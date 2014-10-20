@@ -42,14 +42,16 @@ public final class WithNode extends LexicalContextStatement {
     /**
      * Constructor
      *
-     * @param lineNumber line number
-     * @param token      token
-     * @param finish     finish
+     * @param lineNumber Line number of the header
+     * @param token      First token
+     * @param finish     Character index of the last token
+     * @param expression With expression
+     * @param body       Body of with node
      */
-    public WithNode(final int lineNumber, final long token, final int finish) {
+    public WithNode(final int lineNumber, final long token, final int finish, final Expression expression, final Block body) {
         super(lineNumber, token, finish);
-        this.expression = null;
-        this.body       = null;
+        this.expression = expression;
+        this.body       = body;
     }
 
     private WithNode(final WithNode node, final Expression expression, final Block body) {

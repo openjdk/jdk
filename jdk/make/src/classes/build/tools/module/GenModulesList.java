@@ -112,8 +112,7 @@ public final class GenModulesList {
     }
 
     static final List<String> AGGREGATORS = Arrays.asList(new String[] {
-            "java.se", "java.compact1", "java.compact2",
-            "java.compact3", "jdk.compact3"});
+            "java.se", "java.compact1", "java.compact2", "java.compact3"});
 
     class TopoSorter {
         final Deque<Module> result = new LinkedList<>();

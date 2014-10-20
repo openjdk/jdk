@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -25,7 +28,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
-import java.util.ArrayList;
 import javax.xml.XMLConstants;
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.RevalidationHandler;
@@ -35,6 +37,7 @@ import com.sun.org.apache.xerces.internal.impl.dv.DatatypeException;
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeValueException;
 import com.sun.org.apache.xerces.internal.impl.dv.ValidatedInfo;
 import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
+import com.sun.org.apache.xerces.internal.impl.dv.xs.XSSimpleTypeDecl;
 import com.sun.org.apache.xerces.internal.impl.validation.ConfigurableValidationState;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationState;
@@ -49,6 +52,7 @@ import com.sun.org.apache.xerces.internal.impl.xs.identity.XPathMatcher;
 import com.sun.org.apache.xerces.internal.impl.xs.models.CMBuilder;
 import com.sun.org.apache.xerces.internal.impl.xs.models.CMNodeFactory;
 import com.sun.org.apache.xerces.internal.impl.xs.models.XSCMValidator;
+import com.sun.org.apache.xerces.internal.impl.xs.util.XS10TypeHelper;
 import com.sun.org.apache.xerces.internal.util.AugmentationsImpl;
 import com.sun.org.apache.xerces.internal.util.IntStack;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
@@ -107,7 +111,7 @@ import com.sun.org.apache.xerces.internal.parsers.XMLParser;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  */
 public class XMLSchemaValidator
-    implements XMLComponent, XMLDocumentFilter, FieldActivator, RevalidationHandler {
+    implements XMLComponent, XMLDocumentFilter, FieldActivator, RevalidationHandler, XSElementDeclHelper {
 
     //
     // Constants
@@ -246,6 +250,10 @@ public class XMLSchemaValidator
     protected static final String ROOT_TYPE_DEF =
         Constants.XERCES_PROPERTY_PREFIX + Constants.ROOT_TYPE_DEFINITION_PROPERTY;
 
+    /** Property identifier: root element declaration. */
+    protected static final String ROOT_ELEMENT_DECL =
+        Constants.XERCES_PROPERTY_PREFIX + Constants.ROOT_ELEMENT_DECLARATION_PROPERTY;
+
     /** Property identifier: Schema DV Factory */
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
@@ -279,7 +287,7 @@ public class XMLSchemaValidator
             NAMESPACE_GROWTH,
             TOLERATE_DUPLICATES,
             USE_SERVICE_MECHANISM
-    };
+        };
 
     /** Feature defaults. */
     private static final Boolean[] FEATURE_DEFAULTS = { null,
@@ -324,18 +332,25 @@ public class XMLSchemaValidator
             JAXP_SCHEMA_SOURCE,
             JAXP_SCHEMA_LANGUAGE,
             ROOT_TYPE_DEF,
+            ROOT_ELEMENT_DECL,
             SCHEMA_DV_FACTORY,
             XML_SECURITY_PROPERTY_MANAGER
-            };
+        };
 
     /** Property defaults. */
     private static final Object[] PROPERTY_DEFAULTS =
-        { null, null, null, null, null, null, null, null, null, null, null};
+        { null, null, null, null, null, null, null, null, null, null, null, null};
 
     // this is the number of valuestores of each kind
     // we expect an element to have.  It's almost
     // never > 1; so leave it at that.
     protected static final int ID_CONSTRAINT_NUM = 1;
+
+    // xsi:* attribute declarations
+    static final XSAttributeDecl XSI_TYPE = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_TYPE);
+    static final XSAttributeDecl XSI_NIL = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NIL);
+    static final XSAttributeDecl XSI_SCHEMALOCATION = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_SCHEMALOCATION);
+    static final XSAttributeDecl XSI_NONAMESPACESCHEMALOCATION = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
 
     //
     private static final Hashtable EMPTY_TABLE = new Hashtable();
@@ -353,12 +368,6 @@ public class XMLSchemaValidator
     // If it is not present in calls that we're passing on, we *must*
     // clear this before we introduce it into the pipeline.
     protected final AugmentationsImpl fAugmentations = new AugmentationsImpl();
-
-    /**
-     * Map which is used to catch instance documents that try
-     * and match a field several times in the same scope.
-     */
-    protected final HashMap fMayMatchFieldMap = new HashMap();
 
     // this is included for the convenience of handleEndElement
     protected XMLString fDefaultValue;
@@ -485,9 +494,10 @@ public class XMLSchemaValidator
 
         public void reportError(String domain, String key, Object[] arguments, short severity)
             throws XNIException {
-            fErrorReporter.reportError(domain, key, arguments, severity);
+            String message = fErrorReporter.reportError(domain, key, arguments, severity);
             if (fAugPSVI) {
                 fErrors.addElement(key);
+                fErrors.addElement(message);
             }
         } // reportError(String,String,Object[],short)
 
@@ -498,9 +508,10 @@ public class XMLSchemaValidator
             Object[] arguments,
             short severity)
             throws XNIException {
-            fErrorReporter.reportError(location, domain, key, arguments, severity);
+            String message = fErrorReporter.reportError(location, domain, key, arguments, severity);
             if (fAugPSVI) {
                 fErrors.addElement(key);
+                fErrors.addElement(message);
             }
         } // reportError(XMLLocator,String,String,Object[],short)
     }
@@ -594,7 +605,32 @@ public class XMLSchemaValidator
      */
     public void setProperty(String propertyId, Object value) throws XMLConfigurationException {
         if (propertyId.equals(ROOT_TYPE_DEF)) {
-            fRootTypeQName = (javax.xml.namespace.QName)value;
+            if (value == null) {
+                fRootTypeQName = null;
+                fRootTypeDefinition = null;
+            }
+            else if (value instanceof javax.xml.namespace.QName) {
+                fRootTypeQName = (javax.xml.namespace.QName) value;
+                fRootTypeDefinition = null;
+            }
+            else {
+                fRootTypeDefinition = (XSTypeDefinition) value;
+                fRootTypeQName = null;
+            }
+        }
+        else if (propertyId.equals(ROOT_ELEMENT_DECL)) {
+            if (value == null) {
+                fRootElementDeclQName = null;
+                fRootElementDeclaration = null;
+            }
+            else if (value instanceof javax.xml.namespace.QName) {
+                fRootElementDeclQName = (javax.xml.namespace.QName) value;
+                fRootElementDeclaration = null;
+            }
+            else {
+                fRootElementDeclaration = (XSElementDecl) value;
+                fRootElementDeclQName = null;
+            }
         }
     } // setProperty(String,Object)
 
@@ -868,6 +904,7 @@ public class XMLSchemaValidator
      * @throws XNIException Thrown by handler to signal an error.
      */
     public void ignorableWhitespace(XMLString text, Augmentations augs) throws XNIException {
+
         handleIgnorableWhitespace(text);
         // call handlers
         if (fDocumentHandler != null) {
@@ -1160,7 +1197,7 @@ public class XMLSchemaValidator
 
     /** Schema grammar resolver. */
     private final XSGrammarBucket fGrammarBucket = new XSGrammarBucket();
-    private final SubstitutionGroupHandler fSubGroupHandler = new SubstitutionGroupHandler(fGrammarBucket);
+    private final SubstitutionGroupHandler fSubGroupHandler = new SubstitutionGroupHandler(this);
 
     /** the DV usd to convert xsi:type to a QName */
     // REVISIT: in new simple type design, make things in DVs static,
@@ -1248,7 +1285,7 @@ public class XMLSchemaValidator
     private boolean[] fStrictAssessStack = new boolean[INITIAL_STACK_SIZE];
 
     /** Temporary string buffers. */
-    private final StringBuffer fBuffer = new StringBuffer();
+    private final StringBuilder fBuffer = new StringBuilder();
 
     /** Whether need to append characters to fBuffer */
     private boolean fAppendBuffer = true;
@@ -1268,7 +1305,13 @@ public class XMLSchemaValidator
     /** temporary qname */
     private final QName fTempQName = new QName();
 
+    /** value of the "root-type-definition" property. */
     private javax.xml.namespace.QName fRootTypeQName = null;
+    private XSTypeDefinition fRootTypeDefinition = null;
+
+    /** value of the "root-element-declaration" property. */
+    private javax.xml.namespace.QName fRootElementDeclQName = null;
+    private XSElementDecl fRootElementDeclaration = null;
 
     private int fIgnoreXSITypeDepth;
 
@@ -1341,9 +1384,6 @@ public class XMLSchemaValidator
         // cleanup id table
         fValidationState.resetIDTables();
 
-        //pass the component manager to the factory..
-        nodeFactory.reset(componentManager);
-
         // reset schema loader
         fSchemaLoader.reset(componentManager);
 
@@ -1364,19 +1404,16 @@ public class XMLSchemaValidator
 
         fMatcherStack.clear();
 
-        if (!fMayMatchFieldMap.isEmpty()) {
-            // should only clear this if the last schema had identity constraints.
-            fMayMatchFieldMap.clear();
-        }
-
         // get error reporter
         fXSIErrorReporter.reset((XMLErrorReporter) componentManager.getProperty(ERROR_REPORTER));
 
         boolean parser_settings = componentManager.getFeature(PARSER_SETTINGS, true);
 
-        if (!parser_settings){
+        if (!parser_settings) {
             // parser settings have not been changed
             fValidationManager.addValidationState(fValidationState);
+            // the node limit on the SecurityManager may have changed so need to refresh.
+            nodeFactory.reset();
             // Re-parse external schema location properties.
             XMLSchemaLoader.processExternalHints(
                 fExternalSchemas,
@@ -1386,6 +1423,8 @@ public class XMLSchemaValidator
             return;
         }
 
+        // pass the component manager to the factory..
+        nodeFactory.reset(componentManager);
 
         // get symbol table. if it's a new one, add symbols to it.
         SymbolTable symbolTable = (SymbolTable) componentManager.getProperty(SYMBOL_TABLE);
@@ -1413,8 +1452,8 @@ public class XMLSchemaValidator
         fAugPSVI = componentManager.getFeature(SCHEMA_AUGMENT_PSVI, true);
 
         fSchemaType =
-                (String) componentManager.getProperty(
-                    Constants.JAXP_PROPERTY_PREFIX + Constants.SCHEMA_LANGUAGE, null);
+            (String) componentManager.getProperty(
+                Constants.JAXP_PROPERTY_PREFIX + Constants.SCHEMA_LANGUAGE, null);
 
         fUseGrammarPoolOnly = componentManager.getFeature(USE_GRAMMAR_POOL_ONLY, false);
 
@@ -1424,13 +1463,48 @@ public class XMLSchemaValidator
         fValidationManager.addValidationState(fValidationState);
         fValidationState.setSymbolTable(fSymbolTable);
 
-        boolean ignoreXSIType;
         try {
-            ignoreXSIType = componentManager.getFeature(IGNORE_XSI_TYPE);
+            final Object rootType = componentManager.getProperty(ROOT_TYPE_DEF);
+            if (rootType == null) {
+                fRootTypeQName = null;
+                fRootTypeDefinition = null;
+            }
+            else if (rootType instanceof javax.xml.namespace.QName) {
+                fRootTypeQName = (javax.xml.namespace.QName) rootType;
+                fRootTypeDefinition = null;
+            }
+            else {
+                fRootTypeDefinition = (XSTypeDefinition) rootType;
+                fRootTypeQName = null;
+            }
         }
         catch (XMLConfigurationException e) {
-            ignoreXSIType = false;
+            fRootTypeQName = null;
+            fRootTypeDefinition = null;
         }
+
+        try {
+            final Object rootDecl = componentManager.getProperty(ROOT_ELEMENT_DECL);
+            if (rootDecl == null) {
+                fRootElementDeclQName = null;
+                fRootElementDeclaration = null;
+            }
+            else if (rootDecl instanceof javax.xml.namespace.QName) {
+                fRootElementDeclQName = (javax.xml.namespace.QName) rootDecl;
+                fRootElementDeclaration = null;
+            }
+            else {
+                fRootElementDeclaration = (XSElementDecl) rootDecl;
+                fRootElementDeclQName = null;
+            }
+        }
+        catch (XMLConfigurationException e) {
+            fRootElementDeclQName = null;
+            fRootElementDeclaration = null;
+        }
+
+        boolean ignoreXSIType = componentManager.getFeature(IGNORE_XSI_TYPE, false);
+
         // An initial value of -1 means that the root element considers itself
         // below the depth where xsi:type stopped being ignored (which means that
         // xsi:type attributes will not be ignored for the entire document)
@@ -1515,8 +1589,7 @@ public class XMLSchemaValidator
     public XPathMatcher activateField(Field field, int initialDepth) {
         ValueStore valueStore =
             fValueStoreCache.getValueStoreFor(field.getIdentityConstraint(), initialDepth);
-        setMayMatch(field, Boolean.TRUE);
-        XPathMatcher matcher = field.createMatcher(this, valueStore);
+        XPathMatcher matcher = field.createMatcher(valueStore);
         fMatcherStack.addMatcher(matcher);
         matcher.startDocumentFragment();
         return matcher;
@@ -1535,28 +1608,6 @@ public class XMLSchemaValidator
 
     } // endValueScopeFor(IdentityConstraint)
 
-    /**
-     * Sets whether the given field is permitted to match a value.
-     * This should be used to catch instance documents that try
-     * and match a field several times in the same scope.
-     *
-     * @param field The field that may be permitted to be matched.
-     * @param state Boolean indiciating whether the field may be matched.
-     */
-    public void setMayMatch(Field field, Boolean state) {
-        fMayMatchFieldMap.put(field, state);
-    } // setMayMatch(Field, Boolean)
-
-    /**
-     * Returns whether the given field is permitted to match a value.
-     *
-     * @param field The field that may be permitted to be matched.
-     * @return Boolean indicating whether the field may be matched.
-     */
-    public Boolean mayMatch(Field field) {
-        return (Boolean) fMayMatchFieldMap.get(field);
-    } // mayMatch(Field):Boolean
-
     // a utility method for Identity constraints
     private void activateSelectorFor(IdentityConstraint ic) {
         Selector selector = ic.getSelector();
@@ -1566,6 +1617,21 @@ public class XMLSchemaValidator
         XPathMatcher matcher = selector.createMatcher(activator, fElementDepth);
         fMatcherStack.addMatcher(matcher);
         matcher.startDocumentFragment();
+    }
+
+    // Implements XSElementDeclHelper interface
+    public XSElementDecl getGlobalElementDecl(QName element) {
+        final SchemaGrammar sGrammar =
+            findSchemaGrammar(
+                XSDDescription.CONTEXT_ELEMENT,
+                element.uri,
+                null,
+                element,
+                null);
+        if (sGrammar != null) {
+            return sGrammar.getGlobalElementDecl(element.localpart);
+        }
+        return null;
     }
 
     //
@@ -1823,16 +1889,17 @@ public class XMLSchemaValidator
         }
 
         // get xsi:schemaLocation and xsi:noNamespaceSchemaLocation attributes,
-        // parse them to get the grammars
-
-        String sLocation =
-            attributes.getValue(SchemaSymbols.URI_XSI, SchemaSymbols.XSI_SCHEMALOCATION);
-        String nsLocation =
-            attributes.getValue(SchemaSymbols.URI_XSI, SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
-        //store the location hints..  we need to do it so that we can defer the loading of grammar until
-        //there is a reference to a component from that namespace. To provide location hints to the
-        //application for a namespace
-        storeLocations(sLocation, nsLocation);
+        // parse them to get the grammars. But only do this if the grammar can grow.
+        if (!fUseGrammarPoolOnly) {
+            String sLocation =
+                attributes.getValue(SchemaSymbols.URI_XSI, SchemaSymbols.XSI_SCHEMALOCATION);
+            String nsLocation =
+                attributes.getValue(SchemaSymbols.URI_XSI, SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
+            //store the location hints..  we need to do it so that we can defer the loading of grammar until
+            //there is a reference to a component from that namespace. To provide location hints to the
+            //application for a namespace
+            storeLocations(sLocation, nsLocation);
+        }
 
         // if we are in the content of "skip", then just skip this element
         // REVISIT:  is this the correct behaviour for ID constraints?  -NG
@@ -1842,15 +1909,6 @@ public class XMLSchemaValidator
                 augs = getEmptyAugs(augs);
             return augs;
         }
-
-        //try to find schema grammar by different means..
-        SchemaGrammar sGrammar =
-            findSchemaGrammar(
-                XSDDescription.CONTEXT_ELEMENT,
-                element.uri,
-                null,
-                element,
-                attributes);
 
         // if we are not skipping this element, and there is a content model,
         // we try to find the corresponding decl object for this element.
@@ -1864,15 +1922,57 @@ public class XMLSchemaValidator
             if (fCurrCMState[0] == XSCMValidator.FIRST_ERROR) {
                 XSComplexTypeDecl ctype = (XSComplexTypeDecl) fCurrentType;
                 //REVISIT: is it the only case we will have particle = null?
-                Vector next;
+                ArrayList next;
                 if (ctype.fParticle != null
                     && (next = fCurrentCM.whatCanGoHere(fCurrCMState)).size() > 0) {
                     String expected = expectedStr(next);
-                    reportSchemaError(
-                        "cvc-complex-type.2.4.a",
-                        new Object[] { element.rawname, expected });
-                } else {
-                    reportSchemaError("cvc-complex-type.2.4.d", new Object[] { element.rawname });
+                    final int[] occurenceInfo = fCurrentCM.occurenceInfo(fCurrCMState);
+                    String elemExpandedQname = (element.uri != null) ? "{"+'"'+element.uri+'"'+":"+element.localpart+"}" : element.localpart;
+                    if (occurenceInfo != null) {
+                        final int minOccurs = occurenceInfo[0];
+                        final int maxOccurs = occurenceInfo[1];
+                        final int count = occurenceInfo[2];
+                        // Check if this is a violation of minOccurs
+                        if (count < minOccurs) {
+                            final int required = minOccurs - count;
+                            if (required > 1) {
+                                reportSchemaError("cvc-complex-type.2.4.h", new Object[] { element.rawname,
+                                        fCurrentCM.getTermName(occurenceInfo[3]), Integer.toString(minOccurs), Integer.toString(required) });
+                            }
+                            else {
+                                reportSchemaError("cvc-complex-type.2.4.g", new Object[] { element.rawname,
+                                        fCurrentCM.getTermName(occurenceInfo[3]), Integer.toString(minOccurs) });
+                            }
+                        }
+                        // Check if this is a violation of maxOccurs
+                        else if (count >= maxOccurs && maxOccurs != SchemaSymbols.OCCURRENCE_UNBOUNDED) {
+                            reportSchemaError("cvc-complex-type.2.4.e", new Object[] { element.rawname,
+                                    expected, Integer.toString(maxOccurs) });
+                        }
+                        else {
+                            reportSchemaError("cvc-complex-type.2.4.a", new Object[] { elemExpandedQname, expected });
+                        }
+                    }
+                    else {
+                        reportSchemaError("cvc-complex-type.2.4.a", new Object[] { elemExpandedQname, expected });
+                    }
+                }
+                else {
+                    final int[] occurenceInfo = fCurrentCM.occurenceInfo(fCurrCMState);
+                    if (occurenceInfo != null) {
+                        final int maxOccurs = occurenceInfo[1];
+                        final int count = occurenceInfo[2];
+                        // Check if this is a violation of maxOccurs
+                        if (count >= maxOccurs && maxOccurs != SchemaSymbols.OCCURRENCE_UNBOUNDED) {
+                            reportSchemaError("cvc-complex-type.2.4.f", new Object[] { fCurrentCM.getTermName(occurenceInfo[3]), Integer.toString(maxOccurs) });
+                        }
+                        else {
+                            reportSchemaError("cvc-complex-type.2.4.d", new Object[] { element.rawname });
+                        }
+                    }
+                    else {
+                        reportSchemaError("cvc-complex-type.2.4.d", new Object[] { element.rawname });
+                    }
                 }
             }
         }
@@ -1926,23 +2026,21 @@ public class XMLSchemaValidator
             return augs;
         }
 
-        // 1.2.1.1 A type definition was stipulated by the processor
-        if (fElementDepth == 0 && fRootTypeQName != null) {
-            String rootTypeNamespace = fRootTypeQName.getNamespaceURI();
-            if (rootTypeNamespace != null && rootTypeNamespace.equals(XMLConstants.NULL_NS_URI)) {
-                rootTypeNamespace = null;
+        if (fElementDepth == 0) {
+            // 1.1.1.1 An element declaration was stipulated by the processor
+            if (fRootElementDeclaration != null) {
+                fCurrentElemDecl = fRootElementDeclaration;
+                checkElementMatchesRootElementDecl(fCurrentElemDecl, element);
             }
-            SchemaGrammar grammarForRootType =
-                findSchemaGrammar(
-                        XSDDescription.CONTEXT_ELEMENT, rootTypeNamespace, null, null, null);
-            if (grammarForRootType != null) {
-                fCurrentType = grammarForRootType.getGlobalTypeDecl(fRootTypeQName.getLocalPart());
+            else if (fRootElementDeclQName != null) {
+                processRootElementDeclQName(fRootElementDeclQName, element);
             }
-            if (fCurrentType == null) {
-                String typeName = (fRootTypeQName.getPrefix().equals(XMLConstants.DEFAULT_NS_PREFIX)) ?
-                        fRootTypeQName.getLocalPart() :
-                            fRootTypeQName.getPrefix()+":"+fRootTypeQName.getLocalPart();
-                        reportSchemaError("cvc-type.1", new Object[] {typeName});
+            // 1.2.1.1 A type definition was stipulated by the processor
+            else if (fRootTypeDefinition != null) {
+                fCurrentType = fRootTypeDefinition;
+            }
+            else if (fRootTypeQName != null) {
+                processRootTypeQName(fRootTypeQName);
             }
         }
 
@@ -1952,6 +2050,14 @@ public class XMLSchemaValidator
             // case 1: find declaration for root element
             // case 2: find declaration for element from another namespace
             if (fCurrentElemDecl == null) {
+                // try to find schema grammar by different means..
+                SchemaGrammar sGrammar =
+                    findSchemaGrammar(
+                        XSDDescription.CONTEXT_ELEMENT,
+                        element.uri,
+                        null,
+                        element,
+                        attributes);
                 if (sGrammar != null) {
                     fCurrentElemDecl = sGrammar.getGlobalElementDecl(element.localpart);
                 }
@@ -1962,7 +2068,6 @@ public class XMLSchemaValidator
                 fCurrentType = fCurrentElemDecl.fType;
             }
         }
-
 
         // check if we should be ignoring xsi:type on this element
         if (fElementDepth == fIgnoreXSITypeDepth && fCurrentElemDecl == null) {
@@ -2012,7 +2117,7 @@ public class XMLSchemaValidator
                 // of this. - SG
                 fXSIErrorReporter.fErrorReporter.reportError(
                     XSMessageFormatter.SCHEMA_DOMAIN,
-                    "cvc-elt.1",
+                    "cvc-elt.1.a",
                     new Object[] { element.rawname },
                     XMLErrorReporter.SEVERITY_ERROR);
             }
@@ -2189,6 +2294,8 @@ public class XMLSchemaValidator
             fCurrentPSVI.fTypeDecl = fCurrentType;
             // PSVI: add notation attribute
             fCurrentPSVI.fNotation = fNotation;
+            // PSVI: add nil
+            fCurrentPSVI.fNil = fNil;
         }
 
         return augs;
@@ -2234,7 +2341,7 @@ public class XMLSchemaValidator
             // validation attempted, validity, and error codes
 
             // check extra schema constraints on root element
-            if (fElementDepth == -1 && fFullChecking) {
+            if (fElementDepth == -1 && fFullChecking && !fUseGrammarPoolOnly) {
                 XSConstraints.fullSchemaChecking(
                     fGrammarBucket,
                     fSubGroupHandler,
@@ -2258,10 +2365,10 @@ public class XMLSchemaValidator
             int oldCount = fMatcherStack.getMatcherCount();
             for (int i = oldCount - 1; i >= 0; i--) {
                 XPathMatcher matcher = fMatcherStack.getMatcherAt(i);
-                if (fCurrentElemDecl == null)
-                    matcher.endElement(element, null, false, fValidatedInfo.actualValue, fValidatedInfo.actualValueType, fValidatedInfo.itemValueTypes);
-
-                else
+                if (fCurrentElemDecl == null) {
+                    matcher.endElement(element, fCurrentType, false, fValidatedInfo.actualValue, fValidatedInfo.actualValueType, fValidatedInfo.itemValueTypes);
+                }
+                else {
                     matcher.endElement(
                             element,
                             fCurrentType,
@@ -2275,6 +2382,7 @@ public class XMLSchemaValidator
                             fDefaultValue == null
                                 ? fValidatedInfo.itemValueTypes
                                 : fCurrentElemDecl.fDefault.itemValueTypes);
+                }
             }
 
             if (fMatcherStack.size() > 0) {
@@ -2305,7 +2413,9 @@ public class XMLSchemaValidator
                             && id.getCategory() == IdentityConstraint.IC_KEYREF) {
                         ValueStoreBase values =
                             fValueStoreCache.getValueStoreFor(id, selMatcher.getInitialDepth());
-                        if (values != null) // nothing to do if nothing matched!
+                        // nothing to do if nothing matched, or if not all
+                        // fields are present.
+                        if (values != null && values.fValuesCount == values.fFieldCount)
                             values.endDocumentFragment();
                     }
                 }
@@ -2324,13 +2434,15 @@ public class XMLSchemaValidator
         // have we reached the end tag of the validation root?
         if (fElementDepth == 0) {
             // 7 If the element information item is the validation root, it must be valid per Validation Root Valid (ID/IDREF) (3.3.4).
-            String invIdRef = fValidationState.checkIDRefID();
+            Iterator invIdRefs = fValidationState.checkIDRefID();
             fValidationState.resetIDTables();
-            if (invIdRef != null) {
-                reportSchemaError("cvc-id.1", new Object[] { invIdRef });
+            if (invIdRefs != null) {
+                while (invIdRefs.hasNext()) {
+                    reportSchemaError("cvc-id.1", new Object[] { invIdRefs.next() });
+                }
             }
             // check extra schema constraints
-            if (fFullChecking) {
+            if (fFullChecking && !fUseGrammarPoolOnly) {
                 XSConstraints.fullSchemaChecking(
                     fGrammarBucket,
                     fSubGroupHandler,
@@ -2390,11 +2502,12 @@ public class XMLSchemaValidator
         if (fAugPSVI) {
             augs = getEmptyAugs(augs);
 
-            // the 4 properties sent on startElement calls
+            // the 5 properties sent on startElement calls
             fCurrentPSVI.fDeclaration = this.fCurrentElemDecl;
             fCurrentPSVI.fTypeDecl = this.fCurrentType;
             fCurrentPSVI.fNotation = this.fNotation;
             fCurrentPSVI.fValidationContext = this.fValidationRoot;
+            fCurrentPSVI.fNil = this.fNil;
             // PSVI: validation attempted
             // nothing below or at the same level has none or partial
             // (which means this level is strictly assessed, and all chidren
@@ -2423,12 +2536,7 @@ public class XMLSchemaValidator
 
             if (fDefaultValue != null)
                 fCurrentPSVI.fSpecified = true;
-            fCurrentPSVI.fNil = fNil;
-            fCurrentPSVI.fMemberType = fValidatedInfo.memberType;
-            fCurrentPSVI.fNormalizedValue = fValidatedInfo.normalizedValue;
-            fCurrentPSVI.fActualValue = fValidatedInfo.actualValue;
-            fCurrentPSVI.fActualValueType = fValidatedInfo.actualValueType;
-            fCurrentPSVI.fItemValueTypes = fValidatedInfo.itemValueTypes;
+            fCurrentPSVI.fValue.copyFrom(fValidatedInfo);
 
             if (fStrictAssess) {
                 // get all errors for the current element, its attribute,
@@ -2438,7 +2546,7 @@ public class XMLSchemaValidator
                 String[] errors = fXSIErrorReporter.mergeContext();
 
                 // PSVI: error codes
-                fCurrentPSVI.fErrorCodes = errors;
+                fCurrentPSVI.fErrors = errors;
                 // PSVI: validity
                 fCurrentPSVI.fValidity =
                     (errors == null) ? ElementPSVI.VALIDITY_VALID : ElementPSVI.VALIDITY_INVALID;
@@ -2475,7 +2583,7 @@ public class XMLSchemaValidator
 
     void storeLocations(String sLocation, String nsLocation) {
         if (sLocation != null) {
-            if (!XMLSchemaLoader.tokenizeSchemaLocationStr(sLocation, fLocationPairs)) {
+            if (!XMLSchemaLoader.tokenizeSchemaLocationStr(sLocation, fLocationPairs, fLocator == null ? null : fLocator.getExpandedSystemId())) {
                 // error!
                 fXSIErrorReporter.reportError(
                     XSMessageFormatter.SCHEMA_DOMAIN,
@@ -2491,6 +2599,12 @@ public class XMLSchemaValidator
                 la = new XMLSchemaLoader.LocationArray();
                 fLocationPairs.put(XMLSymbols.EMPTY_STRING, la);
             }
+            if (fLocator != null) {
+                try {
+                    nsLocation = XMLEntityManager.expandSystemId(nsLocation, fLocator.getExpandedSystemId(), false);
+                } catch (MalformedURIException e) {
+                }
+            }
             la.addLocation(nsLocation);
         }
 
@@ -2503,7 +2617,7 @@ public class XMLSchemaValidator
         short contextType,
         String namespace,
         QName enclosingElement,
-        QName triggeringComponet,
+        QName triggeringComponent,
         XMLAttributes attributes) {
         SchemaGrammar grammar = null;
         //get the grammar from local pool...
@@ -2530,12 +2644,14 @@ public class XMLSchemaValidator
                 }
             }
         }
-        if ((grammar == null && !fUseGrammarPoolOnly) || fNamespaceGrowth) {
+
+        if (!fUseGrammarPoolOnly && (grammar == null ||
+            (fNamespaceGrowth && !hasSchemaComponent(grammar, contextType, triggeringComponent)))) {
             fXSDDescription.reset();
             fXSDDescription.fContextType = contextType;
             fXSDDescription.setNamespace(namespace);
             fXSDDescription.fEnclosedElementName = enclosingElement;
-            fXSDDescription.fTriggeringComponent = triggeringComponet;
+            fXSDDescription.fTriggeringComponent = triggeringComponent;
             fXSDDescription.fAttributes = attributes;
             if (fLocator != null) {
                 fXSDDescription.setBaseSystemId(fLocator.getExpandedSystemId());
@@ -2579,13 +2695,14 @@ public class XMLSchemaValidator
                     if (toParseSchema) {
                         grammar = fSchemaLoader.loadSchema(fXSDDescription, xis, fLocationPairs);
                     }
-                } catch (IOException ex) {
+                }
+                catch (IOException ex) {
                     final String [] locationHints = fXSDDescription.getLocationHints();
                     fXSIErrorReporter.fErrorReporter.reportError(
                         XSMessageFormatter.SCHEMA_DOMAIN,
                         "schema_reference.4",
                         new Object[] { locationHints != null ? locationHints[0] : XMLSymbols.EMPTY_STRING },
-                        XMLErrorReporter.SEVERITY_WARNING);
+                        XMLErrorReporter.SEVERITY_WARNING, ex);
                 }
             }
         }
@@ -2593,6 +2710,24 @@ public class XMLSchemaValidator
         return grammar;
 
     } //findSchemaGrammar
+
+    private boolean hasSchemaComponent(SchemaGrammar grammar, short contextType, QName triggeringComponent) {
+        if (grammar != null && triggeringComponent != null) {
+            String localName = triggeringComponent.localpart;
+            if (localName != null && localName.length() > 0) {
+                switch (contextType) {
+                    case XSDDescription.CONTEXT_ELEMENT:
+                        return grammar.getElementDeclaration(localName) != null;
+                    case XSDDescription.CONTEXT_ATTRIBUTE:
+                        return grammar.getAttributeDeclaration(localName) != null;
+                    case XSDDescription.CONTEXT_XSITYPE:
+                        return grammar.getTypeDefinition(localName) != null;
+                }
+            }
+        }
+        return false;
+    }
+
     private void setLocationHints(XSDDescription desc, String[] locations, SchemaGrammar grammar) {
         int length = locations.length;
         if (grammar == null) {
@@ -2610,13 +2745,8 @@ public class XMLSchemaValidator
         int counter = 0;
 
         for (int i=0; i<length; i++) {
-            try {
-                String id = XMLEntityManager.expandSystemId(locations[i], desc.getBaseSystemId(), false);
-                if (!docLocations.contains(id)) {
-                    hints[counter++] = locations[i];
-                }
-            }
-            catch (MalformedURIException e) {
+            if (!docLocations.contains(locations[i])) {
+                hints[counter++] = locations[i];
             }
         }
 
@@ -2630,7 +2760,6 @@ public class XMLSchemaValidator
             }
         }
     }
-
 
     XSTypeDefinition getAndCheckXsiType(QName element, String xsiType, XMLAttributes attributes) {
         // This method also deals with clause 1.2.1.2 of the constraint
@@ -2696,7 +2825,7 @@ public class XMLSchemaValidator
             if (!XSConstraints.checkTypeDerivationOk(type, fCurrentType, block)) {
                 reportSchemaError(
                         "cvc-elt.4.3",
-                        new Object[] { element.rawname, xsiType, fCurrentType.getName()});
+                        new Object[] { element.rawname, xsiType, XS10TypeHelper.getSchemaTypeName(fCurrentType)});
             }
         }
 
@@ -2793,18 +2922,18 @@ public class XMLSchemaValidator
             // for the 4 xsi attributes, get appropriate decl, and validate
             if (fTempQName.uri == SchemaSymbols.URI_XSI) {
                 XSAttributeDecl attrDecl = null;
-                if (fTempQName.localpart == SchemaSymbols.XSI_SCHEMALOCATION)
-                    attrDecl =
-                        SchemaGrammar.SG_XSI.getGlobalAttributeDecl(
-                            SchemaSymbols.XSI_SCHEMALOCATION);
-                else if (fTempQName.localpart == SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION)
-                    attrDecl =
-                        SchemaGrammar.SG_XSI.getGlobalAttributeDecl(
-                            SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
-                else if (fTempQName.localpart == SchemaSymbols.XSI_NIL)
-                    attrDecl = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NIL);
-                else if (fTempQName.localpart == SchemaSymbols.XSI_TYPE)
-                    attrDecl = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_TYPE);
+                if (fTempQName.localpart == SchemaSymbols.XSI_TYPE) {
+                    attrDecl = XSI_TYPE;
+                }
+                else if (fTempQName.localpart == SchemaSymbols.XSI_NIL) {
+                    attrDecl = XSI_NIL;
+                }
+                else if (fTempQName.localpart == SchemaSymbols.XSI_SCHEMALOCATION) {
+                    attrDecl = XSI_SCHEMALOCATION;
+                }
+                else if (fTempQName.localpart == SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION) {
+                    attrDecl = XSI_NONAMESPACESCHEMALOCATION;
+                }
                 if (attrDecl != null) {
                     processOneAttribute(element, attributes, index, attrDecl, null, attrPSVI);
                     continue;
@@ -2849,6 +2978,10 @@ public class XMLSchemaValidator
                     reportSchemaError(
                         "cvc-complex-type.3.2.2",
                         new Object[] { element.rawname, fTempQName.rawname });
+
+                    // We have seen an attribute that was not declared
+                    fNFullValidationDepth = fElementDepth;
+
                     continue;
                 }
             }
@@ -2936,17 +3069,9 @@ public class XMLSchemaValidator
         try {
             actualValue = attDV.validate(attrValue, fValidationState, fValidatedInfo);
             // store the normalized value
-            if (fNormalizeData)
+            if (fNormalizeData) {
                 attributes.setValue(index, fValidatedInfo.normalizedValue);
-            if (attributes instanceof XMLAttributesImpl) {
-                XMLAttributesImpl attrs = (XMLAttributesImpl) attributes;
-                boolean schemaId =
-                    fValidatedInfo.memberType != null
-                        ? fValidatedInfo.memberType.isIDType()
-                        : attDV.isIDType();
-                attrs.setSchemaId(index, schemaId);
             }
-
             // PSVI: element notation
             if (attDV.getVariety() == XSSimpleType.VARIETY_ATOMIC
                 && attDV.getPrimitiveKind() == XSSimpleType.PRIMITIVE_NOTATION) {
@@ -2963,16 +3088,18 @@ public class XMLSchemaValidator
                     fNotation = grammar.getGlobalNotationDecl(qName.localpart);
                 }
             }
-        } catch (InvalidDatatypeValueException idve) {
+        }
+        catch (InvalidDatatypeValueException idve) {
             reportSchemaError(idve.getKey(), idve.getArgs());
             reportSchemaError(
                 "cvc-attribute.3",
-                new Object[] { element.rawname, fTempQName.rawname, attrValue, attDV.getName()});
+                new Object[] { element.rawname, fTempQName.rawname, attrValue,
+                        (attDV instanceof XSSimpleTypeDecl) ?
+                                ((XSSimpleTypeDecl) attDV).getTypeName() : attDV.getName()});
         }
 
         // get the value constraint from use or decl
-        // 4 The item's actual value must match the value of the {value constraint}, if it is present and fixed.
-        // now check the value against the simpleType
+        // 4 The item's actual value must match the value of the {value constraint}, if it is present and fixed.                 // now check the value against the simpleType
         if (actualValue != null && currDecl.getConstraintType() == XSConstants.VC_FIXED) {
             if (!ValidatedInfo.isComparable(fValidatedInfo, currDecl.fDefault) || !actualValue.equals(currDecl.fDefault.actualValue)) {
                 reportSchemaError(
@@ -3000,7 +3127,7 @@ public class XMLSchemaValidator
             }
         }
         if (fIdConstraint) {
-            attrPSVI.fActualValue = actualValue;
+            attrPSVI.fValue.copyFrom(fValidatedInfo);
         }
 
         if (fAugPSVI) {
@@ -3009,25 +3136,25 @@ public class XMLSchemaValidator
             // PSVI: attribute type
             attrPSVI.fTypeDecl = attDV;
 
-            // PSVI: attribute memberType
-            attrPSVI.fMemberType = fValidatedInfo.memberType;
             // PSVI: attribute normalized value
             // NOTE: we always store the normalized value, even if it's invlid,
             // because it might still be useful to the user. But when the it's
             // not valid, the normalized value is not trustable.
-            attrPSVI.fNormalizedValue = fValidatedInfo.normalizedValue;
-            attrPSVI.fActualValue = fValidatedInfo.actualValue;
-            attrPSVI.fActualValueType = fValidatedInfo.actualValueType;
-            attrPSVI.fItemValueTypes = fValidatedInfo.itemValueTypes;
-
-
+            attrPSVI.fValue.copyFrom(fValidatedInfo);
 
             // PSVI: validation attempted:
             attrPSVI.fValidationAttempted = AttributePSVI.VALIDATION_FULL;
 
+            // We have seen an attribute that was declared.
+            if (!fUseGrammarPoolOnly &&
+                    !(fElementDepth < fIgnoreXSITypeDepth && fCurrentElemDecl == null)) {
+                //only when USE_GRAMMAR_POOL_ONLY and IGNORE_XSI_TYPE are not set
+                fNNoneValidationDepth = fElementDepth;
+            }
+
             String[] errors = fXSIErrorReporter.mergeContext();
             // PSVI: error codes
-            attrPSVI.fErrorCodes = errors;
+            attrPSVI.fErrors = errors;
             // PSVI: validity
             attrPSVI.fValidity =
                 (errors == null) ? AttributePSVI.VALIDITY_VALID : AttributePSVI.VALIDITY_INVALID;
@@ -3085,15 +3212,14 @@ public class XMLSchemaValidator
                 attName =
                     new QName(null, currDecl.fName, currDecl.fName, currDecl.fTargetNamespace);
                 String normalized = (defaultValue != null) ? defaultValue.stringValue() : "";
-                int attrIndex = attributes.addAttribute(attName, "CDATA", normalized);
+                int attrIndex;
                 if (attributes instanceof XMLAttributesImpl) {
                     XMLAttributesImpl attrs = (XMLAttributesImpl) attributes;
-                    boolean schemaId =
-                        defaultValue != null
-                            && defaultValue.memberType != null
-                                ? defaultValue.memberType.isIDType()
-                                : currDecl.fType.isIDType();
-                    attrs.setSchemaId(attrIndex, schemaId);
+                    attrIndex = attrs.getLength();
+                    attrs.addAttributeNS(attName, "CDATA", normalized);
+                }
+                else {
+                    attrIndex = attributes.addAttribute(attName, "CDATA", normalized);
                 }
 
                 if (fAugPSVI) {
@@ -3105,11 +3231,7 @@ public class XMLSchemaValidator
 
                     attrPSVI.fDeclaration = currDecl;
                     attrPSVI.fTypeDecl = currDecl.fType;
-                    attrPSVI.fMemberType = defaultValue.memberType;
-                    attrPSVI.fNormalizedValue = normalized;
-                    attrPSVI.fActualValue = defaultValue.actualValue;
-                    attrPSVI.fActualValueType = defaultValue.actualValueType;
-                    attrPSVI.fItemValueTypes = defaultValue.itemValueTypes;
+                    attrPSVI.fValue.copyFrom(defaultValue);
                     attrPSVI.fValidationContext = fValidationRoot;
                     attrPSVI.fValidity = AttributePSVI.VALIDITY_VALID;
                     attrPSVI.fValidationAttempted = AttributePSVI.VALIDATION_FULL;
@@ -3346,9 +3468,29 @@ public class XMLSchemaValidator
                 }
                 if (fCurrCMState[0] >= 0 && !fCurrentCM.endContentModel(fCurrCMState)) {
                     String expected = expectedStr(fCurrentCM.whatCanGoHere(fCurrCMState));
-                    reportSchemaError(
-                        "cvc-complex-type.2.4.b",
-                        new Object[] { element.rawname, expected });
+                    final int[] occurenceInfo = fCurrentCM.occurenceInfo(fCurrCMState);
+                    if (occurenceInfo != null) {
+                        final int minOccurs = occurenceInfo[0];
+                        final int count = occurenceInfo[2];
+                        // Check if this is a violation of minOccurs
+                        if (count < minOccurs) {
+                            final int required = minOccurs - count;
+                            if (required > 1) {
+                                reportSchemaError("cvc-complex-type.2.4.j", new Object[] { element.rawname,
+                                        fCurrentCM.getTermName(occurenceInfo[3]), Integer.toString(minOccurs), Integer.toString(required) });
+                            }
+                            else {
+                                reportSchemaError("cvc-complex-type.2.4.i", new Object[] { element.rawname,
+                                        fCurrentCM.getTermName(occurenceInfo[3]), Integer.toString(minOccurs) });
+                            }
+                        }
+                        else {
+                            reportSchemaError("cvc-complex-type.2.4.b", new Object[] { element.rawname, expected });
+                        }
+                    }
+                    else {
+                        reportSchemaError("cvc-complex-type.2.4.b", new Object[] { element.rawname, expected });
+                    }
                 } else {
                     // Constant space algorithm for a{n,m} for n > 1 and m <= unbounded
                     // After the DFA has completed, check minOccurs and maxOccurs
@@ -3363,10 +3505,69 @@ public class XMLSchemaValidator
                         }
                     }
                 }
-             }
+            }
         }
         return actualValue;
     } // elementLocallyValidComplexType
+
+    void processRootTypeQName(final javax.xml.namespace.QName rootTypeQName) {
+        String rootTypeNamespace = rootTypeQName.getNamespaceURI();
+        // Add namespace to symbol table, to make sure it's interned.
+        // This namespace may be later compared with other values using ==.
+        rootTypeNamespace = fSymbolTable.addSymbol(rootTypeNamespace);
+        if (rootTypeNamespace != null && rootTypeNamespace.equals(XMLConstants.NULL_NS_URI)) {
+            rootTypeNamespace = null;
+        }
+        if (SchemaSymbols.URI_SCHEMAFORSCHEMA.equals(rootTypeNamespace)) {
+            fCurrentType = SchemaGrammar.SG_SchemaNS.getGlobalTypeDecl(rootTypeQName.getLocalPart());
+        }
+        else {
+            final SchemaGrammar grammarForRootType = findSchemaGrammar(
+                    XSDDescription.CONTEXT_ELEMENT, rootTypeNamespace, null, null, null);
+            if (grammarForRootType != null) {
+                fCurrentType = grammarForRootType.getGlobalTypeDecl(rootTypeQName.getLocalPart());
+            }
+        }
+        if (fCurrentType == null) {
+            String typeName = (rootTypeQName.getPrefix().equals(XMLConstants.DEFAULT_NS_PREFIX)) ?
+                    rootTypeQName.getLocalPart() :
+                        rootTypeQName.getPrefix()+":"+rootTypeQName.getLocalPart();
+                    reportSchemaError("cvc-type.1", new Object[] {typeName});
+        }
+    } // processRootTypeQName
+
+    void processRootElementDeclQName(final javax.xml.namespace.QName rootElementDeclQName, final QName element) {
+        String rootElementDeclNamespace = rootElementDeclQName.getNamespaceURI();
+        // Add namespace to symbol table, to make sure it's interned.
+        // This namespace may be later compared with other values using ==.
+        rootElementDeclNamespace = fSymbolTable.addSymbol(rootElementDeclNamespace);
+        if (rootElementDeclNamespace != null && rootElementDeclNamespace.equals(XMLConstants.NULL_NS_URI)) {
+            rootElementDeclNamespace = null;
+        }
+        final SchemaGrammar grammarForRootElement = findSchemaGrammar(
+                XSDDescription.CONTEXT_ELEMENT, rootElementDeclNamespace, null, null, null);
+        if (grammarForRootElement != null) {
+            fCurrentElemDecl = grammarForRootElement.getGlobalElementDecl(rootElementDeclQName.getLocalPart());
+        }
+        if (fCurrentElemDecl == null) {
+            String declName = (rootElementDeclQName.getPrefix().equals(XMLConstants.DEFAULT_NS_PREFIX)) ?
+                    rootElementDeclQName.getLocalPart() :
+                        rootElementDeclQName.getPrefix()+":"+rootElementDeclQName.getLocalPart();
+                    reportSchemaError("cvc-elt.1.a", new Object[] {declName});
+        }
+        else {
+            checkElementMatchesRootElementDecl(fCurrentElemDecl, element);
+        }
+    } // processRootElementDeclQName
+
+    void checkElementMatchesRootElementDecl(final XSElementDecl rootElementDecl, final QName element) {
+        // Report an error if the name of the element does
+        // not match the name of the specified element declaration.
+        if (element.localpart != rootElementDecl.fName ||
+            element.uri != rootElementDecl.fTargetNamespace) {
+            reportSchemaError("cvc-elt.1.b", new Object[] {element.rawname, rootElementDecl.fName});
+        }
+    } // checkElementMatchesRootElementDecl
 
     void reportSchemaError(String key, Object[] arguments) {
         if (fDoValidation)
@@ -3377,14 +3578,13 @@ public class XMLSchemaValidator
                 XMLErrorReporter.SEVERITY_ERROR);
     }
 
-
-    private String expectedStr(Vector expected) {
-        StringBuffer ret = new StringBuffer("{");
+    private String expectedStr(ArrayList expected) {
+        StringBuilder ret = new StringBuilder("{");
         int size = expected.size();
         for (int i = 0; i < size; i++) {
             if (i > 0)
                 ret.append(", ");
-            ret.append(expected.elementAt(i).toString());
+            ret.append(expected.get(i).toString());
         }
         ret.append('}');
         return ret.toString();
@@ -3520,7 +3720,7 @@ public class XMLSchemaValidator
         private ShortList fItemValueType = null;
 
         /** buffer for error messages */
-        final StringBuffer fTempBuffer = new StringBuffer();
+        final StringBuilder fTempBuffer = new StringBuilder();
 
         //
         // Constructors
@@ -3645,9 +3845,12 @@ public class XMLSchemaValidator
          * @param field The field associated to the value. This reference
          *              is used to ensure that each field only adds a value
          *              once within a selection scope.
+         * @param mayMatch a flag indiciating whether the field may be matched.
          * @param actualValue The value to add.
+         * @param valueType Type of the value to add.
+         * @param itemValueType If the value is a list, a list of types for each of the values in the list.
          */
-        public void addValue(Field field, Object actualValue, short valueType, ShortList itemValueType) {
+        public void addValue(Field field, boolean mayMatch, Object actualValue, short valueType, ShortList itemValueType) {
             int i;
             for (i = fFieldCount - 1; i > -1; i--) {
                 if (fFields[i] == field) {
@@ -3662,11 +3865,12 @@ public class XMLSchemaValidator
                 reportSchemaError(code, new Object[] { field.toString(), eName, cName });
                 return;
             }
-            if (Boolean.TRUE != mayMatch(field)) {
+            if (!mayMatch) {
                 String code = "FieldMultipleMatch";
                 String cName = fIdentityConstraint.getIdentityConstraintName();
                 reportSchemaError(code, new Object[] { field.toString(), cName });
-            } else {
+            }
+            else {
                 fValuesCount++;
             }
             fLocalValues[i] = actualValue;
@@ -3815,7 +4019,7 @@ public class XMLSchemaValidator
             }
 
             // construct value string
-            StringBuffer str = new StringBuffer();
+            StringBuilder str = new StringBuilder();
             for (int i = 0; i < length; i++) {
                 if (i > 0) {
                     str.append(',');
@@ -4075,7 +4279,7 @@ public class XMLSchemaValidator
         // values stores
 
         /** stores all global Values stores. */
-        protected final Vector fValueStores = new Vector();
+        protected final ArrayList fValueStores = new ArrayList();
 
         /**
          * Values stores associated to specific identity constraints.
@@ -4086,7 +4290,7 @@ public class XMLSchemaValidator
          * descendant-or-self axes occur on recursively-defined
          * elements.
          */
-        protected final Hashtable fIdentityConstraint2ValueStoreMap = new Hashtable();
+        protected final HashMap fIdentityConstraint2ValueStoreMap = new HashMap();
 
         // sketch of algorithm:
         // - when a constraint is first encountered, its
@@ -4108,7 +4312,7 @@ public class XMLSchemaValidator
         // the fGlobalIDConstraintMap contains descendants+self.
         // keyrefs can only match descendants+self.
         protected final Stack fGlobalMapStack = new Stack();
-        protected final Hashtable fGlobalIDConstraintMap = new Hashtable();
+        protected final HashMap fGlobalIDConstraintMap = new HashMap();
 
         //
         // Constructors
@@ -4124,7 +4328,7 @@ public class XMLSchemaValidator
 
         /** Resets the identity constraint cache. */
         public void startDocument() {
-            fValueStores.removeAllElements();
+            fValueStores.clear();
             fIdentityConstraint2ValueStoreMap.clear();
             fGlobalIDConstraintMap.clear();
             fGlobalMapStack.removeAllElements();
@@ -4133,7 +4337,7 @@ public class XMLSchemaValidator
         // startElement:  pushes the current fGlobalIDConstraintMap
         // onto fGlobalMapStack and clears fGlobalIDConstraint map.
         public void startElement() {
-            // only clone the hashtable when there are elements
+            // only clone the map when there are elements
             if (fGlobalIDConstraintMap.size() > 0)
                 fGlobalMapStack.push(fGlobalIDConstraintMap.clone());
             else
@@ -4148,7 +4352,7 @@ public class XMLSchemaValidator
             if (fGlobalMapStack.isEmpty()) {
                 return; // must be an invalid doc!
             }
-            Hashtable oldMap = (Hashtable) fGlobalMapStack.pop();
+            HashMap oldMap = (HashMap) fGlobalMapStack.pop();
             // return if there is no element
             if (oldMap == null) {
                 return;
@@ -4193,7 +4397,7 @@ public class XMLSchemaValidator
                         } else {
                             uniqueValueStore.clear();
                         }
-                        fValueStores.addElement(uniqueValueStore);
+                        fValueStores.add(uniqueValueStore);
                         activateSelectorFor(icArray[i]);
                         break;
                     case (IdentityConstraint.IC_KEY) :
@@ -4208,7 +4412,7 @@ public class XMLSchemaValidator
                         } else {
                             keyValueStore.clear();
                         }
-                        fValueStores.addElement(keyValueStore);
+                        fValueStores.add(keyValueStore);
                         activateSelectorFor(icArray[i]);
                         break;
                     case (IdentityConstraint.IC_KEYREF) :
@@ -4223,7 +4427,7 @@ public class XMLSchemaValidator
                         } else {
                             keyRefValueStore.clear();
                         }
-                        fValueStores.addElement(keyRefValueStore);
+                        fValueStores.add(keyRefValueStore);
                         activateSelectorFor(icArray[i]);
                         break;
                 }
@@ -4267,7 +4471,7 @@ public class XMLSchemaValidator
 
             int count = fValueStores.size();
             for (int i = 0; i < count; i++) {
-                ValueStoreBase valueStore = (ValueStoreBase) fValueStores.elementAt(i);
+                ValueStoreBase valueStore = (ValueStoreBase) fValueStores.get(i);
                 valueStore.endDocument();
             }
 
@@ -4295,7 +4499,7 @@ public class XMLSchemaValidator
 
     // the purpose of this class is to enable IdentityConstraint,int
     // pairs to be used easily as keys in Hashtables.
-    protected class LocalIDKey {
+    protected static final class LocalIDKey {
 
         public IdentityConstraint fId;
         public int fDepth;

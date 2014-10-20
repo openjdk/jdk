@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1937,6 +1937,9 @@ public class Logger {
         }
 
         setCallersClassLoaderRef(callersClass);
+        if (isSystemLogger && getCallersClassLoader() != null) {
+            checkPermission();
+        }
         if (findResourceBundle(name, true) == null) {
             // We've failed to find an expected ResourceBundle.
             // unset the caller's ClassLoader since we were unable to find the
@@ -2170,11 +2173,13 @@ public class Logger {
                 return trb;
             }
             final String rbName = isSystemLogger
-                ? trb.resourceBundleName
+                // ancestor of a system logger is expected to be a system logger.
+                // ignore resource bundle name if it's not.
+                ? (target.isSystemLogger ? trb.resourceBundleName : null)
                 : target.getResourceBundleName();
             if (rbName != null) {
                 return LoggerBundle.get(rbName,
-                            findResourceBundle(rbName, true));
+                        findResourceBundle(rbName, true));
             }
             target = isSystemLogger ? target.parent : target.getParent();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,6 +357,17 @@ abstract class Handshaker {
         } else {
             return engine.getAcc();
         }
+    }
+
+    String getEndpointIdentificationAlgorithmSE() {
+        SSLParameters paras;
+        if (conn != null) {
+            paras = conn.getSSLParameters();
+        } else {
+            paras = engine.getSSLParameters();
+        }
+
+        return paras.getEndpointIdentificationAlgorithm();
     }
 
     private void setVersionSE(ProtocolVersion protocolVersion) {

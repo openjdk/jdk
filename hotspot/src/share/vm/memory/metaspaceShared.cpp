@@ -608,6 +608,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Pass 2 - write data.
   mapinfo->open_for_write();
+  mapinfo->set_header_crc(mapinfo->compute_header_crc());
   mapinfo->write_header();
   mapinfo->write_space(MetaspaceShared::ro, _loader_data->ro_metaspace(), true);
   mapinfo->write_space(MetaspaceShared::rw, _loader_data->rw_metaspace(), false);
@@ -937,9 +938,13 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 
   // Map each shared region
   if ((_ro_base = mapinfo->map_region(ro)) != NULL &&
+       mapinfo->verify_region_checksum(ro) &&
       (_rw_base = mapinfo->map_region(rw)) != NULL &&
+       mapinfo->verify_region_checksum(rw) &&
       (_md_base = mapinfo->map_region(md)) != NULL &&
+       mapinfo->verify_region_checksum(md) &&
       (_mc_base = mapinfo->map_region(mc)) != NULL &&
+       mapinfo->verify_region_checksum(mc) &&
       (image_alignment == (size_t)max_alignment()) &&
       mapinfo->validate_classpath_entry_table()) {
     // Success (no need to do anything)

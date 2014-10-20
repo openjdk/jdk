@@ -168,42 +168,6 @@ public class ScriptEngineSecurityTest {
         }
     }
 
-    @Test
-    /**
-     * Check that script can't implement sensitive package interfaces.
-     */
-    public void checkSensitiveInterfaceImplTest() throws ScriptException {
-        if (System.getSecurityManager() == null) {
-            // pass vacuously
-            return;
-        }
-
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        final Object[] holder = new Object[1];
-        e.put("holder", holder);
-        // put an empty script object into array
-        e.eval("holder[0] = {}");
-        // holder[0] is an object of some subclass of ScriptObject
-        final Class<?> ScriptObjectClass = holder[0].getClass().getSuperclass();
-        final Class<?> PropertyAccessClass = ScriptObjectClass.getInterfaces()[0];
-        // implementation methods for PropertyAccess class
-        e.eval("function set() {}; function get() {}; function getInt(){} " +
-               "function getDouble(){}; function getLong() {}; " +
-               "this.delete = function () {}; function has() {}; " +
-               "function hasOwnProperty() {}");
-
-        // get implementation of a restricted package interface
-        try {
-            log(Objects.toString(((Invocable)e).getInterface((Class<?>)PropertyAccessClass)));
-            fail("should have thrown SecurityException");
-        } catch (final Exception exp) {
-            if (! (exp instanceof SecurityException)) {
-                fail("SecurityException expected, got " + exp);
-            }
-        }
-    }
-
     // @bug 8032948: Nashorn linkages awry
     public static class FakeProxy extends Proxy {
         public FakeProxy(final InvocationHandler ih) {

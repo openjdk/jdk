@@ -28,6 +28,8 @@
 SUNWprivate_1.1 {
 	global:
 		JNI_OnLoad;
+		Java_java_net_AbstractPlainDatagramSocketImpl_init;
+		Java_java_net_AbstractPlainDatagramSocketImpl_dataAvailable;
 		Java_java_net_PlainSocketImpl_socketListen;
 		Java_java_net_PlainDatagramSocketImpl_getTTL;
 		Java_java_net_PlainDatagramSocketImpl_init;
@@ -108,6 +110,8 @@ SUNWprivate_1.1 {
 		NET_Bind;
 		NET_MapSocketOption;
 		NET_Wait;
+		NET_EnableFastTcpLoopback;
+		NET_ThrowNew;
                 ipv6_available;
                 initInetAddressIDs;
 

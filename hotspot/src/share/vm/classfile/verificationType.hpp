@@ -265,7 +265,8 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
   // is assignable to another.  Returns true if one can assign 'from' to
   // this.
   bool is_assignable_from(
-      const VerificationType& from, ClassVerifier* context, TRAPS) const {
+      const VerificationType& from, ClassVerifier* context,
+      bool from_field_is_protected, TRAPS) const {
     if (equals(from) || is_bogus()) {
       return true;
     } else {
@@ -286,7 +287,9 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
           return from.is_integer();
         default:
           if (is_reference() && from.is_reference()) {
-            return is_reference_assignable_from(from, context, CHECK_false);
+            return is_reference_assignable_from(from, context,
+                                                from_field_is_protected,
+                                                CHECK_false);
           } else {
             return false;
           }
@@ -308,7 +311,8 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
  private:
 
   bool is_reference_assignable_from(
-    const VerificationType&, ClassVerifier*, TRAPS) const;
+    const VerificationType&, ClassVerifier*, bool from_field_is_protected,
+    TRAPS) const;
 };
 
 #endif // SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP

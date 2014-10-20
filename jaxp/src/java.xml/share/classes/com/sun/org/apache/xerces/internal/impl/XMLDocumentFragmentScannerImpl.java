@@ -611,9 +611,9 @@ public class XMLDocumentFragmentScannerImpl
         //fElementStack2.clear();
         //fReplaceEntityReferences = true;
         //fSupportExternalEntities = true;
-        Boolean bo = (Boolean)propertyManager.getProperty(XMLInputFactoryImpl.IS_REPLACING_ENTITY_REFERENCES);
+        Boolean bo = (Boolean)propertyManager.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES);
         fReplaceEntityReferences = bo.booleanValue();
-        bo = (Boolean)propertyManager.getProperty(XMLInputFactoryImpl.IS_SUPPORTING_EXTERNAL_ENTITIES);
+        bo = (Boolean)propertyManager.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES);
         fSupportExternalEntities = bo.booleanValue();
         Boolean cdata = (Boolean)propertyManager.getProperty(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.STAX_REPORT_CDATA_EVENT) ;
         if(cdata != null)

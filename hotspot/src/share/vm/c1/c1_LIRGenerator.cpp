@@ -2069,14 +2069,14 @@ void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
   LIR_Opr base_op = base.result();
   LIR_Opr index_op = idx.result();
 #ifndef _LP64
-  if (x->base()->type()->tag() == longTag) {
+  if (base_op->type() == T_LONG) {
     base_op = new_register(T_INT);
     __ convert(Bytecodes::_l2i, base.result(), base_op);
   }
   if (x->has_index()) {
-    if (x->index()->type()->tag() == longTag) {
+    if (index_op->type() == T_LONG) {
       LIR_Opr long_index_op = index_op;
-      if (x->index()->type()->is_constant()) {
+      if (index_op->is_constant()) {
         long_index_op = new_register(T_LONG);
         __ move(index_op, long_index_op);
       }
@@ -2091,14 +2091,14 @@ void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
   assert(!x->has_index() || index_op->type() == T_INT, "index should be an int");
 #else
   if (x->has_index()) {
-    if (x->index()->type()->tag() == intTag) {
-      if (!x->index()->type()->is_constant()) {
+    if (index_op->type() == T_INT) {
+      if (!index_op->is_constant()) {
         index_op = new_register(T_LONG);
         __ convert(Bytecodes::_i2l, idx.result(), index_op);
       }
     } else {
-      assert(x->index()->type()->tag() == longTag, "must be");
-      if (x->index()->type()->is_constant()) {
+      assert(index_op->type() == T_LONG, "must be");
+      if (index_op->is_constant()) {
         index_op = new_register(T_LONG);
         __ move(idx.result(), index_op);
       }
@@ -2179,12 +2179,12 @@ void LIRGenerator::do_UnsafePutRaw(UnsafePutRaw* x) {
   LIR_Opr index_op = idx.result();
 
 #ifndef _LP64
-  if (x->base()->type()->tag() == longTag) {
+  if (base_op->type() == T_LONG) {
     base_op = new_register(T_INT);
     __ convert(Bytecodes::_l2i, base.result(), base_op);
   }
   if (x->has_index()) {
-    if (x->index()->type()->tag() == longTag) {
+    if (index_op->type() == T_LONG) {
       index_op = new_register(T_INT);
       __ convert(Bytecodes::_l2i, idx.result(), index_op);
     }
@@ -2194,7 +2194,7 @@ void LIRGenerator::do_UnsafePutRaw(UnsafePutRaw* x) {
   assert(!x->has_index() || (index_op->type() == T_INT && !index_op->is_constant()), "index should be an non-constant int");
 #else
   if (x->has_index()) {
-    if (x->index()->type()->tag() == intTag) {
+    if (index_op->type() == T_INT) {
       index_op = new_register(T_LONG);
       __ convert(Bytecodes::_i2l, idx.result(), index_op);
     }
