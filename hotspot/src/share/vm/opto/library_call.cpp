@@ -4697,6 +4697,10 @@ bool LibraryCallKit::inline_arraycopy() {
   Node* dest_offset = argument(3);  // type: int
   Node* length      = argument(4);  // type: int
 
+  // Check for allocation before we add nodes that would confuse
+  // tightly_coupled_allocation()
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
+
   // The following tests must be performed
   // (1) src and dest are arrays.
   // (2) src and dest arrays must have elements of the same BasicType
@@ -4870,7 +4874,6 @@ bool LibraryCallKit::inline_arraycopy() {
     return true;
   }
 
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
   ArrayCopyNode* ac = ArrayCopyNode::make(this, true, src, src_offset, dest, dest_offset, length, alloc != NULL,
                                           // Create LoadRange and LoadKlass nodes for use during macro expansion here
                                           // so the compiler has a chance to eliminate them: during macro expansion,
