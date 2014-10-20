@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2003,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -52,6 +53,8 @@ public interface XSElementDeclaration extends XSTerm {
     /**
      * [Value constraint]: the constraint value with respect to the [type
      * definition], otherwise <code>null</code>.
+     *
+     * @deprecated Use getValueConstraintValue().getNormalizedValue() instead
      */
     public String getConstraintValue();
 
@@ -62,6 +65,8 @@ public interface XSElementDeclaration extends XSTerm {
      * @exception XSException
      *   NOT_SUPPORTED_ERR: Raised if the implementation does not support this
      *   method.
+     *
+     * @deprecated Use getValueConstraintValue().getActualValue() instead
      */
     public Object getActualVC()
                                             throws XSException;
@@ -75,11 +80,12 @@ public interface XSElementDeclaration extends XSTerm {
      * method returns <code>LISTOFUNION_DT</code>. To query the actual
      * constraint value of the list or list of union type definitions use
      * <code>itemValueTypes</code>. If the <code>actualNormalizedValue</code>
-     *  is <code>null</code>, this method returns <code>UNAVAILABLE_DT</code>
-     * .
+     *  is <code>null</code>, this method returns <code>UNAVAILABLE_DT</code>.
      * @exception XSException
      *   NOT_SUPPORTED_ERR: Raised if the implementation does not support this
      *   method.
+     *
+     * @deprecated Use getValueConstraintValue().getActualValueType() instead
      */
     public short getActualVCType()
                                             throws XSException;
@@ -96,9 +102,16 @@ public interface XSElementDeclaration extends XSTerm {
      * @exception XSException
      *   NOT_SUPPORTED_ERR: Raised if the implementation does not support this
      *   method.
+     *
+     * @deprecated Use getValueConstraintValue().getListValueTypes() instead
      */
     public ShortList getItemValueTypes()
                                             throws XSException;
+
+    /**
+     * The actual value of the default or fixed value constraint.
+     */
+    public XSValue getValueConstraintValue();
 
     /**
      *  If nillable is true, then an element may also be valid if it carries

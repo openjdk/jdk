@@ -1683,6 +1683,8 @@ protected:
   int  _failures;
   bool _verbose;
 
+  HeapRegionClaimer _hrclaimer;
+
 public:
   G1ParVerifyFinalCountTask(G1CollectedHeap* g1h,
                             BitMap* region_bm, BitMap* card_bm,
@@ -1692,19 +1694,8 @@ public:
       _actual_region_bm(region_bm), _actual_card_bm(card_bm),
       _expected_region_bm(expected_region_bm), _expected_card_bm(expected_card_bm),
       _failures(0), _verbose(false),
-      _n_workers(0) {
+      _n_workers(_g1h->workers()->active_workers()), _hrclaimer(_n_workers) {
     assert(VerifyDuringGC, "don't call this otherwise");
-
-    // Use the value already set as the number of active threads
-    // in the call to run_task().
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
-      assert( _g1h->workers()->active_workers() > 0,
-        "Should have been previously set");
-      _n_workers = _g1h->workers()->active_workers();
-    } else {
-      _n_workers = 1;
-    }
-
     assert(_expected_card_bm->size() == _actual_card_bm->size(), "sanity");
     assert(_expected_region_bm->size() == _actual_region_bm->size(), "sanity");
 
@@ -1721,10 +1712,7 @@ public:
                                             _verbose);
 
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1h->heap_region_par_iterate_chunked(&verify_cl,
-                                            worker_id,
-                                            _n_workers,
-                                            HeapRegion::VerifyCountClaimValue);
+      _g1h->heap_region_par_iterate(&verify_cl, worker_id, &_hrclaimer);
     } else {
       _g1h->heap_region_iterate(&verify_cl);
     }
@@ -1813,22 +1801,14 @@ protected:
   BitMap* _actual_card_bm;
 
   uint    _n_workers;
+  HeapRegionClaimer _hrclaimer;
 
 public:
   G1ParFinalCountTask(G1CollectedHeap* g1h, BitMap* region_bm, BitMap* card_bm)
     : AbstractGangTask("G1 final counting"),
       _g1h(g1h), _cm(_g1h->concurrent_mark()),
       _actual_region_bm(region_bm), _actual_card_bm(card_bm),
-      _n_workers(0) {
-    // Use the value already set as the number of active threads
-    // in the call to run_task().
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
-      assert( _g1h->workers()->active_workers() > 0,
-        "Should have been previously set");
-      _n_workers = _g1h->workers()->active_workers();
-    } else {
-      _n_workers = 1;
-    }
+      _n_workers(_g1h->workers()->active_workers()), _hrclaimer(_n_workers) {
   }
 
   void work(uint worker_id) {
@@ -1839,10 +1819,7 @@ public:
                                                 _actual_card_bm);
 
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1h->heap_region_par_iterate_chunked(&final_update_cl,
-                                            worker_id,
-                                            _n_workers,
-                                            HeapRegion::FinalCountClaimValue);
+      _g1h->heap_region_par_iterate(&final_update_cl, worker_id, &_hrclaimer);
     } else {
       _g1h->heap_region_iterate(&final_update_cl);
     }
@@ -1929,12 +1906,12 @@ protected:
   size_t _max_live_bytes;
   size_t _freed_bytes;
   FreeRegionList* _cleanup_list;
+  HeapRegionClaimer _hrclaimer;
 
 public:
-  G1ParNoteEndTask(G1CollectedHeap* g1h,
-                   FreeRegionList* cleanup_list) :
-    AbstractGangTask("G1 note end"), _g1h(g1h),
-    _max_live_bytes(0), _freed_bytes(0), _cleanup_list(cleanup_list) { }
+  G1ParNoteEndTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
+      AbstractGangTask("G1 note end"), _g1h(g1h), _max_live_bytes(0), _freed_bytes(0), _cleanup_list(cleanup_list), _hrclaimer(n_workers) {
+  }
 
   void work(uint worker_id) {
     double start = os::elapsedTime();
@@ -1943,9 +1920,7 @@ public:
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h, &local_cleanup_list,
                                            &hrrs_cleanup_task);
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1h->heap_region_par_iterate_chunked(&g1_note_end, worker_id,
-                                            _g1h->workers()->active_workers(),
-                                            HeapRegion::NoteEndClaimValue);
+      _g1h->heap_region_par_iterate(&g1_note_end, worker_id, &_hrclaimer);
     } else {
       _g1h->heap_region_iterate(&g1_note_end);
     }
@@ -1991,16 +1966,16 @@ protected:
   G1RemSet* _g1rs;
   BitMap* _region_bm;
   BitMap* _card_bm;
+  HeapRegionClaimer _hrclaimer;
+
 public:
-  G1ParScrubRemSetTask(G1CollectedHeap* g1h,
-                       BitMap* region_bm, BitMap* card_bm) :
-    AbstractGangTask("G1 ScrubRS"), _g1rs(g1h->g1_rem_set()),
-    _region_bm(region_bm), _card_bm(card_bm) { }
+  G1ParScrubRemSetTask(G1CollectedHeap* g1h, BitMap* region_bm, BitMap* card_bm, uint n_workers) :
+      AbstractGangTask("G1 ScrubRS"), _g1rs(g1h->g1_rem_set()), _region_bm(region_bm), _card_bm(card_bm), _hrclaimer(n_workers) {
+  }
 
   void work(uint worker_id) {
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1rs->scrub_par(_region_bm, _card_bm, worker_id,
-                       HeapRegion::ScrubRemSetClaimValue);
+      _g1rs->scrub_par(_region_bm, _card_bm, worker_id, &_hrclaimer);
     } else {
       _g1rs->scrub(_region_bm, _card_bm);
     }
@@ -2043,9 +2018,6 @@ void ConcurrentMark::cleanup() {
   G1ParFinalCountTask g1_par_count_task(g1h, &_region_bm, &_card_bm);
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-   assert(g1h->check_heap_region_claim_values(HeapRegion::InitialClaimValue),
-           "sanity check");
-
     g1h->set_par_threads();
     n_workers = g1h->n_par_threads();
     assert(g1h->n_par_threads() == n_workers,
@@ -2053,9 +2025,6 @@ void ConcurrentMark::cleanup() {
     g1h->workers()->run_task(&g1_par_count_task);
     // Done with the parallel phase so reset to 0.
     g1h->set_par_threads(0);
-
-    assert(g1h->check_heap_region_claim_values(HeapRegion::FinalCountClaimValue),
-           "sanity check");
   } else {
     n_workers = 1;
     g1_par_count_task.work(0);
@@ -2080,9 +2049,6 @@ void ConcurrentMark::cleanup() {
       g1h->workers()->run_task(&g1_par_verify_task);
       // Done with the parallel phase so reset to 0.
       g1h->set_par_threads(0);
-
-      assert(g1h->check_heap_region_claim_values(HeapRegion::VerifyCountClaimValue),
-             "sanity check");
     } else {
       g1_par_verify_task.work(0);
     }
@@ -2108,14 +2074,11 @@ void ConcurrentMark::cleanup() {
   g1h->reset_gc_time_stamp();
 
   // Note end of marking in all heap regions.
-  G1ParNoteEndTask g1_par_note_end_task(g1h, &_cleanup_list);
+  G1ParNoteEndTask g1_par_note_end_task(g1h, &_cleanup_list, n_workers);
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     g1h->set_par_threads((int)n_workers);
     g1h->workers()->run_task(&g1_par_note_end_task);
     g1h->set_par_threads(0);
-
-    assert(g1h->check_heap_region_claim_values(HeapRegion::NoteEndClaimValue),
-           "sanity check");
   } else {
     g1_par_note_end_task.work(0);
   }
@@ -2132,15 +2095,11 @@ void ConcurrentMark::cleanup() {
   // regions.
   if (G1ScrubRemSets) {
     double rs_scrub_start = os::elapsedTime();
-    G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm);
+    G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm, n_workers);
     if (G1CollectedHeap::use_parallel_gc_threads()) {
       g1h->set_par_threads((int)n_workers);
       g1h->workers()->run_task(&g1_par_scrub_rs_task);
       g1h->set_par_threads(0);
-
-      assert(g1h->check_heap_region_claim_values(
-                                            HeapRegion::ScrubRemSetClaimValue),
-             "sanity check");
     } else {
       g1_par_scrub_rs_task.work(0);
     }
@@ -3288,6 +3247,7 @@ protected:
   BitMap* _cm_card_bm;
   uint _max_worker_id;
   int _active_workers;
+  HeapRegionClaimer _hrclaimer;
 
 public:
   G1AggregateCountDataTask(G1CollectedHeap* g1h,
@@ -3295,18 +3255,18 @@ public:
                            BitMap* cm_card_bm,
                            uint max_worker_id,
                            int n_workers) :
-    AbstractGangTask("Count Aggregation"),
-    _g1h(g1h), _cm(cm), _cm_card_bm(cm_card_bm),
-    _max_worker_id(max_worker_id),
-    _active_workers(n_workers) { }
+      AbstractGangTask("Count Aggregation"),
+      _g1h(g1h), _cm(cm), _cm_card_bm(cm_card_bm),
+      _max_worker_id(max_worker_id),
+      _active_workers(n_workers),
+      _hrclaimer(_active_workers) {
+  }
 
   void work(uint worker_id) {
     AggregateCountDataHRClosure cl(_g1h, _cm_card_bm, _max_worker_id);
 
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1h->heap_region_par_iterate_chunked(&cl, worker_id,
-                                            _active_workers,
-                                            HeapRegion::AggregateCountClaimValue);
+      _g1h->heap_region_par_iterate(&cl, worker_id, &_hrclaimer);
     } else {
       _g1h->heap_region_iterate(&cl);
     }
@@ -3323,15 +3283,9 @@ void ConcurrentMark::aggregate_count_data() {
                                            _max_worker_id, n_workers);
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-    assert(_g1h->check_heap_region_claim_values(HeapRegion::InitialClaimValue),
-           "sanity check");
     _g1h->set_par_threads(n_workers);
     _g1h->workers()->run_task(&g1_par_agg_task);
     _g1h->set_par_threads(0);
-
-    assert(_g1h->check_heap_region_claim_values(HeapRegion::AggregateCountClaimValue),
-           "sanity check");
-    _g1h->reset_heap_region_claim_values();
   } else {
     g1_par_agg_task.work(0);
   }

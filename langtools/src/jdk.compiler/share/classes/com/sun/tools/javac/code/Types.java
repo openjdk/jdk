@@ -1889,7 +1889,12 @@ public class Types {
      * Mapping to take element type of an arraytype
      */
     private Mapping elemTypeFun = new Mapping ("elemTypeFun") {
-        public Type apply(Type t) { return elemtype(t); }
+        public Type apply(Type t) {
+            while (t.hasTag(TYPEVAR)) {
+                t = t.getUpperBound();
+            }
+            return elemtype(t);
+        }
     };
 
     /**
@@ -3531,40 +3536,46 @@ public class Types {
     }
 
     /**
-     * Return the least upper bound of pair of types.  if the lub does
+     * Return the least upper bound of list of types.  if the lub does
      * not exist return null.
      */
-    public Type lub(Type t1, Type t2) {
-        return lub(List.of(t1, t2));
+    public Type lub(List<Type> ts) {
+        return lub(ts.toArray(new Type[ts.length()]));
     }
 
     /**
      * Return the least upper bound (lub) of set of types.  If the lub
      * does not exist return the type of null (bottom).
      */
-    public Type lub(List<Type> ts) {
+    public Type lub(Type... ts) {
+        final int UNKNOWN_BOUND = 0;
         final int ARRAY_BOUND = 1;
         final int CLASS_BOUND = 2;
-        int boundkind = 0;
-        for (Type t : ts) {
+
+        int[] kinds = new int[ts.length];
+
+        int boundkind = UNKNOWN_BOUND;
+        for (int i = 0 ; i < ts.length ; i++) {
+            Type t = ts[i];
             switch (t.getTag()) {
             case CLASS:
-                boundkind |= CLASS_BOUND;
+                boundkind |= kinds[i] = CLASS_BOUND;
                 break;
             case ARRAY:
-                boundkind |= ARRAY_BOUND;
+                boundkind |= kinds[i] = ARRAY_BOUND;
                 break;
             case  TYPEVAR:
                 do {
                     t = t.getUpperBound();
                 } while (t.hasTag(TYPEVAR));
                 if (t.hasTag(ARRAY)) {
-                    boundkind |= ARRAY_BOUND;
+                    boundkind |= kinds[i] = ARRAY_BOUND;
                 } else {
-                    boundkind |= CLASS_BOUND;
+                    boundkind |= kinds[i] = CLASS_BOUND;
                 }
                 break;
             default:
+                kinds[i] = UNKNOWN_BOUND;
                 if (t.isPrimitive())
                     return syms.errType;
             }
@@ -3575,15 +3586,16 @@ public class Types {
 
         case ARRAY_BOUND:
             // calculate lub(A[], B[])
-            List<Type> elements = Type.map(ts, elemTypeFun);
-            for (Type t : elements) {
-                if (t.isPrimitive()) {
+            Type[] elements = new Type[ts.length];
+            for (int i = 0 ; i < ts.length ; i++) {
+                Type elem = elements[i] = elemTypeFun.apply(ts[i]);
+                if (elem.isPrimitive()) {
                     // if a primitive type is found, then return
                     // arraySuperType unless all the types are the
                     // same
-                    Type first = ts.head;
-                    for (Type s : ts.tail) {
-                        if (!isSameType(first, s)) {
+                    Type first = ts[0];
+                    for (int j = 1 ; j < ts.length ; j++) {
+                        if (!isSameType(first, ts[j])) {
                              // lub(int[], B[]) is Cloneable & Serializable
                             return arraySuperType();
                         }
@@ -3598,13 +3610,20 @@ public class Types {
 
         case CLASS_BOUND:
             // calculate lub(A, B)
-            while (!ts.head.hasTag(CLASS) && !ts.head.hasTag(TYPEVAR)) {
-                ts = ts.tail;
+            int startIdx = 0;
+            for (int i = 0; i < ts.length ; i++) {
+                Type t = ts[i];
+                if (t.hasTag(CLASS) || t.hasTag(TYPEVAR)) {
+                    break;
+                } else {
+                    startIdx++;
+                }
             }
-            Assert.check(!ts.isEmpty());
+            Assert.check(startIdx < ts.length);
             //step 1 - compute erased candidate set (EC)
-            List<Type> cl = erasedSupertypes(ts.head);
-            for (Type t : ts.tail) {
+            List<Type> cl = erasedSupertypes(ts[startIdx]);
+            for (int i = startIdx + 1 ; i < ts.length ; i++) {
+                Type t = ts[i];
                 if (t.hasTag(CLASS) || t.hasTag(TYPEVAR))
                     cl = intersect(cl, erasedSupertypes(t));
             }
@@ -3613,9 +3632,9 @@ public class Types {
             //step 3 - for each element G in MEC, compute lci(Inv(G))
             List<Type> candidates = List.nil();
             for (Type erasedSupertype : mec) {
-                List<Type> lci = List.of(asSuper(ts.head, erasedSupertype.tsym));
-                for (Type t : ts) {
-                    lci = intersect(lci, List.of(asSuper(t, erasedSupertype.tsym)));
+                List<Type> lci = List.of(asSuper(ts[startIdx], erasedSupertype.tsym));
+                for (int i = startIdx + 1 ; i < ts.length ; i++) {
+                    lci = intersect(lci, List.of(asSuper(ts[i], erasedSupertype.tsym)));
                 }
                 candidates = candidates.appendList(lci);
             }
@@ -3626,9 +3645,9 @@ public class Types {
         default:
             // calculate lub(A, B[])
             List<Type> classes = List.of(arraySuperType());
-            for (Type t : ts) {
-                if (!t.hasTag(ARRAY)) // Filter out any arrays
-                    classes = classes.prepend(t);
+            for (int i = 0 ; i < ts.length ; i++) {
+                if (kinds[i] != ARRAY_BOUND) // Filter out any arrays
+                    classes = classes.prepend(ts[i]);
             }
             // lub(A, B[]) is lub(A, arraySuperType)
             return lub(classes);

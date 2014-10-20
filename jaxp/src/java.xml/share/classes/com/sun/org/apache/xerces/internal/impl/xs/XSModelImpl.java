@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2002-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,13 +20,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl.xs;
-
-import java.lang.reflect.Array;
-import java.util.AbstractList;
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
-import java.util.Vector;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.xs.util.StringListImpl;
@@ -39,6 +33,7 @@ import com.sun.org.apache.xerces.internal.xs.XSAttributeDeclaration;
 import com.sun.org.apache.xerces.internal.xs.XSAttributeGroupDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSConstants;
 import com.sun.org.apache.xerces.internal.xs.XSElementDeclaration;
+import com.sun.org.apache.xerces.internal.xs.XSIDCDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSModel;
 import com.sun.org.apache.xerces.internal.xs.XSModelGroupDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSNamedMap;
@@ -48,6 +43,12 @@ import com.sun.org.apache.xerces.internal.xs.XSNotationDeclaration;
 import com.sun.org.apache.xerces.internal.xs.XSObject;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import java.lang.reflect.Array;
+import java.util.AbstractList;
+import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.Vector;
 
 /**
  * Implements XSModel:  a read-only interface that represents an XML Schema,
@@ -72,7 +73,7 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
                                                   false,    // model group
                                                   false,    // particle
                                                   false,    // wildcard
-                                                  false,    // idc
+                                                  true,    // idc
                                                   true,     // notation
                                                   false,    // annotation
                                                   false,    // facet
@@ -326,6 +327,9 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
                 case XSConstants.NOTATION_DECLARATION:
                     tables[i] = fGrammarList[i].fGlobalNotationDecls;
                     break;
+                case XSConstants.IDENTITY_CONSTRAINT:
+                    tables[i] = fGrammarList[i].fGlobalIDConstraintDecls;
+                    break;
                 }
             }
             // for complex/simple types, create a special implementation,
@@ -404,6 +408,9 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
                 break;
             case XSConstants.NOTATION_DECLARATION:
                 table = fGrammarList[i].fGlobalNotationDecls;
+                break;
+            case XSConstants.IDENTITY_CONSTRAINT:
+                table = fGrammarList[i].fGlobalIDConstraintDecls;
                 break;
             }
 
@@ -593,6 +600,40 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
             return null;
         }
         return sg.getGlobalGroupDecl(name, loc);
+    }
+
+    /**
+     * Convenience method. Returns a top-level model group definition.
+     *
+     * @param name      The name of the definition.
+     * @param namespace The namespace of the definition, otherwise null.
+     * @return A top-level model group definition definition or null if such
+     *         definition does not exist.
+     */
+    public XSIDCDefinition getIDCDefinition(String name, String namespace) {
+        SchemaGrammar sg = (SchemaGrammar)fGrammarMap.get(null2EmptyString(namespace));
+        if (sg == null) {
+            return null;
+        }
+        return (XSIDCDefinition)sg.fGlobalIDConstraintDecls.get(name);
+    }
+
+    /**
+     * Convenience method. Returns a top-level model group definition.
+     *
+     * @param name      The name of the definition.
+     * @param namespace The namespace of the definition, otherwise null.
+     * @param loc The schema location where the component was defined
+     * @return A top-level model group definition definition or null if such
+     *         definition does not exist.
+     */
+    public XSIDCDefinition getIDCDefinition(String name, String namespace,
+                                                          String loc) {
+        SchemaGrammar sg = (SchemaGrammar)fGrammarMap.get(null2EmptyString(namespace));
+        if (sg == null) {
+            return null;
+        }
+        return sg.getIDConstraintDecl(name, loc);
     }
 
 

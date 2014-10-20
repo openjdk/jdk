@@ -66,9 +66,9 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
     public Object[] asObjectArray() {
         final Object[] value = super.asObjectArray();
 
-        if (lo <= Integer.MAX_VALUE) {
-            final int intHi = (int)Math.min(hi, Integer.MAX_VALUE);
-            for (int i = (int)lo; i <= intHi; i++) {
+        if (lo < Integer.MAX_VALUE) {
+            final int end = (int)Math.min(hi + 1, Integer.MAX_VALUE);
+            for (int i = (int)lo; i < end; i++) {
                 value[i] = ScriptRuntime.UNDEFINED;
             }
         }
@@ -81,9 +81,9 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
         final Object value = super.asArrayOfType(componentType);
         final Object undefValue = convertUndefinedValue(componentType);
 
-        if (lo <= Integer.MAX_VALUE) {
-            final int intHi = (int)Math.min(hi, Integer.MAX_VALUE);
-            for (int i = (int)lo; i <= intHi; i++) {
+        if (lo < Integer.MAX_VALUE) {
+            final int end = (int)Math.min(hi + 1, Integer.MAX_VALUE);
+            for (int i = (int)lo; i < end; i++) {
                 Array.set(value, i, undefValue);
             }
         }
