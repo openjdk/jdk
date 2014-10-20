@@ -672,13 +672,13 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         private static final class ArrayLiteralInitializer {
 
             static ArrayLiteralNode initialize(final ArrayLiteralNode node) {
-                final Type elementType = computeElementType(node.value, node.elementType);
+                final Type elementType = computeElementType(node.value);
                 final int[] postsets = computePostsets(node.value);
                 final Object presets = computePresets(node.value, elementType, postsets);
                 return new ArrayLiteralNode(node, node.value, elementType, postsets, presets, node.units);
             }
 
-            private static Type computeElementType(final Expression[] value, final Type elementType) {
+            private static Type computeElementType(final Expression[] value) {
                 Type widestElementType = Type.INT;
 
                 for (final Expression elem : value) {
