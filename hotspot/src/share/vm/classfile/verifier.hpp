@@ -301,8 +301,9 @@ class ClassVerifier : public StackObj {
 
   void verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_index, VerificationType ref_class_type,
-    StackMapFrame* current_frame, u4 code_length, bool* this_uninit,
-    constantPoolHandle cp, TRAPS);
+    StackMapFrame* current_frame, u4 code_length, bool in_try_block,
+    bool* this_uninit, constantPoolHandle cp, StackMapTable* stackmap_table,
+    TRAPS);
 
   // Used by ends_in_athrow() to push all handlers that contain bci onto
   // the handler_stack, if the handler is not already on the stack.
@@ -316,8 +317,8 @@ class ClassVerifier : public StackObj {
 
   void verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool* this_uninit, VerificationType return_type,
-    constantPoolHandle cp, TRAPS);
+    bool in_try_block, bool* this_uninit, VerificationType return_type,
+    constantPoolHandle cp, StackMapTable* stackmap_table, TRAPS);
 
   VerificationType get_newarray_type(u2 index, u2 bci, TRAPS);
   void verify_anewarray(u2 bci, u2 index, constantPoolHandle cp,
