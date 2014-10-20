@@ -2483,6 +2483,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 
   unsigned int gc_count_before;
   unsigned int old_marking_count_before;
+  unsigned int full_gc_count_before;
   bool retry_gc;
 
   do {
@@ -2493,6 +2494,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 
       // Read the GC count while holding the Heap_lock
       gc_count_before = total_collections();
+      full_gc_count_before = total_full_collections();
       old_marking_count_before = _old_marking_cycles_started;
     }
 
@@ -2537,7 +2539,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
         VMThread::execute(&op);
       } else {
         // Schedule a Full GC.
-        VM_G1CollectFull op(gc_count_before, old_marking_count_before, cause);
+        VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
         VMThread::execute(&op);
       }
     }
