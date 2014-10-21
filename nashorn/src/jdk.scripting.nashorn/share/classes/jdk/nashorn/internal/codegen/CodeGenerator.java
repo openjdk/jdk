@@ -552,10 +552,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     MethodEmitter loadBinaryOperands(final BinaryNode binaryNode) {
-        return loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(binaryNode.getWidestOperandType()), false);
+        return loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(binaryNode.getWidestOperandType()), false, false);
     }
 
-    private MethodEmitter loadBinaryOperands(final Expression lhs, final Expression rhs, final TypeBounds explicitOperandBounds, final boolean baseAlreadyOnStack) {
+    private MethodEmitter loadBinaryOperands(final Expression lhs, final Expression rhs, final TypeBounds explicitOperandBounds, final boolean baseAlreadyOnStack, final boolean forceConversionSeparation) {
         // ECMAScript 5.1 specification (sections 11.5-11.11 and 11.13) prescribes that when evaluating a binary
         // expression "LEFT op RIGHT", the order of operations must be: LOAD LEFT, LOAD RIGHT, CONVERT LEFT, CONVERT
         // RIGHT, EXECUTE OP. Unfortunately, doing it in this order defeats potential optimizations that arise when we
@@ -572,15 +572,34 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Type narrowestOperandType = Type.narrowest(Type.widest(lhs.getType(), rhs.getType()), explicitOperandBounds.widest);
         final TypeBounds operandBounds = explicitOperandBounds.notNarrowerThan(narrowestOperandType);
         if (noToPrimitiveConversion(lhs.getType(), explicitOperandBounds.widest) || rhs.isLocal()) {
-            // Can reorder. Combine load and convert into single operations.
-            loadExpression(lhs, operandBounds, baseAlreadyOnStack);
-            loadExpression(rhs, operandBounds, false);
+            // Can reorder. We might still need to separate conversion, but at least we can do it with reordering
+            if (forceConversionSeparation) {
+                // Can reorder, but can't move conversion into the operand as the operation depends on operands
+                // exact types for its overflow guarantees. E.g. with {L}{%I}expr1 {L}* {L}{%I}expr2 we are not allowed
+                // to merge {L}{%I} into {%L}, as that can cause subsequent overflows; test for JDK-8058610 contains
+                // concrete cases where this could happen.
+                final TypeBounds safeConvertBounds = TypeBounds.UNBOUNDED.notNarrowerThan(narrowestOperandType);
+                loadExpression(lhs, safeConvertBounds, baseAlreadyOnStack);
+                method.convert(operandBounds.within(method.peekType()));
+                loadExpression(rhs, safeConvertBounds, false);
+                method.convert(operandBounds.within(method.peekType()));
+            } else {
+                // Can reorder and move conversion into the operand. Combine load and convert into single operations.
+                loadExpression(lhs, operandBounds, baseAlreadyOnStack);
+                loadExpression(rhs, operandBounds, false);
+            }
         } else {
             // Can't reorder. Load and convert separately.
             final TypeBounds safeConvertBounds = TypeBounds.UNBOUNDED.notNarrowerThan(narrowestOperandType);
             loadExpression(lhs, safeConvertBounds, baseAlreadyOnStack);
+            final Type lhsType = method.peekType();
             loadExpression(rhs, safeConvertBounds, false);
-            method.swap().convert(operandBounds.within(method.peekType())).swap().convert(operandBounds.within(method.peekType()));
+            final Type convertedLhsType = operandBounds.within(method.peekType());
+            if (convertedLhsType != lhsType) {
+                // Do it conditionally, so that if conversion is a no-op we don't introduce a SWAP, SWAP.
+                method.swap().convert(convertedLhsType).swap();
+            }
+            method.convert(operandBounds.within(method.peekType()));
         }
         assert Type.generic(method.peekType()) == operandBounds.narrowest;
         assert Type.generic(method.peekType(1)) == operandBounds.narrowest;
@@ -631,19 +650,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         TypeBounds booleanToInt() {
-            return maybeNew(booleanToInt(narrowest), booleanToInt(widest));
+            return maybeNew(CodeGenerator.booleanToInt(narrowest), CodeGenerator.booleanToInt(widest));
         }
 
         TypeBounds objectToNumber() {
-            return maybeNew(objectToNumber(narrowest), objectToNumber(widest));
-        }
-
-        private static Type booleanToInt(final Type t) {
-            return t == Type.BOOLEAN ? Type.INT : t;
-        }
-
-        private static Type objectToNumber(final Type t) {
-            return t.isObject() ? Type.NUMBER : t;
+            return maybeNew(CodeGenerator.objectToNumber(narrowest), CodeGenerator.objectToNumber(widest));
         }
 
         Type within(final Type type) {
@@ -660,6 +671,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         public String toString() {
             return "[" + narrowest + ", " + widest + "]";
         }
+    }
+
+    private static Type booleanToInt(final Type t) {
+        return t == Type.BOOLEAN ? Type.INT : t;
+    }
+
+    private static Type objectToNumber(final Type t) {
+        return t.isObject() ? Type.NUMBER : t;
     }
 
     MethodEmitter loadExpressionAsType(final Expression expr, final Type type) {
@@ -3543,13 +3562,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             void loadStack() {
                 final TypeBounds operandBounds;
                 final boolean isOptimistic = isValid(getProgramPoint());
+                boolean forceConversionSeparation = false;
                 if(isOptimistic) {
                     operandBounds = new TypeBounds(binaryNode.getType(), Type.OBJECT);
                 } else {
                     // Non-optimistic, non-FP +. Allow it to overflow.
                     operandBounds = new TypeBounds(binaryNode.getWidestOperandType(), Type.OBJECT);
+                    forceConversionSeparation = binaryNode.getWidestOperationType().narrowerThan(resultBounds.widest);
                 }
-                loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), operandBounds, false);
+                loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), operandBounds, false, forceConversionSeparation);
             }
 
             @Override
@@ -3660,12 +3681,21 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         @Override
         protected void evaluate() {
             final Expression lhs = assignNode.lhs();
-            final Type widest = assignNode.isTokenType(TokenType.ASSIGN_ADD) ? Type.OBJECT : assignNode.getWidestOperationType();
+            final Expression rhs = assignNode.rhs();
+            final Type widestOperationType = assignNode.getWidestOperationType();
+            final Type widest = assignNode.isTokenType(TokenType.ASSIGN_ADD) ? Type.OBJECT : widestOperationType;
             final TypeBounds bounds = new TypeBounds(assignNode.getType(), widest);
             new OptimisticOperation(assignNode, bounds) {
                 @Override
                 void loadStack() {
-                    loadBinaryOperands(lhs, assignNode.rhs(), bounds, true);
+                    final boolean forceConversionSeparation;
+                    if (isValid(getProgramPoint()) || widestOperationType == Type.NUMBER) {
+                        forceConversionSeparation = false;
+                    } else {
+                        final Type operandType = Type.widest(booleanToInt(objectToNumber(lhs.getType())), booleanToInt(objectToNumber(rhs.getType())));
+                        forceConversionSeparation = operandType.narrowerThan(widestOperationType);
+                    }
+                    loadBinaryOperands(lhs, rhs, bounds, true, forceConversionSeparation);
                 }
                 @Override
                 void consumeStack() {
@@ -3688,7 +3718,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         @Override
         protected void evaluate() {
-            loadBinaryOperands(assignNode.lhs(), assignNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(assignNode.getWidestOperandType()), true);
+            loadBinaryOperands(assignNode.lhs(), assignNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(assignNode.getWidestOperandType()), true, false);
             op();
         }
     }
@@ -3811,6 +3841,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 @Override
                 void loadStack() {
                     final TypeBounds operandBounds;
+                    boolean forceConversionSeparation = false;
                     if(numericBounds.narrowest == Type.NUMBER) {
                         // Result should be double always. Propagate it into the operands so we don't have lots of I2D
                         // and L2D after operand evaluation.
@@ -3828,9 +3859,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                             // Non-optimistic, non-FP subtraction or multiplication. Allow them to overflow.
                             operandBounds = new TypeBounds(Type.narrowest(node.getWidestOperandType(),
                                     numericBounds.widest), Type.NUMBER);
+                            forceConversionSeparation = node.getWidestOperationType().narrowerThan(numericBounds.widest);
                         }
                     }
-                    loadBinaryOperands(node.lhs(), node.rhs(), operandBounds, false);
+                    loadBinaryOperands(node.lhs(), node.rhs(), operandBounds, false, forceConversionSeparation);
                 }
 
                 @Override
