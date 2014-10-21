@@ -46,6 +46,7 @@ import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.*;
 import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
@@ -667,7 +668,7 @@ public class Types {
     //where
         private Filter<Symbol> bridgeFilter = new Filter<Symbol>() {
             public boolean accepts(Symbol t) {
-                return t.kind == Kinds.MTH &&
+                return t.kind == MTH &&
                         t.name != names.init &&
                         t.name != names.clinit &&
                         (t.flags() & SYNTHETIC) == 0;
@@ -708,7 +709,7 @@ public class Types {
 
        @Override
        public boolean accepts(Symbol sym) {
-           return sym.kind == Kinds.MTH &&
+           return sym.kind == MTH &&
                    (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
                    !overridesObjectMethod(origin, sym) &&
                    (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
@@ -793,7 +794,6 @@ public class Types {
     public boolean isSubtype(Type t, Type s, boolean capture) {
         if (t == s)
             return true;
-
         if (s.isPartial())
             return isSuperType(s, t);
 
@@ -2809,7 +2809,7 @@ public class Types {
                 }
 
                 public boolean accepts(Symbol s) {
-                    return s.kind == Kinds.MTH &&
+                    return s.kind == MTH &&
                             s.name == msym.name &&
                             (s.flags() & SYNTHETIC) == 0 &&
                             s.isInheritedIn(site.tsym, Types.this) &&
@@ -4714,7 +4714,7 @@ public class Types {
             Type outer = ct.getEnclosingType();
             if (outer.allparams().nonEmpty()) {
                 boolean rawOuter =
-                        c.owner.kind == Kinds.MTH || // either a local class
+                        c.owner.kind == MTH || // either a local class
                         c.name == types.names.empty; // or anonymous
                 assembleClassSig(rawOuter
                         ? types.erasure(outer)

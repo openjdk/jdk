@@ -48,8 +48,9 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
-import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.ERROR;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
@@ -341,7 +342,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     ImportFilter typeImportFilter = new ImportFilter() {
         @Override
         public boolean accepts(Scope origin, Symbol t) {
-            return t.kind == Kinds.TYP;
+            return t.kind == TYP;
         }
     };
 
@@ -575,7 +576,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         localEnv.enclMethod = tree;
         if (tree.sym.type != null) {
             //when this is called in the enter stage, there's no type to be set
-            localEnv.info.returnResult = attr.new ResultInfo(VAL, tree.sym.type.getReturnType());
+            localEnv.info.returnResult = attr.new ResultInfo(KindSelector.VAL,
+                                                             tree.sym.type.getReturnType());
         }
         if ((tree.mods.flags & STATIC) != 0) localEnv.info.staticLevel++;
         return localEnv;

@@ -39,7 +39,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -458,7 +458,7 @@ public class Annotate {
             Symbol sym = TreeInfo.symbol(tree);
             if (sym == null ||
                 TreeInfo.nonstaticSelect(tree) ||
-                sym.kind != Kinds.VAR ||
+                sym.kind != VAR ||
                 (sym.flags() & Flags.ENUM) == 0) {
                 log.error(tree.pos(), "enum.annotation.must.be.enum.constant");
                 return new Attribute.Error(result.getOriginalType());
@@ -657,7 +657,7 @@ public class Annotate {
             nr_value_elems++;
 
             if (nr_value_elems == 1 &&
-                elm.kind == Kinds.MTH) {
+                elm.kind == MTH) {
                 containerValueSymbol = (MethodSymbol)elm;
             } else {
                 error = true;
@@ -678,7 +678,7 @@ public class Annotate {
 
         // validate that the 'value' element is a method
         // probably "impossible" to fail this
-        if (containerValueSymbol.kind != Kinds.MTH) {
+        if (containerValueSymbol.kind != MTH) {
             log.error(pos,
                       "invalid.repeatable.annotation.invalid.value",
                       targetContainerType);
@@ -909,7 +909,7 @@ public class Annotate {
                             annotations.nonEmpty())
                             log.error(annotations.head.pos,
                                       "already.annotated",
-                                      kindName(s), s);
+                                      Kinds.kindName(s), s);
                         actualEnterAnnotations(annotations, localEnv, s);
                     } finally {
                         if (prevLint != null)
@@ -1066,7 +1066,7 @@ public class Annotate {
             DiagnosticPosition prevPos = deferPos;
             deferPos = tree.pos();
             try {
-                if (sym != null && sym.kind == Kinds.VAR) {
+                if (sym != null && sym.kind == VAR) {
                     // Don't visit a parameter once when the sym is the method
                     // and once when the sym is the parameter.
                     scan(tree.mods);
