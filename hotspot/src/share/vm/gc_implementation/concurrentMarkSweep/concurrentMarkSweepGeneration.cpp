@@ -887,10 +887,8 @@ void ConcurrentMarkSweepGeneration::reset_after_compaction() {
   // along with all the other pointers into the heap but
   // compaction is expected to be a rare event with
   // a heap using cms so don't do it without seeing the need.
-  if (CollectedHeap::use_parallel_gc_threads()) {
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _par_gc_thread_states[i]->promo.reset();
-    }
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    _par_gc_thread_states[i]->promo.reset();
   }
 }
 
@@ -2804,10 +2802,8 @@ void ConcurrentMarkSweepGeneration::gc_epilogue(bool full) {
   collector()->gc_epilogue(full);
 
   // Also reset promotion tracking in par gc thread states.
-  if (CollectedHeap::use_parallel_gc_threads()) {
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _par_gc_thread_states[i]->promo.stopTrackingPromotions(i);
-    }
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    _par_gc_thread_states[i]->promo.stopTrackingPromotions(i);
   }
 }
 

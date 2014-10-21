@@ -43,7 +43,7 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
     _hot_cache_idx = 0;
 
     // For refining the cards in the hot cache in parallel
-    _hot_cache_par_chunk_size = (ParallelGCThreads > 0 ? ClaimChunkSize : _hot_cache_size);
+    _hot_cache_par_chunk_size = ClaimChunkSize;
     _hot_cache_par_claimed_idx = 0;
 
     _card_counts.initialize(card_counts_storage);
@@ -119,7 +119,7 @@ void G1HotCardCache::drain(uint worker_i,
             // RSet updating while within an evacuation pause.
             // In this case worker_i should be the id of a GC worker thread
             assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
-            assert(worker_i < (ParallelGCThreads == 0 ? 1 : ParallelGCThreads),
+            assert(worker_i < ParallelGCThreads,
                    err_msg("incorrect worker id: %u", worker_i));
 
             into_cset_dcq->enqueue(card_ptr);

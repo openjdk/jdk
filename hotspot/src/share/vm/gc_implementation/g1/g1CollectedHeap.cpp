@@ -1439,36 +1439,31 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       }
 
       // Rebuild remembered sets of all regions.
-      if (G1CollectedHeap::use_parallel_gc_threads()) {
-        uint n_workers =
-          AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
-                                                  workers()->active_workers(),
-                                                  Threads::number_of_non_daemon_threads());
-        assert(UseDynamicNumberOfGCThreads ||
-               n_workers == workers()->total_workers(),
-               "If not dynamic should be using all the  workers");
-        workers()->set_active_workers(n_workers);
-        // Set parallel threads in the heap (_n_par_threads) only
-        // before a parallel phase and always reset it to 0 after
-        // the phase so that the number of parallel threads does
-        // no get carried forward to a serial phase where there
-        // may be code that is "possibly_parallel".
-        set_par_threads(n_workers);
+      uint n_workers =
+        AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
+                                                workers()->active_workers(),
+                                                Threads::number_of_non_daemon_threads());
+      assert(UseDynamicNumberOfGCThreads ||
+             n_workers == workers()->total_workers(),
+             "If not dynamic should be using all the  workers");
+      workers()->set_active_workers(n_workers);
+      // Set parallel threads in the heap (_n_par_threads) only
+      // before a parallel phase and always reset it to 0 after
+      // the phase so that the number of parallel threads does
+      // no get carried forward to a serial phase where there
+      // may be code that is "possibly_parallel".
+      set_par_threads(n_workers);
 
-        ParRebuildRSTask rebuild_rs_task(this);
-        assert(UseDynamicNumberOfGCThreads ||
-               workers()->active_workers() == workers()->total_workers(),
-               "Unless dynamic should use total workers");
-        // Use the most recent number of  active workers
-        assert(workers()->active_workers() > 0,
-               "Active workers not properly set");
-        set_par_threads(workers()->active_workers());
-        workers()->run_task(&rebuild_rs_task);
-        set_par_threads(0);
-      } else {
-        RebuildRSOutOfRegionClosure rebuild_rs(this);
-        heap_region_iterate(&rebuild_rs);
-      }
+      ParRebuildRSTask rebuild_rs_task(this);
+      assert(UseDynamicNumberOfGCThreads ||
+             workers()->active_workers() == workers()->total_workers(),
+             "Unless dynamic should use total workers");
+      // Use the most recent number of  active workers
+      assert(workers()->active_workers() > 0,
+             "Active workers not properly set");
+      set_par_threads(workers()->active_workers());
+      workers()->run_task(&rebuild_rs_task);
+      set_par_threads(0);
 
       // Rebuild the strong code root lists for each region
       rebuild_strong_code_roots();
@@ -2681,27 +2676,25 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
   // Then thread t will start at region floor ((t * n) / p)
 
   result = g1_policy()->collection_set();
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    uint cs_size = g1_policy()->cset_region_length();
-    uint active_workers = workers()->active_workers();
-    assert(UseDynamicNumberOfGCThreads ||
-             active_workers == workers()->total_workers(),
-             "Unless dynamic should use total workers");
+  uint cs_size = g1_policy()->cset_region_length();
+  uint active_workers = workers()->active_workers();
+  assert(UseDynamicNumberOfGCThreads ||
+           active_workers == workers()->total_workers(),
+           "Unless dynamic should use total workers");
 
-    uint end_ind   = (cs_size * worker_i) / active_workers;
-    uint start_ind = 0;
+  uint end_ind   = (cs_size * worker_i) / active_workers;
+  uint start_ind = 0;
 
-    if (worker_i > 0 &&
-        _worker_cset_start_region_time_stamp[worker_i - 1] == gc_time_stamp) {
-      // Previous workers starting region is valid
-      // so let's iterate from there
-      start_ind = (cs_size * (worker_i - 1)) / active_workers;
-      result = _worker_cset_start_region[worker_i - 1];
-    }
+  if (worker_i > 0 &&
+      _worker_cset_start_region_time_stamp[worker_i - 1] == gc_time_stamp) {
+    // Previous workers starting region is valid
+    // so let's iterate from there
+    start_ind = (cs_size * (worker_i - 1)) / active_workers;
+    result = _worker_cset_start_region[worker_i - 1];
+  }
 
-    for (uint i = start_ind; i < end_ind; i++) {
-      result = result->next_in_collection_set();
-    }
+  for (uint i = start_ind; i < end_ind; i++) {
+    result = result->next_in_collection_set();
   }
 
   // Note: the calculated starting heap region may be NULL
@@ -3376,9 +3369,7 @@ void G1CollectedHeap::print_on_error(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    workers()->print_worker_threads_on(st);
-  }
+  workers()->print_worker_threads_on(st);
   _cmThread->print_on(st);
   st->cr();
   _cm->print_worker_threads_on(st);
@@ -3389,9 +3380,7 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    workers()->threads_do(tc);
-  }
+  workers()->threads_do(tc);
   tc->do_thread(_cmThread);
   _cg1r->threads_do(tc);
   if (G1StringDedup::is_enabled()) {
@@ -3686,7 +3675,7 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;
-  const int n = workers() != NULL ? workers()->total_workers() : 1;
+  const int n = workers()->total_workers();
   for (int i = 0; i < n; ++i) {
     st->print("%3d ", i); task_queue(i)->stats.print(st); st->cr();
     totals += task_queue(i)->stats;
@@ -3697,7 +3686,7 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
 }
 
 void G1CollectedHeap::reset_taskqueue_stats() {
-  const int n = workers() != NULL ? workers()->total_workers() : 1;
+  const int n = workers()->total_workers();
   for (int i = 0; i < n; ++i) {
     task_queue(i)->stats.reset();
   }
@@ -3795,8 +3784,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
-    int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                                workers()->active_workers() : 1);
+    int active_workers = workers()->active_workers();
     double pause_start_sec = os::elapsedTime();
     g1_policy()->phase_times()->note_gc_start(active_workers);
     log_gc_header();
@@ -4790,12 +4778,10 @@ private:
   int _symbols_processed;
   int _symbols_removed;
 
-  bool _do_in_parallel;
 public:
   G1StringSymbolTableUnlinkTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols) :
     AbstractGangTask("String/Symbol Unlinking"),
     _is_alive(is_alive),
-    _do_in_parallel(G1CollectedHeap::use_parallel_gc_threads()),
     _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
     _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0) {
 
@@ -4810,10 +4796,10 @@ public:
   }
 
   ~G1StringSymbolTableUnlinkTask() {
-    guarantee(!_process_strings || !_do_in_parallel || StringTable::parallel_claimed_index() >= _initial_string_table_size,
+    guarantee(!_process_strings || StringTable::parallel_claimed_index() >= _initial_string_table_size,
               err_msg("claim value %d after unlink less than initial string table size %d",
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
-    guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
+    guarantee(!_process_symbols || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
               err_msg("claim value %d after unlink less than initial symbol table size %d",
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
 
@@ -4827,28 +4813,19 @@ public:
   }
 
   void work(uint worker_id) {
-    if (_do_in_parallel) {
-      int strings_processed = 0;
-      int strings_removed = 0;
-      int symbols_processed = 0;
-      int symbols_removed = 0;
-      if (_process_strings) {
-        StringTable::possibly_parallel_unlink(_is_alive, &strings_processed, &strings_removed);
-        Atomic::add(strings_processed, &_strings_processed);
-        Atomic::add(strings_removed, &_strings_removed);
-      }
-      if (_process_symbols) {
-        SymbolTable::possibly_parallel_unlink(&symbols_processed, &symbols_removed);
-        Atomic::add(symbols_processed, &_symbols_processed);
-        Atomic::add(symbols_removed, &_symbols_removed);
-      }
-    } else {
-      if (_process_strings) {
-        StringTable::unlink(_is_alive, &_strings_processed, &_strings_removed);
-      }
-      if (_process_symbols) {
-        SymbolTable::unlink(&_symbols_processed, &_symbols_removed);
-      }
+    int strings_processed = 0;
+    int strings_removed = 0;
+    int symbols_processed = 0;
+    int symbols_removed = 0;
+    if (_process_strings) {
+      StringTable::possibly_parallel_unlink(_is_alive, &strings_processed, &strings_removed);
+      Atomic::add(strings_processed, &_strings_processed);
+      Atomic::add(strings_removed, &_strings_removed);
+    }
+    if (_process_symbols) {
+      SymbolTable::possibly_parallel_unlink(&symbols_processed, &symbols_removed);
+      Atomic::add(symbols_processed, &_symbols_processed);
+      Atomic::add(symbols_removed, &_symbols_removed);
     }
   }
 
@@ -5149,33 +5126,23 @@ void G1CollectedHeap::parallel_cleaning(BoolObjectClosure* is_alive,
                                         bool process_strings,
                                         bool process_symbols,
                                         bool class_unloading_occurred) {
-  uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                    workers()->active_workers() : 1);
+  uint n_workers = workers()->active_workers();
 
   G1ParallelCleaningTask g1_unlink_task(is_alive, process_strings, process_symbols,
                                         n_workers, class_unloading_occurred);
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    set_par_threads(n_workers);
-    workers()->run_task(&g1_unlink_task);
-    set_par_threads(0);
-  } else {
-    g1_unlink_task.work(0);
-  }
+  set_par_threads(n_workers);
+  workers()->run_task(&g1_unlink_task);
+  set_par_threads(0);
 }
 
 void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
                                                      bool process_strings, bool process_symbols) {
   {
-    uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                     _g1h->workers()->active_workers() : 1);
+    uint n_workers = _g1h->workers()->active_workers();
     G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
-      set_par_threads(n_workers);
-      workers()->run_task(&g1_unlink_task);
-      set_par_threads(0);
-    } else {
-      g1_unlink_task.work(0);
-    }
+    set_par_threads(n_workers);
+    workers()->run_task(&g1_unlink_task);
+    set_par_threads(0);
   }
 
   if (G1StringDedup::is_enabled()) {
@@ -5193,11 +5160,7 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
     double start_time = os::elapsedTime();
 
     RedirtyLoggedCardTableEntryClosure cl;
-    if (G1CollectedHeap::heap()->use_parallel_gc_threads()) {
-      _queue->par_apply_closure_to_all_completed_buffers(&cl);
-    } else {
-      _queue->apply_closure_to_all_completed_buffers(&cl);
-    }
+    _queue->par_apply_closure_to_all_completed_buffers(&cl);
 
     G1GCPhaseTimes* timer = G1CollectedHeap::heap()->g1_policy()->phase_times();
     timer->record_redirty_logged_cards_time_ms(worker_id, (os::elapsedTime() - start_time) * 1000.0);
@@ -5208,18 +5171,13 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
 void G1CollectedHeap::redirty_logged_cards() {
   double redirty_logged_cards_start = os::elapsedTime();
 
-  uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                   _g1h->workers()->active_workers() : 1);
+  uint n_workers = _g1h->workers()->active_workers();
 
   G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set());
   dirty_card_queue_set().reset_for_par_iteration();
-  if (use_parallel_gc_threads()) {
-    set_par_threads(n_workers);
-    workers()->run_task(&redirty_task);
-    set_par_threads(0);
-  } else {
-    redirty_task.work(0);
-  }
+  set_par_threads(n_workers);
+  workers()->run_task(&redirty_task);
+  set_par_threads(0);
 
   DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
   dcq.merge_bufferlists(&dirty_card_queue_set());
@@ -5609,20 +5567,14 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   // referents points to another object which is also referenced by an
   // object discovered by the STW ref processor.
 
-  assert(!G1CollectedHeap::use_parallel_gc_threads() ||
-           no_of_gc_workers == workers()->active_workers(),
-           "Need to reset active GC workers");
+  assert(no_of_gc_workers == workers()->active_workers(), "Need to reset active GC workers");
 
   set_par_threads(no_of_gc_workers);
   G1ParPreserveCMReferentsTask keep_cm_referents(this,
                                                  no_of_gc_workers,
                                                  _task_queues);
 
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    workers()->run_task(&keep_cm_referents);
-  } else {
-    keep_cm_referents.work(0);
-  }
+  workers()->run_task(&keep_cm_referents);
 
   set_par_threads(0);
 
@@ -5749,21 +5701,15 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   hot_card_cache->set_use_cache(false);
 
   uint n_workers;
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    n_workers =
-      AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
-                                     workers()->active_workers(),
-                                     Threads::number_of_non_daemon_threads());
-    assert(UseDynamicNumberOfGCThreads ||
-           n_workers == workers()->total_workers(),
-           "If not dynamic should be using all the  workers");
-    workers()->set_active_workers(n_workers);
-    set_par_threads(n_workers);
-  } else {
-    assert(n_par_threads() == 0,
-           "Should be the original non-parallel value");
-    n_workers = 1;
-  }
+  n_workers =
+    AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
+                                   workers()->active_workers(),
+                                   Threads::number_of_non_daemon_threads());
+  assert(UseDynamicNumberOfGCThreads ||
+         n_workers == workers()->total_workers(),
+         "If not dynamic should be using all the  workers");
+  workers()->set_active_workers(n_workers);
+  set_par_threads(n_workers);
 
   G1ParTask g1_par_task(this, _task_queues);
 
@@ -5782,18 +5728,13 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
       ClassLoaderDataGraph::clear_claimed_marks();
     }
 
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
-      // The individual threads will set their evac-failure closures.
-      if (PrintTerminationStats) G1ParScanThreadState::print_termination_stats_hdr();
-      // These tasks use ShareHeap::_process_strong_tasks
-      assert(UseDynamicNumberOfGCThreads ||
-             workers()->active_workers() == workers()->total_workers(),
-             "If not dynamic should be using all the  workers");
-      workers()->run_task(&g1_par_task);
-    } else {
-      g1_par_task.set_for_termination(n_workers);
-      g1_par_task.work(0);
-    }
+     // The individual threads will set their evac-failure closures.
+     if (PrintTerminationStats) G1ParScanThreadState::print_termination_stats_hdr();
+     // These tasks use ShareHeap::_process_strong_tasks
+     assert(UseDynamicNumberOfGCThreads ||
+            workers()->active_workers() == workers()->total_workers(),
+            "If not dynamic should be using all the  workers");
+    workers()->run_task(&g1_par_task);
     end_par_time_sec = os::elapsedTime();
 
     // Closing the inner scope will execute the destructor
@@ -6099,22 +6040,9 @@ void G1CollectedHeap::cleanUpCardTable() {
     // Iterate over the dirty cards region list.
     G1ParCleanupCTTask cleanup_task(ct_bs, this);
 
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
-      set_par_threads();
-      workers()->run_task(&cleanup_task);
-      set_par_threads(0);
-    } else {
-      while (_dirty_cards_region_list) {
-        HeapRegion* r = _dirty_cards_region_list;
-        cleanup_task.clear_cards(r);
-        _dirty_cards_region_list = r->get_next_dirty_cards_region();
-        if (_dirty_cards_region_list == r) {
-          // The last region.
-          _dirty_cards_region_list = NULL;
-        }
-        r->set_next_dirty_cards_region(NULL);
-      }
-    }
+    set_par_threads();
+    workers()->run_task(&cleanup_task);
+    set_par_threads(0);
 #ifndef PRODUCT
     if (G1VerifyCTCleanup || VerifyAfterGC) {
       G1VerifyCardTableCleanup cleanup_verifier(this, ct_bs);
@@ -6654,7 +6582,6 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
 void G1CollectedHeap::set_par_threads() {
   // Don't change the number of workers.  Use the value previously set
   // in the workgroup.
-  assert(G1CollectedHeap::use_parallel_gc_threads(), "shouldn't be here otherwise");
   uint n_workers = workers()->active_workers();
   assert(UseDynamicNumberOfGCThreads ||
            n_workers == workers()->total_workers(),
