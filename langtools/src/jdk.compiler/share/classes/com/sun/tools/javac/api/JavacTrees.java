@@ -56,7 +56,6 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -106,6 +105,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 
 /**
@@ -474,7 +474,7 @@ public class JavacTrees extends DocTrees {
         searched.add(tsym);
 
         for (Symbol sym : tsym.members().getSymbolsByName(fieldName)) {
-            if (sym.kind == Kinds.VAR) {
+            if (sym.kind == VAR) {
                 return (VarSymbol)sym;
             }
         }
@@ -516,7 +516,7 @@ public class JavacTrees extends DocTrees {
     /** @see com.sun.tools.javadoc.ClassDocImpl#findConstructor */
     MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes) {
         for (Symbol sym : tsym.members().getSymbolsByName(names.init)) {
-            if (sym.kind == Kinds.MTH) {
+            if (sym.kind == MTH) {
                 if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
                     return (MethodSymbol) sym;
                 }
@@ -557,7 +557,7 @@ public class JavacTrees extends DocTrees {
             // attempt to emulate the old behavior.
             MethodSymbol lastFound = null;
             for (Symbol sym : tsym.members().getSymbolsByName(methodName)) {
-                if (sym.kind == Kinds.MTH) {
+                if (sym.kind == MTH) {
                     if (sym.name == methodName) {
                         lastFound = (MethodSymbol)sym;
                     }
@@ -569,7 +569,7 @@ public class JavacTrees extends DocTrees {
         } else {
             for (Symbol sym : tsym.members().getSymbolsByName(methodName)) {
                 if (sym != null &&
-                    sym.kind == Kinds.MTH) {
+                    sym.kind == MTH) {
                     if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
                         return (MethodSymbol) sym;
                     }

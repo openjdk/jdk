@@ -177,7 +177,6 @@ public class Infer {
 
             resolveContext.methodCheck.argumentsAcceptable(env, deferredAttrContext,   //B2
                     argtypes, mt.getParameterTypes(), warn);
-
             if (allowGraphInference &&
                     resultInfo != null &&
                     !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {

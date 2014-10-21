@@ -49,6 +49,7 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Name;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -120,7 +121,7 @@ public class JavacElements implements Elements {
 
             sym.complete();
 
-            return (sym.kind != Kinds.ERR &&
+            return (sym.kind != ERR &&
                     sym.exists() &&
                     clazz.isInstance(sym) &&
                     name.equals(sym.getQualifiedName()))
@@ -460,7 +461,7 @@ public class JavacElements implements Elements {
 
         // Only static methods can hide other methods.
         // Methods only hide methods with matching signatures.
-        if (hider.kind == Kinds.MTH) {
+        if (hider.kind == MTH) {
             if (!hider.isStatic() ||
                         !types.isSubSignature(hider.type, hidee.type)) {
                 return false;
@@ -592,7 +593,7 @@ public class JavacElements implements Elements {
     private Env<AttrContext> getEnterEnv(Symbol sym) {
         // Get enclosing class of sym, or sym itself if it is a class
         // or package.
-        TypeSymbol ts = (sym.kind != Kinds.PCK)
+        TypeSymbol ts = (sym.kind != PCK)
                         ? sym.enclClass()
                         : (PackageSymbol) sym;
         return (ts != null)
