@@ -120,6 +120,7 @@ jdk_security1 = \
 jdk_security2 = \
     javax/crypto \
     javax/xml/crypto \
+    com/oracle/security/ucrypto \
     com/sun/crypto
 
 jdk_security3 = \
@@ -390,6 +391,10 @@ needs_jre = \
   :jdk_desktop \
   com/sun/corba \
   com/sun/jndi/cosnaming \
+  com/oracle/security/ucrypto/Test8004873.java \
+  com/oracle/security/ucrypto/TestAES.java \
+  com/oracle/security/ucrypto/TestDigest.java \
+  com/oracle/security/ucrypto/TestRSA.java \
   sun/net/ftp \
   sun/net/www/protocol/ftp \
   sun/security/tools/policytool \

@@ -790,6 +790,11 @@ void parseExclusiveBindProperty(JNIEnv *env) {
 #endif
 }
 
+JNIEXPORT jint JNICALL
+NET_EnableFastTcpLoopback(int fd) {
+    return 0;
+}
+
 /* In the case of an IPv4 Inetaddress this method will return an
  * IPv4 mapped address where IPv6 is available and v4MappedAddress is TRUE.
  * Otherwise it will return a sockaddr_in structure for an IPv4 InetAddress.
