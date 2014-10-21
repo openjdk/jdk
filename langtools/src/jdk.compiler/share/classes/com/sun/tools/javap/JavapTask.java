@@ -36,6 +36,10 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.NoSuchFileException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -61,10 +65,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.classfile.*;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -568,7 +568,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             } catch (EOFException e) {
                 reportError("err.end.of.file", className);
                 result = EXIT_ERROR;
-            } catch (FileNotFoundException e) {
+            } catch (FileNotFoundException | NoSuchFileException e) {
                 reportError("err.file.not.found", e.getLocalizedMessage());
                 result = EXIT_ERROR;
             } catch (IOException e) {

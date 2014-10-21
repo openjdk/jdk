@@ -44,12 +44,12 @@ import java.util.Set;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.ProblemException;
 import com.sun.tools.sjavac.Util;
+import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.PortFile;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SjavacServer;
 import com.sun.tools.sjavac.server.SysInfo;
-import com.sun.tools.sjavac.options.Options;
 
 /**
  * Sjavac implementation that delegates requests to a SjavacServer.
