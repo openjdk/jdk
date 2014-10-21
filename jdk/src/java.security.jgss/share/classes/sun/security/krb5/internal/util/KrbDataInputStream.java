@@ -56,15 +56,33 @@ public class KrbDataInputStream extends BufferedInputStream{
     public KrbDataInputStream(InputStream is){
         super(is);
     }
+
+    /**
+     * Reads a length value which is represented in 4 bytes from
+     * this input stream. The value must be positive.
+     * @return the length value represented by this byte array.
+     * @throws IOException if there are not enough bytes or it represents
+     * a negative value
+     */
+    final public int readLength4() throws IOException {
+        int len = read(4);
+        if (len < 0) {
+            throw new IOException("Invalid encoding");
+        }
+        return len;
+    }
+
     /**
      * Reads up to the specific number of bytes from this input stream.
      * @param num the number of bytes to be read.
      * @return the int value of this byte array.
-     * @exception IOException.
+     * @throws IOException if there are not enough bytes
      */
-    public int read(int num) throws IOException{
+    public int read(int num) throws IOException {
         byte[] bytes = new byte[num];
-        read(bytes, 0, num);
+        if (read(bytes, 0, num) != num) {
+            throw new IOException("Premature end of stream reached");
+        };
         int result = 0;
         for (int i = 0; i < num; i++) {
             if (bigEndian) {

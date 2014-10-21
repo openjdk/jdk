@@ -270,6 +270,9 @@ public class GSSHeader {
                 value <<= 8;
                 value += 0x0ff & in.read();
             }
+            if (value < 0) {
+                throw new IOException("Invalid length bytes");
+            }
         }
         return value;
     }
