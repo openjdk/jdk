@@ -479,6 +479,11 @@ define SetupModuleCompilation
   $1_DEPS := $$(call FindDepsForModule, $1)
 
   $1_CLASSPATH := $$(addprefix $(JDK_OUTPUTDIR)/modules/,$$($1_DEPS))
+  # When crypto classes are prebuilt, need to look for classes already in 
+  # output dir.
+  ifneq ($(BUILD_CRYPTO), true)
+    $1_CLASSPATH += $(JDK_OUTPUTDIR)/modules/$1
+  endif
   ifeq ($1, jdk.hotspot.agent)
     ## The source of this module is compiled elsewhere, hotspot, and imported.
     ## Service types are required in the classpath when compiing module-info
