@@ -111,6 +111,7 @@ $(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR, \
 # This value should exclude types destined for jars other than rt.jar and resources.jar.
 # When building a Profile this value augments the profile specific exclusions
 RT_JAR_EXCLUDES += \
+    com/oracle/security/ucrypto \
     com/sun/codemodel \
     com/sun/crypto/provider \
     com/sun/istack/internal/tools \

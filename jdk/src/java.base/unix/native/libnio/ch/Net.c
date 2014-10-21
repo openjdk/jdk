@@ -188,7 +188,7 @@ Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
 
 JNIEXPORT int JNICALL
 Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
-                            jboolean stream, jboolean reuse)
+                            jboolean stream, jboolean reuse, jboolean ignored)
 {
     int fd;
     int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
