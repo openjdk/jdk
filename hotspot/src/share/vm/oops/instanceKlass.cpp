@@ -736,6 +736,41 @@ void InstanceKlass::link_methods(TRAPS) {
   }
 }
 
+// Eagerly initialize superinterfaces that declare default methods (concrete instance: any access)
+void InstanceKlass::initialize_super_interfaces(instanceKlassHandle this_k, TRAPS) {
+  if (this_k->has_default_methods()) {
+    for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
+      Klass* iface = this_k->local_interfaces()->at(i);
+      InstanceKlass* ik = InstanceKlass::cast(iface);
+      if (ik->should_be_initialized()) {
+        if (ik->has_default_methods()) {
+          ik->initialize_super_interfaces(ik, THREAD);
+        }
+        // Only initialize() interfaces that "declare" concrete methods.
+        // has_default_methods drives searching superinterfaces since it
+        // means has_default_methods in its superinterface hierarchy
+        if (!HAS_PENDING_EXCEPTION && ik->declares_default_methods()) {
+          ik->initialize(THREAD);
+        }
+        if (HAS_PENDING_EXCEPTION) {
+          Handle e(THREAD, PENDING_EXCEPTION);
+          CLEAR_PENDING_EXCEPTION;
+          {
+            EXCEPTION_MARK;
+            // Locks object, set state, and notify all waiting threads
+            this_k->set_initialization_state_and_notify(
+                initialization_error, THREAD);
+
+            // ignore any exception thrown, superclass initialization error is
+            // thrown below
+            CLEAR_PENDING_EXCEPTION;
+          }
+          THROW_OOP(e());
+        }
+      }
+    }
+  }
+}
 
 void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   // Make sure klass is linked (verified) before initialization
@@ -815,33 +850,11 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
     }
   }
 
+  // Recursively initialize any superinterfaces that declare default methods
+  // Only need to recurse if has_default_methods which includes declaring and
+  // inheriting default methods
   if (this_k->has_default_methods()) {
-    // Step 7.5: initialize any interfaces which have default methods
-    for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
-      Klass* iface = this_k->local_interfaces()->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(iface);
-      if (ik->has_default_methods() && ik->should_be_initialized()) {
-        ik->initialize(THREAD);
-
-        if (HAS_PENDING_EXCEPTION) {
-          Handle e(THREAD, PENDING_EXCEPTION);
-          CLEAR_PENDING_EXCEPTION;
-          {
-            EXCEPTION_MARK;
-            // Locks object, set state, and notify all waiting threads
-            this_k->set_initialization_state_and_notify(
-                initialization_error, THREAD);
-
-            // ignore any exception thrown, superclass initialization error is
-            // thrown below
-            CLEAR_PENDING_EXCEPTION;
-          }
-          DTRACE_CLASSINIT_PROBE_WAIT(
-              super__failed, InstanceKlass::cast(this_k()), -1, wait);
-          THROW_OOP(e());
-        }
-      }
-    }
+    this_k->initialize_super_interfaces(this_k, CHECK);
   }
 
   // Step 8
