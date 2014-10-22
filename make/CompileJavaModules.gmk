@@ -247,14 +247,6 @@ java.sql.rowset_CLEAN_FILES := $(wildcard \
 # Exclude building of IIOP transport for RMI Connector
 java.management_EXCLUDES := com/sun/jmx/remote/protocol/iiop
 
-# Why is this in the open source tree?
-ifdef OPENJDK
-  java.management_EXCLUDES := \
-      com/sun/jmx/snmp \
-      sun/management/snmp \
-      #
-endif
-
 ifeq ($(RMICONNECTOR_IIOP), false)
   java.management_EXCLUDES += com/sun/jmx/remote/protocol/iiop
 endif
