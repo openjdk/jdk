@@ -82,7 +82,7 @@ public class KrbDataInputStream extends BufferedInputStream{
         byte[] bytes = new byte[num];
         if (read(bytes, 0, num) != num) {
             throw new IOException("Premature end of stream reached");
-        };
+        }
         int result = 0;
         for (int i = 0; i < num; i++) {
             if (bigEndian) {

@@ -58,7 +58,7 @@ public class KeyTabInputStream extends KrbDataInputStream implements KeyTabConst
      * Reads the number of bytes this entry data occupy.
      */
     int readEntryLength() throws IOException {
-        return readLength4();
+        return read(4);
     }
 
 
