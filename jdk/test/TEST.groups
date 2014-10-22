@@ -182,7 +182,6 @@ jdk_launcher = \
 #
 core_tools = \
     tools \
-    com/sun/tools/extcheck \
     sun/tools/java \
     sun/tools/native2ascii \
     sun/tools/jrunscript
