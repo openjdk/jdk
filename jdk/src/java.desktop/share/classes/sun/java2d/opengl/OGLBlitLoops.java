@@ -869,7 +869,7 @@ final class OGLGeneralTransformedBlit extends TransformBlit {
     }
 }
 
-class OGLAnyCompositeBlit extends Blit {
+final class OGLAnyCompositeBlit extends Blit {
     private WeakReference<SurfaceData> dstTmp;
 
     OGLAnyCompositeBlit() {
@@ -895,11 +895,12 @@ class OGLAnyCompositeBlit extends Blit {
         // convert destination to IntArgbPre
         SurfaceData dstBuffer = convertFrom(convertdst, dst, dx, dy, w, h,
                           cachedDst, BufferedImage.TYPE_INT_ARGB_PRE);
+        Region bufferClip =
+                clip == null ? null : clip.getTranslatedRegion(-dx, -dy);
 
         Blit performop = Blit.getFromCache(src.getSurfaceType(),
                 CompositeType.Any, dstBuffer.getSurfaceType());
-
-        performop.Blit(src, dstBuffer, comp, clip, sx, sy, 0, 0, w, h);
+        performop.Blit(src, dstBuffer, comp, bufferClip, sx, sy, 0, 0, w, h);
 
         if (dstBuffer != cachedDst) {
             // cache the intermediate surface
