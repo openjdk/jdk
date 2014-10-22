@@ -160,7 +160,7 @@ void GenMarkSweep::allocate_stacks() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   // Scratch request on behalf of oldest generation; will do no
   // allocation.
-  ScratchBlock* scratch = gch->gather_scratch(gch->get_gen(gch->_n_gens-1), 0);
+  ScratchBlock* scratch = gch->gather_scratch(gch->_gens[gch->_n_gens-1], 0);
 
   // $$$ To cut a corner, we'll only use the first scratch block, and then
   // revert to malloc.
