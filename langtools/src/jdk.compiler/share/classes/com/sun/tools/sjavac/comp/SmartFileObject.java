@@ -27,8 +27,6 @@ package com.sun.tools.sjavac.comp;
 
 import java.io.*;
 import java.net.URI;
-import java.nio.file.NoSuchFileException;
-
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
@@ -110,7 +108,7 @@ public class SmartFileObject implements JavaFileObject {
             while (r.ready()) {
                 s.append(r.readLine()+lineseparator);
             }
-        } catch (FileNotFoundException | NoSuchFileException e) {
+        } catch (FileNotFoundException e) {
             // Perfectly ok.
         }
         return new SmartWriter(file, s.toString(), file.getName(), stdout);

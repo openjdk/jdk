@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,15 @@
 
 package com.sun.tools.javac.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,6 +49,8 @@ import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 
 /**
  * <p><b>This is NOT part of any supported API.
@@ -132,10 +131,10 @@ public class ZipArchive implements Archive {
         return "ZipArchive[" + zfile.getName() + "]";
     }
 
-    private Path getAbsoluteFile() {
-        Path absFile = (absFileRef == null ? null : absFileRef.get());
+    private File getAbsoluteFile() {
+        File absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
-            absFile = Paths.get(zfile.getName()).toAbsolutePath();
+            absFile = new File(zfile.getName()).getAbsoluteFile();
             absFileRef = new SoftReference<>(absFile);
         }
         return absFile;
@@ -156,7 +155,7 @@ public class ZipArchive implements Archive {
     /**
      * A reference to the absolute filename for the zip file for the archive.
      */
-    protected Reference<Path> absFileRef;
+    protected Reference<File> absFileRef;
 
     /**
      * A subclass of JavaFileObject representing zip entries.
@@ -176,7 +175,7 @@ public class ZipArchive implements Archive {
 
         @DefinedBy(Api.COMPILER)
         public URI toUri() {
-            Path zipFile = Paths.get(zarch.zfile.getName());
+            File zipFile = new File(zarch.zfile.getName());
             return createJarUri(zipFile, entry.getName());
         }
 
@@ -187,7 +186,7 @@ public class ZipArchive implements Archive {
 
         @Override
         public String getShortName() {
-            return Paths.get(zarch.zfile.getName()).getFileName() + "(" + entry + ")";
+            return new File(zarch.zfile.getName()).getName() + "(" + entry + ")";
         }
 
         @Override @DefinedBy(Api.COMPILER)
@@ -247,7 +246,7 @@ public class ZipArchive implements Archive {
         }
 
         @Override
-        protected String inferBinaryName(Iterable<? extends Path> path) {
+        protected String inferBinaryName(Iterable<? extends File> path) {
             String entryName = entry.getName();
             return removeExtension(entryName).replace('/', '.');
         }

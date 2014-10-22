@@ -29,10 +29,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.nio.file.NoSuchFileException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
 import java.util.Set;
 
 import javax.tools.JavaFileManager;
@@ -166,7 +166,7 @@ public class Main {
 
         try {
             argv = CommandLine.parse(argv);
-        } catch (FileNotFoundException | NoSuchFileException e) {
+        } catch (FileNotFoundException e) {
             warning("err.file.not.found", e.getMessage());
             return Result.SYSERR;
         } catch (IOException ex) {

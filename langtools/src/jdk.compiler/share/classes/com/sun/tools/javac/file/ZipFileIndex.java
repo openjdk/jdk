@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,18 @@
 package com.sun.tools.javac.file;
 
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,14 +91,14 @@ public class ZipFileIndex {
             Collections.<RelativeDirectory>emptySet();
 
     // ZipFileIndex data entries
-    final Path zipFile;
-    private Reference<Path> absFileRef;
+    final File zipFile;
+    private Reference<File> absFileRef;
     long zipFileLastModified = NOT_MODIFIED;
     private RandomAccessFile zipRandomFile;
     private Entry[] entries;
 
     private boolean readFromIndex = false;
-    private Path zipIndexFile = null;
+    private File zipIndexFile = null;
     private boolean triedToReadIndex = false;
     final RelativeDirectory symbolFilePrefix;
     private final int symbolFilePrefixLength;
@@ -119,7 +117,7 @@ public class ZipFileIndex {
         return (zipRandomFile != null);
     }
 
-    ZipFileIndex(Path zipFile, RelativeDirectory symbolFilePrefix, boolean writeIndex,
+    ZipFileIndex(File zipFile, RelativeDirectory symbolFilePrefix, boolean writeIndex,
             boolean useCache, String cacheLocation) throws IOException {
         this.zipFile = zipFile;
         this.symbolFilePrefix = symbolFilePrefix;
@@ -130,7 +128,7 @@ public class ZipFileIndex {
         this.preindexedCacheLocation = cacheLocation;
 
         if (zipFile != null) {
-            this.zipFileLastModified = Files.getLastModifiedTime(zipFile).toMillis();
+            this.zipFileLastModified = zipFile.lastModified();
         }
 
         // Validate integrity of the zip file
@@ -150,11 +148,10 @@ public class ZipFileIndex {
     }
 
     private boolean isUpToDate() {
-        try {
-            return (zipFile != null
-                    && ((!NON_BATCH_MODE) || zipFileLastModified == Files.getLastModifiedTime(zipFile).toMillis())
-                    && hasPopulatedData);
-        } catch (IOException ignore) {
+        if (zipFile != null
+                && ((!NON_BATCH_MODE) || zipFileLastModified == zipFile.lastModified())
+                && hasPopulatedData) {
+            return true;
         }
 
         return false;
@@ -202,7 +199,7 @@ public class ZipFileIndex {
 
     private void openFile() throws FileNotFoundException {
         if (zipRandomFile == null && zipFile != null) {
-            zipRandomFile = new RandomAccessFile(zipFile.toFile(), "r");
+            zipRandomFile = new RandomAccessFile(zipFile, "r");
         }
     }
 
@@ -788,11 +785,11 @@ public class ZipFileIndex {
                     entries.add(zipFileIndex.entries[i]);
                 }
             } else {
-                Path indexFile = zipFileIndex.getIndexFile();
+                File indexFile = zipFileIndex.getIndexFile();
                 if (indexFile != null) {
                     RandomAccessFile raf = null;
                     try {
-                        raf = new RandomAccessFile(indexFile.toFile(), "r");
+                        raf = new RandomAccessFile(indexFile, "r");
                         raf.seek(writtenOffsetOffset);
 
                         for (int nFiles = 0; nFiles < numEntries; nFiles++) {
@@ -859,11 +856,11 @@ public class ZipFileIndex {
             triedToReadIndex = true;
             RandomAccessFile raf = null;
             try {
-                Path indexFileName = getIndexFile();
-                raf = new RandomAccessFile(indexFileName.toFile(), "r");
+                File indexFileName = getIndexFile();
+                raf = new RandomAccessFile(indexFileName, "r");
 
                 long fileStamp = raf.readLong();
-                if (Files.getLastModifiedTime(zipFile).toMillis() != fileStamp) {
+                if (zipFile.lastModified() != fileStamp) {
                     ret = false;
                 } else {
                     directories = new LinkedHashMap<>();
@@ -911,7 +908,7 @@ public class ZipFileIndex {
             return true;
         }
 
-        Path indexFile = getIndexFile();
+        File indexFile = getIndexFile();
         if (indexFile == null) {
             return false;
         }
@@ -919,7 +916,7 @@ public class ZipFileIndex {
         RandomAccessFile raf = null;
         long writtenSoFar = 0;
         try {
-            raf = new RandomAccessFile(indexFile.toFile(), "rw");
+            raf = new RandomAccessFile(indexFile, "rw");
 
             raf.writeLong(zipFileLastModified);
             writtenSoFar += 8;
@@ -1019,27 +1016,27 @@ public class ZipFileIndex {
         }
     }
 
-    private Path getIndexFile() {
+    private File getIndexFile() {
         if (zipIndexFile == null) {
             if (zipFile == null) {
                 return null;
             }
 
-            zipIndexFile = Paths.get((preindexedCacheLocation == null ? "" : preindexedCacheLocation) +
-                    zipFile.getFileName() + ".index");
+            zipIndexFile = new File((preindexedCacheLocation == null ? "" : preindexedCacheLocation) +
+                    zipFile.getName() + ".index");
         }
 
         return zipIndexFile;
     }
 
-    public Path getZipFile() {
+    public File getZipFile() {
         return zipFile;
     }
 
-    Path getAbsoluteFile() {
-        Path absFile = (absFileRef == null ? null : absFileRef.get());
+    File getAbsoluteFile() {
+        File absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
-            absFile = zipFile.toAbsolutePath();
+            absFile = zipFile.getAbsoluteFile();
             absFileRef = new SoftReference<>(absFile);
         }
         return absFile;

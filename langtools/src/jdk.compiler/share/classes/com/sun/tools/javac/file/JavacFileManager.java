@@ -25,19 +25,17 @@
 
 package com.sun.tools.javac.file;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,8 +46,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import javax.lang.model.SourceVersion;
@@ -58,8 +54,8 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
-import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
+import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -98,15 +94,15 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     protected boolean mmappedIO;
     protected boolean symbolFileEnabled;
 
-    protected enum SortFiles implements Comparator<Path> {
+    protected enum SortFiles implements Comparator<File> {
         FORWARD {
-            public int compare(Path f1, Path f2) {
-                return f1.getFileName().compareTo(f2.getFileName());
+            public int compare(File f1, File f2) {
+                return f1.getName().compareTo(f2.getName());
             }
         },
         REVERSE {
-            public int compare(Path f1, Path f2) {
-                return -f1.getFileName().compareTo(f2.getFileName());
+            public int compare(File f1, File f2) {
+                return -f1.getName().compareTo(f2.getName());
             }
         }
     }
@@ -165,10 +161,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     public JavaFileObject getFileForInput(String name) {
-        return getRegularFile(Paths.get(name));
+        return getRegularFile(new File(name));
     }
 
-    public JavaFileObject getRegularFile(Path file) {
+    public JavaFileObject getRegularFile(File file) {
         return new RegularFileObject(this, file);
     }
 
@@ -258,26 +254,25 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * Insert all files in subdirectory subdirectory of directory directory
      * which match fileKinds into resultList
      */
-    private void listDirectory(Path directory,
+    private void listDirectory(File directory,
                                RelativeDirectory subdirectory,
                                Set<JavaFileObject.Kind> fileKinds,
                                boolean recurse,
                                ListBuffer<JavaFileObject> resultList) {
-        Path d = subdirectory.getFile(directory);
+        File d = subdirectory.getFile(directory);
         if (!caseMapCheck(d, subdirectory))
             return;
 
-
-        java.util.List<Path> files;
-        try (Stream<Path> s = Files.list(d)) {
-            files = (sortFiles == null ? s : s.sorted(sortFiles)).collect(Collectors.toList());
-        } catch (IOException ignore) {
+        File[] files = d.listFiles();
+        if (files == null)
             return;
-        }
 
-        for (Path f: files) {
-            String fname = f.getFileName().toString();
-            if (Files.isDirectory(f)) {
+        if (sortFiles != null)
+            Arrays.sort(files, sortFiles);
+
+        for (File f: files) {
+            String fname = f.getName();
+            if (f.isDirectory()) {
                 if (recurse && SourceVersion.isIdentifier(fname)) {
                     listDirectory(directory,
                                   new RelativeDirectory(subdirectory, fname),
@@ -288,7 +283,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             } else {
                 if (isValidFile(fname, fileKinds)) {
                     JavaFileObject fe =
-                        new RegularFileObject(this, fname, d.resolve(fname));
+                        new RegularFileObject(this, fname, new File(d, fname));
                     resultList.append(fe);
                 }
             }
@@ -331,7 +326,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * Insert all files in subdirectory subdirectory of container which
      * match fileKinds into resultList
      */
-    private void listContainer(Path container,
+    private void listContainer(File container,
                                RelativeDirectory subdirectory,
                                Set<JavaFileObject.Kind> fileKinds,
                                boolean recurse,
@@ -376,13 +371,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      *  ends in a string of characters with the same case as given name.
      *  Ignore file separators in both path and name.
      */
-    private boolean caseMapCheck(Path f, RelativePath name) {
+    private boolean caseMapCheck(File f, RelativePath name) {
         if (fileSystemIsCaseSensitive) return true;
         // Note that getCanonicalPath() returns the case-sensitive
         // spelled file name.
         String path;
         try {
-            path = f.toRealPath().toString();
+            path = f.getCanonicalPath();
         } catch (IOException ex) {
             return false;
         }
@@ -419,8 +414,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     public class MissingArchive implements Archive {
-        final Path zipFileName;
-        public MissingArchive(Path name) {
+        final File zipFileName;
+        public MissingArchive(File name) {
             zipFileName = name;
         }
         public boolean contains(RelativePath name) {
@@ -450,7 +445,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     /** A directory of zip files already opened.
      */
-    Map<Path, Archive> archives = new HashMap<>();
+    Map<File, Archive> archives = new HashMap<>();
 
     private static final String[] symbolFileLocation = { "lib", "ct.sym" };
     private static final RelativeDirectory symbolFilePrefix
@@ -462,7 +457,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * fail over to the platform zip, and allow it to deal with a potentially
      * non compliant zip file.
      */
-    protected Archive openArchive(Path zipFilename) throws IOException {
+    protected Archive openArchive(File zipFilename) throws IOException {
         try {
             return openArchive(zipFilename, contextUseOptimizedZip);
         } catch (IOException ioe) {
@@ -476,17 +471,17 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     /** Open a new zip file directory, and cache it.
      */
-    private Archive openArchive(Path zipFileName, boolean useOptimizedZip) throws IOException {
-        Path origZipFileName = zipFileName;
+    private Archive openArchive(File zipFileName, boolean useOptimizedZip) throws IOException {
+        File origZipFileName = zipFileName;
         if (symbolFileEnabled && locations.isDefaultBootClassPathRtJar(zipFileName)) {
-            Path file = zipFileName.getParent().getParent(); // ${java.home}
-            if (file.getFileName().equals(Paths.get("jre")))
-                file = file.getParent();
+            File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
+            if (new File(file.getName()).equals(new File("jre")))
+                file = file.getParentFile();
             // file == ${jdk.home}
             for (String name : symbolFileLocation)
-                file = file.resolve(name);
+                file = new File(file, name);
             // file == ${jdk.home}/lib/ct.sym
-            if (Files.exists(file))
+            if (file.exists())
                 zipFileName = file;
         }
 
@@ -499,7 +494,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             String preindexCacheLocation = null;
 
             if (!useOptimizedZip) {
-                zdir = new ZipFile(zipFileName.toFile());
+                zdir = new ZipFile(zipFileName);
             } else {
                 usePreindexedCache = options.isSet("usezipindex");
                 preindexCacheLocation = options.get("java.io.tmpdir");
@@ -549,12 +544,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                                     options.isSet("writezipindexfiles")));
                 }
             }
-        } catch (FileNotFoundException | NoSuchFileException ex) {
+        } catch (FileNotFoundException ex) {
             archive = new MissingArchive(zipFileName);
         } catch (ZipFileIndex.ZipFormatException zfe) {
             throw zfe;
         } catch (IOException ex) {
-            if (Files.exists(zipFileName))
+            if (zipFileName.exists())
                 log.error("error.reading.file", zipFileName, getMessage(ex));
             archive = new MissingArchive(zipFileName);
         }
@@ -614,13 +609,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         nullCheck(packageName);
         nullCheck(kinds);
 
-        Iterable<? extends Path> path = asPaths(getLocation(location));
+        Iterable<? extends File> path = getLocation(location);
         if (path == null)
             return List.nil();
         RelativeDirectory subdirectory = RelativeDirectory.forPackage(packageName);
         ListBuffer<JavaFileObject> results = new ListBuffer<>();
 
-        for (Path directory : path)
+        for (File directory : path)
             listContainer(directory, subdirectory, kinds, recurse, results);
         return results.toList();
     }
@@ -630,7 +625,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         file.getClass(); // null check
         location.getClass(); // null check
         // Need to match the path semantics of list(location, ...)
-        Iterable<? extends Path> path = getLocationAsPaths(location);
+        Iterable<? extends File> path = getLocation(location);
         if (path == null) {
             return null;
         }
@@ -690,16 +685,16 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     private JavaFileObject getFileForInput(Location location, RelativeFile name) throws IOException {
-        Iterable<? extends Path> path = asPaths(getLocation(location));
+        Iterable<? extends File> path = getLocation(location);
         if (path == null)
             return null;
 
-        for (Path dir: path) {
+        for (File dir: path) {
             Archive a = archives.get(dir);
             if (a == null) {
                 if (fsInfo.isDirectory(dir)) {
-                    Path f = name.getFile(dir);
-                    if (Files.exists(f))
+                    File f = name.getFile(dir);
+                    if (f.exists())
                         return new RegularFileObject(this, f);
                     continue;
                 }
@@ -753,32 +748,29 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                                             FileObject sibling)
         throws IOException
     {
-        Path dir;
+        File dir;
         if (location == CLASS_OUTPUT) {
             if (getClassOutDir() != null) {
                 dir = getClassOutDir();
             } else {
-                Path siblingDir = null;
+                File siblingDir = null;
                 if (sibling != null && sibling instanceof RegularFileObject) {
-                    siblingDir = ((RegularFileObject)sibling).file.getParent();
+                    siblingDir = ((RegularFileObject)sibling).file.getParentFile();
                 }
-                if (siblingDir == null)
-                    return new RegularFileObject(this, Paths.get(fileName.basename()));
-                else
-                    return new RegularFileObject(this, siblingDir.resolve(fileName.basename()));
+                return new RegularFileObject(this, new File(siblingDir, fileName.basename()));
             }
         } else if (location == SOURCE_OUTPUT) {
             dir = (getSourceOutDir() != null ? getSourceOutDir() : getClassOutDir());
         } else {
-            Iterable<? extends Path> path = locations.getLocation(location);
+            Iterable<? extends File> path = locations.getLocation(location);
             dir = null;
-            for (Path f: path) {
+            for (File f: path) {
                 dir = f;
                 break;
             }
         }
 
-        Path file = fileName.getFile(dir); // null-safe
+        File file = fileName.getFile(dir); // null-safe
         return new RegularFileObject(this, file);
 
     }
@@ -793,7 +785,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         else
             result = new ArrayList<>();
         for (File f: files)
-            result.add(new RegularFileObject(this, nullCheck(f).toPath()));
+            result.add(new RegularFileObject(this, nullCheck(f)));
         return result;
     }
 
@@ -804,29 +796,24 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @DefinedBy(Api.COMPILER)
     public void setLocation(Location location,
-                            Iterable<? extends File> searchpath)
+                            Iterable<? extends File> path)
         throws IOException
     {
         nullCheck(location);
-        locations.setLocation(location, asPaths(searchpath));
+        locations.setLocation(location, path);
     }
 
     @DefinedBy(Api.COMPILER)
     public Iterable<? extends File> getLocation(Location location) {
         nullCheck(location);
-        return asFiles(locations.getLocation(location));
-    }
-
-    private Iterable<? extends Path> getLocationAsPaths(Location location) {
-        nullCheck(location);
         return locations.getLocation(location);
     }
 
-    private Path getClassOutDir() {
+    private File getClassOutDir() {
         return locations.getOutputLocation(CLASS_OUTPUT);
     }
 
-    private Path getSourceOutDir() {
+    private File getSourceOutDir() {
         return locations.getOutputLocation(SOURCE_OUTPUT);
     }
 
@@ -896,51 +883,5 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         if (s != null)
             return s;
         return e.toString();
-    }
-
-    /* Converters between files and paths.
-     * These are temporary until we can update the StandardJavaFileManager API.
-     */
-
-    static Iterable<Path> asPaths(final Iterable<? extends File> files) {
-        if (files == null)
-            return null;
-
-        return () -> new Iterator<Path>() {
-            Iterator<? extends File> iter = files.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return iter.hasNext();
-            }
-
-            @Override
-            public Path next() {
-                return iter.next().toPath();
-            }
-        };
-    }
-
-    static Iterable<File> asFiles(final Iterable<? extends Path> paths) {
-        if (paths == null)
-            return null;
-
-        return () -> new Iterator<File>() {
-            Iterator<? extends Path> iter = paths.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return iter.hasNext();
-            }
-
-            @Override
-            public File next() {
-                return iter.next().toFile();
-            }
-        };
-    }
-
-    static File asFile(Path path) {
-        return path == null ? null : path.toFile();
     }
 }

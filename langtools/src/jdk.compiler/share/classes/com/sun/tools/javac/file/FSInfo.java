@@ -1,10 +1,8 @@
 
 package com.sun.tools.javac.file;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,29 +42,29 @@ public class FSInfo {
         context.put(FSInfo.class, this);
     }
 
-    public Path getCanonicalFile(Path file) {
+    public File getCanonicalFile(File file) {
         try {
-            return file.toRealPath();
+            return file.getCanonicalFile();
         } catch (IOException e) {
-            return file.toAbsolutePath();
+            return file.getAbsoluteFile();
         }
     }
 
-    public boolean exists(Path file) {
-        return Files.exists(file);
+    public boolean exists(File file) {
+        return file.exists();
     }
 
-    public boolean isDirectory(Path file) {
-        return Files.isDirectory(file);
+    public boolean isDirectory(File file) {
+        return file.isDirectory();
     }
 
-    public boolean isFile(Path file) {
-        return Files.isRegularFile(file);
+    public boolean isFile(File file) {
+        return file.isFile();
     }
 
-    public List<Path> getJarClassPath(Path file) throws IOException {
-        Path parent = file.getParent();
-        try (JarFile jarFile = new JarFile(file.toFile())) {
+    public List<File> getJarClassPath(File file) throws IOException {
+        String parent = file.getParent();
+        try (JarFile jarFile = new JarFile(file)) {
             Manifest man = jarFile.getManifest();
             if (man == null)
                 return Collections.emptyList();
@@ -79,14 +77,14 @@ public class FSInfo {
             if (path == null)
                 return Collections.emptyList();
 
-            List<Path> list = new ArrayList<>();
+            List<File> list = new ArrayList<>();
 
             for (StringTokenizer st = new StringTokenizer(path);
                  st.hasMoreTokens(); ) {
                 String elt = st.nextToken();
-                Path f = Paths.get(elt);
+                File f = new File(elt);
                 if (!f.isAbsolute() && parent != null)
-                    f = parent.resolve(f).toAbsolutePath();
+                    f = new File(parent,elt).getAbsoluteFile();
                 list.add(f);
             }
 

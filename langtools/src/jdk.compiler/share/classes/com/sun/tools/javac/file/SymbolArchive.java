@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 
 package com.sun.tools.javac.file;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
@@ -44,10 +43,10 @@ import com.sun.tools.javac.util.List;
 */
 public class SymbolArchive extends ZipArchive {
 
-    final Path origFile;
+    final File origFile;
     final RelativeDirectory prefix;
 
-    public SymbolArchive(JavacFileManager fileManager, Path orig, ZipFile zdir, RelativeDirectory prefix) throws IOException {
+    public SymbolArchive(JavacFileManager fileManager, File orig, ZipFile zdir, RelativeDirectory prefix) throws IOException {
         super(fileManager, zdir, false);
         this.origFile = orig;
         this.prefix = prefix;
@@ -95,7 +94,7 @@ public class SymbolArchive extends ZipArchive {
         }
 
         @Override
-        protected String inferBinaryName(Iterable<? extends Path> path) {
+        protected String inferBinaryName(Iterable<? extends File> path) {
             String entryName = entry.getName();
             String prefix = ((SymbolArchive) zarch).prefix.path;
             if (entryName.startsWith(prefix))

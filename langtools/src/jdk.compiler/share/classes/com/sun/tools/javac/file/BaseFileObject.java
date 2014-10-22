@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,19 @@
 
 package com.sun.tools.javac.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.CharsetDecoder;
-import java.nio.file.Path;
-
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+
+import static javax.tools.JavaFileObject.Kind.*;
 
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.DefinedBy;
@@ -77,7 +78,7 @@ public abstract class BaseFileObject implements JavaFileObject {
         throw new UnsupportedOperationException();
     }
 
-    protected abstract String inferBinaryName(Iterable<? extends Path> path);
+    protected abstract String inferBinaryName(Iterable<? extends File> path);
 
     protected static JavaFileObject.Kind getKind(String filename) {
         return BaseFileManager.getKind(filename);
@@ -88,8 +89,8 @@ public abstract class BaseFileObject implements JavaFileObject {
         return (lastDot == -1 ? fileName : fileName.substring(0, lastDot));
     }
 
-    protected static URI createJarUri(Path jarFile, String entryName) {
-        URI jarURI = jarFile.toUri().normalize();
+    protected static URI createJarUri(File jarFile, String entryName) {
+        URI jarURI = jarFile.toURI().normalize();
         String separator = entryName.startsWith("/") ? "!" : "!/";
         try {
             // The jar URI convention appears to be not to re-encode the jarURI

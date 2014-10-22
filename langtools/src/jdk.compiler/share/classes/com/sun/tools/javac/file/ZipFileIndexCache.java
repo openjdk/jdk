@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,21 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.util.Context;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 /** A cache for ZipFileIndex objects. */
 public class ZipFileIndexCache {
 
-    private final Map<Path, ZipFileIndex> map = new HashMap<>();
+    private final Map<File, ZipFileIndex> map = new HashMap<>();
 
     /** Get a shared instance of the cache. */
     private static ZipFileIndexCache sharedInstance;
@@ -90,13 +89,13 @@ public class ZipFileIndexCache {
         return zipFileIndexes;
     }
 
-    public synchronized ZipFileIndex getZipFileIndex(Path zipFile,
+    public synchronized ZipFileIndex getZipFileIndex(File zipFile,
             RelativeDirectory symbolFilePrefix,
             boolean useCache, String cacheLocation,
             boolean writeIndex) throws IOException {
         ZipFileIndex zi = getExistingZipIndex(zipFile);
 
-        if (zi == null || (zi != null && Files.getLastModifiedTime(zipFile).toMillis() != zi.zipFileLastModified)) {
+        if (zi == null || (zi != null && zipFile.lastModified() != zi.zipFileLastModified)) {
             zi = new ZipFileIndex(zipFile, symbolFilePrefix, writeIndex,
                     useCache, cacheLocation);
             map.put(zipFile, zi);
@@ -104,7 +103,7 @@ public class ZipFileIndexCache {
         return zi;
     }
 
-    public synchronized ZipFileIndex getExistingZipIndex(Path zipFile) {
+    public synchronized ZipFileIndex getExistingZipIndex(File zipFile) {
         return map.get(zipFile);
     }
 
@@ -113,7 +112,7 @@ public class ZipFileIndexCache {
     }
 
     public synchronized void clearCache(long timeNotUsed) {
-        for (Path cachedFile : map.keySet()) {
+        for (File cachedFile : map.keySet()) {
             ZipFileIndex cachedZipIndex = map.get(cachedFile);
             if (cachedZipIndex != null) {
                 long timeToTest = cachedZipIndex.lastReferenceTimeStamp + timeNotUsed;
@@ -125,7 +124,7 @@ public class ZipFileIndexCache {
         }
     }
 
-    public synchronized void removeFromCache(Path file) {
+    public synchronized void removeFromCache(File file) {
         map.remove(file);
     }
 

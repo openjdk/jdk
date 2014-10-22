@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -105,7 +104,7 @@ public class T7068437 {
                 messager.printMessage(Kind.NOTE, "found previous content of length " +
                         filer.getResource(StandardLocation.SOURCE_OUTPUT, "p", "C.java").getCharContent(false).length());
                 found = true;
-            } catch (FileNotFoundException | NoSuchFileException x) {
+            } catch (FileNotFoundException x) {
                 messager.printMessage(Kind.NOTE, "not previously there");
                 found = false;
             } catch (IOException x) {

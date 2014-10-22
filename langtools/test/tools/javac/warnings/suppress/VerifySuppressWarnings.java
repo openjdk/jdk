@@ -74,7 +74,7 @@ public class VerifySuppressWarnings {
             File inp = new File(sp, args[0]);
 
             if (inp.canRead()) {
-                testContent = fm.getRegularFile(inp.toPath()).getCharContent(true).toString();
+                testContent = fm.getRegularFile(inp).getCharContent(true).toString();
             }
         }
         if (testContent == null) throw new IllegalStateException();
