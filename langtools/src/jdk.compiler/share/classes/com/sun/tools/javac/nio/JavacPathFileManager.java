@@ -30,13 +30,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -49,7 +48,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-
 import javax.lang.model.SourceVersion;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
@@ -57,16 +55,15 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
+import static java.nio.file.FileVisitOption.*;
+import static javax.tools.StandardLocation.*;
+
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-
-import static java.nio.file.FileVisitOption.*;
-
-import static javax.tools.StandardLocation.*;
 
 import static com.sun.tools.javac.main.Option.*;
 
@@ -224,7 +221,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
     }
 
     private void setDefaultForLocation(Location locn) {
-        Collection<Path> files = null;
+        Collection<File> files = null;
         if (locn instanceof StandardLocation) {
             switch ((StandardLocation) locn) {
                 case CLASS_PATH:
@@ -238,12 +235,12 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
                     break;
                 case CLASS_OUTPUT: {
                     String arg = options.get(D);
-                    files = (arg == null ? null : Collections.singleton(Paths.get(arg)));
+                    files = (arg == null ? null : Collections.singleton(new File(arg)));
                     break;
                 }
                 case SOURCE_OUTPUT: {
                     String arg = options.get(S);
-                    files = (arg == null ? null : Collections.singleton(Paths.get(arg)));
+                    files = (arg == null ? null : Collections.singleton(new File(arg)));
                     break;
                 }
             }
@@ -251,8 +248,8 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
 
         PathsForLocation pl = new PathsForLocation();
         if (files != null) {
-            for (Path f: files)
-                pl.add(f);
+            for (File f: files)
+                pl.add(f.toPath());
         }
         if (!pl.isEmpty())
             pathsForLocation.put(locn, pl);

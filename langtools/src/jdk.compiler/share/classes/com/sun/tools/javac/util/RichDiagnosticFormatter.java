@@ -24,7 +24,6 @@
  */
 package com.sun.tools.javac.util;
 
-import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -40,8 +39,8 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types;
 
-import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.TypeTag.*;
+import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
@@ -187,7 +186,7 @@ public class RichDiagnosticFormatter extends
         else if (arg instanceof JCDiagnostic) {
             preprocessDiagnostic((JCDiagnostic)arg);
         }
-        else if (arg instanceof Iterable<?> && !(arg instanceof Path)) {
+        else if (arg instanceof Iterable<?>) {
             for (Object o : (Iterable<?>)arg) {
                 preprocessArgument(o);
             }

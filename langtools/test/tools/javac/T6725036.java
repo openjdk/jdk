@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class T6725036 {
         long jarEntryTime = je.getTime();
 
         ZipFileIndexCache zfic = ZipFileIndexCache.getSharedInstance();
-        ZipFileIndex zfi = zfic.getZipFileIndex(rt_jar.toPath(), null, false, null, false);
+        ZipFileIndex zfi = zfic.getZipFileIndex(rt_jar, null, false, null, false);
         long zfiTime = zfi.getLastModified(TEST_ENTRY_NAME);
 
         check(je, jarEntryTime, zfi + ":" + TEST_ENTRY_NAME.getPath(), zfiTime);

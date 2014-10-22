@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package com.sun.tools.javac.util;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -49,7 +48,6 @@ import com.sun.tools.javac.file.BaseFileObject;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.Pretty;
-
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
 
 /**
@@ -188,7 +186,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof JCExpression) {
             return expr2String((JCExpression)arg);
         }
-        else if (arg instanceof Iterable<?> && !(arg instanceof Path)) {
+        else if (arg instanceof Iterable<?>) {
             return formatIterable(d, (Iterable<?>)arg, l);
         }
         else if (arg instanceof Type) {
