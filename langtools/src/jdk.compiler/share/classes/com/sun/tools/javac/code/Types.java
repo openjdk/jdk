@@ -3634,7 +3634,8 @@ public class Types {
             for (Type erasedSupertype : mec) {
                 List<Type> lci = List.of(asSuper(ts[startIdx], erasedSupertype.tsym));
                 for (int i = startIdx + 1 ; i < ts.length ; i++) {
-                    lci = intersect(lci, List.of(asSuper(ts[i], erasedSupertype.tsym)));
+                    Type superType = asSuper(ts[i], erasedSupertype.tsym);
+                    lci = intersect(lci, superType != null ? List.of(superType) : List.<Type>nil());
                 }
                 candidates = candidates.appendList(lci);
             }
