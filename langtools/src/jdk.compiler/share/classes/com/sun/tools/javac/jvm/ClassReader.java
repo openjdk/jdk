@@ -51,7 +51,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ClassFile.*;
@@ -994,7 +994,7 @@ public class ClassReader {
                     // but the class name does not match the file name, then it is
                     // an auxiliary class.
                     String sn = n.toString();
-                    if (c.owner.kind == Kinds.PCK &&
+                    if (c.owner.kind == PCK &&
                         sn.endsWith(".java") &&
                         !sn.equals(c.name.toString()+".java")) {
                         c.flags_field |= AUXILIARY;

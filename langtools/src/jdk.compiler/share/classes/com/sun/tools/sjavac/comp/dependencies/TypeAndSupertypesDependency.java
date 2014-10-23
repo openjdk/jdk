@@ -36,6 +36,7 @@ import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Type;
 
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 public class TypeAndSupertypesDependency implements Dependency {
 
@@ -61,7 +62,7 @@ public class TypeAndSupertypesDependency implements Dependency {
 
     @Override
     public Set<PackageSymbol> getPackages() {
-        if (type.kind == Kinds.ERR)
+        if (type.kind == ERR)
             return Collections.emptySet();
         if (type instanceof ClassSymbol) {
             return allSupertypes(type).stream()
