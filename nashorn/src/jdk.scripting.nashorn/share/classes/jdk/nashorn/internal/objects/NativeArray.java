@@ -92,9 +92,10 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     private static final Object CALL_CMP                 = new Object();
     private static final Object TO_LOCALE_STRING         = new Object();
 
-    private SwitchPoint   lengthMadeNotWritableSwitchPoint;
-    private PushLinkLogic pushLinkLogic;
-    private PopLinkLogic  popLinkLogic;
+    private SwitchPoint     lengthMadeNotWritableSwitchPoint;
+    private PushLinkLogic   pushLinkLogic;
+    private PopLinkLogic    popLinkLogic;
+    private ConcatLinkLogic concatLinkLogic;
 
     /**
      * Index for the modification SwitchPoint that triggers when length
@@ -130,7 +131,9 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         this(ArrayData.allocate(array.length));
 
         ArrayData arrayData = this.getArray();
-        arrayData.ensure(array.length - 1);
+        if (array.length > 0) {
+            arrayData.ensure(array.length - 1);
+        }
 
         for (int index = 0; index < array.length; index++) {
             final Object value = array[index];
@@ -757,12 +760,86 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      * ECMA 15.4.4.4 Array.prototype.concat ( [ item1 [ , item2 [ , ... ] ] ] )
      *
      * @param self self reference
+     * @param arg argument
+     * @return resulting NativeArray
+     */
+    @SpecializedFunction(linkLogic=ConcatLinkLogic.class)
+    public static NativeArray concat(final Object self, final int arg) {
+        final ContinuousArrayData newData = getContinuousArrayDataCCE(self, Integer.class).copy(); //get at least an integer data copy of this data
+        newData.fastPush(arg); //add an integer to its end
+        return new NativeArray(newData);
+    }
+
+    /**
+     * ECMA 15.4.4.4 Array.prototype.concat ( [ item1 [ , item2 [ , ... ] ] ] )
+     *
+     * @param self self reference
+     * @param arg argument
+     * @return resulting NativeArray
+     */
+    @SpecializedFunction(linkLogic=ConcatLinkLogic.class)
+    public static NativeArray concat(final Object self, final long arg) {
+        final ContinuousArrayData newData = getContinuousArrayDataCCE(self, Long.class).copy(); //get at least a long array data copy of this data
+        newData.fastPush(arg); //add a long at the end
+        return new NativeArray(newData);
+    }
+
+    /**
+     * ECMA 15.4.4.4 Array.prototype.concat ( [ item1 [ , item2 [ , ... ] ] ] )
+     *
+     * @param self self reference
+     * @param arg argument
+     * @return resulting NativeArray
+     */
+    @SpecializedFunction(linkLogic=ConcatLinkLogic.class)
+    public static NativeArray concat(final Object self, final double arg) {
+        final ContinuousArrayData newData = getContinuousArrayDataCCE(self, Double.class).copy(); //get at least a number array data copy of this data
+        newData.fastPush(arg); //add a double at the end
+        return new NativeArray(newData);
+    }
+
+    /**
+     * ECMA 15.4.4.4 Array.prototype.concat ( [ item1 [ , item2 [ , ... ] ] ] )
+     *
+     * @param self self reference
+     * @param arg argument
+     * @return resulting NativeArray
+     */
+    @SpecializedFunction(linkLogic=ConcatLinkLogic.class)
+    public static NativeArray concat(final Object self, final Object arg) {
+        //arg is [NativeArray] of same type.
+        final ContinuousArrayData selfData = getContinuousArrayDataCCE(self);
+        final ContinuousArrayData newData;
+
+        if (arg instanceof NativeArray) {
+            final ContinuousArrayData argData = (ContinuousArrayData)((NativeArray)arg).getArray();
+            if (argData.isEmpty()) {
+                newData = selfData.copy();
+            } else if (selfData.isEmpty()) {
+                newData = argData.copy();
+            } else {
+                final Class<?> widestElementType = selfData.widest(argData).getBoxedElementType();
+                newData = ((ContinuousArrayData)selfData.convert(widestElementType)).fastConcat((ContinuousArrayData)argData.convert(widestElementType));
+            }
+        } else {
+            newData = getContinuousArrayDataCCE(self, Object.class).copy();
+            newData.fastPush(arg);
+        }
+
+        return new NativeArray(newData);
+    }
+
+    /**
+     * ECMA 15.4.4.4 Array.prototype.concat ( [ item1 [ , item2 [ , ... ] ] ] )
+     *
+     * @param self self reference
      * @param args arguments
      * @return resulting NativeArray
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static NativeArray concat(final Object self, final Object... args) {
         final ArrayList<Object> list = new ArrayList<>();
+
         concatToList(list, Global.toObject(self));
 
         for (final Object obj : args) {
@@ -1692,13 +1769,15 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
             return pushLinkLogic == null ? new PushLinkLogic(this) : pushLinkLogic;
         } else if (clazz == PopLinkLogic.class) {
             return popLinkLogic == null ? new PopLinkLogic(this) : pushLinkLogic;
+        } else if (clazz == ConcatLinkLogic.class) {
+            return concatLinkLogic == null ? new ConcatLinkLogic(this) : concatLinkLogic;
         }
         return null;
     }
 
     @Override
     public boolean hasPerInstanceAssumptions() {
-        return true; //length switchpoint
+        return true; //length writable switchpoint
     }
 
     /**
@@ -1798,6 +1877,40 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     }
 
     /**
+     * This is linker logic for optimistic concatenations
+     */
+    private static final class ConcatLinkLogic extends ArrayLinkLogic {
+        private ConcatLinkLogic(final NativeArray array) {
+            super(array);
+        }
+
+        @Override
+        public boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
+            final Object[] args = request.getArguments();
+
+            if (args.length != 3) { //single argument check
+                return false;
+            }
+
+            final ContinuousArrayData selfData = getContinuousArrayData(self);
+            if (selfData == null) {
+                return false;
+            }
+
+            final Object arg = args[2];
+            //args[2] continuousarray or non arraydata, let past non array datas
+            if (arg instanceof NativeArray) {
+                final ContinuousArrayData argData = getContinuousArrayData(arg);
+                if (argData == null) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /**
      * This is linker logic for optimistic pushes
      */
     private static final class PushLinkLogic extends ArrayLinkLogic {
@@ -1862,6 +1975,14 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
             //fallthru
         }
         throw new ClassCastException();
+    }
+
+    private static final ContinuousArrayData getContinuousArrayDataCCE(final Object self) {
+        try {
+            return (ContinuousArrayData)((NativeArray)self).getArray();
+         } catch (final NullPointerException e) {
+             throw new ClassCastException();
+         }
     }
 
     private static final ContinuousArrayData getContinuousArrayDataCCE(final Object self, final Class<?> elementType) {

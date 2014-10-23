@@ -88,7 +88,7 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
     }
 
     @Override
-    public ArrayData copy() {
+    public TypedArrayData<T> copy() {
         throw new UnsupportedOperationException();
     }
 
@@ -133,7 +133,7 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
     }
 
     @Override
-    public ArrayData convert(final Class<?> type) {
+    public TypedArrayData<T> convert(final Class<?> type) {
         throw new UnsupportedOperationException();
     }
 

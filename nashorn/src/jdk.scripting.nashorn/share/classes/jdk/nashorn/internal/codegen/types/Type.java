@@ -586,6 +586,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
     public int getSlots() {
         return slots;
     }
+
     /**
      * Returns the widest or most common of two types
      *
@@ -606,6 +607,18 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
             return Type.OBJECT;
         }
         return type0.weight() > type1.weight() ? type0 : type1;
+    }
+
+    /**
+     * Returns the widest or most common of two types, given as classes
+     *
+     * @param type0 type one
+     * @param type1 type two
+     *
+     * @return the widest type
+     */
+    public static Class<?> widest(final Class<?> type0, final Class<?> type1) {
+        return widest(Type.typeFor(type0), Type.typeFor(type1)).getTypeClass();
     }
 
     /**

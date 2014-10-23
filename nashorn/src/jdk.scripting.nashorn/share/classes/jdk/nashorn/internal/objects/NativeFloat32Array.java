@@ -90,6 +90,11 @@ public final class NativeFloat32Array extends ArrayBufferView {
         }
 
         @Override
+        public Class<?> getBoxedElementType() {
+            return Double.class;
+        }
+
+        @Override
         protected MethodHandle getGetElem() {
             return GET_ELEM;
         }
