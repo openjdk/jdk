@@ -51,7 +51,7 @@ import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 
 import static com.sun.tools.javac.main.Option.*;
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /** This class provides operations to write native header files for classes.

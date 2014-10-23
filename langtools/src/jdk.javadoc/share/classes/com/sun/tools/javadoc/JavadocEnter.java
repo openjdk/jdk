@@ -28,13 +28,14 @@ package com.sun.tools.javadoc;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
+
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
  *  Javadoc's own enter phase does a few things above and beyond that
@@ -95,7 +96,7 @@ public class JavadocEnter extends Enter {
     public void visitClassDef(JCClassDecl tree) {
         super.visitClassDef(tree);
         if (tree.sym == null) return;
-        if (tree.sym.kind == Kinds.TYP || tree.sym.kind == Kinds.ERR) {
+        if (tree.sym.kind == TYP || tree.sym.kind == ERR) {
             ClassSymbol c = tree.sym;
             docenv.makeClassDoc(c, docenv.getTreePath(env.toplevel, tree));
         }

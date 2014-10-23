@@ -26,7 +26,6 @@
 package com.sun.tools.javac.sym;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.code.Kinds;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symbol;
@@ -68,6 +67,8 @@ import static javax.tools.JavaFileObject.Kind.CLASS;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
  * Used to generate a "symbol file" representing rt.jar that only
@@ -221,7 +222,7 @@ public class CreateSymbols extends AbstractProcessor {
                 continue;
             }
             TypeSymbol sym = (TypeSymbol)compiler.resolveIdent(className);
-            if (sym.kind != Kinds.TYP) {
+            if (sym.kind != TYP) {
                 if (className.indexOf('$') < 0) {
                     System.err.println("Ignoring (other) " + className + " : " + sym);
                     System.err.println("   " + sym.getClass().getSimpleName() + " " + sym.type);
@@ -263,7 +264,7 @@ public class CreateSymbols extends AbstractProcessor {
             cs.pool = pool;
             writer.writeClass(cs);
             for (Symbol sym : cs.members().getSymbols(NON_RECURSIVE)) {
-                if (sym.kind == Kinds.TYP) {
+                if (sym.kind == TYP) {
                     ClassSymbol nestedClass = (ClassSymbol)sym;
                     nestedClass.complete();
                     writeClass(pool, nestedClass, writer);

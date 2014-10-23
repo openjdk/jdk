@@ -37,6 +37,7 @@ import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
@@ -339,8 +340,7 @@ public class TreeInfo {
     //where
         private static boolean isStaticSym(JCTree tree) {
             Symbol sym = symbol(tree);
-            return (sym.kind == Kinds.TYP ||
-                    sym.kind == Kinds.PCK);
+            return (sym.kind == TYP || sym.kind == PCK);
         }
 
     /** Return true if a tree represents the null literal. */
@@ -876,7 +876,7 @@ public class TreeInfo {
         if (!tree.hasTag(SELECT)) return false;
         JCFieldAccess s = (JCFieldAccess) tree;
         Symbol e = symbol(s.selected);
-        return e == null || (e.kind != Kinds.PCK && e.kind != Kinds.TYP);
+        return e == null || (e.kind != PCK && e.kind != TYP);
     }
 
     /** If this tree is an identifier or a field, set its symbol, otherwise skip.
