@@ -100,6 +100,7 @@ public class StartManagementAgent {
             ex.printStackTrace(System.err);
         } catch (Throwable t) {
             t.printStackTrace(System.err);
+            throw t;
         }
     }
 
@@ -124,6 +125,7 @@ public class StartManagementAgent {
                 try {
                     System.err.println("Trying remote agent. Try #" + i);
                     testRemoteAgent(vm);
+                    System.err.println("Successfully connected to remote agent");
                     success = true;
                 } catch(Exception ex) {
                     System.err.println("testRemoteAgent failed with exception:");
@@ -136,7 +138,9 @@ public class StartManagementAgent {
                 throw new Exception("testRemoteAgent failed after " + MAX_RETRIES + " tries");
             }
         } finally {
+            System.err.println("Detaching from VM ...");
             vm.detach();
+            System.err.println("Detached");
         }
     }
 
@@ -176,7 +180,10 @@ public class StartManagementAgent {
         mgmtProps.put("com.sun.management.jmxremote.port", port);
         mgmtProps.put("com.sun.management.jmxremote.authenticate", "false");
         mgmtProps.put("com.sun.management.jmxremote.ssl", "false");
+
+        System.err.println("Starting management agent ...");
         vm.startManagementAgent(mgmtProps);
+        System.err.println("Started");
 
         // try to connect - should work
         tryConnect(port, true);
@@ -184,9 +191,12 @@ public class StartManagementAgent {
         // try to start again - should fail
         boolean exception = false;
         try {
+            System.err.println("Starting management agent second time ...");
             vm.startManagementAgent(mgmtProps);
+            System.err.println("Started");
         } catch(AttachOperationFailedException ex) {
             // expected
+            System.err.println("Got expected exception: " + ex.getMessage());
             exception = true;
         }
         if (!exception) {
@@ -204,10 +214,14 @@ public class StartManagementAgent {
 
         boolean succeeded;
         try {
+            System.err.println("Trying to connect to " + jmxUrlStr);
             JMXConnector c = JMXConnectorFactory.connect(url, env);
+            System.err.println("Connected, getting MBeanServerConnection");
             c.getMBeanServerConnection();
+            System.err.println("Success");
             succeeded = true;
         } catch(Exception ex) {
+            ex.printStackTrace(System.err);
             succeeded = false;
         }
         if (succeeded && !shouldSucceed) {

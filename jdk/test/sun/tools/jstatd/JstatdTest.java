@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import static jdk.testlibrary.Asserts.*;
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessThread;
-import jdk.testlibrary.TestThread;
 import jdk.testlibrary.Utils;
 import jdk.testlibrary.ProcessTools;
 
@@ -145,8 +144,8 @@ public final class JstatdTest {
         return output;
     }
 
-    private OutputAnalyzer waitForJstatdRMI(ProcessBuilder pb) throws IOException, InterruptedException {
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    private OutputAnalyzer waitForJstatdRMI(ProcessBuilder pb) throws Exception {
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
 
         String remoteHost = (serverName != null) ? serverName : "JStatRemoteHost";
         while (output.getExitValue() != 0) {
@@ -155,7 +154,7 @@ public final class JstatdTest {
             if (out.contains("RMI Registry not available") ||
                 out.contains("RMI Server " + remoteHost + " not available")) {
                 Thread.sleep(100);
-                output = new OutputAnalyzer(pb.start());
+                output = ProcessTools.executeProcess(pb);
             } else {
                 output.shouldHaveExitValue(0);
             }

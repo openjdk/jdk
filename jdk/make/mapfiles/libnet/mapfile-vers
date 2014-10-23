@@ -110,6 +110,8 @@ SUNWprivate_1.1 {
 		NET_Bind;
 		NET_MapSocketOption;
 		NET_Wait;
+		NET_EnableFastTcpLoopback;
+		NET_ThrowNew;
                 ipv6_available;
                 initInetAddressIDs;
 
