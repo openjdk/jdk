@@ -35,9 +35,9 @@ import java.lang.ref.*;
  * @author Santiago.PericasGeertsen@sun.com
  */
 public class BufferAllocator {
-    public static int SMALL_SIZE_LIMIT = 128;
-    public static int MEDIUM_SIZE_LIMIT = 2048;
-    public static int LARGE_SIZE_LIMIT = 8192;
+    private static final int SMALL_SIZE_LIMIT = 128;
+    private static final int MEDIUM_SIZE_LIMIT = 2048;
+    private static final int LARGE_SIZE_LIMIT = 8192;
 
     char[] smallCharBuffer;
     char[] mediumCharBuffer;
