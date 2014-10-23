@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
@@ -1773,6 +1772,23 @@ public enum JSType {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
+    }
+
+    /**
+     * Returns the boxed version of a primitive class
+     * @param clazz the class
+     * @return the boxed type of clazz, or unchanged if not primitive
+     */
+    public static Class<?> getBoxedClass(final Class<?> clazz) {
+        if (clazz == int.class) {
+            return Integer.class;
+        } else if (clazz == long.class) {
+            return Long.class;
+        } else if (clazz == double.class) {
+            return Double.class;
+        }
+        assert !clazz.isPrimitive();
+        return clazz;
     }
 
     /**

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,14 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.nashorn.internal.runtime.arrays;
 
 /**
- * Marker interface for any ContinuousArray with numeric elements
- * (int, long or double)
- * Used for type checks that throw ClassCastExceptions and force relinks
- * for fast NativeArray specializations of builtin methods
+ * Array extension check
+ *
+ * @test
+ * @run
  */
-public interface NumericElements extends AnyElements {
-    //empty
+
+var a = [1,2,3];
+Object.preventExtensions(a);
+a[4] = 4;
+print(a);
+if (a[0] != 1) {
+    throw "element 0 is wrong";
 }
+if (a[1] != 2) {
+    throw "element 1 is wrong";
+}
+if (a[2] != 3) {
+    throw "element 2 is wrong";
+}
+

@@ -133,6 +133,11 @@ public final class NativeUint32Array extends ArrayBufferView {
         }
 
         @Override
+        public Class<?> getBoxedElementType() {
+            return Integer.class;
+        }
+
+        @Override
         public int getInt(final int index) {
             return (int)getLong(index);
         }
