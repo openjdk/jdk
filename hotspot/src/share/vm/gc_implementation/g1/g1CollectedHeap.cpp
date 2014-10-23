@@ -5760,14 +5760,10 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // not copied during the pause.
   process_discovered_references(n_workers);
 
-  // Weak root processing.
-  {
+  if (G1StringDedup::is_enabled()) {
     G1STWIsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
-    JNIHandles::weak_oops_do(&is_alive, &keep_alive);
-    if (G1StringDedup::is_enabled()) {
-      G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive);
-    }
+    G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive);
   }
 
   _allocator->release_gc_alloc_regions(n_workers, evacuation_info);
