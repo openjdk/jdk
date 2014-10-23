@@ -33,6 +33,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class PropertyNode extends Node {
+    private static final long serialVersionUID = 1L;
 
     /** Property key. */
     private final PropertyKey key;

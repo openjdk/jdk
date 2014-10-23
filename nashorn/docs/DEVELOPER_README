@@ -25,6 +25,14 @@ Example:
 > java -Dnashorn.args="--lazy-complation --log=compiler" large-java-app-with-nashorn.jar 
 > ant -Dnashorn.args="--log=codegen" antjob
 
+SYSTEM PROPERTY: -Dnashorn.args.prepend=<string>
+
+This property behaves like nashorn.args, but adds the given arguments
+before the existing ones instead of after them. Later arguments will
+overwrite earlier ones, so this is useful for setting default arguments
+that can be overwritten.
+
+
 SYSTEM PROPERTY: -Dnashorn.unstable.relink.threshold=x
 
 This property controls how many call site misses are allowed before a 
@@ -42,532 +50,37 @@ be split into several classes in order not to run out of bytecode space.
 The default value is 0x8000 (32768).
 
 
-SYSTEM PROPERTY: -Dnashorn.compiler.intarithmetic
+SYSTEM PROPERTY: -Dnashorn.serialize.compression=<x>
 
-(and integer arithmetic in general)
-
-<currently disabled - this is being refactored for update releases> 
-
-Arithmetic operations in Nashorn (except bitwise ones) typically
-coerce the operands to doubles (as per the JavaScript spec). To switch
-this off and remain in integer mode, for example for "var x = a&b; var
-y = c&d; var z = x*y;", use this flag. This will force the
-multiplication of variables that are ints to be done with the IMUL
-bytecode and the result "z" to become an int.
-
-WARNING: Note that is is experimental only to ensure that type support
-exists for all primitive types. The generated code is unsound. This
-will be the case until we do optimizations based on it. There is a CR
-in Nashorn to do better range analysis, and ensure that this is only
-done where the operation can't overflow into a wider type. Currently
-no overflow checking is done, so at the moment, until range analysis
-has been completed, this option is turned off.
-
-We've experimented by using int arithmetic for everything and putting
-overflow checks afterwards, which would recompute the operation with
-the correct precision, but have yet to find a configuration where this
-is faster than just using doubles directly, even if the int operation
-does not overflow. Getting access to a JVM intrinsic that does branch
-on overflow would probably alleviate this.
-
-The future:
-
-We are transitioning to an optimistic type system that uses int
-arithmetic everywhere until proven wrong. The problem here is mostly
-catch an overflow exception and rolling back the state to a new method
-with less optimistic assumptions for an operation at a particular
-program point. This will most likely not be in the Java 8.0 release
-but likely end up in an update release
-
-For Java 8, several java.lang.Math methods like addExact, subExact and
-mulExact are available to help us. Experiments intrinsifying these
-show a lot of promise, and we have devised a system that basically
-does on stack replacement with exceptions in bytecode to revert
-erroneous assumptions. An explanation of how this works and what we
-are doing can be found here:
-http://www.slideshare.net/lagergren/lagergren-jvmls2013final
-
-Experiments with this show significant ~x2-3 performance increases on
-pretty much everything, provided that optimistic assumptions don't
-fail much. It will affect warmup time negatively, depending on how
-many erroneous too optimistic assumptions are placed in the code at
-compile time. We don't think this will be much of an issue.
-
-For example for a small benchmark that repeatedly executes this
-method taken from the Crypto Octane benchmark 
-
-function am3(i,x,w,j,c,n) {
-  var this_array = this.array;
-  var w_array    = w.array;
-  var xl = x&0x3fff, xh = x>>14;
-  while(--n >= 0) {
-    var l = this_array[i]&0x3fff;
-    var h = this_array[i++]>>14;
-    var m = xh*l+h*xl;
-    l = xl*l+((m&0x3fff)<<14)+w_array[j]+c;
-    c = (l>>28)+(m>>14)+xh*h;
-    w_array[j++] = l&0xfffffff;
-  }
-
-  return c;
-}
-
-The performance increase more than doubles. We are also working hard
-with the code generation team in the Java Virtual Machine to fix
-things that are lacking in invokedynamic performance, which is another
-area where a lot of ongoing performance work takes place
-
-"Pessimistic" bytecode for am3, guaranteed to be semantically correct:
-
-// access flags 0x9
-  public static am3(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-   L0
-    LINENUMBER 12 L0
-    ALOAD 0
-    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    ASTORE 8
-   L1
-    LINENUMBER 13 L1
-    ALOAD 3
-    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    ASTORE 9
-   L2
-    LINENUMBER 14 L2
-    ALOAD 2
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
-    SIPUSH 16383
-    IAND
-    ISTORE 10
-    ALOAD 2
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
-    BIPUSH 14
-    ISHR
-    ISTORE 11
-   L3
-    LINENUMBER 15 L3
-    GOTO L4
-   L5
-    LINENUMBER 16 L5
-   FRAME FULL [java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Double T java/lang/Object java/lang/Object I I] []
-    ALOAD 8
-    ALOAD 1
-    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;Ljava/lang/Object;)I [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    SIPUSH 16383
-    IAND
-    INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
-    ASTORE 12
-   L6
-    LINENUMBER 17 L6
-    ALOAD 8
-    ALOAD 1
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
-    DUP2
-    DCONST_1
-    DADD
-    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
-    ASTORE 1
-    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;D)I [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    BIPUSH 14
-    ISHR
-    ISTORE 13
-   L7
-    LINENUMBER 18 L7
-    ILOAD 11
-    I2D
-    ALOAD 12
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
-    DMUL
-    ILOAD 13
-    I2D
-    ILOAD 10
-    I2D
-    DMUL
-    DADD
-    DSTORE 14
-   L8
-    LINENUMBER 19 L8
-    ILOAD 10
-    I2D
-    ALOAD 12
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
-    DMUL
-    DLOAD 14
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (D)I
-    SIPUSH 16383
-    IAND
-    BIPUSH 14
-    ISHL
-    I2D
-    DADD
-    ALOAD 9
-    ALOAD 4
-    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    INVOKEDYNAMIC ADD:ODO_D(DLjava/lang/Object;)Ljava/lang/Object; [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.runtimeBootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;)
-      // arguments: none
-    ]
-    ALOAD 5
-    INVOKEDYNAMIC ADD:OOO_I(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.runtimeBootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;)
-      // arguments: none
-    ]
-    ASTORE 12
-   L9
-    LINENUMBER 20 L9
-    ALOAD 12
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
-    BIPUSH 28
-    ISHR
-    I2D
-    DLOAD 14
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (D)I
-    BIPUSH 14
-    ISHR
-    I2D
-    DADD
-    ILOAD 11
-    I2D
-    ILOAD 13
-    I2D
-    DMUL
-    DADD
-    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
-    ASTORE 5
-   L10
-    LINENUMBER 21 L10
-    ALOAD 9
-    ALOAD 4
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
-    DUP2
-    DCONST_1
-    DADD
-    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
-    ASTORE 4
-    ALOAD 12
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
-    LDC 268435455
-    IAND
-    INVOKEDYNAMIC dyn:setElem|setProp(Ljava/lang/Object;DI)V [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-   L4
-   FRAME FULL [java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object T java/lang/Object java/lang/Object I I] []
-    ALOAD 6
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
-    LDC -1.0
-    DADD
-    DUP2
-    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
-    ASTORE 6
-    DCONST_0
-    DCMPL
-    IFGE L5
-   L11
-    LINENUMBER 24 L11
-    ALOAD 5
-    ARETURN
-
-"Optimistic" bytecode that requires invalidation on e.g overflow. Factor
-x2-3 speedup:
-
-public static am3(Ljava/lang/Object;IILjava/lang/Object;III)I
-   L0
-    LINENUMBER 12 L0
-    ALOAD 0
-    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    ASTORE 8
-   L1
-    LINENUMBER 13 L1
-    ALOAD 3
-    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    ASTORE 9
-   L2
-    LINENUMBER 14 L2
-    ILOAD 2
-    SIPUSH 16383
-    IAND
-    ISTORE 10
-    ILOAD 2
-    BIPUSH 14
-    ISHR
-    ISTORE 11
-   L3
-    LINENUMBER 15 L3
-    GOTO L4
-   L5
-    LINENUMBER 16 L5
-   FRAME FULL [java/lang/Object I I java/lang/Object I I I T java/lang/Object java/lang/Object I I] []
-    ALOAD 8
-    ILOAD 1
-    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;I)I [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    SIPUSH 16383
-    IAND
-    ISTORE 12
-   L6
-    LINENUMBER 17 L6
-    ALOAD 8
-    ILOAD 1
-    DUP
-    ICONST_1
-    IADD
-    ISTORE 1
-    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;I)I [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    BIPUSH 14
-    ISHR
-    ISTORE 13
-   L7
-    LINENUMBER 18 L7
-    ILOAD 11
-    ILOAD 12
-    BIPUSH 8
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
-    ILOAD 13
-    ILOAD 10
-    BIPUSH 9
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
-    IADD
-    ISTORE 14
-   L8
-    LINENUMBER 19 L8
-    ILOAD 10
-    ILOAD 12
-    BIPUSH 11
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
-    ILOAD 14
-    SIPUSH 16383
-    IAND
-    BIPUSH 14
-    ISHL
-    IADD
-    ALOAD 9
-    ILOAD 4
-    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;I)I [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-    IADD
-    ILOAD 5
-    IADD
-    ISTORE 12
-   L9
-    LINENUMBER 20 L9
-    ILOAD 12
-    BIPUSH 28
-    ISHR
-    ILOAD 14
-    BIPUSH 14
-    ISHR
-    IADD
-    ILOAD 11
-    ILOAD 13
-    BIPUSH 21
-    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
-    IADD
-    ISTORE 5
-   L10
-    LINENUMBER 21 L10
-    ALOAD 9
-    ILOAD 4
-    DUP
-    ICONST_1
-    IADD
-    ISTORE 4
-    ILOAD 12
-    LDC 268435455
-    IAND
-    INVOKEDYNAMIC dyn:setElem|setProp(Ljava/lang/Object;II)V [
-      // handle kind 0x6 : INVOKESTATIC
-      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
-      // arguments:
-      0
-    ]
-   L4
-   FRAME SAME
-    ILOAD 6
-    ICONST_M1
-    IADD
-    DUP
-    ISTORE 6
-    ICONST_0
-    IF_ICMPGE L5
-   L11
-    LINENUMBER 24 L11
-    ILOAD 5
-    IRETURN
+This property sets the compression level used when deflating serialized
+AST structures of anonymous split functions. Valid values range from 0 to 9,
+the default value is 4. Higher values will reduce memory size of serialized
+AST but increase CPU usage required for compression.
 
 
-SYSTEM PROPERTY: -Dnashorn.codegen.debug, -Dnashorn.codegen.debug.trace=<x>
+SYSTEM PROPERTY: -Dnashorn.codegen.debug.trace=<x>
 
 See the description of the codegen logger below.
 
 
-SYSTEM_PROPERTY: -Dnashorn.fields.debug
+SYSTEM PROPERTY: -Dnashorn.fields.objects
 
-See the description on the fields logger below.
+When this property is true, Nashorn will only use object fields for
+AccessorProperties. This means that primitive values must be boxed
+when stored in a field, which is significantly slower than using
+primitive fields.
 
-
-SYSTEM PROPERTY: -Dnashorn.fields.dual
-
-When this property is true, Nashorn will attempt to use primitive
-fields for AccessorProperties (currently just AccessorProperties, not
-spill properties). Memory footprint for script objects will increase,
-as we need to maintain both a primitive field (a long) as well as an
-Object field for the property value. Ints are represented as the 32
-low bits of the long fields. Doubles are represented as the
-doubleToLongBits of their value. This way a single field can be used
-for all primitive types. Packing and unpacking doubles to their bit
-representation is intrinsified by the JVM and extremely fast.
-
-While dual fields in theory runs significantly faster than Object
-fields due to reduction of boxing and memory allocation overhead,
-there is still work to be done to make this a general purpose
-solution. Research is ongoing.
+By default, Nashorn uses dual object and long fields. Ints are
+represented as the 32 low bits of the long fields. Doubles are
+represented as the doubleToLongBits of their value. This way a
+single field can be used for all primitive types. Packing and
+unpacking doubles to their bit representation is intrinsified by
+the JVM and extremely fast.
 
 In the future, this might complement or be replaced by experimental
 feature sun.misc.TaggedArray, which has been discussed on the mlvm
 mailing list. TaggedArrays are basically a way to share data space
 between primitives and references, and have the GC understand this.
-
-As long as only primitive values are written to the fields and enough
-type information exists to make sure that any reads don't have to be
-uselessly boxed and unboxed, this is significantly faster than the
-standard "Objects only" approach that currently is the default. See
-test/examples/dual-fields-micro.js for an example that runs twice as
-fast with dual fields as without them. Here, the compiler, can
-determine that we are dealing with numbers only throughout the entire
-property life span of the properties involved.
-
-If a "real" object (not a boxed primitive) is written to a field that
-has a primitive representation, its callsite is relinked and an Object
-field is used forevermore for that particular field in that
-PropertyMap and its children, even if primitives are later assigned to
-it.
-
-As the amount of compile time type information is very small in a
-dynamic language like JavaScript, it is frequently the case that
-something has to be treated as an object, because we don't know any
-better. In reality though, it is often a boxed primitive is stored to
-an AccessorProperty. The fastest way to handle this soundly is to use
-a callsite typecheck and avoid blowing the field up to an Object. We
-never revert object fields to primitives. Ping-pong:ing back and forth
-between primitive representation and Object representation would cause
-fatal performance overhead, so this is not an option.
-
-For a general application the dual fields approach is still slower
-than objects only fields in some places, about the same in most cases,
-and significantly faster in very few. This is due the program using
-primitives, but we still can't prove it. For example "local_var a =
-call(); field = a;" may very well write a double to the field, but the
-compiler dare not guess a double type if field is a local variable,
-due to bytecode variables being strongly typed and later non
-interchangeable. To get around this, the entire method would have to
-be replaced and a continuation retained to restart from. We believe
-that the next steps we should go through are instead:
-
-1) Implement method specialization based on callsite, as it's quite
-frequently the case that numbers are passed around, but currently our
-function nodes just have object types visible to the compiler. For
-example "var b = 17; func(a,b,17)" is an example where two parameters
-can be specialized, but the main version of func might also be called
-from another callsite with func(x,y,"string").
-
-2) This requires lazy jitting as the functions have to be specialized
-per callsite.
-
-Even though "function square(x) { return x*x }" might look like a
-trivial function that can always only take doubles, this is not
-true. Someone might have overridden the valueOf for x so that the
-toNumber coercion has side effects. To fulfil JavaScript semantics,
-the coercion has to run twice for both terms of the multiplication
-even if they are the same object. This means that call site
-specialization is necessary, not parameter specialization on the form
-"function square(x) { var xd = (double)x; return xd*xd; }", as one
-might first think.
-
-Generating a method specialization for any variant of a function that
-we can determine by types at compile time is a combinatorial explosion
-of byte code (try it e.g. on all the variants of am3 in the Octane
-benchmark crypto.js). Thus, this needs to be lazy
-
-3) Optimistic callsite writes, something on the form
-
-x = y; //x is a field known to be a primitive. y is only an object as
-far as we can tell
-
-turns into
-
-try {
-  x = (int)y;
-} catch (X is not an integer field right now | ClassCastException e) {
-  x = y;
-}
-
-Mini POC shows that this is the key to a lot of dual field performance
-in seemingly trivial micros where one unknown object, in reality
-actually a primitive, foils it for us. Very common pattern. Once we
-are "all primitives", dual fields runs a lot faster than Object fields
-only.
-
-We still have to deal with objects vs primitives for local bytecode
-slots, possibly through code copying and versioning.
-
-The Future:
-
-We expect the usefulness of dual fields to increase significantly
-after the optimistic type system described in the section on 
-integer arithmetic above is implemented.
 
 
 SYSTEM PROPERTY: -Dnashorn.compiler.symbol.trace=[<x>[,*]], 
@@ -628,6 +141,9 @@ for invoking a particular script function.
 "identical" - this method compares two script objects for reference
 equality. It is a == Java comparison
 
+"equals" - Returns true if two objects are either referentially
+identical or equal as defined by java.lang.Object.equals.
+
 "dumpCounters" - will dump the debug counters' current values to
 stdout.
 
@@ -648,66 +164,66 @@ Finally we count callsite misses on a per callsite bases, which occur
 when a callsite has to be relinked, due to a previous assumption of
 object layout being invalidated.
 
+"getContext" - return the current Nashorn context.
 
-SYSTEM PROPERTY: -Dnashorn.methodhandles.debug,
--Dnashorn.methodhandles.debug=create
+"equalWithoutType" - Returns true if if the two objects are both
+property maps, and they have identical properties in the same order,
+but allows the properties to differ in their types.
 
-If this property is enabled, each MethodHandle related call that uses
-the java.lang.invoke package gets its MethodHandle intercepted and an
-instrumentation printout of arguments and return value appended to
-it. This shows exactly which method handles are executed and from
-where. (Also MethodTypes and SwitchPoints). This can be augmented with
-more information, for example, instance count, by subclassing or
-further extending the TraceMethodHandleFactory implementation in
-MethodHandleFactory.java.
+"diffPropertyMaps" Returns a diagnostic string representing the difference
+of two property maps.
 
-If the property is specialized with "=create" as its option,
-instrumentation will be shown for method handles upon creation time
-rather than at runtime usage.
+"getClass" - Returns the Java class of an object, or undefined if null.
+
+"toJavaString" - Returns the Java toString representation of an object.
+
+"toIdentString" - Returns a string representation of an object consisting
+of its java class name and hash code.
+
+"getListenerCount" - Return the number of property listeners for a
+script object.
+
+"getEventQueueCapacity" - Get the capacity of the event queue.
+
+"setEventQueueCapacity" - Set the event queue capacity.
+
+"addRuntimeEvent" - Add a runtime event to the runtime event queue.
+The queue has a fixed size (see -Dnashorn.runtime.event.queue.size)
+and the oldest entry will be thrown out of the queue is about to overflow.
+
+"expandEventQueueCapacity" - Expands the event queue capacity,
+or truncates if capacity is lower than current capacity. Then only
+the newest entries are kept.
+
+"clearRuntimeEvents" - Clear the runtime event queue.
+
+"removeRuntimeEvent" - Remove a specific runtime event from the event queue.
+
+"getRuntimeEvents" - Return all runtime events in the queue as an array.
+
+"getLastRuntimeEvent" - Return the last runtime event in the queue.
 
 
 SYSTEM PROPERTY: -Dnashorn.methodhandles.debug.stacktrace
 
-This does the same as nashorn.methodhandles.debug, but when enabled
-also dumps the stack trace for every instrumented method handle
-operation. Warning: This is enormously verbose, but provides a pretty
+This enhances methodhandles logging (see below) to also dump the
+stack trace for every instrumented method handle operation.
+Warning: This is enormously verbose, but provides a pretty
 decent "grep:able" picture of where the calls are coming from.
 
-See the description of the codegen logger below for a more verbose
-description of this option
+
+SYSTEM PROPERTY: -Dnashorn.cce
+
+Setting this system property causes the Nashorn linker to rely on
+ClassCastExceptions for triggering a callsite relink. If not set, the linker
+will add an explicit instanceof guard.
 
 
-SYSTEM PROPERTY: -Dnashorn.scriptfunction.specialization.disable
+SYSTEM PROPERTY: -Dnashorn.spill.threshold=<x>
 
-There are several "fast path" implementations of constructors and
-functions in the NativeObject classes that, in their original form,
-take a variable amount of arguments. Said functions are also declared
-to take Object parameters in their original form, as this is what the
-JavaScript specification mandates.
-However, we often know quite a lot more at a callsite of one of these
-functions. For example, Math.min is called with a fixed number (2) of
-integer arguments. The overhead of boxing these ints to Objects and
-folding them into an Object array for the generic varargs Math.min
-function is an order of magnitude slower than calling a specialized
-implementation of Math.min that takes two integers. Specialized
-functions and constructors are identified by the tag
-@SpecializedFunction and @SpecializedConstructor in the Nashorn
-code. The linker will link in the most appropriate (narrowest types,
-right number of types and least number of arguments) specialization if
-specializations are available.
-
-Every ScriptFunction may carry specializations that the linker can
-choose from. This framework will likely be extended for user defined
-functions. The compiler can often infer enough parameter type info
-from callsites for in order to generate simpler versions with less
-generic Object types. This feature depends on future lazy jitting, as
-there tend to be many calls to user defined functions, some where the
-callsite can be specialized, some where we mostly see object
-parameters even at the callsite.
-
-If this system property is set to true, the linker will not attempt to
-use any specialized function or constructor for native objects, but
-just call the generic one.
+This property sets the number of fields in an object from which to use
+generic array based spill storage instead of Java fields. The default value
+is 256.
 
 
 SYSTEM PROPERTY: -Dnashorn.tcs.miss.samplePercent=<x>
@@ -719,8 +235,47 @@ system property can be used to constrain the percentage of misses that
 should be logged. Typically this is set to 1 or 5 (percent). 1% is the
 default value.
 
+SYSTEM PROPERTY: -Dnashorn.persistent.code.cache
 
-SYSTEM_PROPERTY: -Dnashorn.profilefile=<filename>
+This property can be used to set the directory where Nashorn stores
+serialized script classes generated with the -pcc/--persistent-code-cache
+option. The default directory name is "nashorn_code_cache".
+
+
+SYSTEM PROPERTY: -Dnashorn.typeInfo.maxFiles
+
+Maximum number of files to store in the type info cache. The type info cache
+is used to cache type data of JavaScript functions when running with
+optimistic types (-ot/--optimistic-types). There is one file per JavaScript
+function in the cache.
+
+The default value is 0 which means the feature is disabled. Setting this
+to something like 20000 is probably good enough for most applications and
+will usually cap the cache directory to about 80MB presuming a 4kB
+filesystem allocation unit. Set this to "unlimited" to run without limit.
+
+If the value is not 0 or "unlimited", Nashorn will spawn a cleanup thread
+that makes sure the number of files in the cache does not exceed the given
+value by deleting the least recently modified files.
+
+
+SYSTEM PROPERTY: -Dnashorn.typeInfo.cacheDir
+
+This property can be used to set the directory where Nashorn stores the
+type info cache when -Dnashorn.typeInfo.maxFiles is set to a nonzero
+value. The default location is platform specific. On Windows, it is
+"${java.io.tmpdir}\com.oracle.java.NashornTypeInfo". On Linux and
+Solaris it is "~/.cache/com.oracle.java.NashornTypeInfo". On Mac OS X,
+it is "~/Library/Caches/com.oracle.java.NashornTypeInfo".
+
+
+SYSTEM PROPERTY: -Dnashorn.typeInfo.cleanupDelaySeconds=<value>
+
+This sets the delay between cleanups of the typeInfo cache, in seconds.
+The default delay is 20 seconds.
+
+
+SYSTEM PROPERTY: -Dnashorn.profilefile=<filename>
 
 When running with the profile callsite options (-pcs), Nashorn will
 dump profiling data for all callsites to stderr as a shutdown hook. To
@@ -736,6 +291,11 @@ JDK's java.util.regex package. Set this property to "joni" to install
 an implementation based on Joni, the regular expression engine used by
 the JRuby project. The default value for this flag is "joni"
 
+SYSTEM PROPERTY: -Dnashorn.runtime.event.queue.size=<value>
+
+Nashorn provides a fixed sized runtime event queue for debugging purposes.
+See -Dnashorn.debug for methods to access the event queue.
+The default value is 1024.
 
 ===============
 2. The loggers.
@@ -767,7 +327,9 @@ times on the same command line, with the same effect.
 For example: --log=codegen,fields:finest is equivalent to
 --log=codegen:info --log=fields:finest
 
-The subsystems that currently support logging are:
+The following is an incomplete list of subsystems that currently
+support logging. Look for classes implementing
+jdk.nashorn.internal.runtime.logging.Loggable for more loggers.
 
 
 * compiler
@@ -778,6 +340,14 @@ controlled from the Context. Log messages are, for example, about
 things like new compile units being allocated. The compiler has global
 settings that all the tiers of codegen (e.g. Lower and CodeGenerator)
 use.s
+
+
+* recompile
+
+This logger shows information about recompilation of scripts and
+functions at runtime. Recompilation may happen because a function
+was called with different parameter types, or because an optimistic
+assumption failed while executing a function with -ot/--optimistic-types.
 
 
 * codegen
@@ -836,25 +406,13 @@ and inlining finally blocks.
 Lower is also responsible for determining control flow information
 like end points.
 
+* symbols
 
-* attr
+The symbols logger tracks the assignment os symbols to identifiers.
 
-The lowering annotates a FunctionNode with symbols for each identifier
-and transforms high level constructs into lower level ones, that the
-CodeGenerator consumes.
+* scopedepths
 
-Lower logging typically outputs things like post pass actions,
-insertions of casts because symbol types have been changed and type
-specialization information. Currently very little info is generated by
-this logger. This will probably change.
-
-
-* finalize
-
-This --log=finalize log option outputs information for type finalization,
-the third tier of the compiler. This means things like placement of 
-specialized scope nodes or explicit conversions. 
-
+This logs the calculation of scope depths for non-local symbols.
 
 * fields
 
@@ -895,6 +453,21 @@ Here is an example:
 [time] 'Class Installation'              1854 ms
 [time] 
 [time] Total runtime: 11994 ms (Non-runtime: 11027 ms [91%])
+
+* methodhandles
+
+If this logger is enabled, each MethodHandle related call that uses
+the java.lang.invoke package gets its MethodHandle intercepted and an
+instrumentation printout of arguments and return value appended to
+it. This shows exactly which method handles are executed and from
+where. (Also MethodTypes and SwitchPoints).
+
+* classcache
+
+This logger shows information about reusing code classes using the
+in-memory class cache. Nashorn will try to avoid compilation of
+scripts by using existing classes. This can significantly improve
+performance when repeatedly evaluating the same script.
 
 =======================
 3. Undocumented options
