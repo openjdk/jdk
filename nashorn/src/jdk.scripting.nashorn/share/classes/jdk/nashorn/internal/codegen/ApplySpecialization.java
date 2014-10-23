@@ -27,6 +27,7 @@ package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS_VAR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EXPLODED_ARGUMENT_PREFIX;
+
 import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
@@ -321,7 +323,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
 
         explodedArguments.pop();
 
-        return newFunctionNode;
+        return newFunctionNode.setState(lc, CompilationState.BUILTINS_TRANSFORMED);
     }
 
     private static boolean isApply(final CallNode callNode) {

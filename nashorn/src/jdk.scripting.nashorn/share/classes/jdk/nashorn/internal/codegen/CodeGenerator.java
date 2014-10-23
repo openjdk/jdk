@@ -34,9 +34,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.GET_MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.GET_STRING;
 import static jdk.nashorn.internal.codegen.CompilerConstants.QUICK_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.REGEX_PREFIX;
-import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
-import static jdk.nashorn.internal.codegen.CompilerConstants.SPLIT_ARRAY_ARG;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SPLIT_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
@@ -99,10 +97,10 @@ import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.GetSplitState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
-import jdk.nashorn.internal.ir.JoinPredecessor;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.JumpStatement;
 import jdk.nashorn.internal.ir.LabelNode;
@@ -121,7 +119,8 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
-import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.SetSplitState;
+import jdk.nashorn.internal.ir.SplitReturn;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
@@ -493,8 +492,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         //walk up the chain from starting block and when we bump into the current function boundary, add the external
         //information.
         final FunctionNode fn   = lc.getCurrentFunction();
-        final int          fnId = fn.getId();
-        final int externalDepth = compiler.getScriptFunctionData(fnId).getExternalSymbolDepth(symbol.getName());
+        final int externalDepth = compiler.getScriptFunctionData(fn.getId()).getExternalSymbolDepth(symbol.getName());
 
         //count the number of scopes from this place to the start of the function
 
@@ -554,10 +552,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     MethodEmitter loadBinaryOperands(final BinaryNode binaryNode) {
-        return loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(binaryNode.getWidestOperandType()), false);
+        return loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(binaryNode.getWidestOperandType()), false, false);
     }
 
-    private MethodEmitter loadBinaryOperands(final Expression lhs, final Expression rhs, final TypeBounds explicitOperandBounds, final boolean baseAlreadyOnStack) {
+    private MethodEmitter loadBinaryOperands(final Expression lhs, final Expression rhs, final TypeBounds explicitOperandBounds, final boolean baseAlreadyOnStack, final boolean forceConversionSeparation) {
         // ECMAScript 5.1 specification (sections 11.5-11.11 and 11.13) prescribes that when evaluating a binary
         // expression "LEFT op RIGHT", the order of operations must be: LOAD LEFT, LOAD RIGHT, CONVERT LEFT, CONVERT
         // RIGHT, EXECUTE OP. Unfortunately, doing it in this order defeats potential optimizations that arise when we
@@ -574,15 +572,34 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Type narrowestOperandType = Type.narrowest(Type.widest(lhs.getType(), rhs.getType()), explicitOperandBounds.widest);
         final TypeBounds operandBounds = explicitOperandBounds.notNarrowerThan(narrowestOperandType);
         if (noToPrimitiveConversion(lhs.getType(), explicitOperandBounds.widest) || rhs.isLocal()) {
-            // Can reorder. Combine load and convert into single operations.
-            loadExpression(lhs, operandBounds, baseAlreadyOnStack);
-            loadExpression(rhs, operandBounds, false);
+            // Can reorder. We might still need to separate conversion, but at least we can do it with reordering
+            if (forceConversionSeparation) {
+                // Can reorder, but can't move conversion into the operand as the operation depends on operands
+                // exact types for its overflow guarantees. E.g. with {L}{%I}expr1 {L}* {L}{%I}expr2 we are not allowed
+                // to merge {L}{%I} into {%L}, as that can cause subsequent overflows; test for JDK-8058610 contains
+                // concrete cases where this could happen.
+                final TypeBounds safeConvertBounds = TypeBounds.UNBOUNDED.notNarrowerThan(narrowestOperandType);
+                loadExpression(lhs, safeConvertBounds, baseAlreadyOnStack);
+                method.convert(operandBounds.within(method.peekType()));
+                loadExpression(rhs, safeConvertBounds, false);
+                method.convert(operandBounds.within(method.peekType()));
+            } else {
+                // Can reorder and move conversion into the operand. Combine load and convert into single operations.
+                loadExpression(lhs, operandBounds, baseAlreadyOnStack);
+                loadExpression(rhs, operandBounds, false);
+            }
         } else {
             // Can't reorder. Load and convert separately.
             final TypeBounds safeConvertBounds = TypeBounds.UNBOUNDED.notNarrowerThan(narrowestOperandType);
             loadExpression(lhs, safeConvertBounds, baseAlreadyOnStack);
+            final Type lhsType = method.peekType();
             loadExpression(rhs, safeConvertBounds, false);
-            method.swap().convert(operandBounds.within(method.peekType())).swap().convert(operandBounds.within(method.peekType()));
+            final Type convertedLhsType = operandBounds.within(method.peekType());
+            if (convertedLhsType != lhsType) {
+                // Do it conditionally, so that if conversion is a no-op we don't introduce a SWAP, SWAP.
+                method.swap().convert(convertedLhsType).swap();
+            }
+            method.convert(operandBounds.within(method.peekType()));
         }
         assert Type.generic(method.peekType()) == operandBounds.narrowest;
         assert Type.generic(method.peekType(1)) == operandBounds.narrowest;
@@ -633,19 +650,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         TypeBounds booleanToInt() {
-            return maybeNew(booleanToInt(narrowest), booleanToInt(widest));
+            return maybeNew(CodeGenerator.booleanToInt(narrowest), CodeGenerator.booleanToInt(widest));
         }
 
         TypeBounds objectToNumber() {
-            return maybeNew(objectToNumber(narrowest), objectToNumber(widest));
-        }
-
-        private static Type booleanToInt(final Type t) {
-            return t == Type.BOOLEAN ? Type.INT : t;
-        }
-
-        private static Type objectToNumber(final Type t) {
-            return t.isObject() ? Type.NUMBER : t;
+            return maybeNew(CodeGenerator.objectToNumber(narrowest), CodeGenerator.objectToNumber(widest));
         }
 
         Type within(final Type type) {
@@ -662,6 +671,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         public String toString() {
             return "[" + narrowest + ", " + widest + "]";
         }
+    }
+
+    private static Type booleanToInt(final Type t) {
+        return t == Type.BOOLEAN ? Type.INT : t;
+    }
+
+    private static Type objectToNumber(final Type t) {
+        return t.isObject() ? Type.NUMBER : t;
     }
 
     MethodEmitter loadExpressionAsType(final Expression expr, final Type type) {
@@ -1048,6 +1065,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
+            public boolean enterGetSplitState(final GetSplitState getSplitState) {
+                method.loadScope();
+                method.invoke(Scope.GET_SPLIT_STATE);
+                return false;
+            }
+
+            @Override
             public boolean enterDefault(final Node otherNode) {
                 // Must have handled all expressions that can legally be encountered.
                 throw new AssertionError(otherNode.getClass().getName());
@@ -1219,7 +1243,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         popScopesUntil(target);
         final Label targetLabel = jump.getTargetLabel(target);
         targetLabel.markAsBreakTarget();
-        method.splitAwareGoto(lc, targetLabel, target);
+        method._goto(targetLabel);
 
         return false;
     }
@@ -2029,10 +2053,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void lineNumber(final int lineNumber) {
-        if (lineNumber != lastLineNumber) {
+        if (lineNumber != lastLineNumber && lineNumber != Node.NO_LINE_NUMBER) {
             method.lineNumber(lineNumber);
+            lastLineNumber = lineNumber;
         }
-        lastLineNumber = lineNumber;
     }
 
     int getLastLineNumber() {
@@ -2079,13 +2103,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.begin();
 
                 defineCommonSplitMethodParameters();
-                defineSplitMethodParameter(3, arrayType);
+                defineSplitMethodParameter(CompilerConstants.SPLIT_ARRAY_ARG.slot(), arrayType);
 
-                fixScopeSlot(currentFunction);
+                // NOTE: when this is no longer needed, SplitIntoFunctions will no longer have to add IS_SPLIT
+                // to synthetic functions, and FunctionNode.needsCallee() will no longer need to test for isSplit().
+                final int arraySlot = fixScopeSlot(currentFunction, 3);
 
                 lc.enterSplitNode();
 
-                final int arraySlot = SPLIT_ARRAY_ARG.slot();
                 for (int i = arrayUnit.getLo(); i < arrayUnit.getHi(); i++) {
                     method.load(arrayType, arraySlot);
                     storeElement(nodes, elementType, postsets[i]);
@@ -2700,73 +2725,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.convert(newRuntimeNode.getType());
     }
 
-    @Override
-    public boolean enterSplitNode(final SplitNode splitNode) {
-        if(!method.isReachable()) {
-            return false;
-        }
-
-        final CompileUnit splitCompileUnit = splitNode.getCompileUnit();
-
-        final FunctionNode fn   = lc.getCurrentFunction();
-        final String className  = splitCompileUnit.getUnitClassName();
-        final String name       = splitNode.getName();
-
-        final Type returnType = fn.getReturnType();
-
-        final Class<?>   rtype          = fn.getReturnType().getTypeClass();
-        final boolean    needsArguments = fn.needsArguments();
-        final Class<?>[] ptypes         = needsArguments ?
-                new Class<?>[] {ScriptFunction.class, Object.class, ScriptObject.class, ScriptObject.class} :
-                new Class<?>[] {ScriptFunction.class, Object.class, ScriptObject.class};
-
-        final MethodEmitter caller = method;
-        unit = lc.pushCompileUnit(splitCompileUnit);
-
-        final Call splitCall = staticCallNoLookup(
-            className,
-            name,
-            methodDescriptor(rtype, ptypes));
-
-        final MethodEmitter splitEmitter =
-                splitCompileUnit.getClassEmitter().method(
-                        splitNode,
-                        name,
-                        rtype,
-                        ptypes);
-
-        pushMethodEmitter(splitEmitter);
-        method.setFunctionNode(fn);
-
-        assert fn.needsCallee() : "split function should require callee";
-        caller.loadCompilerConstant(CALLEE);
-        caller.loadCompilerConstant(THIS);
-        caller.loadCompilerConstant(SCOPE);
-        if (needsArguments) {
-            caller.loadCompilerConstant(ARGUMENTS);
-        }
-        caller.invoke(splitCall);
-        caller.storeCompilerConstant(RETURN, returnType);
-
-        method.begin();
-
-        defineCommonSplitMethodParameters();
-        if(needsArguments) {
-            defineSplitMethodParameter(3, ARGUMENTS);
-        }
-
-        // Copy scope to its target slot as first thing because the original slot could be used by return symbol.
-        fixScopeSlot(fn);
-
-        final int returnSlot = fn.compilerConstant(RETURN).getSlot(returnType);
-        method.defineBlockLocalVariable(returnSlot, returnSlot + returnType.getSlots());
-        method.loadUndefined(returnType);
-        method.storeCompilerConstant(RETURN, returnType);
-
-        lc.enterSplitNode();
-        return true;
-    }
-
     private void defineCommonSplitMethodParameters() {
         defineSplitMethodParameter(0, CALLEE);
         defineSplitMethodParameter(1, THIS);
@@ -2782,114 +2740,40 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.onLocalStore(type, slot);
     }
 
-    private void fixScopeSlot(final FunctionNode functionNode) {
+    private int fixScopeSlot(final FunctionNode functionNode, final int extraSlot) {
         // TODO hack to move the scope to the expected slot (needed because split methods reuse the same slots as the root method)
         final int actualScopeSlot = functionNode.compilerConstant(SCOPE).getSlot(SCOPE_TYPE);
         final int defaultScopeSlot = SCOPE.slot();
+        int newExtraSlot = extraSlot;
         if (actualScopeSlot != defaultScopeSlot) {
-            method.defineBlockLocalVariable(actualScopeSlot, actualScopeSlot + 1);
+            if (actualScopeSlot == extraSlot) {
+                newExtraSlot = extraSlot + 1;
+                method.defineBlockLocalVariable(newExtraSlot, newExtraSlot + 1);
+                method.load(Type.OBJECT, extraSlot);
+                method.storeHidden(Type.OBJECT, newExtraSlot);
+            } else {
+                method.defineBlockLocalVariable(actualScopeSlot, actualScopeSlot + 1);
+            }
             method.load(SCOPE_TYPE, defaultScopeSlot);
             method.storeCompilerConstant(SCOPE);
         }
+        return newExtraSlot;
     }
 
     @Override
-    public Node leaveSplitNode(final SplitNode splitNode) {
-        assert method instanceof SplitMethodEmitter;
-        lc.exitSplitNode();
-        final boolean hasReturn = method.hasReturn();
-        final SplitMethodEmitter splitMethod = ((SplitMethodEmitter)method);
-        final List<Label> targets = splitMethod.getExternalTargets();
-        final boolean hasControlFlow = hasReturn || !targets.isEmpty();
-        final List<BreakableNode> targetNodes  = splitMethod.getExternalTargetNodes();
-        final Type returnType = lc.getCurrentFunction().getReturnType();
-
-        try {
-            // Wrap up this method.
-
-            if(method.isReachable()) {
-                if (hasControlFlow) {
-                    method.setSplitState(-1);
-                }
-                method.loadCompilerConstant(RETURN, returnType);
-                method._return(returnType);
-            }
-            method.end();
-
-            lc.releaseSlots();
-
-            unit   = lc.popCompileUnit(splitNode.getCompileUnit());
-            popMethodEmitter();
-
-        } catch (final Throwable t) {
-            Context.printStackTrace(t);
-            final VerifyError e = new VerifyError("Code generation bug in \"" + splitNode.getName() + "\": likely stack misaligned: " + t + " " + getCurrentSource().getName());
-            e.initCause(t);
-            throw e;
+    public boolean enterSplitReturn(final SplitReturn splitReturn) {
+        if (method.isReachable()) {
+            method.loadUndefined(lc.getCurrentFunction().getReturnType())._return();
         }
+        return false;
+    }
 
-        //no external jump targets or return in switch node
-        if (!hasControlFlow) {
-            return splitNode;
+    @Override
+    public boolean enterSetSplitState(final SetSplitState setSplitState) {
+        if (method.isReachable()) {
+            method.setSplitState(setSplitState.getState());
         }
-
-        // Handle return from split method if there was one.
-        final MethodEmitter caller = method;
-        final int     targetCount = targets.size();
-
-        caller.loadScope();
-        caller.invoke(Scope.GET_SPLIT_STATE);
-
-        final Label breakLabel = new Label("no_split_state");
-        // Split state is -1 for no split state, 0 for return, 1..n+1 for break/continue
-
-        //the common case is that we don't need a switch
-        if (targetCount == 0) {
-            assert hasReturn;
-            caller.ifne(breakLabel);
-            //has to be zero
-            caller.label(new Label("split_return"));
-            caller.loadCompilerConstant(RETURN, returnType);
-            caller._return(returnType);
-            caller.label(breakLabel);
-        } else {
-            assert !targets.isEmpty();
-
-            final int     low         = hasReturn ? 0 : 1;
-            final int     labelCount  = targetCount + 1 - low;
-            final Label[] labels      = new Label[labelCount];
-
-            for (int i = 0; i < labelCount; i++) {
-                labels[i] = new Label(i == 0 ? "split_return" : "split_" + targets.get(i - 1));
-            }
-            caller.tableswitch(low, targetCount, breakLabel, labels);
-            for (int i = low; i <= targetCount; i++) {
-                caller.label(labels[i - low]);
-                if (i == 0) {
-                    caller.loadCompilerConstant(RETURN, returnType);
-                    caller._return(returnType);
-                } else {
-                    final BreakableNode targetNode = targetNodes.get(i - 1);
-                    final Label label = targets.get(i - 1);
-                    if (!lc.isExternalTarget(splitNode, targetNode)) {
-                        final JoinPredecessor jumpOrigin = splitNode.getJumpOrigin(label);
-                        if(jumpOrigin != null) {
-                            method.beforeJoinPoint(jumpOrigin);
-                        }
-                        popScopesUntil(targetNode);
-                    }
-                    caller.splitAwareGoto(lc, label, targetNode);
-                }
-            }
-            caller.label(breakLabel);
-        }
-
-        // If split has a return and caller is itself a split method it needs to propagate the return.
-        if (hasReturn) {
-            caller.setHasReturn();
-        }
-
-        return splitNode;
+        return false;
     }
 
     @Override
@@ -3678,13 +3562,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             void loadStack() {
                 final TypeBounds operandBounds;
                 final boolean isOptimistic = isValid(getProgramPoint());
+                boolean forceConversionSeparation = false;
                 if(isOptimistic) {
                     operandBounds = new TypeBounds(binaryNode.getType(), Type.OBJECT);
                 } else {
                     // Non-optimistic, non-FP +. Allow it to overflow.
                     operandBounds = new TypeBounds(binaryNode.getWidestOperandType(), Type.OBJECT);
+                    forceConversionSeparation = binaryNode.getWidestOperationType().narrowerThan(resultBounds.widest);
                 }
-                loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), operandBounds, false);
+                loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), operandBounds, false, forceConversionSeparation);
             }
 
             @Override
@@ -3795,12 +3681,21 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         @Override
         protected void evaluate() {
             final Expression lhs = assignNode.lhs();
-            final Type widest = assignNode.isTokenType(TokenType.ASSIGN_ADD) ? Type.OBJECT : assignNode.getWidestOperationType();
+            final Expression rhs = assignNode.rhs();
+            final Type widestOperationType = assignNode.getWidestOperationType();
+            final Type widest = assignNode.isTokenType(TokenType.ASSIGN_ADD) ? Type.OBJECT : widestOperationType;
             final TypeBounds bounds = new TypeBounds(assignNode.getType(), widest);
             new OptimisticOperation(assignNode, bounds) {
                 @Override
                 void loadStack() {
-                    loadBinaryOperands(lhs, assignNode.rhs(), bounds, true);
+                    final boolean forceConversionSeparation;
+                    if (isValid(getProgramPoint()) || widestOperationType == Type.NUMBER) {
+                        forceConversionSeparation = false;
+                    } else {
+                        final Type operandType = Type.widest(booleanToInt(objectToNumber(lhs.getType())), booleanToInt(objectToNumber(rhs.getType())));
+                        forceConversionSeparation = operandType.narrowerThan(widestOperationType);
+                    }
+                    loadBinaryOperands(lhs, rhs, bounds, true, forceConversionSeparation);
                 }
                 @Override
                 void consumeStack() {
@@ -3823,7 +3718,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         @Override
         protected void evaluate() {
-            loadBinaryOperands(assignNode.lhs(), assignNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(assignNode.getWidestOperandType()), true);
+            loadBinaryOperands(assignNode.lhs(), assignNode.rhs(), TypeBounds.UNBOUNDED.notWiderThan(assignNode.getWidestOperandType()), true, false);
             op();
         }
     }
@@ -3946,6 +3841,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 @Override
                 void loadStack() {
                     final TypeBounds operandBounds;
+                    boolean forceConversionSeparation = false;
                     if(numericBounds.narrowest == Type.NUMBER) {
                         // Result should be double always. Propagate it into the operands so we don't have lots of I2D
                         // and L2D after operand evaluation.
@@ -3963,9 +3859,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                             // Non-optimistic, non-FP subtraction or multiplication. Allow them to overflow.
                             operandBounds = new TypeBounds(Type.narrowest(node.getWidestOperandType(),
                                     numericBounds.widest), Type.NUMBER);
+                            forceConversionSeparation = node.getWidestOperationType().narrowerThan(numericBounds.widest);
                         }
                     }
-                    loadBinaryOperands(node.lhs(), node.rhs(), operandBounds, false);
+                    loadBinaryOperands(node.lhs(), node.rhs(), operandBounds, false, forceConversionSeparation);
                 }
 
                 @Override
@@ -4379,11 +4276,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private void newFunctionObject(final FunctionNode functionNode, final boolean addInitializer) {
         assert lc.peek() == functionNode;
 
-        final int fnId = functionNode.getId();
-
-        final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(fnId);
-
-        assert data != null : functionNode.getName() + " has no data";
+        final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(functionNode.getId());
 
         if (functionNode.isProgram() && !compiler.isOnDemandCompilation()) {
             final CompileUnit fnUnit = functionNode.getCompileUnit();

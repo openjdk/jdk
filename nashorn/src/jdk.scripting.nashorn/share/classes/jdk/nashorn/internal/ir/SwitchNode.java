@@ -37,6 +37,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class SwitchNode extends BreakableStatement {
+    private static final long serialVersionUID = 1L;
+
     /** Switch expression. */
     private final Expression expression;
 

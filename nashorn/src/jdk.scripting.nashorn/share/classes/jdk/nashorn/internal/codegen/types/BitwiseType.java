@@ -29,6 +29,7 @@ package jdk.nashorn.internal.codegen.types;
  * This class represents a numeric type that can be used for bit operations.
  */
 public abstract class BitwiseType extends NumericType implements BytecodeBitwiseOps {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructor
