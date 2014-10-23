@@ -622,7 +622,9 @@ class Compile : public Phase {
 
   void begin_method() {
 #ifndef PRODUCT
-    if (_printer) _printer->begin_method(this);
+    if (_printer && _printer->should_print(_method)) {
+      _printer->begin_method(this);
+    }
 #endif
     C->_latest_stage_start_counter.stamp();
   }
@@ -639,7 +641,9 @@ class Compile : public Phase {
 
 
 #ifndef PRODUCT
-    if (_printer) _printer->print_method(this, CompilerPhaseTypeHelper::to_string(cpt), level);
+    if (_printer && _printer->should_print(_method)) {
+      _printer->print_method(this, CompilerPhaseTypeHelper::to_string(cpt), level);
+    }
 #endif
     C->_latest_stage_start_counter.stamp();
   }
@@ -654,7 +658,9 @@ class Compile : public Phase {
       event.commit();
     }
 #ifndef PRODUCT
-    if (_printer) _printer->end_method();
+    if (_printer && _printer->should_print(_method)) {
+      _printer->end_method();
+    }
 #endif
   }
 

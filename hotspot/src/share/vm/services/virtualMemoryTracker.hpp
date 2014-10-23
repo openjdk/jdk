@@ -62,11 +62,6 @@ class VirtualMemory VALUE_OBJ_CLASS_SPEC {
     _committed -= sz;
   }
 
-  void reset() {
-    _reserved  = 0;
-    _committed = 0;
-  }
-
   inline size_t reserved()  const { return _reserved;  }
   inline size_t committed() const { return _committed; }
 };
@@ -123,12 +118,6 @@ class VirtualMemorySnapshot : public ResourceObj {
     return amount;
   }
 
-  inline void reset() {
-    for (int index = 0; index < mt_number_of_types; index ++) {
-      _virtual_memory[index].reset();
-    }
-  }
-
   void copy_to(VirtualMemorySnapshot* s) {
     for (int index = 0; index < mt_number_of_types; index ++) {
       s->_virtual_memory[index] = _virtual_memory[index];
@@ -172,10 +161,6 @@ class VirtualMemorySummary : AllStatic {
 
   static inline void snapshot(VirtualMemorySnapshot* s) {
     as_snapshot()->copy_to(s);
-  }
-
-  static inline void reset() {
-    as_snapshot()->reset();
   }
 
   static VirtualMemorySnapshot* as_snapshot() {

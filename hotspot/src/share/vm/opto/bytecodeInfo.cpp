@@ -298,10 +298,19 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     if (is_init_with_ea(callee_method, caller_method, C)) {
       // Escape Analysis: inline all executed constructors
       return false;
-    } else if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold,
-                                                           CompileThreshold >> 1))) {
-      set_msg("executed < MinInliningThreshold times");
-      return true;
+    } else {
+      intx counter_high_value;
+      // Tiered compilation uses a different "high value" than non-tiered compilation.
+      // Determine the right value to use.
+      if (TieredCompilation) {
+        counter_high_value = InvocationCounter::count_limit / 2;
+      } else {
+        counter_high_value = CompileThreshold / 2;
+      }
+      if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold, counter_high_value))) {
+        set_msg("executed < MinInliningThreshold times");
+        return true;
+      }
     }
   }
 
