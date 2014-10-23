@@ -173,22 +173,6 @@ static BasicType runtime_type_from(JavaValue* result) {
   return T_ILLEGAL;
 }
 
-// ===== object constructor calls =====
-
-void JavaCalls::call_default_constructor(JavaThread* thread, methodHandle method, Handle receiver, TRAPS) {
-  assert(method->name() == vmSymbols::object_initializer_name(),    "Should only be called for default constructor");
-  assert(method->signature() == vmSymbols::void_method_signature(), "Should only be called for default constructor");
-
-  InstanceKlass* ik = method->method_holder();
-  if (ik->is_initialized() && ik->has_vanilla_constructor()) {
-    // safe to skip constructor call
-  } else {
-    static JavaValue result(T_VOID);
-    JavaCallArguments args(receiver);
-    call(&result, method, &args, CHECK);
-  }
-}
-
 // ============ Virtual calls ============
 
 void JavaCalls::call_virtual(JavaValue* result, KlassHandle spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {

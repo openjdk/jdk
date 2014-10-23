@@ -73,7 +73,9 @@ const char *IdealGraphPrinter::ASSEMBLY_ELEMENT = "assembly";
 int IdealGraphPrinter::_file_count = 0;
 
 IdealGraphPrinter *IdealGraphPrinter::printer() {
-  if (PrintIdealGraphLevel == 0) return NULL;
+  if (!PrintIdealGraph) {
+    return NULL;
+  }
 
   JavaThread *thread = JavaThread::current();
   if (!thread->is_Compiler_thread()) return NULL;
@@ -192,7 +194,6 @@ IdealGraphPrinter::~IdealGraphPrinter() {
     _output = NULL;
   }
 }
-
 
 void IdealGraphPrinter::begin_elem(const char *s) {
   _xml->begin_elem("%s", s);
@@ -680,7 +681,7 @@ void IdealGraphPrinter::print_method(Compile* compile, const char *name, int lev
 // Print current ideal graph
 void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, int level, bool clear_nodes) {
 
-  if (!_current_method || !_should_send_method || level > PrintIdealGraphLevel) return;
+  if (!_current_method || !_should_send_method || !should_print(_current_method, level)) return;
 
   this->C = compile;
 
@@ -730,6 +731,13 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
   }
   tail(GRAPH_ELEMENT);
   output()->flush();
+}
+
+// Should method be printed?
+bool IdealGraphPrinter::should_print(ciMethod* method, int level) {
+  intx ideal_graph_level = PrintIdealGraphLevel;
+  method->has_option_value("PrintIdealGraphLevel", ideal_graph_level); // update value with per-method value (if available)
+  return ideal_graph_level >= level;
 }
 
 extern const char *NodeClassNames[];
