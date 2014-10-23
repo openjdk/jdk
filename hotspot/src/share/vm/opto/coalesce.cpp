@@ -281,9 +281,11 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
             Block *pred = _phc._cfg.get_block_for_node(b->pred(j));
             Node *copy;
             assert(!m->is_Con() || m->is_Mach(), "all Con must be Mach");
-            // Rematerialize constants instead of copying them
-            if( m->is_Mach() && m->as_Mach()->is_Con() &&
-                m->as_Mach()->rematerialize() ) {
+            // Rematerialize constants instead of copying them.
+            // We do this only for immediate constants, we avoid constant table loads
+            // because that will unsafely extend the live range of the constant table base.
+            if (m->is_Mach() && m->as_Mach()->is_Con() && !m->as_Mach()->is_MachConstant() &&
+                m->as_Mach()->rematerialize()) {
               copy = m->clone();
               // Insert the copy in the predecessor basic block
               pred->add_inst(copy);
@@ -317,8 +319,8 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
             assert(!m->is_Con() || m->is_Mach(), "all Con must be Mach");
             // At this point it is unsafe to extend live ranges (6550579).
             // Rematerialize only constants as we do for Phi above.
-            if(m->is_Mach() && m->as_Mach()->is_Con() &&
-               m->as_Mach()->rematerialize()) {
+            if (m->is_Mach() && m->as_Mach()->is_Con() && !m->as_Mach()->is_MachConstant() &&
+                m->as_Mach()->rematerialize()) {
               copy = m->clone();
               // Insert the copy in the basic block, just before us
               b->insert_node(copy, l++);
