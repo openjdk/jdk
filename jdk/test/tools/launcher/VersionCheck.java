@@ -61,7 +61,6 @@ public class VersionCheck extends TestHelper {
     static final String[] BLACKLIST_VERSION = {
         "appletviewer",
         "controlpanel",
-        "extcheck",
         "jar",
         "jarsigner",
         "java-rmi",
