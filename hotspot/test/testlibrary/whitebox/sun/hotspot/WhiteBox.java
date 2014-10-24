@@ -179,6 +179,8 @@ public class WhiteBox {
   public native void printRegionInfo(int context);
 
   // VM flags
+  public native boolean isConstantVMFlag(String name);
+  public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
   public native void    setIntxVMFlag(String name, long value);
   public native void    setUintxVMFlag(String name, long value);

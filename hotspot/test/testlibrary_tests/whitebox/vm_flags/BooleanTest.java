@@ -43,6 +43,7 @@ public class BooleanTest {
     private static final Boolean[] TESTS = {true, false, true, true, false};
     private static final String TEST_NAME = "BooleanTest";
     private static final String FLAG_NAME = "PrintCompilation";
+    private static final String FLAG_DEBUG_NAME = "SafepointALot";
     private static final String METHOD = TEST_NAME + "::method";
     private static final String METHOD1 = METHOD + "1";
     private static final String METHOD2 = METHOD + "2";
@@ -54,6 +55,7 @@ public class BooleanTest {
                 VmFlagTest.WHITE_BOX::getBooleanVMFlag);
             testFunctional(false);
             testFunctional(true);
+            VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getBooleanVMFlag);
         } else {
             boolean value = Boolean.valueOf(args[0]);
             method1();
