@@ -939,7 +939,8 @@ int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
   if (!(call->req() > TypeFunc::Parms &&
         call->in(TypeFunc::Parms) != NULL &&
-        call->in(TypeFunc::Parms)->is_Con())) {
+        call->in(TypeFunc::Parms)->is_Con() &&
+        call->in(TypeFunc::Parms)->bottom_type()->isa_int())) {
     assert(in_dump() != 0, "OK if dumping");
     tty->print("[bad uncommon trap]");
     return 0;
