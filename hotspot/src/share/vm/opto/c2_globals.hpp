@@ -476,6 +476,9 @@
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
                                                                             \
+  product(double, EscapeAnalysisTimeout, 20. DEBUG_ONLY(+40.),              \
+          "Abort EA when it reaches time limit (in sec)")                   \
+                                                                            \
   develop(bool, ExitEscapeAnalysisOnTimeout, true,                          \
           "Exit or throw assert in EA when it reaches time limit")          \
                                                                             \
