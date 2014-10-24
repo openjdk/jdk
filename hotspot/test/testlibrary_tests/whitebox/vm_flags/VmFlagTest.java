@@ -37,16 +37,18 @@ public final class VmFlagTest<T> {
     private final BiConsumer<T, T> test;
     private final BiConsumer<String, T> set;
     private final Function<String, T> get;
+    private final boolean isPositive;
 
     protected VmFlagTest(String flagName, BiConsumer<String, T> set,
             Function<String, T> get, boolean isPositive) {
         this.flagName = flagName;
         this.set = set;
         this.get = get;
+        this.isPositive = isPositive;
         if (isPositive) {
-            test = this::testPositive;
+            test = this::testWritePositive;
         } else {
-            test = this::testNegative;
+            test = this::testWriteNegative;
         }
     }
 
@@ -63,6 +65,10 @@ public final class VmFlagTest<T> {
         runTest(existentFlag, tests, tests, set, get);
     }
 
+    protected static <T> void runTest(String existentFlag, Function<String, T> get) {
+        runTest(existentFlag, null, null, null, get);
+    }
+
     protected static <T> void runTest(String existentFlag, T[] tests,
             T[] results, BiConsumer<String, T> set, Function<String, T> get) {
         if (existentFlag != null) {
@@ -72,13 +78,23 @@ public final class VmFlagTest<T> {
     }
 
     public final void test(T[] tests, T[] results) {
-        Asserts.assertEQ(tests.length, results.length, "[TESTBUG] tests.length != results.length");
-        for (int i = 0, n = tests.length ; i < n; ++i) {
-            test.accept(tests[i], results[i]);
+        if (isPositive) {
+            testRead();
+        }
+        if (tests != null) {
+            Asserts.assertEQ(tests.length, results.length, "[TESTBUG] tests.length != results.length");
+            for (int i = 0, n = tests.length ; i < n; ++i) {
+                test.accept(tests[i], results[i]);
+            }
         }
     }
 
     protected String getVMOptionAsString() {
+        if (WHITE_BOX.isConstantVMFlag(flagName) || WHITE_BOX.isLockedVMFlag(flagName)) {
+          // JMM cannot access debug flags in product builds or locked flags,
+          // use whitebox methods to get such flags value.
+          return asString(getValue());
+        }
         HotSpotDiagnosticMXBean diagnostic
                 = ManagementFactoryHelper.getDiagnosticMXBean();
         VMOption tmp;
@@ -90,18 +106,24 @@ public final class VmFlagTest<T> {
         return tmp == null ? null : tmp.getValue();
     }
 
-    private void testPositive(T value, T expected) {
-        String oldValue = getVMOptionAsString();
-        Asserts.assertEQ(oldValue, asString(getValue()));
-        Asserts.assertEQ(oldValue, asString(WHITE_BOX.getVMFlag(flagName)));
-        setNewValue(value);
-        String newValue = getVMOptionAsString();
-        Asserts.assertEQ(newValue, asString(expected));
-        Asserts.assertEQ(newValue, asString(getValue()));
-        Asserts.assertEQ(newValue, asString(WHITE_BOX.getVMFlag(flagName)));
+    private String testRead() {
+        String value = getVMOptionAsString();
+        Asserts.assertNotNull(value);
+        Asserts.assertEQ(value, asString(getValue()));
+        Asserts.assertEQ(value, asString(WHITE_BOX.getVMFlag(flagName)));
+        return value;
     }
 
-    private void testNegative(T value, T expected) {
+    private void testWritePositive(T value, T expected) {
+        setNewValue(value);
+        String newValue = testRead();
+        Asserts.assertEQ(newValue, asString(expected));
+    }
+
+    private void testWriteNegative(T value, T expected) {
+        // Should always return false for non-existing flags
+        Asserts.assertFalse(WHITE_BOX.isConstantVMFlag(flagName));
+        Asserts.assertFalse(WHITE_BOX.isLockedVMFlag(flagName));
         String oldValue = getVMOptionAsString();
         Asserts.assertEQ(oldValue, asString(getValue()));
         Asserts.assertEQ(oldValue, asString(WHITE_BOX.getVMFlag(flagName)));
@@ -114,4 +136,3 @@ public final class VmFlagTest<T> {
         return value == null ? null : "" + value;
     }
 }
-
