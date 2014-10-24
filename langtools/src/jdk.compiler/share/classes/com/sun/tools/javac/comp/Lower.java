@@ -2468,7 +2468,7 @@ public class Lower extends TreeTranslator {
         currentMethodSym = currentMethodSymPrev;
 
         // Return empty block {} as a placeholder for an inner class.
-        result = make_at(tree.pos()).Block(0, List.<JCStatement>nil());
+        result = make_at(tree.pos()).Block(SYNTHETIC, List.<JCStatement>nil());
     }
 
     /** Translate an enum class. */
