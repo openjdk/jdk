@@ -120,7 +120,7 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   // Toplevel freelist management
   void add_to_freelist(HeapBlock* b);
-  FreeBlock* search_freelist(size_t length, bool is_critical);
+  FreeBlock* search_freelist(size_t length);
 
   // Iteration helpers
   void*      next_free(HeapBlock* b) const;
@@ -140,8 +140,8 @@ class CodeHeap : public CHeapObj<mtCode> {
   bool  expand_by(size_t size);                  // expands committed memory by size
 
   // Memory allocation
-  void* allocate  (size_t size, bool is_critical);  // allocates a block of size or returns NULL
-  void  deallocate(void* p);                        // deallocates a block
+  void* allocate (size_t size); // Allocate 'size' bytes in the code cache or return NULL
+  void  deallocate(void* p);    // Deallocate memory
 
   // Attributes
   char* low_boundary() const                     { return _memory.low_boundary (); }

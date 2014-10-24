@@ -36,6 +36,7 @@
 #include "runtime/reflection.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/exceptions.hpp"
 
 
 /*
@@ -55,26 +56,30 @@
 bool MethodHandles::_enabled = false; // set true after successful native linkage
 MethodHandlesAdapterBlob* MethodHandles::_adapter_code = NULL;
 
-//------------------------------------------------------------------------------
-// MethodHandles::generate_adapters
-//
-void MethodHandles::generate_adapters() {
-  if (SystemDictionary::MethodHandle_klass() == NULL)  return;
+
+/**
+ * Generates method handle adapters. Returns 'false' if memory allocation
+ * failed and true otherwise.
+ */
+bool MethodHandles::generate_adapters() {
+  if (SystemDictionary::MethodHandle_klass() == NULL) {
+    return true;
+  }
 
   assert(_adapter_code == NULL, "generate only once");
 
   ResourceMark rm;
   TraceTime timer("MethodHandles adapters generation", TraceStartupTime);
   _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
-  if (_adapter_code == NULL)
-    vm_exit_out_of_memory(adapter_code_size, OOM_MALLOC_ERROR,
-                          "CodeCache: no room for MethodHandles adapters");
-  {
-    CodeBuffer code(_adapter_code);
-    MethodHandlesAdapterGenerator g(&code);
-    g.generate();
-    code.log_section_sizes("MethodHandlesAdapterBlob");
+  if (_adapter_code == NULL) {
+     return false;
   }
+
+  CodeBuffer code(_adapter_code);
+  MethodHandlesAdapterGenerator g(&code);
+  g.generate();
+  code.log_section_sizes("MethodHandlesAdapterBlob");
+  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -1401,7 +1406,9 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
   }
 
   if (enable_MH) {
-    MethodHandles::generate_adapters();
+    if (MethodHandles::generate_adapters() == false) {
+      THROW_MSG(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for method handle adapters");
+    }
     MethodHandles::set_enabled(true);
   }
 }

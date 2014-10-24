@@ -306,6 +306,9 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "ReflectionWrapResolutionErrors",JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "VerifyReflectionBytecodes",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "AutoShutdownNMT",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "NmethodSweepFraction",          JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "NmethodSweepCheckInterval",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "CodeCacheMinimumFreeSpace",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
 #ifndef ZERO
   { "UseFastAccessorMethods",        JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "UseFastEmptyMethods",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
@@ -2528,7 +2531,7 @@ bool Arguments::check_vm_args_consistency() {
 
   // Check lower bounds of the code cache
   // Template Interpreter code is approximately 3X larger in debug builds.
-  uint min_code_cache_size = (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)) + CodeCacheMinimumFreeSpace;
+  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (InitialCodeCacheSize < (uintx)os::vm_page_size()) {
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid InitialCodeCacheSize=%dK. Must be at least %dK.\n", InitialCodeCacheSize/K,
@@ -2564,10 +2567,11 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
   status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
   status &= verify_interval(CodeCacheMinBlockLength, 1, 100, "CodeCacheMinBlockLength");
   status &= verify_interval(CodeCacheSegmentSize, 1, 1024, "CodeCacheSegmentSize");
+  status &= verify_interval(StartAggressiveSweepingAt, 0, 100, "StartAggressiveSweepingAt");
+
 
   int min_number_of_compiler_threads = get_min_number_of_compiler_threads();
   // The default CICompilerCount's value is CI_COMPILER_COUNT.
@@ -3985,12 +3989,6 @@ jint Arguments::apply_ergo() {
 #endif
 #endif
 
-  // Set NmethodSweepFraction after the size of the code cache is adapted (in case of tiered)
-  if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
-    FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
-  }
-
-
   // Set heap size based on available physical memory
   set_heap_size();
 
@@ -4058,13 +4056,6 @@ jint Arguments::apply_ergo() {
   }
 
 #ifndef PRODUCT
-  if (CompileTheWorld) {
-    // Force NmethodSweeper to sweep whole CodeCache each time.
-    if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
-      NmethodSweepFraction = 1;
-    }
-  }
-
   if (!LogVMOutput && FLAG_IS_DEFAULT(LogVMOutput)) {
     if (use_vm_log()) {
       LogVMOutput = true;

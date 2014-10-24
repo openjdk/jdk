@@ -135,7 +135,6 @@ public class TestHumongousCodeCacheRoots {
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:InitiatingHeapOccupancyPercent=1", // strong code root marking
       "-XX:+G1VerifyHeapRegionCodeRoots", "-XX:+VerifyAfterGC", // make sure that verification is run
-      "-XX:NmethodSweepFraction=1", "-XX:NmethodSweepCheckInterval=1",  // make the code cache sweep more predictable
     };
     runTest("-client", baseArguments);
     runTest("-server", baseArguments);

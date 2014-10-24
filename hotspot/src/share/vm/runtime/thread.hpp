@@ -305,6 +305,7 @@ class Thread: public ThreadShadow {
   virtual bool is_VM_thread()       const            { return false; }
   virtual bool is_Java_thread()     const            { return false; }
   virtual bool is_Compiler_thread() const            { return false; }
+  virtual bool is_Code_cache_sweeper_thread() const  { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
   // True iff the thread can perform GC operations at a safepoint.
@@ -1746,6 +1747,24 @@ inline CompilerThread* JavaThread::as_CompilerThread() {
   return (CompilerThread*)this;
 }
 
+// Dedicated thread to sweep the code cache
+class CodeCacheSweeperThread : public JavaThread {
+  nmethod*       _scanned_nmethod; // nmethod being scanned by the sweeper
+ public:
+  CodeCacheSweeperThread();
+  // Track the nmethod currently being scanned by the sweeper
+  void set_scanned_nmethod(nmethod* nm) {
+    assert(_scanned_nmethod == NULL || nm == NULL, "should reset to NULL before writing a new value");
+    _scanned_nmethod = nm;
+  }
+
+  bool is_Code_cache_sweeper_thread() const { return true; }
+  // GC support
+  // Apply "f->do_oop" to all root oops in "this".
+  // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
+  void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+};
+
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
@@ -1758,7 +1777,6 @@ class CompilerThread : public JavaThread {
   CompileQueue*     _queue;
   BufferBlob*       _buffer_blob;
 
-  nmethod*          _scanned_nmethod;  // nmethod being scanned by the sweeper
   AbstractCompiler* _compiler;
 
  public:
@@ -1792,28 +1810,17 @@ class CompilerThread : public JavaThread {
     _log = log;
   }
 
-  // GC support
-  // Apply "f->do_oop" to all root oops in "this".
-  // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
-  void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
-
 #ifndef PRODUCT
  private:
   IdealGraphPrinter *_ideal_graph_printer;
  public:
-  IdealGraphPrinter *ideal_graph_printer()                       { return _ideal_graph_printer; }
-  void set_ideal_graph_printer(IdealGraphPrinter *n)             { _ideal_graph_printer = n; }
+  IdealGraphPrinter *ideal_graph_printer()           { return _ideal_graph_printer; }
+  void set_ideal_graph_printer(IdealGraphPrinter *n) { _ideal_graph_printer = n; }
 #endif
 
   // Get/set the thread's current task
-  CompileTask*  task()                           { return _task; }
-  void          set_task(CompileTask* task)      { _task = task; }
-
-  // Track the nmethod currently being scanned by the sweeper
-  void          set_scanned_nmethod(nmethod* nm) {
-    assert(_scanned_nmethod == NULL || nm == NULL, "should reset to NULL before writing a new value");
-    _scanned_nmethod = nm;
-  }
+  CompileTask* task()                      { return _task; }
+  void         set_task(CompileTask* task) { _task = task; }
 };
 
 inline CompilerThread* CompilerThread::current() {
