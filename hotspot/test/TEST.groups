@@ -198,7 +198,8 @@ compact2_minimal = \
 
 # Tests that require compact2 API's
 #
-needs_compact2 =
+needs_compact2 = \
+  compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java
 
 # All tests that run on the most minimal configuration: Minimal VM on Compact 1
 compact1_minimal = \
@@ -479,7 +480,6 @@ hotspot_compiler_3 = \
   compiler/intrinsics/unsafe/UnsafeGetAddressTest.java \
   compiler/jsr292/ConcurrentClassLoadingTest.java \
   compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java \
-  compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java \
   compiler/loopopts/TestLogSum.java \
   compiler/macronodes/TestEliminateAllocationPhi.java \
   compiler/membars/TestMemBarAcquire.java \
@@ -602,3 +602,14 @@ hotspot_all = \
   :hotspot_gc \
   :hotspot_runtime \
   :hotspot_serviceability
+
+#All tests that depends on nashorn extension.
+#
+needs_nashorn = \
+  compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java
+
+#All tests that do not depends on nashorn extension
+#
+not_needs_nashorn = \
+  :jdk \
+  -:needs_nashorh
