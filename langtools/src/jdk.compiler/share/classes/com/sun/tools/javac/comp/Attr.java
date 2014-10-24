@@ -989,8 +989,12 @@ public class Attr extends JCTree.Visitor {
                 // parameters have already been entered
                 env.info.scope.enter(tree.sym);
             } else {
-                memberEnter.memberEnter(tree, env);
-                annotate.flush();
+                try {
+                    annotate.enterStart();
+                    memberEnter.memberEnter(tree, env);
+                } finally {
+                    annotate.enterDone();
+                }
             }
         } else {
             if (tree.init != null) {
