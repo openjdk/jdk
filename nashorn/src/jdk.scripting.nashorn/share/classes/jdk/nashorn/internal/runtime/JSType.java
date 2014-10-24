@@ -114,6 +114,9 @@ public enum JSType {
     /** JavaScript compliant conversion function from double to int32 */
     public static final Call TO_INT32_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toInt32", int.class, double.class);
 
+    /** JavaScript compliant conversion function from int to uint32 */
+    public static final Call TO_UINT32_I = staticCall(JSTYPE_LOOKUP, JSType.class, "toUint32", long.class, int.class);
+
     /** JavaScript compliant conversion function from Object to uint32 */
     public static final Call TO_UINT32 = staticCall(JSTYPE_LOOKUP, JSType.class, "toUint32", long.class, Object.class);
 
@@ -998,6 +1001,16 @@ public enum JSType {
      */
     public static long toUint32(final double num) {
         return doubleToInt32(num) & MAX_UINT;
+    }
+
+    /**
+     * JavaScript compliant int to uint32 conversion
+     *
+     * @param num an int
+     * @return a uint32
+     */
+    public static long toUint32(final int num) {
+        return num & MAX_UINT;
     }
 
     /**

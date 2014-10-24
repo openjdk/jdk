@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.arrayLikeIterator;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.reverseArrayLikeIterator;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
 import java.util.ArrayList;
@@ -269,7 +270,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
 
     @Override
     public Object getLength() {
-        final long length = getArray().length() & JSType.MAX_UINT;
+        final long length = JSType.toUint32(getArray().length());
         if(length < Integer.MAX_VALUE) {
             return (int)length;
         }
@@ -479,7 +480,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public static Object length(final Object self) {
         if (isArray(self)) {
-            return ((ScriptObject) self).getArray().length() & JSType.MAX_UINT;
+            return JSType.toUint32(((ScriptObject) self).getArray().length());
         }
 
         return 0;

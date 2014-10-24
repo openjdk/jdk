@@ -208,6 +208,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private static final Type ITERATOR_TYPE = Type.typeFor(ITERATOR_CLASS);
     private static final Type EXCEPTION_TYPE = Type.typeFor(CompilerConstants.EXCEPTION_PREFIX.type());
 
+    private static final Integer INT_ZERO = Integer.valueOf(0);
+
     /** Constant data & installation. The only reason the compiler keeps this is because it is assigned
      *  by reflection in class installation */
     private final Compiler compiler;
@@ -3817,7 +3819,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private void doSHR() {
         // TODO: make SHR optimistic
-        method.shr().convert(Type.LONG).load(JSType.MAX_UINT).and();
+        method.shr();
+        toUint();
+    }
+
+    private void toUint() {
+        JSType.TO_UINT32_I.invoke(method);
     }
 
     private void loadASSIGN_SUB(final BinaryNode binaryNode) {
@@ -3879,8 +3886,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void loadBIT_OR(final BinaryNode binaryNode) {
-        loadBinaryOperands(binaryNode);
-        method.or();
+        // Optimize x|0 to (int)x
+        if (isRhsZero(binaryNode)) {
+            loadExpressionAsType(binaryNode.lhs(), Type.INT);
+        } else {
+            loadBinaryOperands(binaryNode);
+            method.or();
+        }
+    }
+
+    private static boolean isRhsZero(final BinaryNode binaryNode) {
+        final Expression rhs = binaryNode.rhs();
+        return rhs instanceof LiteralNode && INT_ZERO.equals(((LiteralNode)rhs).getValue());
     }
 
     private void loadBIT_XOR(final BinaryNode binaryNode) {
@@ -3957,8 +3974,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void loadSHR(final BinaryNode binaryNode) {
-        loadBinaryOperands(binaryNode);
-        doSHR();
+        // Optimize x >>> 0 to (uint)x
+        if (isRhsZero(binaryNode)) {
+            loadExpressionAsType(binaryNode.lhs(), Type.INT);
+            toUint();
+        } else {
+            loadBinaryOperands(binaryNode);
+            doSHR();
+        }
     }
 
     private void loadSUB(final BinaryNode binaryNode, final TypeBounds resultBounds) {
