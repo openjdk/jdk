@@ -73,8 +73,6 @@ public abstract class CompilerWhiteBoxTest {
     protected static final int THRESHOLD;
     /** invocation count to trigger OSR compilation */
     protected static final long BACKEDGE_THRESHOLD;
-    /** invocation count to warm up method before triggering OSR compilation */
-    protected static final long OSR_WARMUP = 2000;
     /** Value of {@code java.vm.info} (interpreted|mixed|comp mode) */
     protected static final String MODE = System.getProperty("java.vm.info");
 
@@ -498,8 +496,7 @@ enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
                 = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                int result = warmup(OSR_CONSTRUCTOR);
-                return result + new Helper(null, CompilerWhiteBoxTest.BACKEDGE_THRESHOLD).hashCode();
+                return new Helper(null, CompilerWhiteBoxTest.BACKEDGE_THRESHOLD).hashCode();
             }
         };
 
@@ -509,8 +506,7 @@ enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
 
             @Override
             public Integer call() throws Exception {
-                int result = warmup(OSR_METHOD);
-                return result + helper.osrMethod(CompilerWhiteBoxTest.BACKEDGE_THRESHOLD);
+                return helper.osrMethod(CompilerWhiteBoxTest.BACKEDGE_THRESHOLD);
             }
         };
 
@@ -518,61 +514,9 @@ enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
                 = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                int result = warmup(OSR_STATIC);
-                return result + osrStaticMethod(CompilerWhiteBoxTest.BACKEDGE_THRESHOLD);
+                return osrStaticMethod(CompilerWhiteBoxTest.BACKEDGE_THRESHOLD);
             }
         };
-
-        /**
-         * Deoptimizes all non-osr versions of the given executable after
-         * compilation finished.
-         *
-         * @param e Executable
-         * @throws Exception
-         */
-        private static void waitAndDeoptimize(Executable e) {
-            CompilerWhiteBoxTest.waitBackgroundCompilation(e);
-            if (WhiteBox.getWhiteBox().isMethodQueuedForCompilation(e)) {
-                throw new RuntimeException(e + " must not be in queue");
-            }
-            // Deoptimize non-osr versions of executable
-            WhiteBox.getWhiteBox().deoptimizeMethod(e, false);
-        }
-
-        /**
-         * Executes the method multiple times to make sure we have
-         * enough profiling information before triggering an OSR
-         * compilation. Otherwise the C2 compiler may add uncommon traps.
-         *
-         * @param m Method to be executed
-         * @return Number of times the method was executed
-         * @throws Exception
-         */
-        private static int warmup(Method m) throws Exception {
-            Helper helper = new Helper();
-            int result = 0;
-            for (long i = 0; i < CompilerWhiteBoxTest.OSR_WARMUP; ++i) {
-                result += (int)m.invoke(helper, 1);
-            }
-            return result;
-        }
-
-        /**
-         * Executes the constructor multiple times to make sure we
-         * have enough profiling information before triggering an OSR
-         * compilation. Otherwise the C2 compiler may add uncommon traps.
-         *
-         * @param c Constructor to be executed
-         * @return Number of times the constructor was executed
-         * @throws Exception
-         */
-        private static int warmup(Constructor c) throws Exception {
-            int result = 0;
-            for (long i = 0; i < CompilerWhiteBoxTest.OSR_WARMUP; ++i) {
-                result += c.newInstance(null, 1).hashCode();
-            }
-            return result;
-        }
 
         private static final Constructor CONSTRUCTOR;
         private static final Constructor OSR_CONSTRUCTOR;
@@ -618,26 +562,83 @@ enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
             return 42;
         }
 
-        private static int osrStaticMethod(long limit) {
+        /**
+         * Deoptimizes all non-osr versions of the given executable after
+         * compilation finished.
+         *
+         * @param e Executable
+         * @throws Exception
+         */
+        private static void waitAndDeoptimize(Executable e) {
+            CompilerWhiteBoxTest.waitBackgroundCompilation(e);
+            if (WhiteBox.getWhiteBox().isMethodQueuedForCompilation(e)) {
+                throw new RuntimeException(e + " must not be in queue");
+            }
+            // Deoptimize non-osr versions of executable
+            WhiteBox.getWhiteBox().deoptimizeMethod(e, false);
+        }
+
+        /**
+         * Executes the method multiple times to make sure we have
+         * enough profiling information before triggering an OSR
+         * compilation. Otherwise the C2 compiler may add uncommon traps.
+         *
+         * @param m Method to be executed
+         * @return Number of times the method was executed
+         * @throws Exception
+         */
+        private static int warmup(Method m) throws Exception {
+            waitAndDeoptimize(m);
+            Helper helper = new Helper();
+            int result = 0;
+            for (long i = 0; i < CompilerWhiteBoxTest.THRESHOLD; ++i) {
+                result += (int)m.invoke(helper, 1);
+            }
+            // Wait to make sure OSR compilation is not blocked by
+            // non-OSR compilation in the compile queue
+            CompilerWhiteBoxTest.waitBackgroundCompilation(m);
+            return result;
+        }
+
+        /**
+         * Executes the constructor multiple times to make sure we
+         * have enough profiling information before triggering an OSR
+         * compilation. Otherwise the C2 compiler may add uncommon traps.
+         *
+         * @param c Constructor to be executed
+         * @return Number of times the constructor was executed
+         * @throws Exception
+         */
+        private static int warmup(Constructor c) throws Exception {
+            waitAndDeoptimize(c);
+            int result = 0;
+            for (long i = 0; i < CompilerWhiteBoxTest.THRESHOLD; ++i) {
+                result += c.newInstance(null, 1).hashCode();
+            }
+            // Wait to make sure OSR compilation is not blocked by
+            // non-OSR compilation in the compile queue
+            CompilerWhiteBoxTest.waitBackgroundCompilation(c);
+            return result;
+        }
+
+        private static int osrStaticMethod(long limit) throws Exception {
+            int result = 0;
             if (limit != 1) {
-              // Make sure there is no compiled version after warmup
-              waitAndDeoptimize(OSR_STATIC);
+                result = warmup(OSR_STATIC);
             }
             // Trigger osr compilation
-            int result = 0;
             for (long i = 0; i < limit; ++i) {
                 result += staticMethod();
             }
             return result;
         }
 
-        private int osrMethod(long limit) {
+        private int osrMethod(long limit) throws Exception {
+            int result = 0;
             if (limit != 1) {
-              // Make sure there is no compiled version after warmup
-              waitAndDeoptimize(OSR_METHOD);
+                result = warmup(OSR_METHOD);
             }
             // Trigger osr compilation
-            int result = 0;
             for (long i = 0; i < limit; ++i) {
                 result += method();
             }
@@ -652,13 +653,12 @@ enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
         }
 
         // for OSR constructor test case
-        private Helper(Object o, long limit) {
+        private Helper(Object o, long limit) throws Exception {
+            int result = 0;
             if (limit != 1) {
-              // Make sure there is no compiled version after warmup
-              waitAndDeoptimize(OSR_CONSTRUCTOR);
+                result = warmup(OSR_CONSTRUCTOR);
             }
             // Trigger osr compilation
-            int result = 0;
             for (long i = 0; i < limit; ++i) {
                 result += method();
             }
