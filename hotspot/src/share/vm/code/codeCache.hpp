@@ -120,16 +120,16 @@ class CodeCache : AllStatic {
   static void initialize();
 
   // Allocation/administration
-  static CodeBlob* allocate(int size, int code_blob_type, bool is_critical = false); // allocates a new CodeBlob
-  static void commit(CodeBlob* cb);                     // called when the allocated CodeBlob has been filled
-  static int  alignment_unit();                         // guaranteed alignment of all CodeBlobs
-  static int  alignment_offset();                       // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
-  static void free(CodeBlob* cb);                       // frees a CodeBlob
-  static bool contains(void *p);                        // returns whether p is included
-  static void blobs_do(void f(CodeBlob* cb));           // iterates over all CodeBlobs
-  static void blobs_do(CodeBlobClosure* f);             // iterates over all CodeBlobs
-  static void nmethods_do(void f(nmethod* nm));         // iterates over all nmethods
-  static void alive_nmethods_do(void f(nmethod* nm));   // iterates over all alive nmethods
+  static CodeBlob* allocate(int size, int code_blob_type); // allocates a new CodeBlob
+  static void commit(CodeBlob* cb);                        // called when the allocated CodeBlob has been filled
+  static int  alignment_unit();                            // guaranteed alignment of all CodeBlobs
+  static int  alignment_offset();                          // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
+  static void free(CodeBlob* cb);                          // frees a CodeBlob
+  static bool contains(void *p);                           // returns whether p is included
+  static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
+  static void blobs_do(CodeBlobClosure* f);                // iterates over all CodeBlobs
+  static void nmethods_do(void f(nmethod* nm));            // iterates over all nmethods
+  static void alive_nmethods_do(void f(nmethod* nm));      // iterates over all alive nmethods
 
   // Lookup
   static CodeBlob* find_blob(void* start);              // Returns the CodeBlob containing the given address
@@ -182,7 +182,6 @@ class CodeCache : AllStatic {
   static size_t unallocated_capacity();
   static size_t max_capacity();
 
-  static bool   is_full(int* code_blob_type);
   static double reverse_free_ratio(int code_blob_type);
 
   static bool needs_cache_clean()                     { return _needs_cache_clean; }

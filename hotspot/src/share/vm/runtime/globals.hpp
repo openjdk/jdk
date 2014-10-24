@@ -2984,12 +2984,6 @@ class CommandLineFlags {
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
                                                                             \
-  product(intx, NmethodSweepFraction, 16,                                   \
-          "Number of invocations of sweeper to cover all nmethods")         \
-                                                                            \
-  product(intx, NmethodSweepCheckInterval, 5,                               \
-          "Compilers wake up every n seconds to possibly sweep nmethods")   \
-                                                                            \
   product(intx, NmethodSweepActivity, 10,                                   \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
           "result in more aggressive sweeping")                             \
@@ -3378,9 +3372,6 @@ class CommandLineFlags {
   product_pd(uintx, NonNMethodCodeHeapSize,                                 \
           "Size of code heap with non-nmethods (in bytes)")                 \
                                                                             \
-  product(uintx, CodeCacheMinimumFreeSpace, 500*K,                          \
-          "When less than X space left, we stop compiling")                 \
-                                                                            \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
                                                                             \
@@ -3392,6 +3383,11 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
+                                                                            \
+  product(uintx, StartAggressiveSweepingAt, 10,                             \
+          "Start aggressive sweeping if X[%] of the code cache is free."    \
+          "Segmented code cache: X[%] of the non-profiled heap."            \
+          "Non-segmented code cache: X[%] of the total code cache")         \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
