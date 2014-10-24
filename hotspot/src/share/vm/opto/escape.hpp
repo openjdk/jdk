@@ -125,6 +125,8 @@ class LocalVarNode;
 class FieldNode;
 class ArraycopyNode;
 
+class ConnectionGraph;
+
 // ConnectionGraph nodes
 class PointsToNode : public ResourceObj {
   GrowableArray<PointsToNode*> _edges; // List of nodes this node points to
@@ -137,6 +139,7 @@ class PointsToNode : public ResourceObj {
 
   Node* const        _node;  // Ideal node corresponding to this PointsTo node.
   const int           _idx;  // Cached ideal node's _idx
+  const uint         _pidx;  // Index of this node
 
 public:
   typedef enum {
@@ -165,17 +168,9 @@ public:
   } NodeFlags;
 
 
-  PointsToNode(Compile *C, Node* n, EscapeState es, NodeType type):
-    _edges(C->comp_arena(), 2, 0, NULL),
-    _uses (C->comp_arena(), 2, 0, NULL),
-    _node(n),
-    _idx(n->_idx),
-    _type((u1)type),
-    _escape((u1)es),
-    _fields_escape((u1)es),
-    _flags(ScalarReplaceable) {
-    assert(n != NULL && es != UnknownEscape, "sanity");
-  }
+  inline PointsToNode(ConnectionGraph* CG, Node* n, EscapeState es, NodeType type);
+
+  uint        pidx()   const { return _pidx; }
 
   Node* ideal_node()   const { return _node; }
   int          idx()   const { return _idx; }
@@ -243,14 +238,14 @@ public:
 
 class LocalVarNode: public PointsToNode {
 public:
-  LocalVarNode(Compile *C, Node* n, EscapeState es):
-    PointsToNode(C, n, es, LocalVar) {}
+  LocalVarNode(ConnectionGraph *CG, Node* n, EscapeState es):
+    PointsToNode(CG, n, es, LocalVar) {}
 };
 
 class JavaObjectNode: public PointsToNode {
 public:
-  JavaObjectNode(Compile *C, Node* n, EscapeState es):
-    PointsToNode(C, n, es, JavaObject) {
+  JavaObjectNode(ConnectionGraph *CG, Node* n, EscapeState es):
+    PointsToNode(CG, n, es, JavaObject) {
       if (es > NoEscape)
         set_scalar_replaceable(false);
     }
@@ -262,8 +257,8 @@ class FieldNode: public PointsToNode {
   const bool  _is_oop; // Field points to object
         bool  _has_unknown_base; // Has phantom_object base
 public:
-  FieldNode(Compile *C, Node* n, EscapeState es, int offs, bool is_oop):
-    PointsToNode(C, n, es, Field),
+  FieldNode(ConnectionGraph *CG, Node* n, EscapeState es, int offs, bool is_oop):
+    PointsToNode(CG, n, es, Field),
     _offset(offs), _is_oop(is_oop),
     _has_unknown_base(false) {}
 
@@ -284,8 +279,8 @@ public:
 
 class ArraycopyNode: public PointsToNode {
 public:
-  ArraycopyNode(Compile *C, Node* n, EscapeState es):
-    PointsToNode(C, n, es, Arraycopy) {}
+  ArraycopyNode(ConnectionGraph *CG, Node* n, EscapeState es):
+    PointsToNode(CG, n, es, Arraycopy) {}
 };
 
 // Iterators for PointsTo node's edges:
@@ -323,11 +318,14 @@ public:
 
 
 class ConnectionGraph: public ResourceObj {
+  friend class PointsToNode;
 private:
   GrowableArray<PointsToNode*>  _nodes; // Map from ideal nodes to
                                         // ConnectionGraph nodes.
 
   GrowableArray<PointsToNode*>  _worklist; // Nodes to be processed
+  VectorSet                  _in_worklist;
+  uint                         _next_pidx;
 
   bool            _collecting; // Indicates whether escape information
                                // is still being collected. If false,
@@ -352,6 +350,8 @@ private:
     return _nodes.at(idx);
   }
   uint nodes_size() const { return _nodes.length(); }
+
+  uint next_pidx() { return _next_pidx++; }
 
   // Add nodes to ConnectionGraph.
   void add_local_var(Node* n, PointsToNode::EscapeState es);
@@ -396,15 +396,26 @@ private:
   int add_java_object_edges(JavaObjectNode* jobj, bool populate_worklist);
 
   // Put node on worklist if it is (or was) not there.
-  void add_to_worklist(PointsToNode* pt) {
-    _worklist.push(pt);
-    return;
+  inline void add_to_worklist(PointsToNode* pt) {
+    PointsToNode* ptf = pt;
+    uint pidx_bias = 0;
+    if (PointsToNode::is_base_use(pt)) {
+      // Create a separate entry in _in_worklist for a marked base edge
+      // because _worklist may have an entry for a normal edge pointing
+      // to the same node. To separate them use _next_pidx as bias.
+      ptf = PointsToNode::get_use_node(pt)->as_Field();
+      pidx_bias = _next_pidx;
+    }
+    if (!_in_worklist.test_set(ptf->pidx() + pidx_bias)) {
+      _worklist.append(pt);
+    }
   }
 
   // Put on worklist all uses of this node.
-  void add_uses_to_worklist(PointsToNode* pt) {
-    for (UseIterator i(pt); i.has_next(); i.next())
-      _worklist.push(i.get());
+  inline void add_uses_to_worklist(PointsToNode* pt) {
+    for (UseIterator i(pt); i.has_next(); i.next()) {
+      add_to_worklist(i.get());
+    }
   }
 
   // Put on worklist all field's uses and related field nodes.
@@ -517,8 +528,8 @@ private:
  }
   // Helper functions
   bool   is_oop_field(Node* n, int offset, bool* unsafe);
- static Node* get_addp_base(Node *addp);
- static Node* find_second_addp(Node* addp, Node* n);
+  static Node* get_addp_base(Node *addp);
+  static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
   int address_offset(Node* adr, PhaseTransform *phase);
 
@@ -586,5 +597,18 @@ public:
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
 #endif
 };
+
+inline PointsToNode::PointsToNode(ConnectionGraph *CG, Node* n, EscapeState es, NodeType type):
+  _edges(CG->_compile->comp_arena(), 2, 0, NULL),
+  _uses (CG->_compile->comp_arena(), 2, 0, NULL),
+  _node(n),
+  _idx(n->_idx),
+  _pidx(CG->next_pidx()),
+  _type((u1)type),
+  _escape((u1)es),
+  _fields_escape((u1)es),
+  _flags(ScalarReplaceable) {
+  assert(n != NULL && es != UnknownEscape, "sanity");
+}
 
 #endif // SHARE_VM_OPTO_ESCAPE_HPP
