@@ -111,6 +111,8 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         Collection<String> args = formatArguments(d, l);
         String msg = localize(l, d.getCode(), args.toArray());
         String[] lines = msg.split("\n");
+        if (lines.length == 0) // will happen when msg only contains one or more separators: "\n", "\n\n", etc.
+            lines = new String[] { "" };
         if (getConfiguration().getVisible().contains(DiagnosticPart.SUMMARY)) {
             currentIndentation += getConfiguration().getIndentation(DiagnosticPart.SUMMARY);
             buf.append(indent(lines[0], currentIndentation)); //summary
