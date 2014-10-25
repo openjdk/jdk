@@ -41,14 +41,14 @@ public class TestBlsiI {
 
     public static void main(String args[]) throws Throwable {
         if (!CPUInfo.hasFeature("bmi1")) {
-            System.out.println("CPU does not support bmi1 feature. " +
-                               "Test skipped.");
-            return;
+            System.out.println("INFO: CPU does not support bmi1 feature.");
         }
 
         BMITestRunner.runTests(BlsiIExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseBMI1Instructions");
         BMITestRunner.runTests(BlsiICommutativeExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseBMI1Instructions");
     }
 
