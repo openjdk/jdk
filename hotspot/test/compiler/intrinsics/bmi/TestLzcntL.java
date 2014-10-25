@@ -41,12 +41,11 @@ public class TestLzcntL {
 
     public static void main(String args[]) throws Throwable {
         if (!CPUInfo.hasFeature("lzcnt")) {
-            System.out.println("CPU does not support lzcnt feature. " +
-                               "Test skipped.");
-            return;
+            System.out.println("INFO: CPU does not support lzcnt feature.");
         }
 
         BMITestRunner.runTests(LzcntLExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseCountLeadingZerosInstruction");
     }
 

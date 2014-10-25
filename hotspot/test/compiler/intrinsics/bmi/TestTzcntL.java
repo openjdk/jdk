@@ -41,12 +41,11 @@ public class TestTzcntL {
 
     public static void main(String args[]) throws Throwable {
         if (!CPUInfo.hasFeature("bmi1")) {
-            System.out.println("CPU does not support bmi1 feature. " +
-                               "Test skipped.");
-            return;
+            System.out.println("INFO: CPU does not support bmi1 feature.");
         }
 
         BMITestRunner.runTests(TzcntLExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseCountTrailingZerosInstruction");
     }
 

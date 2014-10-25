@@ -41,14 +41,14 @@ public class TestAndnL {
 
     public static void main(String args[]) throws Throwable {
         if (!CPUInfo.hasFeature("bmi1")) {
-            System.out.println("CPU does not support bmi1 feature. " +
-                               "Test skipped.");
-            return;
+            System.out.println("INFO: CPU does not support bmi1 feature.");
         }
 
         BMITestRunner.runTests(AndnLExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseBMI1Instructions");
         BMITestRunner.runTests(AndnLCommutativeExpr.class, args,
+                              "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseBMI1Instructions");
     }
 
