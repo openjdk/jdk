@@ -143,7 +143,7 @@ else
 LIBS += -lsocket -lsched -ldl $(LIBM) -lthread -lc -ldemangle
 endif # sparcWorks
 
-LIBS += -lkstat -lpicl
+LIBS += -lkstat
 
 # By default, link the *.o into the library, not the executable.
 LINK_INTO$(LINK_INTO) = LIBJVM
