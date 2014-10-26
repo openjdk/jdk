@@ -33,18 +33,51 @@
 #include <sys/systeminfo.h>
 #include <kstat.h>
 #include <picl.h>
+#include <dlfcn.h>
+#include <link.h>
 
 extern "C" static int PICL_get_l1_data_cache_line_size_helper(picl_nodehdl_t nodeh, void *result);
 extern "C" static int PICL_get_l2_cache_line_size_helper(picl_nodehdl_t nodeh, void *result);
 
+// Functions from the library we need (signatures should match those in picl.h)
+extern "C" {
+  typedef int (*picl_initialize_func_t)(void);
+  typedef int (*picl_shutdown_func_t)(void);
+  typedef int (*picl_get_root_func_t)(picl_nodehdl_t *nodehandle);
+  typedef int (*picl_walk_tree_by_class_func_t)(picl_nodehdl_t rooth,
+      const char *classname, void *c_args,
+      int (*callback_fn)(picl_nodehdl_t hdl, void *args));
+  typedef int (*picl_get_prop_by_name_func_t)(picl_nodehdl_t nodeh, const char *nm,
+      picl_prophdl_t *ph);
+  typedef int (*picl_get_propval_func_t)(picl_prophdl_t proph, void *valbuf, size_t sz);
+  typedef int (*picl_get_propinfo_func_t)(picl_prophdl_t proph, picl_propinfo_t *pi);
+}
+
 class PICL {
+  // Pointers to functions in the library
+  picl_initialize_func_t _picl_initialize;
+  picl_shutdown_func_t _picl_shutdown;
+  picl_get_root_func_t _picl_get_root;
+  picl_walk_tree_by_class_func_t _picl_walk_tree_by_class;
+  picl_get_prop_by_name_func_t _picl_get_prop_by_name;
+  picl_get_propval_func_t _picl_get_propval;
+  picl_get_propinfo_func_t _picl_get_propinfo;
+  // Handle to the library that is returned by dlopen
+  void *_dl_handle;
+
+  bool open_library();
+  void close_library();
+
+  template<typename FuncType> bool bind(FuncType& func, const char* name);
+  bool bind_library_functions();
+
   // Get a value of the integer property. The value in the tree can be either 32 or 64 bit
   // depending on the platform. The result is converted to int.
-  static int get_int_property(picl_nodehdl_t nodeh, const char* name, int* result) {
+  int get_int_property(picl_nodehdl_t nodeh, const char* name, int* result) {
     picl_propinfo_t pinfo;
     picl_prophdl_t proph;
-    if (picl_get_prop_by_name(nodeh, name, &proph) != PICL_SUCCESS ||
-        picl_get_propinfo(proph, &pinfo) != PICL_SUCCESS) {
+    if (_picl_get_prop_by_name(nodeh, name, &proph) != PICL_SUCCESS ||
+        _picl_get_propinfo(proph, &pinfo) != PICL_SUCCESS) {
       return PICL_FAILURE;
     }
 
@@ -54,13 +87,13 @@ class PICL {
     }
     if (pinfo.size == sizeof(int64_t)) {
       int64_t val;
-      if (picl_get_propval(proph, &val, sizeof(int64_t)) != PICL_SUCCESS) {
+      if (_picl_get_propval(proph, &val, sizeof(int64_t)) != PICL_SUCCESS) {
         return PICL_FAILURE;
       }
       *result = static_cast<int>(val);
     } else if (pinfo.size == sizeof(int32_t)) {
       int32_t val;
-      if (picl_get_propval(proph, &val, sizeof(int32_t)) != PICL_SUCCESS) {
+      if (_picl_get_propval(proph, &val, sizeof(int32_t)) != PICL_SUCCESS) {
         return PICL_FAILURE;
       }
       *result = static_cast<int>(val);
@@ -74,6 +107,7 @@ class PICL {
   // Visitor and a state machine that visits integer properties and verifies that the
   // values are the same. Stores the unique value observed.
   class UniqueValueVisitor {
+    PICL *_picl;
     enum {
       INITIAL,        // Start state, no assignments happened
       ASSIGNED,       // Assigned a value
@@ -81,7 +115,7 @@ class PICL {
     } _state;
     int _value;
   public:
-    UniqueValueVisitor() : _state(INITIAL) { }
+    UniqueValueVisitor(PICL* picl) : _picl(picl), _state(INITIAL) { }
     int value() {
       assert(_state == ASSIGNED, "Precondition");
       return _value;
@@ -98,9 +132,10 @@ class PICL {
 
     static int visit(picl_nodehdl_t nodeh, const char* name, void *arg) {
       UniqueValueVisitor *state = static_cast<UniqueValueVisitor*>(arg);
+      PICL* picl = state->_picl;
       assert(!state->is_inconsistent(), "Precondition");
       int curr;
-      if (PICL::get_int_property(nodeh, name, &curr) == PICL_SUCCESS) {
+      if (picl->get_int_property(nodeh, name, &curr) == PICL_SUCCESS) {
         if (!state->is_assigned()) { // first iteration
           state->set_value(curr);
         } else if (curr != state->value()) { // following iterations
@@ -124,32 +159,36 @@ public:
     return UniqueValueVisitor::visit(nodeh, "l2-cache-line-size", state);
   }
 
-  PICL() : _L1_data_cache_line_size(0), _L2_cache_line_size(0) {
-    if (picl_initialize() == PICL_SUCCESS) {
+  PICL() : _L1_data_cache_line_size(0), _L2_cache_line_size(0), _dl_handle(NULL) {
+    if (!open_library()) {
+      return;
+    }
+    if (_picl_initialize() == PICL_SUCCESS) {
       picl_nodehdl_t rooth;
-      if (picl_get_root(&rooth) == PICL_SUCCESS) {
-        UniqueValueVisitor L1_state;
+      if (_picl_get_root(&rooth) == PICL_SUCCESS) {
+        UniqueValueVisitor L1_state(this);
         // Visit all "cpu" class instances
-        picl_walk_tree_by_class(rooth, "cpu", &L1_state, PICL_get_l1_data_cache_line_size_helper);
+        _picl_walk_tree_by_class(rooth, "cpu", &L1_state, PICL_get_l1_data_cache_line_size_helper);
         if (L1_state.is_initial()) { // Still initial, iteration found no values
           // Try walk all "core" class instances, it might be a Fujitsu machine
-          picl_walk_tree_by_class(rooth, "core", &L1_state, PICL_get_l1_data_cache_line_size_helper);
+          _picl_walk_tree_by_class(rooth, "core", &L1_state, PICL_get_l1_data_cache_line_size_helper);
         }
         if (L1_state.is_assigned()) { // Is there a value?
           _L1_data_cache_line_size = L1_state.value();
         }
 
-        UniqueValueVisitor L2_state;
-        picl_walk_tree_by_class(rooth, "cpu", &L2_state, PICL_get_l2_cache_line_size_helper);
+        UniqueValueVisitor L2_state(this);
+        _picl_walk_tree_by_class(rooth, "cpu", &L2_state, PICL_get_l2_cache_line_size_helper);
         if (L2_state.is_initial()) {
-          picl_walk_tree_by_class(rooth, "core", &L2_state, PICL_get_l2_cache_line_size_helper);
+          _picl_walk_tree_by_class(rooth, "core", &L2_state, PICL_get_l2_cache_line_size_helper);
         }
         if (L2_state.is_assigned()) {
           _L2_cache_line_size = L2_state.value();
         }
       }
-      picl_shutdown();
+      _picl_shutdown();
     }
+    close_library();
   }
 
   unsigned int L1_data_cache_line_size() const { return _L1_data_cache_line_size; }
@@ -161,6 +200,43 @@ extern "C" static int PICL_get_l1_data_cache_line_size_helper(picl_nodehdl_t nod
 }
 extern "C" static int PICL_get_l2_cache_line_size_helper(picl_nodehdl_t nodeh, void *result) {
   return PICL::get_l2_cache_line_size(nodeh, result);
+}
+
+template<typename FuncType>
+bool PICL::bind(FuncType& func, const char* name) {
+  func = reinterpret_cast<FuncType>(dlsym(_dl_handle, name));
+  return func != NULL;
+}
+
+bool PICL::bind_library_functions() {
+  assert(_dl_handle != NULL, "library should be open");
+  return bind(_picl_initialize,         "picl_initialize"        ) &&
+         bind(_picl_shutdown,           "picl_shutdown"          ) &&
+         bind(_picl_get_root,           "picl_get_root"          ) &&
+         bind(_picl_walk_tree_by_class, "picl_walk_tree_by_class") &&
+         bind(_picl_get_prop_by_name,   "picl_get_prop_by_name"  ) &&
+         bind(_picl_get_propval,        "picl_get_propval"       ) &&
+         bind(_picl_get_propinfo,       "picl_get_propinfo"      );
+}
+
+bool PICL::open_library() {
+  _dl_handle = dlopen("libpicl.so.1", RTLD_LAZY);
+  if (_dl_handle == NULL) {
+    warning("PICL (libpicl.so.1) is missing. Performance will not be optimal.");
+    return false;
+  }
+  if (!bind_library_functions()) {
+    assert(false, "unexpected PICL API change");
+    close_library();
+    return false;
+  }
+  return true;
+}
+
+void PICL::close_library() {
+  assert(_dl_handle != NULL, "library should be open");
+  dlclose(_dl_handle);
+  _dl_handle = NULL;
 }
 
 // We need to keep these here as long as we have to build on Solaris
