@@ -615,9 +615,16 @@ public:
   //  The parallel versions are used by G1.
   bool do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred);
   void do_unloading_parallel_postponed(BoolObjectClosure* is_alive, bool unloading_occurred);
+
+ private:
   //  Unload a nmethod if the *root object is dead.
   bool can_unload(BoolObjectClosure* is_alive, oop* root, bool unloading_occurred);
+  bool unload_if_dead_at(RelocIterator *iter_at_oop, BoolObjectClosure* is_alive, bool unloading_occurred);
 
+  void mark_metadata_on_stack_at(RelocIterator* iter_at_metadata);
+  void mark_metadata_on_stack_non_relocs();
+
+ public:
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map,
                                      OopClosure* f);
   void oops_do(OopClosure* f) { oops_do(f, false); }
