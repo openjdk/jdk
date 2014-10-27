@@ -38,7 +38,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.*;
 
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 public class StarImportTest {
     public static void main(String... args) throws Exception {

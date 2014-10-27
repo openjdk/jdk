@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class PremainClassTest {
                 Utils.addTestJavaOpts(testArgs.split("\\s+")));
         System.out.println("testjvm.cmd:" + Utils.getCommandLine(pb));
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
         System.out.println("testjvm.stdout:" + output.getStdout());
         System.out.println("testjvm.stderr:" + output.getStderr());
 

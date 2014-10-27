@@ -29,11 +29,12 @@ import java.io.File;
 import java.util.Locale;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type.CapturedType;
 import com.sun.tools.javac.util.*;
+
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
  * Represents a see also documentation tag.
@@ -132,7 +133,7 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
         sb.append("+++ ").append(file).append(": ")
                 .append(name()).append(" ").append(seetext).append(": ");
         sb.append(sym.getKind()).append(" ");
-        if (sym.kind == Kinds.MTH || sym.kind == Kinds.VAR)
+        if (sym.kind == MTH || sym.kind == VAR)
             sb.append(printer.visit(sym.owner, locale)).append(".");
         sb.append(printer.visit(sym, locale));
 

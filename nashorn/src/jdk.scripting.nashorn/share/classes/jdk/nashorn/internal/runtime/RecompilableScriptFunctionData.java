@@ -43,6 +43,7 @@ import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
+import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator.AllocatorDescriptor;
 import jdk.nashorn.internal.codegen.OptimisticTypesPersistence;
 import jdk.nashorn.internal.codegen.TypeMap;
@@ -78,6 +79,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     /** Source from which FunctionNode was parsed. */
     private transient Source source;
+
+    /** Serialized, compressed form of the AST. Used by split functions as they can't be reparsed from source. */
+    private final byte[] serializedAst;
 
     /** Token of this function within the source. */
     private final long token;
@@ -127,6 +131,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @param nestedFunctions     nested function map
      * @param externalScopeDepths external scope depths
      * @param internalSymbols     internal symbols to method, defined in its scope
+     * @param serializedAst       a serialized AST representation. Normally only used for split functions.
      */
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,
@@ -134,7 +139,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         final AllocatorDescriptor allocationDescriptor,
         final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
         final Map<String, Integer> externalScopeDepths,
-        final Set<String> internalSymbols) {
+        final Set<String> internalSymbols,
+        final byte[] serializedAst) {
 
         super(functionName(functionNode),
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
@@ -158,6 +164,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             nfn.setParent(this);
         }
 
+        this.serializedAst = serializedAst;
         createLogger();
     }
 
@@ -212,10 +219,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      */
     public int getExternalSymbolDepth(final String symbolName) {
         final Integer depth = externalScopeDepths.get(symbolName);
-        if (depth == null) {
-            return -1;
-        }
-        return depth;
+        return depth == null ? -1 : depth;
     }
 
     /**
@@ -354,8 +358,15 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return allocationStrategy.allocate(map);
     }
 
+    boolean isSerialized() {
+        return serializedAst != null;
+    }
+
     FunctionNode reparse() {
-        // NOTE: If we aren't recompiling the top-level program, we decrease functionNodeId 'cause we'll have a synthetic program node
+        if (isSerialized()) {
+            return deserialize();
+        }
+
         final int descPosition = Token.descPosition(token);
         final Context context = Context.getContextTrusted();
         final Parser parser = new Parser(
@@ -363,8 +374,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             source,
             new Context.ThrowErrorManager(),
             isStrict(),
+            // source starts at line 0, so even though lineNumber is the correct declaration line, back off
+            // one to make it exclusive
             lineNumber - 1,
-            context.getLogger(Parser.class)); // source starts at line 0, so even though lineNumber is the correct declaration line, back off one to make it exclusive
+            context.getLogger(Parser.class));
 
         if (getFunctionFlag(FunctionNode.IS_ANONYMOUS)) {
             parser.setFunctionName(functionName);
@@ -376,6 +389,17 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         // Parser generates a program AST even if we're recompiling a single function, so when we are only
         // recompiling a single function, extract it from the program.
         return (isProgram() ? program : extractFunctionFromScript(program)).setName(null, functionName);
+    }
+
+    private FunctionNode deserialize() {
+        final ScriptEnvironment env = installer.getOwner();
+        final Timing timing = env._timing;
+        final long t1 = System.nanoTime();
+        try {
+            return AstDeserializer.deserialize(serializedAst).initializeDeserialized(source, new Namespace(env.getNamespace()));
+        } finally {
+            timing.accumulateTime("'Deserialize'", System.nanoTime() - t1);
+        }
     }
 
     private boolean getFunctionFlag(final int flag) {
@@ -486,7 +510,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         final FunctionNode fn = reparse();
         final Compiler compiler = getCompiler(fn, actualCallSiteType, runtimeScope);
-        final FunctionNode compiledFn = compiler.compile(fn, CompilationPhases.COMPILE_ALL);
+        final FunctionNode compiledFn = compiler.compile(fn,
+                isSerialized() ? CompilationPhases.COMPILE_ALL_SERIALIZED : CompilationPhases.COMPILE_ALL);
 
         if (persist && !compiledFn.getFlag(FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION)) {
             compiler.persistClassInfo(cacheKey, compiledFn);
@@ -606,7 +631,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     MethodHandle lookupCodeMethod(final Class<?> codeClass, final MethodType targetType) {
         if (log.isEnabled()) {
-            log.info("Looking up ", DebugLogger.quote(name), " type=", targetType);
+            log.info("Looking up ", DebugLogger.quote(functionName), " type=", targetType);
         }
         return MH.findStatic(LOOKUP, codeClass, functionName, targetType);
     }
@@ -815,6 +840,26 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         } while(data != null);
 
         return true;
+    }
+
+    /**
+     * Restores the {@link #getFunctionFlags()} flags to a function node. During on-demand compilation, we might need
+     * to restore flags to a function node that was otherwise not subjected to a full compile pipeline (e.g. its parse
+     * was skipped, or it's a nested function of a deserialized function.
+     * @param lc current lexical context
+     * @param fn the function node to restore flags onto
+     * @return the transformed function node
+     */
+    public FunctionNode restoreFlags(final LexicalContext lc, final FunctionNode fn) {
+        assert fn.getId() == functionNodeId;
+        FunctionNode newFn = fn.setFlags(lc, functionFlags);
+        // This compensates for missing markEval() in case the function contains an inner function
+        // that contains eval(), that now we didn't discover since we skipped the inner function.
+        if (newFn.hasNestedEval()) {
+            assert newFn.hasScopeBlock();
+            newFn = newFn.setBody(lc, newFn.getBody().setNeedsScope(null));
+        }
+        return newFn;
     }
 
     private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

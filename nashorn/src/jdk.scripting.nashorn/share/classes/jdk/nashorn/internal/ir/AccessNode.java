@@ -34,6 +34,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class AccessNode extends BaseNode {
+    private static final long serialVersionUID = 1L;
+
     /** Property name. */
     private final String property;
 

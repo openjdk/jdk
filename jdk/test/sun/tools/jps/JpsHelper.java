@@ -36,6 +36,7 @@ import jdk.testlibrary.Asserts;
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.Utils;
+import jdk.testlibrary.ProcessTools;
 
 /**
  * The helper class for running jps utility and verifying output from it
@@ -160,7 +161,7 @@ public final class JpsHelper {
 
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
         System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
-        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());
 
         return output;

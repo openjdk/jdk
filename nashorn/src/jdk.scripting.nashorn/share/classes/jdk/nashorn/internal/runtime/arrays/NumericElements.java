@@ -30,6 +30,6 @@ package jdk.nashorn.internal.runtime.arrays;
  * Used for type checks that throw ClassCastExceptions and force relinks
  * for fast NativeArray specializations of builtin methods
  */
-public interface NumericElements {
+public interface NumericElements extends AnyElements {
     //empty
 }

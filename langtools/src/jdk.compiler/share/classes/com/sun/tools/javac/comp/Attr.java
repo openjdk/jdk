@@ -57,7 +57,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -147,12 +147,12 @@ public class Attr extends JCTree.Visitor {
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
         identifyLambdaCandidate = options.getBoolean("identifyLambdaCandidate", false);
 
-        statInfo = new ResultInfo(NIL, Type.noType);
-        varInfo = new ResultInfo(VAR, Type.noType);
-        unknownExprInfo = new ResultInfo(VAL, Type.noType);
-        unknownAnyPolyInfo = new ResultInfo(VAL, Infer.anyPoly);
-        unknownTypeInfo = new ResultInfo(TYP, Type.noType);
-        unknownTypeExprInfo = new ResultInfo(Kinds.TYP | Kinds.VAL, Type.noType);
+        statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
+        varInfo = new ResultInfo(KindSelector.VAR, Type.noType);
+        unknownExprInfo = new ResultInfo(KindSelector.VAL, Type.noType);
+        unknownAnyPolyInfo = new ResultInfo(KindSelector.VAL, Infer.anyPoly);
+        unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
+        unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
     }
 
@@ -223,14 +223,17 @@ public class Attr extends JCTree.Visitor {
      *  @param ownkind  The computed kind of the tree
      *  @param resultInfo  The expected result of the tree
      */
-    Type check(final JCTree tree, final Type found, final int ownkind, final ResultInfo resultInfo) {
+    Type check(final JCTree tree,
+               final Type found,
+               final KindSelector ownkind,
+               final ResultInfo resultInfo) {
         InferenceContext inferenceContext = resultInfo.checkContext.inferenceContext();
         Type owntype;
         if (!found.hasTag(ERROR) && !resultInfo.pt.hasTag(METHOD) && !resultInfo.pt.hasTag(FORALL)) {
-            if ((ownkind & ~resultInfo.pkind) != 0) {
+            if (!ownkind.subset(resultInfo.pkind)) {
                 log.error(tree.pos(), "unexpected.type",
-                        kindNames(resultInfo.pkind),
-                        kindName(ownkind));
+                        resultInfo.pkind.kindNames(),
+                        ownkind.kindNames());
                 owntype = types.createErrorType(found);
             } else if (allowPoly && inferenceContext.free(found)) {
                 //delay the check if there are inference variables in the found type
@@ -348,7 +351,8 @@ public class Attr extends JCTree.Visitor {
                 Name name = (Name)node.getIdentifier();
                 if (site.kind == PCK) {
                     env.toplevel.packge = (PackageSymbol)site;
-                    return rs.findIdentInPackage(env, (TypeSymbol)site, name, TYP | PCK);
+                    return rs.findIdentInPackage(env, (TypeSymbol)site, name,
+                            KindSelector.TYP_PCK);
                 } else {
                     env.enclClass.sym = (ClassSymbol)site;
                     return rs.findMemberType(env, site.asType(), name, (TypeSymbol)site);
@@ -357,7 +361,7 @@ public class Attr extends JCTree.Visitor {
 
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Symbol visitIdentifier(IdentifierTree node, Env<AttrContext> env) {
-                return rs.findIdent(env, (Name)node.getName(), TYP | PCK);
+                return rs.findIdent(env, (Name)node.getName(), KindSelector.TYP_PCK);
             }
         }
 
@@ -374,9 +378,9 @@ public class Attr extends JCTree.Visitor {
     public Type attribImportQualifier(JCImport tree, Env<AttrContext> env) {
         // Attribute qualifying package or class.
         JCFieldAccess s = (JCFieldAccess)tree.qualid;
-        return attribTree(s.selected,
-                       env,
-                       new ResultInfo(tree.staticImport ? TYP : (TYP | PCK),
+        return attribTree(s.selected, env,
+                          new ResultInfo(tree.staticImport ?
+                                         KindSelector.TYP : KindSelector.TYP_PCK,
                        Type.noType));
     }
 
@@ -431,15 +435,16 @@ public class Attr extends JCTree.Visitor {
     }
 
     class ResultInfo {
-        final int pkind;
+        final KindSelector pkind;
         final Type pt;
         final CheckContext checkContext;
 
-        ResultInfo(int pkind, Type pt) {
+        ResultInfo(KindSelector pkind, Type pt) {
             this(pkind, pt, chk.basicHandler);
         }
 
-        protected ResultInfo(int pkind, Type pt, CheckContext checkContext) {
+        protected ResultInfo(KindSelector pkind,
+                             Type pt, CheckContext checkContext) {
             this.pkind = pkind;
             this.pt = pt;
             this.checkContext = checkContext;
@@ -474,7 +479,8 @@ public class Attr extends JCTree.Visitor {
     class RecoveryInfo extends ResultInfo {
 
         public RecoveryInfo(final DeferredAttr.DeferredAttrContext deferredAttrContext) {
-            super(Kinds.VAL, Type.recoveryType, new Check.NestedCheckContext(chk.basicHandler) {
+            super(KindSelector.VAL, Type.recoveryType,
+                  new Check.NestedCheckContext(chk.basicHandler) {
                 @Override
                 public DeferredAttr.DeferredAttrContext deferredAttrContext() {
                     return deferredAttrContext;
@@ -503,7 +509,7 @@ public class Attr extends JCTree.Visitor {
         return resultInfo.pt;
     }
 
-    int pkind() {
+    KindSelector pkind() {
         return resultInfo.pkind;
     }
 
@@ -575,7 +581,7 @@ public class Attr extends JCTree.Visitor {
     /** Derived visitor method: attribute an expression tree.
      */
     public Type attribExpr(JCTree tree, Env<AttrContext> env, Type pt) {
-        return attribTree(tree, env, new ResultInfo(VAL, !pt.hasTag(ERROR) ? pt : Type.noType));
+        return attribTree(tree, env, new ResultInfo(KindSelector.VAL, !pt.hasTag(ERROR) ? pt : Type.noType));
     }
 
     /** Derived visitor method: attribute an expression tree with
@@ -595,7 +601,7 @@ public class Attr extends JCTree.Visitor {
     /** Derived visitor method: attribute a type tree.
      */
     Type attribType(JCTree tree, Env<AttrContext> env, Type pt) {
-        Type result = attribTree(tree, env, new ResultInfo(TYP, pt));
+        Type result = attribTree(tree, env, new ResultInfo(KindSelector.TYP, pt));
         return result;
     }
 
@@ -623,19 +629,19 @@ public class Attr extends JCTree.Visitor {
 
     /** Attribute the arguments in a method call, returning the method kind.
      */
-    int attribArgs(List<JCExpression> trees, Env<AttrContext> env, ListBuffer<Type> argtypes) {
-        int kind = VAL;
+    KindSelector attribArgs(List<JCExpression> trees, Env<AttrContext> env, ListBuffer<Type> argtypes) {
+        boolean polykind = false;
         for (JCExpression arg : trees) {
             Type argtype;
             if (allowPoly && deferredAttr.isDeferred(env, arg)) {
                 argtype = deferredAttr.new DeferredType(arg, env);
-                kind |= POLY;
+                polykind = true;
             } else {
                 argtype = chk.checkNonVoid(arg, attribTree(arg, env, unknownAnyPolyInfo));
             }
             argtypes.append(argtype);
         }
-        return kind;
+        return polykind ? KindSelector.VAL_POLY : KindSelector.VAL;
     }
 
     /** Attribute a type argument list, returning a list of types.
@@ -792,7 +798,7 @@ public class Attr extends JCTree.Visitor {
     public void visitClassDef(JCClassDecl tree) {
         // Local and anonymous classes have not been entered yet, so we need to
         // do it now.
-        if ((env.info.scope.owner.kind & (VAR | MTH)) != 0) {
+        if (env.info.scope.owner.kind.matches(KindSelector.VAL_MTH)) {
             enter.classEnter(tree, env);
         } else {
             // If this class declaration is part of a class level annotation,
@@ -983,8 +989,12 @@ public class Attr extends JCTree.Visitor {
                 // parameters have already been entered
                 env.info.scope.enter(tree.sym);
             } else {
-                memberEnter.memberEnter(tree, env);
-                annotate.flush();
+                try {
+                    annotate.enterStart();
+                    memberEnter.memberEnter(tree, env);
+                } finally {
+                    annotate.enterDone();
+                }
             }
         } else {
             if (tree.init != null) {
@@ -1282,7 +1292,10 @@ public class Attr extends JCTree.Visitor {
                             chk.basicHandler.report(pos, diags.fragment("try.not.applicable.to.type", details));
                         }
                     };
-                    ResultInfo twrResult = new ResultInfo(VAL, syms.autoCloseableType, twrContext);
+                    ResultInfo twrResult =
+                        new ResultInfo(KindSelector.VAL,
+                                       syms.autoCloseableType,
+                                       twrContext);
                     if (resource.hasTag(VARDEF)) {
                         attribStat(resource, tryEnv);
                         twrResult.check(resource, resource.type);
@@ -1314,7 +1327,7 @@ public class Attr extends JCTree.Visitor {
                         //multi-catch parameter is implicitly marked as final
                         c.param.sym.flags_field |= FINAL | UNION;
                     }
-                    if (c.param.sym.kind == Kinds.VAR) {
+                    if (c.param.sym.kind == VAR) {
                         c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
                     }
                     chk.checkType(c.param.vartype.pos(),
@@ -1399,7 +1412,7 @@ public class Attr extends JCTree.Visitor {
             //constant folding
             owntype = cfolder.coerce(condtype.isTrue() ? truetype : falsetype, owntype);
         }
-        result = check(tree, owntype, VAL, resultInfo);
+        result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
     //where
         private boolean isBooleanOrNumeric(Env<AttrContext> env, JCExpression tree) {
@@ -1749,7 +1762,8 @@ public class Attr extends JCTree.Visitor {
                     // ...and check that it is legal in the current context.
                     // (this will also set the tree's type)
                     Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
-                    checkId(tree.meth, site, sym, localEnv, new ResultInfo(MTH, mpt));
+                    checkId(tree.meth, site, sym, localEnv,
+                            new ResultInfo(KindSelector.MTH, mpt));
                 }
                 // Otherwise, `site' is an error type and we do nothing
             }
@@ -1757,7 +1771,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             // Otherwise, we are seeing a regular method call.
             // Attribute the arguments, yielding list of argument types, ...
-            int kind = attribArgs(tree.args, localEnv, argtypesBuf);
+            KindSelector kind = attribArgs(tree.args, localEnv, argtypesBuf);
             argtypes = argtypesBuf.toList();
             typeargtypes = attribAnyTypes(tree.typeargs, localEnv);
 
@@ -1782,7 +1796,7 @@ public class Attr extends JCTree.Visitor {
 
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
-            result = check(tree, capture(restype), VAL, resultInfo);
+            result = check(tree, capture(restype), KindSelector.VAL, resultInfo);
         }
         chk.validate(tree.typeargs, localEnv);
     }
@@ -1936,7 +1950,8 @@ public class Attr extends JCTree.Visitor {
 
         // Attribute constructor arguments.
         ListBuffer<Type> argtypesBuf = new ListBuffer<>();
-        int pkind = attribArgs(tree.args, localEnv, argtypesBuf);
+        final KindSelector pkind =
+            attribArgs(tree.args, localEnv, argtypesBuf);
         List<Type> argtypes = argtypesBuf.toList();
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
@@ -2096,7 +2111,7 @@ public class Attr extends JCTree.Visitor {
                 clazztype = cdef.sym.type;
                 Symbol sym = tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                Assert.check(sym.kind < AMBIGUOUS);
+                Assert.check(!sym.kind.isOverloadError());
                 tree.constructor = sym;
                 tree.constructorType = checkId(tree,
                     clazztype,
@@ -2108,7 +2123,7 @@ public class Attr extends JCTree.Visitor {
             if (tree.constructor != null && tree.constructor.kind == MTH)
                 owntype = clazztype;
         }
-        result = check(tree, owntype, VAL, resultInfo);
+        result = check(tree, owntype, KindSelector.VAL, resultInfo);
         chk.validate(tree.typeargs, localEnv);
     }
     //where
@@ -2118,7 +2133,7 @@ public class Attr extends JCTree.Visitor {
             try {
                 //create a 'fake' diamond AST node by removing type-argument trees
                 ta.arguments = List.nil();
-                ResultInfo findDiamondResult = new ResultInfo(VAL,
+                ResultInfo findDiamondResult = new ResultInfo(KindSelector.VAL,
                         resultInfo.checkContext.inferenceContext().free(resultInfo.pt) ? Type.noType : pt());
                 Type inferred = deferredAttr.attribSpeculative(tree, env, findDiamondResult).type;
                 Type polyPt = allowPoly ?
@@ -2209,7 +2224,7 @@ public class Attr extends JCTree.Visitor {
         }
         if (!types.isReifiable(elemtype))
             log.error(tree.pos(), "generic.array.creation");
-        result = check(tree, owntype, VAL, resultInfo);
+        result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
 
     /*
@@ -2318,7 +2333,8 @@ public class Attr extends JCTree.Visitor {
 
             ResultInfo bodyResultInfo = lambdaType.getReturnType() == Type.recoveryType ?
                 recoveryInfo :
-                new ResultInfo(VAL, lambdaType.getReturnType(), funcContext);
+                new ResultInfo(KindSelector.VAL,
+                               lambdaType.getReturnType(), funcContext);
             localEnv.info.returnResult = bodyResultInfo;
 
             if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
@@ -2328,7 +2344,7 @@ public class Attr extends JCTree.Visitor {
                 attribStats(body.stats, localEnv);
             }
 
-            result = check(that, currentTarget, VAL, resultInfo);
+            result = check(that, currentTarget, KindSelector.VAL, resultInfo);
 
             boolean isSpeculativeRound =
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
@@ -2349,7 +2365,7 @@ public class Attr extends JCTree.Visitor {
 
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), lambdaType, currentTarget);
             }
-            result = check(that, currentTarget, VAL, resultInfo);
+            result = check(that, currentTarget, KindSelector.VAL, resultInfo);
         } catch (Types.FunctionDescriptorLookupError ex) {
             JCDiagnostic cause = ex.getDiagnostic();
             resultInfo.checkContext.report(that, cause);
@@ -2802,7 +2818,7 @@ public class Attr extends JCTree.Visitor {
             if (!isSpeculativeRound) {
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), desc, currentTarget);
             }
-            result = check(that, currentTarget, VAL, resultInfo);
+            result = check(that, currentTarget, KindSelector.VAL, resultInfo);
         } catch (Types.FunctionDescriptorLookupError ex) {
             JCDiagnostic cause = ex.getDiagnostic();
             resultInfo.checkContext.report(that, cause);
@@ -2813,7 +2829,9 @@ public class Attr extends JCTree.Visitor {
     //where
         ResultInfo memberReferenceQualifierResult(JCMemberReference tree) {
             //if this is a constructor reference, the expected kind must be a type
-            return new ResultInfo(tree.getMode() == ReferenceMode.INVOKE ? VAL | TYP : TYP, Type.noType);
+            return new ResultInfo(tree.getMode() == ReferenceMode.INVOKE ?
+                                  KindSelector.VAL_TYP : KindSelector.TYP,
+                                  Type.noType);
         }
 
 
@@ -2912,7 +2930,7 @@ public class Attr extends JCTree.Visitor {
         Type owntype = attribTree(tree.expr, env, resultInfo);
         result = check(tree, owntype, pkind(), resultInfo);
         Symbol sym = TreeInfo.symbol(tree);
-        if (sym != null && (sym.kind&(TYP|PCK)) != 0)
+        if (sym != null && sym.kind.matches(KindSelector.TYP_PCK))
             log.error(tree.pos(), "illegal.start.of.type");
     }
 
@@ -2920,7 +2938,7 @@ public class Attr extends JCTree.Visitor {
         Type owntype = attribTree(tree.lhs, env.dup(tree), varInfo);
         Type capturedType = capture(owntype);
         attribExpr(tree.rhs, env, owntype);
-        result = check(tree, capturedType, VAL, resultInfo);
+        result = check(tree, capturedType, KindSelector.VAL, resultInfo);
     }
 
     public void visitAssignop(JCAssignOp tree) {
@@ -2945,7 +2963,7 @@ public class Attr extends JCTree.Visitor {
                               operator.type.getReturnType(),
                               owntype);
         }
-        result = check(tree, owntype, VAL, resultInfo);
+        result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
 
     public void visitUnary(JCUnary tree) {
@@ -2974,14 +2992,13 @@ public class Attr extends JCTree.Visitor {
                 }
             }
         }
-        result = check(tree, owntype, VAL, resultInfo);
+        result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
 
     public void visitBinary(JCBinary tree) {
         // Attribute arguments.
         Type left = chk.checkNonVoid(tree.lhs.pos(), attribExpr(tree.lhs, env));
         Type right = chk.checkNonVoid(tree.lhs.pos(), attribExpr(tree.rhs, env));
-
         // Find operator.
         Symbol operator = tree.operator =
             rs.resolveBinaryOperator(tree.pos(), tree.getTag(), env, left, right);
@@ -3019,7 +3036,7 @@ public class Attr extends JCTree.Visitor {
 
             chk.checkDivZero(tree.rhs.pos(), operator, right);
         }
-        result = check(tree, owntype, VAL, resultInfo);
+        result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
 
     public void visitTypeCast(final JCTypeCast tree) {
@@ -3034,7 +3051,8 @@ public class Attr extends JCTree.Visitor {
         boolean isPoly = allowPoly && (expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE));
         if (isPoly) {
             //expression is a poly - we need to propagate target type info
-            castInfo = new ResultInfo(VAL, clazztype, new Check.NestedCheckContext(resultInfo.checkContext) {
+            castInfo = new ResultInfo(KindSelector.VAL, clazztype,
+                                      new Check.NestedCheckContext(resultInfo.checkContext) {
                 @Override
                 public boolean compatible(Type found, Type req, Warner warn) {
                     return types.isCastable(found, req, warn);
@@ -3048,14 +3066,14 @@ public class Attr extends JCTree.Visitor {
         Type owntype = isPoly ? clazztype : chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         if (exprtype.constValue() != null)
             owntype = cfolder.coerce(exprtype, owntype);
-        result = check(tree, capture(owntype), VAL, resultInfo);
+        result = check(tree, capture(owntype), KindSelector.VAL, resultInfo);
         if (!isPoly)
             chk.checkRedundantCast(localEnv, tree);
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
         Type exprtype = chk.checkNullOrRefType(
-            tree.expr.pos(), attribExpr(tree.expr, env));
+                tree.expr.pos(), attribExpr(tree.expr, env));
         Type clazztype = attribType(tree.clazz, env);
         if (!clazztype.hasTag(TYPEVAR)) {
             clazztype = chk.checkClassOrArrayType(tree.clazz.pos(), clazztype);
@@ -3066,7 +3084,7 @@ public class Attr extends JCTree.Visitor {
         }
         chk.validate(tree.clazz, env, false);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
-        result = check(tree, syms.booleanType, VAL, resultInfo);
+        result = check(tree, syms.booleanType, KindSelector.VAL, resultInfo);
     }
 
     public void visitIndexed(JCArrayAccess tree) {
@@ -3077,8 +3095,9 @@ public class Attr extends JCTree.Visitor {
             owntype = types.elemtype(atype);
         else if (!atype.hasTag(ERROR))
             log.error(tree.pos(), "array.req.but.found", atype);
-        if ((pkind() & VAR) == 0) owntype = capture(owntype);
-        result = check(tree, owntype, VAR, resultInfo);
+        if (!pkind().contains(KindSelector.VAL))
+            owntype = capture(owntype);
+        result = check(tree, owntype, KindSelector.VAR, resultInfo);
     }
 
     public void visitIdent(JCIdent tree) {
@@ -3107,7 +3126,7 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> symEnv = env;
         boolean noOuterThisPath = false;
         if (env.enclClass.sym.owner.kind != PCK && // we are in an inner class
-            (sym.kind & (VAR | MTH | TYP)) != 0 &&
+            sym.kind.matches(KindSelector.VAL_MTH) &&
             sym.owner.kind == TYP &&
             tree.name != names._this && tree.name != names._super) {
 
@@ -3130,7 +3149,7 @@ public class Attr extends JCTree.Visitor {
 
             // If we are expecting a variable (as opposed to a value), check
             // that the variable is assignable in the current environment.
-            if (pkind() == VAR)
+            if (pkind() == KindSelector.VAR)
                 checkAssignable(tree.pos(), v, null, env);
         }
 
@@ -3138,13 +3157,15 @@ public class Attr extends JCTree.Visitor {
         // if symbol is a field or instance method, check that it is
         // not accessed before the supertype constructor is called.
         if ((symEnv.info.isSelfCall || noOuterThisPath) &&
-            (sym.kind & (VAR | MTH)) != 0 &&
+            sym.kind.matches(KindSelector.VAL_MTH) &&
             sym.owner.kind == TYP &&
             (sym.flags() & STATIC) == 0) {
-            chk.earlyRefError(tree.pos(), sym.kind == VAR ? sym : thisSym(tree.pos(), env));
+            chk.earlyRefError(tree.pos(), sym.kind == VAR ?
+                                          sym : thisSym(tree.pos(), env));
         }
         Env<AttrContext> env1 = env;
-        if (sym.kind != ERR && sym.kind != TYP && sym.owner != null && sym.owner != env1.enclClass.sym) {
+        if (sym.kind != ERR && sym.kind != TYP &&
+            sym.owner != null && sym.owner != env1.enclClass.sym) {
             // If the found symbol is inaccessible, then it is
             // accessed through an enclosing instance.  Locate this
             // enclosing instance:
@@ -3161,24 +3182,27 @@ public class Attr extends JCTree.Visitor {
 
     public void visitSelect(JCFieldAccess tree) {
         // Determine the expected kind of the qualifier expression.
-        int skind = 0;
+        KindSelector skind = KindSelector.NIL;
         if (tree.name == names._this || tree.name == names._super ||
-            tree.name == names._class)
+                tree.name == names._class)
         {
-            skind = TYP;
+            skind = KindSelector.TYP;
         } else {
-            if ((pkind() & PCK) != 0) skind = skind | PCK;
-            if ((pkind() & TYP) != 0) skind = skind | TYP | PCK;
-            if ((pkind() & (VAL | MTH)) != 0) skind = skind | VAL | TYP;
+            if (pkind().contains(KindSelector.PCK))
+                skind = KindSelector.of(skind, KindSelector.PCK);
+            if (pkind().contains(KindSelector.TYP))
+                skind = KindSelector.of(skind, KindSelector.TYP, KindSelector.PCK);
+            if (pkind().contains(KindSelector.VAL_MTH))
+                skind = KindSelector.of(skind, KindSelector.VAL, KindSelector.TYP);
         }
 
         // Attribute the qualifier expression, and determine its symbol (if any).
         Type site = attribTree(tree.selected, env, new ResultInfo(skind, Infer.anyPoly));
-        if ((pkind() & (PCK | TYP)) == 0)
+        if (!pkind().contains(KindSelector.TYP_PCK))
             site = capture(site); // Capture field access
 
         // don't allow T.class T[].class, etc
-        if (skind == TYP) {
+        if (skind == KindSelector.TYP) {
             Type elt = site;
             while (elt.hasTag(ARRAY))
                 elt = ((ArrayType)elt).elemtype;
@@ -3202,7 +3226,7 @@ public class Attr extends JCTree.Visitor {
         // Determine the symbol represented by the selection.
         env.info.pendingResolutionPhase = null;
         Symbol sym = selectSym(tree, sitesym, site, env, resultInfo);
-        if (sym.exists() && !isType(sym) && (pkind() & (PCK | TYP)) != 0) {
+        if (sym.exists() && !isType(sym) && pkind().contains(KindSelector.TYP_PCK)) {
             site = capture(site);
             sym = selectSym(tree, sitesym, site, env, resultInfo);
         }
@@ -3224,7 +3248,7 @@ public class Attr extends JCTree.Visitor {
 
             // If we are expecting a variable (as opposed to a value), check
             // that the variable is assignable in the current environment.
-            if (pkind() == VAR)
+            if (pkind() == KindSelector.VAR)
                 checkAssignable(tree.pos(), v, tree.selected, env);
         }
 
@@ -3239,9 +3263,11 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Disallow selecting a type from an expression
-        if (isType(sym) && (sitesym==null || (sitesym.kind&(TYP|PCK)) == 0)) {
+        if (isType(sym) && (sitesym == null || !sitesym.kind.matches(KindSelector.TYP_PCK))) {
             tree.type = check(tree.selected, pt(),
-                              sitesym == null ? VAL : sitesym.kind, new ResultInfo(TYP|PCK, pt()));
+                              sitesym == null ?
+                                      KindSelector.VAL : sitesym.kind.toSelector(),
+                              new ResultInfo(KindSelector.TYP_PCK, pt()));
         }
 
         if (isType(sitesym)) {
@@ -3266,10 +3292,13 @@ public class Attr extends JCTree.Visitor {
                     sym.isStatic() && sym.kind == MTH) {
                 log.error(tree.pos(), "static.intf.method.invoke.not.supported.in.source", sourceName);
             }
-        } else if (sym.kind != ERR && (sym.flags() & STATIC) != 0 && sym.name != names._class) {
+        } else if (sym.kind != ERR &&
+                   (sym.flags() & STATIC) != 0 &&
+                   sym.name != names._class) {
             // If the qualified item is not a type and the selected item is static, report
             // a warning. Make allowance for the class of an array type e.g. Object[].class)
-            chk.warnStatic(tree, "static.not.qualified.by.type", Kinds.kindName(sym.kind), sym.owner);
+            chk.warnStatic(tree, "static.not.qualified.by.type",
+                           sym.kind.kindName(), sym.owner);
         }
 
         // If we are selecting an instance member via a `super', ...
@@ -3330,7 +3359,6 @@ public class Attr extends JCTree.Visitor {
                 } else {
                     // We are seeing a plain identifier as selector.
                     Symbol sym = rs.findIdentInType(env, site, name, resultInfo.pkind);
-                    if ((resultInfo.pkind & ERRONEOUS) == 0)
                         sym = rs.accessBase(sym, pos, location, site, name, true);
                     return sym;
                 }
@@ -3438,7 +3466,7 @@ public class Attr extends JCTree.Visitor {
                      Symbol sym,
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
-            if ((resultInfo.pkind & POLY) != 0) {
+            if (resultInfo.pkind.contains(KindSelector.POLY)) {
                 Type pt = resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, sym, env.info.pendingResolutionPhase));
                 Type owntype = checkIdInternal(tree, site, sym, pt, env, resultInfo);
                 resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.CHECK, sym, env.info.pendingResolutionPhase));
@@ -3503,7 +3531,7 @@ public class Attr extends JCTree.Visitor {
                 // Test (4): if symbol is an instance field of a raw type,
                 // which is being assigned to, issue an unchecked warning if
                 // its type changes under erasure.
-                if (resultInfo.pkind == VAR &&
+                if (resultInfo.pkind == KindSelector.VAR &&
                     v.owner.kind == TYP &&
                     (v.flags() & STATIC) == 0 &&
                     (site.hasTag(CLASS) || site.hasTag(TYPEVAR))) {
@@ -3528,7 +3556,7 @@ public class Attr extends JCTree.Visitor {
                 if (v.getConstValue() != null && isStaticReference(tree))
                     owntype = owntype.constType(v.getConstValue());
 
-                if (resultInfo.pkind == VAL) {
+                if (resultInfo.pkind == KindSelector.VAL) {
                     owntype = capture(owntype); // capture "names as expressions"
                 }
                 break;
@@ -3559,7 +3587,7 @@ public class Attr extends JCTree.Visitor {
 
             // Test (3): if symbol is a variable, check that its type and
             // kind are compatible with the prototype and protokind.
-            return check(tree, owntype, sym.kind, resultInfo);
+            return check(tree, owntype, sym.kind.toSelector(), resultInfo);
         }
 
         /** Check that variable is initialized and evaluate the variable's
@@ -3799,8 +3827,8 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitLiteral(JCLiteral tree) {
-        result = check(
-            tree, litType(tree.typetag).constType(tree.value), VAL, resultInfo);
+        result = check(tree, litType(tree.typetag).constType(tree.value),
+                KindSelector.VAL, resultInfo);
     }
     //where
     /** Return the type of a literal with given type tag.
@@ -3810,13 +3838,13 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
-        result = check(tree, syms.typeOfTag[tree.typetag.ordinal()], TYP, resultInfo);
+        result = check(tree, syms.typeOfTag[tree.typetag.ordinal()], KindSelector.TYP, resultInfo);
     }
 
     public void visitTypeArray(JCArrayTypeTree tree) {
         Type etype = attribType(tree.elemtype, env);
         Type type = new ArrayType(etype, syms.arrayClass);
-        result = check(tree, type, TYP, resultInfo);
+        result = check(tree, type, KindSelector.TYP, resultInfo);
     }
 
     /** Visitor method for parameterized types.
@@ -3875,7 +3903,7 @@ public class Attr extends JCTree.Visitor {
                 owntype = types.createErrorType(tree.type);
             }
         }
-        result = check(tree, owntype, TYP, resultInfo);
+        result = check(tree, owntype, KindSelector.TYP, resultInfo);
     }
 
     public void visitTypeUnion(JCTypeUnion tree) {
@@ -3912,7 +3940,8 @@ public class Attr extends JCTree.Visitor {
                 all_multicatchTypes.append(ctype);
             }
         }
-        Type t = check(tree, types.lub(multicatchTypes.toList()), TYP, resultInfo);
+        Type t = check(tree, types.lub(multicatchTypes.toList()),
+                KindSelector.TYP, resultInfo);
         if (t.hasTag(CLASS)) {
             List<Type> alternatives =
                 ((all_multicatchTypes == null) ? multicatchTypes : all_multicatchTypes).toList();
@@ -4016,7 +4045,7 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, new WildcardType(chk.checkRefType(tree.pos(), type),
                                               tree.kind.kind,
                                               syms.boundClass),
-                       TYP, resultInfo);
+                KindSelector.TYP, resultInfo);
     }
 
     public void visitAnnotation(JCAnnotation tree) {
@@ -4064,7 +4093,7 @@ public class Attr extends JCTree.Visitor {
     public void visitErroneous(JCErroneous tree) {
         if (tree.errs != null)
             for (JCTree err : tree.errs)
-                attribTree(err, env, new ResultInfo(ERR, pt()));
+                attribTree(err, env, new ResultInfo(KindSelector.ERR, pt()));
         result = tree.type = syms.errType;
     }
 
@@ -4315,7 +4344,7 @@ public class Attr extends JCTree.Visitor {
         public static final Filter<Symbol> anyNonAbstractOrDefaultMethod = new Filter<Symbol>() {
             @Override
             public boolean accepts(Symbol s) {
-                return s.kind == Kinds.MTH &&
+                return s.kind == MTH &&
                        (s.flags() & (DEFAULT | ABSTRACT)) != ABSTRACT;
             }
         };

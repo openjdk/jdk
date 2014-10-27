@@ -31,6 +31,7 @@ package jdk.nashorn.internal.ir;
  * location information is the Statement
  */
 public abstract class Statement extends Node implements Terminal {
+    private static final long serialVersionUID = 1L;
 
     private final int lineNumber;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+package jdk.testlibrary;
 
 /*
  * @test
@@ -28,12 +29,12 @@
  *     such as printing additional diagnostic info
  *     (exit code, stdout, stderr, command line, etc.)
  * @library /testlibrary
+ * @build jdk.testlibrary.*
+ * @run main jdk.testlibrary.OutputAnalyzerReportingTest
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-
-import jdk.testlibrary.OutputAnalyzer;
 
 public class OutputAnalyzerReportingTest {
 
