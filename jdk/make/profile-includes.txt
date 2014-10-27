@@ -54,14 +54,12 @@ PROFILE_1_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/server/$(LIBRARY_PREFIX)jvm$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/server/$(LIBRARY_PREFIX)jvm.diz \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/server/Xusage.txt \
-    calendars.properties \
     classlist \
     ext/localedata.jar \
     ext/meta-index \
     ext/sunec.jar \
     ext/sunjce_provider.jar \
     ext/sunpkcs11.jar \
-    hijrah-config-umalqura.properties \
     jce.jar \
     jsse.jar \
     logging.properties \
