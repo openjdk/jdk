@@ -97,8 +97,7 @@ class JapaneseImperialCalendar extends Calendar {
      *
      * This implementation uses
      * sun.util.calendar.LocalGregorianCalendar to perform most of the
-     * calendar calculations. LocalGregorianCalendar is configurable
-     * and reads <JRE_HOME>/lib/calendars.properties at the start-up.
+     * calendar calculations.
      */
 
     /**
