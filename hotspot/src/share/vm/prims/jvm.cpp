@@ -3271,8 +3271,10 @@ static inline arrayOop check_array(JNIEnv *env, jobject arr, bool type_array_onl
     THROW_0(vmSymbols::java_lang_NullPointerException());
   }
   oop a = JNIHandles::resolve_non_null(arr);
-  if (!a->is_array() || (type_array_only && !a->is_typeArray())) {
+  if (!a->is_array()) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Argument is not an array");
+  } else if (type_array_only && !a->is_typeArray()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Argument is not an array of primitive type");
   }
   return arrayOop(a);
 }
