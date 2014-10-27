@@ -518,7 +518,7 @@ public interface Collection<E> extends Iterable<E> {
      * <p>The default implementation should be overridden by subclasses that
      * can return a more efficient spliterator.  In order to
      * preserve expected laziness behavior for the {@link #stream()} and
-     * {@link #parallelStream()}} methods, spliterators should either have the
+     * {@link #parallelStream()} methods, spliterators should either have the
      * characteristic of {@code IMMUTABLE} or {@code CONCURRENT}, or be
      * <em><a href="Spliterator.html#binding">late-binding</a></em>.
      * If none of these is practical, the overriding class should describe the
