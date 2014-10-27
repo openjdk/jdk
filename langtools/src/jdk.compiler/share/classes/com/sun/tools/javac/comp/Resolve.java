@@ -55,6 +55,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -65,7 +66,7 @@ import javax.lang.model.element.ElementVisitor;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -154,6 +155,11 @@ public class Resolve {
         return instance;
     }
 
+    private static Symbol bestOf(Symbol s1,
+                                 Symbol s2) {
+        return s1.kind.betterThan(s2.kind) ? s1 : s2;
+    }
+
     // <editor-fold defaultstate="collapsed" desc="Verbose resolution diagnostics support">
     enum VerboseResolutionMode {
         SUCCESS("success"),
@@ -192,7 +198,7 @@ public class Resolve {
 
     void reportVerboseResolutionDiagnostic(DiagnosticPosition dpos, Name name, Type site,
             List<Type> argtypes, List<Type> typeargtypes, Symbol bestSoFar) {
-        boolean success = bestSoFar.kind < ERRONEOUS;
+        boolean success = !bestSoFar.kind.isOverloadError();
 
         if (success && !verboseResolutionMode.contains(VerboseResolutionMode.SUCCESS)) {
             return;
@@ -517,7 +523,6 @@ public class Resolve {
                         boolean allowBoxing,
                         boolean useVarargs,
                         Warner warn) throws Infer.InferenceException {
-
         Type mt = types.memberType(site, m);
         // tvars is the list of formal type variables for which type arguments
         // need to inferred.
@@ -536,9 +541,10 @@ public class Resolve {
             while (formals.nonEmpty() && actuals.nonEmpty()) {
                 List<Type> bounds = types.subst(types.getBounds((TypeVar)formals.head),
                                                 pmt.tvars, typeargtypes);
-                for (; bounds.nonEmpty(); bounds = bounds.tail)
+                for (; bounds.nonEmpty(); bounds = bounds.tail) {
                     if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn))
                         throw inapplicableMethodException.setMessage("explicit.param.do.not.conform.to.bounds",actuals.head, bounds);
+                }
                 formals = formals.tail;
                 actuals = actuals.tail;
             }
@@ -558,7 +564,7 @@ public class Resolve {
             if (l.head.hasTag(FORALL)) instNeeded = true;
         }
 
-        if (instNeeded)
+        if (instNeeded) {
             return infer.instantiateMethod(env,
                                     tvars,
                                     (MethodType)mt,
@@ -569,6 +575,7 @@ public class Resolve {
                                     useVarargs,
                                     currentResolutionContext,
                                     warn);
+        }
 
         DeferredAttr.DeferredAttrContext dc = currentResolutionContext.deferredAttrContext(m, infer.emptyContext, resultInfo, warn);
         currentResolutionContext.methodCheck.argumentsAcceptable(env, dc,
@@ -992,7 +999,7 @@ public class Resolve {
     class MethodResultInfo extends ResultInfo {
 
         public MethodResultInfo(Type pt, CheckContext checkContext) {
-            attr.super(VAL, pt, checkContext);
+            attr.super(KindSelector.VAL, pt, checkContext);
         }
 
         @Override
@@ -1071,7 +1078,7 @@ public class Resolve {
         */
         ResultInfo methodCheckResult(Type to, DeferredAttr.DeferredAttrContext deferredAttrContext,
                Warner rsWarner, Type actual) {
-           return attr.new ResultInfo(Kinds.VAL, to,
+            return attr.new ResultInfo(KindSelector.VAL, to,
                    new MostSpecificCheckContext(strict, deferredAttrContext, rsWarner, actual));
         }
 
@@ -1304,7 +1311,7 @@ public class Resolve {
         Type st = types.supertype(c.type);
         if (st != null && (st.hasTag(CLASS) || st.hasTag(TYPEVAR))) {
             sym = findField(env, site, name, st.tsym);
-            if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            bestSoFar = bestOf(bestSoFar, sym);
         }
         for (List<Type> l = types.interfaces(c.type);
              bestSoFar.kind != AMBIGUOUS && l.nonEmpty();
@@ -1313,8 +1320,8 @@ public class Resolve {
             if (bestSoFar.exists() && sym.exists() &&
                 sym.owner != bestSoFar.owner)
                 bestSoFar = new AmbiguityError(bestSoFar, sym);
-            else if (sym.kind < bestSoFar.kind)
-                bestSoFar = sym;
+            else
+                bestSoFar = bestOf(bestSoFar, sym);
         }
         return bestSoFar;
     }
@@ -1364,8 +1371,8 @@ public class Resolve {
                     return new StaticError(sym);
                 else
                     return sym;
-            } else if (sym.kind < bestSoFar.kind) {
-                bestSoFar = sym;
+            } else {
+                bestSoFar = bestOf(bestSoFar, sym);
             }
 
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
@@ -1383,10 +1390,11 @@ public class Resolve {
             for (Symbol currentSymbol : sc.getSymbolsByName(name)) {
                 if (currentSymbol.kind != VAR)
                     continue;
-                // invariant: sym.kind == VAR
-                if (bestSoFar.kind < AMBIGUOUS && currentSymbol.owner != bestSoFar.owner)
+                // invariant: sym.kind == Symbol.Kind.VAR
+                if (!bestSoFar.kind.isOverloadError() &&
+                    currentSymbol.owner != bestSoFar.owner)
                     return new AmbiguityError(bestSoFar, currentSymbol);
-                else if (bestSoFar.kind >= VAR) {
+                else if (!bestSoFar.kind.betterThan(VAR)) {
                     origin = sc.getOrigin(currentSymbol).owner;
                     bestSoFar = isAccessible(env, origin.type, currentSymbol)
                         ? currentSymbol : new AccessError(env, origin.type, currentSymbol);
@@ -1427,11 +1435,11 @@ public class Resolve {
                 !sym.isInheritedIn(site.tsym, types)) {
             return bestSoFar;
         } else if (useVarargs && (sym.flags() & VARARGS) == 0) {
-            return bestSoFar.kind >= ERRONEOUS ?
+            return bestSoFar.kind.isOverloadError() ?
                     new BadVarargsMethod((ResolveError)bestSoFar.baseSymbol()) :
                     bestSoFar;
         }
-        Assert.check(sym.kind < AMBIGUOUS);
+        Assert.check(!sym.kind.isOverloadError());
         try {
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
                                allowBoxing, useVarargs, types.noWarnings);
@@ -1455,7 +1463,7 @@ public class Resolve {
                 ? new AccessError(env, site, sym)
                 : bestSoFar;
         }
-        return (bestSoFar.kind > AMBIGUOUS)
+        return (bestSoFar.kind.isOverloadError() && bestSoFar.kind != AMBIGUOUS)
             ? sym
             : mostSpecific(argtypes, sym, bestSoFar, env, site,
                            allowBoxing && operator, useVarargs);
@@ -1689,6 +1697,7 @@ public class Resolve {
                               boolean operator) {
         @SuppressWarnings({"unchecked","rawtypes"})
         List<Type>[] itypes = (List<Type>[])new List[] { List.<Type>nil(), List.<Type>nil() };
+
         InterfaceLookupPhase iphase = InterfaceLookupPhase.ABSTRACT_OK;
         for (TypeSymbol s : superclasses(intype)) {
             bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
@@ -1702,7 +1711,7 @@ public class Resolve {
             }
         }
 
-        Symbol concrete = bestSoFar.kind < ERR &&
+        Symbol concrete = bestSoFar.kind.isValid() &&
                 (bestSoFar.flags() & ABSTRACT) == 0 ?
                 bestSoFar : methodNotFound;
 
@@ -1715,7 +1724,8 @@ public class Resolve {
                 bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
                         itype.tsym.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
                 if (concrete != bestSoFar &&
-                        concrete.kind < ERR  && bestSoFar.kind < ERR &&
+                    concrete.kind.isValid() &&
+                    bestSoFar.kind.isValid() &&
                         types.isSubSignature(concrete.type, bestSoFar.type)) {
                     //this is an hack - as javac does not do full membership checks
                     //most specific ends up comparing abstract methods that might have
@@ -1832,8 +1842,8 @@ public class Resolve {
                     sym.owner.kind == TYP &&
                     (sym.flags() & STATIC) == 0) return new StaticError(sym);
                 else return sym;
-            } else if (sym.kind < bestSoFar.kind) {
-                bestSoFar = sym;
+            } else {
+                bestSoFar = bestOf(bestSoFar, sym);
             }
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
             env1 = env1.outer;
@@ -1936,17 +1946,18 @@ public class Resolve {
         Type st = types.supertype(c.type);
         if (st != null && st.hasTag(CLASS)) {
             sym = findMemberType(env, site, name, st.tsym);
-            if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            bestSoFar = bestOf(bestSoFar, sym);
         }
         for (List<Type> l = types.interfaces(c.type);
              bestSoFar.kind != AMBIGUOUS && l.nonEmpty();
              l = l.tail) {
             sym = findMemberType(env, site, name, l.head.tsym);
-            if (bestSoFar.kind < AMBIGUOUS && sym.kind < AMBIGUOUS &&
+            if (!bestSoFar.kind.isOverloadError() &&
+                !sym.kind.isOverloadError() &&
                 sym.owner != bestSoFar.owner)
                 bestSoFar = new AmbiguityError(bestSoFar, sym);
-            else if (sym.kind < bestSoFar.kind)
-                bestSoFar = sym;
+            else
+                bestSoFar = bestOf(bestSoFar, sym);
         }
         return bestSoFar;
     }
@@ -1985,8 +1996,8 @@ public class Resolve {
             if (bestSoFar.kind == TYP && sym.kind == TYP &&
                 bestSoFar != sym)
                 return new AmbiguityError(bestSoFar, sym);
-            else if (sym.kind < bestSoFar.kind)
-                bestSoFar = sym;
+            else
+                bestSoFar = bestOf(bestSoFar, sym);
         }
         return bestSoFar;
     }
@@ -2041,7 +2052,7 @@ public class Resolve {
                 sym.type.getEnclosingType().isParameterized())
                 return new StaticError(sym);
             else if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
 
             JCClassDecl encl = env1.baseClause ? (JCClassDecl)env1.tree : env1.enclClass;
             if ((encl.sym.flags() & STATIC) != 0)
@@ -2051,15 +2062,15 @@ public class Resolve {
         if (!env.tree.hasTag(IMPORT)) {
             sym = findGlobalType(env, env.toplevel.namedImportScope, name);
             if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
 
             sym = findGlobalType(env, env.toplevel.packge.members(), name);
             if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
 
             sym = findGlobalType(env, env.toplevel.starImportScope, name);
             if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
         }
 
         return bestSoFar;
@@ -2071,23 +2082,25 @@ public class Resolve {
      *  @param kind      Indicates the possible symbol kinds
      *                   (a subset of VAL, TYP, PCK).
      */
-    Symbol findIdent(Env<AttrContext> env, Name name, int kind) {
+    Symbol findIdent(Env<AttrContext> env, Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
 
-        if ((kind & VAR) != 0) {
+        if (kind.contains(KindSelector.VAL)) {
             sym = findVar(env, name);
             if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
         }
 
-        if ((kind & TYP) != 0) {
+        if (kind.contains(KindSelector.TYP)) {
             sym = findType(env, name);
+
             if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
         }
 
-        if ((kind & PCK) != 0) return syms.enterPackage(name);
+        if (kind.contains(KindSelector.PCK))
+            return syms.enterPackage(name);
         else return bestSoFar;
     }
 
@@ -2098,21 +2111,21 @@ public class Resolve {
      *                   (a nonempty subset of TYP, PCK).
      */
     Symbol findIdentInPackage(Env<AttrContext> env, TypeSymbol pck,
-                              Name name, int kind) {
+                              Name name, KindSelector kind) {
         Name fullname = TypeSymbol.formFullName(name, pck);
         Symbol bestSoFar = typeNotFound;
         PackageSymbol pack = null;
-        if ((kind & PCK) != 0) {
+        if (kind.contains(KindSelector.PCK)) {
             pack = syms.enterPackage(fullname);
             if (pack.exists()) return pack;
         }
-        if ((kind & TYP) != 0) {
+        if (kind.contains(KindSelector.TYP)) {
             Symbol sym = loadClass(env, fullname);
             if (sym.exists()) {
                 // don't allow programs to use flatnames
                 if (name == sym.name) return sym;
             }
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
         }
         return (pack != null) ? pack : bestSoFar;
     }
@@ -2125,19 +2138,19 @@ public class Resolve {
      *                   (a subset of VAL, TYP).
      */
     Symbol findIdentInType(Env<AttrContext> env, Type site,
-                           Name name, int kind) {
+                           Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
-        if ((kind & VAR) != 0) {
+        if (kind.contains(KindSelector.VAL)) {
             sym = findField(env, site, name, site.tsym);
             if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
         }
 
-        if ((kind & TYP) != 0) {
+        if (kind.contains(KindSelector.TYP)) {
             sym = findMemberType(env, site, name, site.tsym);
             if (sym.exists()) return sym;
-            else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
         }
         return bestSoFar;
     }
@@ -2175,7 +2188,7 @@ public class Resolve {
                   List<Type> argtypes,
                   List<Type> typeargtypes,
                   LogResolveHelper logResolveHelper) {
-        if (sym.kind >= AMBIGUOUS) {
+        if (sym.kind.isOverloadError()) {
             ResolveError errSym = (ResolveError)sym.baseSymbol();
             sym = errSym.access(name, qualified ? site.tsym : syms.noSymbol);
             argtypes = logResolveHelper.getArgumentTypes(errSym, sym, name, argtypes);
@@ -2307,7 +2320,7 @@ public class Resolve {
      *  @param kind      The set of admissible symbol kinds for the identifier.
      */
     Symbol resolveIdent(DiagnosticPosition pos, Env<AttrContext> env,
-                        Name name, int kind) {
+                        Name name, KindSelector kind) {
         return accessBase(
             findIdent(env, name, kind),
             pos, env.enclClass.sym.type, name, false);
@@ -2367,7 +2380,7 @@ public class Resolve {
             }
             @Override
             Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
-                if (sym.kind >= AMBIGUOUS) {
+                if (sym.kind.isOverloadError()) {
                     sym = super.access(env, pos, location, sym);
                 } else if (allowMethodHandles) {
                     MethodSymbol msym = (MethodSymbol)sym;
@@ -2524,8 +2537,9 @@ public class Resolve {
                     }
                     @Override
                     Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
-                        if (sym.kind >= AMBIGUOUS) {
-                            if (sym.kind != WRONG_MTH && sym.kind != WRONG_MTHS) {
+                        if (sym.kind.isOverloadError()) {
+                            if (sym.kind != WRONG_MTH &&
+                                sym.kind != WRONG_MTHS) {
                                 sym = super.access(env, pos, location, sym);
                             } else {
                                 final JCDiagnostic details = sym.kind == WRONG_MTH ?
@@ -2713,7 +2727,7 @@ public class Resolve {
         if (isStaticSelector &&
             !name.equals(names.init) &&
             !boundSym.isStatic() &&
-            boundSym.kind < ERRONEOUS) {
+            !boundSym.kind.isOverloadError()) {
             boundSym = methodNotFound;
         }
 
@@ -2726,7 +2740,7 @@ public class Resolve {
             unboundSym = lookupMethod(unboundEnv, env.tree.pos(), site.tsym,
                     arityMethodCheck, unboundLookupHelper);
             if (unboundSym.isStatic() &&
-                unboundSym.kind < ERRONEOUS) {
+                !unboundSym.kind.isOverloadError()) {
                 unboundSym = methodNotFound;
             }
         }
@@ -2801,11 +2815,11 @@ public class Resolve {
                         boundSearchResultKind = SearchResultKind.BAD_MATCH_MORE_SPECIFIC;
                     } else {
                         boundSearchResultKind = SearchResultKind.BAD_MATCH;
-                        if (boundSym.kind < ERRONEOUS) {
+                        if (!boundSym.kind.isOverloadError()) {
                             boundSym = methodWithCorrectStaticnessNotFound;
                         }
                     }
-                } else if (boundSym.kind < ERRONEOUS) {
+                } else if (!boundSym.kind.isOverloadError()) {
                     boundSearchResultKind = SearchResultKind.GOOD_MATCH;
                 }
             }
@@ -2835,11 +2849,11 @@ public class Resolve {
                             unboundSearchResultKind = SearchResultKind.BAD_MATCH_MORE_SPECIFIC;
                         } else {
                             unboundSearchResultKind = SearchResultKind.BAD_MATCH;
-                            if (unboundSym.kind < ERRONEOUS) {
+                            if (!unboundSym.kind.isOverloadError()) {
                                 unboundSym = methodWithCorrectStaticnessNotFound;
                             }
                         }
-                    } else if (unboundSym.kind < ERRONEOUS) {
+                    } else if (!unboundSym.kind.isOverloadError()) {
                         unboundSearchResultKind = SearchResultKind.GOOD_MATCH;
                     }
                 }
@@ -2849,7 +2863,8 @@ public class Resolve {
         //merge results
         Pair<Symbol, ReferenceLookupHelper> res;
         Symbol bestSym = choose(boundSym, unboundSym);
-        if (bestSym.kind < ERRONEOUS && (staticErrorForBound || staticErrorForUnbound)) {
+        if (!bestSym.kind.isOverloadError() &&
+            (staticErrorForBound || staticErrorForUnbound)) {
             if (staticErrorForBound) {
                 boundSym = methodWithCorrectStaticnessNotFound;
             }
@@ -2983,7 +2998,7 @@ public class Resolve {
          */
         final boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
             return phase.ordinal() > maxPhase.ordinal() ||
-                    sym.kind < ERRONEOUS || sym.kind == AMBIGUOUS;
+                !sym.kind.isOverloadError() || sym.kind == AMBIGUOUS;
         }
 
         /**
@@ -3029,7 +3044,7 @@ public class Resolve {
 
         @Override
         Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
-            if (sym.kind >= AMBIGUOUS) {
+            if (sym.kind.isOverloadError()) {
                 //if nothing is found return the 'first' error
                 sym = accessMethod(sym, pos, location, site, name, true, argtypes, typeargtypes);
             }
@@ -3228,7 +3243,7 @@ public class Resolve {
             return sym.kind != MTH ||
                           site.getEnclosingType().hasTag(NONE) ||
                           hasEnclosingInstance(env, site) ?
-                          sym : new InvalidSymbolError(Kinds.MISSING_ENCL, sym, null) {
+                          sym : new InvalidSymbolError(MISSING_ENCL, sym, null) {
                     @Override
                     JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
                        return diags.create(dkind, log.currentSource(), pos,
@@ -3369,7 +3384,7 @@ public class Resolve {
 
     boolean hasEnclosingInstance(Env<AttrContext> env, Type type) {
         Symbol encl = resolveSelfContainingInternal(env, type.tsym, false);
-        return encl != null && encl.kind < ERRONEOUS;
+        return encl != null && !encl.kind.isOverloadError();
     }
 
     private Symbol resolveSelfContainingInternal(Env<AttrContext> env,
@@ -3405,7 +3420,7 @@ public class Resolve {
     }
 
     Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t, boolean isSuperCall) {
-        Type thisType = (((t.tsym.owner.kind & (MTH|VAR)) != 0)
+        Type thisType = (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)
                          ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
                          : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
         if (env.info.isSelfCall && thisType.tsym == env.enclClass.sym)
@@ -3466,7 +3481,7 @@ public class Resolve {
         /** The name of the kind of error, for debugging only. */
         final String debugName;
 
-        ResolveError(int kind, String debugName) {
+        ResolveError(Kind kind, String debugName) {
             super(kind, 0, null, null, null);
             this.debugName = debugName;
         }
@@ -3534,7 +3549,7 @@ public class Resolve {
         /** The invalid symbol found during resolution */
         Symbol sym;
 
-        InvalidSymbolError(int kind, Symbol sym, String debugName) {
+        InvalidSymbolError(Kind kind, Symbol sym, String debugName) {
             super(kind, debugName);
             this.sym = sym;
         }
@@ -3551,7 +3566,7 @@ public class Resolve {
 
         @Override
         public Symbol access(Name name, TypeSymbol location) {
-            if ((sym.kind & ERRONEOUS) == 0 && (sym.kind & TYP) != 0)
+            if (!sym.kind.isOverloadError() && sym.kind.matches(KindSelector.TYP))
                 return types.createErrorType(name, location, sym.type).tsym;
             else
                 return sym;
@@ -3564,11 +3579,11 @@ public class Resolve {
      */
     class SymbolNotFoundError extends ResolveError {
 
-        SymbolNotFoundError(int kind) {
+        SymbolNotFoundError(Kind kind) {
             this(kind, "symbol not found error");
         }
 
-        SymbolNotFoundError(int kind, String debugName) {
+        SymbolNotFoundError(Kind kind, String debugName) {
             super(kind, debugName);
         }
 
@@ -3609,7 +3624,7 @@ public class Resolve {
             }
             boolean isConstructor = (kind == ABSENT_MTH || kind == WRONG_STATICNESS) &&
                     name == names.init;
-            KindName kindname = isConstructor ? KindName.CONSTRUCTOR : absentKind(kind);
+            KindName kindname = isConstructor ? KindName.CONSTRUCTOR : kind.absentKind();
             Name idname = isConstructor ? site.tsym.name : name;
             String errKey = getErrorKey(kindname, typeargtypes.nonEmpty(), hasLocation);
             if (hasLocation) {
@@ -3669,7 +3684,7 @@ public class Resolve {
             this(WRONG_MTH, "inapplicable symbol error", context);
         }
 
-        protected InapplicableSymbolError(int kind, String debugName, MethodResolutionContext context) {
+        protected InapplicableSymbolError(Kind kind, String debugName, MethodResolutionContext context) {
             super(kind, debugName);
             this.resolveContext = context;
         }
@@ -3784,7 +3799,7 @@ public class Resolve {
                         log.currentSource(),
                         pos,
                         "cant.apply.symbols",
-                        name == names.init ? KindName.CONSTRUCTOR : absentKind(kind),
+                        name == names.init ? KindName.CONSTRUCTOR : kind.absentKind(),
                         name == names.init ? site.tsym.name : name,
                         methodArguments(argtypes));
                 return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(filteredCandidates, site));
@@ -4164,8 +4179,8 @@ public class Resolve {
             @Override
             public Symbol mergeResults(Symbol bestSoFar, Symbol sym) {
                 //Check invariants (see {@code LookupHelper.shouldStop})
-                Assert.check(bestSoFar.kind >= ERRONEOUS && bestSoFar.kind != AMBIGUOUS);
-                if (sym.kind < ERRONEOUS) {
+                Assert.check(bestSoFar.kind.isOverloadError() && bestSoFar.kind != AMBIGUOUS);
+                if (!sym.kind.isOverloadError()) {
                     //varargs resolution successful
                     return sym;
                 } else {

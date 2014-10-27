@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An sjavac implementation that keeps track of idleness and shuts down the
@@ -47,10 +46,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class IdleResetSjavac implements Sjavac {
 
     private final Sjavac delegate;
-    private final AtomicInteger outstandingCalls = new AtomicInteger();
     private final Terminable toShutdown;
     private final Timer idlenessTimer = new Timer();
     private final long idleTimeout;
+    private int outstandingCalls = 0;
 
     // Class invariant: idlenessTimerTask != null <-> idlenessTimerTask is scheduled
     private TimerTask idlenessTimerTask;
@@ -94,9 +93,9 @@ public class IdleResetSjavac implements Sjavac {
         }
     }
 
-    private void startCall() {
+    private synchronized void startCall() {
         // Was there no outstanding calls before this call?
-        if (outstandingCalls.incrementAndGet() == 1) {
+        if (++outstandingCalls == 1) {
             // Then the timer task must have been scheduled
             if (idlenessTimerTask == null)
                 throw new IllegalStateException("Idle timeout already cancelled");
@@ -106,8 +105,8 @@ public class IdleResetSjavac implements Sjavac {
         }
     }
 
-    private void endCall() {
-        if (outstandingCalls.decrementAndGet() == 0) {
+    private synchronized void endCall() {
+        if (--outstandingCalls == 0) {
             // No more outstanding calls. Schedule timeout.
             scheduleTimeout();
         }

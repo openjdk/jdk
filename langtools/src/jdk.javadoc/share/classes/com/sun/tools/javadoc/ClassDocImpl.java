@@ -41,6 +41,7 @@ import com.sun.javadoc.*;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
@@ -58,7 +59,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -617,7 +618,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         List<MethodDocImpl> methods = List.nil();
         for (Symbol sym :tsym.members().getSymbols(NON_RECURSIVE)) {
             if (sym != null
-                && sym.kind == Kinds.MTH
+                && sym.kind == MTH
                 && sym.name != names.init
                 && sym.name != names.clinit) {
                 MethodSymbol s = (MethodSymbol)sym;
@@ -652,7 +653,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         List<ConstructorDocImpl> constructors = List.nil();
         for (Symbol sym : tsym.members().getSymbols(NON_RECURSIVE)) {
             if (sym != null &&
-                sym.kind == Kinds.MTH && sym.name == names.init) {
+                sym.kind == MTH && sym.name == names.init) {
                 MethodSymbol s = (MethodSymbol)sym;
                 if (!filter || env.shouldDocument(s)) {
                     constructors = constructors.prepend(env.getConstructorDoc(s));
@@ -687,7 +688,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
             l.append(this);
             List<ClassDocImpl> more = List.nil();
             for (Symbol sym : tsym.members().getSymbols(NON_RECURSIVE)) {
-                if (sym != null && sym.kind == Kinds.TYP) {
+                if (sym != null && sym.kind == TYP) {
                     ClassSymbol s = (ClassSymbol)sym;
                     ClassDocImpl c = env.getClassDoc(s);
                     if (c.isSynthetic()) continue;
@@ -714,7 +715,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
     public ClassDoc[] innerClasses(boolean filter) {
         ListBuffer<ClassDocImpl> innerClasses = new ListBuffer<>();
         for (Symbol sym : tsym.members().getSymbols(NON_RECURSIVE)) {
-            if (sym != null && sym.kind == Kinds.TYP) {
+            if (sym != null && sym.kind == TYP) {
                 ClassSymbol s = (ClassSymbol)sym;
                 if ((s.flags_field & Flags.SYNTHETIC) != 0) continue;
                 if (!filter || env.isVisible(s)) {
@@ -810,7 +811,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
 
             Scope s = compenv.toplevel.namedImportScope;
             for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == Kinds.TYP) {
+                if (sym.kind == TYP) {
                     ClassDoc c = env.getClassDoc((ClassSymbol)sym);
                     return c;
                 }
@@ -818,7 +819,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
 
             s = compenv.toplevel.starImportScope;
             for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == Kinds.TYP) {
+                if (sym.kind == TYP) {
                     ClassDoc c = env.getClassDoc((ClassSymbol)sym);
                     return c;
                 }
@@ -931,7 +932,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
             // attempt to emulate the old behavior.
             MethodSymbol lastFound = null;
             for (Symbol sym : tsym.members().getSymbolsByName(names.fromString(methodName))) {
-                if (sym.kind == Kinds.MTH) {
+                if (sym.kind == MTH) {
                     //### Should intern methodName as Name.
                     if (sym.name.toString().equals(methodName)) {
                         lastFound = (MethodSymbol)sym;
@@ -944,7 +945,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         } else {
             for (Symbol sym : tsym.members().getSymbolsByName(names.fromString(methodName))) {
                 if (sym != null &&
-                    sym.kind == Kinds.MTH) {
+                    sym.kind == MTH) {
                     //### Should intern methodName as Name.
                     if (hasParameterTypes((MethodSymbol)sym, paramTypes)) {
                         return env.getMethodDoc((MethodSymbol)sym);
@@ -1005,7 +1006,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
                                           String[] paramTypes) {
         Names names = tsym.name.table.names;
         for (Symbol sym : tsym.members().getSymbolsByName(names.fromString("<init>"))) {
-            if (sym.kind == Kinds.MTH) {
+            if (sym.kind == MTH) {
                 if (hasParameterTypes((MethodSymbol)sym, paramTypes)) {
                     return env.getConstructorDoc((MethodSymbol)sym);
                 }
@@ -1047,7 +1048,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         searched.add(this);
 
         for (Symbol sym : tsym.members().getSymbolsByName(names.fromString(fieldName))) {
-            if (sym.kind == Kinds.VAR) {
+            if (sym.kind == VAR) {
                 //### Should intern fieldName as Name.
                 return env.getFieldDoc((VarSymbol)sym);
             }
@@ -1111,7 +1112,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
             if (t.hasTag(IMPORT)) {
                 JCTree imp = ((JCImport) t).qualid;
                 if ((TreeInfo.name(imp) != asterisk) &&
-                        (imp.type.tsym.kind & Kinds.TYP) != 0) {
+                    imp.type.tsym.kind.matches(KindSelector.TYP)) {
                     importedClasses.append(
                             env.getClassDoc((ClassSymbol)imp.type.tsym));
                 }

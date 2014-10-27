@@ -33,6 +33,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class WithNode extends LexicalContextStatement {
+    private static final long serialVersionUID = 1L;
+
    /** This expression. */
     private final Expression expression;
 

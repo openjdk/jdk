@@ -103,6 +103,11 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
             return int.class;
         }
 
+        @Override
+        public Class<?> getBoxedElementType() {
+            return int.class;
+        }
+
         private int getElem(final int index) {
             try {
                 return nb.get(index) & 0xff;

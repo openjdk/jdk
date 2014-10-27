@@ -44,6 +44,7 @@ import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
  * A generator of dynamic proxy implementations of
@@ -121,7 +122,7 @@ public class AnnotationProxyMaker {
         // First find the default values.
         ClassSymbol sym = (ClassSymbol) anno.type.tsym;
         for (Symbol s : sym.members().getSymbols(NON_RECURSIVE)) {
-            if (s.kind == Kinds.MTH) {
+            if (s.kind == MTH) {
                 MethodSymbol m = (MethodSymbol) s;
                 Attribute def = m.getDefaultValue();
                 if (def != null)

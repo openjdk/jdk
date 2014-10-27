@@ -47,6 +47,7 @@ import jdk.nashorn.internal.runtime.Undefined;
  * contain a class that is a more specialized object
  */
 class ObjectType extends Type {
+    private static final long serialVersionUID = 1L;
 
     protected ObjectType() {
         this(Object.class);

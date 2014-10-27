@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
+import jdk.testlibrary.ProcessTools;
 
 /*
  * @test
@@ -42,7 +43,7 @@ public class TestJstatdUsage {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
         launcher.addToolArg(option);
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
-        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
 
         output.shouldContain("usage: jstatd [-nr] [-p port] [-n rminame]");
         output.shouldHaveExitValue(1);

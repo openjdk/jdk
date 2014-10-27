@@ -85,7 +85,7 @@ class ProgramPoints extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterVarNode(final VarNode varNode) {
-        noProgramPoint.add(varNode.getAssignmentDest());
+        noProgramPoint.add(varNode.getName());
         return true;
     }
 

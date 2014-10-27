@@ -37,6 +37,7 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
  * This is an array type, i.e. OBJECT_ARRAY, NUMBER_ARRAY.
  */
 public class ArrayType extends ObjectType implements BytecodeArrayOps {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructor
