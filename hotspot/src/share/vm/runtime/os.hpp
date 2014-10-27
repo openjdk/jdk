@@ -680,28 +680,10 @@ class os: AllStatic {
   // SocketInterface (ex HPI SocketInterface )
   static int socket(int domain, int type, int protocol);
   static int socket_close(int fd);
-  static int socket_shutdown(int fd, int howto);
   static int recv(int fd, char* buf, size_t nBytes, uint flags);
   static int send(int fd, char* buf, size_t nBytes, uint flags);
   static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
-  static int timeout(int fd, long timeout);
-  static int listen(int fd, int count);
   static int connect(int fd, struct sockaddr* him, socklen_t len);
-  static int bind(int fd, struct sockaddr* him, socklen_t len);
-  static int accept(int fd, struct sockaddr* him, socklen_t* len);
-  static int recvfrom(int fd, char* buf, size_t nbytes, uint flags,
-                      struct sockaddr* from, socklen_t* fromlen);
-  static int get_sock_name(int fd, struct sockaddr* him, socklen_t* len);
-  static int sendto(int fd, char* buf, size_t len, uint flags,
-                    struct sockaddr* to, socklen_t tolen);
-  static int socket_available(int fd, jint* pbytes);
-
-  static int get_sock_opt(int fd, int level, int optname,
-                          char* optval, socklen_t* optlen);
-  static int set_sock_opt(int fd, int level, int optname,
-                          const char* optval, socklen_t optlen);
-  static int get_host_name(char* name, int namelen);
-
   static struct hostent* get_host_by_name(char* name);
 
   // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
