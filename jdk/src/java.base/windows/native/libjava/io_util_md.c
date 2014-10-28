@@ -275,7 +275,15 @@ fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
 {
     FD h = winFileHandleOpen(env, path, flags);
     if (h >= 0) {
+        jobject fdobj;
+        jboolean append;
         SET_FD(this, h, fid);
+
+        fdobj = (*env)->GetObjectField(env, this, fid);
+        if (fdobj != NULL) {
+            append = (flags & O_APPEND) == 0 ? JNI_FALSE : JNI_TRUE;
+            (*env)->SetBooleanField(env, fdobj, IO_append_fdID, append);
+        }
     }
 }
 

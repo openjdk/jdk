@@ -35,10 +35,6 @@ class FileDispatcherImpl extends FileDispatcher
         init();
     }
 
-    FileDispatcherImpl(boolean append) {
-        /* append is ignored */
-    }
-
     FileDispatcherImpl() {
     }
 
