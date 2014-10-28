@@ -444,6 +444,7 @@ hotspot_compiler_3 = \
   compiler/arraycopy/TestMissingControl.java \
   compiler/ciReplay/TestVM_no_comp_level.sh \
   compiler/classUnloading/anonymousClass/TestAnonymousClassUnloading.java \
+  compiler/codecache/CheckSegmentedCodeCache.java \
   compiler/codecache/CheckUpperLimit.java \
   compiler/codegen/ \
   compiler/cpuflags/RestoreMXCSR.java \
