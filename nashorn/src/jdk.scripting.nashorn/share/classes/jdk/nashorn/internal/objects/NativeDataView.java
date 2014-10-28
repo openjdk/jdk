@@ -27,6 +27,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -432,7 +433,7 @@ public class NativeDataView extends ScriptObject {
     @SpecializedFunction
     public static long getUint32(final Object self, final int byteOffset) {
         try {
-            return JSType.MAX_UINT & getBuffer(self, false).getInt(JSType.toInt32(byteOffset));
+            return JSType.toUint32(getBuffer(self, false).getInt(JSType.toInt32(byteOffset)));
         } catch (final IllegalArgumentException iae) {
             throw rangeError(iae, "dataview.offset");
         }
@@ -449,7 +450,7 @@ public class NativeDataView extends ScriptObject {
     @SpecializedFunction
     public static long getUint32(final Object self, final int byteOffset, final boolean littleEndian) {
         try {
-            return JSType.MAX_UINT & getBuffer(self, littleEndian).getInt(JSType.toInt32(byteOffset));
+            return JSType.toUint32(getBuffer(self, littleEndian).getInt(JSType.toInt32(byteOffset)));
         } catch (final IllegalArgumentException iae) {
             throw rangeError(iae, "dataview.offset");
         }

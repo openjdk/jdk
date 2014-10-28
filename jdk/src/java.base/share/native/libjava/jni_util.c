@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                              const char *defaultDetail)
 {
     char buf[256];
-    int n = JVM_GetLastErrorString(buf, sizeof(buf));
+    int n = getLastErrorString(buf, sizeof(buf));
 
     if (n > 0) {
         jstring s = JNU_NewStringPlatform(env, buf);

@@ -25,24 +25,31 @@
 
 package jdk.nashorn.internal.codegen;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.TreeSet;
+import jdk.nashorn.internal.ir.CompileUnitHolder;
 
 /**
- * Used to track split class compilation.
- */
-public final class CompileUnit implements Comparable<CompileUnit> {
+  * Used to track split class compilation. Note that instances of the class are serializable, but all fields are
+  * transient, making the serialized version of the class only useful for tracking the referential topology of other
+  * AST nodes referencing the same or different compile units. We do want to preserve this topology though as
+  * {@link CompileUnitHolder}s in a deserialized AST will undergo reinitialization.
+  */
+public final class CompileUnit implements Comparable<CompileUnit>, Serializable {
+    private static final long serialVersionUID = 1L;
+
     /** Current class name */
-    private final String className;
+    private transient final String className;
 
     /** Current class generator */
-    private ClassEmitter classEmitter;
+    private transient ClassEmitter classEmitter;
 
-    private long weight;
+    private transient long weight;
 
-    private Class<?> clazz;
+    private transient Class<?> clazz;
 
-    private boolean isUsed;
+    private transient boolean isUsed;
 
     private static int emittedUnitCount;
 
@@ -122,14 +129,6 @@ public final class CompileUnit implements Comparable<CompileUnit> {
     }
 
     /**
-     * Get the current weight of the compile unit.
-     * @return the unit's weight
-     */
-    long getWeight() {
-        return weight;
-    }
-
-    /**
      * Check if this compile unit can hold {@code weight} more units of weight
      * @param w weight to check if can be added
      * @return true if weight fits in this compile unit
@@ -155,7 +154,7 @@ public final class CompileUnit implements Comparable<CompileUnit> {
     }
 
     private static String shortName(final String name) {
-        return name.lastIndexOf('/') == -1 ? name : name.substring(name.lastIndexOf('/') + 1);
+        return name == null ? null : name.lastIndexOf('/') == -1 ? name : name.substring(name.lastIndexOf('/') + 1);
     }
 
     @Override

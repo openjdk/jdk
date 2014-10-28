@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public abstract class DynamicLauncher {
     protected OutputAnalyzer runVM() throws Exception {
         String[] options = this.options();
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(options);
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        OutputAnalyzer out = ProcessTools.executeProcess(pb);
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
         return out;

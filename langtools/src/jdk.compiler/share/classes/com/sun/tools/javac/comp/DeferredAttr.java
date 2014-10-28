@@ -47,9 +47,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import static com.sun.tools.javac.code.Kinds.VAL;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
  * This is an helper class that is used to perform deferred type-analysis.
@@ -700,7 +701,7 @@ public class DeferredAttr extends JCTree.Visitor {
                      * which may happen if lambda's return type is an
                      * inference variable
                      */
-                    Attr.ResultInfo bodyResultInfo = attr.new ResultInfo(VAL, Type.noType);
+                    Attr.ResultInfo bodyResultInfo = attr.new ResultInfo(KindSelector.VAL, Type.noType);
                     localEnv.info.returnResult = bodyResultInfo;
 
                     // discard any log output
@@ -768,10 +769,10 @@ public class DeferredAttr extends JCTree.Visitor {
                     switch (lookupSym.kind) {
                         //note: as argtypes are erroneous types, type-errors must
                         //have been caused by arity mismatch
-                        case Kinds.ABSENT_MTH:
-                        case Kinds.WRONG_MTH:
-                        case Kinds.WRONG_MTHS:
-                        case Kinds.WRONG_STATICNESS:
+                        case ABSENT_MTH:
+                        case WRONG_MTH:
+                        case WRONG_MTHS:
+                        case WRONG_STATICNESS:
                            checkContext.report(tree, diags.fragment("incompatible.arg.types.in.mref"));
                     }
                 }
@@ -1185,7 +1186,7 @@ public class DeferredAttr extends JCTree.Visitor {
                     rs.getMemberReference(tree, localEnv, mref2,
                         exprTree.type, tree.name);
             tree.sym = res;
-            if (res.kind >= Kinds.ERRONEOUS ||
+            if (res.kind.isOverloadError() ||
                     res.type.hasTag(FORALL) ||
                     (res.flags() & Flags.VARARGS) != 0 ||
                     (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
@@ -1380,13 +1381,13 @@ public class DeferredAttr extends JCTree.Visitor {
          */
         <E> E analyzeCandidateMethods(Symbol sym, E defaultValue, MethodAnalyzer<E> analyzer) {
             switch (sym.kind) {
-                case Kinds.MTH:
+                case MTH:
                     return analyzer.process((MethodSymbol) sym);
-                case Kinds.AMBIGUOUS:
+                case AMBIGUOUS:
                     Resolve.AmbiguityError err = (Resolve.AmbiguityError)sym.baseSymbol();
                     E res = defaultValue;
                     for (Symbol s : err.ambiguousSyms) {
-                        if (s.kind == Kinds.MTH) {
+                        if (s.kind == MTH) {
                             res = analyzer.reduce(res, analyzer.process((MethodSymbol) s));
                             if (analyzer.shouldStop(res))
                                 return res;

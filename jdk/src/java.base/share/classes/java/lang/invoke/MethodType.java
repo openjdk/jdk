@@ -889,11 +889,6 @@ class MethodType implements java.io.Serializable {
      *     with MHs.eCE.
      *  3a. unboxing conversions can be followed by the full matrix of primitive conversions
      *  3b. unboxing of null is permitted (creates a zero primitive value)
-     *     Most unboxing conversions, like {@code Object->int}, has potentially
-     *     different behaviors for asType vs. MHs.eCE, because the dynamic value
-     *     might be a wrapper of a type that requires narrowing, like {@code (Object)1L->byte}.
-     *     The equivalence is only certain if the static src type is a wrapper,
-     *     and the conversion will be a widening one.
      * Other than interfaces, reference-to-reference conversions are the same.
      * Boxing primitives to references is the same for both operators.
      */
@@ -904,11 +899,8 @@ class MethodType implements java.io.Serializable {
             // Or a boxing conversion, which is always to an exact wrapper class.
             return canConvert(src, dst);
         } else if (dst.isPrimitive()) {
-            Wrapper dw = Wrapper.forPrimitiveType(dst);
-            // Watch out:  If src is Number or Object, we could get dynamic narrowing conversion.
-            // The conversion is known to be widening only if the wrapper type is statically visible.
-            return (Wrapper.isWrapperType(src) &&
-                    dw.isConvertibleFrom(Wrapper.forWrapperType(src)));
+            // Unboxing behavior is different between MHs.eCA & MH.asType (see 3b).
+            return false;
         } else {
             // R->R always works, but we have to avoid a check-cast to an interface.
             return !dst.isInterface() || dst.isAssignableFrom(src);

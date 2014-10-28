@@ -36,6 +36,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public class ReturnNode extends Statement {
+    private static final long serialVersionUID = 1L;
+
     /** Optional expression. */
     private final Expression expression;
 

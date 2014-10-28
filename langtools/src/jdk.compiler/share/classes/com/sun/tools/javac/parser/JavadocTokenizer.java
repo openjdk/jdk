@@ -30,6 +30,7 @@ import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.util.*;
 
 import java.nio.*;
+import java.util.regex.Pattern;
 
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
@@ -450,11 +451,15 @@ public class JavadocTokenizer extends JavaTokenizer {
                 scanned = true;
                 comment_reader = null;
                 if (docComment != null &&
-                        docComment.matches("(?sm).*^\\s*@deprecated( |$).*")) {
+                        DEPRECATED_PATTERN.matcher(docComment).matches()) {
                     deprecatedFlag = true;
                 }
             }
         }
+        //where:
+            private static final Pattern DEPRECATED_PATTERN =
+                    Pattern.compile("(?sm).*^\\s*@deprecated( |$).*");
+
     }
 
     @Override

@@ -97,7 +97,7 @@ public final class Symbol implements Comparable<Symbol> {
     private int firstSlot = -1;
 
     /** Field number in scope or property; array index in varargs when not using arguments object. */
-    private int fieldIndex;
+    private int fieldIndex = -1;
 
     /** Number of times this symbol is used in code */
     private int useCount;
@@ -135,26 +135,13 @@ public final class Symbol implements Comparable<Symbol> {
      *
      * @param name  name of symbol
      * @param flags symbol flags
-     * @param slot  bytecode slot for this symbol
      */
-    protected Symbol(final String name, final int flags, final int slot) {
+    public Symbol(final String name, final int flags) {
         this.name       = name;
         this.flags      = flags;
-        this.firstSlot  = slot;
-        this.fieldIndex = -1;
         if(shouldTrace()) {
             trace("CREATE SYMBOL " + name);
         }
-    }
-
-    /**
-     * Constructor
-     *
-     * @param name  name of symbol
-     * @param flags symbol flags
-     */
-    public Symbol(final String name, final int flags) {
-        this(name, flags, -1);
     }
 
     private static String align(final String string, final int max) {

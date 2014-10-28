@@ -73,6 +73,8 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
+import static com.sun.tools.javac.code.Kinds.Kind.*;
+
 /**
  * Contains operations specific to processing type annotations.
  * This class has two functions:
@@ -182,43 +184,43 @@ public class TypeAnnotations {
             }
             Attribute.Enum e = (Attribute.Enum) app;
             if (e.value.name == names.TYPE) {
-                if (s.kind == Kinds.TYP)
+                if (s.kind == TYP)
                     isDecl = true;
             } else if (e.value.name == names.FIELD) {
-                if (s.kind == Kinds.VAR &&
-                        s.owner.kind != Kinds.MTH)
+                if (s.kind == VAR &&
+                        s.owner.kind != MTH)
                     isDecl = true;
             } else if (e.value.name == names.METHOD) {
-                if (s.kind == Kinds.MTH &&
+                if (s.kind == MTH &&
                         !s.isConstructor())
                     isDecl = true;
             } else if (e.value.name == names.PARAMETER) {
-                if (s.kind == Kinds.VAR &&
-                        s.owner.kind == Kinds.MTH &&
+                if (s.kind == VAR &&
+                        s.owner.kind == MTH &&
                         (s.flags() & Flags.PARAMETER) != 0)
                     isDecl = true;
             } else if (e.value.name == names.CONSTRUCTOR) {
-                if (s.kind == Kinds.MTH &&
+                if (s.kind == MTH &&
                         s.isConstructor())
                     isDecl = true;
             } else if (e.value.name == names.LOCAL_VARIABLE) {
-                if (s.kind == Kinds.VAR &&
-                        s.owner.kind == Kinds.MTH &&
+                if (s.kind == VAR &&
+                        s.owner.kind == MTH &&
                         (s.flags() & Flags.PARAMETER) == 0)
                     isDecl = true;
             } else if (e.value.name == names.ANNOTATION_TYPE) {
-                if (s.kind == Kinds.TYP &&
+                if (s.kind == TYP &&
                         (s.flags() & Flags.ANNOTATION) != 0)
                     isDecl = true;
             } else if (e.value.name == names.PACKAGE) {
-                if (s.kind == Kinds.PCK)
+                if (s.kind == PCK)
                     isDecl = true;
             } else if (e.value.name == names.TYPE_USE) {
-                if (s.kind == Kinds.TYP ||
-                        s.kind == Kinds.VAR ||
-                        (s.kind == Kinds.MTH && !s.isConstructor() &&
+                if (s.kind == TYP ||
+                        s.kind == VAR ||
+                        (s.kind == MTH && !s.isConstructor() &&
                         !s.type.getReturnType().hasTag(TypeTag.VOID)) ||
-                        (s.kind == Kinds.MTH && s.isConstructor()))
+                        (s.kind == MTH && s.isConstructor()))
                     isType = true;
             } else if (e.value.name == names.TYPE_PARAMETER) {
                 /* Irrelevant in this case */

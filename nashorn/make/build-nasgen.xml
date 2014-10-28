@@ -25,7 +25,7 @@
     <description>Builds and runs nasgen.</description>
     <import file="build.xml"/>
 
-    <target name="build-nasgen" depends="compile-asm">
+    <target name="build-nasgen" depends="prepare">
         <ant inheritAll="false" dir="${basedir}/buildtools/nasgen"
             antfile="build.xml" target="jar"/>
     </target>

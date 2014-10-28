@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -110,6 +111,8 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
 #define NINFLATIONLOCKS 256
 static volatile intptr_t InflationLocks[NINFLATIONLOCKS];
 
+// gBlockList is really PaddedEnd<ObjectMonitor> *, but we don't
+// want to expose the PaddedEnd template more than necessary.
 ObjectMonitor * ObjectSynchronizer::gBlockList = NULL;
 ObjectMonitor * volatile ObjectSynchronizer::gFreeList  = NULL;
 ObjectMonitor * volatile ObjectSynchronizer::gOmInUseList  = NULL;
@@ -410,16 +413,15 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
 // performed by the CPU(s) or platform.
 
 struct SharedGlobals {
+  char         _pad_prefix[DEFAULT_CACHE_LINE_SIZE];
   // These are highly shared mostly-read variables.
-  // To avoid false-sharing they need to be the sole occupants of a $ line.
-  double padPrefix[8];
+  // To avoid false-sharing they need to be the sole occupants of a cache line.
   volatile int stwRandom;
   volatile int stwCycle;
-
-  // Hot RW variables -- Sequester to avoid false-sharing
-  double padSuffix[16];
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int) * 2);
+  // Hot RW variable -- Sequester to avoid false-sharing
   volatile int hcSequence;
-  double padFinal[8];
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int));
 };
 
 static SharedGlobals GVars;
@@ -780,18 +782,18 @@ JavaThread* ObjectSynchronizer::get_lock_owner(Handle h_obj, bool doLock) {
 // Visitors ...
 
 void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
-  ObjectMonitor* block = gBlockList;
+  PaddedEnd<ObjectMonitor> * block = (PaddedEnd<ObjectMonitor> *)gBlockList;
   ObjectMonitor* mid;
   while (block) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = _BLOCKSIZE - 1; i > 0; i--) {
-      mid = block + i;
+      mid = (ObjectMonitor *)(block + i);
       oop object = (oop) mid->object();
       if (object != NULL) {
         closure->do_monitor(mid);
       }
     }
-    block = (ObjectMonitor*) block->FreeNext;
+    block = (PaddedEnd<ObjectMonitor> *) block->FreeNext;
   }
 }
 
@@ -806,10 +808,12 @@ static inline ObjectMonitor* next(ObjectMonitor* block) {
 
 void ObjectSynchronizer::oops_do(OopClosure* f) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  for (ObjectMonitor* block = gBlockList; block != NULL; block = next(block)) {
+  for (PaddedEnd<ObjectMonitor> * block =
+       (PaddedEnd<ObjectMonitor> *)gBlockList; block != NULL;
+       block = (PaddedEnd<ObjectMonitor> *)next(block)) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = 1; i < _BLOCKSIZE; i++) {
-      ObjectMonitor* mid = &block[i];
+      ObjectMonitor* mid = (ObjectMonitor *)&block[i];
       if (mid->object() != NULL) {
         f->do_oop((oop*)mid->object_addr());
       }
@@ -966,16 +970,29 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::omAlloc(Thread * Self) {
     // 3: allocate a block of new ObjectMonitors
     // Both the local and global free lists are empty -- resort to malloc().
     // In the current implementation objectMonitors are TSM - immortal.
+    // Ideally, we'd write "new ObjectMonitor[_BLOCKSIZE], but we want
+    // each ObjectMonitor to start at the beginning of a cache line,
+    // so we use align_size_up().
+    // A better solution would be to use C++ placement-new.
+    // BEWARE: As it stands currently, we don't run the ctors!
     assert(_BLOCKSIZE > 1, "invariant");
-    ObjectMonitor * temp = new ObjectMonitor[_BLOCKSIZE];
+    size_t neededsize = sizeof(PaddedEnd<ObjectMonitor>) * _BLOCKSIZE;
+    PaddedEnd<ObjectMonitor> * temp;
+    size_t aligned_size = neededsize + (DEFAULT_CACHE_LINE_SIZE - 1);
+    void* real_malloc_addr = (void *)NEW_C_HEAP_ARRAY(char, aligned_size,
+                                                      mtInternal);
+    temp = (PaddedEnd<ObjectMonitor> *)
+             align_size_up((intptr_t)real_malloc_addr,
+                           DEFAULT_CACHE_LINE_SIZE);
 
     // NOTE: (almost) no way to recover if allocation failed.
     // We might be able to induce a STW safepoint and scavenge enough
     // objectMonitors to permit progress.
     if (temp == NULL) {
-      vm_exit_out_of_memory(sizeof (ObjectMonitor[_BLOCKSIZE]), OOM_MALLOC_ERROR,
+      vm_exit_out_of_memory(neededsize, OOM_MALLOC_ERROR,
                             "Allocate ObjectMonitors");
     }
+    (void)memset((void *) temp, 0, neededsize);
 
     // Format the block.
     // initialize the linked list, each monitor points to its next
@@ -986,7 +1003,7 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::omAlloc(Thread * Self) {
     // look like: class Block { Block * next; int N; ObjectMonitor Body [N] ; }
 
     for (int i = 1; i < _BLOCKSIZE; i++) {
-      temp[i].FreeNext = &temp[i+1];
+      temp[i].FreeNext = (ObjectMonitor *)&temp[i+1];
     }
 
     // terminate the last monitor as the end of list
@@ -1141,10 +1158,6 @@ ObjectMonitor* ObjectSynchronizer::inflate_helper(oop obj) {
 }
 
 
-// Note that we could encounter some performance loss through false-sharing as
-// multiple locks occupy the same $ line.  Padding might be appropriate.
-
-
 ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
                                                      oop object) {
   // Inflate mutates the heap ...
@@ -1210,7 +1223,6 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
       // in which INFLATING appears in the mark.
       m->Recycle();
       m->_Responsible  = NULL;
-      m->OwnerIsThread = 0;
       m->_recursions   = 0;
       m->_SpinDuration = ObjectMonitor::Knob_SpinLimit;   // Consider: maintain by type/class
 
@@ -1257,8 +1269,8 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
       m->set_header(dmw);
 
       // Optimization: if the mark->locker stack address is associated
-      // with this thread we could simply set m->_owner = Self and
-      // m->OwnerIsThread = 1. Note that a thread can inflate an object
+      // with this thread we could simply set m->_owner = Self.
+      // Note that a thread can inflate an object
       // that it has stack-locked -- as might happen in wait() -- directly
       // with CAS.  That is, we can avoid the xchg-NULL .... ST idiom.
       m->set_owner(mark->locker());
@@ -1302,7 +1314,6 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
     m->set_header(mark);
     m->set_owner(NULL);
     m->set_object(object);
-    m->OwnerIsThread = 1;
     m->_recursions   = 0;
     m->_Responsible  = NULL;
     m->_SpinDuration = ObjectMonitor::Knob_SpinLimit;       // consider: keep metastats by type/class
@@ -1310,7 +1321,6 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
     if (Atomic::cmpxchg_ptr (markOopDesc::encode(m), object->mark_addr(), mark) != mark) {
       m->set_object(NULL);
       m->set_owner(NULL);
-      m->OwnerIsThread = 0;
       m->Recycle();
       omRelease(Self, m, true);
       m = NULL;
@@ -1335,9 +1345,6 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
     return m;
   }
 }
-
-// Note that we could encounter some performance loss through false-sharing as
-// multiple locks occupy the same $ line.  Padding might be appropriate.
 
 
 // Deflate_idle_monitors() is called at all safepoints, immediately
@@ -1491,12 +1498,14 @@ void ObjectSynchronizer::deflate_idle_monitors() {
       nInuse += gOmInUseCount;
     }
 
-  } else for (ObjectMonitor* block = gBlockList; block != NULL; block = next(block)) {
+  } else for (PaddedEnd<ObjectMonitor> * block =
+              (PaddedEnd<ObjectMonitor> *)gBlockList; block != NULL;
+              block = (PaddedEnd<ObjectMonitor> *)next(block)) {
     // Iterate over all extant monitors - Scavenge all idle monitors.
     assert(block->object() == CHAINMARKER, "must be a block header");
     nInCirculation += _BLOCKSIZE;
     for (int i = 1; i < _BLOCKSIZE; i++) {
-      ObjectMonitor* mid = &block[i];
+      ObjectMonitor* mid = (ObjectMonitor*)&block[i];
       oop obj = (oop) mid->object();
 
       if (obj == NULL) {
@@ -1648,18 +1657,18 @@ void ObjectSynchronizer::sanity_checks(const bool verbose,
 
 // Verify all monitors in the monitor cache, the verification is weak.
 void ObjectSynchronizer::verify() {
-  ObjectMonitor* block = gBlockList;
+  PaddedEnd<ObjectMonitor> * block = (PaddedEnd<ObjectMonitor> *)gBlockList;
   ObjectMonitor* mid;
   while (block) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = 1; i < _BLOCKSIZE; i++) {
-      mid = block + i;
+      mid = (ObjectMonitor *)(block + i);
       oop object = (oop) mid->object();
       if (object != NULL) {
         mid->verify();
       }
     }
-    block = (ObjectMonitor*) block->FreeNext;
+    block = (PaddedEnd<ObjectMonitor> *) block->FreeNext;
   }
 }
 
@@ -1668,18 +1677,19 @@ void ObjectSynchronizer::verify() {
 // the list of extant blocks without taking a lock.
 
 int ObjectSynchronizer::verify_objmon_isinpool(ObjectMonitor *monitor) {
-  ObjectMonitor* block = gBlockList;
+  PaddedEnd<ObjectMonitor> * block = (PaddedEnd<ObjectMonitor> *)gBlockList;
 
   while (block) {
     assert(block->object() == CHAINMARKER, "must be a block header");
-    if (monitor > &block[0] && monitor < &block[_BLOCKSIZE]) {
+    if (monitor > (ObjectMonitor *)&block[0] &&
+        monitor < (ObjectMonitor *)&block[_BLOCKSIZE]) {
       address mon = (address) monitor;
       address blk = (address) block;
       size_t diff = mon - blk;
-      assert((diff % sizeof(ObjectMonitor)) == 0, "check");
+      assert((diff % sizeof(PaddedEnd<ObjectMonitor>)) == 0, "check");
       return 1;
     }
-    block = (ObjectMonitor*) block->FreeNext;
+    block = (PaddedEnd<ObjectMonitor> *) block->FreeNext;
   }
   return 0;
 }

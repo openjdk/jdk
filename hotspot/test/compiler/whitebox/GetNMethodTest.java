@@ -28,7 +28,6 @@ import sun.hotspot.code.NMethod;
  * @test GetNMethodTest
  * @bug 8038240
  * @library /testlibrary /testlibrary/whitebox
- * @ignore 8046268
  * @build GetNMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
