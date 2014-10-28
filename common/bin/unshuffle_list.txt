@@ -1300,7 +1300,6 @@ jdk/src/jdk.deploy.osx/macosx/native/libosx/Dispatch.m : jdk/src/macosx/native/c
 jdk/src/jdk.deploy.osx/macosx/native/libosx/JavaAppLauncher.m : jdk/src/macosx/native/apple/launcher/JavaAppLauncher.m
 jdk/src/jdk.deploy.osx/macosx/native/libosx/KeystoreImpl.m : jdk/src/macosx/native/apple/security/KeystoreImpl.m
 jdk/src/jdk.dev/share/classes/com/sun/jarsigner : jdk/src/share/classes/com/sun/jarsigner
-jdk/src/jdk.dev/share/classes/com/sun/tools/extcheck : jdk/src/share/classes/com/sun/tools/extcheck
 jdk/src/jdk.dev/share/classes/com/sun/tools/hat : jdk/src/share/classes/com/sun/tools/hat
 jdk/src/jdk.dev/share/classes/com/sun/tools/script/shell : jdk/src/share/classes/com/sun/tools/script/shell
 jdk/src/jdk.dev/share/classes/sun/security/tools/jarsigner : jdk/src/share/classes/sun/security/tools/jarsigner

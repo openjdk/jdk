@@ -81,8 +81,6 @@ class AdaptiveFreeList : public FreeList<Chunk> {
   // Reset the head, tail, hint, and count of a free list.
   void reset(size_t hint);
 
-  void assert_proper_lock_protection_work() const PRODUCT_RETURN;
-
   void print_on(outputStream* st, const char* c = NULL) const;
 
   size_t hint() const {

@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
@@ -45,9 +46,9 @@ import com.sun.tools.javac.tree.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
-import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -358,10 +359,10 @@ public class Lower extends TreeTranslator {
             return null;
         }
         Symbol currentOwner = c.owner;
-        while ((currentOwner.owner.kind & TYP) != 0 && currentOwner.isLocal()) {
+        while (currentOwner.owner.kind.matches(KindSelector.TYP) && currentOwner.isLocal()) {
             currentOwner = currentOwner.owner;
         }
-        if ((currentOwner.owner.kind & (VAR | MTH)) != 0 && c.isSubClass(currentOwner, types)) {
+        if (currentOwner.owner.kind.matches(KindSelector.VAL_MTH) && c.isSubClass(currentOwner, types)) {
             return (ClassSymbol)currentOwner;
         }
         return null;
@@ -376,7 +377,7 @@ public class Lower extends TreeTranslator {
         if (fvs != null) {
             return fvs;
         }
-        if ((c.owner.kind & (VAR | MTH)) != 0) {
+        if (c.owner.kind.matches(KindSelector.VAL_MTH)) {
             FreeVarCollector collector = new FreeVarCollector(c);
             collector.scan(classDef(c));
             fvs = collector.fvs;
@@ -2090,7 +2091,7 @@ public class Lower extends TreeTranslator {
             ClassSymbol c = types.boxedClass(type);
             Symbol typeSym =
                 rs.accessBase(
-                    rs.findIdentInType(attrEnv, c.type, names.TYPE, VAR),
+                    rs.findIdentInType(attrEnv, c.type, names.TYPE, KindSelector.VAR),
                     pos, c.type, names.TYPE, true);
             if (typeSym.kind == VAR)
                 ((VarSymbol)typeSym).getConstValue(); // ensure initializer is evaluated
@@ -2467,7 +2468,7 @@ public class Lower extends TreeTranslator {
         currentMethodSym = currentMethodSymPrev;
 
         // Return empty block {} as a placeholder for an inner class.
-        result = make_at(tree.pos()).Block(0, List.<JCStatement>nil());
+        result = make_at(tree.pos()).Block(SYNTHETIC, List.<JCStatement>nil());
     }
 
     /** Translate an enum class. */

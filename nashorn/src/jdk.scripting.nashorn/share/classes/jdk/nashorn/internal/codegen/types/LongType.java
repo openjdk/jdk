@@ -54,6 +54,7 @@ import jdk.nashorn.internal.runtime.JSType;
  * Type class: LONG
  */
 class LongType extends BitwiseType {
+    private static final long serialVersionUID = 1L;
 
     private static final CompilerConstants.Call VALUE_OF = staticCallNoLookup(Long.class, "valueOf", Long.class, long.class);
 
