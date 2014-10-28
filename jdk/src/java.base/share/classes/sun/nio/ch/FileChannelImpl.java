@@ -44,6 +44,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import sun.misc.Cleaner;
+import sun.misc.JavaIOFileDescriptorAccess;
+import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
 public class FileChannelImpl
@@ -51,6 +53,10 @@ public class FileChannelImpl
 {
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity;
+
+    // Access to FileDispatcher internals
+    private static final JavaIOFileDescriptorAccess fdAccess =
+        SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // Used to make native read and write calls
     private final FileDispatcher nd;
@@ -61,7 +67,6 @@ public class FileChannelImpl
     // File access mode (immutable)
     private final boolean writable;
     private final boolean readable;
-    private final boolean append;
 
     // Required to prevent finalization of creating stream (immutable)
     private final Object parent;
@@ -77,38 +82,29 @@ public class FileChannelImpl
     private final Object positionLock = new Object();
 
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
-                            boolean writable, boolean append, Object parent)
+                            boolean writable, Object parent)
     {
         this.fd = fd;
         this.readable = readable;
         this.writable = writable;
-        this.append = append;
         this.parent = parent;
         this.path = path;
-        this.nd = new FileDispatcherImpl(append);
+        this.nd = new FileDispatcherImpl();
     }
 
-    // Used by FileInputStream.getChannel() and RandomAccessFile.getChannel()
+    // Used by FileInputStream.getChannel(), FileOutputStream.getChannel
+    // and RandomAccessFile.getChannel()
     public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
                                    Object parent)
     {
-        return new FileChannelImpl(fd, path, readable, writable, false, parent);
-    }
-
-    // Used by FileOutputStream.getChannel
-    public static FileChannel open(FileDescriptor fd, String path,
-                                   boolean readable, boolean writable,
-                                   boolean append, Object parent)
-    {
-        return new FileChannelImpl(fd, path, readable, writable, append, parent);
+        return new FileChannelImpl(fd, path, readable, writable, parent);
     }
 
     private void ensureOpen() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
     }
-
 
     // -- Standard channel operations --
 
@@ -258,6 +254,7 @@ public class FileChannelImpl
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
+                boolean append = fdAccess.getAppend(fd);
                 do {
                     // in append-mode then position is advanced to end before writing
                     p = (append) ? nd.size(fd) : position0(fd, -1);
@@ -284,7 +281,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return null;
                 do {
-                    p  = position0(fd, newPosition);
+                    p = position0(fd, newPosition);
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {

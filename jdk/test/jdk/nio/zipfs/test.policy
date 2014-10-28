@@ -1,9 +1,3 @@
-grant codeBase "file:${java.home}/lib/ext/zipfs.jar" {
-    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-    permission java.lang.RuntimePermission "fileSystemProvider";
-    permission java.util.PropertyPermission "*", "read";
-};
-
 grant {
     permission java.io.FilePermission "<<ALL FILES>>","read,write,delete";
     permission java.util.PropertyPermission "test.jdk","read";

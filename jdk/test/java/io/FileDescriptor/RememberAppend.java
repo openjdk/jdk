@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,34 @@
  * questions.
  */
 
-/* @test
- * @bug 7156873 8040059
- * @summary ZipFileSystem regression tests
- *
- * @run main ZFSTests
- * @run main/othervm/java.security.policy=test.policy ZFSTests
+/*
+ * @test
+ * @bug 8023173
+ * @summary FileDescriptor should respect append flag
  */
 
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 
-import java.net.URI;
-import java.nio.file.*;
-import java.util.Map;
-import java.util.HashMap;
-
-public class ZFSTests {
+public class RememberAppend {
+    private static final byte[] bytes = "ABC ".getBytes();
 
     public static void main(String[] args) throws Throwable {
-        test7156873();
-    }
+        File f = File.createTempFile("tmp.file", null);
+        f.deleteOnExit();
 
-    static void test7156873() throws Throwable {
-        String DIRWITHSPACE = "testdir with spaces";
-        Path dir = Paths.get(DIRWITHSPACE);
-        Path path = Paths.get(DIRWITHSPACE, "file.zip");
-        try {
-            Files.createDirectory(dir);
-            URI uri = URI.create("jar:" + path.toUri());
-            Map<String, Object> env = new HashMap<String, Object>();
-            env.put("create", "true");
-            try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {}
-        } finally {
-            Files.deleteIfExists(path);
-            Files.deleteIfExists(dir);
+        try (FileOutputStream fos1 = new FileOutputStream(f.getPath(), true)) {
+            fos1.write(bytes);
+        }
+
+        try (FileOutputStream fos1 = new FileOutputStream(f.getPath(), true);
+             FileOutputStream fos2 = new FileOutputStream(fos1.getFD())) {
+            fos2.write(bytes);
+        }
+
+        if (f.length() != 2 * bytes.length) {
+            throw new RuntimeException("Append flag ignored");
         }
     }
 }
