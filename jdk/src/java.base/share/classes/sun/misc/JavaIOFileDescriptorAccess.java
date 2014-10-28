@@ -33,6 +33,8 @@ import java.io.FileDescriptor;
 public interface JavaIOFileDescriptorAccess {
     public void set(FileDescriptor obj, int fd);
     public int get(FileDescriptor fd);
+    public void setAppend(FileDescriptor obj, boolean append);
+    public boolean getAppend(FileDescriptor obj);
 
     // Only valid on Windows
     public void setHandle(FileDescriptor obj, long handle);

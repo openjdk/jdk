@@ -98,6 +98,11 @@ public final class NativeInt8Array extends ArrayBufferView {
             return int.class;
         }
 
+        @Override
+        public Class<?> getBoxedElementType() {
+            return Integer.class;
+        }
+
         private int getElem(final int index) {
             try {
                 return nb.get(index);

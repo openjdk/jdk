@@ -36,6 +36,7 @@ import com.sun.tools.javac.util.ListBuffer;
 
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 
@@ -224,7 +225,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     @Override
     public String visitClassType(ClassType t, Locale locale) {
         StringBuilder buf = new StringBuilder();
-        if (t.getEnclosingType().hasTag(CLASS) && t.tsym.owner.kind == Kinds.TYP) {
+        if (t.getEnclosingType().hasTag(CLASS) && t.tsym.owner.kind == TYP) {
             buf.append(visit(t.getEnclosingType(), locale));
             buf.append('.');
             buf.append(printAnnotations(t));

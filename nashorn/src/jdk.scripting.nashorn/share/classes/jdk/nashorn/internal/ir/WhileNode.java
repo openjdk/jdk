@@ -34,6 +34,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class WhileNode extends LoopNode {
+    private static final long serialVersionUID = 1L;
+
 
     /** is this a do while node ? */
     private final boolean isDoWhile;

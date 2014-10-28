@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.jvm;
 
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.TypeTag;
@@ -42,6 +41,9 @@ import java.util.*;
 
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+
+import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /** An internal structure that corresponds to the constant pool of a classfile.
  *
@@ -289,7 +291,7 @@ public class Pool {
         @SuppressWarnings("fallthrough")
         private void checkConsistent() {
             boolean staticOk = false;
-            int expectedKind = -1;
+            Kind expectedKind = null;
             Filter<Name> nameFilter = nonInitFilter;
             boolean interfaceOwner = false;
             switch (refKind) {
@@ -298,25 +300,25 @@ public class Pool {
                     staticOk = true;
                 case ClassFile.REF_getField:
                 case ClassFile.REF_putField:
-                    expectedKind = Kinds.VAR;
+                    expectedKind = VAR;
                     break;
                 case ClassFile.REF_newInvokeSpecial:
                     nameFilter = initFilter;
-                    expectedKind = Kinds.MTH;
+                    expectedKind = MTH;
                     break;
                 case ClassFile.REF_invokeInterface:
                     interfaceOwner = true;
-                    expectedKind = Kinds.MTH;
+                    expectedKind = MTH;
                     break;
                 case ClassFile.REF_invokeStatic:
                     interfaceOwner = true;
                     staticOk = true;
                 case ClassFile.REF_invokeVirtual:
-                    expectedKind = Kinds.MTH;
+                    expectedKind = MTH;
                     break;
                 case ClassFile.REF_invokeSpecial:
                     interfaceOwner = true;
-                    expectedKind = Kinds.MTH;
+                    expectedKind = MTH;
                     break;
             }
             Assert.check(!refSym.isStatic() || staticOk);

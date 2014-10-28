@@ -37,6 +37,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class CaseNode extends Node implements JoinPredecessor, Labels, Terminal {
+    private static final long serialVersionUID = 1L;
+
     /** Test expression. */
     private final Expression test;
 

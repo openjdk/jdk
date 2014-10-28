@@ -160,7 +160,7 @@ class WindowsChannelFactory {
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
         FileDescriptor fdObj = open(pathForWindows, pathToCheck, flags, pSecurityDescriptor);
-        return FileChannelImpl.open(fdObj, pathForWindows, flags.read, flags.write, flags.append, null);
+        return FileChannelImpl.open(fdObj, pathForWindows, flags.read, flags.write, null);
     }
 
     /**
@@ -339,6 +339,7 @@ class WindowsChannelFactory {
         // create FileDescriptor and return
         FileDescriptor fdObj = new FileDescriptor();
         fdAccess.setHandle(fdObj, handle);
+        fdAccess.setAppend(fdObj, flags.append);
         return fdObj;
     }
 }
