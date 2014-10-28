@@ -51,6 +51,11 @@ public final class FileDescriptor {
     private boolean closed;
 
     /**
+     * true, if file is opened for appending.
+     */
+    private boolean append;
+
+    /**
      * Constructs an (invalid) FileDescriptor
      * object.
      */
@@ -73,6 +78,14 @@ public final class FileDescriptor {
 
                 public int get(FileDescriptor obj) {
                     return obj.fd;
+                }
+
+                public void setAppend(FileDescriptor obj, boolean append) {
+                    obj.append = append;
+                }
+
+                public boolean getAppend(FileDescriptor obj) {
+                    return obj.append;
                 }
 
                 public void setHandle(FileDescriptor obj, long handle) {
