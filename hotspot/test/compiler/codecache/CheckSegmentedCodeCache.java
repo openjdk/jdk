@@ -139,9 +139,8 @@ public class CheckSegmentedCodeCache {
 
     // Fails if not enough space for VM internal code
     long minUseSpace = WHITE_BOX.getUintxVMFlag("CodeCacheMinimumUseSpace");
-    long minFreeSpace = WHITE_BOX.getUintxVMFlag("CodeCacheMinimumFreeSpace");
-    // minimum size: (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)) + CodeCacheMinimumFreeSpace
-    long minSize = (Platform.isDebugBuild() ? 3 : 1) * minUseSpace + minFreeSpace;
+    // minimum size: CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)
+    long minSize = (Platform.isDebugBuild() ? 3 : 1) * minUseSpace;
     pb = ProcessTools.createJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                "-XX:ReservedCodeCacheSize=" + minSize,
                                                "-XX:InitialCodeCacheSize=100K");
