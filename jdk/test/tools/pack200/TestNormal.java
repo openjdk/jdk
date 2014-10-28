@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,23 +42,15 @@ public class TestNormal {
     public static void main(String args[]) throws Exception {
         Properties p = System.getProperties();
         String java_home = p.getProperty("test.jdk");
-        File testJar = new File("test.jar");
-        Utils.jar("cvf", testJar.getName(), Utils.TEST_CLS_DIR.getAbsolutePath());
-
-        File folder = new File("testdir");
-        if (folder.exists()) {
-            delete(folder);
-        }
-        folder.mkdir();
+        String testdir = Utils.TEST_CLS_DIR.getAbsolutePath();
 
         try {
-            extractJar(new JarFile(testJar), folder);
-            execJavaCommand(java_home, "jar cnf normalized.jar -C testdir .");
-            execJavaCommand(java_home, "jar cf original.jar -C testdir .");
+            execJavaCommand(java_home, "jar cnf normalized.jar -C " + testdir + " .");
+            execJavaCommand(java_home, "jar cf original.jar -C " + testdir + " .");
             execJavaCommand(java_home, "pack200 -r repacked.jar original.jar");
             compareJars(new JarFile("normalized.jar"), new JarFile("repacked.jar"));
         } finally {
-            String[] cleanupList = {"testdir", "normalized.jar", "original.jar", "repacked.jar"};
+            String[] cleanupList = {"normalized.jar", "original.jar", "repacked.jar"};
             for (String s : cleanupList) {
                 delete(new File(s));
             }
@@ -98,36 +90,6 @@ public class TestNormal {
         } finally {
             jf1.close();
             jf2.close();
-        }
-    }
-
-    public static void extractJar(JarFile jf, File where) throws Exception {
-        for (JarEntry file : Collections.list(jf.entries())) {
-            File out = new File(where, file.getName());
-            if (file.isDirectory()) {
-                out.mkdirs();
-                continue;
-            }
-            File parent = out.getParentFile();
-            if (parent != null && !parent.exists()) {
-                parent.mkdirs();
-            }
-            InputStream is = null;
-            OutputStream os = null;
-            try {
-                is = jf.getInputStream(file);
-                os = new FileOutputStream(out);
-                while (is.available() > 0) {
-                    os.write(is.read());
-                }
-            } finally {
-                if (is != null) {
-                    is.close();
-                }
-                if (os != null) {
-                    os.close();
-                }
-            }
         }
     }
 

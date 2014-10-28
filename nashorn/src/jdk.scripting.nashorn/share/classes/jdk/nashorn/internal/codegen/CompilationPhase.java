@@ -38,12 +38,11 @@ import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SCOPE_DEPTHS
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SYMBOLS_ASSIGNED;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
+
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -53,10 +52,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -81,7 +77,7 @@ enum CompilationPhase {
                 PARSED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new FoldConstants(compiler));
+            return transformFunction(fn, new FoldConstants(compiler));
         }
 
         @Override
@@ -104,7 +100,7 @@ enum CompilationPhase {
                 CONSTANT_FOLDED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new Lower(compiler));
+            return transformFunction(fn, new Lower(compiler));
         }
 
         @Override
@@ -118,23 +114,6 @@ enum CompilationPhase {
      * optimistic ops a program point so that an UnwarrantedException knows from where
      * a guess went wrong when creating the continuation to roll back this execution
      */
-    PROGRAM_POINT_PHASE(
-            EnumSet.of(
-                INITIALIZED,
-                PARSED,
-                CONSTANT_FOLDED,
-                LOWERED)) {
-        @Override
-        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new ProgramPoints());
-        }
-
-        @Override
-        public String toString() {
-            return "'Program Point Calculation'";
-        }
-    },
-
     TRANSFORM_BUILTINS_PHASE(
             EnumSet.of(
                     INITIALIZED,
@@ -144,13 +123,7 @@ enum CompilationPhase {
         //we only do this if we have a param type map, otherwise this is not a specialized recompile
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new ApplySpecialization(compiler));
-            return (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                @Override
-                public Node leaveFunctionNode(final FunctionNode node) {
-                    return node.setState(lc, BUILTINS_TRANSFORMED);
-                }
-            });
+            return setStates(transformFunction(fn, new ApplySpecialization(compiler)), BUILTINS_TRANSFORMED);
         }
 
         @Override
@@ -177,7 +150,7 @@ enum CompilationPhase {
             FunctionNode newFunctionNode;
 
             //ensure elementTypes, postsets and presets exist for splitter and arraynodes
-            newFunctionNode = (FunctionNode)fn.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            newFunctionNode = transformFunction(fn, new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
                 public LiteralNode<?> leaveLiteralNode(final LiteralNode<?> literalNode) {
                     return literalNode.initialize(lc);
@@ -185,7 +158,7 @@ enum CompilationPhase {
             });
 
             newFunctionNode = new Splitter(compiler, newFunctionNode, outermostCompileUnit).split(newFunctionNode, true);
-
+            newFunctionNode = transformFunction(newFunctionNode, new SplitIntoFunctions(compiler));
             assert newFunctionNode.getCompileUnit() == outermostCompileUnit : "fn=" + fn.getName() + ", fn.compileUnit (" + newFunctionNode.getCompileUnit() + ") != " + outermostCompileUnit;
             assert newFunctionNode.isStrict() == compiler.isStrict() : "functionNode.isStrict() != compiler.isStrict() for " + quote(newFunctionNode.getName());
 
@@ -195,6 +168,52 @@ enum CompilationPhase {
         @Override
         public String toString() {
             return "'Code Splitting'";
+        }
+    },
+
+    PROGRAM_POINT_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            return transformFunction(fn, new ProgramPoints());
+        }
+
+        @Override
+        public String toString() {
+            return "'Program Point Calculation'";
+        }
+    },
+
+    SERIALIZE_SPLIT_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            return transformFunction(fn, new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                @Override
+                public boolean enterFunctionNode(final FunctionNode functionNode) {
+                    if (functionNode.isSplit()) {
+                        compiler.serializeAst(functionNode);
+                    }
+                    return true;
+                }
+            });
+        }
+
+        @Override
+        public String toString() {
+            return "'Serialize Split Functions'";
         }
     },
 
@@ -208,7 +227,7 @@ enum CompilationPhase {
                     SPLIT)) {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new AssignSymbols(compiler));
+            return transformFunction(fn, new AssignSymbols(compiler));
         }
 
         @Override
@@ -228,7 +247,7 @@ enum CompilationPhase {
                     SYMBOLS_ASSIGNED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new FindScopeDepths(compiler));
+            return transformFunction(fn, new FindScopeDepths(compiler));
         }
 
         @Override
@@ -250,7 +269,7 @@ enum CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             if (compiler.useOptimisticTypes()) {
-                return (FunctionNode)fn.accept(new OptimisticTypesCalculator(compiler));
+                return transformFunction(fn, new OptimisticTypesCalculator(compiler));
             }
             return setStates(fn, OPTIMISTIC_TYPES_ASSIGNED);
         }
@@ -274,8 +293,7 @@ enum CompilationPhase {
                     OPTIMISTIC_TYPES_ASSIGNED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new LocalVariableTypesCalculator(compiler));
-
+            final FunctionNode newFunctionNode = transformFunction(fn, new LocalVariableTypesCalculator(compiler));
             final ScriptEnvironment senv = compiler.getScriptEnvironment();
             final PrintWriter       err  = senv.getErr();
 
@@ -330,13 +348,7 @@ enum CompilationPhase {
 
             for (final CompileUnit oldUnit : compiler.getCompileUnits()) {
                 assert map.get(oldUnit) == null;
-                final StringBuilder sb = new StringBuilder(compiler.nextCompileUnitName());
-                if (phases.isRestOfCompilation()) {
-                    sb.append("$restOf");
-                }
-                //it's ok to not copy the initCount, methodCount and clinitCount here, as codegen is what
-                //fills those out anyway. Thus no need for a copy constructor
-                final CompileUnit newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
+                final CompileUnit newUnit = createNewCompileUnit(compiler, phases);
                 log.fine("Creating new compile unit ", oldUnit, " => ", newUnit);
                 map.put(oldUnit, newUnit);
                 assert newUnit != null;
@@ -350,47 +362,10 @@ enum CompilationPhase {
             //replace old compile units in function nodes, if any are assigned,
             //for example by running the splitter on this function node in a previous
             //partial code generation
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            final FunctionNode newFunctionNode = transformFunction(fn, new ReplaceCompileUnits() {
                 @Override
-                public Node leaveFunctionNode(final FunctionNode node) {
-                    final CompileUnit oldUnit = node.getCompileUnit();
-                    assert oldUnit != null : "no compile unit in function node";
-
-                    final CompileUnit newUnit = map.get(oldUnit);
-                    assert newUnit != null : "old unit has no mapping to new unit " + oldUnit;
-
-                    log.fine("Replacing compile unit: ", oldUnit, " => ", newUnit, " in ", quote(node.getName()));
-                    return node.setCompileUnit(lc, newUnit).setState(lc, CompilationState.COMPILE_UNITS_REUSED);
-                }
-
-                @Override
-                public Node leaveSplitNode(final SplitNode node) {
-                    final CompileUnit oldUnit = node.getCompileUnit();
-                    assert oldUnit != null : "no compile unit in function node";
-
-                    final CompileUnit newUnit = map.get(oldUnit);
-                    assert newUnit != null : "old unit has no mapping to new unit " + oldUnit;
-
-                    log.fine("Replacing compile unit: ", oldUnit, " => ", newUnit, " in ", quote(node.getName()));
-                    return node.setCompileUnit(lc, newUnit);
-                }
-
-                @Override
-                public Node leaveLiteralNode(final LiteralNode<?> node) {
-                    if (node instanceof ArrayLiteralNode) {
-                        final ArrayLiteralNode aln = (ArrayLiteralNode)node;
-                        if (aln.getUnits() == null) {
-                            return node;
-                        }
-                        final List<ArrayUnit> newArrayUnits = new ArrayList<>();
-                        for (final ArrayUnit au : aln.getUnits()) {
-                            final CompileUnit newUnit = map.get(au.getCompileUnit());
-                            assert newUnit != null;
-                            newArrayUnits.add(new ArrayUnit(newUnit, au.getLo(), au.getHi()));
-                        }
-                        return aln.setUnits(lc, newArrayUnits);
-                    }
-                    return node;
+                CompileUnit getReplacement(CompileUnit original) {
+                    return map.get(original);
                 }
 
                 @Override
@@ -408,7 +383,59 @@ enum CompilationPhase {
         }
     },
 
-     /**
+    REINITIALIZE_SERIALIZED(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            final Set<CompileUnit> unitSet = CompileUnit.createCompileUnitSet();
+            final Map<CompileUnit, CompileUnit> unitMap = new HashMap<>();
+
+            // Ensure that the FunctionNode's compile unit is the first in the list of new units. Install phase
+            // will use that as the root class.
+            createCompileUnit(fn.getCompileUnit(), unitSet, unitMap, compiler, phases);
+
+            final FunctionNode newFn = transformFunction(fn, new ReplaceCompileUnits() {
+                @Override
+                CompileUnit getReplacement(final CompileUnit oldUnit) {
+                    final CompileUnit existing = unitMap.get(oldUnit);
+                    if (existing != null) {
+                        return existing;
+                    }
+                    return createCompileUnit(oldUnit, unitSet, unitMap, compiler, phases);
+                }
+
+                @Override
+                public Node leaveFunctionNode(final FunctionNode fn2) {
+                    return super.leaveFunctionNode(
+                            // restore flags for deserialized nested function nodes
+                            compiler.getScriptFunctionData(fn2.getId()).restoreFlags(lc, fn2));
+                };
+            });
+            compiler.replaceCompileUnits(unitSet);
+            return newFn;
+        }
+
+        private CompileUnit createCompileUnit(final CompileUnit oldUnit, final Set<CompileUnit> unitSet,
+                final Map<CompileUnit, CompileUnit> unitMap, final Compiler compiler, final CompilationPhases phases) {
+            final CompileUnit newUnit = createNewCompileUnit(compiler, phases);
+            unitMap.put(oldUnit, newUnit);
+            unitSet.add(newUnit);
+            return newUnit;
+        }
+
+        @Override
+        public String toString() {
+            return "'Deserialize'";
+        }
+    },
+
+    /**
      * Bytecode generation:
      *
      * Generate the byte code class(es) resulting from the compiled FunctionNode
@@ -443,7 +470,7 @@ enum CompilationPhase {
             try {
                 // Explicitly set BYTECODE_GENERATED here; it can not be set in case of skipping codegen for :program
                 // in the lazy + optimistic world. See CodeGenerator.skipFunction().
-                newFunctionNode = ((FunctionNode)newFunctionNode.accept(codegen)).setState(null, BYTECODE_GENERATED);
+                newFunctionNode = transformFunction(newFunctionNode, codegen).setState(null, BYTECODE_GENERATED);
                 codegen.generateScopeCalls();
             } catch (final VerifyError e) {
                 if (senv._verify_code || senv._print_code) {
@@ -615,7 +642,7 @@ enum CompilationPhase {
         if (!AssertsEnabled.assertsEnabled()) {
             return functionNode;
         }
-        return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        return transformFunction(functionNode, new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public Node leaveFunctionNode(final FunctionNode fn) {
                 return fn.setState(lc, state);
@@ -701,4 +728,17 @@ enum CompilationPhase {
         return end(compiler, transform(compiler, phases, begin(compiler, functionNode)));
     }
 
+    private static FunctionNode transformFunction(final FunctionNode fn, final NodeVisitor<?> visitor) {
+        return (FunctionNode) fn.accept(visitor);
+    }
+
+    private static CompileUnit createNewCompileUnit(final Compiler compiler, final CompilationPhases phases) {
+        final StringBuilder sb = new StringBuilder(compiler.nextCompileUnitName());
+        if (phases.isRestOfCompilation()) {
+            sb.append("$restOf");
+        }
+        //it's ok to not copy the initCount, methodCount and clinitCount here, as codegen is what
+        //fills those out anyway. Thus no need for a copy constructor
+        return compiler.createCompileUnit(sb.toString(), 0);
+    }
 }

@@ -75,6 +75,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.ServiceLoader;
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.comp.CompileStates.CompileState;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
@@ -1079,7 +1080,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             boolean foundError = false;
 
             for (ClassSymbol cs : symtab.classes.values()) {
-                if (cs.kind == Kinds.ERR) {
+                if (cs.kind == ERR) {
                     foundError = true;
                     break;
                 }
@@ -1087,7 +1088,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
             if (foundError) {
                 for (ClassSymbol cs : symtab.classes.values()) {
-                    if (cs.classfile != null || cs.kind == Kinds.ERR) {
+                    if (cs.classfile != null || cs.kind == ERR) {
                         cs.reset();
                         cs.type = new ClassType(cs.type.getEnclosingType(), null, cs);
                         if (cs.completer == null) {

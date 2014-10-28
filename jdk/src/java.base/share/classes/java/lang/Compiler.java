@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,40 +47,6 @@ package java.lang;
 public final class Compiler  {
     private Compiler() {}               // don't make instances
 
-    private static native void initialize();
-
-    private static native void registerNatives();
-
-    static {
-        registerNatives();
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    boolean loaded = false;
-                    String jit = System.getProperty("java.compiler");
-                    if ((jit != null) && (!jit.equals("NONE")) &&
-                        (!jit.equals("")))
-                    {
-                        try {
-                            System.loadLibrary(jit);
-                            initialize();
-                            loaded = true;
-                        } catch (UnsatisfiedLinkError e) {
-                            System.err.println("Warning: JIT compiler \"" +
-                              jit + "\" not found. Will use interpreter.");
-                        }
-                    }
-                    String info = System.getProperty("java.vm.info");
-                    if (loaded) {
-                        System.setProperty("java.vm.info", info + ", " + jit);
-                    } else {
-                        System.setProperty("java.vm.info", info + ", nojit");
-                    }
-                    return null;
-                }
-            });
-    }
-
     /**
      * Compiles the specified class.
      *
@@ -93,7 +59,9 @@ public final class Compiler  {
      * @throws  NullPointerException
      *          If {@code clazz} is {@code null}
      */
-    public static native boolean compileClass(Class<?> clazz);
+    public static boolean compileClass(Class<?> clazz) {
+        return false;
+    }
 
     /**
      * Compiles all classes whose name matches the specified string.
@@ -107,7 +75,9 @@ public final class Compiler  {
      * @throws  NullPointerException
      *          If {@code string} is {@code null}
      */
-    public static native boolean compileClasses(String string);
+    public static boolean compileClasses(String string) {
+        return false;
+    }
 
     /**
      * Examines the argument type and its fields and perform some documented
@@ -122,15 +92,17 @@ public final class Compiler  {
      * @throws  NullPointerException
      *          If {@code any} is {@code null}
      */
-    public static native Object command(Object any);
+    public static Object command(Object any) {
+        return null;
+    }
 
     /**
      * Cause the Compiler to resume operation.
      */
-    public static native void enable();
+    public static void enable() { }
 
     /**
      * Cause the Compiler to cease operation.
      */
-    public static native void disable();
+    public static void disable() { }
 }

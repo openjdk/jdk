@@ -78,15 +78,9 @@ public:
 };
 
 class SATBMarkQueueSet: public PtrQueueSet {
-  ObjectClosure* _closure;
-  ObjectClosure** _par_closures;  // One per ParGCThread.
+  ObjectClosure** _closures;  // One per ParGCThread.
 
   ObjPtrQueue _shared_satb_queue;
-
-  // Utility function to support sequential and parallel versions.  If
-  // "par" is true, then "worker" is the par thread id; if "false", worker
-  // is ignored.
-  bool apply_closure_to_completed_buffer_work(bool par, uint worker);
 
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
@@ -111,26 +105,16 @@ public:
   // Filter all the currently-active SATB buffers.
   void filter_thread_buffers();
 
-  // Register "blk" as "the closure" for all queues.  Only one such closure
-  // is allowed.  The "apply_closure_to_completed_buffer" method will apply
-  // this closure to a completed buffer, and "iterate_closure_all_threads"
+  // Register closure for the given worker thread. The "apply_closure_to_completed_buffer"
+  // method will apply this closure to a completed buffer, and "iterate_closure_all_threads"
   // applies it to partially-filled buffers (the latter should only be done
   // with the world stopped).
-  void set_closure(ObjectClosure* closure);
-  // Set the parallel closures: pointer is an array of pointers to
-  // closures, one for each parallel GC thread.
-  void set_par_closure(int i, ObjectClosure* closure);
+  void set_closure(uint worker, ObjectClosure* closure);
 
   // If there exists some completed buffer, pop it, then apply the
   // registered closure to all its elements, and return true.  If no
   // completed buffers exist, return false.
-  bool apply_closure_to_completed_buffer() {
-    return apply_closure_to_completed_buffer_work(false, 0);
-  }
-  // Parallel version of the above.
-  bool par_apply_closure_to_completed_buffer(uint worker) {
-    return apply_closure_to_completed_buffer_work(true, worker);
-  }
+  bool apply_closure_to_completed_buffer(uint worker);
 
   // Apply the given closure on enqueued and currently-active buffers
   // respectively. Both methods are read-only, i.e., they do not

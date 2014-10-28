@@ -47,9 +47,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.T_DOUBLE;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_INT;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_LONG;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -88,19 +90,20 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
  * INTs rather than OBJECTs
  */
 
-public abstract class Type implements Comparable<Type>, BytecodeOps {
+public abstract class Type implements Comparable<Type>, BytecodeOps, Serializable {
+    private static final long serialVersionUID = 1L;
 
     /** Human readable name for type */
-    private final String name;
+    private transient final String name;
 
     /** Descriptor for type */
-    private final String descriptor;
+    private transient final String descriptor;
 
     /** The "weight" of the type. Used for picking widest/least specific common type */
-    private final int weight;
+    private transient final int weight;
 
     /** How many bytecode slots does this type occupy */
-    private final int slots;
+    private transient final int slots;
 
     /** The class for this type */
     private final Class<?> clazz;
@@ -113,7 +116,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
             Collections.synchronizedMap(new WeakHashMap<Class<?>, jdk.internal.org.objectweb.asm.Type>());
 
     /** Internal ASM type for this Type - computed once at construction */
-    private final jdk.internal.org.objectweb.asm.Type internalType;
+    private transient final jdk.internal.org.objectweb.asm.Type internalType;
 
     /** Weights are used to decide which types are "wider" than other types */
     protected static final int MIN_WEIGHT = -1;
@@ -583,6 +586,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     public int getSlots() {
         return slots;
     }
+
     /**
      * Returns the widest or most common of two types
      *
@@ -603,6 +607,18 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
             return Type.OBJECT;
         }
         return type0.weight() > type1.weight() ? type0 : type1;
+    }
+
+    /**
+     * Returns the widest or most common of two types, given as classes
+     *
+     * @param type0 type one
+     * @param type1 type two
+     *
+     * @return the widest type
+     */
+    public static Class<?> widest(final Class<?> type0, final Class<?> type1) {
+        return widest(Type.typeFor(type0), Type.typeFor(type1)).getTypeClass();
     }
 
     /**
@@ -934,6 +950,8 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * This is the singleton for integer arrays
      */
     public static final ArrayType INT_ARRAY = new ArrayType(int[].class) {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public void astore(final MethodVisitor method) {
             method.visitInsn(IASTORE);
@@ -961,6 +979,8 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * This is the singleton for long arrays
      */
     public static final ArrayType LONG_ARRAY = new ArrayType(long[].class) {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public void astore(final MethodVisitor method) {
             method.visitInsn(LASTORE);
@@ -988,6 +1008,8 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * This is the singleton for numeric arrays
      */
     public static final ArrayType NUMBER_ARRAY = new ArrayType(double[].class) {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public void astore(final MethodVisitor method) {
             method.visitInsn(DASTORE);
@@ -1022,6 +1044,8 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
 
     /** This type, always an object type, just a toString override */
     public static final Type THIS = new ObjectType() {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public String toString() {
             return "this";
@@ -1030,6 +1054,8 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
 
     /** Scope type, always an object type, just a toString override */
     public static final Type SCOPE = new ObjectType() {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public String toString() {
             return "scope";
@@ -1041,6 +1067,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     private abstract static class ValueLessType extends Type {
+        private static final long serialVersionUID = 1L;
 
         ValueLessType(final String name) {
             super(name, Unknown.class, MIN_WEIGHT, 1);
@@ -1092,6 +1119,8 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * inference. It has the minimum type width
      */
     public static final Type UNKNOWN = new ValueLessType("<unknown>") {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public String getDescriptor() {
             return "<unknown>";
@@ -1108,6 +1137,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * inference. It has the minimum type width
      */
     public static final Type SLOT_2 = new ValueLessType("<slot_2>") {
+        private static final long serialVersionUID = 1L;
 
         @Override
         public String getDescriptor() {
@@ -1123,5 +1153,9 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     private static <T extends Type> T putInCache(final T type) {
         cache.put(type.getTypeClass(), type);
         return type;
+    }
+
+    protected final Object readResolve() {
+        return Type.typeFor(clazz);
     }
 }

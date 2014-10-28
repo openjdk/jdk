@@ -34,6 +34,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class BreakNode extends JumpStatement {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructor

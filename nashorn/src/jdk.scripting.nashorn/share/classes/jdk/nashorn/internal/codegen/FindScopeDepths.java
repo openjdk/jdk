@@ -187,7 +187,6 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
         if (compiler.isOnDemandCompilation()) {
             final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(newFunctionNode.getId());
-            assert data != null : newFunctionNode.getName() + " lacks data";
             if (data.inDynamicContext()) {
                 log.fine("Reviving scriptfunction ", quote(name), " as defined in previous (now lost) dynamic scope.");
                 newFunctionNode = newFunctionNode.setInDynamicContext(lc);
@@ -202,7 +201,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
         //create recompilable scriptfunctiondata
         final int fnId = newFunctionNode.getId();
-        final Map<Integer, RecompilableScriptFunctionData> nestedFunctions = fnIdToNestedFunctions.get(fnId);
+        final Map<Integer, RecompilableScriptFunctionData> nestedFunctions = fnIdToNestedFunctions.remove(fnId);
 
         assert nestedFunctions != null;
         // Generate the object class and property map in case this function is ever used as constructor
@@ -212,8 +211,8 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
                 new AllocatorDescriptor(newFunctionNode.getThisProperties()),
                 nestedFunctions,
                 externalSymbolDepths.get(fnId),
-                internalSymbols.get(fnId)
-                );
+                internalSymbols.get(fnId),
+                compiler.removeSerializedAst(fnId));
 
         if (lc.getOutermostFunction() != newFunctionNode) {
             final FunctionNode parentFn = lc.getParentFunction(newFunctionNode);

@@ -68,12 +68,11 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.WriterKind;
 
-import static javax.tools.StandardLocation.CLASS_OUTPUT;
-
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
-
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /** This class could be the main entry point for GJC when GJC is used as a
  *  component in a larger software system. It provides operations to
@@ -1105,23 +1104,23 @@ public class JavaCompiler {
                     for (String nameStr : classnames) {
                         Symbol sym = resolveBinaryNameOrIdent(nameStr);
                         if (sym == null ||
-                            (sym.kind == Kinds.PCK && !processPcks) ||
-                            sym.kind == Kinds.ABSENT_TYP) {
+                            (sym.kind == PCK && !processPcks) ||
+                            sym.kind == ABSENT_TYP) {
                             log.error("proc.cant.find.class", nameStr);
                             errors = true;
                             continue;
                         }
                         try {
-                            if (sym.kind == Kinds.PCK)
+                            if (sym.kind == PCK)
                                 sym.complete();
                             if (sym.exists()) {
-                                if (sym.kind == Kinds.PCK)
+                                if (sym.kind == PCK)
                                     pckSymbols = pckSymbols.prepend((PackageSymbol)sym);
                                 else
                                     classSymbols = classSymbols.prepend((ClassSymbol)sym);
                                 continue;
                             }
-                            Assert.check(sym.kind == Kinds.PCK);
+                            Assert.check(sym.kind == PCK);
                             log.warning("proc.package.does.not.exist", nameStr);
                             pckSymbols = pckSymbols.prepend((PackageSymbol)sym);
                         } catch (CompletionFailure e) {

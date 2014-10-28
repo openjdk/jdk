@@ -75,7 +75,6 @@
 #define JVM_O_O_APPEND   O_APPEND
 #define JVM_O_EXCL       O_EXCL
 #define JVM_O_CREAT      O_CREAT
-#define JVM_O_DELETE     0x10000
 
 /* Signals */
 

@@ -440,6 +440,14 @@ public class LexicalContext {
     }
 
     /**
+     * Is the topmost lexical context element body of a SplitNode?
+     * @return true if it's the body of a split node.
+     */
+    public boolean isSplitBody() {
+        return sp >= 2 && stack[sp - 1] instanceof Block && stack[sp - 2] instanceof SplitNode;
+    }
+
+    /**
      * Get the parent function for a function in the lexical context
      * @param functionNode function for which to get parent
      * @return parent function of functionNode or null if none (e.g. if functionNode is the program)
@@ -472,9 +480,6 @@ public class LexicalContext {
             final LexicalContextNode node = iter.next();
             if (node == until) {
                 break;
-            } else if (node instanceof SplitNode) {
-                // Don't bother popping scopes if we're going to do a return from a split method anyway.
-                return 0;
             }
             assert !(node instanceof FunctionNode); // Can't go outside current function
             if (node instanceof WithNode || node instanceof Block && ((Block)node).needsScope()) {
