@@ -335,7 +335,36 @@ WB_ENTRY(void, WB_NMTOverflowHashBucket(JNIEnv* env, jobject o, jlong num))
   }
 WB_END
 
+WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
+  // Test that we can downgrade NMT levels but not upgrade them.
+  if (MemTracker::tracking_level() == NMT_off) {
+    MemTracker::transition_to(NMT_off);
+    return MemTracker::tracking_level() == NMT_off;
+  } else {
+    assert(MemTracker::tracking_level() == NMT_detail, "Should start out as detail tracking");
+    MemTracker::transition_to(NMT_summary);
+    assert(MemTracker::tracking_level() == NMT_summary, "Should be summary now");
 
+    // Can't go to detail once NMT is set to summary.
+    MemTracker::transition_to(NMT_detail);
+    assert(MemTracker::tracking_level() == NMT_summary, "Should still be summary now");
+
+    // Shutdown sets tracking level to minimal.
+    MemTracker::shutdown();
+    assert(MemTracker::tracking_level() == NMT_minimal, "Should be minimal now");
+
+    // Once the tracking level is minimal, we cannot increase to summary.
+    // The code ignores this request instead of asserting because if the malloc site
+    // table overflows in another thread, it tries to change the code to summary.
+    MemTracker::transition_to(NMT_summary);
+    assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
+
+    // Really can never go up to detail, verify that the code would never do this.
+    MemTracker::transition_to(NMT_detail);
+    assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
+    return MemTracker::tracking_level() == NMT_minimal;
+  }
+WB_END
 #endif // INCLUDE_NMT
 
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
@@ -962,6 +991,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
   {CC"NMTOverflowHashBucket", CC"(J)V",               (void*)&WB_NMTOverflowHashBucket},
   {CC"NMTIsDetailSupported",CC"()Z",                  (void*)&WB_NMTIsDetailSupported},
+  {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;Z)I",

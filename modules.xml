@@ -1579,6 +1579,10 @@
     <depend>jdk.crypto.ec</depend>
   </module>
   <module>
+    <name>jdk.crypto.ucrypto</name>
+    <depend>java.base</depend>
+  </module>
+  <module>
     <name>jdk.deploy.osx</name>
     <depend>java.base</depend>
     <depend>java.desktop</depend>

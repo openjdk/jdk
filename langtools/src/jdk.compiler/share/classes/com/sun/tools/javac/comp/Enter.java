@@ -30,6 +30,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -43,7 +44,7 @@ import com.sun.tools.javac.util.List;
 
 
 import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /** This class enters symbols for all encountered definitions into
  *  the symbol table. The pass consists of two phases, organized as
@@ -402,7 +403,7 @@ public class Enter extends JCTree.Visitor {
             // which contains this class in a non-static context
             // (its "enclosing instance class"), provided such a class exists.
             Symbol owner1 = owner;
-            while ((owner1.kind & (VAR | MTH)) != 0 &&
+            while (owner1.kind.matches(KindSelector.VAL_MTH) &&
                    (owner1.flags_field & STATIC) == 0) {
                 owner1 = owner1.owner;
             }

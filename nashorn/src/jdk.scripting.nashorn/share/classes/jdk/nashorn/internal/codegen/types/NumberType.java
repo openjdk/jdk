@@ -46,6 +46,7 @@ import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.runtime.JSType;
 
 class NumberType extends NumericType {
+    private static final long serialVersionUID = 1L;
 
     private static final CompilerConstants.Call VALUE_OF = staticCallNoLookup(Double.class, "valueOf", Double.class, double.class);
 

@@ -109,6 +109,16 @@ public class BlockLexicalContext extends LexicalContext {
     }
 
     /**
+     * Prepend a list of statement to the block being generated
+     * @param statements a list of statements to prepend
+     */
+    public void prependStatements(final List<Statement> statements) {
+        assert statements != null;
+        sstack.peek().addAll(0, statements);
+    }
+
+
+    /**
      * Get the last statement that was emitted into a block
      * @return the last statement emitted
      */

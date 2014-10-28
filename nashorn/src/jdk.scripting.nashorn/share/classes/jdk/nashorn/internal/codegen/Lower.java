@@ -352,8 +352,6 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
         assert tryNode.getFinallyBody() == null;
 
-        final LexicalContext lowerLc = lc;
-
         final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             final List<Node> insideTry = new ArrayList<>();
 
@@ -406,7 +404,6 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
                     //still in the try block, store it in a result value and return it afterwards
                     resultNode = new IdentNode(Lower.this.compilerConstant(RETURN));
                     newStatements.add(new ExpressionStatement(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new BinaryNode(Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
-                    lowerLc.setFlag(lowerLc.getCurrentFunction(), FunctionNode.USES_RETURN_SYMBOL);
                 } else {
                     resultNode = null;
                 }
