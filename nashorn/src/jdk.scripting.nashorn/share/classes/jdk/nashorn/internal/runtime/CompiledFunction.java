@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -786,6 +787,7 @@ final class CompiledFunction {
         // isn't available, we'll use the old one bound into the call site.
         final OptimismInfo effectiveOptInfo = currentOptInfo != null ? currentOptInfo : oldOptInfo;
         FunctionNode fn = effectiveOptInfo.reparse();
+        final boolean serialized = effectiveOptInfo.isSerialized();
         final Compiler compiler = effectiveOptInfo.getCompiler(fn, callSiteType, re); //set to non rest-of
 
         if (!shouldRecompile) {
@@ -793,17 +795,17 @@ final class CompiledFunction {
             // recompiled a deoptimized version for an inner invocation.
             // We still need to do the rest of from the beginning
             logRecompile("Rest-of compilation [STANDALONE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
-            return restOfHandle(effectiveOptInfo, compiler.compile(fn, CompilationPhases.COMPILE_ALL_RESTOF), currentOptInfo != null);
+            return restOfHandle(effectiveOptInfo, compiler.compile(fn, serialized ? CompilationPhases.COMPILE_SERIALIZED_RESTOF : CompilationPhases.COMPILE_ALL_RESTOF), currentOptInfo != null);
         }
 
         logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
-        fn = compiler.compile(fn, CompilationPhases.COMPILE_UPTO_BYTECODE);
+        fn = compiler.compile(fn, serialized ? CompilationPhases.RECOMPILE_SERIALIZED_UPTO_BYTECODE : CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Reusable IR generated");
 
         // compile the rest of the function, and install it
         log.info("Generating and installing bytecode from reusable IR...");
         logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
-        final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE);
+        final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.GENERATE_BYTECODE_AND_INSTALL);
 
         if (effectiveOptInfo.data.usePersistentCodeCache()) {
             final RecompilableScriptFunctionData data = effectiveOptInfo.data;
@@ -829,7 +831,7 @@ final class CompiledFunction {
         constructor = null; // Will be regenerated when needed
 
         log.info("Done: ", invoker);
-        final MethodHandle restOf = restOfHandle(effectiveOptInfo, compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE_RESTOF), canBeDeoptimized);
+        final MethodHandle restOf = restOfHandle(effectiveOptInfo, compiler.compile(fn, CompilationPhases.GENERATE_BYTECODE_AND_INSTALL_RESTOF), canBeDeoptimized);
 
         // Note that we only adjust the switch point after we set the invoker/constructor. This is important.
         if (canBeDeoptimized) {
@@ -920,6 +922,10 @@ final class CompiledFunction {
 
         FunctionNode reparse() {
             return data.reparse();
+        }
+
+        boolean isSerialized() {
+            return data.isSerialized();
         }
     }
 

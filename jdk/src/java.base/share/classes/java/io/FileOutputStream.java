@@ -26,6 +26,8 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaIOFileDescriptorAccess;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -53,14 +55,15 @@ public
 class FileOutputStream extends OutputStream
 {
     /**
+     * Access to FileDescriptor internals.
+     */
+    private static final JavaIOFileDescriptorAccess fdAccess =
+        SharedSecrets.getJavaIOFileDescriptorAccess();
+
+    /**
      * The system dependent file descriptor.
      */
     private final FileDescriptor fd;
-
-    /**
-     * True if the file is opened for append.
-     */
-    private final boolean append;
 
     /**
      * The associated channel, initialized lazily.
@@ -207,7 +210,6 @@ class FileOutputStream extends OutputStream
         }
         this.fd = new FileDescriptor();
         fd.attach(this);
-        this.append = append;
         this.path = name;
 
         open(name, append);
@@ -245,7 +247,6 @@ class FileOutputStream extends OutputStream
             security.checkWrite(fdObj);
         }
         this.fd = fdObj;
-        this.append = false;
         this.path = null;
 
         fd.attach(this);
@@ -287,7 +288,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
-        write(b, append);
+        write(b, fdAccess.getAppend(fd));
     }
 
     /**
@@ -310,7 +311,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[]) throws IOException {
-        writeBytes(b, 0, b.length, append);
+        writeBytes(b, 0, b.length, fdAccess.getAppend(fd));
     }
 
     /**
@@ -323,7 +324,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[], int off, int len) throws IOException {
-        writeBytes(b, off, len, append);
+        writeBytes(b, off, len, fdAccess.getAppend(fd));
     }
 
     /**
@@ -395,7 +396,7 @@ class FileOutputStream extends OutputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, path, false, true, append, this);
+                channel = FileChannelImpl.open(fd, path, false, true, this);
             }
             return channel;
         }

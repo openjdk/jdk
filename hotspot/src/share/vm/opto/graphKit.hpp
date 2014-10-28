@@ -771,6 +771,10 @@ class GraphKit : public Phase {
                     Node* index, Node* index_adr,
                     Node* buffer, const TypeFunc* tf);
 
+  bool g1_can_remove_pre_barrier(PhaseTransform* phase, Node* adr, BasicType bt, uint adr_idx);
+
+  bool g1_can_remove_post_barrier(PhaseTransform* phase, Node* store, Node* adr);
+
   public:
   // Helper function to round double arguments before a call
   void round_double_arguments(ciMethod* dest_method);

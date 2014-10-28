@@ -1045,7 +1045,8 @@ public final class NativeDate extends ScriptObject {
 
     // ECMA 15.9.1.2 TimeWithinDay (t)
     private static double timeWithinDay(final double t) {
-        return t % msPerDay;
+        final double val = t % msPerDay;
+        return val < 0? val + msPerDay : val;
     }
 
     // ECMA 15.9.1.3 InLeapYear (t)

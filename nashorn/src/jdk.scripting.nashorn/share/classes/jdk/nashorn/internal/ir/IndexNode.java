@@ -33,6 +33,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class IndexNode extends BaseNode {
+    private static final long serialVersionUID = 1L;
+
     /** Property index. */
     private final Expression index;
 

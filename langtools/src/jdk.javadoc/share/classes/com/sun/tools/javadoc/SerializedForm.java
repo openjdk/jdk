@@ -32,6 +32,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.*;
 
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /**
@@ -158,7 +159,7 @@ class SerializedForm {
          * so must lookup by ClassSymbol, not by ClassDocImpl.
          */
         for (Symbol sym : def.members().getSymbolsByName(names.fromString(SERIALIZABLE_FIELDS))) {
-            if (sym.kind == Kinds.VAR) {
+            if (sym.kind == VAR) {
                 VarSymbol f = (VarSymbol)sym;
                 if ((f.flags() & Flags.STATIC) != 0 &&
                     (f.flags() & Flags.PRIVATE) != 0) {
@@ -179,7 +180,7 @@ class SerializedForm {
                                                   ClassSymbol def,
                                                   ClassDocImpl cd) {
         for (Symbol sym : def.members().getSymbols(NON_RECURSIVE)) {
-            if (sym != null && sym.kind == Kinds.VAR) {
+            if (sym != null && sym.kind == VAR) {
                 VarSymbol f = (VarSymbol)sym;
                 if ((f.flags() & Flags.STATIC) == 0 &&
                     (f.flags() & Flags.TRANSIENT) == 0) {
@@ -208,7 +209,7 @@ class SerializedForm {
         Names names = def.name.table.names;
 
         for (Symbol sym : def.members().getSymbolsByName(names.fromString(methodName))) {
-            if (sym.kind == Kinds.MTH) {
+            if (sym.kind == MTH) {
                 MethodSymbol md = (MethodSymbol)sym;
                 if ((md.flags() & Flags.STATIC) == 0) {
                     /*
@@ -240,7 +241,7 @@ class SerializedForm {
 
             // Look for a FieldDocImpl that is documented by serialFieldTagImpl.
             for (Symbol sym : def.members().getSymbolsByName(fieldName)) {
-                if (sym.kind == Kinds.VAR) {
+                if (sym.kind == VAR) {
                     VarSymbol f = (VarSymbol) sym;
                     FieldDocImpl fdi = env.getFieldDoc(f);
                     ((SerialFieldTagImpl) (tag)).mapToFieldDocImpl(fdi);

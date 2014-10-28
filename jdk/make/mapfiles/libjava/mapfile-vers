@@ -75,6 +75,7 @@ SUNWprivate_1.1 {
 
 		Java_java_io_FileDescriptor_initIDs;
 		Java_java_io_FileDescriptor_sync;
+		Java_java_io_FileDescriptor_getAppend;
 		Java_java_io_FileInputStream_available;
 		Java_java_io_FileInputStream_close0;
 		Java_java_io_FileInputStream_initIDs;
@@ -129,13 +130,11 @@ SUNWprivate_1.1 {
 		Java_java_lang_ClassLoader_defineClass1;
 		Java_java_lang_ClassLoader_defineClass2;
 		Java_java_lang_ClassLoader_findLoadedClass0;
-		Java_java_lang_ClassLoader_resolveClass0;
 		Java_java_lang_ClassLoader_00024NativeLibrary_find;
 		Java_java_lang_ClassLoader_00024NativeLibrary_load;
 		Java_java_lang_ClassLoader_00024NativeLibrary_unload;
 		Java_java_lang_ClassLoader_00024NativeLibrary_findBuiltinLib;
 		Java_java_lang_ClassLoader_registerNatives;
-		Java_java_lang_Compiler_registerNatives;
 		Java_java_lang_Double_longBitsToDouble;
 		Java_java_lang_Double_doubleToRawLongBits;
 		Java_java_lang_reflect_Proxy_defineClass0;
@@ -196,8 +195,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_Runtime_gc;
 		Java_java_lang_Runtime_runFinalization0;
 		Java_java_lang_Runtime_totalMemory;
-		Java_java_lang_Runtime_traceInstructions;
-		Java_java_lang_Runtime_traceMethodCalls;
                 Java_java_lang_Runtime_availableProcessors;
 		Java_java_lang_SecurityManager_classDepth;
 		Java_java_lang_SecurityManager_classLoaderDepth0;
@@ -280,6 +277,8 @@ SUNWprivate_1.1 {
 		
                 # ZipFile.c needs this one
 		throwFileNotFoundException;
+                # zip_util.c needs this one
+		getLastErrorString;
 
 	# Outcalls from libjvm done using dlsym().
 

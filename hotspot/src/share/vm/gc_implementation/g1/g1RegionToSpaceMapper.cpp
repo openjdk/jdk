@@ -69,7 +69,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   virtual void commit_regions(uintptr_t start_idx, size_t num_regions) {
     _storage.commit(start_idx * _pages_per_region, num_regions * _pages_per_region);
     _commit_map.set_range(start_idx, start_idx + num_regions);
-    fire_on_commit(start_idx, num_regions);
+    fire_on_commit(start_idx, num_regions, true);
   }
 
   virtual void uncommit_regions(uintptr_t start_idx, size_t num_regions) {
@@ -115,12 +115,14 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       assert(!_commit_map.at(i), err_msg("Trying to commit storage at region "INTPTR_FORMAT" that is already committed", i));
       uintptr_t idx = region_idx_to_page_idx(i);
       uint old_refcount = _refcounts.get_by_index(idx);
+      bool zero_filled = false;
       if (old_refcount == 0) {
         _storage.commit(idx, 1);
+        zero_filled = true;
       }
       _refcounts.set_by_index(idx, old_refcount + 1);
       _commit_map.set_bit(i);
-      fire_on_commit(i, 1);
+      fire_on_commit(i, 1, zero_filled);
     }
   }
 
@@ -139,9 +141,9 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   }
 };
 
-void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions) {
+void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
   if (_listener != NULL) {
-    _listener->on_commit(start_idx, num_regions);
+    _listener->on_commit(start_idx, num_regions, zero_filled);
   }
 }
 

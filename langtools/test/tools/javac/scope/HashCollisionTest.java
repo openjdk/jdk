@@ -41,6 +41,8 @@ import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.JavacFileManager;
 
+import static com.sun.tools.javac.code.Kinds.Kind.*;
+
 public class HashCollisionTest {
     public static void main(String... args) throws Exception {
         new HashCollisionTest().run();
@@ -116,7 +118,7 @@ public class HashCollisionTest {
         ImportFilter typeFilter = new ImportFilter() {
             @Override
             public boolean accepts(Scope origin, Symbol sym) {
-                return sym.kind == Kinds.TYP;
+                return sym.kind == TYP;
             }
         };
         starImportScope.importAll(fromScope, fromScope, typeFilter, false);
