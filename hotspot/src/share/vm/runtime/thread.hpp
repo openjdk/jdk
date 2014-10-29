@@ -1767,6 +1767,9 @@ class CodeCacheSweeperThread : public JavaThread {
     _scanned_nmethod = nm;
   }
 
+  // Hide sweeper thread from external view.
+  bool is_hidden_from_external_view() const { return true; }
+
   bool is_Code_cache_sweeper_thread() const { return true; }
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
