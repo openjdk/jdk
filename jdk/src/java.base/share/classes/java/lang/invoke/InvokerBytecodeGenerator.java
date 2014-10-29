@@ -628,8 +628,13 @@ class InvokerBytecodeGenerator {
         // Mark this method as a compiled LambdaForm
         mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Compiled;", true);
 
-        // Force inlining of this invoker method.
-        mv.visitAnnotation("Ljava/lang/invoke/ForceInline;", true);
+        if (lambdaForm.forceInline) {
+            // Force inlining of this invoker method.
+            mv.visitAnnotation("Ljava/lang/invoke/ForceInline;", true);
+        } else {
+            mv.visitAnnotation("Ljava/lang/invoke/DontInline;", true);
+        }
+
 
         // iterate over the form's names, generating bytecode instructions for each
         // start iterating at the first name following the arguments
