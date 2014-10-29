@@ -5415,7 +5415,18 @@ void os::pause() {
 }
 
 
-// Refer to the comments in os_solaris.cpp park-unpark.
+// Refer to the comments in os_solaris.cpp park-unpark. The next two
+// comment paragraphs are worth repeating here:
+//
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
+//
+// _Event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
 //
 // Beware -- Some versions of NPTL embody a flaw where pthread_cond_timedwait() can
 // hang indefinitely.  For instance NPTL 0.60 on 2.4.21-4ELsmp is vulnerable.
@@ -5514,6 +5525,11 @@ static struct timespec* compute_abstime(timespec* abstime, jlong millis) {
 }
 
 void os::PlatformEvent::park() {       // AKA "down()"
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   // TODO: assert that _Assoc != NULL or _Assoc == Self
@@ -5551,6 +5567,11 @@ void os::PlatformEvent::park() {       // AKA "down()"
 }
 
 int os::PlatformEvent::park(jlong millis) {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_nParked == 0, "invariant");
 
   int v;
@@ -5614,11 +5635,11 @@ int os::PlatformEvent::park(jlong millis) {
 
 void os::PlatformEvent::unpark() {
   // Transitions for _Event:
-  //    0 :=> 1
-  //    1 :=> 1
-  //   -1 :=> either 0 or 1; must signal target thread
-  //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1.
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _Event from -1 to either
+  //         0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
@@ -5641,15 +5662,16 @@ void os::PlatformEvent::unpark() {
   status = pthread_mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
   if (AnyWaiters != 0) {
+    // Note that we signal() *after* dropping the lock for "immortal" Events.
+    // This is safe and avoids a common class of  futile wakeups.  In rare
+    // circumstances this can cause a thread to return prematurely from
+    // cond_{timed}wait() but the spurious wakeup is benign and the victim
+    // will simply re-test the condition and re-park itself.
+    // This provides particular benefit if the underlying platform does not
+    // provide wait morphing.
     status = pthread_cond_signal(_cond);
     assert_status(status == 0, status, "cond_signal");
   }
-
-  // Note that we signal() _after dropping the lock for "immortal" Events.
-  // This is safe and avoids a common class of  futile wakeups.  In rare
-  // circumstances this can cause a thread to return prematurely from
-  // cond_{timed}wait() but the spurious wakeup is benign and the victim will
-  // simply re-test the condition and re-park itself.
 }
 
 

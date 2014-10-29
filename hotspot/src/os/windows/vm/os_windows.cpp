@@ -4792,27 +4792,46 @@ bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
 // 3.  Collapse the interrupt_event, the JSR166 parker event, and the objectmonitor ParkEvent
 //     into a single win32 CreateEvent() handle.
 //
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
+//
 // _Event transitions in park()
 //   -1 => -1 : illegal
 //    1 =>  0 : pass - return immediately
-//    0 => -1 : block
+//    0 => -1 : block; then set _Event to 0 before returning
 //
-// _Event serves as a restricted-range semaphore :
-//    -1 : thread is blocked
-//     0 : neutral  - thread is running or ready
-//     1 : signaled - thread is running or ready
+// _Event transitions in unpark()
+//    0 => 1 : just return
+//    1 => 1 : just return
+//   -1 => either 0 or 1; must signal target thread
+//         That is, we can safely transition _Event from -1 to either
+//         0 or 1.
 //
-// Another possible encoding of _Event would be
-// with explicit "PARKED" and "SIGNALED" bits.
+// _Event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
+//
+// Another possible encoding of _Event would be with
+// explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
+//
 
 int os::PlatformEvent::park(jlong Millis) {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_ParkHandle != NULL , "Invariant");
   guarantee(Millis > 0          , "Invariant");
-  int v;
 
   // CONSIDER: defer assigning a CreateEvent() handle to the Event until
   // the initial park() operation.
+  // Consider: use atomic decrement instead of CAS-loop
 
+  int v;
   for (;;) {
     v = _Event;
     if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
@@ -4860,9 +4879,15 @@ int os::PlatformEvent::park(jlong Millis) {
 }
 
 void os::PlatformEvent::park() {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_ParkHandle != NULL, "Invariant");
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
+  // Consider: use atomic decrement instead of CAS-loop
   int v;
   for (;;) {
     v = _Event;
@@ -4891,11 +4916,11 @@ void os::PlatformEvent::unpark() {
   guarantee(_ParkHandle != NULL, "Invariant");
 
   // Transitions for _Event:
-  //    0 :=> 1
-  //    1 :=> 1
-  //   -1 :=> either 0 or 1; must signal target thread
-  //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1.
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _Event from -1 to either
+  //         0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
