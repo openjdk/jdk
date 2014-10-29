@@ -208,4 +208,76 @@ public abstract class MappedByteBuffer
     private native boolean isLoaded0(long address, long length, int pageCount);
     private native void load0(long address, long length);
     private native void force0(FileDescriptor fd, long address, long length);
+
+    // -- Covariant return type overrides
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public final MappedByteBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public final MappedByteBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public final MappedByteBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public final MappedByteBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public final MappedByteBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public final MappedByteBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public final MappedByteBuffer rewind() {
+        super.rewind();
+        return this;
+    }
 }
