@@ -2499,7 +2499,7 @@ const char* InstanceKlass::signature_name() const {
   // If this is an anonymous class, append a hash to make the name unique
   if (is_anonymous()) {
     intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
-    sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
+    jio_snprintf(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, (uintx)hash);
     hash_len = (int)strlen(hash_buf);
   }
 
