@@ -5372,31 +5372,32 @@ extern "C" {
 // to immediately return 0 your code should still work,
 // albeit degenerating to a spin loop.
 //
-// An interesting optimization for park() is to use a trylock()
-// to attempt to acquire the mutex.  If the trylock() fails
-// then we know that a concurrent unpark() operation is in-progress.
-// in that case the park() code could simply set _count to 0
-// and return immediately.  The subsequent park() operation *might*
-// return immediately.  That's harmless as the caller of park() is
-// expected to loop.  By using trylock() we will have avoided a
-// avoided a context switch caused by contention on the per-thread mutex.
+// In a sense, park()-unpark() just provides more polite spinning
+// and polling with the key difference over naive spinning being
+// that a parked thread needs to be explicitly unparked() in order
+// to wake up and to poll the underlying condition.
 //
-// TODO-FIXME:
-// 1.  Reconcile Doug's JSR166 j.u.c park-unpark with the
-//     objectmonitor implementation.
-// 2.  Collapse the JSR166 parker event, and the
-//     objectmonitor ParkEvent into a single "Event" construct.
-// 3.  In park() and unpark() add:
-//     assert (Thread::current() == AssociatedWith).
-// 4.  add spurious wakeup injection on a -XX:EarlyParkReturn=N switch.
-//     1-out-of-N park() operations will return immediately.
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
 //
 // _Event transitions in park()
 //   -1 => -1 : illegal
 //    1 =>  0 : pass - return immediately
-//    0 => -1 : block
+//    0 => -1 : block; then set _Event to 0 before returning
+//
+// _Event transitions in unpark()
+//    0 => 1 : just return
+//    1 => 1 : just return
+//   -1 => either 0 or 1; must signal target thread
+//         That is, we can safely transition _Event from -1 to either
+//         0 or 1.
 //
 // _Event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
 //
 // Another possible encoding of _Event would be with
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
@@ -5456,6 +5457,11 @@ static timestruc_t* compute_abstime(timestruc_t* abstime, jlong millis) {
 }
 
 void os::PlatformEvent::park() {           // AKA: down()
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   assert(_nParked == 0, "invariant");
@@ -5497,6 +5503,11 @@ void os::PlatformEvent::park() {           // AKA: down()
 }
 
 int os::PlatformEvent::park(jlong millis) {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_nParked == 0, "invariant");
   int v;
   for (;;) {
@@ -5542,11 +5553,11 @@ int os::PlatformEvent::park(jlong millis) {
 
 void os::PlatformEvent::unpark() {
   // Transitions for _Event:
-  //    0 :=> 1
-  //    1 :=> 1
-  //   -1 :=> either 0 or 1; must signal target thread
-  //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1.
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _Event from -1 to either
+  //         0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
@@ -5566,8 +5577,13 @@ void os::PlatformEvent::unpark() {
   assert_status(status == 0, status, "mutex_unlock");
   guarantee(AnyWaiters == 0 || AnyWaiters == 1, "invariant");
   if (AnyWaiters != 0) {
-    // We intentional signal *after* dropping the lock
-    // to avoid a common class of futile wakeups.
+    // Note that we signal() *after* dropping the lock for "immortal" Events.
+    // This is safe and avoids a common class of  futile wakeups.  In rare
+    // circumstances this can cause a thread to return prematurely from
+    // cond_{timed}wait() but the spurious wakeup is benign and the victim
+    // will simply re-test the condition and re-park itself.
+    // This provides particular benefit if the underlying platform does not
+    // provide wait morphing.
     status = os::Solaris::cond_signal(_cond);
     assert_status(status == 0, status, "cond_signal");
   }
