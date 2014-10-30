@@ -115,7 +115,9 @@ public class TestJavacTaskScanner extends ToolTester {
 
     public static void main(String... args) throws IOException {
         String srcdir = System.getProperty("test.src");
-        new TestJavacTaskScanner(new File(srcdir, args[0])).run();
+        try (TestJavacTaskScanner t = new TestJavacTaskScanner(new File(srcdir, args[0]))) {
+            t.run();
+        }
     }
 
     private void testGetAllMembers(TypeElement clazz) {

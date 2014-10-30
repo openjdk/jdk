@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ public class T6437999 extends ToolTester {
             throw new AssertionError("Error in UTF-8 mode");
     }
     public static void main(String... args) throws IOException {
-        new T6437999().test(args);
+        try (T6437999 t = new T6437999()) {
+            t.test(args);
+        }
     }
 }

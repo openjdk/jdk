@@ -130,6 +130,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         if (register)
             context.put(JavaFileManager.class, this);
         setContext(context);
+        if (System.getProperty("show.fm.open.close") != null)
+            System.err.println("JavacFileManager.open " + this.hashCode());
     }
 
     /**
@@ -571,6 +573,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     @DefinedBy(Api.COMPILER)
     public void close() {
+        if (System.getProperty("show.fm.open.close") != null)
+            System.err.println("JavacFileManager.close " + this.hashCode());
         for (Iterator<Archive> i = archives.values().iterator(); i.hasNext(); ) {
             Archive a = i.next();
             i.remove();
