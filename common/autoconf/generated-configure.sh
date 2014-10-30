@@ -4328,7 +4328,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1414485998
+DATE_WHEN_GENERATED=1414663067
 
 ###############################################################################
 #
@@ -41681,8 +41681,8 @@ $as_echo "$tool_specified" >&6; }
       SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
       SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-      SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
-      SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
+      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
+      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
       SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
       SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
