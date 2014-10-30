@@ -803,8 +803,10 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      * @throws SQLException if a database access error occurs
      * or the given column number is out of bounds
      */
-    public  boolean isDefinitelyWritable(int columnIndex)
-        throws SQLException { return true;}
+    public  boolean isDefinitelyWritable(int columnIndex) throws SQLException {
+        checkColRange(columnIndex);
+        return true;
+    }
 
     /**
      * Retrieves the fully-qualified name of the class in the Java

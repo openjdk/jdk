@@ -1047,7 +1047,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                setting like collation.  Therefore, we temporarily exclude
                Linux.
             */
-            if (!UnixPrintServiceLookup.isLinux()) {
+            if (!PrintServiceLookupProvider.isLinux()) {
                 catList.add(SheetCollate.class);
             }
         }
@@ -1641,7 +1641,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
          * Mac is using printer-info IPP attribute for its human-readable printer
          * name and is also the identifier used in NSPrintInfo:setPrinter.
          */
-        if (UnixPrintServiceLookup.isMac()) {
+        if (PrintServiceLookupProvider.isMac()) {
             PrintServiceAttributeSet psaSet = this.getAttributes();
             if (psaSet != null) {
                 PrinterInfo pName = (PrinterInfo)psaSet.get(PrinterInfo.class);

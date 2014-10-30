@@ -107,7 +107,15 @@ fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
 #endif
         fd = handleOpen(ps, flags, 0666);
         if (fd != -1) {
+            jobject fdobj;
+            jboolean append;
             SET_FD(this, fd, fid);
+
+            fdobj = (*env)->GetObjectField(env, this, fid);
+            if (fdobj != NULL) {
+                append = (flags & O_APPEND) == 0 ? JNI_FALSE : JNI_TRUE;
+                (*env)->SetBooleanField(env, fdobj, IO_append_fdID, append);
+            }
         } else {
             throwFileNotFoundException(env, path);
         }

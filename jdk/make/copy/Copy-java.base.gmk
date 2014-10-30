@@ -48,22 +48,6 @@ $(INCLUDE_DST_OS_DIR)/%.h: \
 
 ################################################################################
 
-CALENDARS_SRC := $(JDK_TOPDIR)/src/java.base/share/conf
-
-$(LIB_DST_DIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
-	$(call install-file)
-
-BASE_CONF_FILES += $(LIB_DST_DIR)/calendars.properties
-
-$(LIB_DST_DIR)/hijrah-config-umalqura.properties: $(CALENDARS_SRC)/hijrah-config-umalqura.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
-
-BASE_CONF_FILES += $(LIB_DST_DIR)/hijrah-config-umalqura.properties
-
-################################################################################
-
 ifneq ($(findstring $(OPENJDK_TARGET_OS), windows aix),)
 
   TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf
