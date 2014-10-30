@@ -146,7 +146,8 @@ import sun.util.logging.PlatformLogger;
  * property resource that defines the {@code ID}, the {@code calendar type},
  * the start of the calendar, the alignment with the
  * ISO calendar, and the length of each month for a range of years.
- * The variants are loaded by HijrahChronology as a resource from hijrah-config-<calendar-type>.properties.
+ * The variants are loaded by HijrahChronology as a resource from
+ * hijrah-config-&lt;calendar type&gt;.properties.
  * <p>
  * The Hijrah property resource is a set of properties that describe the calendar.
  * The syntax is defined by {@code java.util.Properties#load(Reader)}.
