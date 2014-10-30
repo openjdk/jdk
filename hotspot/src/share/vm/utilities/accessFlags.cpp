@@ -47,6 +47,21 @@ void AccessFlags::atomic_clear_bits(jint bits) {
   } while(f != old_flags);
 }
 
+// Returns true iff this thread succeeded setting the bit.
+bool AccessFlags::atomic_set_one_bit(jint bit) {
+  // Atomically update the flags with the bit given
+  jint old_flags, new_flags, f;
+  bool is_setting_bit = false;
+  do {
+    old_flags = _flags;
+    new_flags = old_flags | bit;
+    is_setting_bit = old_flags != new_flags;
+    f = Atomic::cmpxchg(new_flags, &_flags, old_flags);
+  } while(f != old_flags);
+
+  return is_setting_bit;
+}
+
 #if !defined(PRODUCT) || INCLUDE_JVMTI
 
 void AccessFlags::print_on(outputStream* st) const {
