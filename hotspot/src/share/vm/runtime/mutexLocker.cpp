@@ -61,7 +61,7 @@ Mutex*   SymbolTable_lock             = NULL;
 Mutex*   StringTable_lock             = NULL;
 Monitor* StringDedupQueue_lock        = NULL;
 Mutex*   StringDedupTable_lock        = NULL;
-Mutex*   CodeCache_lock               = NULL;
+Monitor* CodeCache_lock               = NULL;
 Mutex*   MethodData_lock              = NULL;
 Mutex*   RetData_lock                 = NULL;
 Monitor* VMOperationQueue_lock        = NULL;
@@ -205,7 +205,7 @@ void mutex_init() {
   }
   def(ParGCRareEvent_lock          , Mutex  , leaf     ,   true );
   def(DerivedPointerTableGC_lock   , Mutex,   leaf,        true );
-  def(CodeCache_lock               , Mutex  , special,     true );
+  def(CodeCache_lock               , Monitor, special,     true );
   def(Interrupt_lock               , Monitor, special,     true ); // used for interrupt processing
   def(RawMonitor_lock              , Mutex,   special,     true );
   def(OopMapCacheAlloc_lock        , Mutex,   leaf,        true ); // used for oop_map_cache allocation.
