@@ -287,11 +287,14 @@ bool FreeList<Chunk>::verify_chunk_in_free_list(Chunk* fc) const {
   return false;
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 template <class Chunk>
 void FreeList<Chunk>::assert_proper_lock_protection_work() const {
-  assert(protecting_lock() != NULL, "Don't call this directly");
-  assert(ParallelGCThreads > 0, "Don't call this directly");
+  // Nothing to do if the list has no assigned protecting lock
+  if (protecting_lock() == NULL) {
+    return;
+  }
+
   Thread* thr = Thread::current();
   if (thr->is_VM_thread() || thr->is_ConcurrentGC_thread()) {
     // assert that we are holding the freelist lock
