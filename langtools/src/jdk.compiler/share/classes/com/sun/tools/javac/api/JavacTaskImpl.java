@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.api;
 
+import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -67,6 +68,7 @@ import com.sun.tools.javac.util.Log.WriterKind;
 public class JavacTaskImpl extends BasicJavacTask {
     private final Arguments args;
     private JavaCompiler compiler;
+    private JavaFileManager fileManager;
     private Locale locale;
     private Map<JavaFileObject, JCCompilationUnit> notYetEntered;
     private ListBuffer<Env<AttrContext>> genList;
@@ -76,6 +78,7 @@ public class JavacTaskImpl extends BasicJavacTask {
     JavacTaskImpl(Context context) {
         super(context, true);
         args = Arguments.instance(context);
+        fileManager = context.get(JavaFileManager.class);
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -202,6 +205,12 @@ public class JavacTaskImpl extends BasicJavacTask {
     void cleanup() {
         if (compiler != null)
             compiler.close();
+        if (fileManager instanceof BaseFileManager && ((BaseFileManager) fileManager).autoClose) {
+            try {
+                fileManager.close();
+            } catch (IOException ignore) {
+            }
+        }
         compiler = null;
         context = null;
         notYetEntered = null;
