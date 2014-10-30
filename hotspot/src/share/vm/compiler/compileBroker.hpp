@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,6 +473,9 @@ class CompileBroker: AllStatic {
   static int get_sum_nmethod_code_size() {        return _sum_nmethod_code_size; }
   static long get_peak_compilation_time() {       return _peak_compilation_time; }
   static long get_total_compilation_time() {      return _t_total_compilation.milliseconds(); }
+
+  // Log that compilation profiling is skipped because metaspace is full.
+  static void log_metaspace_failure();
 };
 
 #endif // SHARE_VM_COMPILER_COMPILEBROKER_HPP
