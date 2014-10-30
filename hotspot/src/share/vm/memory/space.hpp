@@ -46,6 +46,7 @@
 // - Space               -- an abstract base class describing a heap area
 //   - CompactibleSpace  -- a space supporting compaction
 //     - CompactibleFreeListSpace -- (used for CMS generation)
+//     - G1OffsetTableContigSpace -- G1 version of OffsetTableContigSpace
 //     - ContiguousSpace -- a compactible space in which all free space
 //                          is contiguous
 //       - EdenSpace     -- contiguous space used as nursery
@@ -238,7 +239,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Mark-sweep-compact support: all spaces can update pointers to objects
   // moving as a part of compaction.
-  virtual void adjust_pointers();
+  virtual void adjust_pointers() = 0;
 
   // PrintHeapAtGC support
   virtual void print() const;
@@ -339,13 +340,51 @@ public:
 // necessarily, a space that is normally contiguous.  But, for example, a
 // free-list-based space whose normal collection is a mark-sweep without
 // compaction could still support compaction in full GC's.
-
+//
+// The compaction operations are implemented by the
+// scan_and_{adjust_pointers,compact,forward} function templates.
+// The following are, non-virtual, auxiliary functions used by these function templates:
+// - scan_limit()
+// - scanned_block_is_obj()
+// - scanned_block_size()
+// - adjust_obj_size()
+// - obj_size()
+// These functions are to be used exclusively by the scan_and_* function templates,
+// and must be defined for all (non-abstract) subclasses of CompactibleSpace.
+//
+// NOTE: Any subclasses to CompactibleSpace wanting to change/define the behavior
+// in any of the auxiliary functions must also override the corresponding
+// prepare_for_compaction/adjust_pointers/compact functions using them.
+// If not, such changes will not be used or have no effect on the compaction operations.
+//
+// This translates to the following dependencies:
+// Overrides/definitions of
+//  - scan_limit
+//  - scanned_block_is_obj
+//  - scanned_block_size
+// require override/definition of prepare_for_compaction().
+// Similar dependencies exist between
+//  - adjust_obj_size  and adjust_pointers()
+//  - obj_size         and compact().
+//
+// Additionally, this also means that changes to block_size() or block_is_obj() that
+// should be effective during the compaction operations must provide a corresponding
+// definition of scanned_block_size/scanned_block_is_obj respectively.
 class CompactibleSpace: public Space {
   friend class VMStructs;
   friend class CompactibleFreeListSpace;
 private:
   HeapWord* _compaction_top;
   CompactibleSpace* _next_compaction_space;
+
+  // Auxiliary functions for scan_and_{forward,adjust_pointers,compact} support.
+  inline size_t adjust_obj_size(size_t size) const {
+    return size;
+  }
+
+  inline size_t obj_size(const HeapWord* addr) const {
+    return oop(addr)->size();
+  }
 
 public:
   CompactibleSpace() :
@@ -390,7 +429,7 @@ public:
   // "cp->compaction_space" up-to-date.  Offset tables may be updated in
   // this phase as if the final copy had occurred; if so, "cp->threshold"
   // indicates when the next such action should be taken.
-  virtual void prepare_for_compaction(CompactPoint* cp);
+  virtual void prepare_for_compaction(CompactPoint* cp) = 0;
   // MarkSweep support phase3
   virtual void adjust_pointers();
   // MarkSweep support phase4
@@ -449,6 +488,25 @@ protected:
   // words remaining after this operation.
   bool insert_deadspace(size_t& allowed_deadspace_words, HeapWord* q,
                         size_t word_len);
+
+  // Below are template functions for scan_and_* algorithms (avoiding virtual calls).
+  // The space argument should be a subclass of CompactibleSpace, implementing
+  // scan_limit(), scanned_block_is_obj(), and scanned_block_size(),
+  // and possibly also overriding obj_size(), and adjust_obj_size().
+  // These functions should avoid virtual calls whenever possible.
+
+  // Frequently calls adjust_obj_size().
+  template <class SpaceType>
+  static inline void scan_and_adjust_pointers(SpaceType* space);
+
+  // Frequently calls obj_size().
+  template <class SpaceType>
+  static inline void scan_and_compact(SpaceType* space);
+
+  // Frequently calls scanned_block_is_obj() and scanned_block_size().
+  // Requires the scan_limit() function.
+  template <class SpaceType>
+  static inline void scan_and_forward(SpaceType* space, CompactPoint* cp);
 };
 
 class GenSpaceMangler;
@@ -458,6 +516,25 @@ class GenSpaceMangler;
 class ContiguousSpace: public CompactibleSpace {
   friend class OneContigSpaceCardGeneration;
   friend class VMStructs;
+  // Allow scan_and_forward function to call (private) overrides for auxiliary functions on this class
+  template <typename SpaceType>
+  friend void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* cp);
+
+ private:
+  // Auxiliary functions for scan_and_forward support.
+  // See comments for CompactibleSpace for more information.
+  inline HeapWord* scan_limit() const {
+    return top();
+  }
+
+  inline bool scanned_block_is_obj(const HeapWord* addr) const {
+    return true; // Always true, since scan_limit is top
+  }
+
+  inline size_t scanned_block_size(const HeapWord* addr) const {
+    return oop(addr)->size();
+  }
+
  protected:
   HeapWord* _top;
   HeapWord* _concurrent_iteration_safe_limit;
@@ -622,7 +699,6 @@ class ContiguousSpace: public CompactibleSpace {
   // Used to increase collection frequency.  "factor" of 0 means entire
   // space.
   void allocate_temporary_filler(int factor);
-
 };
 
 

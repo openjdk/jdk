@@ -438,52 +438,8 @@ bool CompactibleSpace::insert_deadspace(size_t& allowed_deadspace_words,
   }
 }
 
-#define block_is_always_obj(q) true
-#define obj_size(q) oop(q)->size()
-#define adjust_obj_size(s) s
-
-void CompactibleSpace::prepare_for_compaction(CompactPoint* cp) {
-  SCAN_AND_FORWARD(cp, end, block_is_obj, block_size);
-}
-
-// Faster object search.
 void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
-  SCAN_AND_FORWARD(cp, top, block_is_always_obj, obj_size);
-}
-
-void Space::adjust_pointers() {
-  // adjust all the interior pointers to point at the new locations of objects
-  // Used by MarkSweep::mark_sweep_phase3()
-
-  // First check to see if there is any work to be done.
-  if (used() == 0) {
-    return;  // Nothing to do.
-  }
-
-  // Otherwise...
-  HeapWord* q = bottom();
-  HeapWord* t = end();
-
-  debug_only(HeapWord* prev_q = NULL);
-  while (q < t) {
-    if (oop(q)->is_gc_marked()) {
-      // q is alive
-
-      // point all the oops to the new location
-      size_t size = oop(q)->adjust_pointers();
-
-      debug_only(prev_q = q);
-
-      q += size;
-    } else {
-      // q is not a live object.  But we're not in a compactible space,
-      // So we don't have live ranges.
-      debug_only(prev_q = q);
-      q += block_size(q);
-      assert(q > prev_q, "we should be moving forward through memory");
-    }
-  }
-  assert(q == t, "just checking");
+  scan_and_forward(this, cp);
 }
 
 void CompactibleSpace::adjust_pointers() {
@@ -492,11 +448,11 @@ void CompactibleSpace::adjust_pointers() {
     return;   // Nothing to do.
   }
 
-  SCAN_AND_ADJUST_POINTERS(adjust_obj_size);
+  scan_and_adjust_pointers(this);
 }
 
 void CompactibleSpace::compact() {
-  SCAN_AND_COMPACT(obj_size);
+  scan_and_compact(this);
 }
 
 void Space::print_short() const { print_short_on(tty); }
