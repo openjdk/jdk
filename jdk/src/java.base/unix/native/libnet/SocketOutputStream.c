@@ -74,7 +74,7 @@ Java_java_net_SocketOutputStream_socketWrite0(JNIEnv *env, jobject this,
     } else {
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
         /* Bug 4086704 - If the Socket associated with this file descriptor
-         * was closed (sysCloseFD), the the file descriptor is set to -1.
+         * was closed (sysCloseFD), the file descriptor is set to -1.
          */
         if (fd == -1) {
             JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");

@@ -89,7 +89,7 @@
  *
  * However, if the environment contains a LD_LIBRARY_PATH, this will cause the
  * launcher to inspect the LD_LIBRARY_PATH. The launcher will check
- *  a. if the LD_LIBRARY_PATH's first component is the the path to the desired
+ *  a. if the LD_LIBRARY_PATH's first component is the path to the desired
  *     libjvm.so
  *  b. if any other libjvm.so is found in any of the paths.
  * If case b is true, then the launcher will set the LD_LIBRARY_PATH to the
