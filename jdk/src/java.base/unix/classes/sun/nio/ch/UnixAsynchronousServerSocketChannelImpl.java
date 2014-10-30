@@ -141,7 +141,7 @@ class UnixAsynchronousServerSocketChannelImpl
         Throwable exc = null;
         try {
             begin();
-            int n = accept0(this.fd, newfd, isaa);
+            int n = accept(this.fd, newfd, isaa);
 
             // spurious wakeup, is this possible?
             if (n == IOStatus.UNAVAILABLE) {
@@ -277,7 +277,7 @@ class UnixAsynchronousServerSocketChannelImpl
         try {
             begin();
 
-            int n = accept0(this.fd, newfd, isaa);
+            int n = accept(this.fd, newfd, isaa);
             if (n == IOStatus.UNAVAILABLE) {
 
                 // need calling context when there is security manager as
@@ -330,6 +330,18 @@ class UnixAsynchronousServerSocketChannelImpl
             Invoker.invokeIndirectly(this, handler, att, child, exc);
             return null;
         }
+    }
+
+    /**
+     * Accept a connection on a socket.
+     *
+     * @implNote Wrap native call to allow instrumentation.
+     */
+    private int accept(FileDescriptor ssfd, FileDescriptor newfd,
+                       InetSocketAddress[] isaa)
+        throws IOException
+    {
+        return accept0(ssfd, newfd, isaa);
     }
 
     // -- Native methods --
