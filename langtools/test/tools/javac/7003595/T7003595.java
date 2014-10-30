@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,6 @@ import javax.tools.ToolProvider;
 public class T7003595 {
 
     /** global decls ***/
-
-    // Create a single file manager and reuse it for each compile to save time.
-    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
 
     //statistics
     static int checkCount = 0;
@@ -112,15 +109,18 @@ public class T7003595 {
     }
 
     public static void main(String... args) throws Exception {
-        for (ClassKind ck1 : ClassKind.values()) {
-            String cname1 = "C1";
-            for (ClassKind ck2 : ClassKind.values()) {
-                if (!ck1.isAllowed(ck2)) continue;
-                String cname2 = "C2";
-                for (ClassKind ck3 : ClassKind.values()) {
-                    if (!ck2.isAllowed(ck3)) continue;
-                    String cname3 = "C3";
-                    new T7003595(new ClassKind[] {ck1, ck2, ck3}, new String[] { cname1, cname2, cname3 }).compileAndCheck();
+        // Create a single file manager and reuse it for each compile to save time.
+        try (StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null)) {
+            for (ClassKind ck1 : ClassKind.values()) {
+                String cname1 = "C1";
+                for (ClassKind ck2 : ClassKind.values()) {
+                    if (!ck1.isAllowed(ck2)) continue;
+                    String cname2 = "C2";
+                    for (ClassKind ck3 : ClassKind.values()) {
+                        if (!ck2.isAllowed(ck3)) continue;
+                        String cname3 = "C3";
+                        new T7003595(fm, new ClassKind[] {ck1, ck2, ck3}, new String[] { cname1, cname2, cname3 }).compileAndCheck();
+                    }
                 }
             }
         }
@@ -132,8 +132,10 @@ public class T7003595 {
 
     ClassKind[] cks;
     String[] cnames;
+    StandardJavaFileManager fm;
 
-    T7003595(ClassKind[] cks, String[] cnames) {
+    T7003595(StandardJavaFileManager fm, ClassKind[] cks, String[] cnames) {
+        this.fm = fm;
         this.cks = cks;
         this.cnames = cnames;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,29 +47,30 @@ public class T6665791 {
         write(test_java, test);
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager manager =
-                compiler.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> units = manager.getJavaFileObjects(test_java);
-        final StringWriter sw = new StringWriter();
-        JavacTask task = (JavacTask) compiler.getTask(sw, manager, null, null,
-                null, units);
+        try (StandardJavaFileManager manager =
+                compiler.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> units = manager.getJavaFileObjects(test_java);
+            final StringWriter sw = new StringWriter();
+            JavacTask task = (JavacTask) compiler.getTask(sw, manager, null, null,
+                    null, units);
 
-        new TreeScanner<Boolean, Void>() {
-            @Override
-            public Boolean visitClass(ClassTree arg0, Void arg1) {
-                sw.write(arg0.toString());
-                return super.visitClass(arg0, arg1);
+            new TreeScanner<Boolean, Void>() {
+                @Override
+                public Boolean visitClass(ClassTree arg0, Void arg1) {
+                    sw.write(arg0.toString());
+                    return super.visitClass(arg0, arg1);
+                }
+            }.scan(task.parse(), null);
+
+            System.out.println("output:");
+            System.out.println(sw.toString());
+            String found = sw.toString().replaceAll("\\s+", " ").trim();
+            String expect = test.replaceAll("\\s+", " ").trim();
+            if (!expect.equals(found)) {
+                System.out.println("expect: " + expect);
+                System.out.println("found:  " + found);
+                throw new Exception("unexpected output");
             }
-        }.scan(task.parse(), null);
-
-        System.out.println("output:");
-        System.out.println(sw.toString());
-        String found = sw.toString().replaceAll("\\s+", " ").trim();
-        String expect = test.replaceAll("\\s+", " ").trim();
-        if (!expect.equals(found)) {
-            System.out.println("expect: " + expect);
-            System.out.println("found:  " + found);
-            throw new Exception("unexpected output");
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,7 @@ public class T6400872 {
                 throws IOException {
         System.err.println("compile...");
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
-        try {
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Iterable<? extends JavaFileObject> fileObjects =
                 fm.getJavaFileObjectsFromFiles(Arrays.asList(files));
 
@@ -78,8 +77,6 @@ public class T6400872 {
                 compiler.getTask(null, fm, null, options, null, fileObjects);
             if (!task.call())
                 throw new AssertionError("compilation failed");
-        } finally {
-            fm.close();
         }
     }
 

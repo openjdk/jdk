@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,16 +68,19 @@ public class TestJavacTask_Multiple {
     void run() throws Exception {
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-        for (TestKind tk: TestKind.values()) {
-            test(comp, fm, tk);
-        }
+        try {
+            for (TestKind tk: TestKind.values()) {
+                test(comp, fm, tk);
+            }
 
-        int expect = TestKind.values().length * MAX_TASKS;
-        if (count != expect) {
-            throw new Exception("Unexpected number of tests completed: " + count
-                    + ", expected: " + expect);
+            int expect = TestKind.values().length * MAX_TASKS;
+            if (count != expect) {
+                throw new Exception("Unexpected number of tests completed: " + count
+                        + ", expected: " + expect);
+            }
+        } finally {
+            fm.close();
         }
-
     }
 
     void test(JavaCompiler comp, StandardJavaFileManager fm, TestKind tk) {

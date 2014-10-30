@@ -185,14 +185,15 @@ public class IntersectionTargetTypeTest {
     public static void main(String... args) throws Exception {
         //create default shared JavaCompiler - reused across multiple compilations
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
 
-        for (CastInfo cInfo : allCastInfo()) {
-            for (ExpressionKind ek : ExpressionKind.values()) {
-                new IntersectionTargetTypeTest(cInfo, ek).run(comp, fm);
+            for (CastInfo cInfo : allCastInfo()) {
+                for (ExpressionKind ek : ExpressionKind.values()) {
+                    new IntersectionTargetTypeTest(cInfo, ek).run(comp, fm);
+                }
             }
+            System.out.println("Total check executed: " + checkCount);
         }
-        System.out.println("Total check executed: " + checkCount);
     }
 
     static List<CastInfo> allCastInfo() {

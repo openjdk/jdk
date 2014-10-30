@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,20 +161,24 @@ public class UnusedResourcesTest {
     }
 
     public static void main(String... args) throws Exception {
-        for (XlintOption xlint : XlintOption.values()) {
-            for (SuppressLevel suppressLevel : SuppressLevel.values()) {
-                for (ResourceUsage usage1 : ResourceUsage.values()) {
-                    for (ResourceUsage usage2 : ResourceUsage.values()) {
-                        for (ResourceUsage usage3 : ResourceUsage.values()) {
-                                test(xlint,
-                                        suppressLevel,
-                                        usage1,
-                                        usage2,
-                                        usage3);
+        try {
+            for (XlintOption xlint : XlintOption.values()) {
+                for (SuppressLevel suppressLevel : SuppressLevel.values()) {
+                    for (ResourceUsage usage1 : ResourceUsage.values()) {
+                        for (ResourceUsage usage2 : ResourceUsage.values()) {
+                            for (ResourceUsage usage3 : ResourceUsage.values()) {
+                                    test(xlint,
+                                            suppressLevel,
+                                            usage1,
+                                            usage2,
+                                            usage3);
+                            }
                         }
                     }
                 }
             }
+        } finally {
+            fm.close();
         }
     }
 

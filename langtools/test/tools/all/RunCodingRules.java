@@ -77,41 +77,42 @@ public class RunCodingRules {
         }
 
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = javaCompiler.getStandardFileManager(null, null, null);
-        DiagnosticListener<JavaFileObject> noErrors = diagnostic -> {
-            Assert.check(diagnostic.getKind() != Diagnostic.Kind.ERROR, diagnostic.toString());
-        };
+        try (StandardJavaFileManager fm = javaCompiler.getStandardFileManager(null, null, null)) {
+            DiagnosticListener<JavaFileObject> noErrors = diagnostic -> {
+                Assert.check(diagnostic.getKind() != Diagnostic.Kind.ERROR, diagnostic.toString());
+            };
 
-        List<File> crulesFiles = Files.walk(crulesDir)
-                                      .filter(entry -> entry.getFileName().toString().endsWith(".java"))
-                                      .filter(entry -> entry.getParent().endsWith("crules"))
-                                      .map(entry -> entry.toFile())
-                                      .collect(Collectors.toList());
+            List<File> crulesFiles = Files.walk(crulesDir)
+                                          .filter(entry -> entry.getFileName().toString().endsWith(".java"))
+                                          .filter(entry -> entry.getParent().endsWith("crules"))
+                                          .map(entry -> entry.toFile())
+                                          .collect(Collectors.toList());
 
-        Path crulesTarget = targetDir.resolve("crules");
-        Files.createDirectories(crulesTarget);
-        List<String> crulesOptions = Arrays.asList("-d", crulesTarget.toString());
-        javaCompiler.getTask(null, fm, noErrors, crulesOptions, null,
-                fm.getJavaFileObjectsFromFiles(crulesFiles)).call();
-        Path registration = crulesTarget.resolve("META-INF/services/com.sun.source.util.Plugin");
-        Files.createDirectories(registration.getParent());
-        try (Writer metaInfServices = Files.newBufferedWriter(registration, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-            metaInfServices.write("crules.CodingRulesAnalyzerPlugin\n");
+            Path crulesTarget = targetDir.resolve("crules");
+            Files.createDirectories(crulesTarget);
+            List<String> crulesOptions = Arrays.asList("-d", crulesTarget.toString());
+            javaCompiler.getTask(null, fm, noErrors, crulesOptions, null,
+                    fm.getJavaFileObjectsFromFiles(crulesFiles)).call();
+            Path registration = crulesTarget.resolve("META-INF/services/com.sun.source.util.Plugin");
+            Files.createDirectories(registration.getParent());
+            try (Writer metaInfServices = Files.newBufferedWriter(registration, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                metaInfServices.write("crules.CodingRulesAnalyzerPlugin\n");
+            }
+
+            List<File> sources = sourceDirs.stream()
+                                           .flatMap(dir -> silentFilesWalk(dir))
+                                           .filter(entry -> entry.getFileName().toString().endsWith(".java"))
+                                           .map(p -> p.toFile())
+                                           .collect(Collectors.toList());
+
+            Path sourceTarget = targetDir.resolve("classes");
+            Files.createDirectories(sourceTarget);
+            String processorPath = crulesTarget.toString() + File.pathSeparator + crulesDir.toString();
+            List<String> options = Arrays.asList("-d", sourceTarget.toString(),
+                    "-processorpath", processorPath, "-Xplugin:coding_rules");
+            javaCompiler.getTask(null, fm, noErrors, options, null,
+                    fm.getJavaFileObjectsFromFiles(sources)).call();
         }
-
-        List<File> sources = sourceDirs.stream()
-                                       .flatMap(dir -> silentFilesWalk(dir))
-                                       .filter(entry -> entry.getFileName().toString().endsWith(".java"))
-                                       .map(p -> p.toFile())
-                                       .collect(Collectors.toList());
-
-        Path sourceTarget = targetDir.resolve("classes");
-        Files.createDirectories(sourceTarget);
-        String processorPath = crulesTarget.toString() + File.pathSeparator + crulesDir.toString();
-        List<String> options = Arrays.asList("-d", sourceTarget.toString(),
-                "-processorpath", processorPath, "-Xplugin:coding_rules");
-        javaCompiler.getTask(null, fm, noErrors, options, null,
-                fm.getJavaFileObjectsFromFiles(sources)).call();
     }
 
     Stream<Path> silentFilesWalk(Path dir) throws IllegalStateException {

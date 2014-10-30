@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,18 @@ public class T6963934 {
         File testSrc = new File(System.getProperty("test.src"));
         File thisSrc = new File(testSrc, T6963934.class.getSimpleName() + ".java");
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-        JavacTask task = (JavacTask) compiler.getTask(null, fileManager, null, null, null,
-                fileManager.getJavaFileObjects(thisSrc));
-        CompilationUnitTree tree = task.parse().iterator().next();
-        int count = 0;
-        for (ImportTree importTree : tree.getImports()) {
-            System.out.println(importTree);
-            count++;
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null)) {
+            JavacTask task = (JavacTask) compiler.getTask(null, fileManager, null, null, null,
+                    fileManager.getJavaFileObjects(thisSrc));
+            CompilationUnitTree tree = task.parse().iterator().next();
+            int count = 0;
+            for (ImportTree importTree : tree.getImports()) {
+                System.out.println(importTree);
+                count++;
+            }
+            int expected = 7;
+            if (count != expected)
+                throw new Exception("unexpected number of imports found: " + count + ", expected: " + expected);
         }
-        int expected = 7;
-        if (count != expected)
-            throw new Exception("unexpected number of imports found: " + count + ", expected: " + expected);
     }
 }

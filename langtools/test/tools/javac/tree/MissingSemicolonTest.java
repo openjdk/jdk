@@ -47,7 +47,7 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 
 public class MissingSemicolonTest {
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         String testSrc = System.getProperty("test.src");
         File baseDir = new File(testSrc);
         boolean ok = new MissingSemicolonTest().run(baseDir, args);
@@ -56,24 +56,28 @@ public class MissingSemicolonTest {
         }
     }
 
-    boolean run(File baseDir, String... args) {
-        if (args.length == 0) {
-            throw new IllegalStateException("Needs input files.");
+    boolean run(File baseDir, String... args) throws IOException {
+        try {
+            if (args.length == 0) {
+                throw new IllegalStateException("Needs input files.");
+            }
+
+            for (String arg : args) {
+                File file = new File(baseDir, arg);
+                if (file.exists())
+                    test(file);
+                else
+                    error("File not found: " + file);
+            }
+
+            System.err.println(fileCount + " files read");
+            if (errors > 0)
+                System.err.println(errors + " errors");
+
+            return errors == 0;
+        } finally {
+            fm.close();
         }
-
-        for (String arg : args) {
-            File file = new File(baseDir, arg);
-            if (file.exists())
-                test(file);
-            else
-                error("File not found: " + file);
-        }
-
-        System.err.println(fileCount + " files read");
-        if (errors > 0)
-            System.err.println(errors + " errors");
-
-        return errors == 0;
     }
 
     void test(File file) {

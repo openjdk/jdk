@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,14 @@ public class T6340549 {
 
         try {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-            StandardJavaFileManager jfm = compiler.getStandardFileManager(null, null, null);
-            jfm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(new File(".")));
+            try (StandardJavaFileManager jfm = compiler.getStandardFileManager(null, null, null)) {
+                jfm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(new File(".")));
 
-            for (JavaFileObject jfo : jfm.list(StandardLocation.CLASS_PATH,
-                    "", EnumSet.of(Kind.OTHER), false)) {
-                if (new File(jfo.getName()).isDirectory()) {
-                    throw new AssertionError("Found directory: " + jfo);
+                for (JavaFileObject jfo : jfm.list(StandardLocation.CLASS_PATH,
+                        "", EnumSet.of(Kind.OTHER), false)) {
+                    if (new File(jfo.getName()).isDirectory()) {
+                        throw new AssertionError("Found directory: " + jfo);
+                    }
                 }
             }
         } finally {

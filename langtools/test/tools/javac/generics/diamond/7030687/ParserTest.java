@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,26 +78,27 @@ public class ParserTest {
 
         //create default shared JavaCompiler - reused across multiple compilations
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
 
-        for (TypeQualifierArity arity : TypeQualifierArity.values()) {
-            for (TypeArgumentKind tak1 : TypeArgumentKind.values()) {
-                if (arity == TypeQualifierArity.ONE) {
-                    new ParserTest(arity, tak1).run(comp, fm);
-                    continue;
-                }
-                for (TypeArgumentKind tak2 : TypeArgumentKind.values()) {
-                    if (arity == TypeQualifierArity.TWO) {
-                        new ParserTest(arity, tak1, tak2).run(comp, fm);
+            for (TypeQualifierArity arity : TypeQualifierArity.values()) {
+                for (TypeArgumentKind tak1 : TypeArgumentKind.values()) {
+                    if (arity == TypeQualifierArity.ONE) {
+                        new ParserTest(arity, tak1).run(comp, fm);
                         continue;
                     }
-                    for (TypeArgumentKind tak3 : TypeArgumentKind.values()) {
-                        if (arity == TypeQualifierArity.THREE) {
-                            new ParserTest(arity, tak1, tak2, tak3).run(comp, fm);
+                    for (TypeArgumentKind tak2 : TypeArgumentKind.values()) {
+                        if (arity == TypeQualifierArity.TWO) {
+                            new ParserTest(arity, tak1, tak2).run(comp, fm);
                             continue;
                         }
-                        for (TypeArgumentKind tak4 : TypeArgumentKind.values()) {
-                            new ParserTest(arity, tak1, tak2, tak3, tak4).run(comp, fm);
+                        for (TypeArgumentKind tak3 : TypeArgumentKind.values()) {
+                            if (arity == TypeQualifierArity.THREE) {
+                                new ParserTest(arity, tak1, tak2, tak3).run(comp, fm);
+                                continue;
+                            }
+                            for (TypeArgumentKind tak4 : TypeArgumentKind.values()) {
+                                new ParserTest(arity, tak1, tak2, tak3, tak4).run(comp, fm);
+                            }
                         }
                     }
                 }

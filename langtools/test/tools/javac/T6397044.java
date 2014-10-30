@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,15 @@ public abstract class T6397044 {
         String srcDir = System.getProperty("test.src", ".");
         String self = T6397044.class.getName();
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> files
-            = fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(srcDir, self + ".java")));
-        JavacTask task = tool.getTask(null, fm, null, null, null, files);
-        Iterable<? extends CompilationUnitTree> trees = task.parse();
-        Checker checker = new Checker();
-        for (CompilationUnitTree tree: trees)
-            checker.check(tree);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> files
+                = fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(srcDir, self + ".java")));
+            JavacTask task = tool.getTask(null, fm, null, null, null, files);
+            Iterable<? extends CompilationUnitTree> trees = task.parse();
+            Checker checker = new Checker();
+            for (CompilationUnitTree tree: trees)
+                checker.check(tree);
+        }
     }
 
     public int x_public;

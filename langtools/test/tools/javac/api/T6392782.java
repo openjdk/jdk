@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,21 +38,22 @@ public class T6392782 {
     public static void main(String... args) throws IOException {
         String testSrc = System.getProperty("test.src", ".");
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6392782.class.getName()+".java")));
-        JavacTask task = tool.getTask(null, fm, null, null, null, files);
-        Iterable<? extends Tree> trees = task.parse();
-        TreeScanner<Integer,Void> scanner = new MyScanner();
-        check(scanner, 6, scanner.scan(trees, null));
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6392782.class.getName()+".java")));
+            JavacTask task = tool.getTask(null, fm, null, null, null, files);
+            Iterable<? extends Tree> trees = task.parse();
+            TreeScanner<Integer,Void> scanner = new MyScanner();
+            check(scanner, 6, scanner.scan(trees, null));
 
-        CountNodes nodeCounter = new CountNodes();
-        // 359 nodes with the regular parser; 360 nodes with EndPosParser
-        // We automatically switch to EndPosParser when calling JavacTask.parse()
-        check(nodeCounter, 360, nodeCounter.scan(trees, null));
+            CountNodes nodeCounter = new CountNodes();
+            // 359 nodes with the regular parser; 360 nodes with EndPosParser
+            // We automatically switch to EndPosParser when calling JavacTask.parse()
+            check(nodeCounter, 362, nodeCounter.scan(trees, null));
 
-        CountIdentifiers idCounter = new CountIdentifiers();
-        check(idCounter, 107, idCounter.scan(trees, null));
+            CountIdentifiers idCounter = new CountIdentifiers();
+            check(idCounter, 107, idCounter.scan(trees, null));
+        }
     }
 
     private static void check(TreeScanner<?,?> scanner, int expect, int found) {
