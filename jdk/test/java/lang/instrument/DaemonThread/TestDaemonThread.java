@@ -28,7 +28,7 @@
  *
  * @build jdk.testlibrary.* DummyAgent DummyClass TestDaemonThreadLauncher TestDaemonThread
  * @run shell ../MakeJAR3.sh DummyAgent
- * @run main TestDaemonThreadLauncher /timeout=240
+ * @run main/timeout=240 TestDaemonThreadLauncher
  *
  */
 import java.io.File;

@@ -325,21 +325,35 @@ public final class JLayer<V extends Component>
     }
 
     /**
-     * A non-{@code null} border, or non-zero insets, isn't supported, to prevent the geometry
-     * of this component from becoming complex enough to inhibit
-     * subclassing of {@code LayerUI} class.  To create a {@code JLayer} with a border,
-     * add it to a {@code JPanel} that has a border.
-     * <p>Note:  If {@code border} is non-{@code null}, this
-     * method will throw an exception as borders are not supported on
-     * a {@code JLayer}.
+     * Delegates its functionality to the {@code getView().setBorder(Border)} method,
+     * if the view component is an instance of {@code javax.swing.JComponent},
+     * otherwise this method is a no-op.
      *
-     * @param border the {@code Border} to set
-     * @exception IllegalArgumentException this method is not supported
+     * @param border the border to be rendered for the {@code view} component
+     * @see #getView()
+     * @see javax.swing.JComponent#setBorder(Border)
      */
     public void setBorder(Border border) {
-        if (border != null) {
-            throw new IllegalArgumentException("JLayer.setBorder() not supported");
+        if (view instanceof JComponent) {
+            ((JComponent)view).setBorder(border);
         }
+    }
+
+    /**
+     * Delegates its functionality to the {@code getView().getBorder()} method,
+     * if the view component is an instance of {@code javax.swing.JComponent},
+     * otherwise returns {@code null}.
+     *
+     * @return the border object for the {@code view} component
+     * @see #getView()
+     * @see #setBorder
+     * @see javax.swing.JComponent#getBorder()
+     */
+    public Border getBorder() {
+        if (view instanceof JComponent) {
+            return ((JComponent) view).getBorder();
+        }
+        return null;
     }
 
     /**

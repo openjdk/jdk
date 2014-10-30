@@ -70,10 +70,11 @@
 #	3:30 IRST IRDT	Iran
 #	4:00 GST	Gulf*
 #	5:30 IST	India
-#	7:00 ICT	Indochina*
+#	7:00 ICT	Indochina, most times and locations*
 #	7:00 WIB	west Indonesia (Waktu Indonesia Barat)
 #	8:00 WITA	central Indonesia (Waktu Indonesia Tengah)
 #	8:00 CST	China
+#	8:00 IDT	Indochina, 1943-45, 1947-55, 1960-75 (some locations)*
 #	8:00 JWST	Western Standard Time (Japan, 1896/1937)*
 #	9:00 JCST	Central Standard Time (Japan, 1896/1937)
 #	9:00 WIT	east Indonesia (Waktu Indonesia Timur)
@@ -294,12 +295,8 @@ Zone	Asia/Rangoon	6:24:40 -	LMT	1880        # or Yangon
 			6:30	-	MMT	# Myanmar Time
 
 # Cambodia
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Phnom_Penh	6:59:40 -	LMT	1906 Jun  9
-			7:06:20	-	SMT	1911 Mar 11  0:01 # Saigon MT?
-			7:00	-	ICT	1912 May
-			8:00	-	ICT	1931 May
-			7:00	-	ICT
+# See Asia/Bangkok.
+
 
 # China
 
@@ -915,6 +912,10 @@ Zone	Asia/Kolkata	5:53:28 -	LMT	1880        # Kolkata
 #	Nicobar Is
 
 # Indonesia
+#
+# From Paul Eggert (2014-09-06):
+# The 1876 Report of the Secretary of the [US] Navy, p 306 says that Batavia
+# civil time was 7:07:12.5; round to even for Jakarta.
 #
 # From Gwillim Law (2001-05-28), overriding Shanks & Pottenger:
 # http://www.sumatera-inc.com/go_to_invest/about_indonesia.asp#standtime
@@ -1733,12 +1734,8 @@ Zone	Asia/Kuwait	3:11:56 -	LMT	1950
 			3:00	-	AST
 
 # Laos
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Vientiane	6:50:24 -	LMT	1906 Jun  9       # or Viangchan
-			7:06:20	-	SMT	1911 Mar 11  0:01 # Saigon MT?
-			7:00	-	ICT	1912 May
-			8:00	-	ICT	1931 May
-			7:00	-	ICT
+# See Asia/Bangkok.
+
 
 # Lebanon
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -2751,6 +2748,8 @@ Zone	Asia/Dushanbe	4:35:12 -	LMT	1924 May  2
 Zone	Asia/Bangkok	6:42:04	-	LMT	1880
 			6:42:04	-	BMT	1920 Apr # Bangkok Mean Time
 			7:00	-	ICT
+Link Asia/Bangkok Asia/Phnom_Penh	# Cambodia
+Link Asia/Bangkok Asia/Vientiane	# Laos
 
 # Turkmenistan
 # From Shanks & Pottenger.
@@ -2788,22 +2787,65 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 
 # Vietnam
 
-# From Paul Eggert (2013-02-21):
+# From Paul Eggert (2014-10-04):
 # Milne gives 7:16:56 for the meridian of Saigon in 1899, as being
 # used in Lower Laos, Cambodia, and Annam.  But this is quite a ways
 # from Saigon's location.  For now, ignore this and stick with Shanks
-# and Pottenger.
+# and Pottenger for LMT before 1906.
 
 # From Arthur David Olson (2008-03-18):
 # The English-language name of Vietnam's most populous city is "Ho Chi Minh
 # City"; use Ho_Chi_Minh below to avoid a name of more than 14 characters.
 
-# From Shanks & Pottenger:
+# From Paul Eggert (2014-10-21) after a heads-up from Trần Ngọc Quân:
+# Trần Tiến Bình's authoritative book "Lịch Việt Nam: thế kỷ XX-XXI (1901-2100)"
+# (Nhà xuất bản Văn Hoá - Thông Tin, Hanoi, 2005), pp 49-50,
+# is quoted verbatim in:
+# http://www.thoigian.com.vn/?mPage=P80D01
+# is translated by Brian Inglis in:
+# http://mm.icann.org/pipermail/tz/2014-October/021654.html
+# and is the basis for the information below.
+#
+# The 1906 transition was effective July 1 and standardized Indochina to
+# Phù Liễn Observatory, legally 104 deg. 17'17" east of Paris.
+# It's unclear whether this meant legal Paris Mean Time (00:09:21) or
+# the Paris Meridian (2 deg. 20'14.03" E); the former yields 07:06:30.1333...
+# and the latter 07:06:29.333... so either way it rounds to 07:06:30,
+# which is used below even though the modern-day Phù Liễn Observatory
+# is closer to 07:06:31.  Abbreviate Phù Liễn Mean Time as PLMT.
+#
+# The following transitions occurred in Indochina in general (before 1954)
+# and in South Vietnam in particular (after 1954):
+# To 07:00 on 1911-05-01.
+# To 08:00 on 1942-12-31 at 23:00.
+# To 09:00 in 1945-03-14 at 23:00.
+# To 07:00 on 1945-09-02 in Vietnam.
+# To 08:00 on 1947-04-01 in French-controlled Indochina.
+# To 07:00 on 1955-07-01 in South Vietnam.
+# To 08:00 on 1959-12-31 at 23:00 in South Vietnam.
+# To 07:00 on 1975-06-13 in South Vietnam.
+#
+# Trần cites the following sources; it's unclear which supplied the info above.
+#
+# Hoàng Xuân Hãn: "Lịch và lịch Việt Nam". Tập san Khoa học Xã hội,
+# No. 9, Paris, February 1982.
+#
+# Lê Thành Lân: "Lịch và niên biểu lịch sử hai mươi thế kỷ (0001-2010)",
+# NXB Thống kê, Hanoi, 2000.
+#
+# Lê Thành Lân: "Lịch hai thế kỷ (1802-2010) và các lịch vĩnh cửu",
+# NXB Thuận Hoá, Huế, 1995.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Ho_Chi_Minh	7:06:40 -	LMT	1906 Jun  9
-			7:06:20	-	SMT	1911 Mar 11  0:01 # Saigon MT?
-			7:00	-	ICT	1912 May
-			8:00	-	ICT	1931 May
+Zone Asia/Ho_Chi_Minh	7:06:40 -	LMT	1906 Jul  1
+			7:06:30	-	PLMT	1911 May  1
+			7:00	-	ICT	1942 Dec 31 23:00
+			8:00	-	IDT	1945 Mar 14 23:00
+			9:00	-	JST	1945 Sep  2
+			7:00	-	ICT	1947 Apr  1
+			8:00	-	IDT	1955 Jul  1
+			7:00	-	ICT	1959 Dec 31 23:00
+			8:00	-	IDT	1975 Jun 13
 			7:00	-	ICT
 
 # Yemen

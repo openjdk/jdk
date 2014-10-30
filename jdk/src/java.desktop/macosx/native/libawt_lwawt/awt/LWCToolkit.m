@@ -606,6 +606,23 @@ JNF_COCOA_EXIT(env);
     return active;
 }
 
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    activateApplicationIgnoringOtherApps
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_activateApplicationIgnoringOtherApps
+(JNIEnv *env, jclass clazz)
+{
+    JNF_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        if(![NSApp isActive]){
+            [NSApp activateIgnoringOtherApps:YES];
+        }
+    }];
+    JNF_COCOA_EXIT(env);
+}
+
 
 /*
  * Class:     sun_awt_SunToolkit

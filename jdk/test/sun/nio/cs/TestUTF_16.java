@@ -150,7 +150,7 @@ public class TestUTF_16 {
             if (CoderResult.OVERFLOW !=
                 Charset.forName("UTF_16")
                 .newDecoder()
-                .decode((ByteBuffer)(ByteBuffer.allocate(4)
+                .decode((ByteBuffer.allocate(4)
                                      .put(new byte[]
                                           {(byte)0xd8,(byte)0x00,
                                            (byte)0xdc,(byte)0x01})

@@ -1025,6 +1025,106 @@ public abstract class $Type$Buffer
         return offset;
     }
 
+    // -- Covariant return type overrides
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public
+#if[!byte]
+    final
+#end[!byte]
+    $Type$Buffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public
+#if[!byte]
+    final
+#end[!byte]
+    $Type$Buffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public 
+#if[!byte]
+    final
+#end[!byte]
+    $Type$Buffer mark() {
+        super.mark();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public 
+#if[!byte]
+    final
+#end[!byte]
+    $Type$Buffer reset() {
+        super.reset();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public 
+#if[!byte]
+    final
+#end[!byte]
+    $Type$Buffer clear() {
+        super.clear();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public 
+#if[!byte]
+    final
+#end[!byte]
+    $Type$Buffer flip() {
+        super.flip();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public 
+#if[!byte]
+    final
+#end[!byte]
+    $Type$Buffer rewind() {
+        super.rewind();
+        return this;
+    }
+
     /**
      * Compacts this buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *

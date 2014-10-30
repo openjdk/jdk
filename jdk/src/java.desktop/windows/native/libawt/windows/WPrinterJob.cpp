@@ -68,7 +68,7 @@ static BOOL IsSupportedLevel(HANDLE hPrinter, DWORD dwLevel) {
 extern "C" {
 
 JNIEXPORT jstring JNICALL
-Java_sun_print_Win32PrintServiceLookup_getDefaultPrinterName(JNIEnv *env,
+Java_sun_print_PrintServiceLookupProvider_getDefaultPrinterName(JNIEnv *env,
                                                              jobject peer)
 {
     TRY;
@@ -119,7 +119,7 @@ Java_sun_print_Win32PrintServiceLookup_getDefaultPrinterName(JNIEnv *env,
 
 
 JNIEXPORT jobjectArray JNICALL
-Java_sun_print_Win32PrintServiceLookup_getAllPrinterNames(JNIEnv *env,
+Java_sun_print_PrintServiceLookupProvider_getAllPrinterNames(JNIEnv *env,
                                                           jobject peer)
 {
     TRY;
@@ -176,7 +176,7 @@ Java_sun_print_Win32PrintServiceLookup_getAllPrinterNames(JNIEnv *env,
 
 
 JNIEXPORT jlong JNICALL
-Java_sun_print_Win32PrintServiceLookup_notifyFirstPrinterChange(JNIEnv *env,
+Java_sun_print_PrintServiceLookupProvider_notifyFirstPrinterChange(JNIEnv *env,
                                                                 jobject peer,
                                                                 jstring printer) {
     HANDLE hPrinter;
@@ -210,7 +210,7 @@ Java_sun_print_Win32PrintServiceLookup_notifyFirstPrinterChange(JNIEnv *env,
 
 
 JNIEXPORT void JNICALL
-Java_sun_print_Win32PrintServiceLookup_notifyClosePrinterChange(JNIEnv *env,
+Java_sun_print_PrintServiceLookupProvider_notifyClosePrinterChange(JNIEnv *env,
                                                                 jobject peer,
                                                                 jlong chgObject) {
     FindClosePrinterChangeNotification((HANDLE)chgObject);
@@ -218,7 +218,7 @@ Java_sun_print_Win32PrintServiceLookup_notifyClosePrinterChange(JNIEnv *env,
 
 
 JNIEXPORT jint JNICALL
-Java_sun_print_Win32PrintServiceLookup_notifyPrinterChange(JNIEnv *env,
+Java_sun_print_PrintServiceLookupProvider_notifyPrinterChange(JNIEnv *env,
                                                            jobject peer,
                                                            jlong chgObject) {
     DWORD dwChange;

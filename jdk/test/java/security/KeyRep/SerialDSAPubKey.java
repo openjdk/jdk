@@ -26,7 +26,7 @@
  * @bug 6232513
  * @summary RMI interoperability issue with DSAPublicKey obj between
  *              JDK1.4 & JDK1.5
- * @run main/othervm/policy=SerialDSAPubKey.policy -Dsun.security.key.serial.interop=true -Dsun.security.pkcs11.enable-solaris=false SerialDSAPubKey
+ * @run main/othervm/java.security.policy=SerialDSAPubKey.policy -Dsun.security.key.serial.interop=true -Dsun.security.pkcs11.enable-solaris=false SerialDSAPubKey
  */
 
 import java.io.*;
