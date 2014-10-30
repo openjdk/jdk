@@ -104,11 +104,12 @@ public class TestDocComments extends JavacTestingAbstractProcessor {
             }
         };
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = c.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> units = fm.getJavaFileObjects(files);
-        JavacTask t = (JavacTask) c.getTask(null, fm, dl, Arrays.asList(opts), null, units);
-        t.parse();
-        t.analyze();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> units = fm.getJavaFileObjects(files);
+            JavacTask t = (JavacTask) c.getTask(null, fm, dl, Arrays.asList(opts), null, units);
+            t.parse();
+            t.analyze();
+        }
     }
 
     static void test_javac_cmd(String[] opts, File[] files) {

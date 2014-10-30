@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @author  Peter von der Ah\u00e9
  */
 
+import java.io.IOException;
 import java.util.Arrays;
 import javax.tools.*;
 
@@ -42,21 +43,25 @@ public class T6198196 {
                                      + filename + ") != " + result);
         System.out.format("OK: endsWith(%s, %s) = %s%n", pathname, filename, result);
     }
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
-        boolean windows = System.getProperty("os.name").startsWith("Windows");
-        test("/x/y/z/package-info.java", pkginf, true);
-        if (windows) {
-            test("\\x\\y\\z\\package-info.java", pkginf, true);
-            test("..\\x\\y\\z\\package-info.java", pkginf, true);
-        } else {
-            test("\\x\\y\\z\\package-info.java", pkginf, false);
-            test("..\\x\\y\\z\\package-info.java", pkginf, false);
+        try {
+            boolean windows = System.getProperty("os.name").startsWith("Windows");
+            test("/x/y/z/package-info.java", pkginf, true);
+            if (windows) {
+                test("\\x\\y\\z\\package-info.java", pkginf, true);
+                test("..\\x\\y\\z\\package-info.java", pkginf, true);
+            } else {
+                test("\\x\\y\\z\\package-info.java", pkginf, false);
+                test("..\\x\\y\\z\\package-info.java", pkginf, false);
+            }
+            test("Package-info.java", pkginf, false);
+            test("../x/y/z/package-info.java", pkginf, true);
+            test("/x/y/z/package-info.java", pkginf, true);
+            test("x/y/z/package-info.java", pkginf, true);
+            test("package-info.java", pkginf, true);
+        } finally {
+            fm.close();
         }
-        test("Package-info.java", pkginf, false);
-        test("../x/y/z/package-info.java", pkginf, true);
-        test("/x/y/z/package-info.java", pkginf, true);
-        test("x/y/z/package-info.java", pkginf, true);
-        test("package-info.java", pkginf, true);
     }
 }

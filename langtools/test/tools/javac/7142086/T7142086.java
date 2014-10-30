@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,11 @@ public class T7142086 {
     void run(List<JavaFileObject> sources) throws Exception {
         DiagnosticChecker dc = new DiagnosticChecker();
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-        JavacTask ct = (JavacTask)comp.getTask(null, fm, dc,
-                null, null, sources);
-        ct.analyze();
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
+            JavacTask ct = (JavacTask)comp.getTask(null, fm, dc,
+                    null, null, sources);
+            ct.analyze();
+        }
     }
 
     static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {

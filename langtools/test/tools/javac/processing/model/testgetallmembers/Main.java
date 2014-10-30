@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,66 +64,67 @@ public class Main {
             return;
         }
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        fm.setLocation(CLASS_PATH, Collections.<File>emptyList());
-        JavacTask javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
-        Elements elements = javac.getElements();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            fm.setLocation(CLASS_PATH, Collections.<File>emptyList());
+            JavacTask javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
+            Elements elements = javac.getElements();
 
-        final Set<String> packages = new LinkedHashSet<String>();
+            final Set<String> packages = new LinkedHashSet<String>();
 
-        int nestedClasses = 0;
-        int classes = 0;
+            int nestedClasses = 0;
+            int classes = 0;
 
-        for (JavaFileObject file : fm.list(PLATFORM_CLASS_PATH, "", EnumSet.of(CLASS), true)) {
-            String type = fm.inferBinaryName(PLATFORM_CLASS_PATH, file);
-            if (type.endsWith("package-info"))
-                continue;
-            try {
-                TypeElement elem = elements.getTypeElement(type);
-                if (elem == null && type.indexOf('$') > 0) {
-                    nestedClasses++;
-                    type = null;
+            for (JavaFileObject file : fm.list(PLATFORM_CLASS_PATH, "", EnumSet.of(CLASS), true)) {
+                String type = fm.inferBinaryName(PLATFORM_CLASS_PATH, file);
+                if (type.endsWith("package-info"))
                     continue;
+                try {
+                    TypeElement elem = elements.getTypeElement(type);
+                    if (elem == null && type.indexOf('$') > 0) {
+                        nestedClasses++;
+                        type = null;
+                        continue;
+                    }
+                    classes++;
+                    packages.add(getPackage(elem).getQualifiedName().toString());
+                    elements.getTypeElement(type).getKind(); // force completion
+                    type = null;
+                } finally {
+                    if (type != null)
+                        System.err.println("Looking at " + type);
                 }
-                classes++;
-                packages.add(getPackage(elem).getQualifiedName().toString());
-                elements.getTypeElement(type).getKind(); // force completion
-                type = null;
-            } finally {
-                if (type != null)
-                    System.err.println("Looking at " + type);
             }
-        }
-        javac = null;
-        elements = null;
+            javac = null;
+            elements = null;
 
-        javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
-        elements = javac.getElements();
+            javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
+            elements = javac.getElements();
 
-        for (String name : packages) {
-            PackageElement pe = elements.getPackageElement(name);
-            for (Element e : pe.getEnclosedElements()) {
-                e.getSimpleName().getClass();
+            for (String name : packages) {
+                PackageElement pe = elements.getPackageElement(name);
+                for (Element e : pe.getEnclosedElements()) {
+                    e.getSimpleName().getClass();
+                }
             }
+            /*
+             * A few sanity checks based on current values:
+             *
+             * packages: 775, classes: 12429 + 5917
+             *
+             * As the platform evolves the numbers are likely to grow
+             * monotonically but in case somebody gets a clever idea for
+             * limiting the number of packages exposed, this number might
+             * drop.  So we test low values.
+             */
+            System.out.format("packages: %s, classes: %s + %s%n",
+                              packages.size(), classes, nestedClasses);
+            if (classes < 9000)
+                throw new AssertionError("Too few classes in PLATFORM_CLASS_PATH ;-)");
+            if (packages.size() < 530)
+                throw new AssertionError("Too few packages in PLATFORM_CLASS_PATH ;-)");
+            if (nestedClasses < 3000)
+                throw new AssertionError("Too few nested classes in PLATFORM_CLASS_PATH ;-)");
         }
-        /*
-         * A few sanity checks based on current values:
-         *
-         * packages: 775, classes: 12429 + 5917
-         *
-         * As the platform evolves the numbers are likely to grow
-         * monotonically but in case somebody gets a clever idea for
-         * limiting the number of packages exposed, this number might
-         * drop.  So we test low values.
-         */
-        System.out.format("packages: %s, classes: %s + %s%n",
-                          packages.size(), classes, nestedClasses);
-        if (classes < 9000)
-            throw new AssertionError("Too few classes in PLATFORM_CLASS_PATH ;-)");
-        if (packages.size() < 530)
-            throw new AssertionError("Too few packages in PLATFORM_CLASS_PATH ;-)");
-        if (nestedClasses < 3000)
-            throw new AssertionError("Too few nested classes in PLATFORM_CLASS_PATH ;-)");
     }
     /*
      * If -XX:+AggressiveOpts has been used to test, the option currently

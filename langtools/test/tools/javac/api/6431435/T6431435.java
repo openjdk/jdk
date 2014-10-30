@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,19 @@ public class T6431435 {
         String testSrc = System.getProperty("test.src", ".");
         String testClasses = System.getProperty("test.classes", ".");
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
-        fm.setLocation(StandardLocation.SOURCE_PATH, Arrays.asList(new File(testSrc)));
-        Iterable<? extends JavaFileObject> files = fm.getJavaFileObjectsFromFiles(Arrays.asList(
-                new File(testSrc, "A.java")));
-        JavacTask task = tool.getTask(null, fm, null, null, null, files);
-        boolean ok = true;
-        ok &= check("parse", task.parse(), 1);       // A.java
-        ok &= check("analyze", task.analyze(), 3);   // A, Foo, p.B
-        ok &= check("generate", task.generate(), 5); // A, Foo, Foo$Baz, Foo$1, p.B
-        if (!ok)
-            throw new AssertionError("Test failed");
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
+            fm.setLocation(StandardLocation.SOURCE_PATH, Arrays.asList(new File(testSrc)));
+            Iterable<? extends JavaFileObject> files = fm.getJavaFileObjectsFromFiles(Arrays.asList(
+                    new File(testSrc, "A.java")));
+            JavacTask task = tool.getTask(null, fm, null, null, null, files);
+            boolean ok = true;
+            ok &= check("parse", task.parse(), 1);       // A.java
+            ok &= check("analyze", task.analyze(), 3);   // A, Foo, p.B
+            ok &= check("generate", task.generate(), 5); // A, Foo, Foo$Baz, Foo$1, p.B
+            if (!ok)
+                throw new AssertionError("Test failed");
+        }
     }
 
     private static boolean check(String name, Iterable<?> iter, int expect) {

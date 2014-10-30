@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,29 +102,31 @@ public class Helper {
             throw new RuntimeException("can't get javax.tools.JavaCompiler!");
         }
 
-        StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
-
-        // Assuming filesCount can maximum be 2 and if true, one file is package-info.java
-        if (isPkgInfoPresent(files)) {
-            JavacTask task = (JavacTask) compiler.getTask(null, fm, diagnostics, null, null, files);
-            try {
-                fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
-                task.generate();
-            } catch (IOException ioe) {
-                throw new RuntimeException("Compilation failed for package level tests", ioe);
-            }
-            int err = 0;
-            for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
-                if(d.getKind() == Diagnostic.Kind.ERROR) {
-                  err++;
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            // Assuming filesCount can maximum be 2 and if true, one file is package-info.java
+            if (isPkgInfoPresent(files)) {
+                JavacTask task = (JavacTask) compiler.getTask(null, fm, diagnostics, null, null, files);
+                try {
+                    fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
+                    task.generate();
+                } catch (IOException ioe) {
+                    throw new RuntimeException("Compilation failed for package level tests", ioe);
                 }
+                int err = 0;
+                for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
+                    if(d.getKind() == Diagnostic.Kind.ERROR) {
+                      err++;
+                    }
+                }
+                ok = (err == 0);
+            } else {
+                CompilationTask task = compiler.getTask(null, null, diagnostics, null, null, files);
+                ok = task.call();
             }
-            ok = (err == 0);
-        } else {
-            CompilationTask task = compiler.getTask(null, null, diagnostics, null, null, files);
-            ok = task.call();
+            return ok;
+        } catch (IOException e) {
+            throw new Error(e);
         }
-        return ok;
     }
 
     static private boolean isPkgInfoPresent(Iterable<? extends JavaFileObject> files) {

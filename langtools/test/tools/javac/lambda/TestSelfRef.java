@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,22 +114,23 @@ public class TestSelfRef {
 
         //create default shared JavaCompiler - reused across multiple compilations
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
 
-        for (EnclosingKind ek : EnclosingKind.values()) {
-            for (SiteKind sk : SiteKind.values()) {
-                if (sk == SiteKind.STATIC_INIT && ek == EnclosingKind.MEMBER_INNER)
-                    continue;
-                for (InnerKind ik : InnerKind.values()) {
-                    if (ik != InnerKind.NONE && sk == SiteKind.NONE)
-                        break;
-                    for (RefKind rk : RefKind.values()) {
-                        new TestSelfRef(ek, sk, ik, rk).run(comp, fm);
+            for (EnclosingKind ek : EnclosingKind.values()) {
+                for (SiteKind sk : SiteKind.values()) {
+                    if (sk == SiteKind.STATIC_INIT && ek == EnclosingKind.MEMBER_INNER)
+                        continue;
+                    for (InnerKind ik : InnerKind.values()) {
+                        if (ik != InnerKind.NONE && sk == SiteKind.NONE)
+                            break;
+                        for (RefKind rk : RefKind.values()) {
+                            new TestSelfRef(ek, sk, ik, rk).run(comp, fm);
+                        }
                     }
                 }
             }
+            System.out.println("Total check executed: " + checkCount);
         }
-        System.out.println("Total check executed: " + checkCount);
     }
 
     EnclosingKind ek;

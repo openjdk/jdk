@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,24 @@
  * @author  Peter von der Ah\u00e9
  */
 
+import java.io.IOException;
 import javax.tools.*;
 import static javax.tools.StandardLocation.*;
 
 public class T6400205 {
-    public static void main(String... args) {
-        JavaFileManager fm =
-            ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
-        try {
-            fm.getClassLoader(null);
-            throw new AssertionError("NullPointerException not thrown");
-        } catch (NullPointerException e) {
-            // expected result
+    public static void main(String... args) throws IOException {
+        try (JavaFileManager fm =
+                ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
+            try {
+                fm.getClassLoader(null);
+                throw new AssertionError("NullPointerException not thrown");
+            } catch (NullPointerException e) {
+                // expected result
+            }
+            ClassLoader cl = fm.getClassLoader(locationFor("bogus"));
+            if (cl != null)
+                throw new AssertionError("non-null class loader for bogus location");
+            System.err.println("Test PASSED.");
         }
-        ClassLoader cl = fm.getClassLoader(locationFor("bogus"));
-        if (cl != null)
-            throw new AssertionError("non-null class loader for bogus location");
-        System.err.println("Test PASSED.");
     }
 }
