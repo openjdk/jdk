@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ public class T6437349 extends ToolTester {
             throw new AssertionError();
     }
     public static void main(String... args) throws IOException {
-        new T6437349().test(args);
+        try (T6437349 t = new T6437349()) {
+            t.test(args);
+        }
     }
 }
