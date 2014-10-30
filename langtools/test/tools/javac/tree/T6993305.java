@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,18 +59,19 @@ public class T6993305 {
         File testSrc = new File(System.getProperty("test.src"));
 
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
 
-        File f = new File(testSrc, T6993305.class.getSimpleName() + ".java");
-        Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjects(f);
-        JavacTask task = tool.getTask(null, fm, null, null, null, fos);
-        Iterable<? extends CompilationUnitTree> cus = task.parse();
+            File f = new File(testSrc, T6993305.class.getSimpleName() + ".java");
+            Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjects(f);
+            JavacTask task = tool.getTask(null, fm, null, null, null, fos);
+            Iterable<? extends CompilationUnitTree> cus = task.parse();
 
-        TestScanner s = new TestScanner();
-        s.scan(cus, task);
+            TestScanner s = new TestScanner();
+            s.scan(cus, task);
 
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
+            if (errors > 0)
+                throw new Exception(errors + " errors occurred");
+        }
     }
 
     void error(String msg) {

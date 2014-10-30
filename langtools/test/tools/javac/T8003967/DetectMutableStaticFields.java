@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,18 +179,19 @@ public class DetectMutableStaticFields {
             ConstantPoolException,
             InvalidDescriptor {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        JavaFileManager.Location location =
-                StandardLocation.locationFor(resource.getPath());
-        fm.setLocation(location, com.sun.tools.javac.util.List.of(
-                new File(resource.getPath())));
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            JavaFileManager.Location location =
+                    StandardLocation.locationFor(resource.getPath());
+            fm.setLocation(location, com.sun.tools.javac.util.List.of(
+                    new File(resource.getPath())));
 
-        for (JavaFileObject file : fm.list(location, "", EnumSet.of(CLASS), true)) {
-            String className = fm.inferBinaryName(location, file);
-            int index = className.lastIndexOf('.');
-            String pckName = index == -1 ? "" : className.substring(0, index);
-            if (shouldAnalyzePackage(pckName)) {
-                analyzeClassFile(ClassFile.read(file.openInputStream()));
+            for (JavaFileObject file : fm.list(location, "", EnumSet.of(CLASS), true)) {
+                String className = fm.inferBinaryName(location, file);
+                int index = className.lastIndexOf('.');
+                String pckName = index == -1 ? "" : className.substring(0, index);
+                if (shouldAnalyzePackage(pckName)) {
+                    analyzeClassFile(ClassFile.read(file.openInputStream()));
+                }
             }
         }
     }

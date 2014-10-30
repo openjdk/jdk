@@ -54,25 +54,26 @@ abstract class Checker {
         };
 
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(getFiles(testSrc, fileNames));
-        task = tool.getTask(null, fm, dl, null, null, files);
-        Iterable<? extends CompilationUnitTree> units = task.parse();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(getFiles(testSrc, fileNames));
+            task = tool.getTask(null, fm, dl, null, null, files);
+            Iterable<? extends CompilationUnitTree> units = task.parse();
 
-        if (errors)
-            throw new AssertionError("errors occurred creating trees");
+            if (errors)
+                throw new AssertionError("errors occurred creating trees");
 
-        ScopeScanner s = new ScopeScanner();
-        for (CompilationUnitTree unit: units) {
-            TreePath p = new TreePath(unit);
-            s.scan(p, getTrees());
-            additionalChecks(getTrees(), unit);
+            ScopeScanner s = new ScopeScanner();
+            for (CompilationUnitTree unit: units) {
+                TreePath p = new TreePath(unit);
+                s.scan(p, getTrees());
+                additionalChecks(getTrees(), unit);
+            }
+            task = null;
+
+            if (errors)
+                throw new AssertionError("errors occurred checking scopes");
         }
-        task = null;
-
-        if (errors)
-            throw new AssertionError("errors occurred checking scopes");
     }
 
     // default impl: split ref at ";" and call checkLocal(scope, ref_segment) on scope and its enclosing scopes

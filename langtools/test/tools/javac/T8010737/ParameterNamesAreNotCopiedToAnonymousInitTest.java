@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,73 +132,74 @@ public class ParameterNamesAreNotCopiedToAnonymousInitTest {
             throws IOException {
         Assert.checkNonNull(paramsToCheck, nonNullParamPositionsMsg);
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = c.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> fos =
-                fm.getJavaFileObjectsFromFiles(
-                Arrays.asList(new File(System.getProperty("test.src"),
-                this.getClass().getName() + ".java")));
-        JavacTask task = (JavacTask) c.getTask(null, fm, null,
-                Arrays.asList("-d", System.getProperty("user.dir")), null, fos);
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> fos =
+                    fm.getJavaFileObjectsFromFiles(
+                    Arrays.asList(new File(System.getProperty("test.src"),
+                    this.getClass().getName() + ".java")));
+            JavacTask task = (JavacTask) c.getTask(null, fm, null,
+                    Arrays.asList("-d", System.getProperty("user.dir")), null, fos);
 
-        BasicJavacTask impl = (BasicJavacTask)task;
-        Context context = impl.getContext();
-        final Names names = Names.instance(context);
+            BasicJavacTask impl = (BasicJavacTask)task;
+            Context context = impl.getContext();
+            final Names names = Names.instance(context);
 
-        task.addTaskListener(new TaskListener() {
+            task.addTaskListener(new TaskListener() {
 
-            @Override
-            public void started(TaskEvent e) {}
+                @Override
+                public void started(TaskEvent e) {}
 
-            @Override
-            public void finished(TaskEvent e) {
-                class TheTreeScanner extends TreeScanner {
-                    boolean foundAndCorrect = false;
+                @Override
+                public void finished(TaskEvent e) {
+                    class TheTreeScanner extends TreeScanner {
+                        boolean foundAndCorrect = false;
 
-                    @Override
-                    public void visitMethodDef(JCTree.JCMethodDecl tree) {
-                        ClassSymbol clazz = (ClassSymbol)tree.sym.owner;
-                        if (clazz.owner.name.toString().equals(classOwnerName) &&
-                            tree.sym.name == names.init) {
+                        @Override
+                        public void visitMethodDef(JCTree.JCMethodDecl tree) {
+                            ClassSymbol clazz = (ClassSymbol)tree.sym.owner;
+                            if (clazz.owner.name.toString().equals(classOwnerName) &&
+                                tree.sym.name == names.init) {
 
-                            int currentParamPos = 0;
-                            int paramArrayIndex = 0;
+                                int currentParamPos = 0;
+                                int paramArrayIndex = 0;
 
-                            List<VarSymbol> params = tree.sym.params;
-                            while (params.nonEmpty() && paramArrayIndex < paramsToCheck.size()) {
-                                VarSymbol param = params.head;
-                                if (currentParamPos == paramsToCheck.get(paramArrayIndex)) {
-                                    if (!param.name.toString()
-                                            .equals(paramNames.get(paramArrayIndex))) {
-                                        error(paramNameNotCopiedAssertionMsg);
+                                List<VarSymbol> params = tree.sym.params;
+                                while (params.nonEmpty() && paramArrayIndex < paramsToCheck.size()) {
+                                    VarSymbol param = params.head;
+                                    if (currentParamPos == paramsToCheck.get(paramArrayIndex)) {
+                                        if (!param.name.toString()
+                                                .equals(paramNames.get(paramArrayIndex))) {
+                                            error(paramNameNotCopiedAssertionMsg);
+                                        }
+                                        paramArrayIndex++;
                                     }
-                                    paramArrayIndex++;
+                                    currentParamPos++;
+                                    params = params.tail;
                                 }
-                                currentParamPos++;
-                                params = params.tail;
+                                foundAndCorrect = paramArrayIndex >= paramsToCheck.size();
                             }
-                            foundAndCorrect = paramArrayIndex >= paramsToCheck.size();
+                            super.visitMethodDef(tree);
                         }
-                        super.visitMethodDef(tree);
                     }
-                }
 
-                if (e.getKind() == TaskEvent.Kind.ANALYZE) {
-                    CompilationUnitTree compUnitTree = e.getCompilationUnit();
-                    boolean foundAndCorrect = false;
-                    for (Tree tree : compUnitTree.getTypeDecls()) {
-                        TheTreeScanner scanner = new TheTreeScanner();
-                        scanner.scan((JCTree) tree);
-                        foundAndCorrect = foundAndCorrect | scanner.foundAndCorrect;
-                    }
-                    if (!foundAndCorrect) {
-                        error(seekMethodNotFound);
+                    if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                        CompilationUnitTree compUnitTree = e.getCompilationUnit();
+                        boolean foundAndCorrect = false;
+                        for (Tree tree : compUnitTree.getTypeDecls()) {
+                            TheTreeScanner scanner = new TheTreeScanner();
+                            scanner.scan((JCTree) tree);
+                            foundAndCorrect = foundAndCorrect | scanner.foundAndCorrect;
+                        }
+                        if (!foundAndCorrect) {
+                            error(seekMethodNotFound);
+                        }
                     }
                 }
+            });
+
+            if (!task.call()) {
+                error(compilationFailed);
             }
-        });
-
-        if (!task.call()) {
-            error(compilationFailed);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,19 +77,20 @@ public class TestSuperclass {
 
     public static void main(String... args) throws Exception {
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-        int errors = 0;
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
+            int errors = 0;
 
-        for (ClassKind ck: ClassKind.values()) {
-            for (GenericKind gk: GenericKind.values()) {
-                for (SuperKind sk: SuperKind.values()) {
-                    errors += new TestSuperclass(ck, gk, sk).run(comp, fm);
+            for (ClassKind ck: ClassKind.values()) {
+                for (GenericKind gk: GenericKind.values()) {
+                    for (SuperKind sk: SuperKind.values()) {
+                        errors += new TestSuperclass(ck, gk, sk).run(comp, fm);
+                    }
                 }
             }
-        }
 
-        if (errors > 0)
-            throw new Exception(errors + " errors found");
+            if (errors > 0)
+                throw new Exception(errors + " errors found");
+        }
     }
 
     final ClassKind ck;

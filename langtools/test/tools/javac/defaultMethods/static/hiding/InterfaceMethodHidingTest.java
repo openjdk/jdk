@@ -123,18 +123,19 @@ public class InterfaceMethodHidingTest {
 
         //create default shared JavaCompiler - reused across multiple compilations
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
 
-        for (MethodKind mk1 : MethodKind.values()) {
-            for (SignatureKind sk1 : SignatureKind.values()) {
-                for (BodyExpr be1 : BodyExpr.values()) {
-                    for (MethodKind mk2 : MethodKind.values()) {
-                        for (SignatureKind sk2 : SignatureKind.values()) {
-                            for (BodyExpr be2 : BodyExpr.values()) {
-                                for (MethodKind mk3 : MethodKind.values()) {
-                                    for (SignatureKind sk3 : SignatureKind.values()) {
-                                        for (BodyExpr be3 : BodyExpr.values()) {
-                                            new InterfaceMethodHidingTest(mk1, mk2, mk3, sk1, sk2, sk3, be1, be2, be3).run(comp, fm);
+            for (MethodKind mk1 : MethodKind.values()) {
+                for (SignatureKind sk1 : SignatureKind.values()) {
+                    for (BodyExpr be1 : BodyExpr.values()) {
+                        for (MethodKind mk2 : MethodKind.values()) {
+                            for (SignatureKind sk2 : SignatureKind.values()) {
+                                for (BodyExpr be2 : BodyExpr.values()) {
+                                    for (MethodKind mk3 : MethodKind.values()) {
+                                        for (SignatureKind sk3 : SignatureKind.values()) {
+                                            for (BodyExpr be3 : BodyExpr.values()) {
+                                                new InterfaceMethodHidingTest(mk1, mk2, mk3, sk1, sk2, sk3, be1, be2, be3).run(comp, fm);
+                                            }
                                         }
                                     }
                                 }
@@ -143,8 +144,8 @@ public class InterfaceMethodHidingTest {
                     }
                 }
             }
+            System.out.println("Total check executed: " + checkCount);
         }
-        System.out.println("Total check executed: " + checkCount);
     }
 
     MethodKind mk1, mk2, mk3;

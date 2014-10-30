@@ -49,19 +49,20 @@ public class BaseClassesNotReRead extends AbstractProcessor {
     void run() throws IOException {
         File sources = new File(System.getProperty("test.src"));
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> files =
-                fm.getJavaFileObjects(new File(sources, "BaseClassesNotReReadSource.java"));
-        DiagnosticListener<JavaFileObject> noErrors = new DiagnosticListener<JavaFileObject>() {
-            @Override
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                throw new IllegalStateException(diagnostic.toString());
-            }
-        };
-        JavaFileManager manager = new OnlyOneReadFileManager(fm);
-        Iterable<String> options = Arrays.asList("-processor", "BaseClassesNotReRead");
-        JavacTask task = (JavacTask) compiler.getTask(null, manager, noErrors, options, null, files);
-        task.analyze();
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                    fm.getJavaFileObjects(new File(sources, "BaseClassesNotReReadSource.java"));
+            DiagnosticListener<JavaFileObject> noErrors = new DiagnosticListener<JavaFileObject>() {
+                @Override
+                public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
+                    throw new IllegalStateException(diagnostic.toString());
+                }
+            };
+            JavaFileManager manager = new OnlyOneReadFileManager(fm);
+            Iterable<String> options = Arrays.asList("-processor", "BaseClassesNotReRead");
+            JavacTask task = (JavacTask) compiler.getTask(null, manager, noErrors, options, null, files);
+            task.analyze();
+        }
     }
 
     int round = 1;

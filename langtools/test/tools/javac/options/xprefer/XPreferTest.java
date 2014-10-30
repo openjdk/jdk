@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 
@@ -73,27 +74,31 @@ public class XPreferTest {
     }
 
     final static JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
+    final static StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
     final static File OUTPUT_DIR = new File("out");
 
     public static void main(String... args) throws Exception {
+        try {
+            // Initialize test-directories
+            OUTPUT_DIR.mkdir();
+            for (Dir dir : Dir.values())
+                dir.file.mkdir();
 
-        // Initialize test-directories
-        OUTPUT_DIR.mkdir();
-        for (Dir dir : Dir.values())
-            dir.file.mkdir();
+            int testCaseCounter = 0;
 
-        int testCaseCounter = 0;
+            for (List<Dir> dirSubset : SubseqIter.subseqsOf(Dir.values())) {
 
-        for (List<Dir> dirSubset : SubseqIter.subseqsOf(Dir.values())) {
+                if (dirSubset.isEmpty())
+                    continue;
 
-            if (dirSubset.isEmpty())
-                continue;
-
-            for (ImplicitOption policy : ImplicitOption.values()) {
-                for (List<Dir> dirOrder : PermutationIterator.permutationsOf(dirSubset)) {
-                    new TestCase(dirOrder, policy, testCaseCounter++).run();
+                for (ImplicitOption policy : ImplicitOption.values()) {
+                    for (List<Dir> dirOrder : PermutationIterator.permutationsOf(dirSubset)) {
+                        new TestCase(dirOrder, policy, testCaseCounter++).run();
+                    }
                 }
             }
+        } finally {
+            fm.close();
         }
     }
 
@@ -234,8 +239,8 @@ public class XPreferTest {
             if(dir == Dir.SOURCE_PATH)
                 return src;
             // ...otherwise compile into a ".class".
-            CompilationTask task = comp.getTask(null, null, null, null, null,
-                    comp.getStandardFileManager(null, null, null).getJavaFileObjects(src));
+            CompilationTask task = comp.getTask(null, fm, null, null, null,
+                    fm.getJavaFileObjects(src));
             File dest = new File(dir.file, classId + ".class");
             if(!task.call() || !dest.exists())
                 throw new RuntimeException("Compilation failure.");

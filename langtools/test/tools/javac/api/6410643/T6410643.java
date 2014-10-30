@@ -31,6 +31,7 @@
  * @run main T6410643
  */
 
+import java.io.IOException;
 import javax.tools.JavaFileObject;
 import static java.util.Collections.singleton;
 
@@ -68,7 +69,10 @@ public class T6410643 extends ToolTester {
         testGetTask(s,    s,    f);
         System.err.println("Test result: PASSED");
     }
-    public static void main(String... args) {
-        new T6410643().test(args);
+
+    public static void main(String... args) throws IOException {
+        try (T6410643 t = new T6410643()) {
+            t.test(args);
+        }
     }
 }

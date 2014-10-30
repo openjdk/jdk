@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
@@ -75,34 +76,36 @@ public class T7068451 {
         System.err.println("FIRST compilation");
         System.err.println();
 
-        CompilationTask task = compiler.getTask(null, null, null, opts, null,
-                compiler.getStandardFileManager(null, null, null).getJavaFileObjects(input));
-        task.setProcessors(Collections.singleton(new Proc("first")));
-        check("compilation", task.call());
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            CompilationTask task = compiler.getTask(null, fm, null, opts, null,
+                    fm.getJavaFileObjects(input));
+            task.setProcessors(Collections.singleton(new Proc("first")));
+            check("compilation", task.call());
 
-        writeFile(tmp, "X.java", "package p; class X { { p.C.second(); } }");
+            writeFile(tmp, "X.java", "package p; class X { { p.C.second(); } }");
 
-        //Thread.sleep(2000);
+            //Thread.sleep(2000);
 
-        System.err.println();
-        System.err.println("SECOND compilation");
-        System.err.println();
+            System.err.println();
+            System.err.println("SECOND compilation");
+            System.err.println();
 
-        task = compiler.getTask(null, null, null, opts, null,
-                compiler.getStandardFileManager(null, null, null).getJavaFileObjects(input));
-        task.setProcessors(Collections.singleton(new Proc("second")));
-        check("compilation", task.call());
+            task = compiler.getTask(null, fm, null, opts, null,
+                    fm.getJavaFileObjects(input));
+            task.setProcessors(Collections.singleton(new Proc("second")));
+            check("compilation", task.call());
 
-        //Thread.sleep(2000);
+            //Thread.sleep(2000);
 
-        System.err.println();
-        System.err.println("SECOND compilation, REPEATED");
-        System.err.println();
+            System.err.println();
+            System.err.println("SECOND compilation, REPEATED");
+            System.err.println();
 
-        task = compiler.getTask(null, null, null, opts, null,
-                compiler.getStandardFileManager(null, null, null).getJavaFileObjects(input));
-        task.setProcessors(Collections.singleton(new Proc("second")));
-        check("compilation", task.call());
+            task = compiler.getTask(null, fm, null, opts, null,
+                    fm.getJavaFileObjects(input));
+            task.setProcessors(Collections.singleton(new Proc("second")));
+            check("compilation", task.call());
+        }
     }
 
     void check(String msg, boolean ok) {

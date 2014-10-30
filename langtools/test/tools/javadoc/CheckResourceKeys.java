@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,41 +140,42 @@ public class CheckResourceKeys {
     Set<String> getCodeKeys() throws IOException {
         Set<String> results = new TreeSet<String>();
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        JavaFileManager fm = c.getStandardFileManager(null, null, null);
-        JavaFileManager.Location javadocLoc = findJavadocLocation(fm);
-        String[] pkgs = {
-            "com.sun.tools.doclets",
-            "com.sun.tools.javadoc"
-        };
-        for (String pkg: pkgs) {
-            for (JavaFileObject fo: fm.list(javadocLoc,
-                    pkg, EnumSet.of(JavaFileObject.Kind.CLASS), true)) {
-                String name = fo.getName();
-                // ignore resource files
-                if (name.matches(".*resources.[A-Za-z_0-9]+\\.class.*"))
-                    continue;
-                scan(fo, results);
+        try (JavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            JavaFileManager.Location javadocLoc = findJavadocLocation(fm);
+            String[] pkgs = {
+                "com.sun.tools.doclets",
+                "com.sun.tools.javadoc"
+            };
+            for (String pkg: pkgs) {
+                for (JavaFileObject fo: fm.list(javadocLoc,
+                        pkg, EnumSet.of(JavaFileObject.Kind.CLASS), true)) {
+                    String name = fo.getName();
+                    // ignore resource files
+                    if (name.matches(".*resources.[A-Za-z_0-9]+\\.class.*"))
+                        continue;
+                    scan(fo, results);
+                }
             }
+
+            // special handling for code strings synthesized in
+            // com.sun.tools.doclets.internal.toolkit.util.Util.getTypeName
+            String[] extras = {
+                "AnnotationType", "Class", "Enum", "Error", "Exception", "Interface"
+            };
+            for (String s: extras) {
+                if (results.contains("doclet." + s))
+                    results.add("doclet." + s.toLowerCase());
+            }
+
+            // special handling for code strings synthesized in
+            // com.sun.tools.javadoc.Messager
+            results.add("javadoc.error.msg");
+            results.add("javadoc.note.msg");
+            results.add("javadoc.note.pos.msg");
+            results.add("javadoc.warning.msg");
+
+            return results;
         }
-
-        // special handling for code strings synthesized in
-        // com.sun.tools.doclets.internal.toolkit.util.Util.getTypeName
-        String[] extras = {
-            "AnnotationType", "Class", "Enum", "Error", "Exception", "Interface"
-        };
-        for (String s: extras) {
-            if (results.contains("doclet." + s))
-                results.add("doclet." + s.toLowerCase());
-        }
-
-        // special handling for code strings synthesized in
-        // com.sun.tools.javadoc.Messager
-        results.add("javadoc.error.msg");
-        results.add("javadoc.note.msg");
-        results.add("javadoc.note.pos.msg");
-        results.add("javadoc.warning.msg");
-
-        return results;
     }
 
     // depending on how the test is run, javadoc may be on bootclasspath or classpath
