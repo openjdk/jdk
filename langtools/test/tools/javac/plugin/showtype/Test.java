@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,21 +71,25 @@ public class Test {
     }
 
     void run() throws Exception {
-        // compile the plugin explicitly, to a non-standard directory
-        // so that we don't find it on the wrong path by accident
-        pluginClasses.mkdirs();
-        compile("-d", pluginClasses.getPath(), pluginSrc.getPath());
-        writeFile(new File(pluginClasses, "META-INF/services/com.sun.source.util.Plugin"),
-                "ShowTypePlugin\n");
-        jar("cf", pluginJar.getPath(), "-C", pluginClasses.getPath(), ".");
+        try {
+            // compile the plugin explicitly, to a non-standard directory
+            // so that we don't find it on the wrong path by accident
+            pluginClasses.mkdirs();
+            compile("-d", pluginClasses.getPath(), pluginSrc.getPath());
+            writeFile(new File(pluginClasses, "META-INF/services/com.sun.source.util.Plugin"),
+                    "ShowTypePlugin\n");
+            jar("cf", pluginJar.getPath(), "-C", pluginClasses.getPath(), ".");
 
-        testCommandLine("-Xplugin:showtype", ref1);
-        testCommandLine("-Xplugin:showtype PI", ref2);
-        testAPI("-Xplugin:showtype", ref1);
-        testAPI("-Xplugin:showtype PI", ref2);
+            testCommandLine("-Xplugin:showtype", ref1);
+            testCommandLine("-Xplugin:showtype PI", ref2);
+            testAPI("-Xplugin:showtype", ref1);
+            testAPI("-Xplugin:showtype PI", ref2);
 
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
+            if (errors > 0)
+                throw new Exception(errors + " errors occurred");
+        } finally {
+            fm.close();
+        }
     }
 
     void testAPI(String opt, List<String> ref) throws Exception {

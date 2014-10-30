@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,18 @@ public class T6431879 {
         String testSrc = System.getProperty("test.src", ".");
         String testClasses = System.getProperty("test.classes", ".");
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6431879.class.getName()+".java")));
-        JavacTask task = tool.getTask(null, fm, null, null, null, files);
-        Iterable<? extends CompilationUnitTree> trees = task.parse();
-        TreeScanner<Void,Trees> dependencyScanner = new DependencyScanner();
-        Trees treeUtil = Trees.instance(task);
-        for (CompilationUnitTree unit : trees) {
-            //System.err.println("scan " + unit);
-            dependencyScanner.scan(unit, treeUtil);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6431879.class.getName()+".java")));
+            JavacTask task = tool.getTask(null, fm, null, null, null, files);
+            Iterable<? extends CompilationUnitTree> trees = task.parse();
+            TreeScanner<Void,Trees> dependencyScanner = new DependencyScanner();
+            Trees treeUtil = Trees.instance(task);
+            for (CompilationUnitTree unit : trees) {
+                //System.err.println("scan " + unit);
+                dependencyScanner.scan(unit, treeUtil);
+            }
         }
-
     }
 
     private static class DependencyScanner<R,P> extends TreePathScanner<R,P> {

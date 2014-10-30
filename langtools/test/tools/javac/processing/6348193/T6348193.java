@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,35 +85,36 @@ public class T6348193 extends AbstractProcessor
 
         MyDiagListener dl = new MyDiagListener();
         PrintWriter out = new PrintWriter(System.err, true);
-        StandardJavaFileManager fm = t.getStandardFileManager(dl, null, null);
-        File file = new File(System.getProperty("test.src"), myName+".java");
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(file));
-        boolean ok = t.getTask(out, null, dl, args, null, files).call();
+        try (StandardJavaFileManager fm = t.getStandardFileManager(dl, null, null)) {
+            File file = new File(System.getProperty("test.src"), myName+".java");
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(file));
+            boolean ok = t.getTask(out, null, dl, args, null, files).call();
 
-        if (config == NoGoodBad.GOOD || proc == NoYes.YES) {
-            if (secMgr == NoYes.YES) {
-                if (dl.last == null)
-                    throw new AssertionError("Security manager installed, and processors present, "
-                                             + " but no diagnostic received");
+            if (config == NoGoodBad.GOOD || proc == NoYes.YES) {
+                if (secMgr == NoYes.YES) {
+                    if (dl.last == null)
+                        throw new AssertionError("Security manager installed, and processors present, "
+                                                 + " but no diagnostic received");
+                }
+                else {
+                    if (!processed.exists())
+                        throw new AssertionError("No security manager installed, and processors present, "
+                                                 + " but no processing occurred");
+                }
+            }
+            else if (config == NoGoodBad.BAD) {
+                // TODO: should verify that no compiler crash occurred
+                // needs revised JSR199 spec
             }
             else {
-                if (!processed.exists())
-                    throw new AssertionError("No security manager installed, and processors present, "
-                                             + " but no processing occurred");
+                if (processed.exists())
+                    throw new AssertionError("No processors present, but processing occurred!");
             }
-        }
-        else if (config == NoGoodBad.BAD) {
-            // TODO: should verify that no compiler crash occurred
-            // needs revised JSR199 spec
-        }
-        else {
-            if (processed.exists())
-                throw new AssertionError("No processors present, but processing occurred!");
-        }
 
-        if (verbose)
-            System.err.println("OK");
+            if (verbose)
+                System.err.println("OK");
+        }
     }
 
     // set up or remove a service configuration file

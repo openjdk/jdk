@@ -33,21 +33,22 @@ public class T6406771 extends AbstractProcessor {
 
     // White-space after this point does not matter
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         String self = T6406771.class.getName();
         String testSrc = System.getProperty("test.src");
         String testClasses = System.getProperty("test.classes");
 
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        JavaFileObject f = fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, self+".java"))).iterator().next();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            JavaFileObject f = fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, self+".java"))).iterator().next();
 
-        List<String> opts = Arrays.asList("-d", ".", "-processorpath", testClasses, "-processor", self, "-proc:only");
+            List<String> opts = Arrays.asList("-d", ".", "-processorpath", testClasses, "-processor", self, "-proc:only");
 
-        JavacTask task = tool.getTask(null, fm, null, opts, null, Arrays.asList(f));
+            JavacTask task = tool.getTask(null, fm, null, opts, null, Arrays.asList(f));
 
-        if (!task.call())
-            throw new AssertionError("failed");
+            if (!task.call())
+                throw new AssertionError("failed");
+        }
     }
 
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment rEnv) {

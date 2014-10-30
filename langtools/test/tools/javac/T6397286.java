@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,29 +40,30 @@ public class T6397286 {
         String self = T6397286.class.getName();
 
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
 
-        JavacTask task = tool.getTask(null, fm, null, null, null, files);
-        task.setTaskListener(new TaskListener() {
-                public void started(TaskEvent e) {
-                    throw new TaskEventError(e);
-                }
-                public void finished(TaskEvent e) {
-                }
-            });
+            JavacTask task = tool.getTask(null, fm, null, null, null, files);
+            task.setTaskListener(new TaskListener() {
+                    public void started(TaskEvent e) {
+                        throw new TaskEventError(e);
+                    }
+                    public void finished(TaskEvent e) {
+                    }
+                });
 
-        try {
-            task.call();
-            throw new AssertionError("no exception thrown");
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof TaskEventError) {
-                TaskEventError tee = (TaskEventError) e.getCause();
-                System.err.println("Exception thrown for " + tee.event + " as expected");
-            } else {
-                e.printStackTrace();
-                throw new AssertionError("TaskEventError not thrown");
+            try {
+                task.call();
+                throw new AssertionError("no exception thrown");
+            } catch (RuntimeException e) {
+                if (e.getCause() instanceof TaskEventError) {
+                    TaskEventError tee = (TaskEventError) e.getCause();
+                    System.err.println("Exception thrown for " + tee.event + " as expected");
+                } else {
+                    e.printStackTrace();
+                    throw new AssertionError("TaskEventError not thrown");
+                }
             }
         }
     }

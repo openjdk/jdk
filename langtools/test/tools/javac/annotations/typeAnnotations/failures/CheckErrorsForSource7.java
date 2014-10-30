@@ -72,77 +72,78 @@ public class CheckErrorsForSource7 {
         File testSrc = new File(System.getProperty("test.src"));
         File testFile = new File(testSrc, args[0]);
         if (!testFile.canRead()) throw new IllegalStateException("Cannot read the test source");
-        JavacFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
+        try (JavacFileManager fm = JavacTool.create().getStandardFileManager(null, null, null)) {
 
-        //gather spans of the @TA annotations into typeAnnotationSpans:
-        JavacTask task = JavacTool.create().getTask(null,
-                                                    fm,
-                                                    null,
-                                                    Collections.<String>emptyList(),
-                                                    null,
-                                                    fm.getJavaFileObjects(testFile));
-        final Trees trees = Trees.instance(task);
-        final CompilationUnitTree cut = task.parse().iterator().next();
-        final List<int[]> typeAnnotationSpans = new ArrayList<>();
+            //gather spans of the @TA annotations into typeAnnotationSpans:
+            JavacTask task = JavacTool.create().getTask(null,
+                                                        fm,
+                                                        null,
+                                                        Collections.<String>emptyList(),
+                                                        null,
+                                                        fm.getJavaFileObjects(testFile));
+            final Trees trees = Trees.instance(task);
+            final CompilationUnitTree cut = task.parse().iterator().next();
+            final List<int[]> typeAnnotationSpans = new ArrayList<>();
 
-        new TreePathScanner<Void, Void>() {
-            @Override
-            public Void visitAnnotation(AnnotationTree node, Void p) {
-                if (node.getAnnotationType().getKind() == Kind.IDENTIFIER &&
-                    ((IdentifierTree) node.getAnnotationType()).getName().contentEquals("TA")) {
-                    int start = (int) trees.getSourcePositions().getStartPosition(cut, node);
-                    int end = (int) trees.getSourcePositions().getEndPosition(cut, node);
-                    typeAnnotationSpans.add(new int[] {start, end});
-                }
-                return null;
-            }
-        }.scan(cut, null);
-
-        //sort the spans in the reverse order, to simplify removing them from the source:
-        Collections.sort(typeAnnotationSpans, new Comparator<int[]>() {
-            @Override
-            public int compare(int[] o1, int[] o2) {
-                return o2[0] - o1[0];
-            }
-        });
-
-        //verify the errors are produce correctly:
-        String originalSource = cut.getSourceFile().getCharContent(false).toString();
-
-        for (int[] toKeep : typeAnnotationSpans) {
-            //prepare updated source code by removing all the annotations except the toKeep one:
-            String updated = originalSource;
-
-            for (int[] span : typeAnnotationSpans) {
-                if (span == toKeep) continue;
-
-                updated = updated.substring(0, span[0]) + updated.substring(span[1]);
-            }
-
-            //parse and verify:
-            JavaFileObject updatedFile = new TestFO(cut.getSourceFile().toUri(), updated);
-            DiagnosticCollector<JavaFileObject> errors = new DiagnosticCollector<>();
-            JavacTask task2 = JavacTool.create().getTask(null,
-                                                         fm,
-                                                         errors,
-                                                         Arrays.asList("-source", "7"),
-                                                         null,
-                                                         Arrays.asList(updatedFile));
-            task2.parse();
-
-            boolean found = false;
-
-            for (Diagnostic<? extends JavaFileObject> d : errors.getDiagnostics()) {
-                if (d.getKind() == Diagnostic.Kind.ERROR && EXPECTED_ERRORS.contains(d.getCode())) {
-                    if (found) {
-                        throw new IllegalStateException("More than one expected error found.");
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitAnnotation(AnnotationTree node, Void p) {
+                    if (node.getAnnotationType().getKind() == Kind.IDENTIFIER &&
+                        ((IdentifierTree) node.getAnnotationType()).getName().contentEquals("TA")) {
+                        int start = (int) trees.getSourcePositions().getStartPosition(cut, node);
+                        int end = (int) trees.getSourcePositions().getEndPosition(cut, node);
+                        typeAnnotationSpans.add(new int[] {start, end});
                     }
-                    found = true;
+                    return null;
                 }
-            }
+            }.scan(cut, null);
 
-            if (!found)
-                throw new IllegalStateException("Did not produce proper errors for: " + updated);
+            //sort the spans in the reverse order, to simplify removing them from the source:
+            Collections.sort(typeAnnotationSpans, new Comparator<int[]>() {
+                @Override
+                public int compare(int[] o1, int[] o2) {
+                    return o2[0] - o1[0];
+                }
+            });
+
+            //verify the errors are produce correctly:
+            String originalSource = cut.getSourceFile().getCharContent(false).toString();
+
+            for (int[] toKeep : typeAnnotationSpans) {
+                //prepare updated source code by removing all the annotations except the toKeep one:
+                String updated = originalSource;
+
+                for (int[] span : typeAnnotationSpans) {
+                    if (span == toKeep) continue;
+
+                    updated = updated.substring(0, span[0]) + updated.substring(span[1]);
+                }
+
+                //parse and verify:
+                JavaFileObject updatedFile = new TestFO(cut.getSourceFile().toUri(), updated);
+                DiagnosticCollector<JavaFileObject> errors = new DiagnosticCollector<>();
+                JavacTask task2 = JavacTool.create().getTask(null,
+                                                             fm,
+                                                             errors,
+                                                             Arrays.asList("-source", "7"),
+                                                             null,
+                                                             Arrays.asList(updatedFile));
+                task2.parse();
+
+                boolean found = false;
+
+                for (Diagnostic<? extends JavaFileObject> d : errors.getDiagnostics()) {
+                    if (d.getKind() == Diagnostic.Kind.ERROR && EXPECTED_ERRORS.contains(d.getCode())) {
+                        if (found) {
+                            throw new IllegalStateException("More than one expected error found.");
+                        }
+                        found = true;
+                    }
+                }
+
+                if (!found)
+                    throw new IllegalStateException("Did not produce proper errors for: " + updated);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,27 +46,28 @@ public class PrettySimpleStringTest {
         File testSrc = new File(System.getProperty("test.src"));
         File thisFile = new File(testSrc, getClass().getName() + ".java");
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        JavacTask task = tool.getTask(null, fm, null, null, null,
-                fm.getJavaFileObjects(thisFile));
-        Iterable<? extends CompilationUnitTree> trees = task.parse();
-        CompilationUnitTree thisTree = trees.iterator().next();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            JavacTask task = tool.getTask(null, fm, null, null, null,
+                    fm.getJavaFileObjects(thisFile));
+            Iterable<? extends CompilationUnitTree> trees = task.parse();
+            CompilationUnitTree thisTree = trees.iterator().next();
 
-        {   // test default
-            String thisSrc = Pretty.toSimpleString((JCTree) thisTree);
-            System.err.println(thisSrc);
-            String expect = "import jav[...]} } }";
-            if (!thisSrc.equals(expect)) {
-                throw new Exception("unexpected result");
+            {   // test default
+                String thisSrc = Pretty.toSimpleString((JCTree) thisTree);
+                System.err.println(thisSrc);
+                String expect = "import jav[...]} } }";
+                if (!thisSrc.equals(expect)) {
+                    throw new Exception("unexpected result");
+                }
             }
-        }
 
-        {   // test explicit length
-            String thisSrc = Pretty.toSimpleString((JCTree) thisTree, 32);
-            System.err.println(thisSrc);
-            String expect = "import java.io.Fil[...]; } } } }";
-            if (!thisSrc.equals(expect)) {
-                throw new Exception("unexpected result");
+            {   // test explicit length
+                String thisSrc = Pretty.toSimpleString((JCTree) thisTree, 32);
+                System.err.println(thisSrc);
+                String expect = "import java.io.Fil[...]} } } } }";
+                if (!thisSrc.equals(expect)) {
+                    throw new Exception("unexpected result");
+                }
             }
         }
     }

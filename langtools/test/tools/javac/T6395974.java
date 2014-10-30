@@ -44,24 +44,25 @@ public class T6395974 {
         String testSrc = System.getProperty("test.src");
 
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        Iterable<?extends JavaFileObject> f =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, self + ".java")));
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            Iterable<?extends JavaFileObject> f =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, self + ".java")));
 
-        PrintWriter out = new PrintWriter(System.err, true);
+            PrintWriter out = new PrintWriter(System.err, true);
 
-        JavacTaskImpl task = (JavacTaskImpl) tool.getTask(out,
-                                                          fm,
-                                                          null,
-                                                          Arrays.asList("-processor",
-                                                                        "Foo.java"),
-                                                          null,
-                                                          f);
+            JavacTaskImpl task = (JavacTaskImpl) tool.getTask(out,
+                                                              fm,
+                                                              null,
+                                                              Arrays.asList("-processor",
+                                                                            "Foo.java"),
+                                                              null,
+                                                              f);
 
-        MyTaskListener tl = new MyTaskListener();
-        task.setTaskListener(tl);
+            MyTaskListener tl = new MyTaskListener();
+            task.setTaskListener(tl);
 
-        task.call();
+            task.call();
+        }
     }
 
     static class MyTaskListener implements TaskListener {

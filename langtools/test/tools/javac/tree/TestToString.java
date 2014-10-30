@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,16 @@ public class TestToString {
     }
 
     void run() throws Exception {
-        for (String s: statements) {
-            test(s);
-        }
+        try {
+            for (String s: statements) {
+                test(s);
+            }
 
-        if (errors > 0)
-            throw new Exception(errors + " errors found");
+            if (errors > 0)
+                throw new Exception(errors + " errors found");
+        } finally {
+            fm.close();
+        }
     }
 
     void test(String stmt) throws IOException {

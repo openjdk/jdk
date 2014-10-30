@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,30 +40,31 @@ public class T6440583 {
         String testSrc = System.getProperty("test.src", ".");
         String testClasses = System.getProperty("test.classes", ".");
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, "A.java")));
-        JavacTask task = tool.getTask(null, fm, null, null, null, files);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, "A.java")));
+            JavacTask task = tool.getTask(null, fm, null, null, null, files);
 
-        Iterable<? extends Tree> trees = task.parse();
+            Iterable<? extends Tree> trees = task.parse();
 
-        TreeScanner<Boolean,Void> checker = new TreeScanner<Boolean,Void>() {
-            public Boolean visitErroneous(ErroneousTree tree, Void ignore) {
-                JCErroneous etree = (JCErroneous) tree;
-                List<? extends Tree> errs = etree.getErrorTrees();
-                System.err.println("errs: " + errs);
-                if (errs == null || errs.size() == 0)
-                    throw new AssertionError("no error trees found");
-                found = true;
-                return true;
-            }
-        };
+            TreeScanner<Boolean,Void> checker = new TreeScanner<Boolean,Void>() {
+                public Boolean visitErroneous(ErroneousTree tree, Void ignore) {
+                    JCErroneous etree = (JCErroneous) tree;
+                    List<? extends Tree> errs = etree.getErrorTrees();
+                    System.err.println("errs: " + errs);
+                    if (errs == null || errs.size() == 0)
+                        throw new AssertionError("no error trees found");
+                    found = true;
+                    return true;
+                }
+            };
 
-        for (Tree tree: trees)
-            checker.scan(tree, null);
+            for (Tree tree: trees)
+                checker.scan(tree, null);
 
-        if (!found)
-            throw new AssertionError("no ErroneousTree nodes found");
+            if (!found)
+                throw new AssertionError("no ErroneousTree nodes found");
+        }
     }
 
     private static boolean found;

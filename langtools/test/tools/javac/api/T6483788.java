@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,15 @@ public class T6483788 {
     void run() throws Exception {
         File jar = createJar();
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = c.getStandardFileManager(null, null, null);
-        fm.setLocation(StandardLocation.CLASS_PATH, Collections.singleton(jar));
-        JavaFileObject fo = fm.getJavaFileForInput(StandardLocation.CLASS_PATH, "dummy", JavaFileObject.Kind.CLASS);
-        System.err.println("file: " + fo);
-        URI uri = fo.toUri();
-        System.err.println("uri: " + uri);
-        if (uri.toString().contains(" "))
-            throw new Exception("unexpected space character found");
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            fm.setLocation(StandardLocation.CLASS_PATH, Collections.singleton(jar));
+            JavaFileObject fo = fm.getJavaFileForInput(StandardLocation.CLASS_PATH, "dummy", JavaFileObject.Kind.CLASS);
+            System.err.println("file: " + fo);
+            URI uri = fo.toUri();
+            System.err.println("uri: " + uri);
+            if (uri.toString().contains(" "))
+                throw new Exception("unexpected space character found");
+        }
     }
 
     File createJar() throws IOException {
