@@ -34,9 +34,12 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.peer.RobotPeer;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
+
 import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
+import sun.awt.OSInfo;
 import sun.awt.image.SunWritableRaster;
 
 /**
@@ -555,15 +558,21 @@ public class Robot {
      */
     public synchronized void waitForIdle() {
         checkNotDispatchThread();
-        // post a dummy event to the queue so we know when
-        // all the events before it have been processed
+
         try {
             SunToolkit.flushPendingEvents();
-            EventQueue.invokeAndWait( new Runnable() {
-                                            public void run() {
-                                                // dummy implementation
-                                            }
-                                        } );
+            // 7185258: realSync() call blocks all DnD tests on OS X
+            if (AccessController.doPrivileged(OSInfo.getOSTypeAction()) = OSInfo.OSType.MACOSX) {
+                // post a dummy event to the queue so we know when
+                // all the events before it have been processed
+                EventQueue.invokeAndWait( new Runnable() {
+                                                public void run() {
+                                                    // dummy implementation
+                                                }
+                                            } );
+            } else {
+                ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+            }
         } catch(InterruptedException ite) {
             System.err.println("Robot.waitForIdle, non-fatal exception caught:");
             ite.printStackTrace();
