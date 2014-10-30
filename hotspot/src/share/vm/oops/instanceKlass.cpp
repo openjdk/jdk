@@ -2792,19 +2792,18 @@ void InstanceKlass::adjust_default_methods(Method** old_methods, Method** new_me
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
   // only one compilation can be active
-  NEEDS_CLEANUP
-  // This is a short non-blocking critical region, so the no safepoint check is ok.
-  OsrList_lock->lock_without_safepoint_check();
-  assert(n->is_osr_method(), "wrong kind of nmethod");
-  n->set_osr_link(osr_nmethods_head());
-  set_osr_nmethods_head(n);
-  // Raise the highest osr level if necessary
-  if (TieredCompilation) {
-    Method* m = n->method();
-    m->set_highest_osr_comp_level(MAX2(m->highest_osr_comp_level(), n->comp_level()));
+  {
+    // This is a short non-blocking critical region, so the no safepoint check is ok.
+    MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+    assert(n->is_osr_method(), "wrong kind of nmethod");
+    n->set_osr_link(osr_nmethods_head());
+    set_osr_nmethods_head(n);
+    // Raise the highest osr level if necessary
+    if (TieredCompilation) {
+      Method* m = n->method();
+      m->set_highest_osr_comp_level(MAX2(m->highest_osr_comp_level(), n->comp_level()));
+    }
   }
-  // Remember to unlock again
-  OsrList_lock->unlock();
 
   // Get rid of the osr methods for the same bci that have lower levels.
   if (TieredCompilation) {
@@ -2820,7 +2819,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 
 void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  OsrList_lock->lock_without_safepoint_check();
+  MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = NULL;
   nmethod* cur  = osr_nmethods_head();
@@ -2857,13 +2856,27 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
     }
     m->set_highest_osr_comp_level(max_level);
   }
-  // Remember to unlock again
-  OsrList_lock->unlock();
+}
+
+int InstanceKlass::mark_osr_nmethods(const Method* m) {
+  // This is a short non-blocking critical region, so the no safepoint check is ok.
+  MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  nmethod* osr = osr_nmethods_head();
+  int found = 0;
+  while (osr != NULL) {
+    assert(osr->is_osr_method(), "wrong kind of nmethod found in chain");
+    if (osr->method() == m) {
+      osr->mark_for_deoptimization();
+      found++;
+    }
+    osr = osr->osr_link();
+  }
+  return found;
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  OsrList_lock->lock_without_safepoint_check();
+  MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = NULL;
   while (osr != NULL) {
@@ -2879,14 +2892,12 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
       if (match_level) {
         if (osr->comp_level() == comp_level) {
           // Found a match - return it.
-          OsrList_lock->unlock();
           return osr;
         }
       } else {
         if (best == NULL || (osr->comp_level() > best->comp_level())) {
           if (osr->comp_level() == CompLevel_highest_tier) {
             // Found the best possible - return it.
-            OsrList_lock->unlock();
             return osr;
           }
           best = osr;
@@ -2895,7 +2906,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
     }
     osr = osr->osr_link();
   }
-  OsrList_lock->unlock();
   if (best != NULL && best->comp_level() >= comp_level && match_level == false) {
     return best;
   }

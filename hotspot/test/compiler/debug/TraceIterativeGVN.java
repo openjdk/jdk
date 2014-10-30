@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,27 +24,16 @@
  */
 
 /*
- * @test StringTest
- * @bug 8028756
- * @library /testlibrary /testlibrary/whitebox
- * @build StringTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI StringTest
- * @summary testing of WB::set/getStringVMFlag()
- * @author igor.ignatyev@oracle.com
+ * @test
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceIterativeGVN
+ *                   TraceIterativeGVN
  */
-
-public class StringTest {
-    private static final String FLAG_NAME = "CompileOnly";
-    private static final String FLAG_DEBUG_NAME = "SuppressErrorAt";
-    private static final String[] TESTS = {"StringTest::*", ""};
-
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            VmFlagTest.WHITE_BOX::setStringVMFlag,
-            VmFlagTest.WHITE_BOX::getStringVMFlag);
-        VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getStringVMFlag);
+public class TraceIterativeGVN {
+    public static void main(String[] args) {
+        for (int i = 0; i < 100_000; i++) {
+            Byte.valueOf((byte)0);
+        }
+        System.out.println("TEST PASSED");
     }
 }
-
