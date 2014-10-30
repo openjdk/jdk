@@ -368,6 +368,13 @@ void Method::print_invocation_count() {
 // Build a MethodData* object to hold information about this method
 // collected in the interpreter.
 void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
+  // Do not profile the method if metaspace has hit an OOM previously
+  // allocating profiling data. Callers clear pending exception so don't
+  // add one here.
+  if (ClassLoaderDataGraph::has_metaspace_oom()) {
+    return;
+  }
+
   // Do not profile method if current thread holds the pending list lock,
   // which avoids deadlock for acquiring the MethodData_lock.
   if (InstanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
@@ -379,7 +386,13 @@ void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
   MutexLocker ml(MethodData_lock, THREAD);
   if (method->method_data() == NULL) {
     ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    MethodData* method_data = MethodData::allocate(loader_data, method, CHECK);
+    MethodData* method_data = MethodData::allocate(loader_data, method, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CompileBroker::log_metaspace_failure();
+      ClassLoaderDataGraph::set_metaspace_oom(true);
+      return;   // return the exception (which is cleared)
+    }
+
     method->set_method_data(method_data);
     if (PrintMethodData && (Verbose || WizardMode)) {
       ResourceMark rm(THREAD);
@@ -392,9 +405,19 @@ void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
 }
 
 MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
+  // Do not profile the method if metaspace has hit an OOM previously
+  if (ClassLoaderDataGraph::has_metaspace_oom()) {
+    return NULL;
+  }
+
   methodHandle mh(m);
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  MethodCounters* counters = MethodCounters::allocate(loader_data, CHECK_NULL);
+  MethodCounters* counters = MethodCounters::allocate(loader_data, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CompileBroker::log_metaspace_failure();
+    ClassLoaderDataGraph::set_metaspace_oom(true);
+    return NULL;   // return the exception (which is cleared)
+  }
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(loader_data, counters);
   }

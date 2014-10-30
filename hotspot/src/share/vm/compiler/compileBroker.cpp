@@ -187,6 +187,14 @@ class CompilationLog : public StringEventLog {
     lm.print("\n");
     log(thread, "%s", (const char*)lm);
   }
+
+  void log_metaspace_failure(const char* reason) {
+    ResourceMark rm;
+    StringLogMessage lm;
+    lm.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
+    lm.print("\n");
+    log(JavaThread::current(), "%s", (const char*)lm);
+  }
 };
 
 static CompilationLog* _compilation_log = NULL;
@@ -1842,6 +1850,18 @@ void CompileBroker::init_compiler_thread_log() {
     }
     warning("Cannot open log file: %s", file_name);
 }
+
+void CompileBroker::log_metaspace_failure() {
+  const char* message = "some methods may not be compiled because metaspace "
+                        "is out of memory";
+  if (_compilation_log != NULL) {
+    _compilation_log->log_metaspace_failure(message);
+  }
+  if (PrintCompilation) {
+    tty->print_cr("COMPILE PROFILING SKIPPED: %s", message);
+  }
+}
+
 
 // ------------------------------------------------------------------
 // CompileBroker::set_should_block
