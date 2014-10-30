@@ -213,7 +213,7 @@ public class AnnotationType {
     }
 
     /**
-     * Returns true if this this annotation type is inherited.
+     * Returns true if this annotation type is inherited.
      */
     public boolean isInherited() {
         return inherited;

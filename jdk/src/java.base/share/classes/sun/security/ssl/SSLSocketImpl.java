@@ -144,7 +144,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *                                     v
      *                                 APP_CLOSED
      *
-     * ALSO, note that the the purpose of handshaking (renegotiation is
+     * ALSO, note that the purpose of handshaking (renegotiation is
      * included) is to assign a different, and perhaps new, session to
      * the connection.  The SSLv3 spec is a bit confusing on that new
      * protocol feature.
@@ -2190,7 +2190,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     /**
-     * Returns the the SSL Session in use by this connection.  These can
+     * Returns the SSL Session in use by this connection.  These can
      * be long lived, and frequently correspond to an entire login session
      * for some user.
      */

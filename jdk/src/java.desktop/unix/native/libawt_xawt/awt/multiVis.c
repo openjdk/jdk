@@ -1103,7 +1103,7 @@ int32_t GetXVisualInfo(display, screen, transparentOverlays,
                                          * of those supports a transparent
                                          * pixel. */
     int32_t             *numVisuals;            /* Number of XVisualInfo struct's
-                                         * pointed to to by pVisuals. */
+                                         * pointed to by pVisuals. */
     XVisualInfo **pVisuals;             /* All of the device's visuals. */
     int32_t             *numOverlayVisuals;     /* Number of OverlayInfo's pointed
                                          * to by pOverlayVisuals.  If this
