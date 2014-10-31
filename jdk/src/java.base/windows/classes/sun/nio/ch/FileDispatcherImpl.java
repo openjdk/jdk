@@ -31,22 +31,14 @@ import sun.misc.JavaIOFileDescriptorAccess;
 
 class FileDispatcherImpl extends FileDispatcher
 {
+    private static final JavaIOFileDescriptorAccess fdAccess =
+        SharedSecrets.getJavaIOFileDescriptorAccess();
+
     static {
         IOUtil.load();
     }
 
-    /**
-     * Indicates if the dispatcher should first advance the file position
-     * to the end of file when writing.
-     */
-    private final boolean append;
-
-    FileDispatcherImpl(boolean append) {
-        this.append = append;
-    }
-
     FileDispatcherImpl() {
-        this(false);
     }
 
     @Override
@@ -71,7 +63,7 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     int write(FileDescriptor fd, long address, int len) throws IOException {
-        return write0(fd, address, len, append);
+        return write0(fd, address, len, fdAccess.getAppend(fd));
     }
 
     int pwrite(FileDescriptor fd, long address, int len, long position)
@@ -81,7 +73,7 @@ class FileDispatcherImpl extends FileDispatcher
     }
 
     long writev(FileDescriptor fd, long address, int len) throws IOException {
-        return writev0(fd, address, len, append);
+        return writev0(fd, address, len, fdAccess.getAppend(fd));
     }
 
     int force(FileDescriptor fd, boolean metaData) throws IOException {
@@ -112,8 +104,6 @@ class FileDispatcherImpl extends FileDispatcher
 
     FileDescriptor duplicateForMapping(FileDescriptor fd) throws IOException {
         // on Windows we need to keep a handle to the file
-        JavaIOFileDescriptorAccess fdAccess =
-            SharedSecrets.getJavaIOFileDescriptorAccess();
         FileDescriptor result = new FileDescriptor();
         long handle = duplicateHandle(fdAccess.getHandle(fd));
         fdAccess.setHandle(result, handle);

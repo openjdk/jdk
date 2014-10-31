@@ -52,15 +52,21 @@ public final class FileDescriptor {
     private boolean closed;
 
     /**
+     * true, if file is opened for appending.
+     */
+    private boolean append;
+
+    /**
      * Constructs an (invalid) FileDescriptor
      * object.
      */
-    public /**/ FileDescriptor() {
+    public FileDescriptor() {
         fd = -1;
     }
 
-    private /* */ FileDescriptor(int fd) {
+    private FileDescriptor(int fd) {
         this.fd = fd;
+        this.append = getAppend(fd);
     }
 
     /**
@@ -149,6 +155,14 @@ public final class FileDescriptor {
                     return obj.fd;
                 }
 
+                public void setAppend(FileDescriptor obj, boolean append) {
+                    obj.append = append;
+                }
+
+                public boolean getAppend(FileDescriptor obj) {
+                    return obj.append;
+                }
+
                 public void setHandle(FileDescriptor obj, long handle) {
                     throw new UnsupportedOperationException();
                 }
@@ -159,6 +173,11 @@ public final class FileDescriptor {
             }
         );
     }
+
+    /**
+     * Returns true, if the file was opened for appending.
+     */
+    private static native boolean getAppend(int fd);
 
     /*
      * Package private methods to track referents.

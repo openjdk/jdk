@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Arrays;
 import javax.tools.*;
 
 public class T6258271 {
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
         DiagnosticListener<JavaFileObject> dl =  new DiagnosticListener<JavaFileObject>() {
                 public void report(Diagnostic<? extends JavaFileObject> message) {
@@ -43,9 +43,10 @@ public class T6258271 {
                     System.out.println(message);
                 }
             };
-        StandardJavaFileManager fm = javac.getStandardFileManager(dl, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromStrings(Arrays.asList("nofile.java"));
-        javac.getTask(null, fm, dl, null, null, files).call();
+        try (StandardJavaFileManager fm = javac.getStandardFileManager(dl, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromStrings(Arrays.asList("nofile.java"));
+            javac.getTask(null, fm, dl, null, null, files).call();
+        }
     }
 }

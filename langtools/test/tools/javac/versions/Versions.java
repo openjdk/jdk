@@ -278,22 +278,25 @@ public class Versions {
 
     protected boolean compile(String sourceFile, List<String>options) {
         JavaCompiler.CompilationTask jctask;
-        StandardJavaFileManager fm = javacompiler.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(sourceFile);
+        try (StandardJavaFileManager fm = javacompiler.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(sourceFile);
 
-        jctask = javacompiler.getTask(
-            null,    // Writer
-            fm,      // JavaFileManager
-            null,    // DiagnosticListener
-            options, // Iterable<String>
-            null,    // Iterable<String> classes
-            files);  // Iterable<? extends JavaFileObject>
+            jctask = javacompiler.getTask(
+                null,    // Writer
+                fm,      // JavaFileManager
+                null,    // DiagnosticListener
+                options, // Iterable<String>
+                null,    // Iterable<String> classes
+                files);  // Iterable<? extends JavaFileObject>
 
-        try {
-            return jctask.call();
-        } catch (IllegalStateException e) {
-            System.err.println(e);
-            return false;
+            try {
+                return jctask.call();
+            } catch (IllegalStateException e) {
+                System.err.println(e);
+                return false;
+            }
+        } catch (IOException e) {
+            throw new Error(e);
         }
     }
 

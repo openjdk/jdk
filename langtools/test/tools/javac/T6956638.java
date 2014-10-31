@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,34 +96,35 @@ public class T6956638 {
         List<String> compileOptions = Arrays.asList("-d", classesDir.getPath());
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
-        Iterable<? extends JavaFileObject> sourceFileObjects = fileManager.getJavaFileObjects(sourceFiles);
-        System.err.println("1- javac given java source JavaFileObjects " + sourceFileObjects);
-        JavaCompiler.CompilationTask task = compiler.getTask(compilerOutputStream, fileManager, null, compileOptions, null, sourceFileObjects);
-        JavacTask javacTask = (JavacTask) task;
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null)) {
+            Iterable<? extends JavaFileObject> sourceFileObjects = fileManager.getJavaFileObjects(sourceFiles);
+            System.err.println("1- javac given java source JavaFileObjects " + sourceFileObjects);
+            JavaCompiler.CompilationTask task = compiler.getTask(compilerOutputStream, fileManager, null, compileOptions, null, sourceFileObjects);
+            JavacTask javacTask = (JavacTask) task;
 
-        Iterable<? extends CompilationUnitTree> parsedTrees = javacTask.parse();
-        Iterable<? extends Element> analyzedTrees = javacTask.analyze();
-        Iterable<? extends JavaFileObject> generatedFiles = javacTask.generate();
+            Iterable<? extends CompilationUnitTree> parsedTrees = javacTask.parse();
+            Iterable<? extends Element> analyzedTrees = javacTask.analyze();
+            Iterable<? extends JavaFileObject> generatedFiles = javacTask.generate();
 
-        System.err.println("2- parsed:" + size(parsedTrees) + " analysed:" + size(analyzedTrees) + " generated:" + size(generatedFiles));
+            System.err.println("2- parsed:" + size(parsedTrees) + " analysed:" + size(analyzedTrees) + " generated:" + size(generatedFiles));
 
-        System.err.print("3-");
-        for (JavaFileObject f : generatedFiles)
-            System.err.print(" " + f);
-        System.err.println("");
+            System.err.print("3-");
+            for (JavaFileObject f : generatedFiles)
+                System.err.print(" " + f);
+            System.err.println("");
 
-        System.err.print("5-");
-        for (File f : classesDir.listFiles())
-            System.err.print(" " + f);
-        System.err.println("");
+            System.err.print("5-");
+            for (File f : classesDir.listFiles())
+                System.err.print(" " + f);
+            System.err.println("");
 
-        System.err.println("----");
-        System.err.println(compilerOutputStream.toString());
+            System.err.println("----");
+            System.err.println(compilerOutputStream.toString());
 
-        if (size(generatedFiles) != size(parsedTrees)) {
-            throw new Exception("wrong number of files generated: " + size(generatedFiles)
-                    + " expected: " + size(parsedTrees));
+            if (size(generatedFiles) != size(parsedTrees)) {
+                throw new Exception("wrong number of files generated: " + size(generatedFiles)
+                        + " expected: " + size(parsedTrees));
+            }
         }
     }
 

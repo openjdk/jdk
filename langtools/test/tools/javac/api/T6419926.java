@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,18 @@ import javax.tools.*;
 public class T6419926 {
     public static void main(String[] argv) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager mgr = compiler.getStandardFileManager( new DiagnosticCollector<JavaFileObject>(), null, null);
-        System.out.println( new File( new File(".").toURI() ).getAbsolutePath() );
-        mgr.setLocation(StandardLocation.CLASS_OUTPUT,
-                            Collections.singleton(new File(".")));
+        try (StandardJavaFileManager mgr = compiler.getStandardFileManager( new DiagnosticCollector<JavaFileObject>(), null, null)) {
+            System.out.println( new File( new File(".").toURI() ).getAbsolutePath() );
+            mgr.setLocation(StandardLocation.CLASS_OUTPUT,
+                                Collections.singleton(new File(".")));
 
-        FileObject fo = mgr.getFileForOutput(StandardLocation.CLASS_OUTPUT,
-                                "", "file.to.delete", null);
-        URI uri = fo.toUri();
-        System.out.println( uri );
+            FileObject fo = mgr.getFileForOutput(StandardLocation.CLASS_OUTPUT,
+                                    "", "file.to.delete", null);
+            URI uri = fo.toUri();
+            System.out.println( uri );
 
-        if (!"file".equals(uri.getScheme()))
-            throw new Exception("unexpected scheme for uri: " + uri.getScheme());
+            if (!"file".equals(uri.getScheme()))
+                throw new Exception("unexpected scheme for uri: " + uri.getScheme());
+        }
     }
 }

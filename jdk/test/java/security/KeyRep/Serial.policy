@@ -1,12 +1,3 @@
-grant codeBase "file:${java.home}/lib/ext/sunjce_provider.jar" {
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
-        permission java.util.PropertyPermission "*", "read";
-        permission java.security.SecurityPermission "putProviderProperty.SunJCE";
-        permission java.security.SecurityPermission "clearProviderProperties.SunJCE";
-        permission java.security.SecurityPermission "removeProviderProperty.SunJCE";
-};
-
 grant {
     // XXX note package access is *not* granted to the 'sun' package
 };

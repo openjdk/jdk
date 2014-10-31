@@ -69,7 +69,7 @@ class MethodHandles: AllStatic {
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
   // Generate MethodHandles adapters.
-                              static void generate_adapters();
+  static bool generate_adapters();
 
   // Called from MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm, vmIntrinsics::ID iid);

@@ -245,9 +245,10 @@ public class Finalize {
          * write to fc2 - when fos1 is gc'ed and finalizer is run,
          * write to fc2 should not fail
          */
-        bb = ByteBuffer.allocateDirect(data.length);
-        bb = bb.put(data);
-        bb = (ByteBuffer) bb.flip();
+        bb = ByteBuffer.allocateDirect(data.length)
+                       .put(data)
+                       .flip();
+
         ret = fc2.write(bb);
         System.out.println("Wrote:" +  ret + " bytes to fc2");
         fc2.close();

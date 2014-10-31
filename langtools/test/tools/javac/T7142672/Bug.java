@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,28 +58,29 @@ public class Bug {
             }
         };
 
-        StandardJavaFileManager sjfm = javac.getStandardFileManager(dl,null,null);
+        try (StandardJavaFileManager sjfm = javac.getStandardFileManager(dl,null,null)) {
 
-        List<String> opts = new ArrayList<String>();
-        opts.add("-proc:only");
-        opts.add("-processor");
-        opts.add("AnnoProcessor");
+            List<String> opts = new ArrayList<String>();
+            opts.add("-proc:only");
+            opts.add("-processor");
+            opts.add("AnnoProcessor");
 
-        boolean xxx;
+            boolean xxx;
 
-        System.err.println("\n-- " + name);
-        task2 = javac.getTask(pw, sjfm, dl, opts, Arrays.asList(name), null);
-        xxx = task2.call();
+            System.err.println("\n-- " + name);
+            task2 = javac.getTask(pw, sjfm, dl, opts, Arrays.asList(name), null);
+            xxx = task2.call();
 
-        String out = sw.toString();
-        System.err.println(out);
-        if (out.contains("Assert")) {
-            System.err.println("--Failed: Assertion failure");
-            System.exit(1);
-        }
-        if (!out.contains(expectedMsg)) {
-            System.err.println("--Failed: Expected diagnostic not found");
-            System.exit(1);
+            String out = sw.toString();
+            System.err.println(out);
+            if (out.contains("Assert")) {
+                System.err.println("--Failed: Assertion failure");
+                System.exit(1);
+            }
+            if (!out.contains(expectedMsg)) {
+                System.err.println("--Failed: Expected diagnostic not found");
+                System.exit(1);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,22 +146,26 @@ public class T7043922 {
     static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
 
     public static void main(String... args) throws Exception {
-        for (ClassKind classKind1 : ClassKind.values()) {
-            for (ConstructorKind constrKind1 : ConstructorKind.values()) {
-                if (!classKind1.isConstructorOk(constrKind1)) continue;
-                for (ClassKind classKind2 : ClassKind.values()) {
-                    for (ConstructorKind constrKind2 : ConstructorKind.values()) {
-                        if (!classKind2.isConstructorOk(constrKind2)) continue;
-                        for (ClassKind classKind3 : ClassKind.values()) {
-                            for (ConstructorKind constrKind3 : ConstructorKind.values()) {
-                                if (!classKind3.isConstructorOk(constrKind3)) continue;
-                                new T7043922(new ClassKind[] { classKind1, classKind2, classKind3 },
-                                        new ConstructorKind[] { constrKind1, constrKind2, constrKind3 }).compileAndCheck();
+        try {
+            for (ClassKind classKind1 : ClassKind.values()) {
+                for (ConstructorKind constrKind1 : ConstructorKind.values()) {
+                    if (!classKind1.isConstructorOk(constrKind1)) continue;
+                    for (ClassKind classKind2 : ClassKind.values()) {
+                        for (ConstructorKind constrKind2 : ConstructorKind.values()) {
+                            if (!classKind2.isConstructorOk(constrKind2)) continue;
+                            for (ClassKind classKind3 : ClassKind.values()) {
+                                for (ConstructorKind constrKind3 : ConstructorKind.values()) {
+                                    if (!classKind3.isConstructorOk(constrKind3)) continue;
+                                    new T7043922(new ClassKind[] { classKind1, classKind2, classKind3 },
+                                            new ConstructorKind[] { constrKind1, constrKind2, constrKind3 }).compileAndCheck();
+                                }
                             }
                         }
                     }
                 }
             }
+        } finally {
+            fm.close();
         }
     }
 

@@ -74,29 +74,30 @@ public class TestTrees extends AbstractProcessor {
                 }
             };
 
-        StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
 
-        Iterable<String> opts = Arrays.asList("-d", ".", "-XDcompilePolicy=simple");
+            Iterable<String> opts = Arrays.asList("-d", ".", "-XDcompilePolicy=simple");
 
-        System.err.println("simple compilation, no processing");
-        JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
-        task.setTaskListener(new MyTaskListener(task));
-        if (!task.call())
-            throw new AssertionError("compilation failed");
+            System.err.println("simple compilation, no processing");
+            JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
+            task.setTaskListener(new MyTaskListener(task));
+            if (!task.call())
+                throw new AssertionError("compilation failed");
 
-        opts =  Arrays.asList("-d", ".", "-processorpath", testClassDir, "-processor", self,
-            "-XDcompilePolicy=simple");
+            opts =  Arrays.asList("-d", ".", "-processorpath", testClassDir, "-processor", self,
+                "-XDcompilePolicy=simple");
 
-        System.err.println();
-        System.err.println("compilation with processing");
-        task = tool.getTask(out, fm, dl,opts, null, files);
-        if (!task.call())
-            throw new AssertionError("compilation failed");
+            System.err.println();
+            System.err.println("compilation with processing");
+            task = tool.getTask(out, fm, dl,opts, null, files);
+            if (!task.call())
+                throw new AssertionError("compilation failed");
 
-        if (errors > 0)
-            throw new AssertionError(errors + " errors occurred");
+            if (errors > 0)
+                throw new AssertionError(errors + " errors occurred");
+        }
     }
 
     void testElement(Trees trees, Element e) {

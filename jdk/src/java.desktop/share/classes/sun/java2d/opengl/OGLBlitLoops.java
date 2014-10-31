@@ -47,7 +47,7 @@ import sun.java2d.pipe.RenderQueue;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import java.lang.annotation.Native;
 
-class OGLBlitLoops {
+final class OGLBlitLoops {
 
     static void register() {
         Blit blitIntArgbPreToSurface =
@@ -56,7 +56,9 @@ class OGLBlitLoops {
         Blit blitIntArgbPreToTexture =
             new OGLSwToTextureBlit(SurfaceType.IntArgbPre,
                                    OGLSurfaceData.PF_INT_ARGB_PRE);
-
+        TransformBlit transformBlitIntArgbPreToSurface =
+            new OGLSwToSurfaceTransform(SurfaceType.IntArgbPre,
+                                        OGLSurfaceData.PF_INT_ARGB_PRE);
         GraphicsPrimitive[] primitives = {
             // surface->surface ops
             new OGLSurfaceToSurfaceBlit(),
@@ -100,7 +102,7 @@ class OGLBlitLoops {
                                CompositeType.AnyAlpha,
                                blitIntArgbPreToSurface),
 
-            new OGLAnyCompositeBlit(OGLSurfaceData.OpenGLSurface),
+            new OGLAnyCompositeBlit(),
 
             new OGLSwToSurfaceScale(SurfaceType.IntRgb,
                                     OGLSurfaceData.PF_INT_RGB),
@@ -145,8 +147,9 @@ class OGLBlitLoops {
                                         OGLSurfaceData.PF_BYTE_GRAY),
             new OGLSwToSurfaceTransform(SurfaceType.UshortGray,
                                         OGLSurfaceData.PF_USHORT_GRAY),
-            new OGLSwToSurfaceTransform(SurfaceType.IntArgbPre,
-                                        OGLSurfaceData.PF_INT_ARGB_PRE),
+            transformBlitIntArgbPreToSurface,
+
+            new OGLGeneralTransformedBlit(transformBlitIntArgbPreToSurface),
 
             // texture->surface ops
             new OGLTextureToSurfaceBlit(),
@@ -178,9 +181,6 @@ class OGLBlitLoops {
             new OGLGeneralBlit(OGLSurfaceData.OpenGLTexture,
                                CompositeType.SrcNoEa,
                                blitIntArgbPreToTexture),
-
-            new OGLAnyCompositeBlit(OGLSurfaceData.OpenGLTexture),
-
         };
         GraphicsPrimitiveMgr.register(primitives);
     }
@@ -781,11 +781,11 @@ class OGLTextureToSurfaceTransform extends TransformBlit {
  * This general Blit implementation converts any source surface to an
  * intermediate IntArgbPre surface, and then uses the more specific
  * IntArgbPre->OpenGLSurface/Texture loop to get the intermediate
- * (premultiplied) surface down to OpenGL.
+ * (premultiplied) surface down to OpenGL using simple blit.
  */
 class OGLGeneralBlit extends Blit {
 
-    private Blit performop;
+    private final Blit performop;
     private WeakReference<SurfaceData> srcTmp;
 
     OGLGeneralBlit(SurfaceType dstType,
@@ -826,12 +826,56 @@ class OGLGeneralBlit extends Blit {
     }
 }
 
-class OGLAnyCompositeBlit extends Blit {
+/**
+ * This general TransformedBlit implementation converts any source surface to an
+ * intermediate IntArgbPre surface, and then uses the more specific
+ * IntArgbPre->OpenGLSurface/Texture loop to get the intermediate
+ * (premultiplied) surface down to OpenGL using simple transformBlit.
+ */
+final class OGLGeneralTransformedBlit extends TransformBlit {
+
+    private final TransformBlit performop;
+    private WeakReference<SurfaceData> srcTmp;
+
+    OGLGeneralTransformedBlit(final TransformBlit performop) {
+        super(SurfaceType.Any, CompositeType.AnyAlpha,
+              OGLSurfaceData.OpenGLSurface);
+        this.performop = performop;
+    }
+
+    @Override
+    public synchronized void Transform(SurfaceData src, SurfaceData dst,
+                                       Composite comp, Region clip,
+                                       AffineTransform at, int hint, int srcx,
+                                       int srcy, int dstx, int dsty, int width,
+                                       int height){
+        Blit convertsrc = Blit.getFromCache(src.getSurfaceType(),
+                                            CompositeType.SrcNoEa,
+                                            SurfaceType.IntArgbPre);
+        // use cached intermediate surface, if available
+        final SurfaceData cachedSrc = srcTmp != null ? srcTmp.get() : null;
+        // convert source to IntArgbPre
+        src = convertFrom(convertsrc, src, srcx, srcy, width, height, cachedSrc,
+                          BufferedImage.TYPE_INT_ARGB_PRE);
+
+        // transform IntArgbPre intermediate surface to OpenGL surface
+        performop.Transform(src, dst, comp, clip, at, hint, 0, 0, dstx, dsty,
+                            width, height);
+
+        if (src != cachedSrc) {
+            // cache the intermediate surface
+            srcTmp = new WeakReference<>(src);
+        }
+    }
+}
+
+final class OGLAnyCompositeBlit extends Blit {
     private WeakReference<SurfaceData> dstTmp;
 
-    public OGLAnyCompositeBlit(SurfaceType dstType) {
-        super(SurfaceType.Any, CompositeType.Any, dstType);
+    OGLAnyCompositeBlit() {
+        super(SurfaceType.Any, CompositeType.Any, OGLSurfaceData.OpenGLSurface);
     }
+
     public synchronized void Blit(SurfaceData src, SurfaceData dst,
                                   Composite comp, Region clip,
                                   int sx, int sy, int dx, int dy,
@@ -848,15 +892,15 @@ class OGLAnyCompositeBlit extends Blit {
             cachedDst = dstTmp.get();
         }
 
-        // convert source to IntArgbPre
+        // convert destination to IntArgbPre
         SurfaceData dstBuffer = convertFrom(convertdst, dst, dx, dy, w, h,
                           cachedDst, BufferedImage.TYPE_INT_ARGB_PRE);
+        Region bufferClip =
+                clip == null ? null : clip.getTranslatedRegion(-dx, -dy);
 
         Blit performop = Blit.getFromCache(src.getSurfaceType(),
                 CompositeType.Any, dstBuffer.getSurfaceType());
-
-        performop.Blit(src, dstBuffer, comp, clip,
-                       sx, sy, 0, 0, w, h);
+        performop.Blit(src, dstBuffer, comp, bufferClip, sx, sy, 0, 0, w, h);
 
         if (dstBuffer != cachedDst) {
             // cache the intermediate surface

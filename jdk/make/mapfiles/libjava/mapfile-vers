@@ -75,6 +75,7 @@ SUNWprivate_1.1 {
 
 		Java_java_io_FileDescriptor_initIDs;
 		Java_java_io_FileDescriptor_sync;
+		Java_java_io_FileDescriptor_getAppend;
 		Java_java_io_FileInputStream_available;
 		Java_java_io_FileInputStream_close0;
 		Java_java_io_FileInputStream_initIDs;
