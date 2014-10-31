@@ -25,10 +25,7 @@
 /*
  * @test
  * @bug 6729471
- * @summary javap should accept class files on the command line
- * @library /tools/lib
- * @build ToolBox
- * @run main T6729471
+ * @summary javap does not output inner interfaces of an interface
  */
 
 import java.io.*;
@@ -60,25 +57,29 @@ public class T6729471
         verify(new File(testClasses, "T6729471.class").toURI().toString(),
                 "public static void main(java.lang.String...)");
 
-        // jar url
-        // Create a temp jar
-        ToolBox tb = new ToolBox();
-        tb.new JavacTask()
-          .sources("class Foo { public void sayHello() {} }")
-          .run();
-        String foo_jar = "foo.jar";
-        tb.new JarTask(foo_jar)
-          .files("Foo.class")
-          .run();
-        File foo_jarFile = new File(foo_jar);
-
-        // Verify
+        // jar url: rt.jar
+        File java_home = new File(System.getProperty("java.home"));
+        if (java_home.getName().equals("jre"))
+            java_home = java_home.getParentFile();
+        File rt_jar = new File(new File(new File(java_home, "jre"), "lib"), "rt.jar");
         try {
-            verify("jar:" + foo_jarFile.toURL() + "!/Foo.class",
-                "public void sayHello()");
+            verify("jar:" + rt_jar.toURL() + "!/java/util/Map.class",
+                "public abstract boolean containsKey(java.lang.Object)");
         } catch (MalformedURLException e) {
             error(e.toString());
         }
+
+        // jar url: ct.sym, if it exists
+        File ct_sym = new File(new File(java_home, "lib"), "ct.sym");
+        if (ct_sym.exists()) {
+            try {
+                verify("jar:" + ct_sym.toURL() + "!/META-INF/sym/rt.jar/java/util/Map.class",
+                    "public abstract boolean containsKey(java.lang.Object)");
+            } catch (MalformedURLException e) {
+                error(e.toString());
+            }
+        } else
+            System.err.println("warning: ct.sym not found");
 
         if (errors > 0)
             throw new Error(errors + " found.");

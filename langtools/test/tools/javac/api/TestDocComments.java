@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,23 +52,23 @@ public class TestDocComments {
         File file = new File(testSrc, "TestDocComments.java");
 
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            Iterable<? extends JavaFileObject> fileObjects = fm.getJavaFileObjects(file);
+            JavacTask task = tool.getTask(pw, fm, null, null, null, fileObjects);
+            Iterable<? extends CompilationUnitTree> units = task.parse();
+            Trees trees = Trees.instance(task);
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        Iterable<? extends JavaFileObject> fileObjects = fm.getJavaFileObjects(file);
-        JavacTask task = tool.getTask(pw, fm, null, null, null, fileObjects);
-        Iterable<? extends CompilationUnitTree> units = task.parse();
-        Trees trees = Trees.instance(task);
+            CommentScanner s = new CommentScanner();
+            int n = s.scan(units, trees);
 
-        CommentScanner s = new CommentScanner();
-        int n = s.scan(units, trees);
+            if (n != 12)
+                error("Unexpected number of doc comments found: " + n);
 
-        if (n != 12)
-            error("Unexpected number of doc comments found: " + n);
-
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
+            if (errors > 0)
+                throw new Exception(errors + " errors occurred");
+        }
     }
 
     /**

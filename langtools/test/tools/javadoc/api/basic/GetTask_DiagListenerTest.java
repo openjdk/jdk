@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,27 +60,28 @@ public class GetTask_DiagListenerTest extends APITest {
     public void testDiagListener() throws Exception {
         JavaFileObject srcFile = createSimpleJavaFileObject("pkg/C", "package pkg; public error { }");
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        File outDir = getOutDir();
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
-        Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
-        DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<JavaFileObject>();
-        DocumentationTask t = tool.getTask(null, fm, dc, null, null, files);
-        if (t.call()) {
-            throw new Exception("task succeeded unexpectedly");
-        } else {
-            List<String> diagCodes = new ArrayList<String>();
-            for (Diagnostic d: dc.getDiagnostics()) {
-                System.err.println(d);
-                diagCodes.add(d.getCode());
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            File outDir = getOutDir();
+            fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+            Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
+            DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<JavaFileObject>();
+            DocumentationTask t = tool.getTask(null, fm, dc, null, null, files);
+            if (t.call()) {
+                throw new Exception("task succeeded unexpectedly");
+            } else {
+                List<String> diagCodes = new ArrayList<String>();
+                for (Diagnostic d: dc.getDiagnostics()) {
+                    System.err.println(d);
+                    diagCodes.add(d.getCode());
+                }
+                List<String> expect = Arrays.asList(
+                        "javadoc.note.msg",         // Loading source file
+                        "compiler.err.expected3",   // class, interface, or enum expected
+                        "javadoc.note.msg");        // 1 error
+                if (!diagCodes.equals(expect))
+                    throw new Exception("unexpected diagnostics occurred");
+                System.err.println("diagnostics received as expected");
             }
-            List<String> expect = Arrays.asList(
-                    "javadoc.note.msg",         // Loading source file
-                    "compiler.err.expected3",   // class, interface, or enum expected
-                    "javadoc.note.msg");        // 1 error
-            if (!diagCodes.equals(expect))
-                throw new Exception("unexpected diagnostics occurred");
-            System.err.println("diagnostics received as expected");
         }
     }
 

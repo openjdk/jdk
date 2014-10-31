@@ -235,6 +235,7 @@ public abstract class BaseFileManager implements JavaFileManager {
             return encName;
     }
 
+    @SuppressWarnings("cast")
     public CharBuffer decode(ByteBuffer inbuf, boolean ignoreEncodingErrors) {
         String encodingName = getEncodingName();
         CharsetDecoder decoder;
@@ -315,6 +316,7 @@ public abstract class BaseFileManager implements JavaFileManager {
      * @return a byte buffer containing the contents of the stream
      * @throws IOException if an error occurred while reading the stream
      */
+    @SuppressWarnings("cast")
     public ByteBuffer makeByteBuffer(InputStream in)
         throws IOException {
         int limit = in.available();
@@ -343,6 +345,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     /**
      * A single-element cache of direct byte buffers.
      */
+    @SuppressWarnings("cast")
     private static class ByteBufferCache {
         private ByteBuffer cached;
         ByteBuffer get(int capacity) {

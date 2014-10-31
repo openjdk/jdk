@@ -47,7 +47,7 @@ import javax.management.MBeanServerFactory;
  * <code>DefaultLoaderRepository</code> be rewritten.</p>
  *
  * @deprecated Use
- * {@link javax.management.MBeanServer#getClassLoaderRepository()}}
+ * {@link javax.management.MBeanServer#getClassLoaderRepository()}
  * instead.
  *
  * @since 1.5

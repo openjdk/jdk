@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,13 @@ public class OnScreenRenderingResizeTest {
             public void update(Graphics g) {}
         };
         frame.setBackground(bgColor);
+        frame.setUndecorated(true);
         frame.pack();
-        frame.setSize(FRAME_W, FRAME_H);
+
+        GraphicsConfiguration gc = frame.getGraphicsConfiguration();
+        Rectangle gcBounds = gc.getBounds();
+        frame.setBounds(gcBounds.width / 4, gcBounds.height / 4, FRAME_W, FRAME_H);
+
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 done = true;
@@ -108,9 +113,8 @@ public class OnScreenRenderingResizeTest {
             ex.printStackTrace();
         }
 
-        GraphicsConfiguration gc = frame.getGraphicsConfiguration();
-        int maxW = gc.getBounds().width /2;
-        int maxH = gc.getBounds().height/2;
+        int maxW = gcBounds.width /2;
+        int maxH = gcBounds.height/2;
         int minW = frame.getWidth();
         int minH = frame.getHeight();
         int incW = 10, incH = 10, cnt = 0;
@@ -155,6 +159,7 @@ public class OnScreenRenderingResizeTest {
             Insets in = frame.getInsets();
             frame.getGraphics().drawImage(output, in.left, in.top, null);
             if (cnt == 90 && robot != null) {
+                robot.waitForIdle();
                 // area where we blitted to should be either white or green
                 Point p = frame.getLocationOnScreen();
                 p.translate(in.left+10, in.top+10);
@@ -172,7 +177,7 @@ public class OnScreenRenderingResizeTest {
                                   frame.getWidth()-in.left-in.right,
                                   frame.getHeight()-in.top-in.bottom-5-IMAGE_H));
                 int accepted2[] = { Color.white.getRGB() };
-                checkBI(bi, accepted1);
+                checkBI(bi, accepted2);
             }
 
             Thread.yield();

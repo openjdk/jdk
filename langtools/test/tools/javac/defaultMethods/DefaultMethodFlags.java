@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,31 +54,32 @@ public class DefaultMethodFlags {
 
     void checkDefaultMethodFlags() throws IOException {
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = c.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> fos =
-                fm.getJavaFileObjectsFromFiles(
-                Arrays.asList(new File(
-                System.getProperty("test.src"),
-                this.getClass().getSimpleName() + ".java")));
-        JavacTask task = (JavacTask) c.getTask(null, fm, null, null, null, fos);
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> fos =
+                    fm.getJavaFileObjectsFromFiles(
+                    Arrays.asList(new File(
+                    System.getProperty("test.src"),
+                    this.getClass().getSimpleName() + ".java")));
+            JavacTask task = (JavacTask) c.getTask(null, fm, null, null, null, fos);
 
-        task.addTaskListener(new TaskListener() {
+            task.addTaskListener(new TaskListener() {
 
-            @Override
-            public void started(TaskEvent e) {}
+                @Override
+                public void started(TaskEvent e) {}
 
-            @Override
-            public void finished(TaskEvent e) {
-                if (e.getKind() == TaskEvent.Kind.ANALYZE) {
-                    TypeElement te = e.getTypeElement();
-                    if (te.getSimpleName().toString().equals("I")) {
-                        checkDefaultInterface(te);
+                @Override
+                public void finished(TaskEvent e) {
+                    if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                        TypeElement te = e.getTypeElement();
+                        if (te.getSimpleName().toString().equals("I")) {
+                            checkDefaultInterface(te);
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        task.analyze();
+            task.analyze();
+        }
     }
 
     void checkDefaultInterface(TypeElement te) {

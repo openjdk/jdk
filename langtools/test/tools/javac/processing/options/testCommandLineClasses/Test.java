@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,16 +67,17 @@ public class Test extends JavacTestingAbstractProcessor {
     void test(List<String> names) throws Exception {
         System.err.println("test: " + names);
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
-        File testClasses = new File(System.getProperty("test.classes"));
-        fm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(testClasses));
-        JavaCompiler.CompilationTask task = compiler.getTask(
-                null, null, null, Arrays.asList("-proc:only"), names, null);
-        task.setProcessors(Arrays.asList(new Test()));
-        boolean ok = task.call();
-        if (!ok)
-            error("compilation failed");
-        System.err.println();
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            File testClasses = new File(System.getProperty("test.classes"));
+            fm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(testClasses));
+            JavaCompiler.CompilationTask task = compiler.getTask(
+                    null, null, null, Arrays.asList("-proc:only"), names, null);
+            task.setProcessors(Arrays.asList(new Test()));
+            boolean ok = task.call();
+            if (!ok)
+                error("compilation failed");
+            System.err.println();
+        }
     }
 
     <T> List<T> reverse(List<T> list) {

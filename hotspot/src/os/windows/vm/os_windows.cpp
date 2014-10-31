@@ -5091,37 +5091,12 @@ int os::socket_close(int fd) {
   return ::closesocket(fd);
 }
 
-int os::socket_available(int fd, jint *pbytes) {
-  int ret = ::ioctlsocket(fd, FIONREAD, (u_long*)pbytes);
-  return (ret < 0) ? 0 : 1;
-}
-
 int os::socket(int domain, int type, int protocol) {
   return ::socket(domain, type, protocol);
 }
 
-int os::listen(int fd, int count) {
-  return ::listen(fd, count);
-}
-
 int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   return ::connect(fd, him, len);
-}
-
-int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
-  return ::accept(fd, him, len);
-}
-
-int os::sendto(int fd, char* buf, size_t len, uint flags,
-               struct sockaddr* to, socklen_t tolen) {
-
-  return ::sendto(fd, buf, (int)len, flags, to, tolen);
-}
-
-int os::recvfrom(int fd, char *buf, size_t nBytes, uint flags,
-                 sockaddr* from, socklen_t* fromlen) {
-
-  return ::recvfrom(fd, buf, (int)nBytes, flags, from, fromlen);
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
@@ -5134,45 +5109,6 @@ int os::send(int fd, char* buf, size_t nBytes, uint flags) {
 
 int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
-}
-
-int os::timeout(int fd, long timeout) {
-  fd_set tbl;
-  struct timeval t;
-
-  t.tv_sec  = timeout / 1000;
-  t.tv_usec = (timeout % 1000) * 1000;
-
-  tbl.fd_count    = 1;
-  tbl.fd_array[0] = fd;
-
-  return ::select(1, &tbl, 0, 0, &t);
-}
-
-int os::get_host_name(char* name, int namelen) {
-  return ::gethostname(name, namelen);
-}
-
-int os::socket_shutdown(int fd, int howto) {
-  return ::shutdown(fd, howto);
-}
-
-int os::bind(int fd, struct sockaddr* him, socklen_t len) {
-  return ::bind(fd, him, len);
-}
-
-int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
-  return ::getsockname(fd, him, len);
-}
-
-int os::get_sock_opt(int fd, int level, int optname,
-                     char* optval, socklen_t* optlen) {
-  return ::getsockopt(fd, level, optname, optval, optlen);
-}
-
-int os::set_sock_opt(int fd, int level, int optname,
-                     const char* optval, socklen_t optlen) {
-  return ::setsockopt(fd, level, optname, optval, optlen);
 }
 
 // WINDOWS CONTEXT Flags for THREAD_SAMPLING

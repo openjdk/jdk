@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,28 +40,29 @@ import static javax.lang.model.util.ElementFilter.*;
 
 @SupportedAnnotationTypes("*")
 public class T6439826 extends AbstractProcessor {
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         String testSrc = System.getProperty("test.src", ".");
         String testClasses = System.getProperty("test.classes");
         JavacTool tool = JavacTool.create();
         MyDiagListener dl = new MyDiagListener();
-        StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6439826.class.getName()+".java")));
-        Iterable<String> opts = Arrays.asList("-proc:only",
-                                              "-processor", "T6439826",
-                                              "-processorpath", testClasses);
-        StringWriter out = new StringWriter();
-        JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
-        task.call();
-        String s = out.toString();
-        System.err.print(s);
-        // Expect the following 2 diagnostics, and no output to log
-        //   Foo.java:1: illegal character: \35
-        //   Foo.java:1: reached end of file while parsing
-        System.err.println(dl.count + " diagnostics; " + s.length() + " characters");
-        if (dl.count != 2 || s.length() != 0)
-            throw new AssertionError("unexpected output from compiler");
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null)) {
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6439826.class.getName()+".java")));
+            Iterable<String> opts = Arrays.asList("-proc:only",
+                                                  "-processor", "T6439826",
+                                                  "-processorpath", testClasses);
+            StringWriter out = new StringWriter();
+            JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
+            task.call();
+            String s = out.toString();
+            System.err.print(s);
+            // Expect the following 2 diagnostics, and no output to log
+            //   Foo.java:1: illegal character: \35
+            //   Foo.java:1: reached end of file while parsing
+            System.err.println(dl.count + " diagnostics; " + s.length() + " characters");
+            if (dl.count != 2 || s.length() != 0)
+                throw new AssertionError("unexpected output from compiler");
+        }
     }
 
     public boolean process(Set<? extends TypeElement> annotations,

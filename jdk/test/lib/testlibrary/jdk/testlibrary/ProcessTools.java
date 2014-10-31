@@ -319,13 +319,14 @@ public final class ProcessTools {
 
             return output;
         } catch (Throwable t) {
+            if (p != null) {
+                p.destroyForcibly().waitFor();
+            }
+
             failed = true;
             System.out.println("executeProcess() failed: " + t);
             throw t;
         } finally {
-            if (p != null) {
-                p.destroyForcibly().waitFor();
-            }
             if (failed) {
                 System.err.println(getProcessLog(pb, output));
             }

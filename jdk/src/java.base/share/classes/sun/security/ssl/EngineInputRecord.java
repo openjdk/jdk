@@ -349,8 +349,7 @@ final class EngineInputRecord extends InputRecord {
         /*
          * Copy data out of buffer, it's ready to go.
          */
-        ByteBuffer netBB = (ByteBuffer)
-            (ByteBuffer.allocate(len).put(buf, 0, len).flip());
+        ByteBuffer netBB = ByteBuffer.allocate(len).put(buf, 0, len).flip();
         engine.writer.putOutboundDataSync(netBB);
     }
 

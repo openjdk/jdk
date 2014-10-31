@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,14 @@ public class IntersectionPropertiesTest {
     }
 
     public void run() throws IOException {
-        runOne(Intersection_name, Intersection_contents);
+        try {
+            runOne(Intersection_name, Intersection_contents);
 
-        if (0 != errors)
-            throw new RuntimeException(errors + " errors occurred");
+            if (0 != errors)
+                throw new RuntimeException(errors + " errors occurred");
+        } finally {
+            fm.close();
+        }
     }
 
     public static void main(String... args) throws IOException {

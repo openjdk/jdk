@@ -25,6 +25,7 @@
  * JDK-8062024: Issue with date.setFullYear when time other than midnight
  *
  * @test
+ * @option -timezone=Asia/Calcutta
  * @run
  */
 

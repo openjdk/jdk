@@ -199,13 +199,14 @@ class InstanceKlass: public Klass {
   bool            _has_unloaded_dependent;
 
   enum {
-    _misc_rewritten            = 1 << 0, // methods rewritten.
-    _misc_has_nonstatic_fields = 1 << 1, // for sizing with UseCompressedOops
-    _misc_should_verify_class  = 1 << 2, // allow caching of preverification
-    _misc_is_anonymous         = 1 << 3, // has embedded _host_klass field
-    _misc_is_contended         = 1 << 4, // marked with contended annotation
-    _misc_has_default_methods  = 1 << 5, // class/superclass/implemented interfaces has default methods
-    _misc_has_been_redefined   = 1 << 6  // class has been redefined
+    _misc_rewritten                = 1 << 0, // methods rewritten.
+    _misc_has_nonstatic_fields     = 1 << 1, // for sizing with UseCompressedOops
+    _misc_should_verify_class      = 1 << 2, // allow caching of preverification
+    _misc_is_anonymous             = 1 << 3, // has embedded _host_klass field
+    _misc_is_contended             = 1 << 4, // marked with contended annotation
+    _misc_has_default_methods      = 1 << 5, // class/superclass/implemented interfaces has default methods
+    _misc_declares_default_methods = 1 << 6, // directly declares default methods (any access)
+    _misc_has_been_redefined       = 1 << 7  // class has been redefined
   };
   u2              _misc_flags;
   u2              _minor_version;        // minor version number of class file
@@ -651,6 +652,17 @@ class InstanceKlass: public Klass {
     }
   }
 
+  bool declares_default_methods() const {
+    return (_misc_flags & _misc_declares_default_methods) != 0;
+  }
+  void set_declares_default_methods(bool b) {
+    if (b) {
+      _misc_flags |= _misc_declares_default_methods;
+    } else {
+      _misc_flags &= ~_misc_declares_default_methods;
+    }
+  }
+
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
@@ -1023,6 +1035,7 @@ private:
   static bool link_class_impl                           (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
   static bool verify_code                               (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
   static void initialize_impl                           (instanceKlassHandle this_k, TRAPS);
+  static void initialize_super_interfaces               (instanceKlassHandle this_k, TRAPS);
   static void eager_initialize_impl                     (instanceKlassHandle this_k);
   static void set_initialization_state_and_notify_impl  (instanceKlassHandle this_k, ClassState state, TRAPS);
   static void call_class_initializer_impl               (instanceKlassHandle this_k, TRAPS);

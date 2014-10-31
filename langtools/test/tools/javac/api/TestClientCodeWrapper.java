@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,34 +56,36 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
      */
     void run() throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        defaultFileManager = compiler.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            defaultFileManager = fm;
 
-        for (Method m: getMethodsExcept(JavaFileManager.class, "close", "getJavaFileForInput")) {
-            test(m);
+            for (Method m: getMethodsExcept(JavaFileManager.class, "close", "getJavaFileForInput")) {
+                test(m);
+            }
+
+            for (Method m: getMethodsExcept(FileObject.class, "delete")) {
+                test(m);
+            }
+
+            for (Method m: getMethods(JavaFileObject.class)) {
+                test(m);
+            }
+
+            for (Method m: getMethodsExcept(Processor.class, "getCompletions")) {
+                test(m);
+            }
+
+            for (Method m: DiagnosticListener.class.getDeclaredMethods()) {
+                test(m);
+            }
+
+            for (Method m: TaskListener.class.getDeclaredMethods()) {
+                test(m);
+            }
+
+            if (errors > 0)
+                throw new Exception(errors + " errors occurred");
         }
-
-        for (Method m: getMethodsExcept(FileObject.class, "delete")) {
-            test(m);
-        }
-
-        for (Method m: getMethods(JavaFileObject.class)) {
-            test(m);
-        }
-
-        for (Method m: getMethodsExcept(Processor.class, "getCompletions")) {
-            test(m);
-        }
-
-        for (Method m: DiagnosticListener.class.getDeclaredMethods()) {
-            test(m);
-        }
-
-        for (Method m: TaskListener.class.getDeclaredMethods()) {
-            test(m);
-        }
-
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
     }
 
     /** Get a sorted set of the methods declared on a class. */

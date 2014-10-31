@@ -3958,21 +3958,6 @@ int os::available(int fd, jlong *bytes) {
   return 1;
 }
 
-int os::socket_available(int fd, jint *pbytes) {
-  if (fd < 0) {
-    return OS_OK;
-  }
-
-  int ret;
-
-  RESTARTABLE(::ioctl(fd, FIONREAD, pbytes), ret);
-
-  //%% note ioctl can return 0 when successful, JVM_SocketAvailable
-  // is expected to return 0 on failure and 1 on success to the jdk.
-
-  return (ret == OS_ERR) ? 0 : 1;
-}
-
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,

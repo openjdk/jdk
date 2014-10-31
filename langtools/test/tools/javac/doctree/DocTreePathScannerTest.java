@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,22 +66,23 @@ public class DocTreePathScannerTest {
         }
 
         JavacTool javac = JavacTool.create();
-        StandardJavaFileManager fm = javac.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = javac.getStandardFileManager(null, null, null)) {
 
-        Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(files);
+            Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(files);
 
-        JavacTask t = javac.getTask(null, fm, null, null, null, fos);
-        DocTrees trees = DocTrees.instance(t);
+            JavacTask t = javac.getTask(null, fm, null, null, null, fos);
+            DocTrees trees = DocTrees.instance(t);
 
-        Iterable<? extends CompilationUnitTree> units = t.parse();
+            Iterable<? extends CompilationUnitTree> units = t.parse();
 
-        DeclScanner ds = new DeclScanner(trees);
-        for (CompilationUnitTree unit: units) {
-            ds.scan(unit, null);
+            DeclScanner ds = new DeclScanner(trees);
+            for (CompilationUnitTree unit: units) {
+                ds.scan(unit, null);
+            }
+
+            if (errors > 0)
+                throw new Exception(errors + " errors occurred");
         }
-
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
     }
 
     void error(String msg) {
