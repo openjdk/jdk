@@ -28,12 +28,13 @@ package com.sun.tools.javadoc;
 import com.sun.javadoc.*;
 
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
  * Represents an annotation type.
@@ -94,7 +95,7 @@ public class AnnotationTypeDocImpl
     public AnnotationTypeElementDoc[] elements() {
         List<AnnotationTypeElementDoc> elements = List.nil();
         for (Symbol sym : tsym.members().getSymbols(NON_RECURSIVE)) {
-            if (sym != null && sym.kind == Kinds.MTH) {
+            if (sym != null && sym.kind == MTH) {
                 MethodSymbol s = (MethodSymbol)sym;
                 elements = elements.prepend(env.getAnnotationTypeElementDoc(s));
             }

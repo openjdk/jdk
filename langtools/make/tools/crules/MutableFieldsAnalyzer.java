@@ -30,7 +30,6 @@ import java.util.Map;
 
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent.Kind;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeScanner;
 
@@ -38,6 +37,7 @@ import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.FINAL;
 import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
 
@@ -68,7 +68,7 @@ public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
                     .contains(packageToCheck);
             if (isJavacPack &&
                 (tree.sym.flags() & SYNTHETIC) == 0 &&
-                tree.sym.owner.kind == Kinds.TYP) {
+                tree.sym.owner.kind == TYP) {
                 if (!ignoreField(tree.sym.owner.flatName().toString(),
                         tree.getName().toString())) {
                     boolean enumClass = (tree.sym.owner.flags() & ENUM) != 0;

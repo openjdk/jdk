@@ -30,7 +30,6 @@ import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -58,7 +57,7 @@ import java.util.Set;
 
 import static com.sun.tools.javac.comp.LambdaToMethod.LambdaSymbolKind.*;
 import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -727,7 +726,7 @@ public class LambdaToMethod extends TreeTranslator {
      * with the generated signature.
      */
     private List<JCExpression> convertArgs(Symbol meth, List<JCExpression> args, Type varargsElement) {
-       Assert.check(meth.kind == Kinds.MTH);
+       Assert.check(meth.kind == MTH);
        List<Type> formals = types.erasure(meth.type).getParameterTypes();
        if (varargsElement != null) {
            Assert.check((meth.flags() & VARARGS) != 0);

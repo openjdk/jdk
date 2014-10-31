@@ -2017,13 +2017,12 @@ public class Code {
         List<VarSymbol> locals = lvtRanges.getVars(meth, tree);
         for (LocalVar localVar: lvar) {
             for (VarSymbol aliveLocal : locals) {
-                if (localVar == null) {
-                    return;
-                }
-                if (localVar.sym == aliveLocal && localVar.lastRange() != null) {
-                    char length = (char)(closingCP - localVar.lastRange().start_pc);
-                    if (length < Character.MAX_VALUE) {
-                        localVar.closeRange(length);
+                if (localVar != null) {
+                    if (localVar.sym == aliveLocal && localVar.lastRange() != null) {
+                        char length = (char)(closingCP - localVar.lastRange().start_pc);
+                        if (length < Character.MAX_VALUE) {
+                            localVar.closeRange(length);
+                        }
                     }
                 }
             }

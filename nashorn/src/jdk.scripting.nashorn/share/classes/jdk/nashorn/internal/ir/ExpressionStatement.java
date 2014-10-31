@@ -35,6 +35,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class ExpressionStatement extends Statement {
+    private static final long serialVersionUID = 1L;
+
     /** Expression to execute. */
     private final Expression expression;
 

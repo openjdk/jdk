@@ -1697,11 +1697,17 @@ void nmethod::post_compiled_method_unload() {
   set_unload_reported();
 }
 
-void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_alive) {
+void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_alive, bool mark_on_stack) {
   if (ic->is_icholder_call()) {
     // The only exception is compiledICHolder oops which may
     // yet be marked below. (We check this further below).
     CompiledICHolder* cichk_oop = ic->cached_icholder();
+
+    if (mark_on_stack) {
+      Metadata::mark_on_stack(cichk_oop->holder_method());
+      Metadata::mark_on_stack(cichk_oop->holder_klass());
+    }
+
     if (cichk_oop->holder_method()->method_holder()->is_loader_alive(is_alive) &&
         cichk_oop->holder_klass()->is_loader_alive(is_alive)) {
       return;
@@ -1709,6 +1715,10 @@ void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_a
   } else {
     Metadata* ic_oop = ic->cached_metadata();
     if (ic_oop != NULL) {
+      if (mark_on_stack) {
+        Metadata::mark_on_stack(ic_oop);
+      }
+
       if (ic_oop->is_klass()) {
         if (((Klass*)ic_oop)->is_loader_alive(is_alive)) {
           return;
@@ -1769,7 +1779,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
     while(iter.next()) {
       if (iter.type() == relocInfo::virtual_call_type) {
         CompiledIC *ic = CompiledIC_at(&iter);
-        clean_ic_if_metadata_is_dead(ic, is_alive);
+        clean_ic_if_metadata_is_dead(ic, is_alive, false);
       }
     }
   }
@@ -1837,6 +1847,53 @@ static bool clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, BoolObjectClos
   return clean_if_nmethod_is_unloaded(csc, csc->destination(), is_alive, from);
 }
 
+bool nmethod::unload_if_dead_at(RelocIterator* iter_at_oop, BoolObjectClosure *is_alive, bool unloading_occurred) {
+  assert(iter_at_oop->type() == relocInfo::oop_type, "Wrong relocation type");
+
+  oop_Relocation* r = iter_at_oop->oop_reloc();
+  // Traverse those oops directly embedded in the code.
+  // Other oops (oop_index>0) are seen as part of scopes_oops.
+  assert(1 == (r->oop_is_immediate()) +
+         (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
+         "oop must be found in exactly one place");
+  if (r->oop_is_immediate() && r->oop_value() != NULL) {
+    // Unload this nmethod if the oop is dead.
+    if (can_unload(is_alive, r->oop_addr(), unloading_occurred)) {
+      return true;;
+    }
+  }
+
+  return false;
+}
+
+void nmethod::mark_metadata_on_stack_at(RelocIterator* iter_at_metadata) {
+  assert(iter_at_metadata->type() == relocInfo::metadata_type, "Wrong relocation type");
+
+  metadata_Relocation* r = iter_at_metadata->metadata_reloc();
+  // In this metadata, we must only follow those metadatas directly embedded in
+  // the code.  Other metadatas (oop_index>0) are seen as part of
+  // the metadata section below.
+  assert(1 == (r->metadata_is_immediate()) +
+         (r->metadata_addr() >= metadata_begin() && r->metadata_addr() < metadata_end()),
+         "metadata must be found in exactly one place");
+  if (r->metadata_is_immediate() && r->metadata_value() != NULL) {
+    Metadata* md = r->metadata_value();
+    if (md != _method) Metadata::mark_on_stack(md);
+  }
+}
+
+void nmethod::mark_metadata_on_stack_non_relocs() {
+    // Visit the metadata section
+    for (Metadata** p = metadata_begin(); p < metadata_end(); p++) {
+      if (*p == Universe::non_oop_word() || *p == NULL)  continue;  // skip non-oops
+      Metadata* md = *p;
+      Metadata::mark_on_stack(md);
+    }
+
+    // Visit metadata not embedded in the other places.
+    if (_method != NULL) Metadata::mark_on_stack(_method);
+}
+
 bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred) {
   ResourceMark rm;
 
@@ -1866,6 +1923,11 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
     unloading_occurred = true;
   }
 
+  // When class redefinition is used all metadata in the CodeCache has to be recorded,
+  // so that unused "previous versions" can be purged. Since walking the CodeCache can
+  // be expensive, the "mark on stack" is piggy-backed on this parallel unloading code.
+  bool mark_metadata_on_stack = a_class_was_redefined;
+
   // Exception cache
   clean_exception_cache(is_alive);
 
@@ -1881,7 +1943,7 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
       if (unloading_occurred) {
         // If class unloading occurred we first iterate over all inline caches and
         // clear ICs where the cached oop is referring to an unloaded klass or method.
-        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter), is_alive);
+        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter), is_alive, mark_metadata_on_stack);
       }
 
       postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
@@ -1897,22 +1959,19 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
 
     case relocInfo::oop_type:
       if (!is_unloaded) {
-        // Unload check
-        oop_Relocation* r = iter.oop_reloc();
-        // Traverse those oops directly embedded in the code.
-        // Other oops (oop_index>0) are seen as part of scopes_oops.
-        assert(1 == (r->oop_is_immediate()) +
-                  (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
-              "oop must be found in exactly one place");
-        if (r->oop_is_immediate() && r->oop_value() != NULL) {
-          if (can_unload(is_alive, r->oop_addr(), unloading_occurred)) {
-            is_unloaded = true;
-          }
-        }
+        is_unloaded = unload_if_dead_at(&iter, is_alive, unloading_occurred);
       }
       break;
 
+    case relocInfo::metadata_type:
+      if (mark_metadata_on_stack) {
+        mark_metadata_on_stack_at(&iter);
+      }
     }
+  }
+
+  if (mark_metadata_on_stack) {
+    mark_metadata_on_stack_non_relocs();
   }
 
   if (is_unloaded) {
@@ -2062,7 +2121,7 @@ void nmethod::metadata_do(void f(Metadata*)) {
     while (iter.next()) {
       if (iter.type() == relocInfo::metadata_type ) {
         metadata_Relocation* r = iter.metadata_reloc();
-        // In this lmetadata, we must only follow those metadatas directly embedded in
+        // In this metadata, we must only follow those metadatas directly embedded in
         // the code.  Other metadatas (oop_index>0) are seen as part of
         // the metadata section below.
         assert(1 == (r->metadata_is_immediate()) +
@@ -2096,7 +2155,7 @@ void nmethod::metadata_do(void f(Metadata*)) {
     f(md);
   }
 
-  // Call function Method*, not embedded in these other places.
+  // Visit metadata not embedded in the other places.
   if (_method != NULL) f(_method);
 }
 

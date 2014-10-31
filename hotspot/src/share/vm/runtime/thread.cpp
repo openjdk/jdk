@@ -202,6 +202,8 @@ Thread::Thread() {
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
 
+  _metadata_on_stack_buffer = NULL;
+
   // the handle mark links itself to last_handle_mark
   new HandleMark(this);
 

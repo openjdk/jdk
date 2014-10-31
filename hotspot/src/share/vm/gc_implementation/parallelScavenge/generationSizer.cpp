@@ -47,11 +47,6 @@ void GenerationSizer::initialize_flags() {
   // Do basic sizing work
   GenCollectorPolicy::initialize_flags();
 
-  assert(UseSerialGC ||
-          !FLAG_IS_DEFAULT(ParallelGCThreads) ||
-          (ParallelGCThreads > 0),
-         "ParallelGCThreads should be set before flag initialization");
-
   // The survivor ratio's are calculated "raw", unlike the
   // default gc, which adds 2 to the ratio value. We need to
   // make sure the values are valid before using them.

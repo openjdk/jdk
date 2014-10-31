@@ -1046,7 +1046,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             try {
                 URI uri = ParseUtil.toURI(url);
                 if (uri != null) {
-                    cachedResponse = cacheHandler.get(uri, getRequestMethod(), requests.getHeaders(EXCLUDE_HEADERS));
+                    cachedResponse = cacheHandler.get(uri, getRequestMethod(), getUserSetHeaders().getHeaders());
                     if ("https".equalsIgnoreCase(uri.getScheme())
                         && !(cachedResponse instanceof SecureCacheResponse)) {
                         cachedResponse = null;

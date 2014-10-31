@@ -195,7 +195,6 @@ public abstract class CompilerWhiteBoxTest {
      *                          is compiled, or if {@linkplain #method} has zero
      *                          compilation level.
      */
-
     protected final void checkNotCompiled(int compLevel) {
         if (WHITE_BOX.isMethodQueuedForCompilation(method)) {
             throw new RuntimeException(method + " must not be in queue");
@@ -216,24 +215,30 @@ public abstract class CompilerWhiteBoxTest {
      *                          compilation level.
      */
     protected final void checkNotCompiled() {
-        if (WHITE_BOX.isMethodCompiled(method, false)) {
-            throw new RuntimeException(method + " must be not compiled");
-        }
-        if (WHITE_BOX.getMethodCompilationLevel(method, false) != 0) {
-            throw new RuntimeException(method + " comp_level must be == 0");
-        }
-        checkNotOsrCompiled();
+        checkNotCompiled(true);
+        checkNotCompiled(false);
     }
 
-    protected final void checkNotOsrCompiled() {
+    /**
+     * Checks, that {@linkplain #method} is not (OSR-)compiled.
+     *
+     * @param isOsr Check for OSR compilation if true
+     * @throws RuntimeException if {@linkplain #method} is in compiler queue or
+     *                          is compiled, or if {@linkplain #method} has zero
+     *                          compilation level.
+     */
+    protected final void checkNotCompiled(boolean isOsr) {
+        waitBackgroundCompilation();
         if (WHITE_BOX.isMethodQueuedForCompilation(method)) {
             throw new RuntimeException(method + " must not be in queue");
         }
-        if (WHITE_BOX.isMethodCompiled(method, true)) {
-            throw new RuntimeException(method + " must be not osr_compiled");
+        if (WHITE_BOX.isMethodCompiled(method, isOsr)) {
+            throw new RuntimeException(method + " must not be " +
+                                       (isOsr ? "osr_" : "") + "compiled");
         }
-        if (WHITE_BOX.getMethodCompilationLevel(method, true) != 0) {
-            throw new RuntimeException(method + " osr_comp_level must be == 0");
+        if (WHITE_BOX.getMethodCompilationLevel(method, isOsr) != 0) {
+            throw new RuntimeException(method + (isOsr ? " osr_" : " ") +
+                                       "comp_level must be == 0");
         }
     }
 

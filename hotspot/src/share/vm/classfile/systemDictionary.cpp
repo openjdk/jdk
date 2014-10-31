@@ -1690,9 +1690,9 @@ public:
 
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
-bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
+bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive, bool clean_alive) {
   // First, mark for unload all ClassLoaderData referencing a dead class loader.
-  bool unloading_occurred = ClassLoaderDataGraph::do_unloading(is_alive);
+  bool unloading_occurred = ClassLoaderDataGraph::do_unloading(is_alive, clean_alive);
   if (unloading_occurred) {
     dictionary()->do_unloading();
     constraints()->purge_loader_constraints();

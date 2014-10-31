@@ -54,6 +54,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Flags.SYNCHRONIZED;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
@@ -349,7 +350,7 @@ public class Check {
         for (Symbol sym : s.getSymbolsByName(v.name)) {
             if (sym.owner != v.owner) break;
             if (sym.kind == VAR &&
-                (sym.owner.kind & (VAR | MTH)) != 0 &&
+                sym.owner.kind.matches(KindSelector.VAL_MTH) &&
                 v.name != names.error) {
                 duplicateError(pos, sym);
                 return;
@@ -367,7 +368,7 @@ public class Check {
         for (Symbol sym : s.getSymbolsByName(c.name)) {
             if (sym.owner != c.owner) break;
             if (sym.kind == TYP && !sym.type.hasTag(TYPEVAR) &&
-                (sym.owner.kind & (VAR | MTH)) != 0 &&
+                sym.owner.kind.matches(KindSelector.VAL_MTH) &&
                 c.name != names.error) {
                 duplicateError(pos, sym);
                 return;
@@ -2573,7 +2574,7 @@ public class Check {
     void checkElemAccessFromSerializableLambda(final JCTree tree) {
         if (warnOnAccessToSensitiveMembers) {
             Symbol sym = TreeInfo.symbol(tree);
-            if ((sym.kind & (VAR | MTH)) == 0) {
+            if (!sym.kind.matches(KindSelector.VAL_MTH)) {
                 return;
             }
 
@@ -2599,7 +2600,7 @@ public class Check {
             return false;
         }
 
-        while (sym.kind != Kinds.PCK) {
+        while (sym.kind != PCK) {
             if ((sym.flags() & PUBLIC) == 0) {
                 return true;
             }
@@ -2957,7 +2958,7 @@ public class Check {
         Scope scope = container.members();
         for(Symbol elm : scope.getSymbols()) {
             if (elm.name != names.value &&
-                elm.kind == Kinds.MTH &&
+                elm.kind == MTH &&
                 ((MethodSymbol)elm).defaultValue == null) {
                 log.error(pos,
                           "invalid.repeatable.annotation.elem.nondefault",
@@ -3041,8 +3042,7 @@ public class Check {
             else if (target == names.METHOD)
                 { if (s.kind == MTH && !s.isConstructor()) return true; }
             else if (target == names.PARAMETER)
-                { if (s.kind == VAR &&
-                      s.owner.kind == MTH &&
+                { if (s.kind == VAR && s.owner.kind == MTH &&
                       (s.flags() & PARAMETER) != 0)
                     return true;
                 }
@@ -3060,8 +3060,7 @@ public class Check {
             else if (target == names.PACKAGE)
                 { if (s.kind == PCK) return true; }
             else if (target == names.TYPE_USE)
-                { if (s.kind == TYP ||
-                      s.kind == VAR ||
+                { if (s.kind == TYP || s.kind == VAR ||
                       (s.kind == MTH && !s.isConstructor() &&
                       !s.type.getReturnType().hasTag(VOID)) ||
                       (s.kind == MTH && s.isConstructor()))
@@ -3243,7 +3242,7 @@ public class Check {
         try {
             tsym.flags_field |= LOCKED;
             for (Symbol s : tsym.members().getSymbols(NON_RECURSIVE)) {
-                if (s.kind != Kinds.MTH)
+                if (s.kind != MTH)
                     continue;
                 checkAnnotationResType(pos, ((MethodSymbol)s).type.getReturnType());
             }

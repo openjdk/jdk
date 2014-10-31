@@ -23,21 +23,14 @@
  */
 
 
-import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
 public class TestDaemonThreadLauncher {
-
-    private static ProcessBuilder processBuilder = new ProcessBuilder();
-
     public static void main(String args[]) throws Exception {
         for(int i=0; i<50; i++) {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-javaagent:DummyAgent.jar", "TestDaemonThread", ".");
-            OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+            OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
             analyzer.shouldNotContain("ASSERTION FAILED");
         }
     }
