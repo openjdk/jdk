@@ -436,9 +436,9 @@ static unsigned __stdcall java_start(Thread* thread) {
   }
 
   // Diagnostic code to investigate JDK-6573254
-  int res = 90115;  // non-java thread
+  int res = 50115;  // non-java thread
   if (thread->is_Java_thread()) {
-    res = 60115;    // java thread
+    res = 40115;    // java thread
   }
 
   // Install a win32 structured exception handler around every thread created
@@ -3740,68 +3740,134 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
-#define MIN_EXIT_MUTEXES 1
-#define MAX_EXIT_MUTEXES 16
+#define MAX_EXIT_HANDLES    16
+#define EXIT_TIMEOUT      1000 /* 1 sec */
 
-struct ExitMutexes {
-  DWORD count;
-  HANDLE handles[MAX_EXIT_MUTEXES];
-};
-
-static BOOL CALLBACK init_muts_call(PINIT_ONCE, PVOID ppmuts, PVOID*) {
-  static ExitMutexes muts;
-
-  muts.count = os::processor_count();
-  if (muts.count < MIN_EXIT_MUTEXES) {
-    muts.count = MIN_EXIT_MUTEXES;
-  } else if (muts.count > MAX_EXIT_MUTEXES) {
-    muts.count = MAX_EXIT_MUTEXES;
-  }
-
-  for (DWORD i = 0; i < muts.count; ++i) {
-    muts.handles[i] = CreateMutex(NULL, FALSE, NULL);
-    if (muts.handles[i] == NULL) {
-      return FALSE;
-    }
-  }
-  *((ExitMutexes**)ppmuts) = &muts;
+static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
+  InitializeCriticalSection((CRITICAL_SECTION*)pcrit_sect);
   return TRUE;
 }
 
 int os::win32::exit_process_or_thread(Ept what, int exit_code) {
-  if (os::win32::has_exit_bug()) {
-    static INIT_ONCE init_once_muts = INIT_ONCE_STATIC_INIT;
-    static ExitMutexes* pmuts;
+  // Basic approach:
+  //  - Each exiting thread registers its intent to exit and then does so.
+  //  - A thread trying to terminate the process must wait for all
+  //    threads currently exiting to complete their exit.
 
-    if (!InitOnceExecuteOnce(&init_once_muts, init_muts_call, &pmuts, NULL)) {
-      warning("ExitMutex initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else if (WaitForMultipleObjects(pmuts->count, pmuts->handles,
-                                      (what != EPT_THREAD), // exiting process waits for all mutexes
-                                      INFINITE) == WAIT_FAILED) {
-      warning("ExitMutex acquisition failed in %s: %d\n", __FILE__, __LINE__);
+  if (os::win32::has_exit_bug()) {
+    // The array holds handles of the threads that have started exiting by calling
+    // _endthreadex().
+    // Should be large enough to avoid blocking the exiting thread due to lack of
+    // a free slot.
+    static HANDLE handles[MAX_EXIT_HANDLES];
+    static int handle_count = 0;
+
+    static INIT_ONCE init_once_crit_sect = INIT_ONCE_STATIC_INIT;
+    static CRITICAL_SECTION crit_sect;
+    int i, j;
+    DWORD res;
+    HANDLE hproc, hthr;
+
+    // The first thread that reached this point, initializes the critical section.
+    if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
+      warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
+    } else {
+      EnterCriticalSection(&crit_sect);
+
+      if (what == EPT_THREAD) {
+        // Remove from the array those handles of the threads that have completed exiting.
+        for (i = 0, j = 0; i < handle_count; ++i) {
+          res = WaitForSingleObject(handles[i], 0 /* don't wait */);
+          if (res == WAIT_TIMEOUT) {
+            handles[j++] = handles[i];
+          } else {
+            if (res != WAIT_OBJECT_0) {
+              warning("WaitForSingleObject failed in %s: %d\n", __FILE__, __LINE__);
+              // Don't keep the handle, if we failed waiting for it.
+            }
+            CloseHandle(handles[i]);
+          }
+        }
+
+        // If there's no free slot in the array of the kept handles, we'll have to
+        // wait until at least one thread completes exiting.
+        if ((handle_count = j) == MAX_EXIT_HANDLES) {
+          res = WaitForMultipleObjects(MAX_EXIT_HANDLES, handles, FALSE, EXIT_TIMEOUT);
+          if (res >= WAIT_OBJECT_0 && res < (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
+            i = (res - WAIT_OBJECT_0);
+            handle_count = MAX_EXIT_HANDLES - 1;
+            for (; i < handle_count; ++i) {
+              handles[i] = handles[i + 1];
+            }
+          } else {
+            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+            // Don't keep handles, if we failed waiting for them.
+            for (i = 0; i < MAX_EXIT_HANDLES; ++i) {
+              CloseHandle(handles[i]);
+            }
+            handle_count = 0;
+          }
+        }
+
+        // Store a duplicate of the current thread handle in the array of handles.
+        hproc = GetCurrentProcess();
+        hthr = GetCurrentThread();
+        if (!DuplicateHandle(hproc, hthr, hproc, &handles[handle_count],
+                             0, FALSE, DUPLICATE_SAME_ACCESS)) {
+          warning("DuplicateHandle failed in %s: %d\n", __FILE__, __LINE__);
+        } else {
+          ++handle_count;
+        }
+
+        // The current exiting thread has stored its handle in the array, and now
+        // should leave the critical section before calling _endthreadex().
+
+      } else { // what != EPT_THREAD
+        if (handle_count > 0) {
+          // Before ending the process, make sure all the threads that had called
+          // _endthreadex() completed.
+          res = WaitForMultipleObjects(handle_count, handles, TRUE, EXIT_TIMEOUT);
+          if (res == WAIT_FAILED) {
+            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+          }
+          for (i = 0; i < handle_count; ++i) {
+            CloseHandle(handles[i]);
+          }
+          handle_count = 0;
+        }
+
+        // End the process, not leaving critical section.
+        // This makes sure no other thread executes exit-related code at the same
+        // time, thus a race is avoided.
+        if (what == EPT_PROCESS) {
+          ::exit(exit_code);
+        } else {
+          _exit(exit_code);
+        }
+      }
+
+      LeaveCriticalSection(&crit_sect);
     }
   }
 
-  switch (what) {
-  case EPT_THREAD:
+  // We are here if either
+  // - there's no 'race at exit' bug on this OS release;
+  // - initialization of the critical section failed (unlikely);
+  // - the current thread has stored its handle and left the critical section.
+  if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
-    break;
-
-  case EPT_PROCESS:
+  } else if (what == EPT_PROCESS) {
     ::exit(exit_code);
-    break;
-
-  case EPT_PROCESS_DIE:
+  } else {
     _exit(exit_code);
-    break;
   }
 
-  // should not reach here
+  // Should not reach here
   return exit_code;
 }
 
-#undef MIN_EXIT_MUTEXES
-#undef MAX_EXIT_MUTEXES
+#undef MAX_EXIT_HANDLES
+#undef EXIT_TIMEOUT
 
 void os::win32::setmode_streams() {
   _setmode(_fileno(stdin), _O_BINARY);
@@ -4792,27 +4858,46 @@ bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
 // 3.  Collapse the interrupt_event, the JSR166 parker event, and the objectmonitor ParkEvent
 //     into a single win32 CreateEvent() handle.
 //
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
+//
 // _Event transitions in park()
 //   -1 => -1 : illegal
 //    1 =>  0 : pass - return immediately
-//    0 => -1 : block
+//    0 => -1 : block; then set _Event to 0 before returning
 //
-// _Event serves as a restricted-range semaphore :
-//    -1 : thread is blocked
-//     0 : neutral  - thread is running or ready
-//     1 : signaled - thread is running or ready
+// _Event transitions in unpark()
+//    0 => 1 : just return
+//    1 => 1 : just return
+//   -1 => either 0 or 1; must signal target thread
+//         That is, we can safely transition _Event from -1 to either
+//         0 or 1.
 //
-// Another possible encoding of _Event would be
-// with explicit "PARKED" and "SIGNALED" bits.
+// _Event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
+//
+// Another possible encoding of _Event would be with
+// explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
+//
 
 int os::PlatformEvent::park(jlong Millis) {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_ParkHandle != NULL , "Invariant");
   guarantee(Millis > 0          , "Invariant");
-  int v;
 
   // CONSIDER: defer assigning a CreateEvent() handle to the Event until
   // the initial park() operation.
+  // Consider: use atomic decrement instead of CAS-loop
 
+  int v;
   for (;;) {
     v = _Event;
     if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
@@ -4860,9 +4945,15 @@ int os::PlatformEvent::park(jlong Millis) {
 }
 
 void os::PlatformEvent::park() {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_ParkHandle != NULL, "Invariant");
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
+  // Consider: use atomic decrement instead of CAS-loop
   int v;
   for (;;) {
     v = _Event;
@@ -4891,11 +4982,11 @@ void os::PlatformEvent::unpark() {
   guarantee(_ParkHandle != NULL, "Invariant");
 
   // Transitions for _Event:
-  //    0 :=> 1
-  //    1 :=> 1
-  //   -1 :=> either 0 or 1; must signal target thread
-  //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1.
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _Event from -1 to either
+  //         0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
