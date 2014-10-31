@@ -268,6 +268,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
+  bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
   bool inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id);
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
@@ -868,6 +869,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_getCallerClass:           return inline_native_Reflection_getCallerClass();
 
   case vmIntrinsics::_Reference_get:            return inline_reference_get();
+
+  case vmIntrinsics::_Class_cast:               return inline_Class_cast();
 
   case vmIntrinsics::_aescrypt_encryptBlock:
   case vmIntrinsics::_aescrypt_decryptBlock:    return inline_aescrypt_Block(intrinsic_id());
@@ -3545,6 +3548,89 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   set_result(region, phi);
   return true;
 }
+
+//-------------------------inline_Class_cast-------------------
+bool LibraryCallKit::inline_Class_cast() {
+  Node* mirror = argument(0); // Class
+  Node* obj    = argument(1);
+  const TypeInstPtr* mirror_con = _gvn.type(mirror)->isa_instptr();
+  if (mirror_con == NULL) {
+    return false;  // dead path (mirror->is_top()).
+  }
+  if (obj == NULL || obj->is_top()) {
+    return false;  // dead path
+  }
+  const TypeOopPtr* tp = _gvn.type(obj)->isa_oopptr();
+
+  // First, see if Class.cast() can be folded statically.
+  // java_mirror_type() returns non-null for compile-time Class constants.
+  ciType* tm = mirror_con->java_mirror_type();
+  if (tm != NULL && tm->is_klass() &&
+      tp != NULL && tp->klass() != NULL) {
+    if (!tp->klass()->is_loaded()) {
+      // Don't use intrinsic when class is not loaded.
+      return false;
+    } else {
+      int static_res = C->static_subtype_check(tm->as_klass(), tp->klass());
+      if (static_res == Compile::SSC_always_true) {
+        // isInstance() is true - fold the code.
+        set_result(obj);
+        return true;
+      } else if (static_res == Compile::SSC_always_false) {
+        // Don't use intrinsic, have to throw ClassCastException.
+        // If the reference is null, the non-intrinsic bytecode will
+        // be optimized appropriately.
+        return false;
+      }
+    }
+  }
+
+  // Bailout intrinsic and do normal inlining if exception path is frequent.
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+
+  // Generate dynamic checks.
+  // Class.cast() is java implementation of _checkcast bytecode.
+  // Do checkcast (Parse::do_checkcast()) optimizations here.
+
+  mirror = null_check(mirror);
+  // If mirror is dead, only null-path is taken.
+  if (stopped()) {
+    return true;
+  }
+
+  // Not-subtype or the mirror's klass ptr is NULL (in case it is a primitive).
+  enum { _bad_type_path = 1, _prim_path = 2, PATH_LIMIT };
+  RegionNode* region = new RegionNode(PATH_LIMIT);
+  record_for_igvn(region);
+
+  // Now load the mirror's klass metaobject, and null-check it.
+  // If kls is null, we have a primitive mirror and
+  // nothing is an instance of a primitive type.
+  Node* kls = load_klass_from_mirror(mirror, false, region, _prim_path);
+
+  Node* res = top();
+  if (!stopped()) {
+    Node* bad_type_ctrl = top();
+    // Do checkcast optimizations.
+    res = gen_checkcast(obj, kls, &bad_type_ctrl);
+    region->init_req(_bad_type_path, bad_type_ctrl);
+  }
+  if (region->in(_prim_path) != top() ||
+      region->in(_bad_type_path) != top()) {
+    // Let Interpreter throw ClassCastException.
+    PreserveJVMState pjvms(this);
+    set_control(_gvn.transform(region));
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_maybe_recompile);
+  }
+  if (!stopped()) {
+    set_result(res);
+  }
+  return true;
+}
+
 
 //--------------------------inline_native_subtype_check------------------------
 // This intrinsic takes the JNI calls out of the heart of
