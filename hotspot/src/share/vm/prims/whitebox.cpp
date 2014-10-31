@@ -803,19 +803,23 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(2, clazz, NULL);
+  result = env->NewObjectArray(3, clazz, NULL);
   if (result == NULL) {
     return result;
   }
 
-  jobject obj = integerBox(thread, env, code->comp_level());
+  jobject level = integerBox(thread, env, code->comp_level());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  env->SetObjectArrayElement(result, 0, obj);
+  env->SetObjectArrayElement(result, 0, level);
 
   jbyteArray insts = env->NewByteArray(insts_size);
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetByteArrayRegion(insts, 0, insts_size, (jbyte*) code->insts_begin());
   env->SetObjectArrayElement(result, 1, insts);
+
+  jobject id = integerBox(thread, env, code->compile_id());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 2, id);
 
   return result;
 WB_END
