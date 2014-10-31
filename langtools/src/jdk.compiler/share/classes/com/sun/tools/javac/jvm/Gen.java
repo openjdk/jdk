@@ -44,7 +44,7 @@ import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
@@ -447,7 +447,7 @@ public class Gen extends JCTree.Visitor {
                 JCBlock block = (JCBlock)def;
                 if ((block.flags & STATIC) != 0)
                     clinitCode.append(block);
-                else
+                else if ((block.flags & SYNTHETIC) == 0)
                     initCode.append(block);
                 break;
             case METHODDEF:

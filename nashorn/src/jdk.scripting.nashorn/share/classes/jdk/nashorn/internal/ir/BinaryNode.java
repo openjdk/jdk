@@ -43,6 +43,8 @@ import jdk.nashorn.internal.parser.TokenType;
  */
 @Immutable
 public final class BinaryNode extends Expression implements Assignment<Expression>, Optimistic {
+    private static final long serialVersionUID = 1L;
+
     // Placeholder for "undecided optimistic ADD type". Unfortunately, we can't decide the type of ADD during optimistic
     // type calculation as it can have local variables as its operands that will decide its ultimate type.
     private static final Type OPTIMISTIC_UNDECIDED_TYPE = Type.typeFor(new Object(){/*empty*/}.getClass());
@@ -56,8 +58,8 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
 
     private final Type type;
 
-    private Type cachedType;
-    private Object cachedTypeFunction;
+    private transient Type cachedType;
+    private transient Object cachedTypeFunction;
 
     @Ignore
     private static final Set<TokenType> CAN_OVERFLOW =

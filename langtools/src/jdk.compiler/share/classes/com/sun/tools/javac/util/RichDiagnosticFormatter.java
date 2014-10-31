@@ -31,7 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
@@ -42,6 +41,8 @@ import com.sun.tools.javac.code.Types;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 import static com.sun.tools.javac.util.RichDiagnosticFormatter.RichConfiguration.*;
 
@@ -305,7 +306,7 @@ public class RichDiagnosticFormatter extends
                     Symbol s2 = s;
                     while (s2.type.hasTag(CLASS) &&
                             s2.type.getEnclosingType().hasTag(CLASS) &&
-                            s2.owner.kind == Kinds.TYP) {
+                            s2.owner.kind == TYP) {
                         l = l.prepend(s2.getSimpleName());
                         s2 = s2.owner;
                     }
@@ -562,7 +563,7 @@ public class RichDiagnosticFormatter extends
                     //this is a true typevar
                     JCDiagnostic d = diags.fragment("where.typevar" +
                         (boundErroneous ? ".1" : ""), t, bounds,
-                        Kinds.kindName(t.tsym.location()), t.tsym.location());
+                        kindName(t.tsym.location()), t.tsym.location());
                     whereClauses.get(WhereClauseKind.TYPEVAR).put(t, d);
                     symbolPreprocessor.visit(t.tsym.location(), null);
                     visit(bounds);

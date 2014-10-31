@@ -30,6 +30,7 @@ import com.sun.javadoc.*;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -70,7 +71,7 @@ public class TypeVariableImpl extends AbstractTypeImpl implements TypeVariable {
      */
     public ProgramElementDoc owner() {
         Symbol osym = type.tsym.owner;
-        if ((osym.kind & Kinds.TYP) != 0) {
+        if (osym.kind.matches(KindSelector.TYP)) {
             return env.getClassDoc((ClassSymbol)osym);
         }
         Names names = osym.name.table.names;

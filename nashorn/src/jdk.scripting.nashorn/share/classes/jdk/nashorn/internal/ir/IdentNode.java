@@ -42,6 +42,8 @@ import jdk.nashorn.internal.parser.TokenType;
  */
 @Immutable
 public final class IdentNode extends Expression implements PropertyKey, FunctionCall, Optimistic, JoinPredecessor {
+    private static final long serialVersionUID = 1L;
+
     private static final int PROPERTY_NAME     = 1 << 0;
     private static final int INITIALIZED_HERE  = 1 << 1;
     private static final int FUNCTION          = 1 << 2;

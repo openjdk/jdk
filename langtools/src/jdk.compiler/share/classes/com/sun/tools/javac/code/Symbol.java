@@ -45,6 +45,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
@@ -65,7 +66,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** The kind of this symbol.
      *  @see Kinds
      */
-    public int kind;
+    public Kind kind;
 
     /** The flags of this symbol.
      */
@@ -232,7 +233,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     /** Construct a symbol with given kind, flags, name, type and owner.
      */
-    public Symbol(int kind, long flags, Name name, Type type, Symbol owner) {
+    public Symbol(Kind kind, long flags, Name name, Type type, Symbol owner) {
         this.kind = kind;
         this.flags_field = flags;
         this.type = type;
@@ -268,7 +269,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      */
     public Symbol location() {
         if (owner.name == null || (owner.name.isEmpty() &&
-                (owner.flags() & BLOCK) == 0 && owner.kind != PCK && owner.kind != TYP)) {
+                                   (owner.flags() & BLOCK) == 0 &&
+                                   owner.kind != PCK &&
+                                   owner.kind != TYP)) {
             return null;
         }
         return owner;
@@ -344,8 +347,8 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      */
     public boolean isLocal() {
         return
-            (owner.kind & (VAR | MTH)) != 0 ||
-            (owner.kind == TYP && owner.isLocal());
+            (owner.kind.matches(KindSelector.VAL_MTH) ||
+             (owner.kind == TYP && owner.isLocal()));
     }
 
     /** Has this symbol an empty name? This includes anonymous
@@ -407,7 +410,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     public ClassSymbol enclClass() {
         Symbol c = this;
         while (c != null &&
-               ((c.kind & TYP) == 0 || !c.type.hasTag(CLASS))) {
+               (!c.kind.matches(KindSelector.TYP) || !c.type.hasTag(CLASS))) {
             c = c.owner;
         }
         return (ClassSymbol)c;
@@ -669,16 +672,16 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** A base class for Symbols representing types.
      */
     public static abstract class TypeSymbol extends Symbol {
-        public TypeSymbol(int kind, long flags, Name name, Type type, Symbol owner) {
+        public TypeSymbol(Kind kind, long flags, Name name, Type type, Symbol owner) {
             super(kind, flags, name, type, owner);
         }
         /** form a fully qualified name from a name and an owner
          */
         static public Name formFullName(Name name, Symbol owner) {
             if (owner == null) return name;
-            if (((owner.kind != ERR)) &&
-                ((owner.kind & (VAR | MTH)) != 0
-                 || (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
+            if ((owner.kind != ERR) &&
+                (owner.kind.matches(KindSelector.VAL_MTH) ||
+                 (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
                  )) return name;
             Name prefix = owner.getQualifiedName();
             if (prefix == null || prefix == prefix.table.names.empty)
@@ -690,9 +693,8 @@ public abstract class Symbol extends AnnoConstruct implements Element {
          *  converting to flat representation
          */
         static public Name formFlatName(Name name, Symbol owner) {
-            if (owner == null ||
-                (owner.kind & (VAR | MTH)) != 0
-                || (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
+            if (owner == null || owner.kind.matches(KindSelector.VAL_MTH) ||
+                (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
                 ) return name;
             char sep = owner.kind == TYP ? '$' : '.';
             Name prefix = owner.flatName();
@@ -1558,7 +1560,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         // where
             public static final Filter<Symbol> implementation_filter = new Filter<Symbol>() {
                 public boolean accepts(Symbol s) {
-                    return s.kind == Kinds.MTH &&
+                    return s.kind == MTH &&
                             (s.flags() & SYNTHETIC) == 0;
                 }
             };

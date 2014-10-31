@@ -42,11 +42,10 @@
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/thread_ext.hpp"
 #include "runtime/unhandledOops.hpp"
-#include "utilities/macros.hpp"
-
 #include "trace/traceBackend.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/top.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/dirtyCardQueue.hpp"
@@ -82,6 +81,10 @@ class jvmtiDeferredLocalVariableSet;
 class GCTaskQueue;
 class ThreadClosure;
 class IdealGraphPrinter;
+
+class Metadata;
+template <class T, MEMFLAGS F> class ChunkedList;
+typedef ChunkedList<Metadata*, mtInternal> MetadataOnStackBuffer;
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -254,6 +257,9 @@ class Thread: public ThreadShadow {
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
+
+  // Thread-local buffer used by MetadataOnStackMark.
+  MetadataOnStackBuffer* _metadata_on_stack_buffer;
 
   TRACE_DATA _trace_data;                       // Thread-local data for tracing
 
@@ -491,7 +497,10 @@ class Thread: public ThreadShadow {
   // creation fails due to lack of memory, too many threads etc.
   bool set_as_starting_thread();
 
- protected:
+  void set_metadata_on_stack_buffer(MetadataOnStackBuffer* buffer) { _metadata_on_stack_buffer = buffer; }
+  MetadataOnStackBuffer* metadata_on_stack_buffer() const          { return _metadata_on_stack_buffer; }
+
+protected:
   // OS data associated with the thread
   OSThread* _osthread;  // Platform-specific thread information
 
@@ -1757,6 +1766,9 @@ class CodeCacheSweeperThread : public JavaThread {
     assert(_scanned_nmethod == NULL || nm == NULL, "should reset to NULL before writing a new value");
     _scanned_nmethod = nm;
   }
+
+  // Hide sweeper thread from external view.
+  bool is_hidden_from_external_view() const { return true; }
 
   bool is_Code_cache_sweeper_thread() const { return true; }
   // GC support

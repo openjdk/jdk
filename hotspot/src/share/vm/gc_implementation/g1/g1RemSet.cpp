@@ -80,7 +80,6 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
     _prev_period_summary()
 {
   _seq_task = new SubTasksDone(NumSeqTasks);
-  guarantee(n_workers() > 0, "There should be some workers");
   _cset_rs_update_cl = NEW_C_HEAP_ARRAY(OopsInHeapRegionClosure*, n_workers(), mtGC);
   for (uint i = 0; i < n_workers(); i++) {
     _cset_rs_update_cl[i] = NULL;
@@ -282,7 +281,7 @@ public:
     // is during RSet updating within an evacuation pause.
     // In this case worker_i should be the id of a GC worker thread.
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
-    assert(worker_i < (ParallelGCThreads == 0 ? 1 : ParallelGCThreads), "should be a GC worker");
+    assert(worker_i < ParallelGCThreads, "should be a GC worker");
 
     if (_g1rs->refine_card(card_ptr, worker_i, true)) {
       // 'card_ptr' contains references that point into the collection
@@ -342,8 +341,6 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   // failure the cards/buffers in this queue set are passed to the
   // DirtyCardQueueSet that is used to manage RSet updates
   DirtyCardQueue into_cset_dcq(&_g1->into_cset_dirty_card_queue_set());
-
-  assert((ParallelGCThreads > 0) || worker_i == 0, "invariant");
 
   updateRS(&into_cset_dcq, worker_i);
   scanRS(oc, code_root_cl, worker_i);
@@ -420,12 +417,7 @@ public:
   }
 };
 
-void G1RemSet::scrub(BitMap* region_bm, BitMap* card_bm) {
-  ScrubRSClosure scrub_cl(region_bm, card_bm);
-  _g1->heap_region_iterate(&scrub_cl);
-}
-
-void G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm, uint worker_num, HeapRegionClaimer *hrclaimer) {
+void G1RemSet::scrub(BitMap* region_bm, BitMap* card_bm, uint worker_num, HeapRegionClaimer *hrclaimer) {
   ScrubRSClosure scrub_cl(region_bm, card_bm);
   _g1->heap_region_par_iterate(&scrub_cl, worker_num, hrclaimer);
 }

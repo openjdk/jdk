@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
@@ -114,6 +113,9 @@ public enum JSType {
 
     /** JavaScript compliant conversion function from double to int32 */
     public static final Call TO_INT32_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toInt32", int.class, double.class);
+
+    /** JavaScript compliant conversion function from int to uint32 */
+    public static final Call TO_UINT32_I = staticCall(JSTYPE_LOOKUP, JSType.class, "toUint32", long.class, int.class);
 
     /** JavaScript compliant conversion function from Object to uint32 */
     public static final Call TO_UINT32 = staticCall(JSTYPE_LOOKUP, JSType.class, "toUint32", long.class, Object.class);
@@ -1002,6 +1004,16 @@ public enum JSType {
     }
 
     /**
+     * JavaScript compliant int to uint32 conversion
+     *
+     * @param num an int
+     * @return a uint32
+     */
+    public static long toUint32(final int num) {
+        return num & MAX_UINT;
+    }
+
+    /**
      * JavaScript compliant Object to uint16 conversion
      * ECMA 9.7 ToUint16: (Unsigned 16 Bit Integer)
      *
@@ -1773,6 +1785,23 @@ public enum JSType {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
+    }
+
+    /**
+     * Returns the boxed version of a primitive class
+     * @param clazz the class
+     * @return the boxed type of clazz, or unchanged if not primitive
+     */
+    public static Class<?> getBoxedClass(final Class<?> clazz) {
+        if (clazz == int.class) {
+            return Integer.class;
+        } else if (clazz == long.class) {
+            return Long.class;
+        } else if (clazz == double.class) {
+            return Double.class;
+        }
+        assert !clazz.isPrimitive();
+        return clazz;
     }
 
     /**

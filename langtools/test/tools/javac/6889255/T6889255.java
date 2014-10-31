@@ -31,7 +31,6 @@ import java.io.*;
 import java.util.*;
 import javax.tools.StandardLocation;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
@@ -385,7 +384,7 @@ public class T6889255 {
             for (Symbol s : sym.members_field.getSymbols(NON_RECURSIVE)) {
                 System.err.println("Checking member " + s);
                 switch (s.kind) {
-                    case Kinds.TYP: {
+                    case TYP: {
                         String name = s.flatName().toString();
                         if (!classes.contains(name)) {
                             classes.add(name);
@@ -393,7 +392,7 @@ public class T6889255 {
                         }
                         break;
                     }
-                    case Kinds.MTH:
+                    case MTH:
                         verify((MethodSymbol) s, expectNames);
                         break;
                 }

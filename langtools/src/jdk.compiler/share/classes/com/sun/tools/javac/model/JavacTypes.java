@@ -39,6 +39,8 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
+import static com.sun.tools.javac.code.Kinds.Kind.*;
+
 /**
  * Utility methods for operating on types.
  *
@@ -328,7 +330,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
             if (t != origin.type) {
                 ClassSymbol c = (ClassSymbol) t.tsym;
                 for (Symbol sym : c.members().getSymbolsByName(m.name)) {
-                    if (sym.kind == Kinds.MTH && m.overrides(sym, origin, types, true)) {
+                    if (sym.kind == MTH && m.overrides(sym, origin, types, true)) {
                         results.add((MethodSymbol) sym);
                     }
                 }

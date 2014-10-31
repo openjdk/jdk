@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,19 +210,4 @@ handleSetLength(FD fd, jlong length)
     int result;
     RESTARTABLE(ftruncate64(fd, length), result);
     return result;
-}
-
-size_t
-getLastErrorString(char *buf, size_t len)
-{
-    if (errno == 0 || len < 1) return 0;
-
-    const char *err = strerror(errno);
-    size_t n = strlen(err);
-    if (n >= len)
-        n = len - 1;
-
-    strncpy(buf, err, n);
-    buf[n] = '\0';
-    return n;
 }

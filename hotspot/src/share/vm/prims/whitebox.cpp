@@ -386,19 +386,10 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   CHECK_JNI_EXCEPTION_(env, result);
   MutexLockerEx mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  nmethod* code;
   if (is_osr) {
-    int bci = InvocationEntryBci;
-    while ((code = mh->lookup_osr_nmethod_for(bci, CompLevel_none, false)) != NULL) {
-      code->mark_for_deoptimization();
-      ++result;
-      bci = code->osr_entry_bci() + 1;
-    }
-  } else {
-    code = mh->code();
-  }
-  if (code != NULL) {
-    code->mark_for_deoptimization();
+    result += mh->mark_osr_nmethods();
+  } else if (mh->code() != NULL) {
+    mh->code()->mark_for_deoptimization();
     ++result;
   }
   result += CodeCache::mark_for_deoptimization(mh());

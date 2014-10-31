@@ -150,6 +150,13 @@ public final class Context {
         private final Context      context;
         private final ScriptLoader loader;
         private final CodeSource   codeSource;
+        private int usageCount = 0;
+        private int bytesDefined = 0;
+
+        // We reuse this installer for 10 compilations or 200000 defined bytes. Usually the first condition
+        // will occur much earlier, the second is a safety measure for very large scripts/functions.
+        private final static int MAX_USAGES = 10;
+        private final static int MAX_BYTES_DEFINED = 200_000;
 
         private ContextCodeInstaller(final Context context, final ScriptLoader loader, final CodeSource codeSource) {
             this.context    = context;
@@ -168,6 +175,8 @@ public final class Context {
 
         @Override
         public Class<?> install(final String className, final byte[] bytecode) {
+            usageCount++;
+            bytesDefined += bytecode.length;
             final String   binaryName = Compiler.binaryName(className);
             return loader.installClass(binaryName, bytecode, codeSource);
         }
@@ -225,6 +234,10 @@ public final class Context {
 
         @Override
         public CodeInstaller<ScriptEnvironment> withNewLoader() {
+            // Reuse this installer if we're within our limits.
+            if (usageCount < MAX_USAGES && bytesDefined < MAX_BYTES_DEFINED) {
+                return this;
+            }
             return new ContextCodeInstaller(context, context.createNewLoader(), codeSource);
         }
 
