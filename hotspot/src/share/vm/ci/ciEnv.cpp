@@ -1093,9 +1093,8 @@ void ciEnv::register_method(ciMethod* target,
     // JVMTI -- compiled method notification (must be done outside lock)
     nm->post_compiled_method_load_event();
   } else {
-    // The CodeCache is full. Print out warning and disable compilation.
+    // The CodeCache is full.
     record_failure("code cache is full");
-    CompileBroker::handle_full_code_cache(CodeCache::get_code_blob_type(comp_level));
   }
 }
 

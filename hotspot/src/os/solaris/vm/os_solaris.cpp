@@ -5912,37 +5912,6 @@ int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
 // a poll() is done with timeout == -1, in which case we repeat with this
 // "wait forever" value.
 
-int os::timeout(int fd, long timeout) {
-  int res;
-  struct timeval t;
-  julong prevtime, newtime;
-  static const char* aNull = 0;
-  struct pollfd pfd;
-  pfd.fd = fd;
-  pfd.events = POLLIN;
-
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
-
-  gettimeofday(&t, &aNull);
-  prevtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec / 1000;
-
-  for (;;) {
-    res = ::poll(&pfd, 1, timeout);
-    if (res == OS_ERR && errno == EINTR) {
-      if (timeout != -1) {
-        gettimeofday(&t, &aNull);
-        newtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec /1000;
-        timeout -= newtime - prevtime;
-        if (timeout <= 0) {
-          return OS_OK;
-        }
-        prevtime = newtime;
-      }
-    } else return res;
-  }
-}
-
 int os::connect(int fd, struct sockaddr *him, socklen_t len) {
   int _result;
   _result = ::connect(fd, him, len);
@@ -5980,46 +5949,6 @@ int os::connect(int fd, struct sockaddr *him, socklen_t len) {
     }
   }
   return _result;
-}
-
-int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
-  if (fd < 0) {
-    return OS_ERR;
-  }
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
-  RESTARTABLE_RETURN_INT((int)::accept(fd, him, len));
-}
-
-int os::recvfrom(int fd, char* buf, size_t nBytes, uint flags,
-                 sockaddr* from, socklen_t* fromlen) {
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
-  RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
-}
-
-int os::sendto(int fd, char* buf, size_t len, uint flags,
-               struct sockaddr* to, socklen_t tolen) {
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
-  RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
-}
-
-int os::socket_available(int fd, jint *pbytes) {
-  if (fd < 0) {
-    return OS_OK;
-  }
-  int ret;
-  RESTARTABLE(::ioctl(fd, FIONREAD, pbytes), ret);
-  // note: ioctl can return 0 when successful, JVM_SocketAvailable
-  // is expected to return 0 on failure and 1 on success to the jdk.
-  return (ret == OS_ERR) ? 0 : 1;
-}
-
-int os::bind(int fd, struct sockaddr* him, socklen_t len) {
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
-  return ::bind(fd, him, len);
 }
 
 // Get the default path to the core file
