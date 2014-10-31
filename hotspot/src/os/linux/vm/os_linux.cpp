@@ -5103,9 +5103,38 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  int fd;
 
-  fd = ::open64(path, oflag, mode);
+  // All file descriptors that are opened in the Java process and not
+  // specifically destined for a subprocess should have the close-on-exec
+  // flag set.  If we don't set it, then careless 3rd party native code
+  // might fork and exec without closing all appropriate file descriptors
+  // (e.g. as we do in closeDescriptors in UNIXProcess.c), and this in
+  // turn might:
+  //
+  // - cause end-of-file to fail to be detected on some file
+  //   descriptors, resulting in mysterious hangs, or
+  //
+  // - might cause an fopen in the subprocess to fail on a system
+  //   suffering from bug 1085341.
+  //
+  // (Yes, the default setting of the close-on-exec flag is a Unix
+  // design flaw)
+  //
+  // See:
+  // 1085341: 32-bit stdio routines should support file descriptors >255
+  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+  //
+  // Modern Linux kernels (after 2.6.23 2007) support O_CLOEXEC with open().
+  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
+  // because it saves a system call and removes a small window where the flag
+  // is unset.  On ancient Linux kernels the O_CLOEXEC flag will be ignored
+  // and we fall back to using FD_CLOEXEC (see below).
+#ifdef O_CLOEXEC
+  oflag |= O_CLOEXEC;
+#endif
+
+  int fd = ::open64(path, oflag, mode);
   if (fd == -1) return -1;
 
   //If the open succeeded, the file might still be a directory
@@ -5126,32 +5155,17 @@ int os::open(const char *path, int oflag, int mode) {
     }
   }
 
-  // All file descriptors that are opened in the JVM and not
-  // specifically destined for a subprocess should have the
-  // close-on-exec flag set.  If we don't set it, then careless 3rd
-  // party native code might fork and exec without closing all
-  // appropriate file descriptors (e.g. as we do in closeDescriptors in
-  // UNIXProcess.c), and this in turn might:
-  //
-  // - cause end-of-file to fail to be detected on some file
-  //   descriptors, resulting in mysterious hangs, or
-  //
-  // - might cause an fopen in the subprocess to fail on a system
-  //   suffering from bug 1085341.
-  //
-  // (Yes, the default setting of the close-on-exec flag is a Unix
-  // design flaw)
-  //
-  // See:
-  // 1085341: 32-bit stdio routines should support file descriptors >255
-  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-  //
 #ifdef FD_CLOEXEC
-  {
+  // Validate that the use of the O_CLOEXEC flag on open above worked.
+  // With recent kernels, we will perform this check exactly once.
+  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
+  if (!O_CLOEXEC_is_known_to_work) {
     int flags = ::fcntl(fd, F_GETFD);
     if (flags != -1) {
-      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+      if ((flags & FD_CLOEXEC) != 0)
+        O_CLOEXEC_is_known_to_work = 1;
+      else
+        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
     }
   }
 #endif
@@ -5401,7 +5415,18 @@ void os::pause() {
 }
 
 
-// Refer to the comments in os_solaris.cpp park-unpark.
+// Refer to the comments in os_solaris.cpp park-unpark. The next two
+// comment paragraphs are worth repeating here:
+//
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
+//
+// _Event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
 //
 // Beware -- Some versions of NPTL embody a flaw where pthread_cond_timedwait() can
 // hang indefinitely.  For instance NPTL 0.60 on 2.4.21-4ELsmp is vulnerable.
@@ -5500,6 +5525,11 @@ static struct timespec* compute_abstime(timespec* abstime, jlong millis) {
 }
 
 void os::PlatformEvent::park() {       // AKA "down()"
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   // TODO: assert that _Assoc != NULL or _Assoc == Self
@@ -5537,6 +5567,11 @@ void os::PlatformEvent::park() {       // AKA "down()"
 }
 
 int os::PlatformEvent::park(jlong millis) {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_nParked == 0, "invariant");
 
   int v;
@@ -5600,11 +5635,11 @@ int os::PlatformEvent::park(jlong millis) {
 
 void os::PlatformEvent::unpark() {
   // Transitions for _Event:
-  //    0 :=> 1
-  //    1 :=> 1
-  //   -1 :=> either 0 or 1; must signal target thread
-  //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1.
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _Event from -1 to either
+  //         0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
@@ -5627,15 +5662,16 @@ void os::PlatformEvent::unpark() {
   status = pthread_mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
   if (AnyWaiters != 0) {
+    // Note that we signal() *after* dropping the lock for "immortal" Events.
+    // This is safe and avoids a common class of  futile wakeups.  In rare
+    // circumstances this can cause a thread to return prematurely from
+    // cond_{timed}wait() but the spurious wakeup is benign and the victim
+    // will simply re-test the condition and re-park itself.
+    // This provides particular benefit if the underlying platform does not
+    // provide wait morphing.
     status = pthread_cond_signal(_cond);
     assert_status(status == 0, status, "cond_signal");
   }
-
-  // Note that we signal() _after dropping the lock for "immortal" Events.
-  // This is safe and avoids a common class of  futile wakeups.  In rare
-  // circumstances this can cause a thread to return prematurely from
-  // cond_{timed}wait() but the spurious wakeup is benign and the victim will
-  // simply re-test the condition and re-park itself.
 }
 
 
