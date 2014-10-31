@@ -562,7 +562,7 @@ public class Robot {
         try {
             SunToolkit.flushPendingEvents();
             // 7185258: realSync() call blocks all DnD tests on OS X
-            if (AccessController.doPrivileged(OSInfo.getOSTypeAction()) = OSInfo.OSType.MACOSX) {
+            if (AccessController.doPrivileged(OSInfo.getOSTypeAction()) == OSInfo.OSType.MACOSX) {
                 // post a dummy event to the queue so we know when
                 // all the events before it have been processed
                 EventQueue.invokeAndWait( new Runnable() {
