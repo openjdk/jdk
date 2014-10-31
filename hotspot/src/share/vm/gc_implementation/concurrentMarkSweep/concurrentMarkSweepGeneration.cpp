@@ -167,16 +167,6 @@ class CMSTokenSyncWithLocks: public CMSTokenSync {
 };
 
 
-// Wrapper class to temporarily disable icms during a foreground cms collection.
-class ICMSDisabler: public StackObj {
- public:
-  // The ctor disables icms and wakes up the thread so it notices the change;
-  // the dtor re-enables icms.  Note that the CMSCollector methods will check
-  // CMSIncrementalMode.
-  ICMSDisabler()  { CMSCollector::disable_icms(); CMSCollector::start_icms(); }
-  ~ICMSDisabler() { CMSCollector::enable_icms(); }
-};
-
 //////////////////////////////////////////////////////////////////
 //  Concurrent Mark-Sweep Generation /////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -363,7 +353,6 @@ CMSStats::CMSStats(ConcurrentMarkSweepGeneration* cms_gen, unsigned int alpha):
   _cms_used_at_gc0_end = 0;
   _allow_duty_cycle_reduction = false;
   _valid_bits = 0;
-  _icms_duty_cycle = CMSIncrementalDutyCycle;
 }
 
 double CMSStats::cms_free_adjustment_factor(size_t free) const {
@@ -442,86 +431,17 @@ double CMSStats::time_until_cms_start() const {
   return work - deadline;
 }
 
-// Return a duty cycle based on old_duty_cycle and new_duty_cycle, limiting the
-// amount of change to prevent wild oscillation.
-unsigned int CMSStats::icms_damped_duty_cycle(unsigned int old_duty_cycle,
-                                              unsigned int new_duty_cycle) {
-  assert(old_duty_cycle <= 100, "bad input value");
-  assert(new_duty_cycle <= 100, "bad input value");
-
-  // Note:  use subtraction with caution since it may underflow (values are
-  // unsigned).  Addition is safe since we're in the range 0-100.
-  unsigned int damped_duty_cycle = new_duty_cycle;
-  if (new_duty_cycle < old_duty_cycle) {
-    const unsigned int largest_delta = MAX2(old_duty_cycle / 4, 5U);
-    if (new_duty_cycle + largest_delta < old_duty_cycle) {
-      damped_duty_cycle = old_duty_cycle - largest_delta;
-    }
-  } else if (new_duty_cycle > old_duty_cycle) {
-    const unsigned int largest_delta = MAX2(old_duty_cycle / 4, 15U);
-    if (new_duty_cycle > old_duty_cycle + largest_delta) {
-      damped_duty_cycle = MIN2(old_duty_cycle + largest_delta, 100U);
-    }
-  }
-  assert(damped_duty_cycle <= 100, "invalid duty cycle computed");
-
-  if (CMSTraceIncrementalPacing) {
-    gclog_or_tty->print(" [icms_damped_duty_cycle(%d,%d) = %d] ",
-                           old_duty_cycle, new_duty_cycle, damped_duty_cycle);
-  }
-  return damped_duty_cycle;
-}
-
-unsigned int CMSStats::icms_update_duty_cycle_impl() {
-  assert(CMSIncrementalPacing && valid(),
-         "should be handled in icms_update_duty_cycle()");
-
-  double cms_time_so_far = cms_timer().seconds();
-  double scaled_duration = cms_duration_per_mb() * _cms_used_at_gc0_end / M;
-  double scaled_duration_remaining = fabsd(scaled_duration - cms_time_so_far);
-
-  // Avoid division by 0.
-  double time_until_full = MAX2(time_until_cms_gen_full(), 0.01);
-  double duty_cycle_dbl = 100.0 * scaled_duration_remaining / time_until_full;
-
-  unsigned int new_duty_cycle = MIN2((unsigned int)duty_cycle_dbl, 100U);
-  if (new_duty_cycle > _icms_duty_cycle) {
-    // Avoid very small duty cycles (1 or 2); 0 is allowed.
-    if (new_duty_cycle > 2) {
-      _icms_duty_cycle = icms_damped_duty_cycle(_icms_duty_cycle,
-                                                new_duty_cycle);
-    }
-  } else if (_allow_duty_cycle_reduction) {
-    // The duty cycle is reduced only once per cms cycle (see record_cms_end()).
-    new_duty_cycle = icms_damped_duty_cycle(_icms_duty_cycle, new_duty_cycle);
-    // Respect the minimum duty cycle.
-    unsigned int min_duty_cycle = (unsigned int)CMSIncrementalDutyCycleMin;
-    _icms_duty_cycle = MAX2(new_duty_cycle, min_duty_cycle);
-  }
-
-  if (PrintGCDetails || CMSTraceIncrementalPacing) {
-    gclog_or_tty->print(" icms_dc=%d ", _icms_duty_cycle);
-  }
-
-  _allow_duty_cycle_reduction = false;
-  return _icms_duty_cycle;
-}
-
 #ifndef PRODUCT
 void CMSStats::print_on(outputStream *st) const {
   st->print(" gc0_alpha=%d,cms_alpha=%d", _gc0_alpha, _cms_alpha);
   st->print(",gc0_dur=%g,gc0_per=%g,gc0_promo=" SIZE_FORMAT,
                gc0_duration(), gc0_period(), gc0_promoted());
-  st->print(",cms_dur=%g,cms_dur_per_mb=%g,cms_per=%g,cms_alloc=" SIZE_FORMAT,
-            cms_duration(), cms_duration_per_mb(),
-            cms_period(), cms_allocated());
+  st->print(",cms_dur=%g,cms_per=%g,cms_alloc=" SIZE_FORMAT,
+            cms_duration(), cms_period(), cms_allocated());
   st->print(",cms_since_beg=%g,cms_since_end=%g",
             cms_time_since_begin(), cms_time_since_end());
   st->print(",cms_used_beg=" SIZE_FORMAT ",cms_used_end=" SIZE_FORMAT,
             _cms_used_at_gc0_begin, _cms_used_at_gc0_end);
-  if (CMSIncrementalMode) {
-    st->print(",dc=%d", icms_duty_cycle());
-  }
 
   if (valid()) {
     st->print(",promo_rate=%g,cms_alloc_rate=%g",
@@ -579,8 +499,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 #endif
   _collection_count_start(0),
   _verifying(false),
-  _icms_start_limit(NULL),
-  _icms_stop_limit(NULL),
   _verification_mark_bm(0, Mutex::leaf + 1, "CMS_verification_mark_bm_lock"),
   _completed_initialization(false),
   _collector_policy(cp),
@@ -1116,137 +1034,6 @@ void CMSCollector::promoted(bool par, HeapWord* start,
   }
 }
 
-static inline size_t percent_of_space(Space* space, HeapWord* addr)
-{
-  size_t delta = pointer_delta(addr, space->bottom());
-  return (size_t)(delta * 100.0 / (space->capacity() / HeapWordSize));
-}
-
-void CMSCollector::icms_update_allocation_limits()
-{
-  Generation* young = GenCollectedHeap::heap()->get_gen(0);
-  EdenSpace* eden = young->as_DefNewGeneration()->eden();
-
-  const unsigned int duty_cycle = stats().icms_update_duty_cycle();
-  if (CMSTraceIncrementalPacing) {
-    stats().print();
-  }
-
-  assert(duty_cycle <= 100, "invalid duty cycle");
-  if (duty_cycle != 0) {
-    // The duty_cycle is a percentage between 0 and 100; convert to words and
-    // then compute the offset from the endpoints of the space.
-    size_t free_words = eden->free() / HeapWordSize;
-    double free_words_dbl = (double)free_words;
-    size_t duty_cycle_words = (size_t)(free_words_dbl * duty_cycle / 100.0);
-    size_t offset_words = (free_words - duty_cycle_words) / 2;
-
-    _icms_start_limit = eden->top() + offset_words;
-    _icms_stop_limit = eden->end() - offset_words;
-
-    // The limits may be adjusted (shifted to the right) by
-    // CMSIncrementalOffset, to allow the application more mutator time after a
-    // young gen gc (when all mutators were stopped) and before CMS starts and
-    // takes away one or more cpus.
-    if (CMSIncrementalOffset != 0) {
-      double adjustment_dbl = free_words_dbl * CMSIncrementalOffset / 100.0;
-      size_t adjustment = (size_t)adjustment_dbl;
-      HeapWord* tmp_stop = _icms_stop_limit + adjustment;
-      if (tmp_stop > _icms_stop_limit && tmp_stop < eden->end()) {
-        _icms_start_limit += adjustment;
-        _icms_stop_limit = tmp_stop;
-      }
-    }
-  }
-  if (duty_cycle == 0 || (_icms_start_limit == _icms_stop_limit)) {
-    _icms_start_limit = _icms_stop_limit = eden->end();
-  }
-
-  // Install the new start limit.
-  eden->set_soft_end(_icms_start_limit);
-
-  if (CMSTraceIncrementalMode) {
-    gclog_or_tty->print(" icms alloc limits:  "
-                           PTR_FORMAT "," PTR_FORMAT
-                           " (" SIZE_FORMAT "%%," SIZE_FORMAT "%%) ",
-                           p2i(_icms_start_limit), p2i(_icms_stop_limit),
-                           percent_of_space(eden, _icms_start_limit),
-                           percent_of_space(eden, _icms_stop_limit));
-    if (Verbose) {
-      gclog_or_tty->print("eden:  ");
-      eden->print_on(gclog_or_tty);
-    }
-  }
-}
-
-// Any changes here should try to maintain the invariant
-// that if this method is called with _icms_start_limit
-// and _icms_stop_limit both NULL, then it should return NULL
-// and not notify the icms thread.
-HeapWord*
-CMSCollector::allocation_limit_reached(Space* space, HeapWord* top,
-                                       size_t word_size)
-{
-  // A start_limit equal to end() means the duty cycle is 0, so treat that as a
-  // nop.
-  if (CMSIncrementalMode && _icms_start_limit != space->end()) {
-    if (top <= _icms_start_limit) {
-      if (CMSTraceIncrementalMode) {
-        space->print_on(gclog_or_tty);
-        gclog_or_tty->stamp();
-        gclog_or_tty->print_cr(" start limit top=" PTR_FORMAT
-                               ", new limit=" PTR_FORMAT
-                               " (" SIZE_FORMAT "%%)",
-                               p2i(top), p2i(_icms_stop_limit),
-                               percent_of_space(space, _icms_stop_limit));
-      }
-      ConcurrentMarkSweepThread::start_icms();
-      assert(top < _icms_stop_limit, "Tautology");
-      if (word_size < pointer_delta(_icms_stop_limit, top)) {
-        return _icms_stop_limit;
-      }
-
-      // The allocation will cross both the _start and _stop limits, so do the
-      // stop notification also and return end().
-      if (CMSTraceIncrementalMode) {
-        space->print_on(gclog_or_tty);
-        gclog_or_tty->stamp();
-        gclog_or_tty->print_cr(" +stop limit top=" PTR_FORMAT
-                               ", new limit=" PTR_FORMAT
-                               " (" SIZE_FORMAT "%%)",
-                               p2i(top), p2i(space->end()),
-                               percent_of_space(space, space->end()));
-      }
-      ConcurrentMarkSweepThread::stop_icms();
-      return space->end();
-    }
-
-    if (top <= _icms_stop_limit) {
-      if (CMSTraceIncrementalMode) {
-        space->print_on(gclog_or_tty);
-        gclog_or_tty->stamp();
-        gclog_or_tty->print_cr(" stop limit top=" PTR_FORMAT
-                               ", new limit=" PTR_FORMAT
-                               " (" SIZE_FORMAT "%%)",
-                               top, space->end(),
-                               percent_of_space(space, space->end()));
-      }
-      ConcurrentMarkSweepThread::stop_icms();
-      return space->end();
-    }
-
-    if (CMSTraceIncrementalMode) {
-      space->print_on(gclog_or_tty);
-      gclog_or_tty->stamp();
-      gclog_or_tty->print_cr(" end limit top=" PTR_FORMAT
-                             ", new limit=" PTR_FORMAT,
-                             top, NULL);
-    }
-  }
-
-  return NULL;
-}
-
 oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
   assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
   // allocate, copy and if necessary update promoinfo --
@@ -1288,14 +1075,6 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
   return res;
 }
 
-
-HeapWord*
-ConcurrentMarkSweepGeneration::allocation_limit_reached(Space* space,
-                                             HeapWord* top,
-                                             size_t word_sz)
-{
-  return collector()->allocation_limit_reached(space, top, word_sz);
-}
 
 // IMPORTANT: Notes on object size recognition in CMS.
 // ---------------------------------------------------
@@ -1809,9 +1588,6 @@ void CMSCollector::acquire_control_and_collect(bool full,
   // we want to do a foreground collection.
   _foregroundGCIsActive = true;
 
-  // Disable incremental mode during a foreground collection.
-  ICMSDisabler icms_disabler;
-
   // release locks and wait for a notify from the background collector
   // releasing the locks in only necessary for phases which
   // do yields to improve the granularity of the collection.
@@ -2135,7 +1911,7 @@ void CMSCollector::do_mark_sweep_work(bool clear_all_soft_refs,
 
 void CMSCollector::print_eden_and_survivor_chunk_arrays() {
   DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
-  EdenSpace* eden_space = dng->eden();
+  ContiguousSpace* eden_space = dng->eden();
   ContiguousSpace* from_space = dng->from();
   ContiguousSpace* to_space   = dng->to();
   // Eden
@@ -2782,10 +2558,6 @@ void CMSCollector::gc_epilogue(bool full) {
   // parameter, avoiding multiple calls to used().
   //
   _cmsGen->update_counters(cms_used);
-
-  if (CMSIncrementalMode) {
-    icms_update_allocation_limits();
-  }
 
   bitMapLock()->unlock();
   releaseFreelistLocks();
@@ -4272,12 +4044,10 @@ void CMSConcMarkingTask::coordinator_yield() {
   assert_lock_strong(_bit_map_lock);
   _bit_map_lock->unlock();
   ConcurrentMarkSweepThread::desynchronize(true);
-  ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
-  _collector->icms_wait();
 
   // It is possible for whichever thread initiated the yield request
   // not to get a chance to wake up and take the bitmap lock between
@@ -4307,7 +4077,6 @@ void CMSConcMarkingTask::coordinator_yield() {
                    ConcurrentMarkSweepThread::should_yield() &&
                    !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
-    ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -5238,7 +5007,7 @@ class RemarkKlassClosure : public KlassClosure {
 
 void CMSParMarkTask::work_on_young_gen_roots(uint worker_id, OopsInGenClosure* cl) {
   DefNewGeneration* dng = _collector->_young_gen->as_DefNewGeneration();
-  EdenSpace* eden_space = dng->eden();
+  ContiguousSpace* eden_space = dng->eden();
   ContiguousSpace* from_space = dng->from();
   ContiguousSpace* to_space   = dng->to();
 
@@ -5410,7 +5179,7 @@ CMSParMarkTask::do_young_space_rescan(uint worker_id,
     while (!pst->is_task_claimed(/* reference */ nth_task)) {
       // We claimed task # nth_task; compute its boundaries.
       if (chunk_top == 0) {  // no samples were taken
-        assert(nth_task == 0 && n_tasks == 1, "Can have only 1 EdenSpace task");
+        assert(nth_task == 0 && n_tasks == 1, "Can have only 1 eden task");
         start = space->bottom();
         end   = space->top();
       } else if (nth_task == 0) {
@@ -5788,7 +5557,7 @@ void CMSCollector::do_remark_parallel() {
   // process_roots (which currently doesn't know how to
   // parallelize such a scan), but rather will be broken up into
   // a set of parallel tasks (via the sampling that the [abortable]
-  // preclean phase did of EdenSpace, plus the [two] tasks of
+  // preclean phase did of eden, plus the [two] tasks of
   // scanning the [two] survivor spaces. Further fine-grain
   // parallelization of the scanning of the survivor spaces
   // themselves, and of precleaning of the younger gen itself
@@ -6474,19 +6243,16 @@ void CMSCollector::reset(bool asynch) {
         assert_lock_strong(bitMapLock());
         bitMapLock()->unlock();
         ConcurrentMarkSweepThread::desynchronize(true);
-        ConcurrentMarkSweepThread::acknowledge_yield_request();
         stopTimer();
         if (PrintCMSStatistics != 0) {
           incrementYields();
         }
-        icms_wait();
 
         // See the comment in coordinator_yield()
         for (unsigned i = 0; i < CMSYieldSleepCount &&
                          ConcurrentMarkSweepThread::should_yield() &&
                          !CMSCollector::foregroundGCIsActive(); ++i) {
           os::sleep(Thread::current(), 1, false);
-          ConcurrentMarkSweepThread::acknowledge_yield_request();
         }
 
         ConcurrentMarkSweepThread::synchronize(true);
@@ -6508,10 +6274,6 @@ void CMSCollector::reset(bool asynch) {
     _markBitMap.clear_all();
     _collectorState = Idling;
   }
-
-  // Stop incremental mode after a cycle completes, so that any future cycles
-  // are triggered by allocation.
-  stop_icms();
 
   NOT_PRODUCT(
     if (RotateCMSCollectionTypes) {
@@ -6964,12 +6726,10 @@ void MarkRefsIntoAndScanClosure::do_yield_work() {
   _bit_map->lock()->unlock();
   _freelistLock->unlock();
   ConcurrentMarkSweepThread::desynchronize(true);
-  ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
-  _collector->icms_wait();
 
   // See the comment in coordinator_yield()
   for (unsigned i = 0;
@@ -6978,7 +6738,6 @@ void MarkRefsIntoAndScanClosure::do_yield_work() {
        !CMSCollector::foregroundGCIsActive();
        ++i) {
     os::sleep(Thread::current(), 1, false);
-    ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -7124,19 +6883,16 @@ void ScanMarkedObjectsAgainCarefullyClosure::do_yield_work() {
   _bitMap->lock()->unlock();
   _freelistLock->unlock();
   ConcurrentMarkSweepThread::desynchronize(true);
-  ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
-  _collector->icms_wait();
 
   // See the comment in coordinator_yield()
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                    ConcurrentMarkSweepThread::should_yield() &&
                    !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
-    ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -7196,19 +6952,16 @@ void SurvivorSpacePrecleanClosure::do_yield_work() {
   // Relinquish the bit map lock
   _bit_map->lock()->unlock();
   ConcurrentMarkSweepThread::desynchronize(true);
-  ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
-  _collector->icms_wait();
 
   // See the comment in coordinator_yield()
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
-    ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -7354,19 +7107,16 @@ void MarkFromRootsClosure::do_yield_work() {
   assert_lock_strong(_bitMap->lock());
   _bitMap->lock()->unlock();
   ConcurrentMarkSweepThread::desynchronize(true);
-  ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
-  _collector->icms_wait();
 
   // See the comment in coordinator_yield()
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
-    ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -7388,7 +7138,7 @@ void MarkFromRootsClosure::scanOopsInOop(HeapWord* ptr) {
   _finger = ptr + obj->size();
   assert(_finger > ptr, "we just incremented it above");
   // On large heaps, it may take us some time to get through
-  // the marking phase (especially if running iCMS). During
+  // the marking phase. During
   // this time it's possible that a lot of mutations have
   // accumulated in the card table and the mod union table --
   // these mutation records are redundant until we have
@@ -7505,7 +7255,7 @@ void Par_MarkFromRootsClosure::scan_oops_in_oop(HeapWord* ptr) {
   _finger = ptr + obj->size();
   assert(_finger > ptr, "we just incremented it above");
   // On large heaps, it may take us some time to get through
-  // the marking phase (especially if running iCMS). During
+  // the marking phase. During
   // this time it's possible that a lot of mutations have
   // accumulated in the card table and the mod union table --
   // these mutation records are redundant until we have
@@ -7994,20 +7744,16 @@ void CMSPrecleanRefsYieldClosure::do_yield_work() {
   bml->unlock();
   ConcurrentMarkSweepThread::desynchronize(true);
 
-  ConcurrentMarkSweepThread::acknowledge_yield_request();
-
   _collector->stopTimer();
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
-  _collector->icms_wait();
 
   // See the comment in coordinator_yield()
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
-    ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -8675,19 +8421,16 @@ void SweepClosure::do_yield_work(HeapWord* addr) {
   _bitMap->lock()->unlock();
   _freelistLock->unlock();
   ConcurrentMarkSweepThread::desynchronize(true);
-  ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
-  _collector->icms_wait();
 
   // See the comment in coordinator_yield()
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
-    ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
