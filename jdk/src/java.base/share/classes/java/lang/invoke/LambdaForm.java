@@ -119,6 +119,7 @@ import static java.lang.invoke.MethodHandleNatives.Constants.*;
 class LambdaForm {
     final int arity;
     final int result;
+    final boolean forceInline;
     @Stable final Name[] names;
     final String debugName;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
@@ -243,11 +244,16 @@ class LambdaForm {
 
     LambdaForm(String debugName,
                int arity, Name[] names, int result) {
+        this(debugName, arity, names, result, true);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, int result, boolean forceInline) {
         assert(namesOK(arity, names));
         this.arity = arity;
         this.result = fixResult(result, names);
         this.names = names.clone();
         this.debugName = fixDebugName(debugName);
+        this.forceInline = forceInline;
         int maxOutArity = normalize();
         if (maxOutArity > MethodType.MAX_MH_INVOKER_ARITY) {
             // Cannot use LF interpreter on very high arity expressions.
@@ -255,17 +261,23 @@ class LambdaForm {
             compileToBytecode();
         }
     }
-
     LambdaForm(String debugName,
                int arity, Name[] names) {
-        this(debugName,
-             arity, names, LAST_RESULT);
+        this(debugName, arity, names, LAST_RESULT, true);
     }
-
+    LambdaForm(String debugName,
+               int arity, Name[] names, boolean forceInline) {
+        this(debugName, arity, names, LAST_RESULT, forceInline);
+    }
     LambdaForm(String debugName,
                Name[] formals, Name[] temps, Name result) {
         this(debugName,
-             formals.length, buildNames(formals, temps, result), LAST_RESULT);
+             formals.length, buildNames(formals, temps, result), LAST_RESULT, true);
+    }
+    LambdaForm(String debugName,
+               Name[] formals, Name[] temps, Name result, boolean forceInline) {
+        this(debugName,
+             formals.length, buildNames(formals, temps, result), LAST_RESULT, forceInline);
     }
 
     private static Name[] buildNames(Name[] formals, Name[] temps, Name result) {
@@ -279,6 +291,10 @@ class LambdaForm {
     }
 
     private LambdaForm(String sig) {
+        this(sig, true);
+    }
+
+    private LambdaForm(String sig, boolean forceInline) {
         // Make a blank lambda form, which returns a constant zero or null.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
         // Called only from getPreparedForm.
@@ -287,6 +303,7 @@ class LambdaForm {
         this.result = (signatureReturn(sig) == V_TYPE ? -1 : arity);
         this.names = buildEmptyNames(arity, sig);
         this.debugName = "LF.zero";
+        this.forceInline = forceInline;
         assert(nameRefsAreLegal());
         assert(isEmpty());
         assert(sig.equals(basicTypeSignature())) : sig + " != " + basicTypeSignature();

@@ -145,13 +145,6 @@ public class AccessorProperty extends Property {
     transient MethodHandle objectSetter;
 
     /**
-     * Current type of this object, in object only mode, this is an Object.class. In dual-fields mode
-     * null means undefined, and primitive types are allowed. The reason a special type is used for
-     * undefined, is that are no bits left to represent it in primitive types
-     */
-    private Class<?> currentType;
-
-    /**
      * Delegate constructor for bound properties. This is used for properties created by
      * {@link ScriptRuntime#mergeScope} and the Nashorn {@code Object.bindProperties} method.
      * The former is used to add a script's defined globals to the current global scope while
@@ -171,7 +164,7 @@ public class AccessorProperty extends Property {
         this.objectSetter    = bindTo(property.objectSetter, delegate);
         property.GETTER_CACHE = new MethodHandle[NOOF_TYPES];
         // Properties created this way are bound to a delegate
-        setCurrentType(property.getCurrentType());
+        setType(property.getType());
     }
 
     /**
@@ -248,7 +241,7 @@ public class AccessorProperty extends Property {
         objectGetter  = getter.type() != Lookup.GET_OBJECT_TYPE ? MH.asType(getter, Lookup.GET_OBJECT_TYPE) : getter;
         objectSetter  = setter != null && setter.type() != Lookup.SET_OBJECT_TYPE ? MH.asType(setter, Lookup.SET_OBJECT_TYPE) : setter;
 
-        setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : getterType);
+        setType(OBJECT_FIELDS_ONLY ? Object.class : getterType);
     }
 
     /**
@@ -317,7 +310,7 @@ public class AccessorProperty extends Property {
      */
     public AccessorProperty(final String key, final int flags, final Class<?> structure, final int slot, final Class<?> initialType) {
         this(key, flags, structure, slot);
-        setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
+        setType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
     }
 
     /**
@@ -330,13 +323,13 @@ public class AccessorProperty extends Property {
     protected AccessorProperty(final AccessorProperty property, final Class<?> newType) {
         super(property, property.getFlags());
 
-        this.GETTER_CACHE    = newType != property.getCurrentType() ? new MethodHandle[NOOF_TYPES] : property.GETTER_CACHE;
+        this.GETTER_CACHE    = newType != property.getLocalType() ? new MethodHandle[NOOF_TYPES] : property.GETTER_CACHE;
         this.primitiveGetter = property.primitiveGetter;
         this.primitiveSetter = property.primitiveSetter;
         this.objectGetter    = property.objectGetter;
         this.objectSetter    = property.objectSetter;
 
-        setCurrentType(newType);
+        setType(newType);
     }
 
     /**
@@ -345,7 +338,7 @@ public class AccessorProperty extends Property {
      * @param property  source property
      */
     protected AccessorProperty(final AccessorProperty property) {
-        this(property, property.getCurrentType());
+        this(property, property.getLocalType());
     }
 
     /**
@@ -354,7 +347,7 @@ public class AccessorProperty extends Property {
      * @param initialValue initial value
      */
     protected final void setInitialValue(final ScriptObject owner, final Object initialValue) {
-        setCurrentType(JSType.unboxedFieldType(initialValue));
+        setType(JSType.unboxedFieldType(initialValue));
         if (initialValue instanceof Integer) {
             invokeSetter(owner, ((Integer)initialValue).intValue());
         } else if (initialValue instanceof Long) {
@@ -370,7 +363,7 @@ public class AccessorProperty extends Property {
      * Initialize the type of a property
      */
     protected final void initializeType() {
-        setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : null);
+        setType(OBJECT_FIELDS_ONLY ? Object.class : null);
     }
 
     private void readObject(final ObjectInputStream s) throws IOException, ClassNotFoundException {
@@ -557,12 +550,12 @@ public class AccessorProperty extends Property {
         } else {
             getter = debug(
                 createGetter(
-                    getCurrentType(),
+                    getLocalType(),
                     type,
                     primitiveGetter,
                     objectGetter,
                     INVALID_PROGRAM_POINT),
-                getCurrentType(),
+                getLocalType(),
                 type,
                 "get");
             getterCache[i] = getter;
@@ -582,18 +575,18 @@ public class AccessorProperty extends Property {
 
         return debug(
             createGetter(
-                getCurrentType(),
+                getLocalType(),
                 type,
                 primitiveGetter,
                 objectGetter,
                 programPoint),
-            getCurrentType(),
+            getLocalType(),
             type,
             "get");
     }
 
     private MethodHandle getOptimisticPrimitiveGetter(final Class<?> type, final int programPoint) {
-        final MethodHandle g = getGetter(getCurrentType());
+        final MethodHandle g = getGetter(getLocalType());
         return MH.asType(OptimisticReturnFilters.filterOptimisticReturnValue(g, type, programPoint), g.type().changeReturnType(type));
     }
 
@@ -631,7 +624,7 @@ public class AccessorProperty extends Property {
     }
 
     private MethodHandle generateSetter(final Class<?> forType, final Class<?> type) {
-        return debug(createSetter(forType, type, primitiveSetter, objectSetter), getCurrentType(), type, "set");
+        return debug(createSetter(forType, type, primitiveSetter, objectSetter), getLocalType(), type, "set");
     }
 
     /**
@@ -639,7 +632,7 @@ public class AccessorProperty extends Property {
      * @return true if undefined
      */
     protected final boolean isUndefined() {
-        return getCurrentType() == null;
+        return getLocalType() == null;
     }
 
     @Override
@@ -647,7 +640,7 @@ public class AccessorProperty extends Property {
         checkUndeclared();
 
         final int typeIndex        = getAccessorTypeIndex(type);
-        final int currentTypeIndex = getAccessorTypeIndex(getCurrentType());
+        final int currentTypeIndex = getAccessorTypeIndex(getLocalType());
 
         //if we are asking for an object setter, but are still a primitive type, we might try to box it
         MethodHandle mh;
@@ -656,13 +649,13 @@ public class AccessorProperty extends Property {
             final PropertyMap  newMap      = getWiderMap(currentMap, newProperty);
 
             final MethodHandle widerSetter = newProperty.getSetter(type, newMap);
-            final Class<?>     ct = getCurrentType();
+            final Class<?>     ct = getLocalType();
             mh = MH.filterArguments(widerSetter, 0, MH.insertArguments(debugReplace(ct, type, currentMap, newMap) , 1, newMap));
             if (ct != null && ct.isPrimitive() && !type.isPrimitive()) {
                  mh = ObjectClassGenerator.createGuardBoxedPrimitiveSetter(ct, generateSetter(ct, ct), mh);
             }
         } else {
-            final Class<?> forType = isUndefined() ? type : getCurrentType();
+            final Class<?> forType = isUndefined() ? type : getLocalType();
             mh = generateSetter(!forType.isPrimitive() ? Object.class : forType, type);
         }
 
@@ -681,22 +674,11 @@ public class AccessorProperty extends Property {
             return false;
         }
         // Return true for currently undefined even if non-writable/configurable to allow initialization of ES6 CONST.
-        return getCurrentType() == null || (getCurrentType() != Object.class && (isConfigurable() || isWritable()));
+        return getLocalType() == null || (getLocalType() != Object.class && (isConfigurable() || isWritable()));
     }
 
     private boolean needsInvalidator(final int typeIndex, final int currentTypeIndex) {
         return canChangeType() && typeIndex > currentTypeIndex;
-    }
-
-    @Override
-    public final void setCurrentType(final Class<?> currentType) {
-        assert currentType != boolean.class : "no boolean storage support yet - fix this";
-        this.currentType = currentType == null ? null : currentType.isPrimitive() ? currentType : Object.class;
-    }
-
-    @Override
-    public Class<?> getCurrentType() {
-        return currentType;
     }
 
     private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {

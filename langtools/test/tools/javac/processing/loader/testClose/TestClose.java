@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,50 +117,51 @@ public class TestClose implements TaskListener {
 
     void run() throws IOException {
         JavacTool tool = (JavacTool) ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
 
-        File classes = new File("classes");
-        classes.mkdirs();
-        File extraClasses = new File("extraClasses");
-        extraClasses.mkdirs();
+            File classes = new File("classes");
+            classes.mkdirs();
+            File extraClasses = new File("extraClasses");
+            extraClasses.mkdirs();
 
-        System.out.println("compiling classes to extraClasses");
-        {   // setup class in extraClasses
-            fm.setLocation(StandardLocation.CLASS_OUTPUT,
-                    Collections.singleton(extraClasses));
-            List<? extends JavaFileObject> files = Arrays.asList(
-                    new MemFile("AnnoProc.java", annoProc),
-                    new MemFile("Callback.java", callback));
-            JavacTask task = tool.getTask(null, fm, null, null, null, files);
-            check(task.call());
-        }
-
-        System.out.println("compiling dummy to classes with anno processor");
-        {   // use that class in a TaskListener after processing has completed
-            PrintStream prev = System.out;
-            String out;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (PrintStream ps = new PrintStream(baos)) {
-                System.setOut(ps);
-                File testClasses = new File(System.getProperty("test.classes"));
+            System.out.println("compiling classes to extraClasses");
+            {   // setup class in extraClasses
                 fm.setLocation(StandardLocation.CLASS_OUTPUT,
-                        Collections.singleton(classes));
-                fm.setLocation(StandardLocation.ANNOTATION_PROCESSOR_PATH,
-                        Arrays.asList(extraClasses, testClasses));
+                        Collections.singleton(extraClasses));
                 List<? extends JavaFileObject> files = Arrays.asList(
-                        new MemFile("my://dummy", "class Dummy { }"));
-                List<String> options = Arrays.asList("-processor", "AnnoProc");
-                JavacTask task = tool.getTask(null, fm, null, options, null, files);
-                task.setTaskListener(this);
+                        new MemFile("AnnoProc.java", annoProc),
+                        new MemFile("Callback.java", callback));
+                JavacTask task = tool.getTask(null, fm, null, null, null, files);
                 check(task.call());
-            } finally {
-                System.setOut(prev);
-                out = baos.toString();
-                if (!out.isEmpty())
-                    System.out.println(out);
             }
-            check(out.contains("AnnoProc$1: run()"));
-            check(out.contains("Callback: run()"));
+
+            System.out.println("compiling dummy to classes with anno processor");
+            {   // use that class in a TaskListener after processing has completed
+                PrintStream prev = System.out;
+                String out;
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try (PrintStream ps = new PrintStream(baos)) {
+                    System.setOut(ps);
+                    File testClasses = new File(System.getProperty("test.classes"));
+                    fm.setLocation(StandardLocation.CLASS_OUTPUT,
+                            Collections.singleton(classes));
+                    fm.setLocation(StandardLocation.ANNOTATION_PROCESSOR_PATH,
+                            Arrays.asList(extraClasses, testClasses));
+                    List<? extends JavaFileObject> files = Arrays.asList(
+                            new MemFile("my://dummy", "class Dummy { }"));
+                    List<String> options = Arrays.asList("-processor", "AnnoProc");
+                    JavacTask task = tool.getTask(null, fm, null, options, null, files);
+                    task.setTaskListener(this);
+                    check(task.call());
+                } finally {
+                    System.setOut(prev);
+                    out = baos.toString();
+                    if (!out.isEmpty())
+                        System.out.println(out);
+                }
+                check(out.contains("AnnoProc$1: run()"));
+                check(out.contains("Callback: run()"));
+            }
         }
     }
 

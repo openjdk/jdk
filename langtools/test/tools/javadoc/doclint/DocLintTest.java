@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,60 +121,64 @@ public class DocLintTest {
     void run() throws Exception {
         javadoc = ToolProvider.getSystemDocumentationTool();
         fm = javadoc.getStandardFileManager(null, null, null);
-        fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
-        file = new SimpleJavaFileObject(URI.create("Test.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncoding) {
-                return code;
-            }
-        };
+        try {
+            fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
+            file = new SimpleJavaFileObject(URI.create("Test.java"), JavaFileObject.Kind.SOURCE) {
+                @Override
+                public CharSequence getCharContent(boolean ignoreEncoding) {
+                    return code;
+                }
+            };
 
-        test(Collections.<String>emptyList(),
-                Main.Result.ERROR,
-                EnumSet.of(Message.DL_ERR9A, Message.DL_WRN12A));
+            test(Collections.<String>emptyList(),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.DL_ERR9A, Message.DL_WRN12A));
 
-        test(Arrays.asList(rawDiags),
-                Main.Result.ERROR,
-                EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
+            test(Arrays.asList(rawDiags),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
 
-        test(Arrays.asList("-Xdoclint:none"),
-                Main.Result.OK,
-                EnumSet.of(Message.JD_WRN10, Message.JD_WRN13));
+            test(Arrays.asList("-Xdoclint:none"),
+                    Main.Result.OK,
+                    EnumSet.of(Message.JD_WRN10, Message.JD_WRN13));
 
-        test(Arrays.asList(rawDiags, "-Xdoclint"),
-                Main.Result.ERROR,
-                EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
+            test(Arrays.asList(rawDiags, "-Xdoclint"),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
 
-        test(Arrays.asList(rawDiags, "-Xdoclint:all/public"),
-                Main.Result.ERROR,
-                EnumSet.of(Message.OPT_BADQUAL));
+            test(Arrays.asList(rawDiags, "-Xdoclint:all/public"),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.OPT_BADQUAL));
 
-        test(Arrays.asList(rawDiags, "-Xdoclint:all", "-public"),
-                Main.Result.OK,
-                EnumSet.of(Message.DL_WRN12));
+            test(Arrays.asList(rawDiags, "-Xdoclint:all", "-public"),
+                    Main.Result.OK,
+                    EnumSet.of(Message.DL_WRN12));
 
-        test(Arrays.asList(rawDiags, "-Xdoclint:syntax"),
-                Main.Result.OK,
-                EnumSet.of(Message.DL_WRN12));
+            test(Arrays.asList(rawDiags, "-Xdoclint:syntax"),
+                    Main.Result.OK,
+                    EnumSet.of(Message.DL_WRN12));
 
-        test(Arrays.asList(rawDiags, "-private"),
-                Main.Result.ERROR,
-                EnumSet.of(Message.DL_ERR6, Message.DL_ERR9, Message.DL_WRN12));
+            test(Arrays.asList(rawDiags, "-private"),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.DL_ERR6, Message.DL_ERR9, Message.DL_WRN12));
 
-        test(Arrays.asList(rawDiags, "-Xdoclint:syntax", "-private"),
-                Main.Result.ERROR,
-                EnumSet.of(Message.DL_ERR6, Message.DL_WRN12));
+            test(Arrays.asList(rawDiags, "-Xdoclint:syntax", "-private"),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.DL_ERR6, Message.DL_WRN12));
 
-        test(Arrays.asList(rawDiags, "-Xdoclint:reference"),
-                Main.Result.ERROR,
-                EnumSet.of(Message.DL_ERR9));
+            test(Arrays.asList(rawDiags, "-Xdoclint:reference"),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.DL_ERR9));
 
-        test(Arrays.asList(rawDiags, "-Xdoclint:badarg"),
-                Main.Result.ERROR,
-                EnumSet.of(Message.OPT_BADARG));
+            test(Arrays.asList(rawDiags, "-Xdoclint:badarg"),
+                    Main.Result.ERROR,
+                    EnumSet.of(Message.OPT_BADARG));
 
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
+            if (errors > 0)
+                throw new Exception(errors + " errors occurred");
+        } finally {
+            fm.close();
+        }
     }
 
     void test(List<String> opts, Main.Result expectResult, Set<Message> expectMessages) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,15 @@ public class T6956462 {
         if (compiler == null) {
             throw new RuntimeException("can't get javax.tools.JavaCompiler!");
         }
-        StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
-        List<File> files = new ArrayList<File>();
-        files.add(new File(T6956462.class.getResource("TestClass.java").toURI()));
-        final CompilationTask task = compiler.getTask(null, fm, null,
-            null, null, fm.getJavaFileObjectsFromFiles(files));
-        JavacTask javacTask = (JavacTask) task;
-        for (CompilationUnitTree cu : javacTask.parse()) {
-            cu.accept(new MyVisitor(javacTask), null);
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            List<File> files = new ArrayList<File>();
+            files.add(new File(T6956462.class.getResource("TestClass.java").toURI()));
+            final CompilationTask task = compiler.getTask(null, fm, null,
+                null, null, fm.getJavaFileObjectsFromFiles(files));
+            JavacTask javacTask = (JavacTask) task;
+            for (CompilationUnitTree cu : javacTask.parse()) {
+                cu.accept(new MyVisitor(javacTask), null);
+            }
         }
     }
 

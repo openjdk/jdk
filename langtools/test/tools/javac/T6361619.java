@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,17 +57,18 @@ public class T6361619 extends AbstractProcessor {
             }
         };
 
-        StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
-        Iterable<? extends JavaFileObject> f =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir,
-                                                                  self + ".java")));
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null)) {
+            Iterable<? extends JavaFileObject> f =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir,
+                                                                      self + ".java")));
 
-        JavacTask task = tool.getTask(out, fm, dl, flags, null, f);
-        MyTaskListener tl = new MyTaskListener(task);
-        task.setTaskListener(tl);
+            JavacTask task = tool.getTask(out, fm, dl, flags, null, f);
+            MyTaskListener tl = new MyTaskListener(task);
+            task.setTaskListener(tl);
 
-        // should complete, without exceptions
-        task.call();
+            // should complete, without exceptions
+            task.call();
+        }
     }
 
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {

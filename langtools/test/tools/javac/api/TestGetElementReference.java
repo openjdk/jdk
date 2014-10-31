@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,31 +50,32 @@ public class TestGetElementReference {
 
     public static void main(String... args) throws IOException {
         File source = new File(System.getProperty("test.src", "."), "TestGetElementReferenceData.java").getAbsoluteFile();
-        StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, Arrays.asList("-Xjcov"), null, fm.getJavaFileObjects(source));
-        Trees trees = Trees.instance(ct);
-        CompilationUnitTree cut = ct.parse().iterator().next();
+        try (StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, Arrays.asList("-Xjcov"), null, fm.getJavaFileObjects(source));
+            Trees trees = Trees.instance(ct);
+            CompilationUnitTree cut = ct.parse().iterator().next();
 
-        ct.analyze();
+            ct.analyze();
 
-        for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
-            if (d.getKind() == Diagnostic.Kind.ERROR) {
-                throw new IllegalStateException("Should have been attributed without errors: " + diagnostics.getDiagnostics());
+            for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
+                if (d.getKind() == Diagnostic.Kind.ERROR) {
+                    throw new IllegalStateException("Should have been attributed without errors: " + diagnostics.getDiagnostics());
+                }
             }
-        }
 
-        Pattern p = Pattern.compile("/\\*getElement:(.*?)\\*/");
-        Matcher m = p.matcher(cut.getSourceFile().getCharContent(false));
+            Pattern p = Pattern.compile("/\\*getElement:(.*?)\\*/");
+            Matcher m = p.matcher(cut.getSourceFile().getCharContent(false));
 
-        while (m.find()) {
-            TreePath tp = pathFor(trees, cut, m.start() - 1);
-            Element found = trees.getElement(tp);
-            String expected = m.group(1);
-            String actual = found != null ? found.getKind() + ":" + symbolToString(found) : "<null>";
+            while (m.find()) {
+                TreePath tp = pathFor(trees, cut, m.start() - 1);
+                Element found = trees.getElement(tp);
+                String expected = m.group(1);
+                String actual = found != null ? found.getKind() + ":" + symbolToString(found) : "<null>";
 
-            if (!expected.equals(actual)) {
-                throw new IllegalStateException("expected=" + expected + "; actual=" + actual);
+                if (!expected.equals(actual)) {
+                    throw new IllegalStateException("expected=" + expected + "; actual=" + actual);
+                }
             }
         }
     }

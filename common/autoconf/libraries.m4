@@ -139,20 +139,9 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
         -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
   fi
 
-  #
-  # Weird Sol10 something check...TODO change to try compile
-  #
-  if test "x${OPENJDK_TARGET_OS}" = xsolaris; then
-    if test "`uname -r`" = "5.10"; then
-      if test "`${EGREP} -c XLinearGradient ${OPENWIN_HOME}/share/include/X11/extensions/Xrender.h`" = "0"; then
-        X_CFLAGS="${X_CFLAGS} -DSOLARIS10_NO_XRENDER_STRUCTS"
-      fi
-    fi
-  fi
-
   AC_LANG_PUSH(C)
   OLD_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $X_CFLAGS"
+  CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
 
   # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
   AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h],
@@ -163,6 +152,16 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
         # include <X11/Xutil.h>
       ]
   )
+
+  # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
+  # defined in libawt_xawt.
+  AC_MSG_CHECKING([if XlinearGradient is defined in Xrender.h])
+  AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#include <X11/extensions/Xrender.h>]],
+          [[XLinearGradient x;]])],
+      [AC_MSG_RESULT([yes])],
+      [AC_MSG_RESULT([no])
+       X_CFLAGS="$X_CFLAGS -DSOLARIS10_NO_XRENDER_STRUCTS"])
 
   CFLAGS="$OLD_CFLAGS"
   AC_LANG_POP(C)

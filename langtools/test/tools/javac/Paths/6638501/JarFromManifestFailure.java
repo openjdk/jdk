@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,28 +71,29 @@ public class JarFromManifestFailure {
         }
     }
 
-    static void compile(File classOutDir, Iterable<File> classPath, File... files) {
+    static void compile(File classOutDir, Iterable<File> classPath, File... files) throws IOException {
         System.err.println("compile...");
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> fileObjects =
-                    fm.getJavaFileObjectsFromFiles(Arrays.asList(files));
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> fileObjects =
+                        fm.getJavaFileObjectsFromFiles(Arrays.asList(files));
 
-        List<String> options = new ArrayList<String>();
-        if (classOutDir != null) {
-            options.add("-d");
-            options.add(classOutDir.getPath());
-        }
-        if (classPath != null) {
-            options.add("-classpath");
-            options.add(join(classPath, File.pathSeparator));
-        }
-        options.add("-verbose");
+            List<String> options = new ArrayList<String>();
+            if (classOutDir != null) {
+                options.add("-d");
+                options.add(classOutDir.getPath());
+            }
+            if (classPath != null) {
+                options.add("-classpath");
+                options.add(join(classPath, File.pathSeparator));
+            }
+            options.add("-verbose");
 
-        JavaCompiler.CompilationTask task =
-            compiler.getTask(null, fm, null, options, null, fileObjects);
-        if (!task.call())
-            throw new AssertionError("compilation failed");
+            JavaCompiler.CompilationTask task =
+                compiler.getTask(null, fm, null, options, null, fileObjects);
+            if (!task.call())
+                throw new AssertionError("compilation failed");
+        }
     }
 
     static void jar(File jar, Iterable<File> classPath, File base, File... files)

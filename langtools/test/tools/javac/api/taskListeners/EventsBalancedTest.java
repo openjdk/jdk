@@ -44,7 +44,12 @@ public class EventsBalancedTest {
     StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
 
     public static void main(String... args) throws IOException {
-        new EventsBalancedTest().test();
+        EventsBalancedTest t = new EventsBalancedTest();
+        try {
+            t.test();
+        } finally {
+            t.fm.close();
+        }
     }
 
     void test() throws IOException {

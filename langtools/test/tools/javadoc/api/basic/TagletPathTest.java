@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,38 +62,40 @@ public class TagletPathTest extends APITest {
         File tagletSrcFile = new File(testSrc, "taglets/UnderlineTaglet.java");
         File tagletDir = getOutDir("classes");
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager cfm = compiler.getStandardFileManager(null, null, null);
-        cfm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(tagletDir));
-        Iterable<? extends JavaFileObject> cfiles = cfm.getJavaFileObjects(tagletSrcFile);
-        if (!compiler.getTask(null, cfm, null, null, null, cfiles).call())
-            throw new Exception("cannot compile taglet");
+        try (StandardJavaFileManager cfm = compiler.getStandardFileManager(null, null, null)) {
+            cfm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(tagletDir));
+            Iterable<? extends JavaFileObject> cfiles = cfm.getJavaFileObjects(tagletSrcFile);
+            if (!compiler.getTask(null, cfm, null, null, null, cfiles).call())
+                throw new Exception("cannot compile taglet");
+        }
 
         JavaFileObject srcFile = createSimpleJavaFileObject("pkg/C", testSrcText);
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        File outDir = getOutDir("api");
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
-        fm.setLocation(DocumentationTool.Location.TAGLET_PATH, Arrays.asList(tagletDir));
-        Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
-        Iterable<String> options = Arrays.asList("-taglet", "UnderlineTaglet");
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        DocumentationTask t = tool.getTask(pw, fm, null, null, options, files);
-        boolean ok = t.call();
-        String out = sw.toString();
-        System.err.println(">>" + out + "<<");
-        if (ok) {
-            File f = new File(outDir, "pkg/C.html");
-            List<String> doc = Files.readAllLines(f.toPath(), Charset.defaultCharset());
-            for (String line: doc) {
-                if (line.contains("<u>" + TEST_STRING + "</u>")) {
-                    System.err.println("taglet executed as expected");
-                    return;
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            File outDir = getOutDir("api");
+            fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+            fm.setLocation(DocumentationTool.Location.TAGLET_PATH, Arrays.asList(tagletDir));
+            Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
+            Iterable<String> options = Arrays.asList("-taglet", "UnderlineTaglet");
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            DocumentationTask t = tool.getTask(pw, fm, null, null, options, files);
+            boolean ok = t.call();
+            String out = sw.toString();
+            System.err.println(">>" + out + "<<");
+            if (ok) {
+                File f = new File(outDir, "pkg/C.html");
+                List<String> doc = Files.readAllLines(f.toPath(), Charset.defaultCharset());
+                for (String line: doc) {
+                    if (line.contains("<u>" + TEST_STRING + "</u>")) {
+                        System.err.println("taglet executed as expected");
+                        return;
+                    }
                 }
+                error("expected text not found in output " + f);
+            } else {
+                error("task failed");
             }
-            error("expected text not found in output " + f);
-        } else {
-            error("task failed");
         }
     }
 
