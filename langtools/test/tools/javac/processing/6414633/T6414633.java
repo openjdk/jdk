@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,29 +40,30 @@ import com.sun.source.util.*;
 import com.sun.tools.javac.api.*;
 
 public class T6414633 {
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         String testSrc = System.getProperty("test.src", ".");
         String testClasses = System.getProperty("test.classes", ".");
         String testClassPath = System.getProperty("test.class.path", testClasses);
 
         JavacTool tool = JavacTool.create();
         MyDiagListener dl = new MyDiagListener();
-        StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
-        try {
-            fm.setLocation(StandardLocation.CLASS_PATH, pathToFiles(testClassPath));
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, A.class.getName()+".java")));
-        String[] opts = { "-proc:only",
-                          "-processor", A.class.getName() };
-        JavacTask task = tool.getTask(null, fm, dl, Arrays.asList(opts), null, files);
-        task.call();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null)) {
+            try {
+                fm.setLocation(StandardLocation.CLASS_PATH, pathToFiles(testClassPath));
+            } catch (IOException e) {
+                throw new AssertionError(e);
+            }
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, A.class.getName()+".java")));
+            String[] opts = { "-proc:only",
+                              "-processor", A.class.getName() };
+            JavacTask task = tool.getTask(null, fm, dl, Arrays.asList(opts), null, files);
+            task.call();
 
-        // two annotations on the same element -- expect 2 diags from the processor
-        if (dl.diags != 2)
-            throw new AssertionError(dl.diags + " diagnostics reported");
+            // two annotations on the same element -- expect 2 diags from the processor
+            if (dl.diags != 2)
+                throw new AssertionError(dl.diags + " diagnostics reported");
+        }
     }
 
     private static List<File> pathToFiles(String path) {

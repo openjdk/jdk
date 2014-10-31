@@ -28,11 +28,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.Policy;
+import java.sql.JDBCType;
 import java.sql.SQLException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 
 public class BaseTest {
 
@@ -95,5 +97,30 @@ public class BaseTest {
      */
     protected static void setPolicy(Policy p) {
         Policy.setPolicy(p);
+    }
+
+    /*
+     * DataProvider used to specify the value to set and check for
+     * methods using boolean values
+     */
+    @DataProvider(name = "trueFalse")
+    protected Object[][] trueFalse() {
+        return new Object[][]{
+            {true},
+            {false}
+        };
+    }
+
+    /*
+     * DataProvider used to specify the standard JDBC Types
+     */
+    @DataProvider(name = "jdbcTypes")
+    protected Object[][] jdbcTypes() {
+        Object[][] o = new Object[JDBCType.values().length][1];
+        int pos = 0;
+        for (JDBCType c : JDBCType.values()) {
+            o[pos++][0] = c.getVendorTypeNumber();
+        }
+        return o;
     }
 }

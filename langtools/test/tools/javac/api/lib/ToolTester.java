@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import static javax.tools.StandardLocation.CLASS_PATH;
 import static javax.tools.StandardLocation.SOURCE_PATH;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
-public class ToolTester {
+public class ToolTester implements AutoCloseable {
     public final File test_src     = new File(System.getProperty("test.src", "."));
     public final File test_classes = new File(System.getProperty("test.classes", "."));
     public final List<File> test_class_path = pathToFiles(System.getProperty("test.class.path"),
@@ -76,5 +76,10 @@ public class ToolTester {
         result.addAll(a);
         result.addAll(b);
         return result;
+    }
+
+    @Override
+    public void close() throws IOException {
+        fm.close();
     }
 }

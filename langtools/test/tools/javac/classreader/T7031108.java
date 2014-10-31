@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,39 +68,40 @@ public class T7031108 extends JavacTestingAbstractProcessor {
 
     void run() throws Exception {
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
 
-        // step 1: compile test classes
-        File cwd = new File(".");
-        fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(cwd));
-        compile(comp, fm, null, null, pC);
+            // step 1: compile test classes
+            File cwd = new File(".");
+            fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(cwd));
+            compile(comp, fm, null, null, pC);
 
-        // step 2: verify functioning of processor
-        fm.setLocation(StandardLocation.ANNOTATION_PROCESSOR_PATH,
-                fm.getLocation(StandardLocation.CLASS_PATH));
-        fm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(cwd));
-        compile(comp, fm, null, getClass().getName(), dummy);
+            // step 2: verify functioning of processor
+            fm.setLocation(StandardLocation.ANNOTATION_PROCESSOR_PATH,
+                    fm.getLocation(StandardLocation.CLASS_PATH));
+            fm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(cwd));
+            compile(comp, fm, null, getClass().getName(), dummy);
 
-        File pC_class = new File(new File("p"), "C.class");
-        pC_class.delete();
+            File pC_class = new File(new File("p"), "C.class");
+            pC_class.delete();
 
-        DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<JavaFileObject>();
-        compile(comp, fm, dc, getClass().getName(), dummy);
-        List<Diagnostic<? extends JavaFileObject>> diags =dc.getDiagnostics();
+            DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<JavaFileObject>();
+            compile(comp, fm, dc, getClass().getName(), dummy);
+            List<Diagnostic<? extends JavaFileObject>> diags =dc.getDiagnostics();
 
-        System.err.println(diags);
-        switch (diags.size()) {
-            case 0:
-                throw new Exception("no diagnostics received");
-            case 1:
-                String code = diags.get(0).getCode();
-                String expect = "compiler.err.proc.cant.access.1";
-                if (!expect.equals(code))
-                    throw new Exception("unexpected diag code: " + code
-                            + ", expected: " + expect);
-                break;
-            default:
-                throw new Exception("unexpected diags received");
+            System.err.println(diags);
+            switch (diags.size()) {
+                case 0:
+                    throw new Exception("no diagnostics received");
+                case 1:
+                    String code = diags.get(0).getCode();
+                    String expect = "compiler.err.proc.cant.access.1";
+                    if (!expect.equals(code))
+                        throw new Exception("unexpected diag code: " + code
+                                + ", expected: " + expect);
+                    break;
+                default:
+                    throw new Exception("unexpected diags received");
+            }
         }
     }
 

@@ -59,59 +59,60 @@ public class DependencyCollection {
         Path src = Paths.get(ToolBox.testSrc, "test-input", "src");
 
         JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fileManager = javac.getStandardFileManager(null, null, null);
-        SmartFileManager smartFileManager = new SmartFileManager(fileManager);
-        smartFileManager.setSymbolFileEnabled(false);
-        Iterable<? extends JavaFileObject> fileObjects =
-                fileManager.getJavaFileObjectsFromFiles(Arrays.asList(src.resolve("pkg/Test.java").toFile()));
-        JavacTaskImpl task = (JavacTaskImpl) javac.getTask(new PrintWriter(System.out),
-                                                           smartFileManager,
-                                                           null,
-                                                           Arrays.asList("-d", "classes",
-                                                                         "-sourcepath", src.toAbsolutePath().toString()),
-                                                           null,
-                                                           fileObjects);
-        DependencyCollector depsCollector = new DependencyCollector();
-        task.addTaskListener(depsCollector);
-        task.doCall();
+        try (StandardJavaFileManager fileManager = javac.getStandardFileManager(null, null, null)) {
+            SmartFileManager smartFileManager = new SmartFileManager(fileManager);
+            smartFileManager.setSymbolFileEnabled(false);
+            Iterable<? extends JavaFileObject> fileObjects =
+                    fileManager.getJavaFileObjectsFromFiles(Arrays.asList(src.resolve("pkg/Test.java").toFile()));
+            JavacTaskImpl task = (JavacTaskImpl) javac.getTask(new PrintWriter(System.out),
+                                                               smartFileManager,
+                                                               null,
+                                                               Arrays.asList("-d", "classes",
+                                                                             "-sourcepath", src.toAbsolutePath().toString()),
+                                                               null,
+                                                               fileObjects);
+            DependencyCollector depsCollector = new DependencyCollector();
+            task.addTaskListener(depsCollector);
+            task.doCall();
 
-        // Find pkg symbol
-        PackageSymbol pkg = findPkgSymbolWithName(depsCollector.getSourcePackages(), "pkg");
-        Set<PackageSymbol> foundDependencies = depsCollector.getDependenciesForPkg(pkg);
+            // Find pkg symbol
+            PackageSymbol pkg = findPkgSymbolWithName(depsCollector.getSourcePackages(), "pkg");
+            Set<PackageSymbol> foundDependencies = depsCollector.getDependenciesForPkg(pkg);
 
-        // Print dependencies
-        System.out.println("Found dependencies:");
-        foundDependencies.stream()
-                         .sorted(Comparator.comparing(DependencyCollection::extractNumber))
-                         .forEach(p -> System.out.println("    " + p));
+            // Print dependencies
+            System.out.println("Found dependencies:");
+            foundDependencies.stream()
+                             .sorted(Comparator.comparing(DependencyCollection::extractNumber))
+                             .forEach(p -> System.out.println("    " + p));
 
-        // Check result
-        Set<Integer> found = foundDependencies.stream()
-                                              .map(DependencyCollection::extractNumber)
-                                              .collect(Collectors.toSet());
-        found.remove(-1); // Dependencies with no number (java.lang etc)
-        Set<Integer> expected = new HashSet<>();
-        for (int i = 2; i <= 30; i++) {
-            if (i == 15) continue;  // Case 15 correspond to the type of a throw-away return value.
-            expected.add(i);
+            // Check result
+            Set<Integer> found = foundDependencies.stream()
+                                                  .map(DependencyCollection::extractNumber)
+                                                  .collect(Collectors.toSet());
+            found.remove(-1); // Dependencies with no number (java.lang etc)
+            Set<Integer> expected = new HashSet<>();
+            for (int i = 2; i <= 30; i++) {
+                if (i == 15) continue;  // Case 15 correspond to the type of a throw-away return value.
+                expected.add(i);
+            }
+
+            Set<Integer> missing = new HashSet<>(expected);
+            missing.removeAll(found);
+            if (missing.size() > 0) {
+                System.out.println("Missing dependencies:");
+                missing.forEach(i -> System.out.println("    Dependency " + i));
+            }
+
+            Set<Integer> unexpected = new HashSet<>(found);
+            unexpected.removeAll(expected);
+            if (unexpected.size() > 0) {
+                System.out.println("Unexpected dependencies found:");
+                unexpected.forEach(i -> System.out.println("    Dependency " + i));
+            }
+
+            if (missing.size() > 0 || unexpected.size() > 0)
+                throw new AssertionError("Missing and/or unexpected dependencies found.");
         }
-
-        Set<Integer> missing = new HashSet<>(expected);
-        missing.removeAll(found);
-        if (missing.size() > 0) {
-            System.out.println("Missing dependencies:");
-            missing.forEach(i -> System.out.println("    Dependency " + i));
-        }
-
-        Set<Integer> unexpected = new HashSet<>(found);
-        unexpected.removeAll(expected);
-        if (unexpected.size() > 0) {
-            System.out.println("Unexpected dependencies found:");
-            unexpected.forEach(i -> System.out.println("    Dependency " + i));
-        }
-
-        if (missing.size() > 0 || unexpected.size() > 0)
-            throw new AssertionError("Missing and/or unexpected dependencies found.");
     }
 
     private static PackageSymbol findPkgSymbolWithName(Set<PackageSymbol> syms, String name) {

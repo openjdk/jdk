@@ -203,7 +203,12 @@ public class TestSimpleAddRemove {
     }
 
     public static void main(String... args) throws Exception {
-        new TestSimpleAddRemove().run();
+        TestSimpleAddRemove t = new TestSimpleAddRemove();
+        try {
+            t.run();
+        } finally {
+            t.fm.close();
+        }
     }
 
     JavacTool tool = (JavacTool) ToolProvider.getSystemJavaCompiler();

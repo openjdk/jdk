@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,16 @@ public class T6420464 {
 
     public static void main(String... args) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager mgr = compiler.getStandardFileManager(null, null, null);
-        mgr.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(test_src));
-        JavaFileObject f = mgr.getJavaFileForInput(StandardLocation.SOURCE_PATH,
-                                                   "T6420464",
-                                                   JavaFileObject.Kind.SOURCE);
-        if (!f.isNameCompatible("T6420464", JavaFileObject.Kind.SOURCE))
-            throw new AssertionError("isNameCompatible(SOURCE) fails on " + f.toUri());
-        if (f.isNameCompatible("T6420464", JavaFileObject.Kind.OTHER))
-            throw new AssertionError("isNameCompatible(OTHER) fails on " + f.toUri());
-        System.out.println("OK");
+        try (StandardJavaFileManager mgr = compiler.getStandardFileManager(null, null, null)) {
+            mgr.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(test_src));
+            JavaFileObject f = mgr.getJavaFileForInput(StandardLocation.SOURCE_PATH,
+                                                       "T6420464",
+                                                       JavaFileObject.Kind.SOURCE);
+            if (!f.isNameCompatible("T6420464", JavaFileObject.Kind.SOURCE))
+                throw new AssertionError("isNameCompatible(SOURCE) fails on " + f.toUri());
+            if (f.isNameCompatible("T6420464", JavaFileObject.Kind.OTHER))
+                throw new AssertionError("isNameCompatible(OTHER) fails on " + f.toUri());
+            System.out.println("OK");
+        }
     }
 }

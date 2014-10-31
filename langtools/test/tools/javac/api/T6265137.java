@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,12 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import javax.tools.*;
 
 public class T6265137 {
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
         DiagnosticListener<JavaFileObject> dl =  new DiagnosticListener<JavaFileObject>() {
                 public void report(Diagnostic<? extends JavaFileObject> message) {
@@ -45,10 +46,11 @@ public class T6265137 {
                     System.out.flush();
                 }
         };
-        StandardJavaFileManager fm = javac.getStandardFileManager(dl, null, null);
-        String srcdir = System.getProperty("test.src");
-        Iterable<? extends JavaFileObject> files =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(srcdir, "T6265137a.java")));
-        javac.getTask(null, fm, dl, Arrays.asList("-target","9"), null, files).call();
+        try (StandardJavaFileManager fm = javac.getStandardFileManager(dl, null, null)) {
+            String srcdir = System.getProperty("test.src");
+            Iterable<? extends JavaFileObject> files =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(srcdir, "T6265137a.java")));
+            javac.getTask(null, fm, dl, Arrays.asList("-target","9"), null, files).call();
+        }
     }
 }

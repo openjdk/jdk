@@ -42,6 +42,9 @@ jfieldID IO_fd_fdID;
 /* field id for jlong 'handle' in java.io.FileDescriptor */
 jfieldID IO_handle_fdID;
 
+/* field id for jboolean 'append' in java.io.FileDescriptor */
+jfieldID IO_append_fdID;
+
 /**************************************************************
  * static methods to store field IDs in initializers
  */
@@ -50,6 +53,7 @@ JNIEXPORT void JNICALL
 Java_java_io_FileDescriptor_initIDs(JNIEnv *env, jclass fdClass) {
     CHECK_NULL(IO_fd_fdID = (*env)->GetFieldID(env, fdClass, "fd", "I"));
     CHECK_NULL(IO_handle_fdID = (*env)->GetFieldID(env, fdClass, "handle", "J"));
+    CHECK_NULL(IO_append_fdID = (*env)->GetFieldID(env, fdClass, "append", "Z"));
 }
 
 JNIEXPORT jlong JNICALL

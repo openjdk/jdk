@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,25 +54,26 @@ public class GetTask_WriterTest extends APITest {
     public void testWriter() throws Exception {
         JavaFileObject srcFile = createSimpleJavaFileObject();
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        File outDir = getOutDir();
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
-        Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        DocumentationTask t = tool.getTask(pw, fm, null, null, null, files);
-        if (t.call()) {
-            System.err.println("task succeeded");
-            checkFiles(outDir, standardExpectFiles);
-            String out = sw.toString();
-            System.err.println(">>" + out + "<<");
-            for (String f: standardExpectFiles) {
-                String f1 = f.replace('/', File.separatorChar);
-                if (f1.endsWith(".html") && !out.contains(f1))
-                    throw new Exception("expected string not found: " + f1);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            File outDir = getOutDir();
+            fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+            Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            DocumentationTask t = tool.getTask(pw, fm, null, null, null, files);
+            if (t.call()) {
+                System.err.println("task succeeded");
+                checkFiles(outDir, standardExpectFiles);
+                String out = sw.toString();
+                System.err.println(">>" + out + "<<");
+                for (String f: standardExpectFiles) {
+                    String f1 = f.replace('/', File.separatorChar);
+                    if (f1.endsWith(".html") && !out.contains(f1))
+                        throw new Exception("expected string not found: " + f1);
+                }
+            } else {
+                throw new Exception("task failed");
             }
-        } else {
-            throw new Exception("task failed");
         }
     }
 }

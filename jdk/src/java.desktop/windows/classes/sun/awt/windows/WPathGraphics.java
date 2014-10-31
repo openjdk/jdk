@@ -1400,7 +1400,9 @@ final class WPathGraphics extends PathGraphics {
          * The saved device transform is needed as the current transform
          * is not likely to be the same.
          */
-        deviceClip(savedClip.getPathIterator(savedTransform));
+        if (savedClip != null) {
+            deviceClip(savedClip.getPathIterator(savedTransform));
+        }
 
         /* Scale the bounding rectangle by the scale transform.
          * Because the scaling transform has only x and y
