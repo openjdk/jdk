@@ -28,6 +28,7 @@
 
 extern jfieldID IO_fd_fdID;
 extern jfieldID IO_handle_fdID;
+extern jfieldID IO_append_fdID;
 
 #ifdef _ALLBSD_SOURCE
 #include <fcntl.h>

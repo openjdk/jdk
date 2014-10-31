@@ -35,7 +35,7 @@ import java.nio.charset.*;
 public class Flush {
     private static byte[] contents(ByteBuffer bb) {
         byte[] contents = new byte[bb.position()];
-        ((ByteBuffer)(bb.duplicate().flip())).get(contents);
+        bb.duplicate().flip().get(contents);
         return contents;
     }
 

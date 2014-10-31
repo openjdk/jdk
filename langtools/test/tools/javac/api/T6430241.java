@@ -1,5 +1,5 @@
     /*
-     * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+     * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
      * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
      *
      * This code is free software; you can redistribute it and/or modify it
@@ -134,21 +134,22 @@
             System.err.println("test task API: " + pcp);
 
             JavacTool tool = JavacTool.create();
-            StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
+            try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
 
-            if (pcp != null)
-                fm.setLocation(StandardLocation.PLATFORM_CLASS_PATH, pcp);
+                if (pcp != null)
+                    fm.setLocation(StandardLocation.PLATFORM_CLASS_PATH, pcp);
 
-            Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(testFile);
+                Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(testFile);
 
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            JavacTask task = tool.getTask(pw, fm, null, null, null, files);
-            boolean ok = task.call();
-            String out = showOutput(sw.toString());
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                JavacTask task = tool.getTask(pw, fm, null, null, null, files);
+                boolean ok = task.call();
+                String out = showOutput(sw.toString());
 
-            checkCompilationOK(ok);
-            checkOutput(out, expectWarnings);
+                checkCompilationOK(ok);
+                checkOutput(out, expectWarnings);
+            }
         }
 
         //----- utility methods

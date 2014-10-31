@@ -595,8 +595,13 @@ final class XWM
         return isNetWMName("Mutter") || isNetWMName("GNOME Shell");
     }
 
+    static int awtWMNonReparenting = -1;
     static boolean isNonReparentingWM() {
-        return (XWM.getWMID() == XWM.COMPIZ_WM || XWM.getWMID() == XWM.LG3D_WM || XWM.getWMID() == XWM.CWM_WM);
+        if (awtWMNonReparenting == -1) {
+            awtWMNonReparenting = (XToolkit.getEnv("_JAVA_AWT_WM_NONREPARENTING") != null) ? 1 : 0;
+        }
+        return (awtWMNonReparenting == 1 || XWM.getWMID() == XWM.COMPIZ_WM
+                || XWM.getWMID() == XWM.LG3D_WM || XWM.getWMID() == XWM.CWM_WM);
     }
 
     /*

@@ -1588,7 +1588,7 @@ public class File
     /**
      * A convenience method to set the owner's read permission for this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
-     * machine with special privileges that allow it to read files that that are
+     * machine with special privileges that allow it to read files that are
      * marked as unreadable.
      *
      * <p>An invocation of this method of the form <tt>file.setReadable(arg)</tt>

@@ -300,6 +300,12 @@ Zone	PST8PDT		 -8:00	US	P%sT
 # time zone, but we do go by the Eastern time zone because so many people work
 # in Columbus."
 
+# From Paul Eggert (2014-09-06):
+# Monthly Notices of the Royal Astronomical Society 44, 4 (1884-02-08), 208
+# says that New York City Hall time was 3 minutes 58.4 seconds fast of
+# Eastern time (i.e., -4:56:01.6) just before the 1883 switch.  Round to the
+# nearest second.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
 Rule	NYC	1920	only	-	Mar	lastSun	2:00	1:00	D
 Rule	NYC	1920	only	-	Oct	lastSun	2:00	0	S
@@ -1118,17 +1124,16 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 # An amendment to the Interpretation Act was registered on February 19/2007....
 # http://action.attavik.ca/home/justice-gn/attach/2007/gaz02part2.pdf
 
-# From Paul Eggert (2006-04-25):
+# From Paul Eggert (2014-10-18):
 # H. David Matthews and Mary Vincent's map
 # "It's about TIME", _Canadian Geographic_ (September-October 1998)
-# http://www.canadiangeographic.ca/Magazine/SO98/geomap.asp
+# http://www.canadiangeographic.ca/Magazine/SO98/alacarte.asp
 # contains detailed boundaries for regions observing nonstandard
 # time and daylight saving time arrangements in Canada circa 1998.
 #
-# INMS, the Institute for National Measurement Standards in Ottawa, has
-# information about standard and daylight saving time zones in Canada.
-# http://inms-ienm.nrc-cnrc.gc.ca/en/time_services/daylight_saving_e.php
-# (updated periodically).
+# National Research Council Canada maintains info about time zones and DST.
+# http://www.nrc-cnrc.gc.ca/eng/services/time/time_zones.html
+# http://www.nrc-cnrc.gc.ca/eng/services/time/faq/index.html#Q5
 # Its unofficial information is often taken from Matthews and Vincent.
 
 # From Paul Eggert (2006-06-27):
@@ -1993,10 +1998,7 @@ Zone America/Creston	-7:46:04 -	LMT	1884
 # [Also see <http://www.nunatsiaq.com/nunavut/nvt10309_06.html> (2001-03-09).]
 
 # From Gwillim Law (2005-05-21):
-# According to maps at
-# http://inms-ienm.nrc-cnrc.gc.ca/images/time_services/TZ01SWE.jpg
-# http://inms-ienm.nrc-cnrc.gc.ca/images/time_services/TZ01SSE.jpg
-# (both dated 2003), and
+# According to ...
 # http://www.canadiangeographic.ca/Magazine/SO98/geomap.asp
 # (from a 1998 Canadian Geographic article), the de facto and de jure time
 # for Southampton Island (at the north end of Hudson Bay) is UTC-5 all year
@@ -2005,9 +2007,11 @@ Zone America/Creston	-7:46:04 -	LMT	1884
 # predates the creation of Nunavut, it probably goes back many years....
 # The Inuktitut name of Coral Harbour is Sallit, but it's rarely used.
 #
-# From Paul Eggert (2005-07-26):
+# From Paul Eggert (2014-10-17):
 # For lack of better information, assume that Southampton Island observed
-# daylight saving only during wartime.
+# daylight saving only during wartime.  Gwillim Law's email also
+# mentioned maps now maintained by National Research Council Canada;
+# see above for an up-to-date link.
 
 # From Chris Walton (2007-03-01):
 # ... the community of Resolute (located on Cornwallis Island in
@@ -3008,10 +3012,21 @@ Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 # Shanks & Pottenger give -5:07:12, but Milne records -5:07:10.41 from an
 # unspecified official document, and says "This time is used throughout the
 # island".  Go with Milne.  Round to the nearest second as required by zic.
+#
+# Shanks & Pottenger give April 28 for the 1974 spring-forward transition, but
+# Lance Neita writes that Prime Minister Michael Manley decreed it January 5.
+# Assume Neita meant Jan 6 02:00, the same as the US.  Neita also writes that
+# Manley's supporters associated this act with Manley's nickname "Joshua"
+# (recall that in the Bible the sun stood still at Joshua's request),
+# and with the Rod of Correction which Manley said he had received from
+# Haile Selassie, Emperor of Ethiopia.  See:
+# Neita L. The politician in all of us. Jamaica Observer 2014-09-20
+# http://www.jamaicaobserver.com/columns/The-politician-in-all-of-us_17573647
+#
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Jamaica	-5:07:11 -	LMT	1890        # Kingston
 			-5:07:11 -	KMT	1912 Feb    # Kingston Mean Time
-			-5:00	-	EST	1974 Apr 28  2:00
+			-5:00	-	EST	1974
 			-5:00	US	E%sT	1984
 			-5:00	-	EST
 

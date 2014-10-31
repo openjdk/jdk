@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 
 import com.sun.source.tree.IdentifierTree;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -51,24 +52,25 @@ import javax.lang.model.SourceVersion;
 
 @SupportedAnnotationTypes("*")
 public class TestGetScope extends AbstractProcessor {
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         new TestGetScope().run();
     }
 
-    public void run() {
+    public void run() throws IOException {
         File srcDir = new File(System.getProperty("test.src"));
         File thisFile = new File(srcDir, getClass().getName() + ".java");
 
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = c.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
 
-        List<String> opts = Arrays.asList("-proc:only", "-doe");
-        Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(thisFile);
-        JavacTask t = (JavacTask) c.getTask(null, fm, null, opts, null, files);
-        t.setProcessors(Collections.singleton(this));
-        boolean ok = t.call();
-        if (!ok)
-            throw new Error("compilation failed");
+            List<String> opts = Arrays.asList("-proc:only", "-doe");
+            Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(thisFile);
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, opts, null, files);
+            t.setProcessors(Collections.singleton(this));
+            boolean ok = t.call();
+            if (!ok)
+                throw new Error("compilation failed");
+        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,41 +100,42 @@ public class TestSuppression {
 
         DiagListener dl = new DiagListener();
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
-        fm.setLocation(StandardLocation.CLASS_PATH,
-                Arrays.asList(classesDir, new File(System.getProperty("test.classes"))));
-        fm.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singleton(classesDir));
-        fm.setLocation(StandardLocation.SOURCE_OUTPUT, Collections.singleton(gensrcDir));
-        List<String> args = new ArrayList<String>();
-//        args.add("-XprintProcessorInfo");
-        args.add("-XprintRounds");
-        args.add("-Agen=" + gen);
-        if (wk == WarningKind.YES)
-            args.add("-Xlint:serial");
-        Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(x);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null)) {
+            fm.setLocation(StandardLocation.CLASS_PATH,
+                    Arrays.asList(classesDir, new File(System.getProperty("test.classes"))));
+            fm.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singleton(classesDir));
+            fm.setLocation(StandardLocation.SOURCE_OUTPUT, Collections.singleton(gensrcDir));
+            List<String> args = new ArrayList<String>();
+    //        args.add("-XprintProcessorInfo");
+            args.add("-XprintRounds");
+            args.add("-Agen=" + gen);
+            if (wk == WarningKind.YES)
+                args.add("-Xlint:serial");
+            Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(x);
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        JavacTask task = tool.getTask(pw, fm, dl, args, null, files);
-        task.setProcessors(Arrays.asList(new AnnoProc()));
-        boolean ok = task.call();
-        pw.close();
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            JavacTask task = tool.getTask(pw, fm, dl, args, null, files);
+            task.setProcessors(Arrays.asList(new AnnoProc()));
+            boolean ok = task.call();
+            pw.close();
 
-        System.err.println("ok:" + ok + " diags:" + dl.counts);
-        if (sw.toString().length() > 0) {
-            System.err.println("output:\n" + sw.toString());
-        }
-
-        for (Diagnostic.Kind dk: Diagnostic.Kind.values()) {
-            Integer v = dl.counts.get(dk);
-            int found = (v == null) ? 0 : v;
-            int expect = (dk == Diagnostic.Kind.WARNING && wk == WarningKind.YES) ? gen : 0;
-            if (found != expect) {
-                error("Unexpected value for " + dk + ": expected: " + expect + " found: " + found);
+            System.err.println("ok:" + ok + " diags:" + dl.counts);
+            if (sw.toString().length() > 0) {
+                System.err.println("output:\n" + sw.toString());
             }
-        }
 
-        System.err.println();
+            for (Diagnostic.Kind dk: Diagnostic.Kind.values()) {
+                Integer v = dl.counts.get(dk);
+                int found = (v == null) ? 0 : v;
+                int expect = (dk == Diagnostic.Kind.WARNING && wk == WarningKind.YES) ? gen : 0;
+                if (found != expect) {
+                    error("Unexpected value for " + dk + ": expected: " + expect + " found: " + found);
+                }
+            }
+
+            System.err.println();
+        }
     }
 
     File createDir(File parent, String name) {

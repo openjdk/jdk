@@ -47,7 +47,7 @@ import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.PrinterName;
 
-public class Win32PrintServiceLookup extends PrintServiceLookup {
+public class PrintServiceLookupProvider extends PrintServiceLookup {
 
     private String defaultPrinter;
     private PrintService defaultPrintService;
@@ -70,10 +70,10 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
      * javax.print.PrintServiceLookup.defaultPrintService() so that the
      * same instance is stored there.
      */
-    private static Win32PrintServiceLookup win32PrintLUS;
+    private static PrintServiceLookupProvider win32PrintLUS;
 
     /* Think carefully before calling this. Preferably don't call it. */
-    public static Win32PrintServiceLookup getWin32PrintLUS() {
+    public static PrintServiceLookupProvider getWin32PrintLUS() {
         if (win32PrintLUS == null) {
             /* This call is internally synchronized.
              * When it returns an instance of this class will have
@@ -84,7 +84,7 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
         return win32PrintLUS;
     }
 
-    public Win32PrintServiceLookup() {
+    public PrintServiceLookupProvider() {
 
         if (win32PrintLUS == null) {
             win32PrintLUS = this;

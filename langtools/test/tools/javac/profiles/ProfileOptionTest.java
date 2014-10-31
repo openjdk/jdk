@@ -236,24 +236,28 @@ public class ProfileOptionTest {
 
     /** Run all test cases. */
     void run() throws Exception {
-        initTestClasses();
+        try {
+            initTestClasses();
 
-        for (Method m: getClass().getDeclaredMethods()) {
-            Annotation a = m.getAnnotation(Test.class);
-            if (a != null) {
-                System.err.println(m.getName());
-                try {
-                    m.invoke(this, new Object[] { });
-                } catch (InvocationTargetException e) {
-                    Throwable cause = e.getCause();
-                    throw (cause instanceof Exception) ? ((Exception) cause) : e;
+            for (Method m: getClass().getDeclaredMethods()) {
+                Annotation a = m.getAnnotation(Test.class);
+                if (a != null) {
+                    System.err.println(m.getName());
+                    try {
+                        m.invoke(this, new Object[] { });
+                    } catch (InvocationTargetException e) {
+                        Throwable cause = e.getCause();
+                        throw (cause instanceof Exception) ? ((Exception) cause) : e;
+                    }
+                    System.err.println();
                 }
-                System.err.println();
             }
-        }
 
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
+            if (errors > 0)
+                throw new Exception(errors + " errors occurred");
+        } finally {
+            fm.close();
+        }
     }
 
     void error(String msg) {
