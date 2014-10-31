@@ -234,36 +234,6 @@ inline void CMSBitMap::iterate(BitMapClosure* cl, HeapWord* left,
   }
 }
 
-inline void CMSCollector::start_icms() {
-  if (CMSIncrementalMode) {
-    ConcurrentMarkSweepThread::start_icms();
-  }
-}
-
-inline void CMSCollector::stop_icms() {
-  if (CMSIncrementalMode) {
-    ConcurrentMarkSweepThread::stop_icms();
-  }
-}
-
-inline void CMSCollector::disable_icms() {
-  if (CMSIncrementalMode) {
-    ConcurrentMarkSweepThread::disable_icms();
-  }
-}
-
-inline void CMSCollector::enable_icms() {
-  if (CMSIncrementalMode) {
-    ConcurrentMarkSweepThread::enable_icms();
-  }
-}
-
-inline void CMSCollector::icms_wait() {
-  if (CMSIncrementalMode) {
-    cmsThread()->icms_wait();
-  }
-}
-
 inline void CMSCollector::save_sweep_limits() {
   _cmsGen->save_sweep_limit();
 }
@@ -363,12 +333,6 @@ inline void CMSStats::record_cms_end() {
   _cms_duration = AdaptiveWeightedAverage::exp_avg(_cms_duration,
     cur_duration, _cms_alpha);
 
-  // Avoid division by 0.
-  const size_t cms_used_mb = MAX2(_cms_used_at_cms_begin / M, (size_t)1);
-  _cms_duration_per_mb = AdaptiveWeightedAverage::exp_avg(_cms_duration_per_mb,
-                                 cur_duration / cms_used_mb,
-                                 _cms_alpha);
-
   _cms_end_time.update();
   _cms_alpha = _saved_alpha;
   _allow_duty_cycle_reduction = true;
@@ -398,15 +362,6 @@ inline double CMSStats::cms_allocation_rate() const {
 inline double CMSStats::cms_consumption_rate() const {
   assert(valid(), "statistics not valid yet");
   return (gc0_promoted() + cms_allocated()) / gc0_period();
-}
-
-inline unsigned int CMSStats::icms_update_duty_cycle() {
-  // Update the duty cycle only if pacing is enabled and the stats are valid
-  // (after at least one young gen gc and one cms cycle have completed).
-  if (CMSIncrementalPacing && valid()) {
-    return icms_update_duty_cycle_impl();
-  }
-  return _icms_duty_cycle;
 }
 
 inline void ConcurrentMarkSweepGeneration::save_sweep_limit() {

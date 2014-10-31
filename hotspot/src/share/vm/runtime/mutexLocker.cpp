@@ -72,7 +72,6 @@ Monitor* Threads_lock                 = NULL;
 Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* SLT_lock                     = NULL;
-Monitor* iCMS_lock                    = NULL;
 Monitor* FullGCCount_lock             = NULL;
 Monitor* CMark_lock                   = NULL;
 Mutex*   CMRegionStack_lock           = NULL;
@@ -175,9 +174,6 @@ void mutex_init() {
 
   def(CGC_lock                   , Monitor, special,     true ); // coordinate between fore- and background GC
   def(STS_lock                   , Monitor, leaf,        true );
-  if (UseConcMarkSweepGC) {
-    def(iCMS_lock                  , Monitor, special,     true ); // CMS incremental mode start/stop notification
-  }
   if (UseConcMarkSweepGC || UseG1GC) {
     def(FullGCCount_lock           , Monitor, leaf,        true ); // in support of ExplicitGCInvokesConcurrent
   }

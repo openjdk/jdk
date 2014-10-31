@@ -41,20 +41,6 @@
 // implementations for keeping track of free and used space,
 // for iterating over objects and free blocks, etc.
 
-// Here's the Space hierarchy:
-//
-// - Space               -- an abstract base class describing a heap area
-//   - CompactibleSpace  -- a space supporting compaction
-//     - CompactibleFreeListSpace -- (used for CMS generation)
-//     - G1OffsetTableContigSpace -- G1 version of OffsetTableContigSpace
-//     - ContiguousSpace -- a compactible space in which all free space
-//                          is contiguous
-//       - EdenSpace     -- contiguous space used as nursery
-//         - ConcEdenSpace -- contiguous space with a 'soft end safe' allocation
-//       - OffsetTableContigSpace -- contiguous space with a block offset array
-//                          that allows "fast" block_start calls
-//         - TenuredSpace -- (used for TenuredGeneration)
-
 // Forward decls.
 class Space;
 class BlockOffsetArray;
@@ -544,8 +530,8 @@ class ContiguousSpace: public CompactibleSpace {
   GenSpaceMangler* mangler() { return _mangler; }
 
   // Allocation helpers (return NULL if full).
-  inline HeapWord* allocate_impl(size_t word_size, HeapWord* end_value);
-  inline HeapWord* par_allocate_impl(size_t word_size, HeapWord* end_value);
+  inline HeapWord* allocate_impl(size_t word_size);
+  inline HeapWord* par_allocate_impl(size_t word_size);
 
  public:
   ContiguousSpace();
@@ -760,56 +746,6 @@ public:
     Filtering_DCTOC(sp, cl, precision, boundary)
   {}
 };
-
-
-// Class EdenSpace describes eden-space in new generation.
-
-class DefNewGeneration;
-
-class EdenSpace : public ContiguousSpace {
-  friend class VMStructs;
- private:
-  DefNewGeneration* _gen;
-
-  // _soft_end is used as a soft limit on allocation.  As soft limits are
-  // reached, the slow-path allocation code can invoke other actions and then
-  // adjust _soft_end up to a new soft limit or to end().
-  HeapWord* _soft_end;
-
- public:
-  EdenSpace(DefNewGeneration* gen) :
-   _gen(gen), _soft_end(NULL) {}
-
-  // Get/set just the 'soft' limit.
-  HeapWord* soft_end()               { return _soft_end; }
-  HeapWord** soft_end_addr()         { return &_soft_end; }
-  void set_soft_end(HeapWord* value) { _soft_end = value; }
-
-  // Override.
-  void clear(bool mangle_space);
-
-  // Set both the 'hard' and 'soft' limits (_end and _soft_end).
-  void set_end(HeapWord* value) {
-    set_soft_end(value);
-    ContiguousSpace::set_end(value);
-  }
-
-  // Allocation (return NULL if full)
-  HeapWord* allocate(size_t word_size);
-  HeapWord* par_allocate(size_t word_size);
-};
-
-// Class ConcEdenSpace extends EdenSpace for the sake of safe
-// allocation while soft-end is being modified concurrently
-
-class ConcEdenSpace : public EdenSpace {
- public:
-  ConcEdenSpace(DefNewGeneration* gen) : EdenSpace(gen) { }
-
-  // Allocation (return NULL if full)
-  HeapWord* par_allocate(size_t word_size);
-};
-
 
 // A ContigSpace that Supports an efficient "block_start" operation via
 // a BlockOffsetArray (whose BlockOffsetSharedArray may be shared with

@@ -640,13 +640,12 @@ size_t ContiguousSpace::block_size(const HeapWord* p) const {
 }
 
 // This version requires locking.
-inline HeapWord* ContiguousSpace::allocate_impl(size_t size,
-                                                HeapWord* const end_value) {
+inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
   assert(Heap_lock->owned_by_self() ||
          (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()),
          "not locked");
   HeapWord* obj = top();
-  if (pointer_delta(end_value, obj) >= size) {
+  if (pointer_delta(end(), obj) >= size) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
     assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
@@ -657,11 +656,10 @@ inline HeapWord* ContiguousSpace::allocate_impl(size_t size,
 }
 
 // This version is lock-free.
-inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size,
-                                                    HeapWord* const end_value) {
+inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
   do {
     HeapWord* obj = top();
-    if (pointer_delta(end_value, obj) >= size) {
+    if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
       HeapWord* result = (HeapWord*)Atomic::cmpxchg_ptr(new_top, top_addr(), obj);
       // result can be one of two:
@@ -700,12 +698,12 @@ HeapWord* ContiguousSpace::allocate_aligned(size_t size) {
 
 // Requires locking.
 HeapWord* ContiguousSpace::allocate(size_t size) {
-  return allocate_impl(size, end());
+  return allocate_impl(size);
 }
 
 // Lock-free.
 HeapWord* ContiguousSpace::par_allocate(size_t size) {
-  return par_allocate_impl(size, end());
+  return par_allocate_impl(size);
 }
 
 void ContiguousSpace::allocate_temporary_filler(int factor) {
@@ -739,49 +737,6 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
     obj->set_klass(SystemDictionary::Object_klass());
   }
 }
-
-void EdenSpace::clear(bool mangle_space) {
-  ContiguousSpace::clear(mangle_space);
-  set_soft_end(end());
-}
-
-// Requires locking.
-HeapWord* EdenSpace::allocate(size_t size) {
-  return allocate_impl(size, soft_end());
-}
-
-// Lock-free.
-HeapWord* EdenSpace::par_allocate(size_t size) {
-  return par_allocate_impl(size, soft_end());
-}
-
-HeapWord* ConcEdenSpace::par_allocate(size_t size)
-{
-  do {
-    // The invariant is top() should be read before end() because
-    // top() can't be greater than end(), so if an update of _soft_end
-    // occurs between 'end_val = end();' and 'top_val = top();' top()
-    // also can grow up to the new end() and the condition
-    // 'top_val > end_val' is true. To ensure the loading order
-    // OrderAccess::loadload() is required after top() read.
-    HeapWord* obj = top();
-    OrderAccess::loadload();
-    if (pointer_delta(*soft_end_addr(), obj) >= size) {
-      HeapWord* new_top = obj + size;
-      HeapWord* result = (HeapWord*)Atomic::cmpxchg_ptr(new_top, top_addr(), obj);
-      // result can be one of two:
-      //  the old top value: the exchange succeeded
-      //  otherwise: the new value of the top is returned.
-      if (result == obj) {
-        assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
-        return obj;
-      }
-    } else {
-      return NULL;
-    }
-  } while (true);
-}
-
 
 HeapWord* OffsetTableContigSpace::initialize_threshold() {
   return _offsets.initialize_threshold();
