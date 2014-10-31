@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,9 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package pkg2;
 
-/**
- * @expert Expert tag text
- */
+import java.util.List;
+import java.util.Set;
 
-public class D extends C {}
+
+public class Test {
+    public <T> Object alphaProperty(List<T> foo) { return null; }
+    public Object betaProperty() { return null; }
+    public final  List<String> gammaProperty()  {return null;}
+    public final List<Set<? super Object>> deltaProperty() {return null;}
+}
