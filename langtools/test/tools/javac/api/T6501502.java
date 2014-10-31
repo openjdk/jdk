@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,16 +46,18 @@ public class T6501502 {
     // we test a number of platform-independent paths.
     void run() throws Exception {
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        fm = c.getStandardFileManager(null, null, null);
-        System.err.println(System.getProperties());
-        File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        File testSrcDir = new File(System.getProperty("test.src"));
-        File testClassesDir = new File(System.getProperty("test.classes"));
-        test(new File("abc.tmp"));
-        test(new File(tmpDir, "bad.file"));
-        test(new File(testSrcDir, "T6501501.java"));
-        test(new File(testClassesDir, "T6501501.class"));
-        test(new File("a b"));
+        try (StandardJavaFileManager sfm = c.getStandardFileManager(null, null, null)) {
+            fm = sfm;
+            System.err.println(System.getProperties());
+            File tmpDir = new File(System.getProperty("java.io.tmpdir"));
+            File testSrcDir = new File(System.getProperty("test.src"));
+            File testClassesDir = new File(System.getProperty("test.classes"));
+            test(new File("abc.tmp"));
+            test(new File(tmpDir, "bad.file"));
+            test(new File(testSrcDir, "T6501501.java"));
+            test(new File(testClassesDir, "T6501501.class"));
+            test(new File("a b"));
+        }
     }
 
     void test(File f) throws Exception {

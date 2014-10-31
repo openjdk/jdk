@@ -560,7 +560,7 @@ final class CipherBox {
                         + newLen);
 
                     hd.encodeBuffer(
-                        (ByteBuffer)bb.duplicate().position(pos), System.out);
+                        bb.duplicate().position(pos), System.out);
                 } catch (IOException e) { }
             }
 
@@ -790,7 +790,7 @@ final class CipherBox {
 
         // The padding data should be filled with the padding length value.
         int[] results = checkPadding(
-                (ByteBuffer)bb.duplicate().position(offset + newLen),
+                bb.duplicate().position(offset + newLen),
                 (byte)(padLen & 0xFF));
         if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
             if (results[0] != 0) {          // padding data has invalid bytes

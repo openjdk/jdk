@@ -140,7 +140,8 @@ public final class KeychainStore extends KeyStoreSpi {
      * password to recover it.
      *
      * @param alias the alias name
-     * @param password the password for recovering the key
+     * @param password the password for recovering the key. This password is
+     *        used internally as the key is exported in a PKCS12 format.
      *
      * @return the requested key, or null if the given alias does not exist
      * or does not identify a <i>key entry</i>.
@@ -154,6 +155,20 @@ public final class KeychainStore extends KeyStoreSpi {
         throws NoSuchAlgorithmException, UnrecoverableKeyException
     {
         permissionCheck();
+
+        // An empty password is rejected by MacOS API, no private key data
+        // is exported. If no password is passed (as is the case when
+        // this implementation is used as browser keystore in various
+        // deployment scenarios like Webstart, JFX and applets), create
+        // a dummy password so MacOS API is happy.
+        if (password == null || password.length == 0) {
+            // Must not be a char array with only a 0, as this is an empty
+            // string.
+            if (random == null) {
+                random = new SecureRandom();
+            }
+            password = Long.toString(random.nextLong()).toCharArray();
+        }
 
         Object entry = entries.get(alias.toLowerCase());
 

@@ -3696,7 +3696,7 @@ public class Container extends Component {
     private void writeObject(ObjectOutputStream s) throws IOException {
         ObjectOutputStream.PutField f = s.putFields();
         f.put("ncomponents", component.size());
-        f.put("component", getComponentsSync());
+        f.put("component", component.toArray(EMPTY_ARRAY));
         f.put("layoutMgr", layoutMgr);
         f.put("dispatcher", dispatcher);
         f.put("maxSize", maxSize);

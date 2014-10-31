@@ -71,13 +71,17 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
     static final StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
 
     public static void main(String[] args) throws Exception {
-        fm.setLocation(SOURCE_PATH,
-                Arrays.asList(new File(System.getProperty("test.src"), "tests")));
-        for (JavaFileObject jfo : fm.list(SOURCE_PATH, "", Collections.singleton(JavaFileObject.Kind.SOURCE), true)) {
-            new ResolveHarness(jfo).check();
-        }
-        if (nerrors > 0) {
-            throw new AssertionError("Errors were found");
+        try {
+            fm.setLocation(SOURCE_PATH,
+                    Arrays.asList(new File(System.getProperty("test.src"), "tests")));
+            for (JavaFileObject jfo : fm.list(SOURCE_PATH, "", Collections.singleton(JavaFileObject.Kind.SOURCE), true)) {
+                new ResolveHarness(jfo).check();
+            }
+            if (nerrors > 0) {
+                throw new AssertionError("Errors were found");
+            }
+        } finally {
+            fm.close();
         }
     }
 

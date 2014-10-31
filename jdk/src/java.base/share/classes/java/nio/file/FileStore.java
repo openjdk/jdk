@@ -208,7 +208,7 @@ public abstract class FileStore {
      * @param   attribute
      *          the attribute to read
 
-     * @return  the attribute value; {@code null} may be a valid for some
+     * @return  the attribute value; {@code null} may be valid for some
      *          attributes
      *
      * @throws  UnsupportedOperationException

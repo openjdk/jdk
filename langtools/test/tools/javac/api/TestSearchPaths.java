@@ -76,30 +76,33 @@ public class TestSearchPaths {
     void run() throws Exception {
         compiler = ToolProvider.getSystemJavaCompiler();
         fileManager = compiler.getStandardFileManager(null, null, null);
+        try {
+            // basic output path
+            testClassOutput();
 
-        // basic output path
-        testClassOutput();
+            // basic search paths
+            testClassPath();
+            testSourcePath();
+            testPlatformClassPath();
 
-        // basic search paths
-        testClassPath();
-        testSourcePath();
-        testPlatformClassPath();
+            // annotation processing
+            testAnnotationProcessorPath();
+            testSourceOutput();
 
-        // annotation processing
-        testAnnotationProcessorPath();
-        testSourceOutput();
+            // javah equivalent
+            testNativeHeaderOutput();
 
-        // javah equivalent
-        testNativeHeaderOutput();
+            // future-proof: guard against new StandardLocations being added
+            if (!tested.equals(EnumSet.allOf(StandardLocation.class))) {
+                error("not all standard locations have been tested");
+                out.println("not yet tested: " + EnumSet.complementOf(tested));
+            }
 
-        // future-proof: guard against new StandardLocations being added
-        if (!tested.equals(EnumSet.allOf(StandardLocation.class))) {
-            error("not all standard locations have been tested");
-            out.println("not yet tested: " + EnumSet.complementOf(tested));
-        }
-
-        if (errors > 0) {
-            throw new Exception(errors + " errors occurred");
+            if (errors > 0) {
+                throw new Exception(errors + " errors occurred");
+            }
+        } finally {
+            fileManager.close();
         }
     }
 

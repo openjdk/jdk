@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,17 +105,18 @@ public class TestTreePath extends AbstractProcessor {
 
     public void run() throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fileManager
-            = compiler.getStandardFileManager(null, null, null);
-        Iterable<? extends JavaFileObject> tests
-            = fileManager.getJavaFileObjects(writeTestFile());
+        try (StandardJavaFileManager fileManager
+                = compiler.getStandardFileManager(null, null, null)) {
+            Iterable<? extends JavaFileObject> tests
+                = fileManager.getJavaFileObjects(writeTestFile());
 
-        JavaCompiler.CompilationTask task =
-            ToolProvider.getSystemJavaCompiler().getTask(
-                    null, null, null,
-                    Arrays.asList("-processor", this.getClass().getName()), null,
-                    tests);
-        task.call();
+            JavaCompiler.CompilationTask task =
+                ToolProvider.getSystemJavaCompiler().getTask(
+                        null, null, null,
+                        Arrays.asList("-processor", this.getClass().getName()), null,
+                        tests);
+            task.call();
+        }
     }
 
     public static void main(String[] args) throws IOException {

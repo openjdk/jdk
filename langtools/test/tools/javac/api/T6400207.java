@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,28 +61,29 @@ public class T6400207 {
     }
 
     public static void main(String... args) throws Exception {
-        JavaFileManager fm =
-            ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
-        JavaFileManager.Location bogusLocation = locationFor("bogus");
-        JavaFileManager.Location knownLocation = CLASS_PATH;
-        String packageName = "java.lang";
-        Set<JavaFileObject.Kind> kinds = EnumSet.of(CLASS);
+        try (JavaFileManager fm =
+                ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
+            JavaFileManager.Location bogusLocation = locationFor("bogus");
+            JavaFileManager.Location knownLocation = CLASS_PATH;
+            String packageName = "java.lang";
+            Set<JavaFileObject.Kind> kinds = EnumSet.of(CLASS);
 
-        for (StandardLocation location : StandardLocation.values()) {
-            if (location != locationFor(location.getName()))
-                throw new AssertionError(location + " != locationFor(" +
-                                         location.getName() + ")");
+            for (StandardLocation location : StandardLocation.values()) {
+                if (location != locationFor(location.getName()))
+                    throw new AssertionError(location + " != locationFor(" +
+                                             location.getName() + ")");
+            }
+
+            testList(fm, null, null, null);
+            testList(fm, bogusLocation, packageName, kinds);
+            testList(fm, knownLocation, packageName, kinds);
+            testList(fm, null, packageName, kinds);
+            testList(fm, knownLocation, null, kinds);
+            testList(fm, knownLocation, packageName, null);
+            testList(fm, bogusLocation, null, kinds);
+            testList(fm, bogusLocation, packageName, null);
+
+            System.err.println("Test PASSED.");
         }
-
-        testList(fm, null, null, null);
-        testList(fm, bogusLocation, packageName, kinds);
-        testList(fm, knownLocation, packageName, kinds);
-        testList(fm, null, packageName, kinds);
-        testList(fm, knownLocation, null, kinds);
-        testList(fm, knownLocation, packageName, null);
-        testList(fm, bogusLocation, null, kinds);
-        testList(fm, bogusLocation, packageName, null);
-
-        System.err.println("Test PASSED.");
     }
 }

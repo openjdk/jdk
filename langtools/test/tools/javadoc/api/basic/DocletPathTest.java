@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,34 +59,36 @@ public class DocletPathTest extends APITest {
                 createSimpleJavaFileObject("DocletOnDocletPath", docletSrcText);
         File docletDir = getOutDir("classes");
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager cfm = compiler.getStandardFileManager(null, null, null);
-        cfm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(docletDir));
-        Iterable<? extends JavaFileObject> cfiles = Arrays.asList(docletSrc);
-        if (!compiler.getTask(null, cfm, null, null, null, cfiles).call())
-            throw new Exception("cannot compile doclet");
+        try (StandardJavaFileManager cfm = compiler.getStandardFileManager(null, null, null)) {
+            cfm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(docletDir));
+            Iterable<? extends JavaFileObject> cfiles = Arrays.asList(docletSrc);
+            if (!compiler.getTask(null, cfm, null, null, null, cfiles).call())
+                throw new Exception("cannot compile doclet");
+        }
 
         JavaFileObject srcFile = createSimpleJavaFileObject();
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        File outDir = getOutDir("api");
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
-        fm.setLocation(DocumentationTool.Location.DOCLET_PATH, Arrays.asList(docletDir));
-        Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
-        Iterable<String> options = Arrays.asList("-doclet", "DocletOnDocletPath");
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        DocumentationTask t = tool.getTask(pw, fm, null, null, options, files);
-        boolean ok = t.call();
-        String out = sw.toString();
-        System.err.println(">>" + out + "<<");
-        if (ok) {
-            if (out.contains(TEST_STRING)) {
-                System.err.println("doclet executed as expected");
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            File outDir = getOutDir("api");
+            fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+            fm.setLocation(DocumentationTool.Location.DOCLET_PATH, Arrays.asList(docletDir));
+            Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
+            Iterable<String> options = Arrays.asList("-doclet", "DocletOnDocletPath");
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            DocumentationTask t = tool.getTask(pw, fm, null, null, options, files);
+            boolean ok = t.call();
+            String out = sw.toString();
+            System.err.println(">>" + out + "<<");
+            if (ok) {
+                if (out.contains(TEST_STRING)) {
+                    System.err.println("doclet executed as expected");
+                } else {
+                    error("test string not found in doclet output");
+                }
             } else {
-                error("test string not found in doclet output");
+                error("task failed");
             }
-        } else {
-            error("task failed");
         }
     }
 

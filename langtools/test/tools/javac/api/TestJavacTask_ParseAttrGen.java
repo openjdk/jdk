@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,17 @@ public class TestJavacTask_ParseAttrGen {
     void run() throws Exception {
         comp = ToolProvider.getSystemJavaCompiler();
         fm = comp.getStandardFileManager(null, null, null);
-
-        final boolean[] booleanValues = { false, true };
-        for (boolean pk: booleanValues) {
-            for (boolean ak: booleanValues) {
-                for (boolean gk: booleanValues) {
-                    test(pk, ak, gk);
+        try {
+            final boolean[] booleanValues = { false, true };
+            for (boolean pk: booleanValues) {
+                for (boolean ak: booleanValues) {
+                    for (boolean gk: booleanValues) {
+                        test(pk, ak, gk);
+                    }
                 }
             }
+        } finally {
+            fm.close();
         }
     }
 
