@@ -510,7 +510,7 @@ public class DrawImage implements DrawImagePipe
         // We need to transform to a temp image and then copy
         // just the pieces that are valid data to the dest.
         BufferedImage tmpimg = new BufferedImage(dx2-dx1, dy2-dy1,
-                                                 BufferedImage.TYPE_INT_ARGB);
+                                                 BufferedImage.TYPE_INT_ARGB_PRE);
         SurfaceData tmpData = SurfaceData.getPrimarySurfaceData(tmpimg);
         SurfaceType tmpType = tmpData.getSurfaceType();
         MaskBlit tmpmaskblit =
