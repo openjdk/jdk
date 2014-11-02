@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
  * Micro-benchmark for Math.pow() and Math.exp()
  */
 
-import java.util.*;
+import com.oracle.java.testlibrary.Utils;
+import java.util.Random;
 
 public class Test7177917 {
 
   static double d;
 
-  static Random r = new Random(0);
+  static final Random R = Utils.getRandomInstance();
 
   static long  m_pow(double[][] values) {
     double res = 0;
@@ -59,10 +60,10 @@ public class Test7177917 {
   static double[][] pow_values(int nb) {
     double[][] res = new double[nb][2];
     for (int i = 0; i < nb; i++) {
-      double ylogx = (1 + (r.nextDouble() * 2045)) - 1023; // 2045 rather than 2046 as a safety margin
-      double x = Math.abs(Double.longBitsToDouble(r.nextLong()));
+      double ylogx = (1 + (R.nextDouble() * 2045)) - 1023; // 2045 rather than 2046 as a safety margin
+      double x = Math.abs(Double.longBitsToDouble(R.nextLong()));
       while (x != x) {
-        x = Math.abs(Double.longBitsToDouble(r.nextLong()));
+        x = Math.abs(Double.longBitsToDouble(R.nextLong()));
       }
       double logx = Math.log(x) / Math.log(2);
       double y = ylogx / logx;
@@ -76,7 +77,7 @@ public class Test7177917 {
   static double[] exp_values(int nb) {
     double[] res = new double[nb];
     for (int i = 0; i < nb; i++) {
-      double ylogx = (1 + (r.nextDouble() * 2045)) - 1023; // 2045 rather than 2046 as a safety margin
+      double ylogx = (1 + (R.nextDouble() * 2045)) - 1023; // 2045 rather than 2046 as a safety margin
       double x = Math.E;
       double logx = Math.log(x) / Math.log(2);
       double y = ylogx / logx;
