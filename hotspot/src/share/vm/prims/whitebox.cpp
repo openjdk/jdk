@@ -509,16 +509,6 @@ class AlwaysFalseClosure : public BoolObjectClosure {
 
 static AlwaysFalseClosure always_false;
 
-class VM_WhiteBoxCleanMethodData : public VM_WhiteBoxOperation {
- public:
-  VM_WhiteBoxCleanMethodData(MethodData* mdo) : _mdo(mdo) { }
-  void doit() {
-    _mdo->clean_method_data(&always_false);
-  }
- private:
-  MethodData* _mdo;
-};
-
 WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
@@ -534,8 +524,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    VM_WhiteBoxCleanMethodData op(mdo);
-    VMThread::execute(&op);
+    MutexLockerEx mu(mdo->extra_data_lock());
+    mdo->clean_method_data(&always_false);
   }
 
   mh->clear_not_c1_compilable();
