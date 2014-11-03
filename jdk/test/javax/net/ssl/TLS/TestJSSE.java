@@ -78,6 +78,10 @@ public class TestJSSE {
     private static final String LOCAL_IP = "127.0.0.1";
 
     public static void main(String... args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         String serverProtocol = System.getProperty("SERVER_PROTOCOL");
         String clientProtocol = System.getProperty("CLIENT_PROTOCOL");
         int port = jdk.testlibrary.Utils.getFreePort();

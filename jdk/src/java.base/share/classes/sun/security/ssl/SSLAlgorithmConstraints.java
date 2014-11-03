@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,14 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     private AlgorithmConstraints peerAlgConstraints = null;
 
     private boolean enabledX509DisabledAlgConstraints = true;
+
+    // the default algorithm constraints
+    final static AlgorithmConstraints DEFAULT =
+                        new SSLAlgorithmConstraints(null);
+
+    // the default SSL only algorithm constraints
+    final static AlgorithmConstraints DEFAULT_SSL_ONLY =
+                        new SSLAlgorithmConstraints((SSLSocket)null, false);
 
     SSLAlgorithmConstraints(AlgorithmConstraints algorithmConstraints) {
         userAlgConstraints = algorithmConstraints;
