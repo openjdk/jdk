@@ -527,11 +527,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(DefNewGeneration,            _next_gen,                                     Generation*)                           \
   nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
   nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
-  nonstatic_field(DefNewGeneration,            _eden_space,                                   EdenSpace*)                            \
+  nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _to_space,                                     ContiguousSpace*)                      \
-                                                                                                                                     \
-  nonstatic_field(EdenSpace,                   _gen,                                          DefNewGeneration*)                     \
                                                                                                                                      \
   nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
   nonstatic_field(Generation,                  _virtual_space,                                VirtualSpace)                          \
@@ -1490,7 +1488,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(BitMap)                                           \
            declare_type(CompactibleSpace,             Space)              \
            declare_type(ContiguousSpace,              CompactibleSpace)   \
-           declare_type(EdenSpace,                    ContiguousSpace)    \
            declare_type(OffsetTableContigSpace,       ContiguousSpace)    \
            declare_type(TenuredSpace,                 OffsetTableContigSpace) \
   declare_toplevel_type(BarrierSet)                                       \
@@ -1532,7 +1529,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
   declare_toplevel_type(DefNewGeneration*)                                \
-  declare_toplevel_type(EdenSpace*)                                       \
   declare_toplevel_type(GenCollectedHeap*)                                \
   declare_toplevel_type(Generation*)                                      \
   declare_toplevel_type(GenerationSpec**)                                 \

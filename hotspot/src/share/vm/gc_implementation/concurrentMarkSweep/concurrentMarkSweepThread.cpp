@@ -49,13 +49,6 @@ bool ConcurrentMarkSweepThread::_should_terminate = false;
 int  ConcurrentMarkSweepThread::_CMS_flag         = CMS_nil;
 
 volatile jint ConcurrentMarkSweepThread::_pending_yields      = 0;
-volatile jint ConcurrentMarkSweepThread::_pending_decrements  = 0;
-
-volatile jint ConcurrentMarkSweepThread::_icms_disabled   = 0;
-volatile bool ConcurrentMarkSweepThread::_should_run     = false;
-// When icms is enabled, the icms thread is stopped until explicitly
-// started.
-volatile bool ConcurrentMarkSweepThread::_should_stop    = true;
 
 SurrogateLockerThread*
      ConcurrentMarkSweepThread::_slt = NULL;
@@ -99,7 +92,6 @@ ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
     }
   }
   _sltMonitor = SLT_lock;
-  assert(!CMSIncrementalMode || icms_is_enabled(), "Error");
 }
 
 void ConcurrentMarkSweepThread::run() {
@@ -184,11 +176,6 @@ ConcurrentMarkSweepThread* ConcurrentMarkSweepThread::start(CMSCollector* collec
 }
 
 void ConcurrentMarkSweepThread::stop() {
-  if (CMSIncrementalMode) {
-    // Disable incremental mode and wake up the thread so it notices the change.
-    disable_icms();
-    start_icms();
-  }
   // it is ok to take late safepoints here, if needed
   {
     MutexLockerEx x(Terminator_lock);
@@ -387,23 +374,13 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
 
 void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
   while (!_should_terminate) {
-    if (CMSIncrementalMode) {
-      icms_wait();
-      if(CMSWaitDuration >= 0) {
-        // Wait until the next synchronous GC, a concurrent full gc
-        // request or a timeout, whichever is earlier.
-        wait_on_cms_lock_for_scavenge(CMSWaitDuration);
-      }
-      return;
+    if(CMSWaitDuration >= 0) {
+      // Wait until the next synchronous GC, a concurrent full gc
+      // request or a timeout, whichever is earlier.
+      wait_on_cms_lock_for_scavenge(CMSWaitDuration);
     } else {
-      if(CMSWaitDuration >= 0) {
-        // Wait until the next synchronous GC, a concurrent full gc
-        // request or a timeout, whichever is earlier.
-        wait_on_cms_lock_for_scavenge(CMSWaitDuration);
-      } else {
-        // Wait until any cms_lock event or check interval not to call shouldConcurrentCollect permanently
-        wait_on_cms_lock(CMSCheckInterval);
-      }
+      // Wait until any cms_lock event or check interval not to call shouldConcurrentCollect permanently
+      wait_on_cms_lock(CMSCheckInterval);
     }
     // Check if we should start a CMS collection cycle
     if (_collector->shouldConcurrentCollect()) {
@@ -411,42 +388,6 @@ void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
     }
     // .. collection criterion not yet met, let's go back
     // and wait some more
-  }
-}
-
-// Incremental CMS
-void ConcurrentMarkSweepThread::start_icms() {
-  assert(UseConcMarkSweepGC && CMSIncrementalMode, "just checking");
-  MutexLockerEx x(iCMS_lock, Mutex::_no_safepoint_check_flag);
-  trace_state("start_icms");
-  _should_run = true;
-  iCMS_lock->notify_all();
-}
-
-void ConcurrentMarkSweepThread::stop_icms() {
-  assert(UseConcMarkSweepGC && CMSIncrementalMode, "just checking");
-  MutexLockerEx x(iCMS_lock, Mutex::_no_safepoint_check_flag);
-  if (!_should_stop) {
-    trace_state("stop_icms");
-    _should_stop = true;
-    _should_run = false;
-    asynchronous_yield_request();
-    iCMS_lock->notify_all();
-  }
-}
-
-void ConcurrentMarkSweepThread::icms_wait() {
-  assert(UseConcMarkSweepGC && CMSIncrementalMode, "just checking");
-  if (_should_stop && icms_is_enabled()) {
-    MutexLockerEx x(iCMS_lock, Mutex::_no_safepoint_check_flag);
-    trace_state("pause_icms");
-    _collector->stats().stop_cms_timer();
-    while(!_should_run && icms_is_enabled()) {
-      iCMS_lock->wait(Mutex::_no_safepoint_check_flag);
-    }
-    _collector->stats().start_cms_timer();
-    _should_stop = false;
-    trace_state("pause_icms end");
   }
 }
 

@@ -2964,7 +2964,7 @@ void MacroAssembler::eden_allocate(Register obj,
                                    Label& slow_case) {
   assert(obj == rax, "obj must be in rax, for cmpxchg");
   assert_different_registers(obj, var_size_in_bytes, t1);
-  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!Universe::heap()->supports_inline_contig_alloc()) {
     jmp(slow_case);
   } else {
     Register end = t1;
@@ -4437,7 +4437,7 @@ Register MacroAssembler::tlab_refill(Label& retry,
   assert_different_registers(top, thread_reg, t1, t2, /* preserve: */ rbx, rdx);
   Label do_refill, discard_tlab;
 
-  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
     jmp(slow_case);
   }

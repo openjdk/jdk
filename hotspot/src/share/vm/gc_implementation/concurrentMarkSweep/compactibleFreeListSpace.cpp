@@ -2083,16 +2083,12 @@ bool CompactibleFreeListSpace::should_concurrent_collect() const {
 }
 
 // Support for compaction
-
 void CompactibleFreeListSpace::prepare_for_compaction(CompactPoint* cp) {
-  SCAN_AND_FORWARD(cp,end,block_is_obj,block_size);
+  scan_and_forward(this, cp);
   // Prepare_for_compaction() uses the space between live objects
   // so that later phase can skip dead space quickly.  So verification
   // of the free lists doesn't work after.
 }
-
-#define obj_size(q) adjustObjectSize(oop(q)->size())
-#define adjust_obj_size(s) adjustObjectSize(s)
 
 void CompactibleFreeListSpace::adjust_pointers() {
   // In other versions of adjust_pointers(), a bail out
@@ -2101,12 +2097,12 @@ void CompactibleFreeListSpace::adjust_pointers() {
   // Cannot test used() == 0 here because the free lists have already
   // been mangled by the compaction.
 
-  SCAN_AND_ADJUST_POINTERS(adjust_obj_size);
+  scan_and_adjust_pointers(this);
   // See note about verification in prepare_for_compaction().
 }
 
 void CompactibleFreeListSpace::compact() {
-  SCAN_AND_COMPACT(obj_size);
+  scan_and_compact(this);
 }
 
 // Fragmentation metric = 1 - [sum of (fbs**2) / (sum of fbs)**2]
