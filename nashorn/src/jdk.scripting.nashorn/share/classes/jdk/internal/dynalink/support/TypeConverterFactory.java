@@ -97,6 +97,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
 
 /**
  * A factory for type converters. This class is the main implementation behind the
@@ -109,6 +110,7 @@ public class TypeConverterFactory {
 
     private final GuardingTypeConverterFactory[] factories;
     private final ConversionComparator[] comparators;
+    private final MethodTypeConversionStrategy autoConversionStrategy;
 
     private final ClassValue<ClassMap<MethodHandle>> converterMap = new ClassValue<ClassMap<MethodHandle>>() {
         @Override
@@ -177,8 +179,24 @@ public class TypeConverterFactory {
      * Creates a new type converter factory from the available {@link GuardingTypeConverterFactory} instances.
      *
      * @param factories the {@link GuardingTypeConverterFactory} instances to compose.
+     * @param autoConversionStrategy conversion strategy for automatic type conversions. After
+     * {@link #asType(java.lang.invoke.MethodHandle, java.lang.invoke.MethodType)} has applied all custom
+     * conversions to a method handle, it still needs to effect
+     * {@link TypeUtilities#isMethodInvocationConvertible(Class, Class) method invocation conversions} that
+     * can usually be automatically applied as per
+     * {@link java.lang.invoke.MethodHandle#asType(java.lang.invoke.MethodType)}.
+     * However, sometimes language runtimes will want to customize even those conversions for their own call
+     * sites. A typical example is allowing unboxing of null return values, which is by default prohibited by
+     * ordinary {@code MethodHandles.asType}. In this case, a language runtime can install its own custom
+     * automatic conversion strategy, that can deal with null values. Note that when the strategy's
+     * {@link MethodTypeConversionStrategy#asType(java.lang.invoke.MethodHandle, java.lang.invoke.MethodType)}
+     * is invoked, the custom language conversions will already have been applied to the method handle, so by
+     * design the difference between the handle's current method type and the desired final type will always
+     * only be ones that can be subjected to method invocation conversions. Can be null, in which case no
+     * custom strategy is employed.
      */
-    public TypeConverterFactory(final Iterable<? extends GuardingTypeConverterFactory> factories) {
+    public TypeConverterFactory(final Iterable<? extends GuardingTypeConverterFactory> factories,
+            final MethodTypeConversionStrategy autoConversionStrategy) {
         final List<GuardingTypeConverterFactory> l = new LinkedList<>();
         final List<ConversionComparator> c = new LinkedList<>();
         for(final GuardingTypeConverterFactory factory: factories) {
@@ -189,20 +207,24 @@ public class TypeConverterFactory {
         }
         this.factories = l.toArray(new GuardingTypeConverterFactory[l.size()]);
         this.comparators = c.toArray(new ConversionComparator[c.size()]);
-
+        this.autoConversionStrategy = autoConversionStrategy;
     }
 
     /**
      * Similar to {@link MethodHandle#asType(MethodType)} except it also hooks in method handles produced by
      * {@link GuardingTypeConverterFactory} implementations, providing for language-specific type coercing of
-     * parameters. It will apply {@link MethodHandle#asType(MethodType)} for all primitive-to-primitive,
-     * wrapper-to-primitive, primitive-to-wrapper conversions as well as for all upcasts. For all other conversions,
-     * it'll insert {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with composite filters
-     * provided by {@link GuardingTypeConverterFactory} implementations.
+     * parameters. For all conversions that are not a JLS method invocation conversion it'll insert
+     * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with composite filters
+     * provided by {@link GuardingTypeConverterFactory} implementations. For the remaining JLS method invocation
+     * conversions, it will invoke {@link MethodTypeConversionStrategy#asType(MethodHandle, MethodType)} first
+     * if an automatic conversion strategy was specified in the
+     * {@link #TypeConverterFactory(Iterable, MethodTypeConversionStrategy) constructor}, and finally apply
+     * {@link MethodHandle#asType(MethodType)} for any remaining conversions.
      *
      * @param handle target method handle
      * @param fromType the types of source arguments
-     * @return a method handle that is a suitable combination of {@link MethodHandle#asType(MethodType)} and
+     * @return a method handle that is a suitable combination of {@link MethodHandle#asType(MethodType)},
+     * {@link MethodTypeConversionStrategy#asType(MethodHandle, MethodType)}, and
      * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with
      * {@link GuardingTypeConverterFactory} produced type converters as filters.
      */
@@ -246,8 +268,12 @@ public class TypeConverterFactory {
             }
         }
 
-        // Take care of automatic conversions
-        return newHandle.asType(fromType);
+        // Give change to automatic conversion strategy, if one is present.
+        final MethodHandle autoConvertedHandle =
+                autoConversionStrategy != null ? autoConversionStrategy.asType(newHandle, fromType) : newHandle;
+
+        // Do a final asType for any conversions that remain.
+        return autoConvertedHandle.asType(fromType);
     }
 
     private static MethodHandle applyConverters(final MethodHandle handle, final int pos, final List<MethodHandle> converters) {
