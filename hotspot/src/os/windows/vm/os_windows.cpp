@@ -1610,96 +1610,123 @@ void os::print_os_info(outputStream* st) {
 
 void os::win32::print_windows_version(outputStream* st) {
   OSVERSIONINFOEX osvi;
-  SYSTEM_INFO si;
+  VS_FIXEDFILEINFO *file_info;
+  TCHAR kernel32_path[MAX_PATH];
+  UINT len, ret;
 
+  // Use the GetVersionEx information to see if we're on a server or
+  // workstation edition of Windows. Starting with Windows 8.1 we can't
+  // trust the OS version information returned by this API.
   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-
   if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
-    st->print_cr("N/A");
+    st->print_cr("Call to GetVersionEx failed");
+    return;
+  }
+  bool is_workstation = (osvi.wProductType == VER_NT_WORKSTATION);
+
+  // Get the full path to \Windows\System32\kernel32.dll and use that for
+  // determining what version of Windows we're running on.
+  len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
+  ret = GetSystemDirectory(kernel32_path, len);
+  if (ret == 0 || ret > len) {
+    st->print_cr("Call to GetSystemDirectory failed");
+    return;
+  }
+  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+
+  DWORD version_size = GetFileVersionInfoSize(kernel32_path, NULL);
+  if (version_size == 0) {
+    st->print_cr("Call to GetFileVersionInfoSize failed");
     return;
   }
 
-  int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
+  LPTSTR version_info = (LPTSTR)os::malloc(version_size, mtInternal);
+  if (version_info == NULL) {
+    st->print_cr("Failed to allocate version_info");
+    return;
+  }
 
-  ZeroMemory(&si, sizeof(SYSTEM_INFO));
-  if (os_vers >= 5002) {
-    // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
-    // find out whether we are running on 64 bit processor or not.
-    if (os::Kernel32Dll::GetNativeSystemInfoAvailable()) {
-      os::Kernel32Dll::GetNativeSystemInfo(&si);
+  if (!GetFileVersionInfo(kernel32_path, NULL, version_size, version_info)) {
+    os::free(version_info);
+    st->print_cr("Call to GetFileVersionInfo failed");
+    return;
+  }
+
+  if (!VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len)) {
+    os::free(version_info);
+    st->print_cr("Call to VerQueryValue failed");
+    return;
+  }
+
+  int major_version = HIWORD(file_info->dwProductVersionMS);
+  int minor_version = LOWORD(file_info->dwProductVersionMS);
+  int build_number = HIWORD(file_info->dwProductVersionLS);
+  int build_minor = LOWORD(file_info->dwProductVersionLS);
+  int os_vers = major_version * 1000 + minor_version;
+  os::free(version_info);
+
+  st->print(" Windows ");
+  switch (os_vers) {
+
+  case 6000:
+    if (is_workstation) {
+      st->print("Vista");
     } else {
-      GetSystemInfo(&si);
+      st->print("Server 2008");
     }
+    break;
+
+  case 6001:
+    if (is_workstation) {
+      st->print("7");
+    } else {
+      st->print("Server 2008 R2");
+    }
+    break;
+
+  case 6002:
+    if (is_workstation) {
+      st->print("8");
+    } else {
+      st->print("Server 2012");
+    }
+    break;
+
+  case 6003:
+    if (is_workstation) {
+      st->print("8.1");
+    } else {
+      st->print("Server 2012 R2");
+    }
+    break;
+
+  case 6004:
+    if (is_workstation) {
+      st->print("10");
+    } else {
+      // The server version name of Windows 10 is not known at this time
+      st->print("%d.%d", major_version, minor_version);
+    }
+    break;
+
+  default:
+    // Unrecognized windows, print out its major and minor versions
+    st->print("%d.%d", major_version, minor_version);
+    break;
   }
 
-  if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-    switch (os_vers) {
-    case 3051: st->print(" Windows NT 3.51"); break;
-    case 4000: st->print(" Windows NT 4.0"); break;
-    case 5000: st->print(" Windows 2000"); break;
-    case 5001: st->print(" Windows XP"); break;
-    case 5002:
-      if (osvi.wProductType == VER_NT_WORKSTATION &&
-          si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
-        st->print(" Windows XP x64 Edition");
-      } else {
-        st->print(" Windows Server 2003 family");
-      }
-      break;
-
-    case 6000:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows Vista");
-      } else {
-        st->print(" Windows Server 2008");
-      }
-      break;
-
-    case 6001:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows 7");
-      } else {
-        st->print(" Windows Server 2008 R2");
-      }
-      break;
-
-    case 6002:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows 8");
-      } else {
-        st->print(" Windows Server 2012");
-      }
-      break;
-
-    case 6003:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows 8.1");
-      } else {
-        st->print(" Windows Server 2012 R2");
-      }
-      break;
-
-    default: // future os
-      // Unrecognized windows, print out its major and minor versions
-      st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-    }
-  } else {
-    switch (os_vers) {
-    case 4000: st->print(" Windows 95"); break;
-    case 4010: st->print(" Windows 98"); break;
-    case 4090: st->print(" Windows Me"); break;
-    default: // future windows, print out its major and minor versions
-      st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-    }
-  }
-
-  if (os_vers >= 6000 && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+  // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
+  // find out whether we are running on 64 bit processor or not
+  SYSTEM_INFO si;
+  ZeroMemory(&si, sizeof(SYSTEM_INFO));
+  os::Kernel32Dll::GetNativeSystemInfo(&si);
+  if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
     st->print(" , 64 bit");
   }
 
-  st->print(" Build %d", osvi.dwBuildNumber);
-  st->print(" %s", osvi.szCSDVersion);           // service pack
+  st->print(" Build %d", build_number);
+  st->print(" (%d.%d.%d.%d)", major_version, minor_version, build_number, build_minor);
   st->cr();
 }
 
@@ -5392,11 +5419,6 @@ inline BOOL os::Kernel32Dll::Module32First(HANDLE hSnapshot,
 inline BOOL os::Kernel32Dll::Module32Next(HANDLE hSnapshot,
                                           LPMODULEENTRY32 lpme) {
   return ::Module32Next(hSnapshot, lpme);
-}
-
-
-inline BOOL os::Kernel32Dll::GetNativeSystemInfoAvailable() {
-  return true;
 }
 
 inline void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
