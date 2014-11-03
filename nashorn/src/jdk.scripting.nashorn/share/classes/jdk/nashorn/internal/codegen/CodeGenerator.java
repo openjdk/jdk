@@ -3569,7 +3569,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     operandBounds = new TypeBounds(binaryNode.getType(), Type.OBJECT);
                 } else {
                     // Non-optimistic, non-FP +. Allow it to overflow.
-                    operandBounds = new TypeBounds(binaryNode.getWidestOperandType(), Type.OBJECT);
+                    operandBounds = new TypeBounds(Type.narrowest(binaryNode.getWidestOperandType(), resultBounds.widest),
+                            Type.OBJECT);
                     forceConversionSeparation = binaryNode.getWidestOperationType().narrowerThan(resultBounds.widest);
                 }
                 loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), operandBounds, false, forceConversionSeparation);
@@ -3856,12 +3857,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         operandBounds = numericBounds;
                     } else {
                         final boolean isOptimistic = isValid(getProgramPoint());
-                        if(isOptimistic) {
+                        if(isOptimistic || node.isTokenType(TokenType.DIV) || node.isTokenType(TokenType.MOD)) {
                             operandBounds = new TypeBounds(node.getType(), Type.NUMBER);
-                        } else if(node.isTokenType(TokenType.DIV) || node.isTokenType(TokenType.MOD)) {
-                            // Non-optimistic division must always take double arguments as its result must also be
-                            // double.
-                            operandBounds = TypeBounds.NUMBER;
                         } else {
                             // Non-optimistic, non-FP subtraction or multiplication. Allow them to overflow.
                             operandBounds = new TypeBounds(Type.narrowest(node.getWidestOperandType(),
