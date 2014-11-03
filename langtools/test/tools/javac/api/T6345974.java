@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,17 +45,18 @@ public class T6345974 {
     public static void main(String[] args) throws Exception {
         PrintWriter out = new PrintWriter(System.out, true);
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        File testSrc = new File(System.getProperty("test.src"));
-        Iterable<? extends JavaFileObject> f =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, "T6345974.java")));
-        JavacTask task = tool.getTask(out, fm, null, null, null, f);
-        Iterable<? extends CompilationUnitTree> trees = task.parse();
-        out.flush();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            File testSrc = new File(System.getProperty("test.src"));
+            Iterable<? extends JavaFileObject> f =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, "T6345974.java")));
+            JavacTask task = tool.getTask(out, fm, null, null, null, f);
+            Iterable<? extends CompilationUnitTree> trees = task.parse();
+            out.flush();
 
-        Scanner s = new Scanner();
-        for (CompilationUnitTree t: trees)
-            s.scan(t, null);
+            Scanner s = new Scanner();
+            for (CompilationUnitTree t: trees)
+                s.scan(t, null);
+        }
     }
 
     private static class Scanner extends TreeScanner<Void,Void> {

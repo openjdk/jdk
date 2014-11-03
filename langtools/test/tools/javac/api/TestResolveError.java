@@ -51,7 +51,9 @@ import com.sun.tools.javac.api.JavacTaskImpl;
  */
 public class TestResolveError extends ToolTester {
     public static void main(String... args) throws Exception {
-        new TestResolveError().run();
+        try (TestResolveError t = new TestResolveError()) {
+            t.run();
+        }
     }
 
     void run() throws Exception {

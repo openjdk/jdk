@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 public class T7159016 {
@@ -58,11 +59,13 @@ public class T7159016 {
             w.close();
         }
         JavaCompiler jc = ToolProvider.getSystemJavaCompiler();
-        JavaCompiler.CompilationTask task = jc.getTask(null, null, null, null, null,
-                                                       jc.getStandardFileManager(null, null, null).getJavaFileObjects(src));
-        task.setProcessors(Collections.singleton(new Proc()));
-        if (!task.call()) {
-            throw new Error("Test failed");
+        try (StandardJavaFileManager fm = jc.getStandardFileManager(null, null, null)) {
+            JavaCompiler.CompilationTask task = jc.getTask(null, fm, null, null, null,
+                                                           fm.getJavaFileObjects(src));
+            task.setProcessors(Collections.singleton(new Proc()));
+            if (!task.call()) {
+                throw new Error("Test failed");
+            }
         }
     }
 

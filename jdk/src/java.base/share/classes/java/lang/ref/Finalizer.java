@@ -122,18 +122,18 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
                 public Void run() {
-                ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                for (ThreadGroup tgn = tg;
-                     tgn != null;
-                     tg = tgn, tgn = tg.getParent());
-                Thread sft = new Thread(tg, proc, "Secondary finalizer");
-                sft.start();
-                try {
-                    sft.join();
-                } catch (InterruptedException x) {
-                    /* Ignore */
-                }
-                return null;
+                    ThreadGroup tg = Thread.currentThread().getThreadGroup();
+                    for (ThreadGroup tgn = tg;
+                         tgn != null;
+                         tg = tgn, tgn = tg.getParent());
+                    Thread sft = new Thread(tg, proc, "Secondary finalizer");
+                    sft.start();
+                    try {
+                        sft.join();
+                    } catch (InterruptedException x) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return null;
                 }});
     }
 
@@ -146,6 +146,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         forkSecondaryFinalizer(new Runnable() {
             private volatile boolean running;
             public void run() {
+                // in case of recursive call to run()
                 if (running)
                     return;
                 final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
@@ -168,6 +169,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         forkSecondaryFinalizer(new Runnable() {
             private volatile boolean running;
             public void run() {
+                // in case of recursive call to run()
                 if (running)
                     return;
                 final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
@@ -189,6 +191,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             super(g, "Finalizer");
         }
         public void run() {
+            // in case of recursive call to run()
             if (running)
                 return;
 

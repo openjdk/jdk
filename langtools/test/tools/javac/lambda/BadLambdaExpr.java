@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,18 +105,19 @@ public class BadLambdaExpr {
 
         //create default shared JavaCompiler - reused across multiple compilations
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
 
-        for (ParameterListKind plk : ParameterListKind.values()) {
-            for (ParameterKind pk : ParameterKind.values()) {
-                for (ArrowKind ak : ArrowKind.values()) {
-                    for (ExprKind ek : ExprKind.values()) {
-                        new BadLambdaExpr(plk, pk, ak, ek).run(comp, fm);
+            for (ParameterListKind plk : ParameterListKind.values()) {
+                for (ParameterKind pk : ParameterKind.values()) {
+                    for (ArrowKind ak : ArrowKind.values()) {
+                        for (ExprKind ek : ExprKind.values()) {
+                            new BadLambdaExpr(plk, pk, ak, ek).run(comp, fm);
+                        }
                     }
                 }
             }
+            System.out.println("Total check executed: " + checkCount);
         }
-        System.out.println("Total check executed: " + checkCount);
     }
 
     ParameterListKind plk;

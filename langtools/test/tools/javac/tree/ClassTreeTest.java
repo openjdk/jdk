@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,25 +41,26 @@ public class ClassTreeTest {
 
     void run() throws Exception {
         JavacTool tool = JavacTool.create();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        List<String> opts = Collections.<String>emptyList();
-        File testSrc = new File(System.getProperty("test.src"));
-        File thisFile = new File(testSrc, ClassTreeTest.class.getSimpleName() + ".java");
-        Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjects(thisFile);
-        JavacTask task = tool.getTask(null, fm, null, opts, null, fos);
-        for (CompilationUnitTree cu: task.parse()) {
-            check(cu, "CLASS", Tree.Kind.CLASS);
-            check(cu, "INTERFACE", Tree.Kind.INTERFACE);
-            check(cu, "ENUM", Tree.Kind.ENUM);
-            check(cu, "ANNOTATION_TYPE", Tree.Kind.ANNOTATION_TYPE);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            List<String> opts = Collections.<String>emptyList();
+            File testSrc = new File(System.getProperty("test.src"));
+            File thisFile = new File(testSrc, ClassTreeTest.class.getSimpleName() + ".java");
+            Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjects(thisFile);
+            JavacTask task = tool.getTask(null, fm, null, opts, null, fos);
+            for (CompilationUnitTree cu: task.parse()) {
+                check(cu, "CLASS", Tree.Kind.CLASS);
+                check(cu, "INTERFACE", Tree.Kind.INTERFACE);
+                check(cu, "ENUM", Tree.Kind.ENUM);
+                check(cu, "ANNOTATION_TYPE", Tree.Kind.ANNOTATION_TYPE);
+            }
+
+            int expected = 4;
+            if (checks != expected)
+                error("Unexpected number of checks performed; expected: " + expected + ", found: " + checks);
+
+            if (errors > 0)
+                throw new Exception(errors + " errors found");
         }
-
-        int expected = 4;
-        if (checks != expected)
-            error("Unexpected number of checks performed; expected: " + expected + ", found: " + checks);
-
-        if (errors > 0)
-            throw new Exception(errors + " errors found");
     }
 
     void check(CompilationUnitTree cu, String name, Tree.Kind k) {

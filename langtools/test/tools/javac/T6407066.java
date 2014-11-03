@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,20 +37,21 @@ public class T6407066 {
         String testClasses = System.getProperty("test.classes", ".");
 
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager jfm = tool.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager jfm = tool.getStandardFileManager(null, null, null)) {
 
-        List<File> path = new ArrayList<File>();
-        path.add(new File("BadDirectory"));
-        path.add(new File(testSrc));
-        path.add(new File("BadFile.jar"));
+            List<File> path = new ArrayList<File>();
+            path.add(new File("BadDirectory"));
+            path.add(new File(testSrc));
+            path.add(new File("BadFile.jar"));
 
-        jfm.setLocation(StandardLocation.SOURCE_PATH, path);
+            jfm.setLocation(StandardLocation.SOURCE_PATH, path);
 
-        List<File> path2  = new ArrayList<File>();
-        for (File f: jfm.getLocation(StandardLocation.SOURCE_PATH))
-            path2.add(f);
+            List<File> path2  = new ArrayList<File>();
+            for (File f: jfm.getLocation(StandardLocation.SOURCE_PATH))
+                path2.add(f);
 
-        if (!path.equals(path2))
-            throw new AssertionError("path not preserved");
+            if (!path.equals(path2))
+                throw new AssertionError("path not preserved");
+        }
     }
 }

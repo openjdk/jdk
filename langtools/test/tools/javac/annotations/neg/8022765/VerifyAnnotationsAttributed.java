@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,38 +41,39 @@ public class VerifyAnnotationsAttributed {
         File testSrc = new File(System.getProperty("test.src"));
         File testFile = new File(testSrc, args[0]);
         if (!testFile.canRead()) throw new IllegalStateException("Cannot read the test source");
-        JavacFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
-        JavacTask task = JavacTool.create().getTask(null,
-                                                    fm,
-                                                    null,
-                                                    Collections.<String>emptyList(),
-                                                    null,
-                                                    fm.getJavaFileObjects(testFile));
-        final Trees trees = Trees.instance(task);
-        final CompilationUnitTree cut = task.parse().iterator().next();
-        task.analyze();
+        try (JavacFileManager fm = JavacTool.create().getStandardFileManager(null, null, null)) {
+            JavacTask task = JavacTool.create().getTask(null,
+                                                        fm,
+                                                        null,
+                                                        Collections.<String>emptyList(),
+                                                        null,
+                                                        fm.getJavaFileObjects(testFile));
+            final Trees trees = Trees.instance(task);
+            final CompilationUnitTree cut = task.parse().iterator().next();
+            task.analyze();
 
-        //ensure all the annotation attributes are annotated meaningfully
-        //all the attributes in the test file should contain either an identifier
-        //or a select, so only checking those for a reasonable Element/Symbol.
-        new TreePathScanner<Void, Void>() {
-            @Override
-            public Void visitIdentifier(IdentifierTree node, Void p) {
-                verifyAttributedMeaningfully();
-                return super.visitIdentifier(node, p);
-            }
-            @Override
-            public Void visitMemberSelect(MemberSelectTree node, Void p) {
-                verifyAttributedMeaningfully();
-                return super.visitMemberSelect(node, p);
-            }
-            private void verifyAttributedMeaningfully() {
-                Element el = trees.getElement(getCurrentPath());
-
-                if (el == null || el.getKind() == ElementKind.OTHER) {
-                    throw new IllegalStateException("Not attributed properly: " + getCurrentPath().getParentPath().getLeaf());
+            //ensure all the annotation attributes are annotated meaningfully
+            //all the attributes in the test file should contain either an identifier
+            //or a select, so only checking those for a reasonable Element/Symbol.
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitIdentifier(IdentifierTree node, Void p) {
+                    verifyAttributedMeaningfully();
+                    return super.visitIdentifier(node, p);
                 }
-            }
-        }.scan(cut, null);
+                @Override
+                public Void visitMemberSelect(MemberSelectTree node, Void p) {
+                    verifyAttributedMeaningfully();
+                    return super.visitMemberSelect(node, p);
+                }
+                private void verifyAttributedMeaningfully() {
+                    Element el = trees.getElement(getCurrentPath());
+
+                    if (el == null || el.getKind() == ElementKind.OTHER) {
+                        throw new IllegalStateException("Not attributed properly: " + getCurrentPath().getParentPath().getLeaf());
+                    }
+                }
+            }.scan(cut, null);
+        }
     }
 }
