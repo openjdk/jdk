@@ -572,7 +572,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
         try {
             return ((CharSequence)self).charAt(pos);
         } catch (final IndexOutOfBoundsException e) {
-            throw new ClassCastException();
+            throw new ClassCastException(); //invalid char, out of bounds, force relink
         }
     }
 
@@ -1389,7 +1389,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
                 //check that it's a char sequence or throw cce
                 final CharSequence cs = (CharSequence)self;
                 //check that the index, representable as an int, is inside the array
-                final int intIndex = JSType.toInteger(request.getArguments()[1]);
+                final int intIndex = JSType.toInteger(request.getArguments()[2]);
                 return intIndex >= 0 && intIndex < cs.length(); //can link
             } catch (final ClassCastException | IndexOutOfBoundsException e) {
                 //fallthru
