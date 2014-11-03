@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,8 @@ typedef enum {
   JMM_VMGLOBAL_TYPE_UNKNOWN  = 0,
   JMM_VMGLOBAL_TYPE_JBOOLEAN = 1,
   JMM_VMGLOBAL_TYPE_JSTRING  = 2,
-  JMM_VMGLOBAL_TYPE_JLONG    = 3
+  JMM_VMGLOBAL_TYPE_JLONG    = 3,
+  JMM_VMGLOBAL_TYPE_JDOUBLE  = 4
 } jmmVMGlobalType;
 
 typedef enum {
