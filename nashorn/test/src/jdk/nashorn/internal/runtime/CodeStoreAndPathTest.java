@@ -26,7 +26,6 @@ package jdk.nashorn.internal.runtime;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -44,7 +43,7 @@ import org.testng.annotations.Test;
  * @summary  Test for persistent code cache and path handling
  * @run testng jdk.nashorn.internal.runtime.CodeStoreAndPathTest
  */
-
+@SuppressWarnings("javadoc")
 public class CodeStoreAndPathTest {
 
     final String code1 = "var code1; var x = 'Hello Script'; var x1 = 'Hello Script'; "
@@ -98,19 +97,22 @@ public class CodeStoreAndPathTest {
 
     private static final String[] ENGINE_OPTIONS = new String[]{"--persistent-code-cache", "--optimistic-types=false", "--lazy-compilation=false"};
 
-    public void checkCompiledScripts(final DirectoryStream<Path> stream, int numberOfScripts) throws IOException {
-        for (final Path file : stream) {
-            numberOfScripts--;
+    public void checkCompiledScripts(final DirectoryStream<Path> stream, final int numberOfScripts) throws IOException {
+        int n = numberOfScripts;
+        for (@SuppressWarnings("unused") final Path file : stream) {
+            n--;
         }
         stream.close();
-        assertEquals(numberOfScripts,0);
+        assertEquals(n, 0);
     }
 
     @Test
-    public void pathHandlingTest() throws ScriptException, IOException {
+    public void pathHandlingTest() {
         System.setProperty("nashorn.persistent.code.cache", codeCache);
         final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
-        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS);
+
+        fac.getScriptEngine(ENGINE_OPTIONS);
+
         final Path expectedCodeCachePath = FileSystems.getDefault().getPath(oldUserDir + File.separator + codeCache);
         final Path actualCodeCachePath = FileSystems.getDefault().getPath(System.getProperty(
                             "nashorn.persistent.code.cache")).toAbsolutePath();

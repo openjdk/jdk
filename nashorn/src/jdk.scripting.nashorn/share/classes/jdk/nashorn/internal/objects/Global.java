@@ -559,16 +559,16 @@ public final class Global extends ScriptObject implements Scope {
      * as well as our extension builtin objects like "Java", "JSAdapter" as properties
      * of the global scope object.
      *
-     * @param engine ScriptEngine to initialize
+     * @param eng ScriptEngine to initialize
      */
-    public void initBuiltinObjects(final ScriptEngine engine) {
+    public void initBuiltinObjects(final ScriptEngine eng) {
         if (this.builtinObject != null) {
             // already initialized, just return
             return;
         }
 
-        this.engine = engine;
-        init(engine);
+        this.engine = eng;
+        init(eng);
     }
 
     /**
@@ -1717,7 +1717,7 @@ public final class Global extends ScriptObject implements Scope {
         return func;
     }
 
-    private void init(final ScriptEngine engine) {
+    private void init(final ScriptEngine eng) {
         assert Context.getGlobal() == this : "this global is not set as current";
 
         final ScriptEnvironment env = getContext().getEnv();
@@ -1835,7 +1835,7 @@ public final class Global extends ScriptObject implements Scope {
             addOwnProperty("$ARG", Attribute.NOT_ENUMERABLE, arguments);
         }
 
-        if (engine != null) {
+        if (eng != null) {
             // default file name
             addOwnProperty(ScriptEngine.FILENAME, Attribute.NOT_ENUMERABLE, null);
             // __noSuchProperty__ hook for ScriptContext search of missing variables

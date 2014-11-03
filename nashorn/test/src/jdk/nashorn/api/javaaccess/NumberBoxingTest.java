@@ -27,7 +27,6 @@ package jdk.nashorn.api.javaaccess;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -41,6 +40,7 @@ import org.testng.annotations.Test;
  * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.NumberBoxingTest
  * @run testng/othervm jdk.nashorn.api.javaaccess.NumberBoxingTest
  */
+@SuppressWarnings("javadoc")
 public class NumberBoxingTest {
 
     private static ScriptEngine e;

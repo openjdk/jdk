@@ -26,12 +26,9 @@
 package jdk.nashorn.api.scripting;
 
 import static org.testng.Assert.fail;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Objects;
-import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -40,9 +37,10 @@ import org.testng.annotations.Test;
 /**
  * jsr223 tests for security access checks.
  */
+@SuppressWarnings("javadoc")
 public class ScriptEngineSecurityTest {
 
-    private void log(final String msg) {
+    private static void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 
@@ -169,6 +167,7 @@ public class ScriptEngineSecurityTest {
     }
 
     // @bug 8032948: Nashorn linkages awry
+    @SuppressWarnings("serial")
     public static class FakeProxy extends Proxy {
         public FakeProxy(final InvocationHandler ih) {
             super(ih);
@@ -180,7 +179,7 @@ public class ScriptEngineSecurityTest {
     }
 
     @Test
-    public void fakeProxySubclassAccessCheckTest() throws ScriptException {
+    public void fakeProxySubclassAccessCheckTest() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
             return;
@@ -197,7 +196,7 @@ public class ScriptEngineSecurityTest {
 
         // Should not be able to call static methods of Proxy via fake subclass
         try {
-            final Class<?> c = (Class<?>)e.eval(getClass);
+            e.eval(getClass);
             fail("should have thrown SecurityException");
         } catch (final Exception exp) {
             if (! (exp instanceof SecurityException)) {
@@ -207,7 +206,7 @@ public class ScriptEngineSecurityTest {
     }
 
     @Test
-    public void fakeProxySubclassAccessCheckTest2() throws ScriptException {
+    public void fakeProxySubclassAccessCheckTest2() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
             return;
@@ -224,7 +223,7 @@ public class ScriptEngineSecurityTest {
 
         // Should not be able to call static methods of Proxy via fake subclass
         try {
-            final Class<?> c = (Class<?>)e.eval(getClass);
+            e.eval(getClass);
             fail("should have thrown SecurityException");
         } catch (final Exception exp) {
             if (! (exp instanceof SecurityException)) {
@@ -234,7 +233,7 @@ public class ScriptEngineSecurityTest {
     }
 
     @Test
-    public static void proxyStaticAccessCheckTest() throws ScriptException {
+    public static void proxyStaticAccessCheckTest() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
             return;
@@ -247,7 +246,7 @@ public class ScriptEngineSecurityTest {
             new Class[] { Runnable.class },
             new InvocationHandler() {
                 @Override
-                public Object invoke(final Object p, final Method m, final Object[] a) {
+                public Object invoke(final Object p, final Method mtd, final Object[] a) {
                     return null;
                 }
             });
@@ -284,7 +283,9 @@ public class ScriptEngineSecurityTest {
                }
             });
             fail("SecurityException should have been thrown");
-        } catch (final SecurityException exp) {}
+        } catch (final SecurityException e) {
+            //empty
+        }
     }
 
     @Test
@@ -303,6 +304,8 @@ public class ScriptEngineSecurityTest {
                }
             });
             fail("SecurityException should have been thrown");
-        } catch (final SecurityException exp) {}
+        } catch (final SecurityException e) {
+            //empty
+        }
     }
 }

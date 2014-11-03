@@ -50,7 +50,6 @@ public final class RecompilationEvent extends RuntimeEvent<RewriteException> {
      *     {@link RewriteException#getReturnValueNonDestructive()} public, we pass it as
      *     an extra parameter, rather than querying the getter from another package.
      */
-    @SuppressWarnings("javadoc")
     public RecompilationEvent(final Level level, final RewriteException rewriteException, final Object returnValue) {
         super(level, rewriteException);
         assert Context.getContext().getLogger(RecompilableScriptFunctionData.class).isEnabled() :

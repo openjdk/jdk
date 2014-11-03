@@ -389,6 +389,7 @@ public final class Compiler implements Loggable {
      * @param continuationEntryPoints  continuation entry points for restof method
      * @param runtimeScope             runtime scope for recompilation type lookup in {@code TypeEvaluator}
      */
+    @SuppressWarnings("unused")
     public Compiler(
             final Context context,
             final ScriptEnvironment env,

@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
-
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -475,6 +474,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @return either the existing map, or a loaded map from the persistent type info cache, or a new empty map if
      * neither an existing map or a persistent cached type info is available.
      */
+    @SuppressWarnings("unused")
     private static Map<Integer, Type> getEffectiveInvalidatedProgramPoints(
             final Map<Integer, Type> invalidatedProgramPoints, final Object typeInformationFile) {
         if(invalidatedProgramPoints != null) {
