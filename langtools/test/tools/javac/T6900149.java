@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,15 @@ public class T6900149 {
         DiagnosticCollector<JavaFileObject> diag =
                 new DiagnosticCollector<JavaFileObject>();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm =
-                compiler.getStandardFileManager(null, null, null);
-        File emptyFile = createTempFile("Empty.java");
-        File[] files = new File[] { emptyFile, emptyFile };
-        CompilationTask task = compiler.getTask(null, fm, diag,
-                null, null, fm.getJavaFileObjects(files));
-        if (! task.call()) {
-            throw new AssertionError("compilation failed");
+        try (StandardJavaFileManager fm =
+                compiler.getStandardFileManager(null, null, null)) {
+            File emptyFile = createTempFile("Empty.java");
+            File[] files = new File[] { emptyFile, emptyFile };
+            CompilationTask task = compiler.getTask(null, fm, diag,
+                    null, null, fm.getJavaFileObjects(files));
+            if (! task.call()) {
+                throw new AssertionError("compilation failed");
+            }
         }
     }
 

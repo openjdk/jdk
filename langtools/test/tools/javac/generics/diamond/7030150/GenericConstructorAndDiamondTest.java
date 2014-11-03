@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,17 +150,17 @@ public class GenericConstructorAndDiamondTest {
 
         //create default shared JavaCompiler - reused across multiple compilations
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
-        for (BoundKind boundKind : BoundKind.values()) {
-            for (ConstructorKind constructorKind : ConstructorKind.values()) {
-                for (TypeArgumentKind declArgKind : TypeArgumentKind.values()) {
-                    for (TypeArgArity arity : TypeArgArity.values()) {
-                        for (TypeArgumentKind useArgKind : TypeArgumentKind.values()) {
-                            for (TypeArgumentKind diamondArgKind : TypeArgumentKind.values()) {
-                                for (ArgumentKind argKind : ArgumentKind.values()) {
-                                    new GenericConstructorAndDiamondTest(boundKind, constructorKind,
-                                            declArgKind, arity, useArgKind, diamondArgKind, argKind).run(comp, fm);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
+            for (BoundKind boundKind : BoundKind.values()) {
+                for (ConstructorKind constructorKind : ConstructorKind.values()) {
+                    for (TypeArgumentKind declArgKind : TypeArgumentKind.values()) {
+                        for (TypeArgArity arity : TypeArgArity.values()) {
+                            for (TypeArgumentKind useArgKind : TypeArgumentKind.values()) {
+                                for (TypeArgumentKind diamondArgKind : TypeArgumentKind.values()) {
+                                    for (ArgumentKind argKind : ArgumentKind.values()) {
+                                        new GenericConstructorAndDiamondTest(boundKind, constructorKind,
+                                                declArgKind, arity, useArgKind, diamondArgKind, argKind).run(comp, fm);
+                                    }
                                 }
                             }
                         }

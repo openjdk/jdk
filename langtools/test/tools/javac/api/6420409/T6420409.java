@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,21 +46,22 @@ public class T6420409 {
 
     public static void main(String... args) throws IOException {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        final StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        fm.setLocation(SOURCE_PATH,  Arrays.asList(test_classes)); // switcheroo !!!
-        fm.setLocation(CLASS_PATH,   Arrays.asList(test_src));
-        fm.setLocation(CLASS_OUTPUT, Arrays.asList(test_classes));
-        final Iterable<? extends JavaFileObject> compilationUnits =
-            fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(test_src, "T6420409.java")));
-        tool.getTask(null,
-                     fm,
-                     null,
-                     Arrays.asList("-proc:none"),
-                     null,
-                     compilationUnits).call();
-        test(fm.getLocation(CLASS_PATH),   test_src,     CLASS_PATH);
-        test(fm.getLocation(SOURCE_PATH),  test_classes, SOURCE_PATH);
-        test(fm.getLocation(CLASS_OUTPUT), test_classes, CLASS_OUTPUT);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            fm.setLocation(SOURCE_PATH,  Arrays.asList(test_classes)); // switcheroo !!!
+            fm.setLocation(CLASS_PATH,   Arrays.asList(test_src));
+            fm.setLocation(CLASS_OUTPUT, Arrays.asList(test_classes));
+            final Iterable<? extends JavaFileObject> compilationUnits =
+                fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(test_src, "T6420409.java")));
+            tool.getTask(null,
+                         fm,
+                         null,
+                         Arrays.asList("-proc:none"),
+                         null,
+                         compilationUnits).call();
+            test(fm.getLocation(CLASS_PATH),   test_src,     CLASS_PATH);
+            test(fm.getLocation(SOURCE_PATH),  test_classes, SOURCE_PATH);
+            test(fm.getLocation(CLASS_OUTPUT), test_classes, CLASS_OUTPUT);
+        }
     }
 
     static void test(Iterable<? extends File> path, File file, Location location) {

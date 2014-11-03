@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,18 +56,19 @@ public class JavadocTaskImplTest extends APITest {
     public void testRawCall() throws Exception {
         JavaFileObject srcFile = createSimpleJavaFileObject();
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
-        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-        File outDir = getOutDir();
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
-        Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            File outDir = getOutDir();
+            fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+            Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
 
-        @SuppressWarnings("rawtypes")
-        Callable t = tool.getTask(null, fm, null, null, null, files);
+            @SuppressWarnings("rawtypes")
+            Callable t = tool.getTask(null, fm, null, null, null, files);
 
-        if (t.call() == Boolean.TRUE) {
-            System.err.println("task succeeded");
-        } else {
-            throw new Exception("task failed");
+            if (t.call() == Boolean.TRUE) {
+                System.err.println("task succeeded");
+            } else {
+                throw new Exception("task failed");
+            }
         }
     }
 
@@ -77,14 +78,15 @@ public class JavadocTaskImplTest extends APITest {
         Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
         Context c = new Context();
         Messager.preRegister(c, "javadoc");
-        StandardJavaFileManager fm = new JavacFileManager(c, true, null);
-        File outDir = getOutDir();
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
-        DocumentationTask t = new JavadocTaskImpl(c, null, null, files);
-        if (t.call()) {
-            System.err.println("task succeeded");
-        } else {
-            throw new Exception("task failed");
+        try (StandardJavaFileManager fm = new JavacFileManager(c, true, null)) {
+            File outDir = getOutDir();
+            fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+            DocumentationTask t = new JavadocTaskImpl(c, null, null, files);
+            if (t.call()) {
+                System.err.println("task succeeded");
+            } else {
+                throw new Exception("task failed");
+            }
         }
     }
 
@@ -94,14 +96,15 @@ public class JavadocTaskImplTest extends APITest {
         Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
         Context c = new Context();
         Messager.preRegister(c, "javadoc");
-        StandardJavaFileManager fm = new JavacFileManager(c, true, null);
-        File outDir = getOutDir();
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
-        try {
-            DocumentationTask t = new JavadocTaskImpl(c, null, null, files);;
-            error("getTask succeeded, no exception thrown");
-        } catch (NullPointerException e) {
-            System.err.println("exception caught as expected: " + e);
+        try (StandardJavaFileManager fm = new JavacFileManager(c, true, null)) {
+            File outDir = getOutDir();
+            fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+            try {
+                DocumentationTask t = new JavadocTaskImpl(c, null, null, files);;
+                error("getTask succeeded, no exception thrown");
+            } catch (NullPointerException e) {
+                System.err.println("exception caught as expected: " + e);
+            }
         }
     }
 }

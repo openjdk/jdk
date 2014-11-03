@@ -76,6 +76,7 @@ import static javax.tools.StandardLocation.*;
  */
 public class JavacFileManager extends BaseFileManager implements StandardJavaFileManager {
 
+    @SuppressWarnings("cast")
     public static char[] toArray(CharBuffer buffer) {
         if (buffer.hasArray())
             return ((CharBuffer)buffer.compact().flip()).array();
@@ -129,6 +130,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         if (register)
             context.put(JavaFileManager.class, this);
         setContext(context);
+        if (System.getProperty("show.fm.open.close") != null)
+            System.err.println("JavacFileManager.open " + this.hashCode());
     }
 
     /**
@@ -570,6 +573,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     @DefinedBy(Api.COMPILER)
     public void close() {
+        if (System.getProperty("show.fm.open.close") != null)
+            System.err.println("JavacFileManager.close " + this.hashCode());
         for (Iterator<Archive> i = archives.values().iterator(); i.hasNext(); ) {
             Archive a = i.next();
             i.remove();

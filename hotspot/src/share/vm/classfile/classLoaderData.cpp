@@ -734,7 +734,7 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
-bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
+bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure, bool clean_alive) {
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
   bool seen_dead_loader = false;
@@ -743,27 +743,9 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
   // purging and we don't want to rewalk the previously unloaded class loader data.
   _saved_unloading = _unloading;
 
-  // mark metadata seen on the stack and code cache so we can delete
-  // unneeded entries.
-  bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();
-  MetadataOnStackMark md_on_stack(has_redefined_a_class);
-  if (has_redefined_a_class) {
-    // purge_previous_versions also cleans weak method links. Because
-    // one method's MDO can reference another method from another
-    // class loader, we need to first clean weak method links for all
-    // class loaders here. Below, we can then free redefined methods
-    // for all class loaders.
-    while (data != NULL) {
-      if (data->is_alive(is_alive_closure)) {
-        data->classes_do(InstanceKlass::purge_previous_versions);
-      }
-      data = data->next();
-    }
-  }
   data = _head;
   while (data != NULL) {
     if (data->is_alive(is_alive_closure)) {
-      data->free_deallocate_list();
       prev = data;
       data = data->next();
       continue;
@@ -785,11 +767,36 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
     _unloading = dead;
   }
 
+  if (clean_alive) {
+    // Clean previous versions and the deallocate list.
+    ClassLoaderDataGraph::clean_metaspaces();
+  }
+
   if (seen_dead_loader) {
     post_class_unload_events();
   }
 
   return seen_dead_loader;
+}
+
+void ClassLoaderDataGraph::clean_metaspaces() {
+  // mark metadata seen on the stack and code cache so we can delete unneeded entries.
+  bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();
+  MetadataOnStackMark md_on_stack(has_redefined_a_class);
+
+  if (has_redefined_a_class) {
+    // purge_previous_versions also cleans weak method links. Because
+    // one method's MDO can reference another method from another
+    // class loader, we need to first clean weak method links for all
+    // class loaders here. Below, we can then free redefined methods
+    // for all class loaders.
+    for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
+      data->classes_do(InstanceKlass::purge_previous_versions);
+    }
+  }
+
+  // Need to purge the previous version before deallocating.
+  free_deallocate_lists();
 }
 
 void ClassLoaderDataGraph::purge() {
@@ -817,6 +824,14 @@ void ClassLoaderDataGraph::post_class_unload_events(void) {
     Tracing::on_unloading_classes();
   }
 #endif
+}
+
+void ClassLoaderDataGraph::free_deallocate_lists() {
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    // We need to keep this data until InstanceKlass::purge_previous_version has been
+    // called on all alive classes. See the comment in ClassLoaderDataGraph::clean_metaspaces.
+    cld->free_deallocate_list();
+  }
 }
 
 // CDS support

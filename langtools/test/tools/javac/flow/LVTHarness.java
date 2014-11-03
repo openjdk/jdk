@@ -76,18 +76,21 @@ public class LVTHarness {
     static final StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
 
     public static void main(String[] args) throws Exception {
+        try {
+            String testDir = System.getProperty("test.src");
+            fm.setLocation(SOURCE_PATH, Arrays.asList(new File(testDir, "tests")));
 
-        String testDir = System.getProperty("test.src");
-        fm.setLocation(SOURCE_PATH, Arrays.asList(new File(testDir, "tests")));
+            // Make sure classes are written to scratch dir.
+            fm.setLocation(CLASS_OUTPUT, Arrays.asList(new File(".")));
 
-        // Make sure classes are written to scratch dir.
-        fm.setLocation(CLASS_OUTPUT, Arrays.asList(new File(".")));
-
-        for (JavaFileObject jfo : fm.list(SOURCE_PATH, "", Collections.singleton(SOURCE), true)) {
-            new LVTHarness(jfo).check();
-        }
-        if (nerrors > 0) {
-            throw new AssertionError("Errors were found");
+            for (JavaFileObject jfo : fm.list(SOURCE_PATH, "", Collections.singleton(SOURCE), true)) {
+                new LVTHarness(jfo).check();
+            }
+            if (nerrors > 0) {
+                throw new AssertionError("Errors were found");
+            }
+        } finally {
+            fm.close();
         }
     }
 

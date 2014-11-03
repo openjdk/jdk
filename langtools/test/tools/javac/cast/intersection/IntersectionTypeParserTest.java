@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,35 +104,36 @@ public class IntersectionTypeParserTest {
     public static void main(String... args) throws Exception {
         //create default shared JavaCompiler - reused across multiple compilations
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
 
-        for (CastKind ck : CastKind.values()) {
-            for (TypeKind t1 : TypeKind.values()) {
-                for (ArrayKind ak1 : ArrayKind.values()) {
-                    Type typ1 = new Type(t1, ak1);
-                    if (ck.nBounds == 1) {
-                        new IntersectionTypeParserTest(ck, typ1).run(comp, fm);
-                        continue;
-                    }
-                    for (TypeKind t2 : TypeKind.values()) {
-                        for (ArrayKind ak2 : ArrayKind.values()) {
-                            Type typ2 = new Type(t2, ak2);
-                            if (ck.nBounds == 2) {
-                                new IntersectionTypeParserTest(ck, typ1, typ2).run(comp, fm);
-                                continue;
-                            }
-                            for (TypeKind t3 : TypeKind.values()) {
-                                for (ArrayKind ak3 : ArrayKind.values()) {
-                                    Type typ3 = new Type(t3, ak3);
-                                    new IntersectionTypeParserTest(ck, typ1, typ2, typ3).run(comp, fm);
+            for (CastKind ck : CastKind.values()) {
+                for (TypeKind t1 : TypeKind.values()) {
+                    for (ArrayKind ak1 : ArrayKind.values()) {
+                        Type typ1 = new Type(t1, ak1);
+                        if (ck.nBounds == 1) {
+                            new IntersectionTypeParserTest(ck, typ1).run(comp, fm);
+                            continue;
+                        }
+                        for (TypeKind t2 : TypeKind.values()) {
+                            for (ArrayKind ak2 : ArrayKind.values()) {
+                                Type typ2 = new Type(t2, ak2);
+                                if (ck.nBounds == 2) {
+                                    new IntersectionTypeParserTest(ck, typ1, typ2).run(comp, fm);
+                                    continue;
+                                }
+                                for (TypeKind t3 : TypeKind.values()) {
+                                    for (ArrayKind ak3 : ArrayKind.values()) {
+                                        Type typ3 = new Type(t3, ak3);
+                                        new IntersectionTypeParserTest(ck, typ1, typ2, typ3).run(comp, fm);
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            System.out.println("Total check executed: " + checkCount);
         }
-        System.out.println("Total check executed: " + checkCount);
     }
 
     CastKind ck;
