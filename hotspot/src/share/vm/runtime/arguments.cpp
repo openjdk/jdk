@@ -1777,7 +1777,7 @@ void Arguments::set_g1_gc_flags() {
 #ifdef ASSERT
 static bool verify_serial_gc_flags() {
   return (UseSerialGC &&
-        !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
+        !(UseParNewGC || (UseConcMarkSweepGC) || UseG1GC ||
           UseParallelGC || UseParallelOldGC));
 }
 #endif // ASSERT
@@ -2191,10 +2191,6 @@ void Arguments::check_deprecated_gcs() {
     warning("Using the ParNew young collector with the Serial old collector is deprecated "
         "and will likely be removed in a future release");
   }
-
-  if (CMSIncrementalMode) {
-    warning("Using incremental CMS is deprecated and will likely be removed in a future release");
-  }
 }
 
 void Arguments::check_deprecated_gc_flags() {
@@ -2316,31 +2312,8 @@ bool Arguments::check_vm_args_consistency() {
   status = status && ArgumentsExt::check_gc_consistency_user();
   status = status && check_stack_pages();
 
-  if (CMSIncrementalMode) {
-    if (!UseConcMarkSweepGC) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "error:  invalid argument combination.\n"
-                  "The CMS collector (-XX:+UseConcMarkSweepGC) must be "
-                  "selected in order\nto use CMSIncrementalMode.\n");
-      status = false;
-    } else {
-      status = status && verify_percentage(CMSIncrementalDutyCycle,
-                                  "CMSIncrementalDutyCycle");
-      status = status && verify_percentage(CMSIncrementalDutyCycleMin,
-                                  "CMSIncrementalDutyCycleMin");
-      status = status && verify_percentage(CMSIncrementalSafetyFactor,
-                                  "CMSIncrementalSafetyFactor");
-      status = status && verify_percentage(CMSIncrementalOffset,
-                                  "CMSIncrementalOffset");
-      status = status && verify_percentage(CMSExpAvgFactor,
-                                  "CMSExpAvgFactor");
-      // If it was not set on the command line, set
-      // CMSInitiatingOccupancyFraction to 1 so icms can initiate cycles early.
-      if (CMSInitiatingOccupancyFraction < 0) {
-        FLAG_SET_DEFAULT(CMSInitiatingOccupancyFraction, 1);
-      }
-    }
-  }
+  status = status && verify_percentage(CMSIncrementalSafetyFactor,
+                                    "CMSIncrementalSafetyFactor");
 
   // CMS space iteration, which FLSVerifyAllHeapreferences entails,
   // insists that we hold the requisite locks so that the iteration is
@@ -2874,14 +2847,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xnoclassgc
     } else if (match_option(option, "-Xnoclassgc", &tail)) {
       FLAG_SET_CMDLINE(bool, ClassUnloading, false);
-    // -Xincgc: i-CMS
-    } else if (match_option(option, "-Xincgc", &tail)) {
-      FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, true);
-      FLAG_SET_CMDLINE(bool, CMSIncrementalMode, true);
-    // -Xnoincgc: no i-CMS
-    } else if (match_option(option, "-Xnoincgc", &tail)) {
-      FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, false);
-      FLAG_SET_CMDLINE(bool, CMSIncrementalMode, false);
     // -Xconcgc
     } else if (match_option(option, "-Xconcgc", &tail)) {
       FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, true);
@@ -3711,7 +3676,6 @@ void Arguments::set_shared_spaces_flags() {
 #if !INCLUDE_ALL_GCS
 static void force_serial_gc() {
   FLAG_SET_DEFAULT(UseSerialGC, true);
-  FLAG_SET_DEFAULT(CMSIncrementalMode, false);  // special CMS suboption
   UNSUPPORTED_GC_OPTION(UseG1GC);
   UNSUPPORTED_GC_OPTION(UseParallelGC);
   UNSUPPORTED_GC_OPTION(UseParallelOldGC);

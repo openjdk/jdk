@@ -1638,29 +1638,9 @@ class CommandLineFlags {
           "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \
                                                                             \
-  product(bool, CMSIncrementalMode, false,                                  \
-          "Whether CMS GC should operate in \"incremental\" mode")          \
-                                                                            \
-  product(uintx, CMSIncrementalDutyCycle, 10,                               \
-          "Percentage (0-100) of CMS incremental mode duty cycle. If "      \
-          "CMSIncrementalPacing is enabled, then this is just the initial " \
-          "value.")                                                         \
-                                                                            \
-  product(bool, CMSIncrementalPacing, true,                                 \
-          "Whether the CMS incremental mode duty cycle should be "          \
-          "automatically adjusted")                                         \
-                                                                            \
-  product(uintx, CMSIncrementalDutyCycleMin, 0,                             \
-          "Minimum percentage (0-100) of the CMS incremental duty cycle "   \
-          "used when CMSIncrementalPacing is enabled")                      \
-                                                                            \
   product(uintx, CMSIncrementalSafetyFactor, 10,                            \
           "Percentage (0-100) used to add conservatism when computing the " \
           "duty cycle")                                                     \
-                                                                            \
-  product(uintx, CMSIncrementalOffset, 0,                                   \
-          "Percentage (0-100) by which the CMS incremental mode duty cycle "\
-          "is shifted to the right within the period between young GCs")    \
                                                                             \
   product(uintx, CMSExpAvgFactor, 50,                                       \
           "Percentage (0-100) used to weight the current sample when "      \
@@ -1719,15 +1699,6 @@ class CommandLineFlags {
   product(uintx, CMS_SweepTimerThresholdMillis, 10,                         \
           "Skip block flux-rate sampling for an epoch unless inter-sweep "  \
           "duration exceeds this threshold in milliseconds")                \
-                                                                            \
-  develop(bool, CMSTraceIncrementalMode, false,                             \
-          "Trace CMS incremental mode")                                     \
-                                                                            \
-  develop(bool, CMSTraceIncrementalPacing, false,                           \
-          "Trace CMS incremental mode pacing computation")                  \
-                                                                            \
-  develop(bool, CMSTraceThreadState, false,                                 \
-          "Trace the CMS thread state (enable the trace_state() method)")   \
                                                                             \
   product(bool, CMSClassUnloadingEnabled, true,                             \
           "Whether class unloading enabled when using CMS GC")              \

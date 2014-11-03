@@ -1197,8 +1197,7 @@ void PhaseMacroExpand::expand_allocate_common(
   }
 
   if (C->env()->dtrace_alloc_probes() ||
-      !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc() ||
-                   (UseConcMarkSweepGC && CMSIncrementalMode))) {
+      !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc())) {
     // Force slow-path allocation
     always_slow = true;
     initial_slow_test = NULL;

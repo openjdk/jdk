@@ -66,7 +66,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* SLT_lock;                        // used in CMS GC for acquiring PLL
-extern Monitor* iCMS_lock;                       // CMS incremental mode start/stop notification
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* CMark_lock;                      // used for concurrent mark thread coordination
 extern Mutex*   CMRegionStack_lock;              // used for protecting accesses to the CM region stack
