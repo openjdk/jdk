@@ -1572,6 +1572,9 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
   } else if (flag->is_uint64_t()) {
     global->value.j = (jlong)flag->get_uint64_t();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
+  } else if (flag->is_double()) {
+    global->value.d = (jdouble)flag->get_double();
+    global->type = JMM_VMGLOBAL_TYPE_JDOUBLE;
   } else if (flag->is_size_t()) {
     global->value.j = (jlong)flag->get_size_t();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
