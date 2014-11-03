@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.runtime.Source.sourceFor;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-
 import java.util.Map;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -41,6 +40,7 @@ import org.testng.annotations.Test;
  * @test
  * @run testng jdk.nashorn.internal.runtime.ContextTest
  */
+@SuppressWarnings("javadoc")
 public class ContextTest {
     // basic context eval test
     @Test
@@ -96,7 +96,7 @@ public class ContextTest {
             final String code = "var obj = { x: 344, y: 42 }";
             eval(cx, "<reflectionTest>", code);
 
-            final Object obj = cx.getGlobal().get("obj");
+            final Object obj = Context.getGlobal().get("obj");
 
             assertTrue(obj instanceof ScriptObject);
 
@@ -129,7 +129,7 @@ public class ContextTest {
         }
     }
 
-    private Object eval(final Context cx, final String name, final String code) {
+    private static Object eval(final Context cx, final String name, final String code) {
         final Source source = sourceFor(name, code);
         final ScriptObject global = Context.getGlobal();
         final ScriptFunction func = cx.compileScript(source, global);

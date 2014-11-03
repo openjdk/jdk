@@ -25,6 +25,7 @@
 
 package jdk.nashorn.test.models;
 
+@SuppressWarnings("javadoc")
 public class OuterClass {
     private final String value;
 
@@ -35,6 +36,7 @@ public class OuterClass {
     public static class InnerStaticClass {
 
         public static class InnerInnerStaticClass {
+            //empty
         }
 
         private final String value;
@@ -50,15 +52,15 @@ public class OuterClass {
     }
 
     public class InnerNonStaticClass {
-        private final String value;
+        private final String val;
 
         public InnerNonStaticClass(final String value) {
-            this.value = value;
+            this.val = value;
         }
 
         @Override
         public String toString() {
-            return "InnerNonStaticClass[value=" + value + ", outer=" + OuterClass.this + "]";
+            return "InnerNonStaticClass[value=" + val + ", outer=" + OuterClass.this + "]";
         }
     }
 

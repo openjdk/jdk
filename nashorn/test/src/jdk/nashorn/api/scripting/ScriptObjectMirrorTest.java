@@ -46,6 +46,7 @@ import org.testng.annotations.Test;
 /**
  * Tests to check jdk.nashorn.api.scripting.ScriptObjectMirror API.
  */
+@SuppressWarnings("javadoc")
 public class ScriptObjectMirrorTest {
 
     @SuppressWarnings("unchecked")
@@ -343,14 +344,13 @@ public class ScriptObjectMirrorTest {
         assertEquals(ScriptObjectMirror.class, value3.getClass());
         assertEquals(ScriptObjectMirror.class, value4.getClass());
         assertTrue((boolean)invocable.invokeFunction("compare", value1, value1));
-        assertTrue((boolean)example.compare(value1, value1));
+        assertTrue(example.compare(value1, value1));
         assertTrue((boolean)invocable.invokeFunction("compare", value3, value4));
-        assertTrue((boolean)example.compare(value3, value4));
+        assertTrue(example.compare(value3, value4));
     }
 
     // @bug 8053910: ScriptObjectMirror causing havoc with Invocation interface
     @Test
-    @SuppressWarnings("unchecked")
     public void mirrorUnwrapInterfaceMethod() throws Exception {
         final ScriptEngineManager engineManager = new ScriptEngineManager();
         final ScriptEngine engine = engineManager.getEngineByName("nashorn");
@@ -358,6 +358,7 @@ public class ScriptObjectMirrorTest {
         engine.eval("function apply(obj) { " +
             " return obj instanceof Packages.jdk.nashorn.api.scripting.ScriptObjectMirror; " +
             "}");
+        @SuppressWarnings("unchecked")
         final Function<Object,Object> func = invocable.getInterface(Function.class);
         assertFalse((boolean)func.apply(engine.eval("({ x: 2 })")));
     }
