@@ -53,8 +53,6 @@
 typedef unsigned __int32 juint;
 typedef unsigned __int64 julong;
 
-typedef enum boolean_values { false=0, true=1};
-
 static void set_low(jlong* value, jint low) {
     *value &= (jlong)0xffffffff << 32;
     *value |= (jlong)(julong)(juint)low;
@@ -66,22 +64,22 @@ static void set_high(jlong* value, jint high) {
 }
 
 static jlong jlong_from(jint h, jint l) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, h);
-  set_low(&result,  l);
-  return result;
+    jlong result = 0; // initialization to avoid warning
+    set_high(&result, h);
+    set_low(&result,  l);
+    return result;
 }
 
 static HANDLE main_process;
 
-int perfiInit(void);
+static void perfInit(void);
 
 JNIEXPORT void JNICALL
 Java_sun_management_OperatingSystemImpl_initialize0
   (JNIEnv *env, jclass cls)
 {
     main_process = GetCurrentProcess();
-     perfiInit();
+    perfInit();
 }
 
 JNIEXPORT jlong JNICALL
@@ -155,26 +153,7 @@ Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize0
     return (jlong) ms.ullTotalPhys;
 }
 
-// Seems WinXP PDH returns PDH_MORE_DATA whenever we send in a NULL buffer.
-// Let's just ignore it, since we make sure we have enough buffer anyway.
-static int
-pdh_fail(PDH_STATUS pdhStat) {
-    return pdhStat != ERROR_SUCCESS && pdhStat != PDH_MORE_DATA;
-}
-
-// INFO: Using PDH APIs Correctly in a Localized Language (Q287159)
-//       http://support.microsoft.com/default.aspx?scid=kb;EN-US;q287159
-// The index value for the base system counters and objects like processor,
-// process, thread, memory, and so forth are always the same irrespective
-// of the localized version of the operating system or service pack installed.
-#define PDH_PROCESSOR_IDX        ((DWORD) 238)
-#define PDH_PROCESSOR_TIME_IDX        ((DWORD)   6)
-#define PDH_PRIV_PROCESSOR_TIME_IDX ((DWORD) 144)
-#define PDH_PROCESS_IDX            ((DWORD) 230)
-#define PDH_ID_PROCESS_IDX        ((DWORD) 784)
-#define PDH_CONTEXT_SWITCH_RATE_IDX ((DWORD) 146)
-#define PDH_SYSTEM_IDX            ((DWORD)   2)
-#define PDH_VIRTUAL_BYTES_IDX        ((DWORD) 174)
+/* Performance Data Helper API (PDH) support */
 
 typedef PDH_STATUS (WINAPI *PdhAddCounterFunc)(
                            HQUERY      hQuery,
@@ -183,48 +162,44 @@ typedef PDH_STATUS (WINAPI *PdhAddCounterFunc)(
                            HCOUNTER    *phCounter
                            );
 typedef PDH_STATUS (WINAPI *PdhOpenQueryFunc)(
-                          LPCWSTR     szDataSource,
-                          DWORD       dwUserData,
-                          HQUERY      *phQuery
-                          );
+                           LPCWSTR     szDataSource,
+                           DWORD       dwUserData,
+                           HQUERY      *phQuery
+                           );
+typedef PDH_STATUS (WINAPI *PdhCollectQueryDataFunc)(
+                           HQUERY      hQuery
+                           );
+
+typedef PDH_STATUS (WINAPI *PdhEnumObjectItemsFunc)(
+                           LPCTSTR     szDataSource,
+                           LPCTSTR     szMachineName,
+                           LPCTSTR     szObjectName,
+                           LPTSTR      mszCounterList,
+                           LPDWORD     pcchCounterListLength,
+                           LPTSTR      mszInstanceList,
+                           LPDWORD     pcchInstanceListLength,
+                           DWORD       dwDetailLevel,
+                           DWORD       dwFlags
+                           );
+typedef PDH_STATUS (WINAPI *PdhRemoveCounterFunc)(
+                           HCOUNTER   hCounter
+                           );
+typedef PDH_STATUS (WINAPI *PdhLookupPerfNameByIndexFunc)(
+                           LPCSTR     szMachineName,
+                           DWORD      dwNameIndex,
+                           LPSTR      szNameBuffer,
+                           LPDWORD    pcchNameBufferSize
+                           );
 typedef DWORD (WINAPI *PdhCloseQueryFunc)(
                       HQUERY      hQuery
                       );
-typedef PDH_STATUS (WINAPI *PdhCollectQueryDataFunc)(
-                             HQUERY      hQuery
-                             );
+
 typedef DWORD (WINAPI *PdhGetFormattedCounterValueFunc)(
-                            HCOUNTER                hCounter,
-                            DWORD                   dwFormat,
-                            LPDWORD                 lpdwType,
-                            PPDH_FMT_COUNTERVALUE   pValue
-                            );
-typedef PDH_STATUS (WINAPI *PdhEnumObjectItemsFunc)(
-                            LPCTSTR    szDataSource,
-                            LPCTSTR    szMachineName,
-                            LPCTSTR    szObjectName,
-                            LPTSTR     mszCounterList,
-                            LPDWORD    pcchCounterListLength,
-                            LPTSTR     mszInstanceList,
-                            LPDWORD    pcchInstanceListLength,
-                            DWORD      dwDetailLevel,
-                            DWORD      dwFlags
-                            );
-typedef PDH_STATUS (WINAPI *PdhRemoveCounterFunc)(
-                          HCOUNTER  hCounter
-                          );
-typedef PDH_STATUS (WINAPI *PdhLookupPerfNameByIndexFunc)(
-                              LPCSTR  szMachineName,
-                              DWORD   dwNameIndex,
-                              LPSTR   szNameBuffer,
-                              LPDWORD pcchNameBufferSize
-                              );
-typedef PDH_STATUS (WINAPI *PdhMakeCounterPathFunc)(
-                            PDH_COUNTER_PATH_ELEMENTS *pCounterPathElements,
-                            LPTSTR szFullPathBuffer,
-                            LPDWORD pcchBufferSize,
-                            DWORD dwFlags
-                            );
+                      HCOUNTER                hCounter,
+                      DWORD                   dwFormat,
+                      LPDWORD                 lpdwType,
+                      PPDH_FMT_COUNTERVALUE   pValue
+                      );
 
 static PdhAddCounterFunc PdhAddCounter_i;
 static PdhOpenQueryFunc PdhOpenQuery_i;
@@ -234,76 +209,757 @@ static PdhGetFormattedCounterValueFunc PdhGetFormattedCounterValue_i;
 static PdhEnumObjectItemsFunc PdhEnumObjectItems_i;
 static PdhRemoveCounterFunc PdhRemoveCounter_i;
 static PdhLookupPerfNameByIndexFunc PdhLookupPerfNameByIndex_i;
-static PdhMakeCounterPathFunc PdhMakeCounterPath_i;
 
-static HANDLE thisProcess;
-static double cpuFactor;
-static DWORD  num_cpus;
-
-#define FT2JLONG(X)  ((((jlong)X.dwHighDateTime) << 32) | ((jlong)X.dwLowDateTime))
-#define COUNTER_BUF_SIZE 256
-// Min time between query updates.
-#define MIN_UPDATE_INTERVAL 500
-#define CONFIG_SUCCESSFUL 0
-
-/**
+/*
  * Struct for PDH queries.
  */
 typedef struct {
     HQUERY      query;
-    uint64_t      lastUpdate; // Last time query was updated (current millis).
+    uint64_t    lastUpdate; // Last time query was updated (ticks)
 } UpdateQueryS, *UpdateQueryP;
 
-/**
- * Struct for the processor load counters.
+// Min time between query updates (ticks)
+static const int MIN_UPDATE_INTERVAL = 500;
+
+/*
+ * Struct for a PDH query with multiple counters.
  */
 typedef struct {
-    UpdateQueryS      query;
-    HCOUNTER*      counters;
-    int          noOfCounters;
+    UpdateQueryS  query;
+    HCOUNTER*     counters;
+    int           noOfCounters;
 } MultipleCounterQueryS, *MultipleCounterQueryP;
 
-/**
- * Struct for the jvm process load counter.
+/*
+ * Struct for a PDH query with a single counter.
  */
 typedef struct {
-    UpdateQueryS      query;
+    UpdateQueryS  query;
     HCOUNTER      counter;
 } SingleCounterQueryS, *SingleCounterQueryP;
 
-static char* getProcessPDHHeader(void);
 
-/**
- * Currently available counters.
+typedef struct {
+    CRITICAL_SECTION cs;
+    DWORD owningThread;
+    DWORD recursionCount;
+} PdhCriticalSectionS, *PdhCriticalSectionP;
+
+static PdhCriticalSectionS initializationLock;
+
+static void InitializePdhCriticalSection(PdhCriticalSectionP criticalSection) {
+    assert(criticalSection);
+
+    InitializeCriticalSection(&criticalSection->cs);
+    criticalSection->owningThread = 0;
+    criticalSection->recursionCount = 0;
+}
+
+static void EnterPdhCriticalSection(PdhCriticalSectionP criticalSection) {
+    assert(criticalSection);
+
+    EnterCriticalSection(&criticalSection->cs);
+    criticalSection->recursionCount++;
+    if (!criticalSection->owningThread) {
+        criticalSection->owningThread = GetCurrentThreadId();
+    }
+}
+
+static void LeavePdhCriticalSection(PdhCriticalSectionP criticalSection) {
+    assert(criticalSection);
+    assert(GetCurrentThreadId() == criticalSection->owningThread);
+    assert(criticalSection->recursionCount >= 1);
+
+    criticalSection->recursionCount--;
+    if (!criticalSection->recursionCount) {
+        criticalSection->owningThread = 0;
+    }
+    LeaveCriticalSection(&criticalSection->cs);
+}
+
+/*
+ * INFO: Using PDH APIs Correctly in a Localized Language (Q287159)
+ *   http://support.microsoft.com/default.aspx?scid=kb;EN-US;q287159
+ * The index value for the base system counters and objects like processor,
+ * process, thread, memory, and so forth are always the same irrespective
+ * of the localized version of the operating system or service pack installed.
+ * To find the correct index for an object or counter, inspect the registry key/value:
+ * [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009\Counter]
  */
-static SingleCounterQueryS cntCtxtSwitchRate;
-static SingleCounterQueryS cntVirtualSize;
-static SingleCounterQueryS cntProcLoad;
-static SingleCounterQueryS cntProcSystemLoad;
-static MultipleCounterQueryS multiCounterCPULoad;
+static const DWORD PDH_PROCESSOR_IDX = 238;
+static const DWORD PDH_PROCESSOR_TIME_IDX = 6;
+static const DWORD PDH_PROCESS_IDX = 230;
+static const DWORD PDH_ID_PROCESS_IDX = 784;
 
-static CRITICAL_SECTION processHeaderLock;
-static CRITICAL_SECTION initializationLock;
+/* useful pdh fmt's */
+static const char* const OBJECT_COUNTER_FMT = "\\%s\\%s";
+static const size_t OBJECT_COUNTER_FMT_LEN = 2;
+static const char* const OBJECT_WITH_INSTANCES_COUNTER_FMT = "\\%s(%s)\\%s";
+static const size_t OBJECT_WITH_INSTANCES_COUNTER_FMT_LEN = 4;
+static const char* const PROCESS_OBJECT_INSTANCE_COUNTER_FMT = "\\%s(%s#%s)\\%s";
+static const size_t PROCESS_OBJECT_INSTANCE_COUNTER_FMT_LEN = 5;
 
-/**
- * Initialize the perf module at startup.
+static const char* pdhProcessImageName = NULL; /* "java" */
+static char* pdhIDProcessCounterFmt = NULL;    /* "\Process(java#%d)\ID Process" */
+
+static int numberOfJavaProcessesAtInitialization = 0;
+
+/*
+ * Currently used CPU queries/counters and variables
  */
-int
-perfiInit(void)
-{
-    InitializeCriticalSection(&processHeaderLock);
-    InitializeCriticalSection(&initializationLock);
+static SingleCounterQueryP processTotalCPULoad = NULL;
+static MultipleCounterQueryP multiCounterCPULoad = NULL;
+static double cpuFactor = .0;
+static DWORD  numCpus = 0;
+
+/*
+ * Seems WinXP PDH returns PDH_MORE_DATA whenever we send in a NULL buffer.
+ * Let's just ignore it, since we make sure we have enough buffer anyway.
+ */
+static int
+pdhFail(PDH_STATUS pdhStat) {
+    return pdhStat != ERROR_SUCCESS && pdhStat != PDH_MORE_DATA;
+}
+
+static const char*
+allocateAndCopy(const char* const originalString) {
+    size_t len;
+    char* allocatedString;
+
+    assert(originalString);
+
+    len = strlen(originalString);
+
+    allocatedString = malloc(len + 1);
+
+    if (!allocatedString) {
+        return NULL;
+    }
+
+    strncpy(allocatedString, originalString, len);
+    allocatedString[len] = '\0';
+
+    return allocatedString;
+}
+
+/*
+ * Allocates memory into the supplied pointer and
+ * fills it with the localized PDH artifact description, if indexed correctly.
+ * Caller owns the memory from the point of returning from this function.
+ *
+ * @param index    the PDH counter index as specified in the registry
+ * @param ppBuffer pointer to a char*.
+ * @return         0 if successful, negative on failure.
+ */
+static int
+lookupNameByIndex(DWORD index, char** ppBuffer) {
+    DWORD size;
+
+    assert(ppBuffer);
+
+    /* determine size needed */
+    if (PdhLookupPerfNameByIndex_i(NULL, index, NULL, &size) != PDH_MORE_DATA) {
+      /* invalid index? */
+      return -1;
+    }
+
+    *ppBuffer = malloc((size_t)size);
+
+    if (!*ppBuffer) {
+        return -1;
+    }
+
+    if (PdhLookupPerfNameByIndex_i(NULL, index, *ppBuffer, &size) != ERROR_SUCCESS) {
+        free(*ppBuffer);
+        *ppBuffer = NULL;
+        return -1;
+    }
+
+    /* windows vista does not null-terminate the string
+     * (although the docs says it will) */
+    (*ppBuffer)[size - 1] = '\0';
+
     return 0;
 }
 
-/**
- * Dynamically sets up function pointers to the PDH library.
+/*
+* Construct a fully qualified PDH path
+*
+* @param objectName   a PDH Object string representation (required)
+* @param counterName  a PDH Counter string representation (required)
+* @param imageName    a process image name string, ex. "java" (opt)
+* @param instance     an instance string, ex. "0", "1", ... (opt)
+* @return             the fully qualified PDH path.
+*
+* Caller will own the returned malloc:ed string
+*/
+static const char*
+makeFullCounterPath(const char* const objectName,
+                    const char* const counterName,
+                    const char* const imageName,
+                    const char* const instance) {
+
+    size_t fullCounterPathLen;
+    char* fullCounterPath;
+
+    assert(objectName);
+    assert(counterName);
+
+    fullCounterPathLen = strlen(objectName);
+    fullCounterPathLen += strlen(counterName);
+
+    if (imageName) {
+        /*
+         * For paths using the "Process" Object.
+         *
+         * Examples:
+         * abstract: "\Process(imageName#instance)\Counter"
+         * actual:   "\Process(java#2)\ID Process"
+         */
+        fullCounterPathLen += PROCESS_OBJECT_INSTANCE_COUNTER_FMT_LEN;
+        fullCounterPathLen += strlen(imageName);
+
+        /*
+         * imageName must be passed together with an associated
+         * instance "number" ("0", "1", "2", ...).
+         * This is required in order to create valid "Process" Object paths.
+         *
+         * Examples: "\Process(java#0)", \Process(java#1"), ...
+         */
+        assert(instance);
+
+        fullCounterPathLen += strlen(instance);
+
+        fullCounterPath = malloc(fullCounterPathLen + 1);
+
+        if (!fullCounterPath) {
+            return NULL;
+        }
+
+        _snprintf(fullCounterPath,
+                  fullCounterPathLen,
+                  PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
+                  objectName,
+                  imageName,
+                  instance,
+                  counterName);
+    } else {
+        if (instance) {
+            /*
+             * For paths where the Object has multiple instances.
+             *
+             * Examples:
+             * abstract: "\Object(instance)\Counter"
+             * actual:   "\Processor(0)\% Privileged Time"
+             */
+            fullCounterPathLen += strlen(instance);
+            fullCounterPathLen += OBJECT_WITH_INSTANCES_COUNTER_FMT_LEN;
+        } else {
+            /*
+             * For "normal" paths.
+             *
+             * Examples:
+             * abstract: "\Object\Counter"
+             * actual:   "\Memory\Available Mbytes"
+             */
+            fullCounterPathLen += OBJECT_COUNTER_FMT_LEN;
+        }
+
+        fullCounterPath = malloc(fullCounterPathLen + 1);
+
+        if (!fullCounterPath) {
+            return NULL;
+        }
+
+        if (instance) {
+            _snprintf(fullCounterPath,
+                      fullCounterPathLen,
+                      OBJECT_WITH_INSTANCES_COUNTER_FMT,
+                      objectName,
+                      instance,
+                      counterName);
+        } else {
+            _snprintf(fullCounterPath,
+                      fullCounterPathLen,
+                      OBJECT_COUNTER_FMT,
+                      objectName,
+                      counterName);
+        }
+    }
+
+    fullCounterPath[fullCounterPathLen] = '\0';
+
+    return fullCounterPath;
+}
+
+/*
+ * Resolves an index for a PDH artifact to
+ * a localized, malloc:ed string representation.
+ * Caller will own the returned malloc:ed string.
  *
- * @return CONFIG_SUCCESSFUL on success, negative on failure.
+ * @param pdhArtifactIndex  PDH index
+ * @return                  malloc:ed string representation
+ *                          of the requested pdh artifact (localized).
+ *                          NULL on failure.
+ */
+static const char*
+getPdhLocalizedArtifact(DWORD pdhArtifactIndex) {
+    char* pdhLocalizedArtifactString;
+
+    if (lookupNameByIndex(pdhArtifactIndex,
+                          &pdhLocalizedArtifactString) != 0) {
+        return NULL;
+    }
+
+    return pdhLocalizedArtifactString;
+}
+
+static void
+pdhCleanup(HQUERY* const query, HCOUNTER* const counter) {
+    if (counter && *counter) {
+        PdhRemoveCounter_i(*counter);
+        *counter = NULL;
+    }
+    if (query && *query) {
+        PdhCloseQuery_i(*query);
+        *query = NULL;
+    }
+}
+
+static void
+destroySingleCounter(SingleCounterQueryP counterQuery) {
+    if (counterQuery) {
+        pdhCleanup(&counterQuery->query.query, &counterQuery->counter);
+    }
+}
+
+static void
+destroyMultiCounter(MultipleCounterQueryP multiCounterQuery) {
+    int i;
+    if (multiCounterQuery) {
+        if (multiCounterQuery->counters) {
+            for (i = 0; i < multiCounterQuery->noOfCounters; i++) {
+                pdhCleanup(NULL, &multiCounterQuery->counters[i]);
+            }
+            free(multiCounterQuery->counters);
+            multiCounterQuery->counters = NULL;
+        }
+        pdhCleanup(&multiCounterQuery->query.query, NULL);
+    }
+}
+
+static int
+openQuery(HQUERY* const query) {
+    assert(query);
+
+    if (PdhOpenQuery_i(NULL, 0, query) != ERROR_SUCCESS) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+addCounter(HQUERY query,
+           const char* const fullCounterPath,
+           HCOUNTER* const counter) {
+
+    assert(fullCounterPath);
+    assert(counter);
+
+    if (PdhAddCounter_i(query,
+                        fullCounterPath,
+                        0,
+                        counter) != ERROR_SUCCESS) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
+ * Sets up the supplied SingleCounterQuery to listen for the specified counter.
+ *
+ * @param counterQuery       the counter query to set up.
+ * @param fullCounterPath    the string specifying the full path to the counter.
+ * @returns                  0 if successful, negative on failure.
  */
 static int
-get_functions(HMODULE h, char *ebuf, size_t elen) {
-    // The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods
+initializeSingleCounterQuery(SingleCounterQueryP counterQuery,
+                             const char* const fullCounterPath) {
+    assert(counterQuery);
+    assert(fullCounterPath);
+
+    if (openQuery(&counterQuery->query.query) == 0) {
+        if (addCounter(counterQuery->query.query,
+                       fullCounterPath,
+                       &counterQuery->counter) == 0) {
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+/*
+ * Sets up a SingleCounterQuery
+ *
+ * param counter             the counter query to set up.
+ * param localizedObject     string representing the PDH object to query
+ * param localizedCounter    string representing the PDH counter to query
+ * param processImageName    if the counter query needs the process image name ("java")
+ * param instance            if the counter has instances, this is the instance ("\Processor(0)\")
+                                 where 0 is the instance
+ * param firstSampleOnInit   for counters that need two queries to yield their values,
+                                 the first query can be issued just after initialization
+ *
+ * @returns                   0 if successful, negative on failure.
+ */
+static int
+initializeSingleCounter(SingleCounterQueryP const counter,
+                        const char* const localizedObject,
+                        const char* const localizedCounter,
+                        const char* const processImageName,
+                        const char* const instance,
+                        BOOL firstSampleOnInit) {
+    int retValue = -1;
+
+    const char* fullCounterPath = makeFullCounterPath(localizedObject,
+                                                      localizedCounter,
+                                                      processImageName,
+                                                      instance);
+
+    if (fullCounterPath) {
+
+        assert(counter);
+
+        if (initializeSingleCounterQuery(counter, fullCounterPath) == 0) {
+            /*
+             * According to the MSDN documentation, rate counters must be read twice:
+             *
+             * "Obtaining the value of rate counters such as Page faults/sec requires that
+             *  PdhCollectQueryData be called twice, with a specific time interval between
+             *  the two calls, before calling PdhGetFormattedCounterValue. Call Sleep to
+             *  implement the waiting period between the two calls to PdhCollectQueryData."
+             *
+             *  Take the first sample here already to allow for the next (first) "real" sample
+             *  to succeed.
+             */
+            if (firstSampleOnInit) {
+                PdhCollectQueryData_i(counter->query.query);
+            }
+
+            retValue = 0;
+        }
+        free((char*)fullCounterPath);
+    }
+
+    return retValue;
+}
+
+static void
+perfInit(void) {
+    InitializePdhCriticalSection(&initializationLock);
+}
+
+static int
+getProcessID() {
+    static int myPid = 0;
+    if (0 == myPid) {
+        myPid = _getpid();
+    }
+    return myPid;
+}
+
+/*
+ * Working against the Process object and it's related counters is inherently problematic
+ * when using the PDH API:
+ *
+ * For PDH, a process is not primarily identified by it's process id,
+ * but with a sequential number, for example \Process(java#0), \Process(java#1), ....
+ * The really bad part is that this list is reset as soon as one process exits:
+ * If \Process(java#1) exits, \Process(java#3) now becomes \Process(java#2) etc.
+ *
+ * The PDH query api requires a process identifier to be submitted when registering
+ * a query, but as soon as the list resets, the query is invalidated (since the name
+ * changed).
+ *
+ * Solution:
+ * The #number identifier for a Process query can only decrease after process creation.
+ *
+ * Therefore we create an array of counter queries for all process object instances
+ * up to and including ourselves:
+ *
+ * Ex. we come in as third process instance (java#2), we then create and register
+ * queries for the following Process object instances:
+ * java#0, java#1, java#2
+ *
+ * currentQueryIndexForProcess() keeps track of the current "correct" query
+ * (in order to keep this index valid when the list resets from underneath,
+ * ensure to call getCurrentQueryIndexForProcess() before every query involving
+ * Process object instance data).
+ */
+static int
+currentQueryIndexForProcess(void) {
+    HQUERY tmpQuery = NULL;
+    HCOUNTER handleCounter = NULL;
+    int retValue = -1;
+
+    assert(pdhProcessImageName);
+    assert(pdhIDProcessCounterFmt);
+
+    if (openQuery(&tmpQuery) == 0) {
+        int index;
+
+        /* iterate over all instance indexes and try to find our own pid */
+        for (index = 0; index < INT_MAX; ++index) {
+            char fullIDProcessCounterPath[MAX_PATH];
+            PDH_FMT_COUNTERVALUE counterValue;
+            PDH_STATUS res;
+
+            _snprintf(fullIDProcessCounterPath,
+                      MAX_PATH,
+                      pdhIDProcessCounterFmt,
+                      index);
+
+            if (addCounter(tmpQuery, fullIDProcessCounterPath, &handleCounter) != 0) {
+                break;
+            }
+
+            res = PdhCollectQueryData_i(tmpQuery);
+
+            if (PDH_INVALID_HANDLE == res || PDH_NO_DATA == res) {
+                break;
+            }
+
+            PdhGetFormattedCounterValue_i(handleCounter,
+                                          PDH_FMT_LONG,
+                                          NULL,
+                                          &counterValue);
+            /*
+             * This check seems to be needed for Win2k SMP boxes, since
+             * they for some reason don't return PDH_NO_DATA for non existing
+             * counters.
+             */
+            if (counterValue.CStatus != PDH_CSTATUS_VALID_DATA) {
+                break;
+            }
+
+            if ((LONG)getProcessID() == counterValue.longValue) {
+                retValue = index;
+                break;
+            }
+        }
+    }
+
+    pdhCleanup(&tmpQuery, &handleCounter);
+
+    return retValue;
+}
+
+/*
+ * If successful, returns the #index corresponding to our PID
+ * as resolved by the pdh query:
+ * "\Process(java#index)\ID Process" (or localized equivalent)
+ *
+ * This function should be called before attempting to read
+ * from any Process related counter(s), and the return value
+ * is the index to be used for indexing an array of Process object query's:
+ *
+ * Example:
+ * processTotalCPULoad[currentQueryIndex].query
+ *
+ * Returns -1 on failure.
+ */
+static int
+getCurrentQueryIndexForProcess() {
+    int currentQueryIndex = currentQueryIndexForProcess();
+
+    assert(currentQueryIndex >= 0 &&
+           currentQueryIndex < numberOfJavaProcessesAtInitialization);
+
+    return currentQueryIndex;
+}
+
+/*
+ * Returns the PDH string identifying the current process image name.
+ * Use this name as a qualifier when getting counters from the PDH Process Object
+ * representing your process.
+
+ * Example:
+ * "\Process(java#0)\Virtual Bytes" - where "java" is the PDH process
+ * image name.
+ *
+ * Please note that the process image name is not necessarily "java",
+ * hence the use of GetModuleFileName() to detect the process image name.
+ *
+ * @return   the process image name to be used when retrieving
+ *           PDH counters from the current process. The caller will
+             own the returned malloc:ed string. NULL if failure.
+ */
+static const char*
+getPdhProcessImageName() {
+    char moduleName[MAX_PATH];
+    char* processImageName;
+    char* dotPos;
+
+    // Find our module name and use it to extract the image name used by PDH
+    DWORD getmfnReturn = GetModuleFileName(NULL, moduleName, sizeof(moduleName));
+
+    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        return NULL;
+    }
+
+    if (getmfnReturn >= MAX_PATH || 0 == getmfnReturn) {
+        return NULL;
+    }
+
+    processImageName = strrchr(moduleName, '\\'); //drop path
+    processImageName++;                           //skip slash
+    dotPos = strrchr(processImageName, '.');      //drop .exe
+    dotPos[0] = '\0';
+
+    return allocateAndCopy(processImageName);
+}
+
+/*
+ * Sets up the supplied MultipleCounterQuery to check on the processors via PDH CPU counters.
+ * TODO: Refactor and prettify as with the the SingleCounter queries
+ * if more MultipleCounterQueries are discovered/needed.
+ *
+ * @param multiCounterCPULoad  a pointer to a MultipleCounterQueryS, will be filled in with
+ *                             the necessary info to check the PDH processor counters.
+ * @return                     0 if successful, negative on failure.
+ */
+static int
+initializeMultipleCounterForCPUs(MultipleCounterQueryP multiCounterCPULoad) {
+    DWORD cSize = 0;
+    DWORD iSize = 0;
+    DWORD pCount;
+    DWORD index;
+    char* processor = NULL; //'Processor' == PDH_PROCESSOR_IDX
+    char* time = NULL;      //'Time' == PDH_PROCESSOR_TIME_IDX
+    char* instances = NULL;
+    char* tmp;
+    int   retValue = -1;
+    PDH_STATUS pdhStat;
+
+    if (lookupNameByIndex(PDH_PROCESSOR_IDX, &processor) != 0) {
+        goto end;
+    }
+
+    if (lookupNameByIndex(PDH_PROCESSOR_TIME_IDX, &time) != 0) {
+        goto end;
+    }
+
+    //ok, now we have enough to enumerate all processors.
+    pdhStat = PdhEnumObjectItems_i(
+                                   NULL, // reserved
+                                   NULL, // local machine
+                                   processor, // object to enumerate
+                                   NULL, // pass in NULL buffers
+                                   &cSize, // and 0 length to get
+                                   NULL, // required size
+                                   &iSize, // of the buffers in chars
+                                   PERF_DETAIL_WIZARD, // counter detail level
+                                   0);
+
+    if (pdhFail(pdhStat)) {
+        goto end;
+    }
+
+    instances = calloc(iSize, 1);
+
+    if (!instances) {
+        goto end;
+    }
+
+    cSize = 0;
+
+    pdhStat = PdhEnumObjectItems_i(
+                                   NULL, // reserved
+                                   NULL, // local machine
+                                   processor, // object to enumerate
+                                   NULL, // pass in NULL buffers
+                                   &cSize,
+                                   instances, // now allocated to be filled in
+                                   &iSize, // and size is known
+                                   PERF_DETAIL_WIZARD, // counter detail level
+                                   0);
+
+    if (pdhFail(pdhStat)) {
+        goto end;
+    }
+
+    // enumerate the Processor instances ("\Processor(0)", "\Processor(1)", ..., "\Processor(_Total)")
+    for (pCount = 0, tmp = instances; *tmp != '\0'; tmp = &tmp[strlen(tmp)+1], pCount++);
+
+    assert(pCount == numCpus+1);
+
+    //ok, we now have the number of Processor instances - allocate an HCOUNTER for each
+    multiCounterCPULoad->counters = (HCOUNTER*)malloc(pCount * sizeof(HCOUNTER));
+
+    if (!multiCounterCPULoad->counters) {
+        goto end;
+    }
+
+    multiCounterCPULoad->noOfCounters = pCount;
+
+    if (openQuery(&multiCounterCPULoad->query.query) != 0) {
+        goto end;
+    }
+
+    // fetch instance and register its corresponding HCOUNTER with the query
+    for (index = 0, tmp = instances; *tmp != '\0'; tmp = &tmp[strlen(tmp)+1], ++index) {
+        const char* const fullCounterPath = makeFullCounterPath(processor, time, NULL, tmp);
+
+        if (!fullCounterPath) {
+            goto end;
+        }
+
+        retValue = addCounter(multiCounterCPULoad->query.query,
+                              fullCounterPath,
+                              &multiCounterCPULoad->counters[index]);
+
+        free((char*)fullCounterPath);
+
+        if (retValue != 0) {
+            goto end;
+        }
+    }
+
+    // Query once to initialize the counters which require at least two samples
+    // (like the % CPU usage) to calculate correctly.
+    PdhCollectQueryData_i(multiCounterCPULoad->query.query);
+
+  end:
+    if (processor) {
+        free(processor);
+    }
+
+    if (time) {
+        free(time);
+    }
+
+    if (instances) {
+        free(instances);
+    }
+
+    return retValue;
+}
+
+/*
+ * Dynamically sets up function pointers to the PDH library.
+ *
+ * @param h  HMODULE for the PDH library
+ * @return   0 on success, negative on failure.
+ */
+static int
+bindPdhFunctionPointers(HMODULE h) {
+    assert(h);
+    assert(GetCurrentThreadId() == initializationLock.owningThread);
+
+    /* The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods */
     PdhAddCounter_i         = (PdhAddCounterFunc)GetProcAddress(h, "PdhAddCounterA");
     PdhOpenQuery_i         = (PdhOpenQueryFunc)GetProcAddress(h, "PdhOpenQueryA");
     PdhCloseQuery_i         = (PdhCloseQueryFunc)GetProcAddress(h, "PdhCloseQuery");
@@ -312,42 +968,41 @@ get_functions(HMODULE h, char *ebuf, size_t elen) {
     PdhEnumObjectItems_i         = (PdhEnumObjectItemsFunc)GetProcAddress(h, "PdhEnumObjectItemsA");
     PdhRemoveCounter_i         = (PdhRemoveCounterFunc)GetProcAddress(h, "PdhRemoveCounter");
     PdhLookupPerfNameByIndex_i     = (PdhLookupPerfNameByIndexFunc)GetProcAddress(h, "PdhLookupPerfNameByIndexA");
-    PdhMakeCounterPath_i         = (PdhMakeCounterPathFunc)GetProcAddress(h, "PdhMakeCounterPathA");
 
-    if (PdhAddCounter_i == NULL || PdhOpenQuery_i == NULL ||
-    PdhCloseQuery_i == NULL || PdhCollectQueryData_i == NULL ||
-    PdhGetFormattedCounterValue_i == NULL || PdhEnumObjectItems_i == NULL ||
-    PdhRemoveCounter_i == NULL || PdhLookupPerfNameByIndex_i == NULL || PdhMakeCounterPath_i == NULL)
+    if (!PdhAddCounter_i || !PdhOpenQuery_i ||
+        !PdhCloseQuery_i || !PdhCollectQueryData_i ||
+        !PdhGetFormattedCounterValue_i || !PdhEnumObjectItems_i ||
+        !PdhRemoveCounter_i || !PdhLookupPerfNameByIndex_i)
     {
-        _snprintf(ebuf, elen, "Required method could not be found.");
         return -1;
     }
-    return CONFIG_SUCCESSFUL;
+    return 0;
 }
 
-/**
+/*
  * Returns the counter value as a double for the specified query.
  * Will collect the query data and update the counter values as necessary.
  *
  * @param query       the query to update (if needed).
- * @param c          the counter to read.
+ * @param c           the counter to read.
  * @param value       where to store the formatted value.
  * @param format      the format to use (i.e. PDH_FMT_DOUBLE, PDH_FMT_LONG etc)
- * @return            CONFIG_SUCCESSFUL if no error
+ * @return            0 if no error
  *                    -1 if PdhCollectQueryData fails
  *                    -2 if PdhGetFormattedCounterValue fails
  */
 static int
 getPerformanceData(UpdateQueryP query, HCOUNTER c, PDH_FMT_COUNTERVALUE* value, DWORD format) {
-    clock_t now;
-    now = clock();
+    clock_t now = clock();
 
-    // Need to limit how often we update the query
-    // to mimise the heisenberg effect.
-    // (PDH behaves erratically if the counters are
-    // queried too often, especially counters that
-    // store and use values from two consecutive updates,
-    // like cpu load.)
+    /*
+     * Need to limit how often we update the query
+     * to minimize the Heisenberg effect.
+     * (PDH behaves erratically if the counters are
+     * queried too often, especially counters that
+     * store and use values from two consecutive updates,
+     * like cpu load.)
+     */
     if (now - query->lastUpdate > MIN_UPDATE_INTERVAL) {
         if (PdhCollectQueryData_i(query->query) != ERROR_SUCCESS) {
             return -1;
@@ -358,500 +1013,308 @@ getPerformanceData(UpdateQueryP query, HCOUNTER c, PDH_FMT_COUNTERVALUE* value, 
     if (PdhGetFormattedCounterValue_i(c, format, NULL, value) != ERROR_SUCCESS) {
         return -2;
     }
-    return CONFIG_SUCCESSFUL;
-}
 
-/**
- * Places the resolved counter name of the counter at the specified index in the
- * supplied buffer. There must be enough space in the buffer to hold the counter name.
- *
- * @param index   the counter index as specified in the registry.
- * @param buf     the buffer in which to place the counter name.
- * @param size      the size of the counter name buffer.
- * @param ebuf    the error message buffer.
- * @param elen    the length of the error buffer.
- * @return        CONFIG_SUCCESSFUL if successful, negative on failure.
- */
-static int
-find_name(DWORD index, char *buf, DWORD size) {
-    PDH_STATUS res;
-
-    if ((res = PdhLookupPerfNameByIndex_i(NULL, index, buf, &size)) != ERROR_SUCCESS) {
-
-        /* printf("Could not open counter %d: error=0x%08x", index, res); */
-        /* if (res == PDH_CSTATUS_NO_MACHINE) { */
-        /*      printf("User probably does not have sufficient privileges to use"); */
-        /*      printf("performance counters. If you are running on Windows 2003"); */
-        /*      printf("or Windows Vista, make sure the user is in the"); */
-        /*      printf("Performance Logs user group."); */
-        /* } */
-        return -1;
-    }
-
-    if (size == 0) {
-        /* printf("Failed to get counter name for %d: empty string", index); */
-        return -1;
-    }
-
-    // windows vista does not null-terminate the string (allthough the docs says it will)
-    buf[size - 1] = '\0';
-    return CONFIG_SUCCESSFUL;
-}
-
-/**
- * Sets up the supplied SingleCounterQuery to listen for the specified counter.
- * initPDH() must have been run prior to calling this function!
- *
- * @param counterQuery   the counter query to set up.
- * @param counterString  the string specifying the path to the counter.
- * @param ebuf           the error buffer.
- * @param elen           the length of the error buffer.
- * @returns              CONFIG_SUCCESSFUL if successful, negative on failure.
- */
-static int
-initSingleCounterQuery(SingleCounterQueryP counterQuery, char *counterString) {
-    if (PdhOpenQuery_i(NULL, 0, &counterQuery->query.query) != ERROR_SUCCESS) {
-        /* printf("Could not open query for %s", counterString); */
-        return -1;
-    }
-    if (PdhAddCounter_i(counterQuery->query.query, counterString, 0, &counterQuery->counter) != ERROR_SUCCESS) {
-        /* printf("Could not add counter %s for query", counterString); */
-        if (counterQuery->counter != NULL) {
-            PdhRemoveCounter_i(counterQuery->counter);
-        }
-        if (counterQuery->query.query != NULL) {
-            PdhCloseQuery_i(counterQuery->query.query);
-        }
-        memset(counterQuery, 0, sizeof(SingleCounterQueryS));
-        return -1;
-    }
-    return CONFIG_SUCCESSFUL;
-}
-
-/**
- * Sets up the supplied SingleCounterQuery to listen for the time spent
- * by the HotSpot process.
- *
- * @param counterQuery   the counter query to set up as a process counter.
- * @param ebuf           the error buffer.
- * @param elen           the length of the error buffer.
- * @returns              CONFIG_SUCCESSFUL if successful, negative on failure.
- */
-static int
-initProcLoadCounter(void) {
-    char time[COUNTER_BUF_SIZE];
-    char counter[COUNTER_BUF_SIZE*2];
-
-    if (find_name(PDH_PROCESSOR_TIME_IDX, time, sizeof(time)-1) < 0) {
-        return -1;
-    }
-    _snprintf(counter, sizeof(counter)-1, "%s\\%s", getProcessPDHHeader(), time);
-    return initSingleCounterQuery(&cntProcLoad, counter);
+    return 0;
 }
 
 static int
-initProcSystemLoadCounter(void) {
-    char time[COUNTER_BUF_SIZE];
-    char counter[COUNTER_BUF_SIZE*2];
+allocateAndInitializePdhConstants() {
+    const char* pdhLocalizedProcessObject = NULL;
+    const char* pdhLocalizedIDProcessCounter = NULL;
+    size_t pdhIDProcessCounterFmtLen;
+    int currentQueryIndex;
+    int retValue = -1;
 
-    if (find_name(PDH_PRIV_PROCESSOR_TIME_IDX, time, sizeof(time)-1) < 0) {
-        return -1;
-    }
-    _snprintf(counter, sizeof(counter)-1, "%s\\%s", getProcessPDHHeader(), time);
-    return initSingleCounterQuery(&cntProcSystemLoad, counter);
-}
+    assert(GetCurrentThreadId() == initializationLock.owningThread);
 
-/**
- * Sets up the supplied MultipleCounterQuery to check on the processors.
- * (Comment: Refactor and prettify as with the the SingleCounter queries
- * if more MultipleCounterQueries are discovered.)
- *
- * initPDH() must have been run prior to calling this function.
- *
- * @param multiQuery  a pointer to a MultipleCounterQueryS, will be filled in with
- *                    the necessary info to check the PDH processor counters.
- * @return            CONFIG_SUCCESSFUL if successful, negative on failure.
- */
-static int
-initProcessorCounters(void) {
-    char          processor[COUNTER_BUF_SIZE]; //'Processor' == #238
-    char          time[COUNTER_BUF_SIZE];      //'Time' == 6
-    DWORD      c_size, i_size;
-    HQUERY     tmpQuery;
-    DWORD      i, p_count;
-    BOOL          error;
-    char         *instances, *tmp;
-    PDH_STATUS pdhStat;
-
-    c_size   = i_size = 0;
-    tmpQuery = NULL;
-    error    = false;
-
-    // This __try / __except stuff is there since Windows 2000 beta (or so) sometimes triggered
-    // an access violation when the user had insufficient privileges to use the performance
-    // counters. This was previously guarded by a very ugly piece of code which disabled the
-    // global trap handling in JRockit. Don't know if this really is needed anymore, but otoh,
-    // if we keep it we don't crash on Win2k beta. /Ihse, 2005-05-30
-    __try {
-        if (find_name(PDH_PROCESSOR_IDX, processor, sizeof(processor)-1) < 0) {
-            return -1;
-        }
-    } __except (EXCEPTION_EXECUTE_HANDLER) { // We'll catch all exceptions here.
-        /* printf("User does not have sufficient privileges to use performance counters"); */
-        return -1;
-    }
-
-    if (find_name(PDH_PROCESSOR_TIME_IDX, time, sizeof(time)-1) < 0) {
-        return -1;
-    }
-    //ok, now we have enough to enumerate all processors.
-    pdhStat = PdhEnumObjectItems_i (
-                    NULL,                   // reserved
-                    NULL,                   // local machine
-                    processor,          // object to enumerate
-                    NULL,              // pass in NULL buffers
-                    &c_size,              // and 0 length to get
-                    NULL,              // required size
-                    &i_size,              // of the buffers in chars
-                    PERF_DETAIL_WIZARD,     // counter detail level
-                    0);
-    if (pdh_fail(pdhStat)) {
-        /* printf("could not enumerate processors (1) error=%d", pdhStat); */
-        return -1;
-    }
-
-    // use calloc because windows vista does not null terminate the instance names (allthough the docs says it will)
-    instances = calloc(i_size, 1);
-    if (instances == NULL) {
-        /* printf("could not allocate memory (1) %d bytes", i_size); */
-        error = true;
+    assert(!pdhProcessImageName);
+    pdhProcessImageName = getPdhProcessImageName();
+    if (!pdhProcessImageName) {
         goto end;
     }
 
-    c_size  = 0;
-    pdhStat = PdhEnumObjectItems_i (
-                    NULL,                   // reserved
-                    NULL,                   // local machine
-                    processor,              // object to enumerate
-                    NULL,              // pass in NULL buffers
-                    &c_size,              // and 0 length to get
-                    instances,          // required size
-                    &i_size,              // of the buffers in chars
-                    PERF_DETAIL_WIZARD,     // counter detail level
-                    0);
-
-    if (pdh_fail(pdhStat)) {
-        /* printf("could not enumerate processors (2) error=%d", pdhStat); */
-        error = true;
-        goto end;
-    }
-    //count perf count instances.
-    for (p_count = 0, tmp = instances; *tmp != 0; tmp = &tmp[lstrlen(tmp)+1], p_count++);
-
-    //is this correct for HT?
-    assert(p_count == num_cpus+1);
-
-    //ok, have number of perf counters.
-    multiCounterCPULoad.counters = calloc(p_count, sizeof(HCOUNTER));
-    if (multiCounterCPULoad.counters == NULL) {
-        /* printf("could not allocate memory (2) count=%d", p_count); */
-        error = true;
+    pdhLocalizedProcessObject = getPdhLocalizedArtifact(PDH_PROCESS_IDX);
+    if (!pdhLocalizedProcessObject) {
         goto end;
     }
 
-    multiCounterCPULoad.noOfCounters = p_count;
-
-    if (PdhOpenQuery_i(NULL, 0, &multiCounterCPULoad.query.query) != ERROR_SUCCESS) {
-        /* printf("could not create query"); */
-        error = true;
+    pdhLocalizedIDProcessCounter = getPdhLocalizedArtifact(PDH_ID_PROCESS_IDX);
+    if (!pdhLocalizedIDProcessCounter) {
         goto end;
     }
-    //now, fetch the counters.
-    for (i = 0, tmp = instances; *tmp != '\0'; tmp = &tmp[lstrlen(tmp)+1], i++) {
-    char counter[2*COUNTER_BUF_SIZE];
 
-    _snprintf(counter, sizeof(counter)-1, "\\%s(%s)\\%s", processor, tmp, time);
+    assert(!pdhIDProcessCounterFmt);
 
-    if (PdhAddCounter_i(multiCounterCPULoad.query.query, counter, 0, &multiCounterCPULoad.counters[i]) != ERROR_SUCCESS) {
-            /* printf("error adding processor counter %s", counter); */
-            error = true;
-            goto end;
-        }
+    pdhIDProcessCounterFmtLen = strlen(pdhProcessImageName);
+    pdhIDProcessCounterFmtLen += strlen(pdhLocalizedProcessObject);
+    pdhIDProcessCounterFmtLen += strlen(pdhLocalizedIDProcessCounter);
+    pdhIDProcessCounterFmtLen += PROCESS_OBJECT_INSTANCE_COUNTER_FMT_LEN;
+    pdhIDProcessCounterFmtLen += 2; // "%d"
+
+    assert(pdhIDProcessCounterFmtLen < MAX_PATH);
+    pdhIDProcessCounterFmt = malloc(pdhIDProcessCounterFmtLen + 1);
+    if (!pdhIDProcessCounterFmt) {
+        goto end;
     }
 
-    free(instances);
-    instances = NULL;
+    /* "\Process(java#%d)\ID Process" */
+    _snprintf(pdhIDProcessCounterFmt,
+              pdhIDProcessCounterFmtLen,
+              PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
+              pdhLocalizedProcessObject,
+              pdhProcessImageName,
+              "%d",
+              pdhLocalizedIDProcessCounter);
 
-    // Query once to initialize the counters needing at least two queries
-    // (like the % CPU usage) to calculate correctly.
-    if (PdhCollectQueryData_i(multiCounterCPULoad.query.query) != ERROR_SUCCESS)
-        error = true;
+    pdhIDProcessCounterFmt[pdhIDProcessCounterFmtLen] = '\0';
 
- end:
-    if (instances != NULL) {
-        free(instances);
+    assert(0 == numberOfJavaProcessesAtInitialization);
+    currentQueryIndex = currentQueryIndexForProcess();
+    if (-1 == currentQueryIndex) {
+        goto end;
     }
-    if (tmpQuery != NULL) {
-        PdhCloseQuery_i(tmpQuery);
-    }
-    if (error) {
-        int i;
 
-        if (multiCounterCPULoad.counters != NULL) {
-            for (i = 0; i < multiCounterCPULoad.noOfCounters; i++) {
-                if (multiCounterCPULoad.counters[i] != NULL) {
-                    PdhRemoveCounter_i(multiCounterCPULoad.counters[i]);
+    numberOfJavaProcessesAtInitialization = currentQueryIndex + 1;
+    assert(numberOfJavaProcessesAtInitialization >= 1);
+
+    retValue = 0;
+
+  end:
+
+    if (pdhLocalizedProcessObject) {
+        free((char*)pdhLocalizedProcessObject);
+    }
+
+    if (pdhLocalizedIDProcessCounter) {
+        free((char*)pdhLocalizedIDProcessCounter);
+    }
+
+    return retValue;
+}
+
+static void
+deallocatePdhConstants() {
+    assert(GetCurrentThreadId() == initializationLock.owningThread);
+
+    if (pdhProcessImageName) {
+        free((char*)pdhProcessImageName);
+        pdhProcessImageName = NULL;
+    }
+
+    if (pdhIDProcessCounterFmt) {
+      free(pdhIDProcessCounterFmt);
+      pdhIDProcessCounterFmt = NULL;
+    }
+
+    numberOfJavaProcessesAtInitialization = 0;
+}
+
+static int
+initializeCPUCounters() {
+    SYSTEM_INFO si;
+    char* localizedProcessObject;
+    char* localizedProcessorTimeCounter;
+    int i;
+    int retValue = -1;
+
+    assert(GetCurrentThreadId() == initializationLock.owningThread);
+
+    assert(0 == numCpus);
+    GetSystemInfo(&si);
+    numCpus = si.dwNumberOfProcessors;
+    assert(numCpus >= 1);
+
+    /* Initialize the denominator for the jvm load calculations */
+    assert(.0 == cpuFactor);
+    cpuFactor = numCpus * 100;
+
+    if (lookupNameByIndex(PDH_PROCESS_IDX,
+                          &localizedProcessObject) == 0) {
+
+        if (lookupNameByIndex(PDH_PROCESSOR_TIME_IDX,
+                              &localizedProcessorTimeCounter) == 0) {
+
+            assert(processTotalCPULoad);
+            assert(pdhProcessImageName);
+
+            for (i = 0; i < numberOfJavaProcessesAtInitialization; ++i) {
+                char instanceIndexBuffer[32];
+                retValue = initializeSingleCounter(&processTotalCPULoad[i],
+                                                   localizedProcessObject,
+                                                   localizedProcessorTimeCounter,
+                                                   pdhProcessImageName,
+                                                   itoa(i, instanceIndexBuffer, 10),
+                                                   TRUE);
+                if (retValue != 0) {
+                    break;
                 }
             }
-            free(multiCounterCPULoad.counters[i]);
+            free(localizedProcessorTimeCounter);
         }
-        if (multiCounterCPULoad.query.query != NULL) {
-            PdhCloseQuery_i(multiCounterCPULoad.query.query);
-        }
-        memset(&multiCounterCPULoad, 0, sizeof(MultipleCounterQueryS));
+        free(localizedProcessObject);
+    }
+
+    if (retValue != 0) {
         return -1;
     }
-    return CONFIG_SUCCESSFUL;
+
+    assert(multiCounterCPULoad);
+    return initializeMultipleCounterForCPUs(multiCounterCPULoad);
 }
 
-/**
- * Help function that initializes the PDH process header for the JRockit process.
- * (You should probably use getProcessPDHHeader() instead!)
- *
- * initPDH() must have been run prior to calling this function.
- *
- * @param ebuf the error buffer.
- * @param elen the length of the error buffer.
- *
- * @return the PDH instance description corresponding to the JVM process.
- */
-static char*
-initProcessPDHHeader(void) {
-    static char hotspotheader[2*COUNTER_BUF_SIZE];
+static void
+deallocateCPUCounters() {
+    int i;
 
-    char           counter[2*COUNTER_BUF_SIZE];
-    char           processes[COUNTER_BUF_SIZE];   //'Process' == #230
-    char           pid[COUNTER_BUF_SIZE];           //'ID Process' == 784
-    char           module_name[MAX_PATH];
-    PDH_STATUS  pdhStat;
-    DWORD       c_size = 0, i_size = 0;
-    HQUERY      tmpQuery = NULL;
-    int           i, myPid = _getpid();
-    BOOL           error = false;
-    char          *instances, *tmp, *instance_name, *dot_pos;
+    assert(GetCurrentThreadId() == initializationLock.owningThread);
 
-    tmpQuery = NULL;
-    myPid    = _getpid();
-    error    = false;
-
-    if (find_name(PDH_PROCESS_IDX, processes, sizeof(processes) - 1) < 0) {
-        return NULL;
-    }
-
-    if (find_name(PDH_ID_PROCESS_IDX, pid, sizeof(pid) - 1) < 0) {
-        return NULL;
-    }
-    //time is same.
-
-    c_size = 0;
-    i_size = 0;
-
-    pdhStat = PdhEnumObjectItems_i (
-                    NULL,                   // reserved
-                    NULL,                   // local machine
-                    processes,              // object to enumerate
-                    NULL,                   // pass in NULL buffers
-                    &c_size,              // and 0 length to get
-                    NULL,              // required size
-                    &i_size,              // of the buffers in chars
-                    PERF_DETAIL_WIZARD,     // counter detail level
-                    0);
-
-    //ok, now we have enough to enumerate all processes
-    if (pdh_fail(pdhStat)) {
-        /* printf("Could not enumerate processes (1) error=%d", pdhStat); */
-        return NULL;
-    }
-
-    // use calloc because windows vista does not null terminate the instance names (allthough the docs says it will)
-    if ((instances = calloc(i_size, 1)) == NULL) {
-        /* printf("Could not allocate memory %d bytes", i_size); */
-        error = true;
-        goto end;
-    }
-
-    c_size = 0;
-
-    pdhStat = PdhEnumObjectItems_i (
-                    NULL,                   // reserved
-                    NULL,                   // local machine
-                    processes,              // object to enumerate
-                    NULL,              // pass in NULL buffers
-                    &c_size,              // and 0 length to get
-                    instances,          // required size
-                    &i_size,              // of the buffers in chars
-                    PERF_DETAIL_WIZARD,     // counter detail level
-                    0);
-
-    // ok, now we have enough to enumerate all processes
-    if (pdh_fail(pdhStat)) {
-        /* printf("Could not enumerate processes (2) error=%d", pdhStat); */
-        error = true;
-        goto end;
-    }
-
-    if (PdhOpenQuery_i(NULL, 0, &tmpQuery) != ERROR_SUCCESS) {
-        /* printf("Could not create temporary query"); */
-        error = true;
-        goto end;
-    }
-
-    // Find our module name and use it to extract the instance name used by PDH
-    if (GetModuleFileName(NULL, module_name, MAX_PATH) >= MAX_PATH-1) {
-        /* printf("Module name truncated"); */
-        error = true;
-        goto end;
-    }
-    instance_name = strrchr(module_name, '\\'); //drop path
-    instance_name++;                            //skip slash
-    dot_pos = strchr(instance_name, '.');       //drop .exe
-    dot_pos[0] = '\0';
-
-    //now, fetch the counters.
-    for (tmp = instances; *tmp != 0 && !error; tmp = &tmp[lstrlen(tmp)+1]) {
-        HCOUNTER  hc = NULL;
-        BOOL done = false;
-
-        // Skip until we find our own process name
-        if (strcmp(tmp, instance_name) != 0) {
-            continue;
+    if (processTotalCPULoad) {
+        for (i = 0; i < numberOfJavaProcessesAtInitialization; ++i) {
+            destroySingleCounter(&processTotalCPULoad[i]);
         }
+        free(processTotalCPULoad);
+        processTotalCPULoad = NULL;
+    }
 
-        // iterate over all instance indexes and try to find our own pid
-        for (i = 0; !done && !error; i++){
-            PDH_STATUS res;
-            _snprintf(counter, sizeof(counter)-1, "\\%s(%s#%d)\\%s", processes, tmp, i, pid);
+    if (multiCounterCPULoad) {
+        destroyMultiCounter(multiCounterCPULoad);
+        free(multiCounterCPULoad);
+        multiCounterCPULoad = NULL;
+    }
 
-            if (PdhAddCounter_i(tmpQuery, counter, 0, &hc) != ERROR_SUCCESS) {
-                /* printf("Failed to create process id query"); */
-                error = true;
-                goto end;
+    cpuFactor = .0;
+    numCpus = 0;
+}
+
+static void
+pdhInitErrorHandler(HMODULE h) {
+    assert(GetCurrentThreadId() == initializationLock.owningThread);
+
+    deallocatePdhConstants();
+
+    if (h) {
+        FreeLibrary(h);
+    }
+}
+
+/*
+ * Helper to initialize the PDH library, function pointers and constants.
+ *
+ * @return  0 if successful, negative on failure.
+ */
+static int
+pdhInit() {
+    static BOOL initialized = FALSE;
+    int retValue;
+
+    if (initialized) {
+        return 0;
+    }
+
+    retValue = 0;
+
+    EnterPdhCriticalSection(&initializationLock); {
+        if (!initialized) {
+            HMODULE h = NULL;
+            if ((h = LoadLibrary("pdh.dll")) == NULL) {
+                retValue = -1;
+            } else if (bindPdhFunctionPointers(h) < 0) {
+                retValue = -1;
+            } else if (allocateAndInitializePdhConstants() < 0) {
+                retValue = -1;
             }
 
-            res = PdhCollectQueryData_i(tmpQuery);
-
-            if (res == PDH_INVALID_HANDLE) {
-                /* printf("Failed to query process id"); */
-                res = -1;
-                done = true;
-            } else if (res == PDH_NO_DATA) {
-                done = true;
+            if (0 == retValue) {
+                initialized = TRUE;
             } else {
-                PDH_FMT_COUNTERVALUE cv;
-
-                PdhGetFormattedCounterValue_i(hc, PDH_FMT_LONG, NULL, &cv);
-               /*
-                 * This check seems to be needed for Win2k SMP boxes, since
-                 * they for some reason don't return PDH_NO_DATA for non existing
-                 * counters.
-                 */
-                if (cv.CStatus != PDH_CSTATUS_VALID_DATA) {
-                    done = true;
-                } else if (cv.longValue == myPid) {
-                    _snprintf(hotspotheader, sizeof(hotspotheader)-1, "\\%s(%s#%d)\0", processes, tmp, i);
-                    PdhRemoveCounter_i(hc);
-                    goto end;
-                }
+                pdhInitErrorHandler(h);
             }
-            PdhRemoveCounter_i(hc);
         }
-    }
- end:
-    if (instances != NULL) {
-        free(instances);
-    }
-    if (tmpQuery != NULL) {
-        PdhCloseQuery_i(tmpQuery);
-    }
-    if (error) {
-        return NULL;
-    }
-    return hotspotheader;
+    } LeavePdhCriticalSection(&initializationLock);
+
+    return retValue;
 }
 
-/**
- * Returns the PDH string prefix identifying the HotSpot process. Use this prefix when getting
- * counters from the PDH process object representing HotSpot.
- *
- * Note: this call may take some time to complete.
- *
- * @param ebuf error buffer.
- * @param elen error buffer length.
- *
- * @return the header to be used when retrieving PDH counters from the HotSpot process.
- * Will return NULL if the call failed.
- */
-static char *
-getProcessPDHHeader(void) {
-    static char *processHeader = NULL;
+static int
+allocateCPUCounters() {
+    assert(GetCurrentThreadId() == initializationLock.owningThread);
+    assert(numberOfJavaProcessesAtInitialization >= 1);
+    assert(!processTotalCPULoad);
+    assert(!multiCounterCPULoad);
 
-    EnterCriticalSection(&processHeaderLock); {
-        if (processHeader == NULL) {
-            processHeader = initProcessPDHHeader();
-        }
-    } LeaveCriticalSection(&processHeaderLock);
-    return processHeader;
+    /*
+     * Create an array of Process object queries, for each instance
+     * up to and including our own (java#0, java#1, java#2, ...).
+     */
+    processTotalCPULoad = calloc(numberOfJavaProcessesAtInitialization,
+                                 sizeof(SingleCounterQueryS));
+
+    if (!processTotalCPULoad) {
+        return -1;
+    }
+
+    multiCounterCPULoad = calloc(1, sizeof(MultipleCounterQueryS));
+
+    if (!multiCounterCPULoad) {
+        return -1;
+    }
+
+    return 0;
 }
 
-int perfInit(void);
+static int
+initializePdhCPUCounters() {
+    static BOOL initialized = FALSE;
+    int retValue;
 
-double
-perfGetCPULoad(int which)
-{
+    if (initialized) {
+        return 0;
+    }
+
+    retValue = 0;
+
+    EnterPdhCriticalSection(&initializationLock); {
+        if (!initialized) {
+            if (pdhInit() < 0) {
+                retValue = -1;
+            }  else if (allocateCPUCounters() < 0) {
+                retValue = -1;
+            } else if (initializeCPUCounters() < 0) {
+                retValue = -1;
+            }
+
+            if (0 == retValue) {
+                initialized = TRUE;
+            } else {
+              deallocateCPUCounters();
+            }
+        }
+    } LeavePdhCriticalSection(&initializationLock);
+
+    return retValue;
+}
+
+static int
+perfCPUInit() {
+    return initializePdhCPUCounters();
+}
+
+static double
+perfGetProcessCPULoad() {
     PDH_FMT_COUNTERVALUE cv;
-    HCOUNTER            c;
+    int currentQueryIndex;
 
-    if (perfInit() < 0) {
+    if (perfCPUInit() < 0) {
         // warn?
         return -1.0;
     }
 
-    if (multiCounterCPULoad.query.query == NULL) {
-        // warn?
-        return -1.0;
-    }
+    currentQueryIndex = getCurrentQueryIndexForProcess();
 
-    if (which == -1) {
-        c = multiCounterCPULoad.counters[multiCounterCPULoad.noOfCounters - 1];
-    } else {
-        if (which < multiCounterCPULoad.noOfCounters) {
-            c = multiCounterCPULoad.counters[which];
-        } else {
-            return -1.0;
-        }
-    }
-    if (getPerformanceData(&multiCounterCPULoad.query, c, &cv, PDH_FMT_DOUBLE ) == CONFIG_SUCCESSFUL) {
-        return cv.doubleValue / 100;
-    }
-    return -1.0;
-}
-
-double
-perfGetProcessLoad(void)
-{
-    PDH_FMT_COUNTERVALUE cv;
-
-    if (perfInit() < 0) {
-        // warn?
-        return -1.0;
-    }
-
-    if (cntProcLoad.query.query == NULL) {
-        // warn?
-        return -1.0;
-    }
-
-    if (getPerformanceData(&cntProcLoad.query, cntProcLoad.counter, &cv, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100) == CONFIG_SUCCESSFUL) {
+    if (getPerformanceData(&processTotalCPULoad[currentQueryIndex].query,
+                           processTotalCPULoad[currentQueryIndex].counter,
+                           &cv,
+                           PDH_FMT_DOUBLE | PDH_FMT_NOCAP100) == 0) {
         double d = cv.doubleValue / cpuFactor;
         d = min(1, d);
         d = max(0, d);
@@ -860,70 +1323,29 @@ perfGetProcessLoad(void)
     return -1.0;
 }
 
-/**
- * Helper to initialize the PDH library. Loads the library and sets up the functions.
- * Note that once loaded, we will never unload the PDH library.
- *
- * @return  CONFIG_SUCCESSFUL if successful, negative on failure.
- */
-int
-perfInit(void) {
-    static HMODULE    h;
-    static BOOL        running, inited;
+static double
+perfGetCPULoad(int which) {
+    PDH_FMT_COUNTERVALUE cv;
+    HCOUNTER c;
 
-    int error;
-
-    if (running) {
-        return CONFIG_SUCCESSFUL;
+    if (perfCPUInit() < 0) {
+        // warn?
+        return -1.0;
     }
 
-    error = CONFIG_SUCCESSFUL;
-
-    // this is double checked locking again, but we try to bypass the worst by
-    // implicit membar at end of lock.
-    EnterCriticalSection(&initializationLock); {
-        if (!inited) {
-            char         buf[64] = "";
-            SYSTEM_INFO si;
-
-            // CMH. But windows will not care about our affinity when giving
-            // us measurements. Need the real, raw num cpus.
-
-            GetSystemInfo(&si);
-            num_cpus  = si.dwNumberOfProcessors;
-            // Initialize the denominator for the jvm load calculations
-            cpuFactor = num_cpus * 100;
-
-            /**
-             * Do this dynamically, so we don't fail to start on systems without pdh.
-             */
-            if ((h = LoadLibrary("pdh.dll")) == NULL) {
-                /* printf("Could not load pdh.dll (%d)", GetLastError()); */
-                error = -2;
-            } else if (get_functions(h, buf, sizeof(buf)) < 0) {
-                FreeLibrary(h);
-                h = NULL;
-                error = -2;
-               /* printf("Failed to init pdh functions: %s.\n", buf); */
-            } else {
-                if (initProcessorCounters() != 0) {
-                    /* printf("Failed to init system load counters.\n"); */
-                } else if (initProcLoadCounter() != 0) {
-                    /* printf("Failed to init process load counter.\n"); */
-                } else if (initProcSystemLoadCounter() != 0) {
-                    /* printf("Failed to init process system load counter.\n"); */
-                } else {
-                    inited = true;
-                }
-            }
+    if (-1 == which) {
+        c = multiCounterCPULoad->counters[multiCounterCPULoad->noOfCounters - 1];
+    } else {
+        if (which < multiCounterCPULoad->noOfCounters) {
+            c = multiCounterCPULoad->counters[which];
+        } else {
+            return -1.0;
         }
-    } LeaveCriticalSection(&initializationLock);
-
-    if (inited && error == CONFIG_SUCCESSFUL) {
-        running = true;
     }
-
-    return error;
+    if (getPerformanceData(&multiCounterCPULoad->query, c, &cv, PDH_FMT_DOUBLE ) == 0) {
+        return cv.doubleValue / 100;
+    }
+    return -1.0;
 }
 
 JNIEXPORT jdouble JNICALL
@@ -937,5 +1359,5 @@ JNIEXPORT jdouble JNICALL
 Java_sun_management_OperatingSystemImpl_getProcessCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
-    return perfGetProcessLoad();
+    return perfGetProcessCPULoad();
 }
