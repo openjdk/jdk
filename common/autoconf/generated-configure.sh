@@ -3944,7 +3944,7 @@ yum_help() {
     pulse)
       PKGHANDLER_COMMAND="sudo yum install pulseaudio-libs-devel" ;;
     x11)
-      PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel" ;;
+      PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
   esac
@@ -4328,7 +4328,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1415177189
+DATE_WHEN_GENERATED=1415177972
 
 ###############################################################################
 #
@@ -43273,32 +43273,40 @@ $as_echo "alsa" >&6; }
   # Check for X Windows
   #
 
-  # Check if the user has specified sysroot, but not --x-includes or --x-libraries.
-  # Make a simple check for the libraries at the sysroot, and setup --x-includes and
-  # --x-libraries for the sysroot, if that seems to be correct.
-  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
-    if test "x$SYSROOT" != "x"; then
-      if test "x$x_includes" = xNONE; then
-        if test -f "$SYSROOT/usr/X11R6/include/X11/Xlib.h"; then
-          x_includes="$SYSROOT/usr/X11R6/include"
-        elif test -f "$SYSROOT/usr/include/X11/Xlib.h"; then
-          x_includes="$SYSROOT/usr/include"
+  if test "x$X11_NOT_NEEDED" = xyes; then
+    if test "x${with_x}" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: X11 is not used, so --with-x is ignored" >&5
+$as_echo "$as_me: WARNING: X11 is not used, so --with-x is ignored" >&2;}
+    fi
+    X_CFLAGS=
+    X_LIBS=
+  else
+    # Check if the user has specified sysroot, but not --x-includes or --x-libraries.
+    # Make a simple check for the libraries at the sysroot, and setup --x-includes and
+    # --x-libraries for the sysroot, if that seems to be correct.
+    if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+      if test "x$SYSROOT" != "x"; then
+        if test "x$x_includes" = xNONE; then
+          if test -f "$SYSROOT/usr/X11R6/include/X11/Xlib.h"; then
+            x_includes="$SYSROOT/usr/X11R6/include"
+          elif test -f "$SYSROOT/usr/include/X11/Xlib.h"; then
+            x_includes="$SYSROOT/usr/include"
+          fi
         fi
-      fi
-      if test "x$x_libraries" = xNONE; then
-        if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
-          x_libraries="$SYSROOT/usr/X11R6/lib"
-        elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          x_libraries="$SYSROOT/usr/lib64"
-        elif test -f "$SYSROOT/usr/lib/libX11.so"; then
-          x_libraries="$SYSROOT/usr/lib"
+        if test "x$x_libraries" = xNONE; then
+          if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
+            x_libraries="$SYSROOT/usr/X11R6/lib"
+          elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+            x_libraries="$SYSROOT/usr/lib64"
+          elif test -f "$SYSROOT/usr/lib/libX11.so"; then
+            x_libraries="$SYSROOT/usr/lib"
+          fi
         fi
       fi
     fi
-  fi
 
-  # Now let autoconf do it's magic
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X" >&5
+    # Now let autoconf do it's magic
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X" >&5
 $as_echo_n "checking for X... " >&6; }
 
 
@@ -43491,7 +43499,7 @@ else
 $as_echo "libraries $x_libraries, headers $x_includes" >&6; }
 fi
 
-  if test "$no_x" = yes; then
+    if test "$no_x" = yes; then
   # Not all programs may use this symbol, but it does not hurt to define it.
 
 $as_echo "#define X_DISPLAY_MISSING 1" >>confdefs.h
@@ -43982,13 +43990,13 @@ fi
 fi
 
 
-  # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
-  # this doesn't make sense so we remove it.
-  if test "x$COMPILE_TYPE" = xcross; then
-    X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[^ ]*//g'`
-  fi
+    # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
+    # this doesn't make sense so we remove it.
+    if test "x$COMPILE_TYPE" = xcross; then
+      X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[^ ]*//g'`
+    fi
 
-  if test "x$no_x" = xyes && test "x$X11_NOT_NEEDED" != xyes; then
+    if test "x$no_x" = xyes; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
   # x11 is the help tag: freetype, cups, pulse, alsa etc
@@ -44019,34 +44027,34 @@ fi
     fi
   fi
 
-    as_fn_error $? "Could not find X11 libraries. $HELP_MSG" "$LINENO" 5
-  fi
+      as_fn_error $? "Could not find X11 libraries. $HELP_MSG" "$LINENO" 5
+    fi
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    OPENWIN_HOME="/usr/openwin"
-    X_CFLAGS="-I$SYSROOT$OPENWIN_HOME/include -I$SYSROOT$OPENWIN_HOME/include/X11/extensions"
-    X_LIBS="-L$SYSROOT$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
-        -L$SYSROOT$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR \
-        -R$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
-        -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
-  fi
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+      OPENWIN_HOME="/usr/openwin"
+      X_CFLAGS="-I$SYSROOT$OPENWIN_HOME/include -I$SYSROOT$OPENWIN_HOME/include/X11/extensions"
+      X_LIBS="-L$SYSROOT$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+          -L$SYSROOT$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR \
+          -R$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+          -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
+    fi
 
-  ac_ext=c
+    ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-  OLD_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
+    OLD_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
 
-  # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
-  for ac_header in X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h
+    # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
+    for ac_header in X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
-        # include <X11/Xlib.h>
-        # include <X11/Xutil.h>
+          # include <X11/Xlib.h>
+          # include <X11/Xutil.h>
 
 
 "
@@ -44054,19 +44062,53 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- X11_A_OK=yes
+ X11_HEADERS_OK=yes
 else
-  X11_A_OK=no; break
+  X11_HEADERS_OK=no; break
 fi
 
 done
 
 
-  # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
-  # defined in libawt_xawt.
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if XlinearGradient is defined in Xrender.h" >&5
+    if test "x$X11_HEADERS_OK" = xno; then
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # x11 is the help tag: freetype, cups, pulse, alsa etc
+  MISSING_DEPENDENCY=x11
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG" "$LINENO" 5
+    fi
+
+    # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
+    # defined in libawt_xawt.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if XlinearGradient is defined in Xrender.h" >&5
 $as_echo_n "checking if XlinearGradient is defined in Xrender.h... " >&6; }
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <X11/extensions/Xrender.h>
 int
@@ -44083,51 +44125,18 @@ $as_echo "yes" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-       X_CFLAGS="$X_CFLAGS -DSOLARIS10_NO_XRENDER_STRUCTS"
+         X_CFLAGS="$X_CFLAGS -DSOLARIS10_NO_XRENDER_STRUCTS"
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-  CFLAGS="$OLD_CFLAGS"
-  ac_ext=cpp
+    CFLAGS="$OLD_CFLAGS"
+    ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-
-  if test "x$X11_A_OK" = xno && test "x$X11_NOT_NEEDED" != xyes; then
-
-  # Print a helpful message on how to acquire the necessary build dependency.
-  # x11 is the help tag: freetype, cups, pulse, alsa etc
-  MISSING_DEPENDENCY=x11
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
-  else
-    PKGHANDLER_COMMAND=
-
-    case $PKGHANDLER in
-      apt-get)
-        apt_help     $MISSING_DEPENDENCY ;;
-      yum)
-        yum_help     $MISSING_DEPENDENCY ;;
-      port)
-        port_help    $MISSING_DEPENDENCY ;;
-      pkgutil)
-        pkgutil_help $MISSING_DEPENDENCY ;;
-      pkgadd)
-        pkgadd_help  $MISSING_DEPENDENCY ;;
-    esac
-
-    if test "x$PKGHANDLER_COMMAND" != x; then
-      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-    fi
-  fi
-
-    as_fn_error $? "Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG" "$LINENO" 5
-  fi
+  fi # X11_NOT_NEEDED
 
 
 
