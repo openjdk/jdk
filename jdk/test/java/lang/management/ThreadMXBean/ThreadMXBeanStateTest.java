@@ -32,7 +32,7 @@
  *
  * @library ../../Thread
  * @library /lib/testlibrary
- * @build jdk.testlibrary.LockFreeLogManager
+ * @build jdk.testlibrary.*
  * @build ThreadMXBeanStateTest ThreadStateController
  * @run main ThreadMXBeanStateTest
  */
