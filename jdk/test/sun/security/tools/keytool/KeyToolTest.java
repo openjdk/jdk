@@ -170,6 +170,13 @@ public class KeyToolTest {
      */
     void testOK(String input, String cmd) throws Exception {
         try {
+            // Workaround for "8057810: Make SHA256withDSA the default
+            // jarsigner and keytool algorithm for DSA keys". Unfortunately
+            // SunPKCS11-NSS does not support SHA256withDSA yet.
+            if (cmd.contains("p11-nss.txt") && cmd.contains("-genkey")
+                    && !cmd.contains("-keyalg")) {
+                cmd += " -sigalg SHA1withDSA -keysize 1024";
+            }
             test(input, cmd);
         } catch(Exception e) {
             afterFail(input, cmd, "OK");
@@ -245,6 +252,9 @@ public class KeyToolTest {
      * Helper method, print some output after a test does not do as expected
      */
     void afterFail(String input, String cmd, String should) {
+        if (cmd.contains("p11-nss.txt")) {
+            cmd = "-J-Dnss.lib=" + System.getProperty("nss.lib") + " " + cmd;
+        }
         System.err.println("\nTest fails for the command ---\n" +
                 "keytool " + cmd + "\nOr its debug version ---\n" +
                 "keytool -debug " + cmd);
@@ -799,7 +809,7 @@ public class KeyToolTest {
         remove("x.jks.p1.cert");
         remove("csr1");
         // PrivateKeyEntry can do certreq
-        testOK("", "-keystore x.jks -storepass changeit -keypass changeit -genkeypair -dname CN=olala");
+        testOK("", "-keystore x.jks -storepass changeit -keypass changeit -genkeypair -dname CN=olala -keysize 1024");
         testOK("", "-keystore x.jks -storepass changeit -certreq -file csr1 -alias mykey");
         testOK("", "-keystore x.jks -storepass changeit -certreq -file csr1");
         testOK("", "-keystore x.jks -storepass changeit -certreq -file csr1 -sigalg SHA1withDSA");
