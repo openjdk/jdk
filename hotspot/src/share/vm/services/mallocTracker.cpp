@@ -72,7 +72,7 @@ void MallocHeader::release() const {
 
   MallocMemorySummary::record_free(size(), flags());
   MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
-  if (tracking_level() == NMT_detail) {
+  if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(size(), _bucket_idx, _pos_idx);
   }
 }
@@ -128,35 +128,17 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   }
 
   // Uses placement global new operator to initialize malloc header
-  switch(level) {
-    case NMT_off:
-      return malloc_base;
-    case NMT_minimal: {
-      MallocHeader* hdr = ::new (malloc_base) MallocHeader();
-      break;
-    }
-    case NMT_summary: {
-      assert(size <= MAX_MALLOC_SIZE, "malloc size overrun for NMT");
-      header = ::new (malloc_base) MallocHeader(size, flags);
-      break;
-    }
-    case NMT_detail: {
-      assert(size <= MAX_MALLOC_SIZE, "malloc size overrun for NMT");
-      header = ::new (malloc_base) MallocHeader(size, flags, stack);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
+
+  if (level == NMT_off) {
+    return malloc_base;
   }
+
+  header = ::new (malloc_base)MallocHeader(size, flags, stack, level);
   memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
   //                      16 bytes alignment for 64-bit systems.
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
-
-  // Sanity check
-  assert(get_memory_tracking_level(memblock) == level,
-    "Wrong tracking level");
 
 #ifdef ASSERT
   if (level > NMT_minimal) {
