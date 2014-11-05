@@ -615,7 +615,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         static final TypeBounds UNBOUNDED = new TypeBounds(Type.UNKNOWN, Type.OBJECT);
         static final TypeBounds INT = exact(Type.INT);
-        static final TypeBounds NUMBER = exact(Type.NUMBER);
         static final TypeBounds OBJECT = exact(Type.OBJECT);
         static final TypeBounds BOOLEAN = exact(Type.BOOLEAN);
 
@@ -3894,7 +3893,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private static boolean isRhsZero(final BinaryNode binaryNode) {
         final Expression rhs = binaryNode.rhs();
-        return rhs instanceof LiteralNode && INT_ZERO.equals(((LiteralNode)rhs).getValue());
+        return rhs instanceof LiteralNode && INT_ZERO.equals(((LiteralNode<?>)rhs).getValue());
     }
 
     private void loadBIT_XOR(final BinaryNode binaryNode) {

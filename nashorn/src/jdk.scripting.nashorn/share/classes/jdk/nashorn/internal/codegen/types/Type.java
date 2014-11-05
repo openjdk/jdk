@@ -1155,6 +1155,10 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
         return type;
     }
 
+    /**
+     * Read resolve
+     * @return resolved type
+     */
     protected final Object readResolve() {
         return Type.typeFor(clazz);
     }

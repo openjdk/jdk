@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -1380,7 +1381,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
      * sequence and that we are in range
      */
     private static final class CharCodeAtLinkLogic extends SpecializedFunction.LinkLogic {
-
         private static final CharCodeAtLinkLogic INSTANCE = new CharCodeAtLinkLogic();
 
         @Override
