@@ -1150,9 +1150,8 @@ public final class Context {
 
         StoredScript storedScript = null;
         FunctionNode functionNode = null;
-        // We only use the code store here if optimistic types are disabled. With optimistic types,
-        // code is stored per function in RecompilableScriptFunctionData.
-        // TODO: This should really be triggered by lazy compilation, not optimistic types.
+        // We only use the code store here if optimistic types are disabled. With optimistic types, initial compilation
+        // just creates a thin wrapper, and actual code is stored per function in RecompilableScriptFunctionData.
         final boolean useCodeStore = env._persistent_cache && !env._parse_only && !env._optimistic_types;
         final String cacheKey = useCodeStore ? CodeStore.getCacheKey(0, null) : null;
 

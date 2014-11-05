@@ -95,23 +95,15 @@ public class CodeStoreAndPathTest {
     final String codeCache = "build/nashorn_code_cache";
     final String oldUserDir = System.getProperty("user.dir");
 
-    private static final String[] ENGINE_OPTIONS = new String[]{"--persistent-code-cache", "--optimistic-types=false", "--lazy-compilation=false"};
-
-    public void checkCompiledScripts(final DirectoryStream<Path> stream, final int numberOfScripts) throws IOException {
-        int n = numberOfScripts;
-        for (@SuppressWarnings("unused") final Path file : stream) {
-            n--;
-        }
-        stream.close();
-        assertEquals(n, 0);
-    }
+    private static final String[] ENGINE_OPTIONS_OPT   = new String[]{"--persistent-code-cache", "--optimistic-types=true"};
+    private static final String[] ENGINE_OPTIONS_NOOPT = new String[]{"--persistent-code-cache", "--optimistic-types=false"};
 
     @Test
     public void pathHandlingTest() {
         System.setProperty("nashorn.persistent.code.cache", codeCache);
         final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
 
-        fac.getScriptEngine(ENGINE_OPTIONS);
+        fac.getScriptEngine(ENGINE_OPTIONS_NOOPT);
 
         final Path expectedCodeCachePath = FileSystems.getDefault().getPath(oldUserDir + File.separator + codeCache);
         final Path actualCodeCachePath = FileSystems.getDefault().getPath(System.getProperty(
@@ -128,9 +120,8 @@ public class CodeStoreAndPathTest {
     public void changeUserDirTest() throws ScriptException, IOException {
         System.setProperty("nashorn.persistent.code.cache", codeCache);
         final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
-        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS);
-        final Path codeCachePath = FileSystems.getDefault().getPath(System.getProperty(
-                            "nashorn.persistent.code.cache")).toAbsolutePath();
+        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS_NOOPT);
+        final Path codeCachePath = getCodeCachePath(false);
         final String newUserDir = "build/newUserDir";
         // Now changing current working directory
         System.setProperty("user.dir", System.getProperty("user.dir") + File.separator + newUserDir);
@@ -149,9 +140,8 @@ public class CodeStoreAndPathTest {
     public void codeCacheTest() throws ScriptException, IOException {
         System.setProperty("nashorn.persistent.code.cache", codeCache);
         final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
-        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS);
-        final Path codeCachePath = FileSystems.getDefault().getPath(System.getProperty(
-                            "nashorn.persistent.code.cache")).toAbsolutePath();
+        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS_NOOPT);
+        final Path codeCachePath = getCodeCachePath(false);
         e.eval(code1);
         e.eval(code2);
         e.eval(code3);// less than minimum size for storing
@@ -159,4 +149,40 @@ public class CodeStoreAndPathTest {
         final DirectoryStream<Path> stream = Files.newDirectoryStream(codeCachePath);
         checkCompiledScripts(stream, 2);
     }
+
+    @Test
+    public void codeCacheTestOpt() throws ScriptException, IOException {
+        System.setProperty("nashorn.persistent.code.cache", codeCache);
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS_OPT);
+        final Path codeCachePath = getCodeCachePath(true);
+        e.eval(code1);
+        e.eval(code2);
+        e.eval(code3);// less than minimum size for storing
+        // adding code1 and code2.
+        final DirectoryStream<Path> stream = Files.newDirectoryStream(codeCachePath);
+        checkCompiledScripts(stream, 2);
+    }
+
+    private static Path getCodeCachePath(final boolean optimistic) {
+        final String codeCache = System.getProperty("nashorn.persistent.code.cache");
+        final Path codeCachePath = FileSystems.getDefault().getPath(codeCache).toAbsolutePath();
+        final String[] files = codeCachePath.toFile().list();
+        for (final String file : files) {
+            if (file.endsWith("_opt") == optimistic) {
+                return codeCachePath.resolve(file);
+            }
+        }
+        throw new AssertionError("Code cache path not found");
+    }
+
+    private static void checkCompiledScripts(final DirectoryStream<Path> stream, final int numberOfScripts) throws IOException {
+        int n = numberOfScripts;
+        for (@SuppressWarnings("unused") final Path file : stream) {
+            n--;
+        }
+        stream.close();
+        assertEquals(n, 0);
+    }
+
 }
