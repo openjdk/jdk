@@ -2607,7 +2607,10 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   assert((intptr_t)addr % alignment_hint == 0, "Address should be aligned.");
   assert((intptr_t)(addr + bytes) % alignment_hint == 0, "End should be aligned.");
   if (UseLargePages) {
-    Solaris::setup_large_pages(addr, bytes, alignment_hint);
+    size_t page_size = Solaris::page_size_for_alignment(alignment_hint);
+    if (page_size > (size_t) vm_page_size()) {
+      Solaris::setup_large_pages(addr, bytes, page_size);
+    }
   }
 }
 
