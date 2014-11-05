@@ -4140,10 +4140,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-void os::init_3(void) {
-  return;
-}
-
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
   DWORD old_status;
