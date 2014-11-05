@@ -326,15 +326,6 @@ WB_ENTRY(jboolean, WB_NMTIsDetailSupported(JNIEnv* env))
   return MemTracker::tracking_level() == NMT_detail;
 WB_END
 
-WB_ENTRY(void, WB_NMTOverflowHashBucket(JNIEnv* env, jobject o, jlong num))
-  address pc = (address)1;
-  for (jlong index = 0; index < num; index ++) {
-    NativeCallStack stack(&pc, 1);
-    os::malloc(0, mtTest, stack);
-    pc += MallocSiteTable::hash_buckets();
-  }
-WB_END
-
 WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
   // Test that we can downgrade NMT levels but not upgrade them.
   if (MemTracker::tracking_level() == NMT_off) {
@@ -364,6 +355,12 @@ WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
     assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
     return MemTracker::tracking_level() == NMT_minimal;
   }
+WB_END
+
+WB_ENTRY(jint, WB_NMTGetHashSize(JNIEnv* env, jobject o))
+  int hash_size = MallocSiteTable::hash_buckets();
+  assert(hash_size > 0, "NMT hash_size should be > 0");
+  return (jint)hash_size;
 WB_END
 #endif // INCLUDE_NMT
 
@@ -998,9 +995,9 @@ static JNINativeMethod methods[] = {
   {CC"NMTCommitMemory",     CC"(JJ)V",                (void*)&WB_NMTCommitMemory    },
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
-  {CC"NMTOverflowHashBucket", CC"(J)V",               (void*)&WB_NMTOverflowHashBucket},
   {CC"NMTIsDetailSupported",CC"()Z",                  (void*)&WB_NMTIsDetailSupported},
   {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
+  {CC"NMTGetHashSize",      CC"()I",                  (void*)&WB_NMTGetHashSize     },
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;Z)I",
