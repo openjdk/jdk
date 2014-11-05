@@ -4328,7 +4328,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1415177972
+DATE_WHEN_GENERATED=1415179461
 
 ###############################################################################
 #
@@ -44438,6 +44438,8 @@ if test "${enable_freetype_bundling+set}" = set; then :
 fi
 
 
+  # Need to specify explicitly since it needs to be overridden on some versions of macosx
+  FREETYPE_BASE_NAME=freetype
   FREETYPE_CFLAGS=
   FREETYPE_LIBS=
   FREETYPE_BUNDLE_LIB_PATH=
@@ -44478,8 +44480,8 @@ $as_echo "$as_me: WARNING: Can't find project file $vcxproj_path (you may try a 
   fi
   # Now check if configure found a version of 'msbuild.exe'
   if test "x$BUILD_FREETYPE" = xyes && test "x$MSBUILD" == x ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can't find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src" >&5
-$as_echo "$as_me: WARNING: Can't find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can not find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src" >&5
+$as_echo "$as_me: WARNING: Can not find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src" >&2;}
     BUILD_FREETYPE=no
   fi
 
@@ -44579,30 +44581,55 @@ $as_echo "$as_me: Compiling freetype sources succeeded! (see freetype.log for bu
   POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
   METHOD="--with-freetype-src"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -44907,30 +44934,55 @@ $as_echo "$as_me: WARNING: --with-freetype-src is currently only supported on Wi
   POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
   METHOD="--with-freetype"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -45496,30 +45548,55 @@ $as_echo "yes (using pkg-config)" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -45799,30 +45876,55 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -46093,30 +46195,55 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -46387,30 +46514,55 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -46682,30 +46834,55 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -46978,30 +47155,55 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib/x86_64-linux-gnu"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -47270,30 +47472,55 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib/i386-linux-gnu"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -47562,30 +47789,55 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib32"
   METHOD="well-known location"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
 $as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
-    FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
     if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
-      FOUND_FREETYPE=no
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
-$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
       fi
     fi
   fi
@@ -48144,9 +48396,9 @@ $as_echo "$as_me: The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is
   fi
 
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
-        FREETYPE_LIBS="$FREETYPE_LIB_PATH/freetype.lib"
+        FREETYPE_LIBS="$FREETYPE_LIB_PATH/$FREETYPE_BASE_NAME.lib"
       else
-        FREETYPE_LIBS="-L$FREETYPE_LIB_PATH -lfreetype"
+        FREETYPE_LIBS="-L$FREETYPE_LIB_PATH -l$FREETYPE_BASE_NAME"
       fi
     fi
 
