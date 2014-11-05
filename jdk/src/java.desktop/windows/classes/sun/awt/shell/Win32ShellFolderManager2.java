@@ -278,7 +278,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
 
                 folders.add(desktop);
                 // Add all second level folders
-                File[] secondLevelFolders = desktop.listFiles();
+                File[] secondLevelFolders = checkFiles(desktop.listFiles());
                 Arrays.sort(secondLevelFolders);
                 for (File secondLevelFolder : secondLevelFolders) {
                     Win32ShellFolder2 folder = (Win32ShellFolder2) secondLevelFolder;
@@ -286,7 +286,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                         folders.add(folder);
                         // Add third level for "My Computer"
                         if (folder.equals(drives)) {
-                            File[] thirdLevelFolders = folder.listFiles();
+                            File[] thirdLevelFolders = checkFiles(folder.listFiles());
                             if (thirdLevelFolders != null && thirdLevelFolders.length > 0) {
                                 List<File> thirdLevelFoldersList = Arrays.asList(thirdLevelFolders);
 
