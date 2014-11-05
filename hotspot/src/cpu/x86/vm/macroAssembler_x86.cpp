@@ -1769,7 +1769,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     // at [FETCH], below, will never observe a biased encoding (*101b).
     // If this invariant is not held we risk exclusion (safety) failure.
     if (UseBiasedLocking && !UseOptoBiasInlining) {
-      biased_locking_enter(boxReg, objReg, tmpReg, scrReg, true, DONE_LABEL, NULL, counters);
+      biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, counters);
     }
 
 #if INCLUDE_RTM_OPT
