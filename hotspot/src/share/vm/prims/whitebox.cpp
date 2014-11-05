@@ -282,7 +282,7 @@ WB_END
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
-    addr = (jlong)(uintptr_t)os::malloc(size, mtTest);
+  addr = (jlong)(uintptr_t)os::malloc(size, mtTest);
   return addr;
 WB_END
 
@@ -291,7 +291,7 @@ WB_END
 WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, jint pseudo_stack))
   address pc = (address)(size_t)pseudo_stack;
   NativeCallStack stack(&pc, 1);
-  return (jlong)os::malloc(size, mtTest, stack);
+  return (jlong)(uintptr_t)os::malloc(size, mtTest, stack);
 WB_END
 
 // Free the memory allocated by NMTAllocTest
