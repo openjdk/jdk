@@ -47,7 +47,7 @@ public final class RecompilationEvent extends RuntimeEvent<RewriteException> {
      * @param level            logging level
      * @param rewriteException rewriteException wrapped by this RuntimEvent
      * @param returnValue      rewriteException return value - as we don't want to make
-     *     {@link RewriteException#getReturnValueNonDestructive()} public, we pass it as
+     *     {@code RewriteException.getReturnValueNonDestructive()} public, we pass it as
      *     an extra parameter, rather than querying the getter from another package.
      */
     public RecompilationEvent(final Level level, final RewriteException rewriteException, final Object returnValue) {

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,12 +21,25 @@
  * questions.
  */
 
-package jdk.nashorn.test.models;
+/**
+ * JDK-8057825 : A failed apply to call generation should NOT reuse the 
+ * best apply to call generation so far - because it may not fit!!!
+ *
+ * @test
+ * @run
+ */
 
-@SuppressWarnings("javadoc")
-public class NullProvider {
-    public static Integer getInteger() { return null; }
-    public static Long getLong() { return null; }
-    public static Double getDouble() { return null; }
-    public static Boolean getBoolean() { return null; }
-}
+function createApplier(f) { 
+    function applier() { 
+        f.apply(this, arguments); // no transform applied here 
+    } 
+    return applier; 
+} 
+
+function printer(x,y) { 
+    print(x + " and " + y);
+} 
+
+var printerApplier = createApplier(printer); 
+printerApplier();
+printerApplier.apply(this, ["foo", "bar"]); 

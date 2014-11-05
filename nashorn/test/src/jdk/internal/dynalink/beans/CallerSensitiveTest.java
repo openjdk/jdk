@@ -28,6 +28,7 @@ package jdk.internal.dynalink.beans;
 import jdk.nashorn.test.models.ClassLoaderAware;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("javadoc")
 public class CallerSensitiveTest {
     @Test
     public void testCallerSensitive() {
