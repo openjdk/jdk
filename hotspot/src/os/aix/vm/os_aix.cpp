@@ -3829,11 +3829,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-// this is called at the end of vm_initialization
-void os::init_3(void) {
-  return;
-}
-
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
   if (!guard_memory((char*)_polling_page, Aix::page_size())) {
