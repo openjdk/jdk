@@ -1533,7 +1533,8 @@ public final class Class<T> implements java.io.Serializable,
      * 0.
      *
      * <p> If this {@code Class} object represents a class, then this method
-     * returns the public fields of the class and of all its superclasses.
+     * returns the public fields of the class and of all its superclasses and
+     * superinterfaces.
      *
      * <p> If this {@code Class} object represents an interface, then this
      * method returns the fields of the interface and of all its
