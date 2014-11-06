@@ -85,9 +85,9 @@ public class Test {
               .run();
 
             File plugin = new File(pluginClasses.getPath(), "META-INF/services/com.sun.source.util.Plugin");
-            tb.writeFile(plugin.getPath(),"ShowTypePlugin");
+            tb.writeFile(plugin.getPath(), "ShowTypePlugin\n");
             tb.new JarTask()
-              .run("cf", pluginJar.getPath(),"-C", pluginClasses.getPath(), ".");
+              .run("cf", pluginJar.getPath(), "-C", pluginClasses.getPath(), ".");
 
             testCommandLine("-Xplugin:showtype", ref1);
             testCommandLine("-Xplugin:showtype PI", ref2);
