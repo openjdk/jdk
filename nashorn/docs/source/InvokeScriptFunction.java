@@ -29,22 +29,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import javax.script.*;
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
+@SuppressWarnings("javadoc")
 public class InvokeScriptFunction {
-    public static void main(String[] args) throws Exception {
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("nashorn");
+    public static void main(final String[] args) throws Exception {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("nashorn");
 
         // JavaScript code in a String
-        String script = "function hello(name) { print('Hello, ' + name); }";
+        final String script = "function hello(name) { print('Hello, ' + name); }";
         // evaluate script
         engine.eval(script);
 
         // javax.script.Invocable is an optional interface.
         // Check whether your script engine implements or not!
         // Note that the JavaScript engine implements Invocable interface.
-        Invocable inv = (Invocable) engine;
+        final Invocable inv = (Invocable) engine;
 
         // invoke the global function named "hello"
         inv.invokeFunction("hello", "Scripting!!" );

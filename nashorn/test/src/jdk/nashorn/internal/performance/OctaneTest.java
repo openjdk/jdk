@@ -40,6 +40,7 @@ import java.text.NumberFormat;
 import java.util.List;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("javadoc")
 public class OctaneTest {
 
     @Test
@@ -72,7 +73,7 @@ public class OctaneTest {
         genericTest("GBEMU");
     }
 
-    /*    @Test
+/*    @Test
     public void mandreelTest() {
         genericTest("Mandreel");
     }*/
@@ -107,10 +108,20 @@ public class OctaneTest {
         genericTest("Splay");
     }
 
+    @Test
+/*    public void typeScriptTest() {
+        genericTest("TypeScript");
+    }
+
+    @Test
+    public void zlibTest() {
+        genericTest("zlib");
+    }/*/
+
     public void genericTest(final String benchmark) {
         try {
             final String mainScript      = "test/script/basic/run-octane.js";
-            final String benchmarkScript = "test/script/external/octane/benchmarks/"+benchmark.toLowerCase() + ".js";
+            final String benchmarkScript = "test/script/external/octane/benchmarks/" + benchmark.toLowerCase() + ".js";
             final String[] args = {
                 "--",
                 benchmarkScript,

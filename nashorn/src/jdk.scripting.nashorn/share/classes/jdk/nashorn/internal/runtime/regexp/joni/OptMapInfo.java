@@ -31,7 +31,9 @@ final class OptMapInfo {
         mmd.clear();
         anchor.clear();
         value = 0;
-        for (int i=0; i<map.length; i++) map[i] = 0;
+        for (int i=0; i<map.length; i++) {
+            map[i] = 0;
+        }
     }
 
     void copy(final OptMapInfo other) {
@@ -50,11 +52,10 @@ final class OptMapInfo {
         }
     }
 
-    void addCharAmb(final char[] chars, final int p, final int end, int caseFoldFlag) {
+    void addCharAmb(final char[] chars, final int p, final int end, final int caseFoldFlag) {
         addChar(chars[p]);
 
-        caseFoldFlag &= ~Config.INTERNAL_ENC_CASE_FOLD_MULTI_CHAR;
-        final char[]items = EncodingHelper.caseFoldCodesByString(caseFoldFlag, chars[p]);
+        final char[]items = EncodingHelper.caseFoldCodesByString(caseFoldFlag & ~Config.INTERNAL_ENC_CASE_FOLD_MULTI_CHAR, chars[p]);
 
         for (int i=0; i<items.length; i++) {
             addChar(items[i]);
@@ -64,7 +65,9 @@ final class OptMapInfo {
     // select_opt_map_info
     private static final int z = 1<<15; /* 32768: something big value */
     void select(final OptMapInfo alt) {
-        if (alt.value == 0) return;
+        if (alt.value == 0) {
+            return;
+        }
         if (value == 0) {
             copy(alt);
             return;
@@ -73,13 +76,17 @@ final class OptMapInfo {
         final int v1 = z / value;
         final int v2 = z /alt.value;
 
-        if (mmd.compareDistanceValue(alt.mmd, v1, v2) > 0) copy(alt);
+        if (mmd.compareDistanceValue(alt.mmd, v1, v2) > 0) {
+            copy(alt);
+        }
     }
 
     // alt_merge_opt_map_info
     void altMerge(final OptMapInfo other) {
         /* if (! is_equal_mml(&to->mmd, &add->mmd)) return ; */
-        if (value == 0) return;
+        if (value == 0) {
+            return;
+        }
         if (other.value == 0 || mmd.max < other.mmd.max) {
             clear();
             return;
@@ -89,8 +96,12 @@ final class OptMapInfo {
 
         int val = 0;
         for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) {
-            if (other.map[i] != 0) map[i] = 1;
-            if (map[i] != 0) val += positionValue(i);
+            if (other.map[i] != 0) {
+                map[i] = 1;
+            }
+            if (map[i] != 0) {
+                val += positionValue(i);
+            }
         }
 
         value = val;
@@ -112,9 +123,8 @@ final class OptMapInfo {
     static int positionValue(final int i) {
         if (i < ByteValTable.length) {
             return ByteValTable[i];
-        } else {
-            return 4; /* Take it easy. */
         }
+        return 4; /* Take it easy. */
     }
 
 }

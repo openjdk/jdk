@@ -96,15 +96,17 @@ public final class ECMAException extends NashornException {
         // If thrown object is an Error or sub-object like TypeError, then
         // an ECMAException object has been already initialized at constructor.
         if (thrown instanceof ScriptObject) {
-            final ScriptObject sobj = (ScriptObject)thrown;
-            final Object exception = getException(sobj);
+            final Object exception = getException((ScriptObject)thrown);
             if (exception instanceof ECMAException) {
-                // copy over file name, line number and column number.
                 final ECMAException ee = (ECMAException)exception;
-                ee.setFileName(fileName);
-                ee.setLineNumber(line);
-                ee.setColumnNumber(column);
-                return ee;
+                // Make sure exception has correct thrown reference because that's what will end up getting caught.
+                if (ee.getThrown() == thrown) {
+                    // copy over file name, line number and column number.
+                    ee.setFileName(fileName);
+                    ee.setLineNumber(line);
+                    ee.setColumnNumber(column);
+                    return ee;
+                }
             }
         }
 
@@ -154,7 +156,11 @@ public final class ECMAException extends NashornException {
      * @return a {@link ECMAException}
      */
     public static Object getException(final ScriptObject errObj) {
-        return errObj.get(ECMAException.EXCEPTION_PROPERTY);
+        // Exclude inherited properties that may belong to errors in the prototype chain.
+        if (errObj.hasOwnProperty(ECMAException.EXCEPTION_PROPERTY)) {
+            return errObj.get(ECMAException.EXCEPTION_PROPERTY);
+        }
+        return null;
     }
 
     /**

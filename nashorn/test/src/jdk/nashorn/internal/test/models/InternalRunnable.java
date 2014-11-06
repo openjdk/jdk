@@ -28,6 +28,7 @@ package jdk.nashorn.internal.test.models;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@SuppressWarnings("javadoc")
 public class InternalRunnable implements Runnable, RestrictedRunnable {
 
     // This is a public field in a restricted class; scripts should not see it.

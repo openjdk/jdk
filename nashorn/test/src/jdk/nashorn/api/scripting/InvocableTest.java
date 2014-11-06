@@ -27,7 +27,6 @@ package jdk.nashorn.api.scripting;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
-
 import java.util.Objects;
 import java.util.function.Function;
 import javax.script.Invocable;
@@ -42,9 +41,10 @@ import org.testng.annotations.Test;
 /**
  * Tests for javax.script.Invocable implementation of nashorn.
  */
+@SuppressWarnings("javadoc")
 public class InvocableTest {
 
-    private void log(final String msg) {
+    private static void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 
@@ -100,7 +100,7 @@ public class InvocableTest {
 
         try {
             final Object obj = e.eval("({})");
-            final Object res = ((Invocable) e).invokeMethod(obj, null);
+            ((Invocable) e).invokeMethod(obj, null);
             fail("should have thrown NPE");
         } catch (final Exception exp) {
             if (!(exp instanceof NullPointerException)) {
@@ -120,7 +120,7 @@ public class InvocableTest {
 
         try {
             final Object obj = e.eval("({})");
-            final Object res = ((Invocable) e).invokeMethod(obj, "nonExistentMethod");
+            ((Invocable) e).invokeMethod(obj, "nonExistentMethod");
             fail("should have thrown NoSuchMethodException");
         } catch (final Exception exp) {
             if (!(exp instanceof NoSuchMethodException)) {
@@ -398,7 +398,7 @@ public class InvocableTest {
         final ScriptEngine e = m.getEngineByName("nashorn");
 
         try {
-            final Object res = ((Invocable) e).invokeFunction(null);
+            ((Invocable)e).invokeFunction(null);
             fail("should have thrown NPE");
         } catch (final Exception exp) {
             if (!(exp instanceof NullPointerException)) {
@@ -418,7 +418,7 @@ public class InvocableTest {
         final ScriptEngine e = m.getEngineByName("nashorn");
 
         try {
-            final Object res = ((Invocable) e).invokeFunction("NonExistentFunc");
+            ((Invocable)e).invokeFunction("NonExistentFunc");
             fail("should have thrown NoSuchMethodException");
         } catch (final Exception exp) {
             if (!(exp instanceof NoSuchMethodException)) {
@@ -439,7 +439,7 @@ public class InvocableTest {
 
         try {
             // define an object with method on it
-            final Object obj = e.eval("function hello() { return 'Hello World!'; }");
+            e.eval("function hello() { return 'Hello World!'; }");
             final ScriptContext ctxt = new SimpleScriptContext();
             ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
             // change engine's current context
@@ -526,13 +526,13 @@ public class InvocableTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void defaultMethodTest() throws ScriptException {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
         final Invocable inv = (Invocable) e;
 
         final Object obj = e.eval("({ apply: function(arg) { return arg.toUpperCase(); }})");
+        @SuppressWarnings("unchecked")
         final Function<String, String> func = inv.getInterface(obj, Function.class);
         assertEquals(func.apply("hello"), "HELLO");
     }
