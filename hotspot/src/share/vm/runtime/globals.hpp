@@ -2066,9 +2066,6 @@ class CommandLineFlags {
           "Provide more detailed and expensive TLAB statistics "            \
           "(with PrintTLAB)")                                               \
                                                                             \
-  EMBEDDED_ONLY(product(bool, LowMemoryProtection, true,                    \
-          "Enable LowMemoryProtection"))                                    \
-                                                                            \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
                                                                             \
