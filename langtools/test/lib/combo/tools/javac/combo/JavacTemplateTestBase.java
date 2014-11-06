@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,21 +245,22 @@ public abstract class JavacTemplateTestBase {
 
     private File compile(List<File> classpaths, List<JavaFileObject> files, boolean generate) throws IOException {
         JavaCompiler systemJavaCompiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = systemJavaCompiler.getStandardFileManager(null, null, null);
-        if (classpaths.size() > 0)
-            fm.setLocation(StandardLocation.CLASS_PATH, classpaths);
-        JavacTask ct = (JavacTask) systemJavaCompiler.getTask(null, fm, diags, compileOptions, null, files);
-        if (generate) {
-            File destDir = new File(root, Integer.toString(counter.incrementAndGet()));
-            // @@@ Assert that this directory didn't exist, or start counter at max+1
-            destDir.mkdirs();
-            fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
-            ct.generate();
-            return destDir;
-        }
-        else {
-            ct.analyze();
-            return nullDir;
+        try (StandardJavaFileManager fm = systemJavaCompiler.getStandardFileManager(null, null, null)) {
+            if (classpaths.size() > 0)
+                fm.setLocation(StandardLocation.CLASS_PATH, classpaths);
+            JavacTask ct = (JavacTask) systemJavaCompiler.getTask(null, fm, diags, compileOptions, null, files);
+            if (generate) {
+                File destDir = new File(root, Integer.toString(counter.incrementAndGet()));
+                // @@@ Assert that this directory didn't exist, or start counter at max+1
+                destDir.mkdirs();
+                fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
+                ct.generate();
+                return destDir;
+            }
+            else {
+                ct.analyze();
+                return nullDir;
+            }
         }
     }
 
