@@ -36,8 +36,7 @@
 #include <dlfcn.h>
 #include <link.h>
 
-extern "C" static int PICL_get_l1_data_cache_line_size_helper(picl_nodehdl_t nodeh, void *result);
-extern "C" static int PICL_get_l2_cache_line_size_helper(picl_nodehdl_t nodeh, void *result);
+extern "C" static int PICL_visit_cpu_helper(picl_nodehdl_t nodeh, void *result);
 
 // Functions from the library we need (signatures should match those in picl.h)
 extern "C" {
@@ -130,60 +129,74 @@ class PICL {
     bool is_inconsistent()  { return _state == INCONSISTENT; }
     void set_inconsistent() { _state = INCONSISTENT;         }
 
-    static int visit(picl_nodehdl_t nodeh, const char* name, void *arg) {
-      UniqueValueVisitor *state = static_cast<UniqueValueVisitor*>(arg);
-      PICL* picl = state->_picl;
-      assert(!state->is_inconsistent(), "Precondition");
+    void visit(picl_nodehdl_t nodeh, const char* name) {
+      assert(!is_inconsistent(), "Precondition");
       int curr;
-      if (picl->get_int_property(nodeh, name, &curr) == PICL_SUCCESS) {
-        if (!state->is_assigned()) { // first iteration
-          state->set_value(curr);
-        } else if (curr != state->value()) { // following iterations
-          state->set_inconsistent();
+      if (_picl->get_int_property(nodeh, name, &curr) == PICL_SUCCESS) {
+        if (!is_assigned()) { // first iteration
+          set_value(curr);
+        } else if (curr != value()) { // following iterations
+          set_inconsistent();
         }
       }
-      if (state->is_inconsistent()) {
+    }
+  };
+
+  class CPUVisitor {
+    UniqueValueVisitor _l1_visitor;
+    UniqueValueVisitor _l2_visitor;
+    int _limit; // number of times visit() can be run
+  public:
+    CPUVisitor(PICL *picl, int limit) : _l1_visitor(picl), _l2_visitor(picl), _limit(limit) {}
+    static int visit(picl_nodehdl_t nodeh, void *arg) {
+      CPUVisitor *cpu_visitor = static_cast<CPUVisitor*>(arg);
+      UniqueValueVisitor* l1_visitor = cpu_visitor->l1_visitor();
+      UniqueValueVisitor* l2_visitor = cpu_visitor->l2_visitor();
+      if (!l1_visitor->is_inconsistent()) {
+        l1_visitor->visit(nodeh, "l1-dcache-line-size");
+      }
+      if (!l2_visitor->is_inconsistent()) {
+        l2_visitor->visit(nodeh, "l2-cache-line-size");
+      }
+
+      if (l1_visitor->is_inconsistent() && l2_visitor->is_inconsistent()) {
+        return PICL_WALK_TERMINATE;
+      }
+      cpu_visitor->_limit--;
+      if (cpu_visitor->_limit <= 0) {
         return PICL_WALK_TERMINATE;
       }
       return PICL_WALK_CONTINUE;
     }
+    UniqueValueVisitor* l1_visitor() { return &_l1_visitor; }
+    UniqueValueVisitor* l2_visitor() { return &_l2_visitor; }
   };
-
   int _L1_data_cache_line_size;
   int _L2_cache_line_size;
 public:
-  static int get_l1_data_cache_line_size(picl_nodehdl_t nodeh, void *state) {
-    return UniqueValueVisitor::visit(nodeh, "l1-dcache-line-size", state);
-  }
-  static int get_l2_cache_line_size(picl_nodehdl_t nodeh, void *state) {
-    return UniqueValueVisitor::visit(nodeh, "l2-cache-line-size", state);
+  static int visit_cpu(picl_nodehdl_t nodeh, void *state) {
+    return CPUVisitor::visit(nodeh, state);
   }
 
-  PICL() : _L1_data_cache_line_size(0), _L2_cache_line_size(0), _dl_handle(NULL) {
+  PICL(bool is_fujitsu) : _L1_data_cache_line_size(0), _L2_cache_line_size(0), _dl_handle(NULL) {
     if (!open_library()) {
       return;
     }
     if (_picl_initialize() == PICL_SUCCESS) {
       picl_nodehdl_t rooth;
       if (_picl_get_root(&rooth) == PICL_SUCCESS) {
-        UniqueValueVisitor L1_state(this);
-        // Visit all "cpu" class instances
-        _picl_walk_tree_by_class(rooth, "cpu", &L1_state, PICL_get_l1_data_cache_line_size_helper);
-        if (L1_state.is_initial()) { // Still initial, iteration found no values
-          // Try walk all "core" class instances, it might be a Fujitsu machine
-          _picl_walk_tree_by_class(rooth, "core", &L1_state, PICL_get_l1_data_cache_line_size_helper);
+        const char* cpu_class = "cpu";
+        // If it's a Fujitsu machine, it's a "core"
+        if (is_fujitsu) {
+          cpu_class = "core";
         }
-        if (L1_state.is_assigned()) { // Is there a value?
-          _L1_data_cache_line_size = L1_state.value();
+        CPUVisitor cpu_visitor(this, os::processor_count());
+        _picl_walk_tree_by_class(rooth, cpu_class, &cpu_visitor, PICL_visit_cpu_helper);
+        if (cpu_visitor.l1_visitor()->is_assigned()) { // Is there a value?
+          _L1_data_cache_line_size = cpu_visitor.l1_visitor()->value();
         }
-
-        UniqueValueVisitor L2_state(this);
-        _picl_walk_tree_by_class(rooth, "cpu", &L2_state, PICL_get_l2_cache_line_size_helper);
-        if (L2_state.is_initial()) {
-          _picl_walk_tree_by_class(rooth, "core", &L2_state, PICL_get_l2_cache_line_size_helper);
-        }
-        if (L2_state.is_assigned()) {
-          _L2_cache_line_size = L2_state.value();
+        if (cpu_visitor.l2_visitor()->is_assigned()) {
+          _L2_cache_line_size = cpu_visitor.l2_visitor()->value();
         }
       }
       _picl_shutdown();
@@ -195,11 +208,9 @@ public:
   unsigned int L2_cache_line_size() const      { return _L2_cache_line_size;      }
 };
 
-extern "C" static int PICL_get_l1_data_cache_line_size_helper(picl_nodehdl_t nodeh, void *result) {
-  return PICL::get_l1_data_cache_line_size(nodeh, result);
-}
-extern "C" static int PICL_get_l2_cache_line_size_helper(picl_nodehdl_t nodeh, void *result) {
-  return PICL::get_l2_cache_line_size(nodeh, result);
+
+extern "C" static int PICL_visit_cpu_helper(picl_nodehdl_t nodeh, void *result) {
+  return PICL::visit_cpu(nodeh, result);
 }
 
 template<typename FuncType>
@@ -418,7 +429,7 @@ int VM_Version::platform_features(int features) {
   }
 
   // Figure out cache line sizes using PICL
-  PICL picl;
+  PICL picl((features & sparc64_family_m) != 0);
   _L1_data_cache_line_size = picl.L1_data_cache_line_size();
   _L2_cache_line_size      = picl.L2_cache_line_size();
 
