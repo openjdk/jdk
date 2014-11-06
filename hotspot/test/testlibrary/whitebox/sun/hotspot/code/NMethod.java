@@ -34,18 +34,21 @@ public class NMethod {
     return obj == null ? null : new NMethod(obj);
   }
   private NMethod(Object[] obj) {
-    assert obj.length == 2;
+    assert obj.length == 3;
     comp_level = (Integer) obj[0];
     insts = (byte[]) obj[1];
+    compile_id = (Integer) obj[2];
   }
   public byte[] insts;
   public int comp_level;
+  public int compile_id;
 
   @Override
   public String toString() {
     return "NMethod{" +
         "insts=" + insts +
         ", comp_level=" + comp_level +
+        ", compile_id=" + compile_id +
         '}';
   }
 }
