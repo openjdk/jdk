@@ -1730,6 +1730,25 @@ jmethodID InstanceKlass::get_jmethod_id(instanceKlassHandle ik_h, methodHandle m
   return id;
 }
 
+// Figure out how many jmethodIDs haven't been allocated, and make
+// sure space for them is pre-allocated.  This makes getting all
+// method ids much, much faster with classes with more than 8
+// methods, and has a *substantial* effect on performance with jvmti
+// code that loads all jmethodIDs for all classes.
+void InstanceKlass::ensure_space_for_methodids(int start_offset) {
+  int new_jmeths = 0;
+  int length = methods()->length();
+  for (int index = start_offset; index < length; index++) {
+    Method* m = methods()->at(index);
+    jmethodID id = m->find_jmethod_id_or_null();
+    if (id == NULL) {
+      new_jmeths++;
+    }
+  }
+  if (new_jmeths != 0) {
+    Method::ensure_jmethod_ids(class_loader_data(), new_jmeths);
+  }
+}
 
 // Common code to fetch the jmethodID from the cache or update the
 // cache with the new jmethodID. This function should never do anything
