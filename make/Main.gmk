@@ -514,7 +514,7 @@ clean-docs: clean-docstemp
 # If the output directory was created by configure and now becomes empty, remove it as well.
 dist-clean: clean
 	($(CD) $(OUTPUT_ROOT) && $(RM) -r *spec.gmk config.* configure-arguments \
-	    Makefile compare.sh spec.sh tmp javacservers)
+	    Makefile compare.sh tmp javacservers)
 	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUT_ROOT))), \
 	  if test "x`$(LS) $(OUTPUT_ROOT)`" != x; then \
 	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
