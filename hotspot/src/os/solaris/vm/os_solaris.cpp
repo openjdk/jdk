@@ -2221,6 +2221,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   strncpy(saved_jvm_path, buf, MAXPATHLEN);
+  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 

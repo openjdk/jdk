@@ -1597,7 +1597,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ movl(rdx, 0x80000000);
         __ xorl(rax, rax);
 #else
-        __ mov64(rax, CONST64(0x8000000000000000));
+        __ mov64(rax, UCONST64(0x8000000000000000));
 #endif // _LP64
         __ jmp(do_return);
 
