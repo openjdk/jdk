@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -54,7 +54,6 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.GlobalConstants;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
@@ -438,9 +437,6 @@ public final class Global extends ScriptObject implements Scope {
         this.scontext = scontext;
     }
 
-    // global constants for this global - they can be replaced with MethodHandle.constant until invalidated
-    private static AtomicReference<GlobalConstants> gcsInstance = new AtomicReference<>();
-
     @Override
     protected Context getContext() {
         return context;
@@ -470,11 +466,6 @@ public final class Global extends ScriptObject implements Scope {
         super(checkAndGetMap(context));
         this.context = context;
         this.setIsScope();
-        //we can only share one instance of Global constants between globals, or we consume way too much
-        //memory - this is good enough for most programs
-        while (gcsInstance.get() == null) {
-            gcsInstance.compareAndSet(null, new GlobalConstants(context.getLogger(GlobalConstants.class)));
-        }
     }
 
     /**
@@ -490,15 +481,6 @@ public final class Global extends ScriptObject implements Scope {
 
     private static Global instanceFrom(final Object self) {
         return self instanceof Global? (Global)self : instance();
-    }
-
-    /**
-     * Return the global constants map for fields that
-     * can be accessed as MethodHandle.constant
-     * @return constant map
-     */
-    public static GlobalConstants getConstants() {
-        return gcsInstance.get();
     }
 
     /**
