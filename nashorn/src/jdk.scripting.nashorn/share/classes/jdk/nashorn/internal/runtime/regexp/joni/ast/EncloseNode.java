@@ -22,6 +22,7 @@ package jdk.nashorn.internal.runtime.regexp.joni.ast;
 import jdk.nashorn.internal.runtime.regexp.joni.Option;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.EncloseType;
 
+@SuppressWarnings("javadoc")
 public final class EncloseNode extends StateNode implements EncloseType {
 
     public final int type;                // enclose type

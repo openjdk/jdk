@@ -141,9 +141,8 @@ class ParserContext {
                 return breakable;
             }
             return null;
-        } else {
-            return getBreakable();
         }
+        return getBreakable();
     }
 
     /**

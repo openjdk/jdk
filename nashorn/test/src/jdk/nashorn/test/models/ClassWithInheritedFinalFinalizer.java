@@ -25,5 +25,7 @@
 
 package jdk.nashorn.test.models;
 
+@SuppressWarnings("javadoc")
 public class ClassWithInheritedFinalFinalizer extends ClassWithFinalFinalizer {
+    //empty
 }

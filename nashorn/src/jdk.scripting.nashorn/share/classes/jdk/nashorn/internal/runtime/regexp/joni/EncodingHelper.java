@@ -23,6 +23,7 @@ import java.util.Arrays;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.IntHolder;
 
+@SuppressWarnings("javadoc")
 public final class EncodingHelper {
 
     final static int NEW_LINE            = 0x000a;
@@ -79,14 +80,19 @@ public final class EncodingHelper {
 
     /* onigenc_get_right_adjust_char_head_with_prev */
     public static int rightAdjustCharHeadWithPrev(final int s, final IntHolder prev) {
-        if (prev != null) prev.value = -1; /* Sorry */
+        if (prev != null) {
+            prev.value = -1; /* Sorry */
+        }
         return s;
     }
 
     // Encoding.stepBack
-    public static int stepBack(final int p, int s, int n) {
-       while (s != -1 && n-- > 0) {
-           if (s <= p) return -1;
+    public static int stepBack(final int p, final int sp, final int np) {
+        int s = sp, n = np;
+        while (s != -1 && n-- > 0) {
+           if (s <= p) {
+            return -1;
+        }
            s--;
        }
        return s;
@@ -122,7 +128,7 @@ public final class EncodingHelper {
                 final int upper = toUpperCase(c);
 
                 if (upper != c) {
-                    fun.apply(c, upper, arg);
+                    ApplyCaseFold.apply(c, upper, arg);
                 }
             }
         }
@@ -133,7 +139,7 @@ public final class EncodingHelper {
                 final int upper = toUpperCase(c);
 
                 if (upper != c) {
-                    fun.apply(upper, c, arg);
+                    ApplyCaseFold.apply(upper, c, arg);
                 }
             }
         }
