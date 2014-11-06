@@ -44,6 +44,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 
@@ -52,22 +53,26 @@ public class VerifyErroneousAnnotationsAttributed {
         new VerifyErroneousAnnotationsAttributed().run();
     }
 
-    void run() {
-        int failCount = 0;
-        for (String ann : generateAnnotations()) {
-            String code = PATTERN.replace("PLACEHOLDER", ann);
-            try {
-                validate(code);
-            } catch (Throwable t) {
-                System.out.println("Failed for: ");
-                System.out.println(code);
-                t.printStackTrace(System.out);
-                failCount++;
+    void run() throws IOException {
+        try {
+            int failCount = 0;
+            for (String ann : generateAnnotations()) {
+                String code = PATTERN.replace("PLACEHOLDER", ann);
+                try {
+                    validate(code);
+                } catch (Throwable t) {
+                    System.out.println("Failed for: ");
+                    System.out.println(code);
+                    t.printStackTrace(System.out);
+                    failCount++;
+                }
             }
-        }
 
-        if (failCount > 0) {
-            throw new IllegalStateException("failed sub-tests: " + failCount);
+            if (failCount > 0) {
+                throw new IllegalStateException("failed sub-tests: " + failCount);
+            }
+        } finally {
+            fm.close();
         }
     }
 
@@ -221,13 +226,14 @@ public class VerifyErroneousAnnotationsAttributed {
     }
 
     final JavacTool tool = JavacTool.create();
+    final JavaFileManager fm = tool.getStandardFileManager(null, null, null);
     final DiagnosticListener<JavaFileObject> devNull = new DiagnosticListener<JavaFileObject>() {
         @Override public void report(Diagnostic<? extends JavaFileObject> diagnostic) {}
     };
 
     void validate(String code) throws IOException, URISyntaxException {
         JavacTask task = tool.getTask(null,
-                                      null,
+                                      fm,
                                       devNull,
                                       Arrays.asList("-XDshouldStopPolicy=FLOW"),
                                       null,
