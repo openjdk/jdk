@@ -29,8 +29,8 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents a formal type parameter. */
 public class FormalTypeParameter implements TypeTree {
-    private String name;
-    private FieldTypeSignature[] bounds;
+    private final String name;
+    private final FieldTypeSignature[] bounds;
 
     private FormalTypeParameter(String n, FieldTypeSignature[] bs) {
         name = n;

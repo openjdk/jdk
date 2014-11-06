@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type double. */
 public class DoubleSignature implements BaseType {
-    private static DoubleSignature singleton = new DoubleSignature();
+    private static final DoubleSignature singleton = new DoubleSignature();
 
     private DoubleSignature(){}
 

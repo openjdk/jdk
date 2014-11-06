@@ -50,9 +50,9 @@ import sun.reflect.misc.ReflectUtil;
 public class ReflectionFactory {
 
     private static boolean initted = false;
-    private static Permission reflectionFactoryAccessPerm
+    private static final Permission reflectionFactoryAccessPerm
         = new RuntimePermission("reflectionFactoryAccess");
-    private static ReflectionFactory soleInstance = new ReflectionFactory();
+    private static final ReflectionFactory soleInstance = new ReflectionFactory();
     // Provides access to package-private mechanisms in java.lang.reflect
     private static volatile LangReflectAccess langReflectAccess;
 
