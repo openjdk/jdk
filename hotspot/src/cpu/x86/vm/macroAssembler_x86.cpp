@@ -1450,8 +1450,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
 void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register box_Reg,
                                             Register tmp_Reg, Register scr_Reg, Label& retryLabel) {
   Label SpinLoop, SpinExit, doneRetry;
-  // Clean monitor_value bit to get valid pointer
-  int owner_offset = ObjectMonitor::owner_offset_in_bytes() - markOopDesc::monitor_value;
+  int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
 
   testl(retry_count_Reg, retry_count_Reg);
   jccb(Assembler::zero, doneRetry);
@@ -1532,7 +1531,7 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
 // Use RTM for inflating locks
 // inputs: objReg (object to lock)
 //         boxReg (on-stack box address (displaced header location) - KILLED)
-//         tmpReg (ObjectMonitor address + 2(monitor_value))
+//         tmpReg (ObjectMonitor address + markOopDesc::monitor_value)
 void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Register tmpReg,
                                           Register scrReg, Register retry_on_busy_count_Reg,
                                           Register retry_on_abort_count_Reg,
@@ -1543,8 +1542,7 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
   assert(tmpReg == rax, "");
   assert(scrReg == rdx, "");
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
-  // Clean monitor_value bit to get valid pointer
-  int owner_offset = ObjectMonitor::owner_offset_in_bytes() - markOopDesc::monitor_value;
+  int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
 
   // Without cast to int32_t a movptr will destroy r10 which is typically obj
   movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
@@ -1716,7 +1714,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     atomic_incl(ExternalAddress((address)counters->total_entry_count_addr()), scrReg);
   }
   if (EmitSync & 1) {
-      // set box->dhw = unused_mark (3)
+      // set box->dhw = markOopDesc::unused_mark()
       // Force all sync thru slow-path: slow_enter() and slow_exit()
       movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
       cmpptr (rsp, (int32_t)NULL_WORD);
@@ -1811,7 +1809,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     jmp(DONE_LABEL);
 
     bind(IsInflated);
-    // The object is inflated. tmpReg contains pointer to ObjectMonitor* + 2(monitor_value)
+    // The object is inflated. tmpReg contains pointer to ObjectMonitor* + markOopDesc::monitor_value
 
 #if INCLUDE_RTM_OPT
     // Use the same RTM locking code in 32- and 64-bit VM.
@@ -1823,25 +1821,10 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
 
 #ifndef _LP64
     // The object is inflated.
-    //
-    // TODO-FIXME: eliminate the ugly use of manifest constants:
-    //   Use markOopDesc::monitor_value instead of "2".
-    //   use markOop::unused_mark() instead of "3".
-    // The tmpReg value is an objectMonitor reference ORed with
-    // markOopDesc::monitor_value (2).   We can either convert tmpReg to an
-    // objectmonitor pointer by masking off the "2" bit or we can just
-    // use tmpReg as an objectmonitor pointer but bias the objectmonitor
-    // field offsets with "-2" to compensate for and annul the low-order tag bit.
-    //
-    // I use the latter as it avoids AGI stalls.
-    // As such, we write "mov r, [tmpReg+OFFSETOF(Owner)-2]"
-    // instead of "mov r, [tmpReg+OFFSETOF(Owner)]".
-    //
-    #define OFFSET_SKEWED(f) ((ObjectMonitor::f ## _offset_in_bytes())-2)
 
     // boxReg refers to the on-stack BasicLock in the current frame.
     // We'd like to write:
-    //   set box->_displaced_header = markOop::unused_mark().  Any non-0 value suffices.
+    //   set box->_displaced_header = markOopDesc::unused_mark().  Any non-0 value suffices.
     // This is convenient but results a ST-before-CAS penalty.  The following CAS suffers
     // additional latency as we have another ST in the store buffer that must drain.
 
@@ -1853,7 +1836,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        if (os::is_MP()) {
          lock();
        }
-       cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
     } else
     if ((EmitSync & 128) == 0) {                      // avoid ST-before-CAS
        movptr(scrReg, boxReg);
@@ -1862,7 +1845,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
        if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
           // prefetchw [eax + Offset(_owner)-2]
-          prefetchw(Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+          prefetchw(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
        }
 
        if ((EmitSync & 64) == 0) {
@@ -1871,7 +1854,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        } else {
          // Can suffer RTS->RTO upgrades on shared or cold $ lines
          // Test-And-CAS instead of CAS
-         movptr(tmpReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));   // rax, = m->_owner
+         movptr(tmpReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));   // rax, = m->_owner
          testptr(tmpReg, tmpReg);                   // Locked ?
          jccb  (Assembler::notZero, DONE_LABEL);
        }
@@ -1887,11 +1870,11 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        if (os::is_MP()) {
          lock();
        }
-       cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
        movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
        jccb  (Assembler::notZero, DONE_LABEL);
        get_thread (scrReg);                    // beware: clobbers ICCs
-       movptr(Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2), scrReg);
+       movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
        xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
 
        // If the CAS fails we can either retry or pass control to the slow-path.
@@ -1908,7 +1891,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
        if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
           // prefetchw [eax + Offset(_owner)-2]
-          prefetchw(Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+          prefetchw(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
        }
 
        if ((EmitSync & 64) == 0) {
@@ -1916,7 +1899,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
          xorptr  (tmpReg, tmpReg);
        } else {
          // Can suffer RTS->RTO upgrades on shared or cold $ lines
-         movptr(tmpReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));   // rax, = m->_owner
+         movptr(tmpReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));   // rax, = m->_owner
          testptr(tmpReg, tmpReg);                   // Locked ?
          jccb  (Assembler::notZero, DONE_LABEL);
        }
@@ -1928,7 +1911,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        if (os::is_MP()) {
          lock();
        }
-       cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
 
        // If the CAS fails we can either retry or pass control to the slow-path.
        // We use the latter tactic.
@@ -1951,7 +1934,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
 
     movptr (boxReg, tmpReg);
-    movptr (tmpReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    movptr(tmpReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
     testptr(tmpReg, tmpReg);
     jccb   (Assembler::notZero, DONE_LABEL);
 
@@ -1959,7 +1942,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     if (os::is_MP()) {
       lock();
     }
-    cmpxchgptr(r15_thread, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    cmpxchgptr(r15_thread, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
     // Intentional fall-through into DONE_LABEL ...
 #endif // _LP64
 
@@ -2065,8 +2048,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 #if INCLUDE_RTM_OPT
     if (use_rtm) {
       Label L_regular_inflated_unlock;
-      // Clean monitor_value bit to get valid pointer
-      int owner_offset = ObjectMonitor::owner_offset_in_bytes() - markOopDesc::monitor_value;
+      int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
       movptr(boxReg, Address(tmpReg, owner_offset));
       testptr(boxReg, boxReg);
       jccb(Assembler::notZero, L_regular_inflated_unlock);
@@ -2102,7 +2084,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     get_thread (boxReg);
     if ((EmitSync & 4096) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
       // prefetchw [ebx + Offset(_owner)-2]
-      prefetchw(Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+      prefetchw(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
     }
 
     // Note that we could employ various encoding schemes to reduce
@@ -2111,21 +2093,21 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     // In practice the chain of fetches doesn't seem to impact performance, however.
     if ((EmitSync & 65536) == 0 && (EmitSync & 256)) {
        // Attempt to reduce branch density - AMD's branch predictor.
-       xorptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
-       orptr(boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2));
-       orptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2));
-       orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2));
+       xorptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
        jccb  (Assembler::notZero, DONE_LABEL);
-       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD);
+       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
        jmpb  (DONE_LABEL);
     } else {
-       xorptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
-       orptr(boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2));
+       xorptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
        jccb  (Assembler::notZero, DONE_LABEL);
-       movptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2));
-       orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2));
+       movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
        jccb  (Assembler::notZero, CheckSucc);
-       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD);
+       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
        jmpb  (DONE_LABEL);
     }
 
@@ -2143,7 +2125,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 
        // Optional pre-test ... it's safe to elide this
        if ((EmitSync & 16) == 0) {
-          cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD);
+          cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
           jccb  (Assembler::zero, LGoSlowPath);
        }
 
@@ -2173,7 +2155,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
        // We currently use (3), although it's likely that switching to (2)
        // is correct for the future.
 
-       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD);
+       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
        if (os::is_MP()) {
           if (VM_Version::supports_sse2() && 1 == FenceInstruction) {
             mfence();
@@ -2182,18 +2164,18 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
           }
        }
        // Ratify _succ remains non-null
-       cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), 0);
+       cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), 0);
        jccb  (Assembler::notZero, LSuccess);
 
        xorptr(boxReg, boxReg);                  // box is really EAX
        if (os::is_MP()) { lock(); }
-       cmpxchgptr(rsp, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       cmpxchgptr(rsp, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
        jccb  (Assembler::notEqual, LSuccess);
        // Since we're low on registers we installed rsp as a placeholding in _owner.
        // Now install Self over rsp.  This is safe as we're transitioning from
        // non-null to non=null
        get_thread (boxReg);
-       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), boxReg);
+       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), boxReg);
        // Intentional fall-through into LGoSlowPath ...
 
        bind  (LGoSlowPath);
@@ -2228,36 +2210,36 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     }
 #else // _LP64
     // It's inflated
-    movptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
     xorptr(boxReg, r15_thread);
-    orptr (boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2));
+    orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
     jccb  (Assembler::notZero, DONE_LABEL);
-    movptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2));
-    orptr (boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2));
+    movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+    orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
     jccb  (Assembler::notZero, CheckSucc);
-    movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD);
+    movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
     jmpb  (DONE_LABEL);
 
     if ((EmitSync & 65536) == 0) {
       Label LSuccess, LGoSlowPath ;
       bind  (CheckSucc);
-      cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD);
+      cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
       jccb  (Assembler::zero, LGoSlowPath);
 
       // I'd much rather use lock:andl m->_owner, 0 as it's faster than the
       // the explicit ST;MEMBAR combination, but masm doesn't currently support
       // "ANDQ M,IMM".  Don't use MFENCE here.  lock:add to TOS, xchg, etc
       // are all faster when the write buffer is populated.
-      movptr (Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD);
+      movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
       if (os::is_MP()) {
          lock (); addl (Address(rsp, 0), 0);
       }
-      cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD);
+      cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
       jccb  (Assembler::notZero, LSuccess);
 
       movptr (boxReg, (int32_t)NULL_WORD);                   // box is really EAX
       if (os::is_MP()) { lock(); }
-      cmpxchgptr(r15_thread, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+      cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
       jccb  (Assembler::notEqual, LSuccess);
       // Intentional fall-through into slow-path
 
