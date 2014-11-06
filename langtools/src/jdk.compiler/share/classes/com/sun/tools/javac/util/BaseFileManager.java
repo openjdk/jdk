@@ -104,6 +104,12 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     protected Locations locations;
 
+    /**
+     * A flag for clients to use to indicate that this file manager should
+     * be closed when it is no longer required.
+     */
+    public boolean autoClose;
+
     protected Source getSource() {
         String sourceName = options.get(Option.SOURCE);
         Source source = null;

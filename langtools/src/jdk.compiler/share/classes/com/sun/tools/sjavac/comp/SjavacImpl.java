@@ -25,6 +25,7 @@
 package com.sun.tools.sjavac.comp;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -76,90 +77,93 @@ public class SjavacImpl implements Sjavac {
                                      Set<URI> sourcesToCompile,
                                      Set<URI> visibleSources) {
         JavacTool compiler = JavacTool.create();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-        SmartFileManager smartFileManager = new SmartFileManager(fileManager);
-        Context context = new Context();
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null)) {
+            SmartFileManager smartFileManager = new SmartFileManager(fileManager);
+            Context context = new Context();
 
-        // Now setup the actual compilation....
-        CompilationResult compilationResult = new CompilationResult(0);
+            // Now setup the actual compilation....
+            CompilationResult compilationResult = new CompilationResult(0);
 
-        // First deal with explicit source files on cmdline and in at file.
-        ListBuffer<JavaFileObject> compilationUnits = new ListBuffer<>();
-        for (JavaFileObject i : fileManager.getJavaFileObjectsFromFiles(explicitSources)) {
-            compilationUnits.append(i);
-        }
-        // Now deal with sources supplied as source_to_compile.
-        ListBuffer<File> sourcesToCompileFiles = new ListBuffer<>();
-        for (URI u : sourcesToCompile) {
-            sourcesToCompileFiles.append(new File(u));
-        }
-        for (JavaFileObject i : fileManager.getJavaFileObjectsFromFiles(sourcesToCompileFiles)) {
-            compilationUnits.append(i);
-        }
-
-        // Create a new logger.
-        StringWriter stdoutLog = new StringWriter();
-        StringWriter stderrLog = new StringWriter();
-        PrintWriter stdout = new PrintWriter(stdoutLog);
-        PrintWriter stderr = new PrintWriter(stderrLog);
-        com.sun.tools.javac.main.Main.Result rc = com.sun.tools.javac.main.Main.Result.OK;
-        DependencyCollector depsCollector = new DependencyCollector();
-        PublicApiCollector pubApiCollector = new PublicApiCollector();
-        PathAndPackageVerifier papVerifier = new PathAndPackageVerifier();
-        try {
-            if (compilationUnits.size() > 0) {
-                smartFileManager.setVisibleSources(visibleSources);
-                smartFileManager.cleanArtifacts();
-                smartFileManager.setLog(stdout);
-
-                // Do the compilation!
-                JavacTaskImpl task =
-                        (JavacTaskImpl) compiler.getTask(stderr,
-                                                         smartFileManager,
-                                                         null,
-                                                         Arrays.asList(args),
-                                                         null,
-                                                         compilationUnits,
-                                                         context);
-                smartFileManager.setSymbolFileEnabled(!Options.instance(context).isSet("ignore.symbol.file"));
-                task.addTaskListener(depsCollector);
-                task.addTaskListener(pubApiCollector);
-                task.addTaskListener(papVerifier);
-                rc = task.doCall();
-                smartFileManager.flush();
+            // First deal with explicit source files on cmdline and in at file.
+            ListBuffer<JavaFileObject> compilationUnits = new ListBuffer<>();
+            for (JavaFileObject i : fileManager.getJavaFileObjectsFromFiles(explicitSources)) {
+                compilationUnits.append(i);
             }
-        } catch (Exception e) {
-            stderrLog.append(Util.getStackTrace(e));
-            rc = com.sun.tools.javac.main.Main.Result.ERROR;
-        }
-
-        compilationResult.packageArtifacts = smartFileManager.getPackageArtifacts();
-
-        Dependencies deps = Dependencies.instance(context);
-        for (PackageSymbol from : depsCollector.getSourcePackages()) {
-            for (PackageSymbol to : depsCollector.getDependenciesForPkg(from))
-                deps.collect(from.fullname, to.fullname);
-        }
-
-        for (ClassSymbol cs : pubApiCollector.getClassSymbols())
-            deps.visitPubapi(cs);
-
-        if (papVerifier.getMisplacedCompilationUnits().size() > 0) {
-            for (CompilationUnitTree cu : papVerifier.getMisplacedCompilationUnits()) {
-                System.err.println("Misplaced compilation unit.");
-                System.err.println("    Directory: " + Paths.get(cu.getSourceFile().toUri()).getParent());
-                System.err.println("    Package:   " + cu.getPackageName());
+            // Now deal with sources supplied as source_to_compile.
+            ListBuffer<File> sourcesToCompileFiles = new ListBuffer<>();
+            for (URI u : sourcesToCompile) {
+                sourcesToCompileFiles.append(new File(u));
             }
-            rc = com.sun.tools.javac.main.Main.Result.ERROR;
+            for (JavaFileObject i : fileManager.getJavaFileObjectsFromFiles(sourcesToCompileFiles)) {
+                compilationUnits.append(i);
+            }
+
+            // Create a new logger.
+            StringWriter stdoutLog = new StringWriter();
+            StringWriter stderrLog = new StringWriter();
+            PrintWriter stdout = new PrintWriter(stdoutLog);
+            PrintWriter stderr = new PrintWriter(stderrLog);
+            com.sun.tools.javac.main.Main.Result rc = com.sun.tools.javac.main.Main.Result.OK;
+            DependencyCollector depsCollector = new DependencyCollector();
+            PublicApiCollector pubApiCollector = new PublicApiCollector();
+            PathAndPackageVerifier papVerifier = new PathAndPackageVerifier();
+            try {
+                if (compilationUnits.size() > 0) {
+                    smartFileManager.setVisibleSources(visibleSources);
+                    smartFileManager.cleanArtifacts();
+                    smartFileManager.setLog(stdout);
+
+                    // Do the compilation!
+                    JavacTaskImpl task =
+                            (JavacTaskImpl) compiler.getTask(stderr,
+                                                             smartFileManager,
+                                                             null,
+                                                             Arrays.asList(args),
+                                                             null,
+                                                             compilationUnits,
+                                                             context);
+                    smartFileManager.setSymbolFileEnabled(!Options.instance(context).isSet("ignore.symbol.file"));
+                    task.addTaskListener(depsCollector);
+                    task.addTaskListener(pubApiCollector);
+                    task.addTaskListener(papVerifier);
+                    rc = task.doCall();
+                    smartFileManager.flush();
+                }
+            } catch (Exception e) {
+                stderrLog.append(Util.getStackTrace(e));
+                rc = com.sun.tools.javac.main.Main.Result.ERROR;
+            }
+
+            compilationResult.packageArtifacts = smartFileManager.getPackageArtifacts();
+
+            Dependencies deps = Dependencies.instance(context);
+            for (PackageSymbol from : depsCollector.getSourcePackages()) {
+                for (PackageSymbol to : depsCollector.getDependenciesForPkg(from))
+                    deps.collect(from.fullname, to.fullname);
+            }
+
+            for (ClassSymbol cs : pubApiCollector.getClassSymbols())
+                deps.visitPubapi(cs);
+
+            if (papVerifier.getMisplacedCompilationUnits().size() > 0) {
+                for (CompilationUnitTree cu : papVerifier.getMisplacedCompilationUnits()) {
+                    System.err.println("Misplaced compilation unit.");
+                    System.err.println("    Directory: " + Paths.get(cu.getSourceFile().toUri()).getParent());
+                    System.err.println("    Package:   " + cu.getPackageName());
+                }
+                rc = com.sun.tools.javac.main.Main.Result.ERROR;
+            }
+
+            compilationResult.packageDependencies = deps.getDependencies();
+            compilationResult.packagePubapis = deps.getPubapis();
+            compilationResult.stdout = stdoutLog.toString();
+            compilationResult.stderr = stderrLog.toString();
+            compilationResult.returnCode = rc.exitCode;
+
+            return compilationResult;
+        } catch (IOException e) {
+            throw new Error(e);
         }
-
-        compilationResult.packageDependencies = deps.getDependencies();
-        compilationResult.packagePubapis = deps.getPubapis();
-        compilationResult.stdout = stdoutLog.toString();
-        compilationResult.stderr = stderrLog.toString();
-        compilationResult.returnCode = rc.exitCode;
-
-        return compilationResult;
     }
 
     @Override
