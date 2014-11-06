@@ -158,7 +158,6 @@ class os: AllStatic {
   static void init_globals(void) {             // Called from init_globals() in init.cpp
     init_globals_ext();
   }
-  static void init_3(void);                    // Called at the end of vm init
 
   // File names are case-insensitive on windows only
   // Override me as needed

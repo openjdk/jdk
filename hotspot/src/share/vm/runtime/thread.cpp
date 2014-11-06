@@ -3617,9 +3617,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
   }
 
-  // Give os specific code one last chance to start
-  os::init_3();
-
   create_vm_timer.end();
 #ifdef ASSERT
   _vm_complete = true;
