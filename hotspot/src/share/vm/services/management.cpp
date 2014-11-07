@@ -1333,7 +1333,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
         GrowableArray<oop>* locked_monitors = frame->locked_monitors();
         for (j = 0; j < len; j++) {
           oop monitor = locked_monitors->at(j);
-          assert(monitor != NULL && monitor->is_instance(), "must be a Java object");
+          assert(monitor != NULL, "must be a Java object");
           monitors_array->obj_at_put(count, monitor);
           depths_array->int_at_put(count, depth);
           count++;
@@ -1343,7 +1343,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       GrowableArray<oop>* jni_locked_monitors = stacktrace->jni_locked_monitors();
       for (j = 0; j < jni_locked_monitors->length(); j++) {
         oop object = jni_locked_monitors->at(j);
-        assert(object != NULL && object->is_instance(), "must be a Java object");
+        assert(object != NULL, "must be a Java object");
         monitors_array->obj_at_put(count, object);
         // Monitor locked via JNI MonitorEnter call doesn't have stack depth info
         depths_array->int_at_put(count, -1);
@@ -1572,6 +1572,9 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
   } else if (flag->is_uint64_t()) {
     global->value.j = (jlong)flag->get_uint64_t();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
+  } else if (flag->is_double()) {
+    global->value.d = (jdouble)flag->get_double();
+    global->type = JMM_VMGLOBAL_TYPE_JDOUBLE;
   } else if (flag->is_size_t()) {
     global->value.j = (jlong)flag->get_size_t();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;

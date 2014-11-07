@@ -196,7 +196,6 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
     // Don't trigger other compiles in testing mode
     return NULL;
   }
-  nmethod *osr_nm = NULL;
 
   handle_counter_overflow(method());
   if (method() != inlinee()) {
@@ -210,14 +209,16 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
   if (bci == InvocationEntryBci) {
     method_invocation_event(method, inlinee, comp_level, nm, thread);
   } else {
-    method_back_branch_event(method, inlinee, bci, comp_level, nm, thread);
     // method == inlinee if the event originated in the main method
-    int highest_level = inlinee->highest_osr_comp_level();
-    if (highest_level > comp_level) {
-      osr_nm = inlinee->lookup_osr_nmethod_for(bci, highest_level, false);
+    method_back_branch_event(method, inlinee, bci, comp_level, nm, thread);
+    // Check if event led to a higher level OSR compilation
+    nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, comp_level, false);
+    if (osr_nm != NULL && osr_nm->comp_level() > comp_level) {
+      // Perform OSR with new nmethod
+      return osr_nm;
     }
   }
-  return osr_nm;
+  return NULL;
 }
 
 // Check if the method can be compiled, change level if necessary

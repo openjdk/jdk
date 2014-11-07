@@ -277,7 +277,7 @@ public:
   bool has_stackmap_table() const { return _stackmap_data != NULL; }
 
   void init_fingerprint() {
-    const uint64_t initval = CONST64(0x8000000000000000);
+    const uint64_t initval = UCONST64(0x8000000000000000);
     _fingerprint = initval;
   }
 

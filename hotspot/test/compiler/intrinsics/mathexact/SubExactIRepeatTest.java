@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test repeating subtractExact
+ * @library /testlibrary
  * @compile SubExactIRepeatTest.java Verify.java
  * @run main SubExactIRepeatTest
  *
  */
 
-import java.lang.ArithmeticException;
+import com.oracle.java.testlibrary.Utils;
+import java.util.Random;
 
 public class SubExactIRepeatTest {
     public static void main(String[] args) {
@@ -46,7 +48,7 @@ public class SubExactIRepeatTest {
     }
 
     public static void runTest(Verify.BinaryMethod method) {
-        java.util.Random rnd = new java.util.Random();
+        Random rnd = Utils.getRandomInstance();
         for (int i = 0; i < 50000; ++i) {
             int x = Integer.MIN_VALUE + 10;
             int y = Integer.MAX_VALUE - 10 + rnd.nextInt(5);
