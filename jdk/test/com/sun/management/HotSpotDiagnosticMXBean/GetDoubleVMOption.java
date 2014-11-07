@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug     6314913
- * @summary Basic Test for HotSpotDiagnosticMXBean.getVMOption()
- * @author  Mandy Chung
+ * @bug     8061616
+ * @summary Basic Test for HotSpotDiagnosticMXBean.getVMOption() and double values
+ * @author  Jaroslav Bachorik
  *
- * @run main/othervm -XX:+PrintGCDetails GetVMOption
+ * @run main/othervm -XX:CompileThresholdScaling=0.14 GetDoubleVMOption
  */
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -36,10 +36,9 @@ import java.lang.management.ManagementFactory;
 import java.util.List;
 import javax.management.MBeanServer;
 
-public class GetVMOption {
-    private static final String PRINT_GC_DETAILS = "PrintGCDetails";
-    private static final String EXPECTED_VALUE = "true";
-    private static final String BAD_OPTION = "BadOption";
+public class GetDoubleVMOption {
+    private static final String COMPILE_THRESHOLD_SCALING = "CompileThresholdScaling";
+    private static final String EXPECTED_VALUE = "0.14";
     private static final String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=HotSpotDiagnostic";
 
@@ -57,20 +56,10 @@ public class GetVMOption {
     }
 
     private static void checkVMOption(HotSpotDiagnosticMXBean mbean) {
-        VMOption option = mbean.getVMOption(PRINT_GC_DETAILS);
+        VMOption option = mbean.getVMOption(COMPILE_THRESHOLD_SCALING);
         if (!option.getValue().equalsIgnoreCase(EXPECTED_VALUE)) {
             throw new RuntimeException("Unexpected value: " +
                 option.getValue() + " expected: " + EXPECTED_VALUE);
-        }
-        boolean iae = false;
-        try {
-            mbean.getVMOption(BAD_OPTION);
-        } catch (IllegalArgumentException e) {
-            iae = true;
-        }
-        if (!iae) {
-            throw new RuntimeException("Invalid VM Option" +
-                " was not detected");
         }
     }
 }
