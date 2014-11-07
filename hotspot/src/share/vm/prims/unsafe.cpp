@@ -802,8 +802,7 @@ UNSAFE_END
 
 static inline void throw_new(JNIEnv *env, const char *ename) {
   char buf[100];
-  strcpy(buf, "java/lang/");
-  strcat(buf, ename);
+  jio_snprintf(buf, 100, "%s%s", "java/lang/", ename);
   jclass cls = env->FindClass(buf);
   if (env->ExceptionCheck()) {
     env->ExceptionClear();

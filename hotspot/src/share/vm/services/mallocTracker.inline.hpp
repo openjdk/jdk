@@ -28,13 +28,6 @@
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 
-inline NMT_TrackingLevel MallocTracker::get_memory_tracking_level(void* memblock) {
-  assert(memblock != NULL, "Sanity check");
-  if (MemTracker::tracking_level() == NMT_off) return NMT_off;
-  MallocHeader* header = malloc_header(memblock);
-  return header->tracking_level();
-}
-
 inline void* MallocTracker::get_base(void* memblock){
   return get_base(memblock, MemTracker::tracking_level());
 }
