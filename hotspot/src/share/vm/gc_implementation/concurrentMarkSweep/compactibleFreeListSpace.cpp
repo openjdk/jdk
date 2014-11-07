@@ -2625,7 +2625,7 @@ void CFLS_LAB::get_from_global_pool(size_t word_sz, AdaptiveFreeList<FreeChunk>*
   // Get the #blocks we want to claim
   size_t n_blks = (size_t)_blocks_to_claim[word_sz].average();
   assert(n_blks > 0, "Error");
-  assert(ResizePLAB || n_blks == OldPLABSize, "Error");
+  assert(ResizeOldPLAB || n_blks == OldPLABSize, "Error");
   // In some cases, when the application has a phase change,
   // there may be a sudden and sharp shift in the object survival
   // profile, and updating the counts at the end of a scavenge
