@@ -28,6 +28,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/top.hpp"
@@ -818,15 +819,12 @@ bool CommandLineFlags::ccstrAtPut(const char* name, size_t len, ccstr* value, Fl
   trace_flag_changed<EventStringFlagChanged, const char*>(name, old_value, *value, origin);
   char* new_value = NULL;
   if (*value != NULL) {
-    new_value = NEW_C_HEAP_ARRAY(char, strlen(*value)+1, mtInternal);
-    strcpy(new_value, *value);
+    new_value = os::strdup_check_oom(*value);
   }
   result->set_ccstr(new_value);
   if (result->is_default() && old_value != NULL) {
     // Prior value is NOT heap allocated, but was a literal constant.
-    char* old_value_to_free = NEW_C_HEAP_ARRAY(char, strlen(old_value)+1, mtInternal);
-    strcpy(old_value_to_free, old_value);
-    old_value = old_value_to_free;
+    old_value = os::strdup_check_oom(old_value);
   }
   *value = old_value;
   result->set_origin(origin);
@@ -838,8 +836,7 @@ void CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, F
   guarantee(faddr != NULL && faddr->is_ccstr(), "wrong flag type");
   ccstr old_value = faddr->get_ccstr();
   trace_flag_changed<EventStringFlagChanged, const char*>(faddr->_name, old_value, value, origin);
-  char* new_value = NEW_C_HEAP_ARRAY(char, strlen(value)+1, mtInternal);
-  strcpy(new_value, value);
+  char* new_value = os::strdup_check_oom(value);
   faddr->set_ccstr(new_value);
   if (!faddr->is_default() && old_value != NULL) {
     // Prior value is heap allocated so free it.

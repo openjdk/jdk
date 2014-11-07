@@ -32,6 +32,7 @@
  * @run main Wrapper DependencyCollection
  */
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,7 +56,7 @@ import com.sun.tools.sjavac.comp.dependencies.DependencyCollector;
 
 public class DependencyCollection {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Path src = Paths.get(ToolBox.testSrc, "test-input", "src");
 
         JavaCompiler javac = ToolProvider.getSystemJavaCompiler();

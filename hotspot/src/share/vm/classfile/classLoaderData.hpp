@@ -68,6 +68,9 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* _saved_head;
   static ClassLoaderData* _saved_unloading;
   static bool _should_purge;
+  // OOM has been seen in metaspace allocation. Used to prevent some
+  // allocations until class unloading
+  static bool _metaspace_oom;
 
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
   static void post_class_unload_events(void);
@@ -106,6 +109,9 @@ class ClassLoaderDataGraph : public AllStatic {
       set_should_purge(false);
     }
   }
+
+  static bool has_metaspace_oom()           { return _metaspace_oom; }
+  static void set_metaspace_oom(bool value) { _metaspace_oom = value; }
 
   static void free_deallocate_lists();
 

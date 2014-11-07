@@ -36,6 +36,7 @@ import java.io.Reader;
 /**
  * Simple utilities to deal with build-dir, read/dump files etc.
  */
+@SuppressWarnings("javadoc")
 public abstract class TestHelper {
 
     public static final String TEST_ROOT   = "test";

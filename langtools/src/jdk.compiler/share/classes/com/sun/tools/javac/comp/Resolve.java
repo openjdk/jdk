@@ -2033,10 +2033,11 @@ public class Resolve {
             // Return the type variable if we have it, and have no
             // immediate member, OR the type variable is for a method.
             if (tyvar != typeNotFound) {
-                if (sym == typeNotFound ||
+                if (env.baseClause || sym == typeNotFound ||
                     (tyvar.kind == TYP && tyvar.exists() &&
-                     tyvar.owner.kind == MTH))
+                     tyvar.owner.kind == MTH)) {
                     return tyvar;
+                }
             }
 
             // If the environment is a class def, finish up,

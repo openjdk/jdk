@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +25,23 @@
 
 /*
  * @test
- * @bug 8055289
- * @library /testlibrary
- * @build UnsafeMallocLimit
- * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=summary UnsafeMallocLimit
+ * @bug 6987475
+ *
+ * @summary Order of declarations affects whether abstract method considered overridden
+ * @compile T6987475pos.java
  */
 
-import com.oracle.java.testlibrary.*;
-import sun.misc.Unsafe;
-
-public class UnsafeMallocLimit {
-
-    public static void main(String args[]) throws Exception {
-        if (Platform.is32bit()) {
-            Unsafe unsafe = Utils.getUnsafe();
-            try {
-                unsafe.allocateMemory(1 << 30);
-                throw new RuntimeException("Did not get expected OOME");
-            } catch (OutOfMemoryError e) {
-                // Expected exception
-            }
-        } else {
-            System.out.println("Test only valid on 32-bit platforms");
-        }
+class T6987475pos {
+    static abstract class Base<A> {
+        public void go(String s) { }
+        public abstract void go(A a);
     }
+
+    static abstract class BaseReverse<A> {
+        public abstract void go(A a);
+        public void go(String s) { }
+    }
+
+    static class Impl1 extends Base<String> { }
+    static class Impl2 extends BaseReverse<String> { }
 }

@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.runtime.Source.readFully;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -45,6 +44,7 @@ import org.testng.annotations.Test;
 /**
  * Tests to check Nashorn JS compiler - just compiler and not execution of scripts.
  */
+@SuppressWarnings("javadoc")
 public class CompilerTest {
     private static final boolean VERBOSE  = Boolean.valueOf(System.getProperty("compilertest.verbose"));
     private static final boolean TEST262  = Boolean.valueOf(System.getProperty("compilertest.test262"));
@@ -56,7 +56,7 @@ public class CompilerTest {
         public boolean exclude(File file, String content);
     }
 
-    private void log(final String msg) {
+    private static void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 

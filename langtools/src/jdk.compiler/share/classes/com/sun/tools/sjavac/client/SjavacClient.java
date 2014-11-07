@@ -25,31 +25,33 @@
 
 package com.sun.tools.sjavac.client;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 
 import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.ProblemException;
 import com.sun.tools.sjavac.Util;
+import com.sun.tools.sjavac.options.OptionHelper;
+import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.PortFile;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SjavacServer;
 import com.sun.tools.sjavac.server.SysInfo;
-import com.sun.tools.sjavac.options.Options;
 
 /**
  * Sjavac implementation that delegates requests to a SjavacServer.
@@ -64,10 +66,9 @@ public class SjavacClient implements Sjavac {
     // The id can perhaps be used in the future by the javac server to reuse the
     // JavaCompiler instance for several compiles using the same id.
     private final String id;
-    private final String portfileName;
+    private final PortFile portFile;
     private final String logfile;
     private final String stdouterrfile;
-    private final boolean background;
 
     // Default keepalive for server is 120 seconds.
     // I.e. it will accept 120 seconds of inactivity before quitting.
@@ -88,16 +89,27 @@ public class SjavacClient implements Sjavac {
     // Store the server conf settings here.
     private final String settings;
 
-    public SjavacClient(Options options) {
+    // This constructor should not throw FileNotFoundException (to be resolved
+    // in JDK-8060030)
+    public SjavacClient(Options options) throws FileNotFoundException {
         String tmpServerConf = options.getServerConf();
         String serverConf = (tmpServerConf!=null)? tmpServerConf : "";
         String tmpId = Util.extractStringOption("id", serverConf);
         id = (tmpId!=null) ? tmpId : "id"+(((new java.util.Random()).nextLong())&Long.MAX_VALUE);
-        String p = Util.extractStringOption("portfile", serverConf);
-        portfileName = (p!=null) ? p : options.getStateDir().toFile().getAbsolutePath()+File.separatorChar+"javac_server";
+        String defaultPortfile = options.getStateDir()
+                                        .resolve("javac_server")
+                                        .toAbsolutePath()
+                                        .toString();
+        String portfileName = Util.extractStringOption("portfile", serverConf, defaultPortfile);
+        try {
+            portFile = SjavacServer.getPortFile(portfileName);
+        } catch (FileNotFoundException e) {
+            // Reached for instance if directory of port file does not exist
+            Log.error("Port file inaccessable: " + e);
+            throw e;
+        }
         logfile = Util.extractStringOption("logfile", serverConf, portfileName + ".javaclog");
         stdouterrfile = Util.extractStringOption("stdouterrfile", serverConf, portfileName + ".stdouterr");
-        background = Util.extractBooleanOption("background", serverConf, true);
         sjavacForkCmd = Util.extractStringOption("sjavac", serverConf, "sjavac");
         int poolsize = Util.extractIntOption("poolsize", serverConf);
         keepalive = Util.extractIntOption("keepalive", serverConf, 120);
@@ -138,8 +150,11 @@ public class SjavacClient implements Sjavac {
             return (SysInfo) ois.readObject();
         } catch (IOException | ClassNotFoundException ex) {
             Log.error("[CLIENT] Exception caught: " + ex);
-            StringWriter sw = new StringWriter();
-            ex.printStackTrace(new PrintWriter(sw));
+            Log.debug(Util.getStackTrace(ex));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt(); // Restore interrupt
+            Log.error("[CLIENT] getSysInfo interrupted.");
+            Log.debug(Util.getStackTrace(ie));
         }
         return null;
     }
@@ -170,106 +185,127 @@ public class SjavacClient implements Sjavac {
             oos.flush();
             result = (CompilationResult) ois.readObject();
         } catch (IOException | ClassNotFoundException ex) {
-            Log.error("Exception caught: " + ex);
+            Log.error("[CLIENT] Exception caught: " + ex);
             result = new CompilationResult(CompilationResult.ERROR_FATAL);
             result.stderr = Util.getStackTrace(ex);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt(); // Restore interrupt
+            Log.error("[CLIENT] compile interrupted.");
+            result = new CompilationResult(CompilationResult.ERROR_FATAL);
+            result.stderr = Util.getStackTrace(ie);
         }
         return result;
     }
 
-    private Socket tryConnect() throws IOException {
-
-        PortFile portFile;
-        try {
-            // This should be taken care of at a higher level (JDK-8048451)
-            portFile = SjavacServer.getPortFile(portfileName);
-        } catch (FileNotFoundException e) {
-            // Reached for instance if directory of port file does not exist
-            Log.error("Port file inaccessable: " + e);
-            throw new RuntimeException(e);
-        }
-        for (int i = 0; i < MAX_CONNECT_ATTEMPTS; i++) {
-            Log.info(String.format("Trying to connect (attempt %d of %d)",
-                                   i+1, MAX_CONNECT_ATTEMPTS));
+    /*
+     * Makes MAX_CONNECT_ATTEMPTS attepmts to connect to server.
+     */
+    private Socket tryConnect() throws IOException, InterruptedException {
+        makeSureServerIsRunning(portFile);
+        int attempt = 0;
+        while (true) {
+            Log.info("Trying to connect. Attempt " + (++attempt) + " of " + MAX_CONNECT_ATTEMPTS);
             try {
-                if (!makeSureServerIsRunning(portFile))
-                    continue;
-                Socket socket = new Socket();
-                InetAddress localhost = InetAddress.getByName(null);
-                socket.connect(new InetSocketAddress(localhost, portFile.getPort()),
-                               CONNECTION_TIMEOUT);
-                return socket;
-            } catch (ProblemException | IOException ex) {
-                Log.error("Caught exception during tryConnect: " + ex);
-            }
-
-            try {
-                Thread.sleep(WAIT_BETWEEN_CONNECT_ATTEMPTS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        throw new IOException("Could not connect to server");
-    }
-
-    private boolean makeSureServerIsRunning(PortFile portFile)
-            throws IOException, ProblemException, FileNotFoundException {
-
-        synchronized (portFile) {
-            portFile.lock();
-            portFile.getValues();
-            portFile.unlock();
-        }
-
-        if (!portFile.containsPortInfo()) {
-            String forkCmd = SjavacServer.fork(sjavacForkCmd,
-                                               portFile.getFilename(),
-                                               logfile,
-                                               poolsize,
-                                               keepalive,
-                                               System.err,
-                                               stdouterrfile,
-                                               background);
-            if (!portFile.waitForValidValues()) {
-                // This can be simplified once JDK-8048457 has been addressed
-                // since we won't have an SjavacClient if background = false
-                if (background) {
-                    // There seems be some problem with spawning the external
-                    // process (for instance no fork command provided and no
-                    // sjavac on path)
-                    StringWriter sw = new StringWriter();
-                    SjavacClient.printFailedAttempt(forkCmd,
-                                                    stdouterrfile,
-                                                    new PrintWriter(sw));
-                    Log.error(sw.toString());
+                return makeConnectionAttempt();
+            } catch (IOException ex) {
+                Log.error("Connection attempt failed: " + ex.getMessage());
+                if (attempt >= MAX_CONNECT_ATTEMPTS) {
+                    Log.error("Giving up");
+                    throw new IOException("Could not connect to server", ex);
                 }
             }
+            Thread.sleep(WAIT_BETWEEN_CONNECT_ATTEMPTS);
         }
-        return portFile.containsPortInfo();
     }
 
+    private Socket makeConnectionAttempt() throws IOException {
+        Socket socket = new Socket();
+        InetAddress localhost = InetAddress.getByName(null);
+        InetSocketAddress address = new InetSocketAddress(localhost, portFile.getPort());
+        socket.connect(address, CONNECTION_TIMEOUT);
+        Log.info("Connected");
+        return socket;
+    }
 
-    public static void printFailedAttempt(String cmd, String f, PrintWriter err) {
-        err.println("---- Failed to start javac server with this command -----");
-        err.println(cmd);
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(f));
-            err.println("---- stdout/stderr output from attempt to start javac server -----");
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    break;
-                }
-                err.println(l);
-            }
-            err.println("------------------------------------------------------------------");
-        } catch (Exception e) {
-            err.println("The stdout/stderr output in file " + f + " does not exist and the server did not start.");
+    /*
+     * Will return immediately if a server already seems to be running,
+     * otherwise fork a new server and block until it seems to be running.
+     */
+    private void makeSureServerIsRunning(PortFile portFile)
+            throws IOException, InterruptedException {
+
+        portFile.lock();
+        portFile.getValues();
+        portFile.unlock();
+
+        if (portFile.containsPortInfo()) {
+            // Server seems to already be running
+            return;
         }
+
+        // Fork a new server and wait for it to start
+        SjavacClient.fork(sjavacForkCmd,
+                          portFile,
+                          logfile,
+                          poolsize,
+                          keepalive,
+                          System.err,
+                          stdouterrfile);
     }
 
     @Override
     public void shutdown() {
         // Nothing to clean up
+    }
+
+    /*
+     * Fork a server process process and wait for server to come around
+     */
+    public static void fork(String sjavacCmd,
+                            PortFile portFile,
+                            String logfile,
+                            int poolsize,
+                            int keepalive,
+                            final PrintStream err,
+                            String stdouterrfile)
+                                    throws IOException, InterruptedException {
+        List<String> cmd = new ArrayList<>();
+        cmd.addAll(Arrays.asList(OptionHelper.unescapeCmdArg(sjavacCmd).split(" ")));
+        cmd.add("--startserver:"
+              + "portfile=" + portFile.getFilename()
+              + ",logfile=" + logfile
+              + ",stdouterrfile=" + stdouterrfile
+              + ",poolsize=" + poolsize
+              + ",keepalive="+ keepalive);
+
+        Process p = null;
+        Log.info("Starting server. Command: " + String.join(" ", cmd));
+        try {
+            // If the cmd for some reason can't be executed (file not found, or
+            // is not executable) this will throw an IOException with a decent
+            // error message.
+            p = new ProcessBuilder(cmd)
+                        .redirectErrorStream(true)
+                        .redirectOutput(new File(stdouterrfile))
+                        .start();
+
+            // Throws an IOException if no valid values materialize
+            portFile.waitForValidValues();
+
+        } catch (IOException ex) {
+            // Log and rethrow exception
+            Log.error("Faild to launch server.");
+            Log.error("    Message: " + ex.getMessage());
+            String rc = p == null || p.isAlive() ? "n/a" : "" + p.exitValue();
+            Log.error("    Server process exit code: " + rc);
+            Log.error("Server log:");
+            Log.error("------- Server log start -------");
+            try (Scanner s = new Scanner(new File(stdouterrfile))) {
+                while (s.hasNextLine())
+                    Log.error(s.nextLine());
+            }
+            Log.error("------- Server log end ---------");
+            throw ex;
+        }
     }
 }
