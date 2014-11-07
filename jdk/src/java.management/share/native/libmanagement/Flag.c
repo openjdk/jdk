@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,10 @@ Java_sun_management_Flag_getFlags
             valueObj = JNU_NewObjectByName(env, "java/lang/Long", "(J)V",
                                            globals[i].value.j);
             break;
+        case JMM_VMGLOBAL_TYPE_JDOUBLE:
+            valueObj = JNU_NewObjectByName(env, "java/lang/Double", "(D)V",
+                                           globals[i].value.d);
+            break;
         default:
             // ignore unsupported type
             continue;
@@ -197,6 +201,16 @@ Java_sun_management_Flag_setLongValue
 {
    jvalue v;
    v.j = value;
+
+   jmm_interface->SetVMGlobal(env, name, v);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_management_Flag_setDoubleValue
+  (JNIEnv *env, jclass cls, jstring name, jdouble value)
+{
+   jvalue v;
+   v.d = value;
 
    jmm_interface->SetVMGlobal(env, name, v);
 }
