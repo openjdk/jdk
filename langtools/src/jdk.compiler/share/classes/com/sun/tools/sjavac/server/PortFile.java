@@ -33,6 +33,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
+import java.util.concurrent.Semaphore;
+
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.sjavac.Log;
 
@@ -61,7 +63,12 @@ public class PortFile {
     private File stopFile;
     private RandomAccessFile rwfile;
     private FileChannel channel;
+
+    // FileLock used to solve inter JVM synchronization, lockSem used to avoid
+    // JVM internal OverlappingFileLockExceptions.
+    // Class invariant: lock.isValid() <-> lockSem.availablePermits() == 0
     private FileLock lock;
+    private Semaphore lockSem = new Semaphore(1);
 
     private boolean containsPortInfo;
     private int serverPort;
@@ -88,7 +95,8 @@ public class PortFile {
     /**
      * Lock the port file.
      */
-    public void lock() throws IOException {
+    public void lock() throws IOException, InterruptedException {
+        lockSem.acquire();
         lock = channel.lock();
     }
 
@@ -195,34 +203,37 @@ public class PortFile {
         Assert.check(lock != null);
         lock.release();
         lock = null;
+        lockSem.release();
     }
 
     /**
      * Wait for the port file to contain values that look valid.
-     * Return true, if a-ok, false if the valid values did not materialize within 5 seconds.
      */
-    public synchronized boolean waitForValidValues() throws IOException, FileNotFoundException {
-        for (int tries = 0; tries < 50; tries++) {
+    public void waitForValidValues() throws IOException, InterruptedException {
+        final int MAX_ATTEMPTS = 10;
+        final int MS_BETWEEN_ATTEMPTS = 500;
+        long startTime = System.currentTimeMillis();
+        for (int attempt = 0; ; attempt++) {
+            Log.debug("Looking for valid port file values...");
             lock();
             getValues();
             unlock();
             if (containsPortInfo) {
-                Log.debug("Found valid values in port file after waiting "+(tries*100)+"ms");
-                return true;
+                Log.debug("Valid port file values found after " + (System.currentTimeMillis() - startTime) + " ms");
+                return;
             }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e)
-            {}
+            if (attempt >= MAX_ATTEMPTS) {
+                throw new IOException("No port file values materialized. Giving up after " +
+                                      (System.currentTimeMillis() - startTime) + " ms");
+            }
+            Thread.sleep(MS_BETWEEN_ATTEMPTS);
         }
-        Log.debug("Gave up waiting for valid values in port file");
-        return false;
     }
 
     /**
      * Check if the portfile still contains my values, assuming that I am the server.
      */
-    public synchronized boolean stillMyValues() throws IOException, FileNotFoundException {
+    public boolean stillMyValues() throws IOException, FileNotFoundException, InterruptedException {
         for (;;) {
             try {
                 lock();

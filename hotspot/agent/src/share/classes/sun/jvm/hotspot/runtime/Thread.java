@@ -111,14 +111,15 @@ public class Thread extends VMObject {
     return allocatedBytesField.getValue(addr);
   }
 
-  public boolean   isVMThread()                { return false; }
-  public boolean   isJavaThread()              { return false; }
-  public boolean   isCompilerThread()          { return false; }
-  public boolean   isHiddenFromExternalView()  { return false; }
-  public boolean   isJvmtiAgentThread()        { return false; }
-  public boolean   isWatcherThread()           { return false; }
+  public boolean   isVMThread()                  { return false; }
+  public boolean   isJavaThread()                { return false; }
+  public boolean   isCompilerThread()            { return false; }
+  public boolean   isCodeCacheSweeperThread()    { return false; }
+  public boolean   isHiddenFromExternalView()    { return false; }
+  public boolean   isJvmtiAgentThread()          { return false; }
+  public boolean   isWatcherThread()             { return false; }
   public boolean   isConcurrentMarkSweepThread() { return false; }
-  public boolean   isServiceThread()           { return false; }
+  public boolean   isServiceThread()             { return false; }
 
   /** Memory operations */
   public void oopsDo(AddressVisitor oopVisitor) {

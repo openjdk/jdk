@@ -24,41 +24,56 @@
 /*
  * @test
  * @summary Test corner case that overflows malloc site hashtable bucket
+ * @requires sun.arch.data.model == "32"
  * @key nmt jcmd stress
  * @library /testlibrary /testlibrary/whitebox
- * @ignore - This test is disabled since it will stress NMT and timeout during normal testing
+ * @ignore 8062870
  * @build MallocSiteHashOverflow
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocSiteHashOverflow
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocSiteHashOverflow
  */
 
 import com.oracle.java.testlibrary.*;
 import sun.hotspot.WhiteBox;
 
 public class MallocSiteHashOverflow {
-    private static long K = 1024;
-    public static void main(String args[]) throws Exception {
-        String vm_name = System.getProperty("java.vm.name");
 
+    public static void main(String args[]) throws Exception {
+
+        // Size of entries based on malloc tracking header defined in mallocTracker.hpp
         // For 32-bit systems, create 257 malloc sites with the same hash bucket to overflow a hash bucket
-        // For 64-bit systems, create 64K + 1 malloc sites with the same hash bucket to overflow a hash bucket
         long entries = 257;
-        if (Platform.is64bit()) {
-            entries = 64 * K + 1;
-        }
 
         OutputAnalyzer output;
         WhiteBox wb = WhiteBox.getWhiteBox();
+        int MAX_HASH_SIZE = wb.NMTGetHashSize();
 
         // Grab my own PID
         String pid = Integer.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
-        wb.NMTOverflowHashBucket(entries);
-
-        // Run 'jcmd <pid> VM.native_memory summary'
+        // Verify that current tracking level is "detail"
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics"});
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Tracking level has been downgraded due to lack of resources");
+        output.shouldContain("Native Memory Tracking Statistics");
+
+        // Attempt to cause NMT to downgrade tracking level by allocating small amounts
+        // of memory with random pseudo call stack
+        int pc = 1;
+        for (int i = 0; i < entries; i++) {
+            long addr = wb.NMTMallocWithPseudoStack(1, pc);
+            if (addr == 0) {
+                throw new RuntimeException("NMTMallocWithPseudoStack: out of memory");
+            }
+            // We free memory here since it doesn't affect pseudo malloc alloc site hash table entries
+            wb.NMTFree(addr);
+            pc += MAX_HASH_SIZE;
+            if (i == entries) {
+                // Verify that tracking has been downgraded
+                pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics"});
+                output = new OutputAnalyzer(pb.start());
+                output.shouldContain("Tracking level has been downgraded due to lack of resources");
+            }
+        }
     }
 }

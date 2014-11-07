@@ -368,6 +368,13 @@ void Method::print_invocation_count() {
 // Build a MethodData* object to hold information about this method
 // collected in the interpreter.
 void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
+  // Do not profile the method if metaspace has hit an OOM previously
+  // allocating profiling data. Callers clear pending exception so don't
+  // add one here.
+  if (ClassLoaderDataGraph::has_metaspace_oom()) {
+    return;
+  }
+
   // Do not profile method if current thread holds the pending list lock,
   // which avoids deadlock for acquiring the MethodData_lock.
   if (InstanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
@@ -379,7 +386,13 @@ void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
   MutexLocker ml(MethodData_lock, THREAD);
   if (method->method_data() == NULL) {
     ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    MethodData* method_data = MethodData::allocate(loader_data, method, CHECK);
+    MethodData* method_data = MethodData::allocate(loader_data, method, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CompileBroker::log_metaspace_failure();
+      ClassLoaderDataGraph::set_metaspace_oom(true);
+      return;   // return the exception (which is cleared)
+    }
+
     method->set_method_data(method_data);
     if (PrintMethodData && (Verbose || WizardMode)) {
       ResourceMark rm(THREAD);
@@ -392,9 +405,19 @@ void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
 }
 
 MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
+  // Do not profile the method if metaspace has hit an OOM previously
+  if (ClassLoaderDataGraph::has_metaspace_oom()) {
+    return NULL;
+  }
+
   methodHandle mh(m);
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  MethodCounters* counters = MethodCounters::allocate(loader_data, CHECK_NULL);
+  MethodCounters* counters = MethodCounters::allocate(loader_data, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CompileBroker::log_metaspace_failure();
+    ClassLoaderDataGraph::set_metaspace_oom(true);
+    return NULL;   // return the exception (which is cleared)
+  }
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(loader_data, counters);
   }
@@ -1708,59 +1731,98 @@ void BreakpointInfo::clear(Method* method) {
 // jmethodID handling
 
 // This is a block allocating object, sort of like JNIHandleBlock, only a
-// lot simpler.  There aren't many of these, they aren't long, they are rarely
-// deleted and so we can do some suboptimal things.
+// lot simpler.
 // It's allocated on the CHeap because once we allocate a jmethodID, we can
 // never get rid of it.
-// It would be nice to be able to parameterize the number of methods for
-// the null_class_loader but then we'd have to turn this and ClassLoaderData
-// into templates.
 
-// I feel like this brain dead class should exist somewhere in the STL
+static const int min_block_size = 8;
+
+class JNIMethodBlockNode : public CHeapObj<mtClass> {
+  friend class JNIMethodBlock;
+  Method**        _methods;
+  int             _number_of_methods;
+  int             _top;
+  JNIMethodBlockNode* _next;
+
+ public:
+
+  JNIMethodBlockNode(int num_methods = min_block_size);
+
+  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods, mtInternal); }
+
+  void ensure_methods(int num_addl_methods) {
+    if (_top < _number_of_methods) {
+      num_addl_methods -= _number_of_methods - _top;
+      if (num_addl_methods <= 0) {
+        return;
+      }
+    }
+    if (_next == NULL) {
+      _next = new JNIMethodBlockNode(MAX2(num_addl_methods, min_block_size));
+    } else {
+      _next->ensure_methods(num_addl_methods);
+    }
+  }
+};
 
 class JNIMethodBlock : public CHeapObj<mtClass> {
-  enum { number_of_methods = 8 };
-
-  Method*         _methods[number_of_methods];
-  int             _top;
-  JNIMethodBlock* _next;
+  JNIMethodBlockNode _head;
+  JNIMethodBlockNode *_last_free;
  public:
   static Method* const _free_method;
 
-  JNIMethodBlock() : _next(NULL), _top(0) {
-    for (int i = 0; i< number_of_methods; i++) _methods[i] = _free_method;
+  JNIMethodBlock(int initial_capacity = min_block_size)
+      : _head(initial_capacity), _last_free(&_head) {}
+
+  void ensure_methods(int num_addl_methods) {
+    _last_free->ensure_methods(num_addl_methods);
   }
 
   Method** add_method(Method* m) {
-    if (_top < number_of_methods) {
-      // top points to the next free entry.
-      int i = _top;
-      _methods[i] = m;
-      _top++;
-      return &_methods[i];
-    } else if (_top == number_of_methods) {
-      // if the next free entry ran off the block see if there's a free entry
-      for (int i = 0; i< number_of_methods; i++) {
-        if (_methods[i] == _free_method) {
-          _methods[i] = m;
-          return &_methods[i];
+    for (JNIMethodBlockNode* b = _last_free; b != NULL; b = b->_next) {
+      if (b->_top < b->_number_of_methods) {
+        // top points to the next free entry.
+        int i = b->_top;
+        b->_methods[i] = m;
+        b->_top++;
+        _last_free = b;
+        return &(b->_methods[i]);
+      } else if (b->_top == b->_number_of_methods) {
+        // if the next free entry ran off the block see if there's a free entry
+        for (int i = 0; i < b->_number_of_methods; i++) {
+          if (b->_methods[i] == _free_method) {
+            b->_methods[i] = m;
+            _last_free = b;
+            return &(b->_methods[i]);
+          }
         }
+        // Only check each block once for frees.  They're very unlikely.
+        // Increment top past the end of the block.
+        b->_top++;
       }
-      // Only check each block once for frees.  They're very unlikely.
-      // Increment top past the end of the block.
-      _top++;
+      // need to allocate a next block.
+      if (b->_next == NULL) {
+        b->_next = _last_free = new JNIMethodBlockNode();
+      }
     }
-    // need to allocate a next block.
-    if (_next == NULL) {
-      _next = new JNIMethodBlock();
-    }
-    return _next->add_method(m);
+    guarantee(false, "Should always allocate a free block");
+    return NULL;
   }
 
   bool contains(Method** m) {
-    for (JNIMethodBlock* b = this; b != NULL; b = b->_next) {
-      for (int i = 0; i< number_of_methods; i++) {
-        if (&(b->_methods[i]) == m) {
+    if (m == NULL) return false;
+    for (JNIMethodBlockNode* b = &_head; b != NULL; b = b->_next) {
+      if (b->_methods <= m && m < b->_methods + b->_number_of_methods) {
+        // This is a bit of extra checking, for two reasons.  One is
+        // that contains() deals with pointers that are passed in by
+        // JNI code, so making sure that the pointer is aligned
+        // correctly is valuable.  The other is that <= and > are
+        // technically not defined on pointers, so the if guard can
+        // pass spuriously; no modern compiler is likely to make that
+        // a problem, though (and if one did, the guard could also
+        // fail spuriously, which would be bad).
+        ptrdiff_t idx = m - b->_methods;
+        if (b->_methods + idx == m) {
           return true;
         }
       }
@@ -1779,9 +1841,9 @@ class JNIMethodBlock : public CHeapObj<mtClass> {
   // During class unloading the methods are cleared, which is different
   // than freed.
   void clear_all_methods() {
-    for (JNIMethodBlock* b = this; b != NULL; b = b->_next) {
-      for (int i = 0; i< number_of_methods; i++) {
-        _methods[i] = NULL;
+    for (JNIMethodBlockNode* b = &_head; b != NULL; b = b->_next) {
+      for (int i = 0; i< b->_number_of_methods; i++) {
+        b->_methods[i] = NULL;
       }
     }
   }
@@ -1789,9 +1851,9 @@ class JNIMethodBlock : public CHeapObj<mtClass> {
   int count_methods() {
     // count all allocated methods
     int count = 0;
-    for (JNIMethodBlock* b = this; b != NULL; b = b->_next) {
-      for (int i = 0; i< number_of_methods; i++) {
-        if (_methods[i] != _free_method) count++;
+    for (JNIMethodBlockNode* b = &_head; b != NULL; b = b->_next) {
+      for (int i = 0; i< b->_number_of_methods; i++) {
+        if (b->_methods[i] != _free_method) count++;
       }
     }
     return count;
@@ -1801,6 +1863,36 @@ class JNIMethodBlock : public CHeapObj<mtClass> {
 
 // Something that can't be mistaken for an address or a markOop
 Method* const JNIMethodBlock::_free_method = (Method*)55;
+
+JNIMethodBlockNode::JNIMethodBlockNode(int num_methods) : _next(NULL), _top(0) {
+  _number_of_methods = MAX2(num_methods, min_block_size);
+  _methods = NEW_C_HEAP_ARRAY(Method*, _number_of_methods, mtInternal);
+  for (int i = 0; i < _number_of_methods; i++) {
+    _methods[i] = JNIMethodBlock::_free_method;
+  }
+}
+
+void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
+  ClassLoaderData* cld = loader_data;
+  if (!SafepointSynchronize::is_at_safepoint()) {
+    // Have to add jmethod_ids() to class loader data thread-safely.
+    // Also have to add the method to the list safely, which the cld lock
+    // protects as well.
+    MutexLockerEx ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    if (cld->jmethod_ids() == NULL) {
+      cld->set_jmethod_ids(new JNIMethodBlock(capacity));
+    } else {
+      cld->jmethod_ids()->ensure_methods(capacity);
+    }
+  } else {
+    // At safepoint, we are single threaded and can set this.
+    if (cld->jmethod_ids() == NULL) {
+      cld->set_jmethod_ids(new JNIMethodBlock(capacity));
+    } else {
+      cld->jmethod_ids()->ensure_methods(capacity);
+    }
+  }
+}
 
 // Add a method id to the jmethod_ids
 jmethodID Method::make_jmethod_id(ClassLoaderData* loader_data, Method* m) {

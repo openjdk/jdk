@@ -23,32 +23,26 @@
 
 /*
  * @test
- * @bug 8058818
- * @library /testlibrary
- * @build UnsafeMallocLimit2
- * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=off UnsafeMallocLimit2
+ * @bug 8062744
+ * @run main SupportedOptions
  */
 
-import com.oracle.java.testlibrary.*;
-import sun.misc.Unsafe;
+import java.net.*;
+import java.io.IOException;
+import jdk.net.*;
 
-public class UnsafeMallocLimit2 {
+public class SupportedOptions {
 
-    public static void main(String args[]) throws Exception {
-        if (Platform.is32bit()) {
-            Unsafe unsafe = Utils.getUnsafe();
-            try {
-                // Allocate greater than MALLOC_MAX and likely won't fail to allocate,
-                // so it hits the NMT code that asserted.
-                // Test that this doesn't cause an assertion with NMT off.
-                // The option above overrides if all the tests are run with NMT on.
-                unsafe.allocateMemory(0x40000000);
-                System.out.println("Allocation succeeded");
-            } catch (OutOfMemoryError e) {
-                System.out.println("Allocation failed");
-            }
-        } else {
-            System.out.println("Test only valid on 32-bit platforms");
+    public static void main(String[] args) throws Exception {
+        if (!Sockets.supportedOptions(ServerSocket.class)
+              .contains(StandardSocketOptions.IP_TOS)) {
+            throw new RuntimeException("Test failed");
         }
+        // Now set the option
+        ServerSocket ss = new ServerSocket();
+        if (!ss.supportedOptions().contains(StandardSocketOptions.IP_TOS)) {
+            throw new RuntimeException("Test failed");
+        }
+        Sockets.setOption(ss, java.net.StandardSocketOptions.IP_TOS, 128);
     }
 }

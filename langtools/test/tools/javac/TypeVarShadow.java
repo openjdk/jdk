@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,20 @@
  */
 
 /**
- * @expert Expert tag text
+ * @test
+ * @summary Incorrect shadowing of classes vs type parameters
+ * @bug 8035259
+ * @run compile TypeVarShadow.java
  */
 
-public class D extends C {}
+public class TypeVarShadow {
+    class T<E> {}
+
+    abstract class One<E> {
+        abstract E foo();
+    }
+
+    abstract class Two<T> extends One<T> {
+        abstract T foo();
+    }
+}

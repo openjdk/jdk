@@ -20,10 +20,10 @@
 package jdk.nashorn.internal.runtime.regexp.joni;
 
 import static jdk.nashorn.internal.runtime.regexp.joni.constants.MetaChar.INEFFECTIVE_META_CHAR;
-
 import jdk.nashorn.internal.runtime.regexp.joni.constants.SyntaxProperties;
 
-public final class Syntax implements SyntaxProperties{
+@SuppressWarnings("javadoc")
+public final class Syntax implements SyntaxProperties {
     private final int op;
     private final int op2;
     private final int behavior;

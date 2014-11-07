@@ -413,17 +413,17 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     int run(String[] args) {
         try {
-            handleOptions(args);
-
-            // the following gives consistent behavior with javac
-            if (classes == null || classes.size() == 0) {
-                if (options.help || options.version || options.fullVersion)
-                    return EXIT_OK;
-                else
-                    return EXIT_CMDERR;
-            }
-
             try {
+                handleOptions(args);
+
+                // the following gives consistent behavior with javac
+                if (classes == null || classes.size() == 0) {
+                    if (options.help || options.version || options.fullVersion)
+                        return EXIT_OK;
+                    else
+                        return EXIT_CMDERR;
+                }
+
                 return run();
             } finally {
                 if (defaultFileManager != null) {

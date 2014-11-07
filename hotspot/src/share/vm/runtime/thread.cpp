@@ -3617,9 +3617,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
   }
 
-  // Give os specific code one last chance to start
-  os::init_3();
-
   create_vm_timer.end();
 #ifdef ASSERT
   _vm_complete = true;
@@ -3642,7 +3639,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
 
   if (!agent->valid()) {
     char buffer[JVM_MAXPATHLEN];
-    char ebuf[1024];
+    char ebuf[1024] = "";
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 

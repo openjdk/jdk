@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,17 +67,23 @@ import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 public class JavacParserTest extends TestCase {
     static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+    static final JavaFileManager fm = tool.getStandardFileManager(null, null, null);
 
     private JavacParserTest(){}
 
     public static void main(String... args) throws Exception {
-        new JavacParserTest().run(args);
+        try {
+            new JavacParserTest().run(args);
+        } finally {
+            fm.close();
+        }
     }
 
     class MyFileObject extends SimpleJavaFileObject {
@@ -103,7 +109,7 @@ public class JavacParserTest extends TestCase {
 
     CompilationUnitTree getCompilationUnitTree(String code) throws IOException {
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
         return cut;
@@ -129,7 +135,7 @@ public class JavacParserTest extends TestCase {
 
         String code = "package test; public class Test {public Test() {super();}}";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
         SourcePositions pos = Trees.instance(ct).getSourcePositions();
@@ -168,7 +174,7 @@ public class JavacParserTest extends TestCase {
         final String theString = "public";
         String code = "package test; " + theString + " enum Test {A;}";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
         SourcePositions pos = Trees.instance(ct).getSourcePositions();
@@ -191,7 +197,7 @@ public class JavacParserTest extends TestCase {
                 "class d {} private void method() { " +
                 "Object o = " + theString + "; } }";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
         SourcePositions pos = Trees.instance(ct).getSourcePositions();
@@ -238,7 +244,7 @@ public class JavacParserTest extends TestCase {
         final List<Diagnostic<? extends JavaFileObject>> errors =
                 new LinkedList<Diagnostic<? extends JavaFileObject>>();
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm,
                 new DiagnosticListener<JavaFileObject>() {
             public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
                 errors.add(diagnostic);
@@ -261,7 +267,7 @@ public class JavacParserTest extends TestCase {
 
         String code = "\n@interface Test {}";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         CompilationUnitTree cut = ct.parse().iterator().next();
@@ -300,7 +306,7 @@ public class JavacParserTest extends TestCase {
         final List<Diagnostic<? extends JavaFileObject>> errors =
                 new LinkedList<Diagnostic<? extends JavaFileObject>>();
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm,
                 new DiagnosticListener<JavaFileObject>() {
 
             public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
@@ -443,7 +449,7 @@ public class JavacParserTest extends TestCase {
         final List<Diagnostic<? extends JavaFileObject>> errors =
                 new LinkedList<Diagnostic<? extends JavaFileObject>>();
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm,
                 new DiagnosticListener<JavaFileObject>() {
                     public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
                         errors.add(diagnostic);
@@ -482,7 +488,7 @@ public class JavacParserTest extends TestCase {
 
         String code = "package t; class Test { <T> void t() {} }";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
         ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
@@ -505,7 +511,7 @@ public class JavacParserTest extends TestCase {
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<JavaFileObject>();
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         ct.parse();
@@ -529,7 +535,7 @@ public class JavacParserTest extends TestCase {
                 "if (name != null) class X {} } }";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         ct.parse();
@@ -552,7 +558,7 @@ public class JavacParserTest extends TestCase {
                 "if (true) abstract class F {} }}";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         ct.parse();
@@ -575,7 +581,7 @@ public class JavacParserTest extends TestCase {
                 "if (name != null) interface X {} } }";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         ct.parse();
@@ -598,7 +604,7 @@ public class JavacParserTest extends TestCase {
                 "if (true) } }";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         ct.parse();
@@ -620,7 +626,7 @@ public class JavacParserTest extends TestCase {
 
         String code = "\nclass Test { { System.err.println(0e); } }";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         assertNotNull(ct.parse().iterator().next());
@@ -820,7 +826,7 @@ public class JavacParserTest extends TestCase {
                     + "        };\n"
                     + "    }\n"
                     + "}";
-            JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null,
+            JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
                     null, null, Arrays.asList(new MyFileObject(code)));
             CompilationUnitTree cut = ct.parse().iterator().next();
 
@@ -861,7 +867,7 @@ public class JavacParserTest extends TestCase {
                     + "    }\n"
                     + "}";
 
-            JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null,
+            JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
                     null, null, Arrays.asList(new MyFileObject(code)));
             CompilationUnitTree cut = ct.parse().iterator().next();
 
@@ -886,7 +892,7 @@ public class JavacParserTest extends TestCase {
 
         String code = "package t; enum Test { AAA; }";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
         ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
@@ -905,7 +911,7 @@ public class JavacParserTest extends TestCase {
                 "}";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
 
         CompilationUnitTree cut = ct.parse().iterator().next();

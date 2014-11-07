@@ -1641,7 +1641,8 @@ void os::jvm_path(char *buf, jint buflen) {
   char* rp = realpath((char *)dlinfo.dli_fname, buf);
   assert(rp != NULL, "error in realpath(): maybe the 'path' argument is too long?");
 
-  strcpy(saved_jvm_path, buf);
+  strncpy(saved_jvm_path, buf, sizeof(saved_jvm_path));
+  saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
 }
 
 void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
@@ -3827,11 +3828,6 @@ jint os::init_2(void) {
   }
 
   return JNI_OK;
-}
-
-// this is called at the end of vm_initialization
-void os::init_3(void) {
-  return;
 }
 
 // Mark the polling page as unreadable

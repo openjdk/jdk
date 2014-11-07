@@ -87,7 +87,6 @@ needs_jdk = \
   runtime/NMT/SummarySanityCheck.java \
   runtime/NMT/ThreadedMallocTestType.java \
   runtime/NMT/ThreadedVirtualAllocTestType.java \
-  runtime/NMT/UnsafeMallocLimit.java \
   runtime/NMT/VirtualAllocCommitUncommitRecommit.java \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \

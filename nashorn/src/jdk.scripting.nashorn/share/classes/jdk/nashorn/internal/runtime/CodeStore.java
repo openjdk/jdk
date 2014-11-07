@@ -41,6 +41,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceLoader;
+import jdk.nashorn.internal.codegen.OptimisticTypesPersistence;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -102,7 +103,7 @@ public abstract class CodeStore implements Loggable {
         } catch (final AccessControlException e) {
             context.getLogger(CodeStore.class).warning("failed to load code store provider ", e);
         }
-        final CodeStore store = new DirectoryCodeStore();
+        final CodeStore store = new DirectoryCodeStore(context);
         store.initLogger(context);
         return store;
     }
@@ -210,32 +211,34 @@ public abstract class CodeStore implements Loggable {
         /**
          * Constructor
          *
+         * @param context the current context
          * @throws IOException if there are read/write problems with the cache and cache directory
          */
-        public DirectoryCodeStore() throws IOException {
-            this(Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache"), false, DEFAULT_MIN_SIZE);
+        public DirectoryCodeStore(final Context context) throws IOException {
+            this(context, Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache"), false, DEFAULT_MIN_SIZE);
         }
 
         /**
          * Constructor
          *
+         * @param context the current context
          * @param path    directory to store code in
          * @param readOnly is this a read only code store
          * @param minSize minimum file size for caching scripts
          * @throws IOException if there are read/write problems with the cache and cache directory
          */
-        public DirectoryCodeStore(final String path, final boolean readOnly, final int minSize) throws IOException {
-            this.dir = checkDirectory(path, readOnly);
+        public DirectoryCodeStore(final Context context, final String path, final boolean readOnly, final int minSize) throws IOException {
+            this.dir = checkDirectory(path, context.getEnv(), readOnly);
             this.readOnly = readOnly;
             this.minSize = minSize;
         }
 
-        private static File checkDirectory(final String path, final boolean readOnly) throws IOException {
+        private static File checkDirectory(final String path, final ScriptEnvironment env, final boolean readOnly) throws IOException {
             try {
                 return AccessController.doPrivileged(new PrivilegedExceptionAction<File>() {
                     @Override
                     public File run() throws IOException {
-                        final File dir = new File(path).getAbsoluteFile();
+                        final File dir = new File(path, getVersionDir(env)).getAbsoluteFile();
                         if (readOnly) {
                             if (!dir.exists() || !dir.isDirectory()) {
                                 throw new IOException("Not a directory: " + dir.getPath());
@@ -254,6 +257,15 @@ public abstract class CodeStore implements Loggable {
                 });
             } catch (final PrivilegedActionException e) {
                 throw (IOException) e.getException();
+            }
+        }
+
+        private static String getVersionDir(final ScriptEnvironment env) throws IOException {
+            try {
+                final String versionDir = OptimisticTypesPersistence.getVersionDirName();
+                return env._optimistic_types ? versionDir + "_opt" : versionDir;
+            } catch (final Exception e) {
+                throw new IOException(e);
             }
         }
 

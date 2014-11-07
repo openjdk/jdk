@@ -46,8 +46,8 @@ public class ServerMain {
         try {
             SjavacServer server = new SjavacServer(args[0], System.err);
             exitCode = server.startServer();
-        } catch (IOException ioex) {
-            ioex.printStackTrace();
+        } catch (IOException | InterruptedException ex) {
+            ex.printStackTrace();
             exitCode = -1;
         }
 
