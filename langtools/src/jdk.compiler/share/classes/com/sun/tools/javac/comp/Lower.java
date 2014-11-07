@@ -2642,9 +2642,10 @@ public class Lower extends TreeTranslator {
                       syms.intType, tree.sym);
             ordParam.mods.flags |= SYNTHETIC; ordParam.sym.flags_field |= SYNTHETIC;
 
-            tree.params = tree.params.prepend(ordParam).prepend(nameParam);
-
             MethodSymbol m = tree.sym;
+            tree.params = tree.params.prepend(ordParam).prepend(nameParam);
+            incrementParamTypeAnnoIndexes(m, 2);
+
             m.extraParams = m.extraParams.prepend(ordParam.sym);
             m.extraParams = m.extraParams.prepend(nameParam.sym);
             Type olderasure = m.erasure(types);
@@ -2667,6 +2668,17 @@ public class Lower extends TreeTranslator {
         }
     }
     //where
+    private void incrementParamTypeAnnoIndexes(MethodSymbol m,
+                                               int amount) {
+        for (final Attribute.TypeCompound anno : m.getRawTypeAttributes()) {
+            // Increment the parameter_index of any existing formal
+            // parameter annotations.
+            if (anno.position.type == TargetType.METHOD_FORMAL_PARAMETER) {
+                anno.position.parameter_index += amount;
+            }
+        }
+    }
+
     private void visitMethodDefInternal(JCMethodDecl tree) {
         if (tree.name == names.init &&
             (currentClass.isInner() || currentClass.isLocal())) {
@@ -2697,8 +2709,10 @@ public class Lower extends TreeTranslator {
             // Add this$n (if needed) in front of and free variables behind
             // constructor parameter list.
             tree.params = tree.params.appendList(fvdefs);
-            if (currentClass.hasOuterInstance())
+            if (currentClass.hasOuterInstance()) {
                 tree.params = tree.params.prepend(otdef);
+                incrementParamTypeAnnoIndexes(m, 1);
+            }
 
             // If this is an initial constructor, i.e., it does not start with
             // this(...), insert initializers for this$n and proxies
