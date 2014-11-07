@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,20 @@
  * @test
  * @bug 6896617
  * @summary Optimize sun.nio.cs.ISO_8859_1$Encode.encodeArrayLoop() with SSE instructions on x86
+ * @library /testlibrary
  * @run main/othervm/timeout=1200 -Xbatch -Xmx256m Test6896617
  *
  */
 
-import java.util.*;
-import java.nio.*;
-import java.nio.charset.*;
+import com.oracle.java.testlibrary.Utils;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
+import java.util.Arrays;
+import java.util.Random;
 
 public class Test6896617 {
     final static int SIZE = 256;
@@ -54,7 +61,7 @@ public class Test6896617 {
         sun.nio.cs.ArrayDecoder arrdec = (sun.nio.cs.ArrayDecoder)dec;
 
         // Populate char[] with chars which can be encoded by ISO_8859_1 (<= 0xFF)
-        Random rnd = new Random(0);
+        Random rnd = Utils.getRandomInstance();
         int maxchar = 0xFF;
         char[] a = new char[SIZE];
         byte[] b = new byte[SIZE];
