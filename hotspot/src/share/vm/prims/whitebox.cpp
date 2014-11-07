@@ -506,16 +506,6 @@ class AlwaysFalseClosure : public BoolObjectClosure {
 
 static AlwaysFalseClosure always_false;
 
-class VM_WhiteBoxCleanMethodData : public VM_WhiteBoxOperation {
- public:
-  VM_WhiteBoxCleanMethodData(MethodData* mdo) : _mdo(mdo) { }
-  void doit() {
-    _mdo->clean_method_data(&always_false);
-  }
- private:
-  MethodData* _mdo;
-};
-
 WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
@@ -531,8 +521,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    VM_WhiteBoxCleanMethodData op(mdo);
-    VMThread::execute(&op);
+    MutexLockerEx mu(mdo->extra_data_lock());
+    mdo->clean_method_data(&always_false);
   }
 
   mh->clear_not_c1_compilable();
@@ -800,19 +790,23 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(2, clazz, NULL);
+  result = env->NewObjectArray(3, clazz, NULL);
   if (result == NULL) {
     return result;
   }
 
-  jobject obj = integerBox(thread, env, code->comp_level());
+  jobject level = integerBox(thread, env, code->comp_level());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  env->SetObjectArrayElement(result, 0, obj);
+  env->SetObjectArrayElement(result, 0, level);
 
   jbyteArray insts = env->NewByteArray(insts_size);
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetByteArrayRegion(insts, 0, insts_size, (jbyte*) code->insts_begin());
   env->SetObjectArrayElement(result, 1, insts);
+
+  jobject id = integerBox(thread, env, code->compile_id());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 2, id);
 
   return result;
 WB_END

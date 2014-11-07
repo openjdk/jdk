@@ -1318,6 +1318,10 @@ void Method::init_intrinsic_id() {
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
   if (id != vmIntrinsics::_none) {
     set_intrinsic_id(id);
+    if (id == vmIntrinsics::_Class_cast) {
+      // Even if the intrinsic is rejected, we want to inline this simple method.
+      set_force_inline(true);
+    }
     return;
   }
 
