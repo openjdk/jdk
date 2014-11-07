@@ -259,10 +259,11 @@ public class MethodGen extends FieldGenOrMethodGen {
                                l.getIndex(), start, end);
             }
           } else if (a instanceof LocalVariableTypeTable) {
-             LocalVariable[] lv = ((LocalVariableTypeTable) a).getLocalVariableTypeTable();
-             removeLocalVariables();
-             for (int k = 0; k < lv.length; k++) {
-                 LocalVariable l = lv[k];
+             LocalVariable[] oldLV = ((LocalVariableTypeTable) a).getLocalVariableTypeTable();
+             int lvLength = oldLV.length;
+             LocalVariable[] newLV = new LocalVariable[lvLength];
+             for (int k = 0; k < lvLength; k++) {
+                 LocalVariable l = oldLV[k];
                  InstructionHandle start = il.findHandle(l.getStartPC());
                  InstructionHandle end = il.findHandle(l.getStartPC() + l.getLength());
                  // Repair malformed handles
@@ -272,9 +273,16 @@ public class MethodGen extends FieldGenOrMethodGen {
                  if (null == end) {
                      end = il.getEnd();
                  }
-                 addLocalVariable(l.getName(), Type.getType(l.getSignature()), l
-                         .getIndex(), start, end);
+                 LocalVariable newVar = new LocalVariable(l);
+                 int startPosition = start.getPosition();
+                 newVar.setStartPC(startPosition);
+                 newVar.setLength(end.getPosition() - startPosition);
+                 newLV[k] = newVar;
               }
+              LocalVariableTypeTable newLVTT = new LocalVariableTypeTable(
+                      (LocalVariableTypeTable)a);
+              newLVTT.setLocalVariableTable(newLV);
+              addCodeAttribute(newLVTT);
           } else
             addCodeAttribute(a);
         }
