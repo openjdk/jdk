@@ -431,7 +431,8 @@ hotspot_compiler_2 = \
   compiler/8005033/Test8005033.java \
   compiler/8005419/Test8005419.java \
   compiler/8005956/PolynomialRoot.java \
-  compiler/8007294/Test8007294.java
+  compiler/8007294/Test8007294.java \
+  compiler/EliminateAutoBox/UnsignedLoads.java
 
 hotspot_compiler_3 = \
   compiler/8007722/Test8007722.java \
