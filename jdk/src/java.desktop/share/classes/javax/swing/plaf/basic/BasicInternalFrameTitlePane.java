@@ -31,16 +31,14 @@ import java.awt.event.*;
 import javax.accessibility.AccessibleContext;
 import javax.swing.*;
 import javax.swing.plaf.*;
-import javax.swing.border.*;
 import javax.swing.event.InternalFrameEvent;
-import java.util.EventListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import java.beans.VetoableChangeListener;
 import java.beans.PropertyVetoException;
 
 import sun.swing.DefaultLookup;
-import sun.swing.UIAction;
+
+import static sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY;
 
 /**
  * The class that manages a basic title bar
@@ -215,6 +213,12 @@ public class BasicInternalFrameTitlePane extends JComponent
         createButtons();
         addSubComponents();
 
+        updateProperties();
+    }
+
+    private void updateProperties() {
+        final Object aaTextInfo = frame.getClientProperty(AA_TEXT_PROPERTY_KEY);
+        putClientProperty(AA_TEXT_PROPERTY_KEY, aaTextInfo);
     }
 
     /**
