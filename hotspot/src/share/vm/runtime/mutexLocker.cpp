@@ -88,6 +88,7 @@ Mutex*   DerivedPointerTableGC_lock   = NULL;
 Mutex*   Compile_lock                 = NULL;
 Monitor* MethodCompileQueue_lock      = NULL;
 Monitor* CompileThread_lock           = NULL;
+Monitor* Compilation_lock             = NULL;
 Mutex*   CompileTaskAlloc_lock        = NULL;
 Mutex*   CompileStatistics_lock       = NULL;
 Mutex*   MultiArray_lock              = NULL;
@@ -278,7 +279,9 @@ void mutex_init() {
   def(ProfileVM_lock               , Monitor, special,   false); // used for profiling of the VMThread
   def(CompileThread_lock           , Monitor, nonleaf+5,   false );
   def(PeriodicTask_lock            , Monitor, nonleaf+5,   true);
-
+  if (WhiteBoxAPI) {
+    def(Compilation_lock           , Monitor, leaf,        false );
+  }
 #ifdef INCLUDE_TRACE
   def(JfrMsg_lock                  , Monitor, leaf,        true);
   def(JfrBuffer_lock               , Mutex,   leaf,        true);
