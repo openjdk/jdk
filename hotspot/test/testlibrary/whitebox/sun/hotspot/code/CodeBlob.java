@@ -24,33 +24,38 @@
 
 package sun.hotspot.code;
 
-import java.lang.reflect.Executable;
 import sun.hotspot.WhiteBox;
 
-public class NMethod extends CodeBlob {
-  private static final WhiteBox wb = WhiteBox.getWhiteBox();
-  public static NMethod get(Executable method, boolean isOsr) {
-    Object[] obj = wb.getNMethod(method, isOsr);
-    return obj == null ? null : new NMethod(obj);
+public class CodeBlob {
+  private static final WhiteBox WB = WhiteBox.getWhiteBox();
+  public static CodeBlob[] getCodeBlobs(BlobType type) {
+    Object[] obj = WB.getCodeHeapEntries(type.id);
+    if (obj == null) {
+      return null;
+    }
+    CodeBlob[] result = new CodeBlob[obj.length];
+    for (int i = 0, n = result.length; i < n; ++i) {
+      result[i] = new CodeBlob((Object[]) obj[i]);
+    }
+    return result;
   }
-  private NMethod(Object[] obj) {
-    super((Object[])obj[0]);
-    assert obj.length == 4;
-    comp_level = (Integer) obj[1];
-    insts = (byte[]) obj[2];
-    compile_id = (Integer) obj[3];
+  protected CodeBlob(Object[] obj) {
+    assert obj.length == 3;
+    name = (String) obj[0];
+    size = (Integer) obj[1];
+    code_blob_type = BlobType.values()[(Integer) obj[2]];
+    assert code_blob_type.id == (Integer) obj[2];
   }
-  public final byte[] insts;
-  public final int comp_level;
-  public final int compile_id;
+  public final String name;
+  public final int size;
+  public final BlobType code_blob_type;
 
   @Override
   public String toString() {
-    return "NMethod{"
-        + super.toString()
-        + ", insts=" + insts
-        + ", comp_level=" + comp_level
-        + ", compile_id=" + compile_id
+    return "CodeBlob{"
+        + "name=" + name
+        + ", size=" + size
+        + ", code_blob_type=" + code_blob_type
         + '}';
   }
 }
