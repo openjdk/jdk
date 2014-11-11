@@ -3492,17 +3492,18 @@ void ClassFileParser::layout_fields(Handle class_loader,
           real_offset = next_nonstatic_oop_offset;
           next_nonstatic_oop_offset += heapOopSize;
         }
-        // Update oop maps
+
+        // Record this oop in the oop maps
         if( nonstatic_oop_map_count > 0 &&
             nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
             real_offset -
             int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
             heapOopSize ) {
-          // Extend current oop map
+          // This oop is adjacent to the previous one, add to current oop map
           assert(nonstatic_oop_map_count - 1 < max_nonstatic_oop_maps, "range check");
           nonstatic_oop_counts[nonstatic_oop_map_count - 1] += 1;
         } else {
-          // Create new oop map
+          // This oop is not adjacent to the previous one, create new oop map
           assert(nonstatic_oop_map_count < max_nonstatic_oop_maps, "range check");
           nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
           nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
@@ -3624,13 +3625,24 @@ void ClassFileParser::layout_fields(Handle class_loader,
             real_offset = next_nonstatic_padded_offset;
             next_nonstatic_padded_offset += heapOopSize;
 
-            // Create new oop map
-            assert(nonstatic_oop_map_count < max_nonstatic_oop_maps, "range check");
-            nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
-            nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
-            nonstatic_oop_map_count += 1;
-            if( first_nonstatic_oop_offset == 0 ) { // Undefined
-              first_nonstatic_oop_offset = real_offset;
+            // Record this oop in the oop maps
+            if( nonstatic_oop_map_count > 0 &&
+                nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
+                real_offset -
+                int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
+                heapOopSize ) {
+              // This oop is adjacent to the previous one, add to current oop map
+              assert(nonstatic_oop_map_count - 1 < max_nonstatic_oop_maps, "range check");
+              nonstatic_oop_counts[nonstatic_oop_map_count - 1] += 1;
+            } else {
+              // This oop is not adjacent to the previous one, create new oop map
+              assert(nonstatic_oop_map_count < max_nonstatic_oop_maps, "range check");
+              nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
+              nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
+              nonstatic_oop_map_count += 1;
+              if( first_nonstatic_oop_offset == 0 ) { // Undefined
+                first_nonstatic_oop_offset = real_offset;
+              }
             }
             break;
 
