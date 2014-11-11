@@ -910,7 +910,7 @@ void os::workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*) (Linux::initial_thread_stack_bottom() -
                         ((StackYellowPages + StackRedPages + 1) * page_size));
-  char* codebuf = os::reserve_memory(page_size, hint);
+  char* codebuf = os::attempt_reserve_memory_at(page_size, hint);
   if ( (codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true)) ) {
     return; // No matter, we tried, best effort.
   }

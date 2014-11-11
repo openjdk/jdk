@@ -282,7 +282,7 @@ WB_END
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
-    addr = (jlong)(uintptr_t)os::malloc(size, mtTest);
+  addr = (jlong)(uintptr_t)os::malloc(size, mtTest);
   return addr;
 WB_END
 
@@ -291,7 +291,7 @@ WB_END
 WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, jint pseudo_stack))
   address pc = (address)(size_t)pseudo_stack;
   NativeCallStack stack(&pc, 1);
-  return (jlong)os::malloc(size, mtTest, stack);
+  return (jlong)(uintptr_t)os::malloc(size, mtTest, stack);
 WB_END
 
 // Free the memory allocated by NMTAllocTest
@@ -326,15 +326,6 @@ WB_ENTRY(jboolean, WB_NMTIsDetailSupported(JNIEnv* env))
   return MemTracker::tracking_level() == NMT_detail;
 WB_END
 
-WB_ENTRY(void, WB_NMTOverflowHashBucket(JNIEnv* env, jobject o, jlong num))
-  address pc = (address)1;
-  for (jlong index = 0; index < num; index ++) {
-    NativeCallStack stack(&pc, 1);
-    os::malloc(0, mtTest, stack);
-    pc += MallocSiteTable::hash_buckets();
-  }
-WB_END
-
 WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
   // Test that we can downgrade NMT levels but not upgrade them.
   if (MemTracker::tracking_level() == NMT_off) {
@@ -364,6 +355,12 @@ WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
     assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
     return MemTracker::tracking_level() == NMT_minimal;
   }
+WB_END
+
+WB_ENTRY(jint, WB_NMTGetHashSize(JNIEnv* env, jobject o))
+  int hash_size = MallocSiteTable::hash_buckets();
+  assert(hash_size > 0, "NMT hash_size should be > 0");
+  return (jint)hash_size;
 WB_END
 #endif // INCLUDE_NMT
 
@@ -509,16 +506,6 @@ class AlwaysFalseClosure : public BoolObjectClosure {
 
 static AlwaysFalseClosure always_false;
 
-class VM_WhiteBoxCleanMethodData : public VM_WhiteBoxOperation {
- public:
-  VM_WhiteBoxCleanMethodData(MethodData* mdo) : _mdo(mdo) { }
-  void doit() {
-    _mdo->clean_method_data(&always_false);
-  }
- private:
-  MethodData* _mdo;
-};
-
 WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
@@ -534,8 +521,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    VM_WhiteBoxCleanMethodData op(mdo);
-    VMThread::execute(&op);
+    MutexLockerEx mu(mdo->extra_data_lock());
+    mdo->clean_method_data(&always_false);
   }
 
   mh->clear_not_c1_compilable();
@@ -803,19 +790,23 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(2, clazz, NULL);
+  result = env->NewObjectArray(3, clazz, NULL);
   if (result == NULL) {
     return result;
   }
 
-  jobject obj = integerBox(thread, env, code->comp_level());
+  jobject level = integerBox(thread, env, code->comp_level());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  env->SetObjectArrayElement(result, 0, obj);
+  env->SetObjectArrayElement(result, 0, level);
 
   jbyteArray insts = env->NewByteArray(insts_size);
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetByteArrayRegion(insts, 0, insts_size, (jbyte*) code->insts_begin());
   env->SetObjectArrayElement(result, 1, insts);
+
+  jobject id = integerBox(thread, env, code->compile_id());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 2, id);
 
   return result;
 WB_END
@@ -998,9 +989,9 @@ static JNINativeMethod methods[] = {
   {CC"NMTCommitMemory",     CC"(JJ)V",                (void*)&WB_NMTCommitMemory    },
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
-  {CC"NMTOverflowHashBucket", CC"(J)V",               (void*)&WB_NMTOverflowHashBucket},
   {CC"NMTIsDetailSupported",CC"()Z",                  (void*)&WB_NMTIsDetailSupported},
   {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
+  {CC"NMTGetHashSize",      CC"()I",                  (void*)&WB_NMTGetHashSize     },
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;Z)I",

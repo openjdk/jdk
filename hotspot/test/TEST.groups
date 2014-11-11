@@ -87,7 +87,6 @@ needs_jdk = \
   runtime/NMT/SummarySanityCheck.java \
   runtime/NMT/ThreadedMallocTestType.java \
   runtime/NMT/ThreadedVirtualAllocTestType.java \
-  runtime/NMT/UnsafeMallocLimit.java \
   runtime/NMT/VirtualAllocCommitUncommitRecommit.java \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \
@@ -479,6 +478,7 @@ hotspot_compiler_3 = \
   compiler/intrinsics/mathexact/SubExactILoopDependentTest.java \
   compiler/intrinsics/stringequals/TestStringEqualsBadLength.java \
   compiler/intrinsics/unsafe/UnsafeGetAddressTest.java \
+  compiler/intrinsics/classcast/NullCheckDroppingsTest.java \
   compiler/jsr292/ConcurrentClassLoadingTest.java \
   compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java \
   compiler/loopopts/TestLogSum.java \

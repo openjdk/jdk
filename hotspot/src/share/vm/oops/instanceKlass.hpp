@@ -698,6 +698,7 @@ class InstanceKlass: public Klass {
                      jmethodID** to_dealloc_jmeths_p);
   static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
                 size_t *length_p, jmethodID* id_p);
+  void ensure_space_for_methodids(int start_offset = 0);
   jmethodID jmethod_id_or_null(Method* method);
 
   // annotations support

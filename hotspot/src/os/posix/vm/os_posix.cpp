@@ -663,7 +663,10 @@ const char* os::Posix::get_signal_name(int sig, char* out, size_t outlen) {
     }
   }
 
-  jio_snprintf(out, outlen, ret);
+  if (out && outlen > 0) {
+    strncpy(out, ret, outlen);
+    out[outlen - 1] = '\0';
+  }
   return out;
 }
 
