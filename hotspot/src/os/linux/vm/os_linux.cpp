@@ -355,7 +355,10 @@ void os::init_system_properties_values() {
 
     // Found the full path to libjvm.so.
     // Now cut the path to <java_home>/jre if we can.
-    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
+    pslash = strrchr(buf, '/');
+    if (pslash != NULL) {
+      *pslash = '\0';            // Get rid of /libjvm.so.
+    }
     pslash = strrchr(buf, '/');
     if (pslash != NULL) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
@@ -1194,7 +1197,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
       i = 0;
       if (s) {
         // Skip blank chars
-        do s++; while (isspace(*s));
+        do { s++; } while (s && isspace(*s));
 
 #define _UFM UINTX_FORMAT
 #define _DFM INTX_FORMAT
@@ -2343,6 +2346,9 @@ void os::jvm_path(char *buf, jint buflen) {
 
         // Check the current module name "libjvm.so".
         p = strrchr(buf, '/');
+        if (p == NULL) {
+          return;
+        }
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
         rp = realpath(java_home_var, buf);
@@ -2376,6 +2382,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   strncpy(saved_jvm_path, buf, MAXPATHLEN);
+  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
@@ -5314,7 +5321,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   if (s == NULL) return -1;
 
   // Skip blank chars
-  do s++; while (isspace(*s));
+  do { s++; } while (s && isspace(*s));
 
   count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
                  &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,

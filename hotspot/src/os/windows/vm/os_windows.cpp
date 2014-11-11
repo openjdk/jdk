@@ -96,7 +96,7 @@
 #include <vdmdbg.h>
 
 // for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+#define ALL_64_BITS CONST64(-1)
 
 // For DLL loading/load error detection
 // Values of PE COFF
@@ -211,6 +211,7 @@ void os::init_system_properties_values() {
     }
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
+    FREE_C_HEAP_ARRAY(char, home_path, mtInternal);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
@@ -220,6 +221,7 @@ void os::init_system_properties_values() {
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);
+    FREE_C_HEAP_ARRAY(char, dll_path, mtInternal);
 
     if (!set_boot_path('\\', ';')) {
       return;
@@ -297,6 +299,9 @@ void os::init_system_properties_values() {
     char * buf = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     sprintf(buf, "%s%s", Arguments::get_java_home(), ENDORSED_DIR);
     Arguments::set_endorsed_dirs(buf);
+    // (Arguments::set_endorsed_dirs() calls SystemProperty::set_value(), which
+    //  duplicates the input.)
+    FREE_C_HEAP_ARRAY(char, buf, mtInternal);
 #undef ENDORSED_DIR
   }
 
@@ -1834,6 +1839,7 @@ void os::jvm_path(char *buf, jint buflen) {
     GetModuleFileName(vm_lib_handle, buf, buflen);
   }
   strncpy(saved_jvm_path, buf, MAX_PATH);
+  saved_jvm_path[MAX_PATH - 1] = '\0';
 }
 
 
@@ -3746,8 +3752,12 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
 
   // search system directory
   if ((size = GetSystemDirectory(path, pathLen)) > 0) {
-    strcat(path, "\\");
-    strcat(path, name);
+    if (size >= pathLen) {
+      return NULL; // truncated
+    }
+    if (jio_snprintf(path + size, pathLen - size, "\\%s", name) == -1) {
+      return NULL; // truncated
+    }
     if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
       return result;
     }
@@ -3755,8 +3765,12 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
 
   // try Windows directory
   if ((size = GetWindowsDirectory(path, pathLen)) > 0) {
-    strcat(path, "\\");
-    strcat(path, name);
+    if (size >= pathLen) {
+      return NULL; // truncated
+    }
+    if (jio_snprintf(path + size, pathLen - size, "\\%s", name) == -1) {
+      return NULL; // truncated
+    }
     if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
       return result;
     }

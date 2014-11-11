@@ -3639,7 +3639,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
 
   if (!agent->valid()) {
     char buffer[JVM_MAXPATHLEN];
-    char ebuf[1024];
+    char ebuf[1024] = "";
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 

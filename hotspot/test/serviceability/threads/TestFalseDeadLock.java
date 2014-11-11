@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import com.oracle.java.testlibrary.Utils;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Random;
@@ -30,6 +31,7 @@ import java.util.Random;
  * @ignore 8061157
  * @bug 8016304
  * @summary Make sure no deadlock is reported for this program which has no deadlocks.
+ * @library /testlibrary
  * @run main/othervm TestFalseDeadLock
  */
 
@@ -66,7 +68,7 @@ public class TestFalseDeadLock {
 
     public static class Test implements Runnable {
         public void run() {
-            Random r = new Random();
+            Random r = Utils.getRandomInstance();
             while (running) {
                 try {
                     synchronized (this) {
