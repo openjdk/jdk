@@ -31,10 +31,6 @@
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#if INCLUDE_CDS
-#include "classfile/sharedClassUtil.hpp"
-#include "classfile/systemDictionaryShared.hpp"
-#endif
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -65,7 +61,10 @@
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-
+#if INCLUDE_CDS
+#include "classfile/sharedClassUtil.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 #if INCLUDE_TRACE
  #include "trace/tracing.hpp"
 #endif

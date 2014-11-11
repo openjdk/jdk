@@ -47,6 +47,7 @@
 #include "services/memoryService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
