@@ -853,7 +853,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
     ik->link_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       ResourceMark rm;
-      tty->print_cr("Preload Error: Verification failed for %s",
+      tty->print_cr("Preload Warning: Verification failed for %s",
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
       ik->set_in_error_state();
