@@ -1120,7 +1120,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     h = context.record_result(classpath_index, e, result, THREAD);
   } else {
     if (DumpSharedSpaces) {
-      tty->print_cr("Preload Error: Cannot find %s", class_name);
+      tty->print_cr("Preload Warning: Cannot find %s", class_name);
     }
   }
 
