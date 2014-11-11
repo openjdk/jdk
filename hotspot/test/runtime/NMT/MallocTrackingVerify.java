@@ -27,7 +27,6 @@
  * @summary Test to verify correctness of malloc tracking
  * @key nmt jcmd
  * @library /testlibrary /testlibrary/whitebox
- * @ignore 8058251
  * @build MallocTrackingVerify
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocTrackingVerify
