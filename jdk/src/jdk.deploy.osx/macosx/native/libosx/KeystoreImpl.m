@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,7 +279,8 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
     // Search the user keychain list for all identities. Identities are a certificate/private key association that
     // can be chosen for a purpose such as signing or an SSL connection.
     SecIdentitySearchRef identitySearch = NULL;
-    OSStatus err = SecIdentitySearchCreate(NULL, CSSM_KEYUSE_ANY, &identitySearch);
+    // Pass 0 if you want all identities returned by this search
+    OSStatus err = SecIdentitySearchCreate(NULL, 0, &identitySearch);
     SecIdentityRef theIdentity = NULL;
     OSErr searchResult = noErr;
 
