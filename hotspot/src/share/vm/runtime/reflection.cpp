@@ -806,17 +806,16 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
 
 oop Reflection::new_parameter(Handle method, int index, Symbol* sym,
                               int flags, TRAPS) {
-  Handle name;
-
-  // A null symbol here translates to the empty string
-  if(NULL != sym) {
-    name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
-  } else {
-    name = java_lang_String::create_from_str("", CHECK_NULL);
-  }
 
   Handle rh = java_lang_reflect_Parameter::create(CHECK_NULL);
-  java_lang_reflect_Parameter::set_name(rh(), name());
+
+  if(NULL != sym) {
+    Handle name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
+    java_lang_reflect_Parameter::set_name(rh(), name());
+  } else {
+    java_lang_reflect_Parameter::set_name(rh(), NULL);
+  }
+
   java_lang_reflect_Parameter::set_modifiers(rh(), flags);
   java_lang_reflect_Parameter::set_executable(rh(), method());
   java_lang_reflect_Parameter::set_index(rh(), index);
