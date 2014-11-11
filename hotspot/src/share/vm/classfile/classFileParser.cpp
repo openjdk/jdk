@@ -2059,7 +2059,7 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   u2** localvariable_table_start;
   u2* localvariable_type_table_length;
   u2** localvariable_type_table_start;
-  u2 method_parameters_length = 0;
+  int method_parameters_length = -1;
   u1* method_parameters_data = NULL;
   bool method_parameters_seen = false;
   bool parsed_code_attribute = false;
@@ -2278,7 +2278,8 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
       }
       method_parameters_seen = true;
       method_parameters_length = cfs->get_u1_fast();
-      if (method_attribute_length != (method_parameters_length * 4u) + 1u) {
+      const u2 real_length = (method_parameters_length * 4u) + 1u;
+      if (method_attribute_length != real_length) {
         classfile_parse_error(
           "Invalid MethodParameters method attribute length %u in class file",
           method_attribute_length, CHECK_(nullHandle));
@@ -2288,7 +2289,7 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
       cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
       if (!SystemDictionary::Parameter_klass_loaded())
-        method_parameters_length = 0;
+        method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
         classfile_parse_error(
