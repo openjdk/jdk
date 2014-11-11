@@ -239,7 +239,7 @@ void ciObjectFactory::remove_symbols() {
 ciObject* ciObjectFactory::get(oop key) {
   ASSERT_IN_VM;
 
-  assert(key == NULL || Universe::heap()->is_in_reserved(key), "must be");
+  assert(Universe::heap()->is_in_reserved(key), "must be");
 
   NonPermObject* &bucket = find_non_perm(key);
   if (bucket != NULL) {
@@ -260,10 +260,10 @@ ciObject* ciObjectFactory::get(oop key) {
 }
 
 // ------------------------------------------------------------------
-// ciObjectFactory::get
+// ciObjectFactory::get_metadata
 //
-// Get the ciObject corresponding to some oop.  If the ciObject has
-// already been created, it is returned.  Otherwise, a new ciObject
+// Get the ciMetadata corresponding to some Metadata. If the ciMetadata has
+// already been created, it is returned. Otherwise, a new ciMetadata
 // is created.
 ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
   ASSERT_IN_VM;
@@ -290,9 +290,9 @@ ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
   }
 #endif
   if (!is_found_at(index, key, _ci_metadata)) {
-    // The ciObject does not yet exist.  Create it and insert it
+    // The ciMetadata does not yet exist. Create it and insert it
     // into the cache.
-    ciMetadata* new_object = create_new_object(key);
+    ciMetadata* new_object = create_new_metadata(key);
     init_ident_of(new_object);
     assert(new_object->is_metadata(), "must be");
 
@@ -344,14 +344,27 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
 }
 
 // ------------------------------------------------------------------
-// ciObjectFactory::create_new_object
+// ciObjectFactory::create_new_metadata
 //
-// Create a new ciObject from a Metadata*.
+// Create a new ciMetadata from a Metadata*.
 //
-// Implementation note: this functionality could be virtual behavior
-// of the oop itself.  For now, we explicitly marshal the object.
-ciMetadata* ciObjectFactory::create_new_object(Metadata* o) {
+// Implementation note: in order to keep Metadata live, an auxiliary ciObject
+// is used, which points to it's holder.
+ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   EXCEPTION_CONTEXT;
+
+  // Hold metadata from unloading by keeping it's holder alive.
+  if (_initialized && o->is_klass()) {
+    Klass* holder = ((Klass*)o);
+    if (holder->oop_is_instance() && InstanceKlass::cast(holder)->is_anonymous()) {
+      // Though ciInstanceKlass records class loader oop, it's not enough to keep
+      // VM anonymous classes alive (loader == NULL). Klass holder should be used instead.
+      // It is enough to record a ciObject, since cached elements are never removed
+      // during ciObjectFactory lifetime. ciObjectFactory itself is created for
+      // every compilation and lives for the whole duration of the compilation.
+      ciObject* h = get(holder->klass_holder());
+    }
+  }
 
   if (o->is_klass()) {
     KlassHandle h_k(THREAD, (Klass*)o);
@@ -365,14 +378,16 @@ ciMetadata* ciObjectFactory::create_new_object(Metadata* o) {
     }
   } else if (o->is_method()) {
     methodHandle h_m(THREAD, (Method*)o);
-    return new (arena()) ciMethod(h_m);
+    ciEnv *env = CURRENT_THREAD_ENV;
+    ciInstanceKlass* holder = env->get_instance_klass(h_m()->method_holder());
+    return new (arena()) ciMethod(h_m, holder);
   } else if (o->is_methodData()) {
     // Hold methodHandle alive - might not be necessary ???
     methodHandle h_m(THREAD, ((MethodData*)o)->method());
     return new (arena()) ciMethodData((MethodData*)o);
   }
 
-  // The oop is of some type not supported by the compiler interface.
+  // The Metadata* is of some type not supported by the compiler interface.
   ShouldNotReachHere();
   return NULL;
 }
@@ -701,7 +716,7 @@ static ciObjectFactory::NonPermObject* emptyBucket = NULL;
 // If there is no entry in the cache corresponding to this oop, return
 // the null tail of the bucket into which the oop should be inserted.
 ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(oop key) {
-  assert(Universe::heap()->is_in_reserved_or_null(key), "must be");
+  assert(Universe::heap()->is_in_reserved(key), "must be");
   ciMetadata* klass = get_metadata(key->klass());
   NonPermObject* *bp = &_non_perm_bucket[(unsigned) klass->hash() % NON_PERM_BUCKETS];
   for (NonPermObject* p; (p = (*bp)) != NULL; bp = &p->next()) {
