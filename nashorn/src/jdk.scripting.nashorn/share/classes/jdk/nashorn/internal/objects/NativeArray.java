@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.arrayLikeIterator;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.reverseArrayLikeIterator;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
+
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,10 +91,6 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     private static final Object REDUCE_CALLBACK_INVOKER  = new Object();
     private static final Object CALL_CMP                 = new Object();
     private static final Object TO_LOCALE_STRING         = new Object();
-
-    private PushLinkLogic   pushLinkLogic;
-    private PopLinkLogic    popLinkLogic;
-    private ConcatLinkLogic concatLinkLogic;
 
     /*
      * Constructors.
@@ -1750,11 +1747,11 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     @Override
     public SpecializedFunction.LinkLogic getLinkLogic(final Class<? extends LinkLogic> clazz) {
         if (clazz == PushLinkLogic.class) {
-            return pushLinkLogic == null ? new PushLinkLogic() : pushLinkLogic;
+            return PushLinkLogic.INSTANCE;
         } else if (clazz == PopLinkLogic.class) {
-            return popLinkLogic == null ? new PopLinkLogic() : pushLinkLogic;
+            return PopLinkLogic.INSTANCE;
         } else if (clazz == ConcatLinkLogic.class) {
-            return concatLinkLogic == null ? new ConcatLinkLogic() : concatLinkLogic;
+            return ConcatLinkLogic.INSTANCE;
         }
         return null;
     }
@@ -1797,6 +1794,8 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      * This is linker logic for optimistic concatenations
      */
     private static final class ConcatLinkLogic extends ArrayLinkLogic {
+        private static final LinkLogic INSTANCE = new ConcatLinkLogic();
+
         @Override
         public boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
             final Object[] args = request.getArguments();
@@ -1827,6 +1826,8 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      * This is linker logic for optimistic pushes
      */
     private static final class PushLinkLogic extends ArrayLinkLogic {
+        private static final LinkLogic INSTANCE = new PushLinkLogic();
+
         @Override
         public boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
             return getContinuousArrayData(self) != null;
@@ -1837,6 +1838,8 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      * This is linker logic for optimistic pops
      */
     private static final class PopLinkLogic extends ArrayLinkLogic {
+        private static final LinkLogic INSTANCE = new PopLinkLogic();
+
         /**
          * We need to check if we are dealing with a continuous non empty array data here,
          * as pop with a primitive return value returns undefined for arrays with length 0
