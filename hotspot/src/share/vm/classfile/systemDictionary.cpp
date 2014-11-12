@@ -233,15 +233,15 @@ Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader
                  class_name->as_C_string(),
                  class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string()));
   if (FieldType::is_array(class_name)) {
-    return resolve_array_class_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
   } else if (FieldType::is_obj(class_name)) {
     ResourceMark rm(THREAD);
     // Ignore wrapping L and ;.
     TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
                                    class_name->utf8_length() - 2, CHECK_NULL);
-    return resolve_instance_class_or_null(name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_instance_class_or_null(name, class_loader, protection_domain, THREAD);
   } else {
-    return resolve_instance_class_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_instance_class_or_null(class_name, class_loader, protection_domain, THREAD);
   }
 }
 

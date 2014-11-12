@@ -506,7 +506,7 @@ Symbol* MethodFamily::generate_method_message(Symbol *klass_name, Method* method
   ss.write((const char*)name->bytes(), name->utf8_length());
   ss.write((const char*)signature->bytes(), signature->utf8_length());
   ss.print(" is abstract");
-  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), CHECK_NULL);
+  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), THREAD);
 }
 
 Symbol* MethodFamily::generate_conflicts_message(GrowableArray<Method*>* methods, TRAPS) const {
@@ -521,7 +521,7 @@ Symbol* MethodFamily::generate_conflicts_message(GrowableArray<Method*>* methods
     ss.print(".");
     ss.write((const char*)name->bytes(), name->utf8_length());
   }
-  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), CHECK_NULL);
+  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), THREAD);
 }
 
 

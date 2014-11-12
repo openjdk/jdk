@@ -3537,7 +3537,7 @@ JVM_ENTRY(jlong,JVM_DTraceActivate(
     JVM_DTraceProvider* providers))
   JVMWrapper("JVM_DTraceActivate");
   return DTraceJSDT::activate(
-    version, module_name, providers_count, providers, CHECK_0);
+    version, module_name, providers_count, providers, THREAD);
 JVM_END
 
 JVM_ENTRY(jboolean,JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method))
