@@ -32,10 +32,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/gcLocker.inline.hpp"
@@ -81,6 +77,10 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif // INCLUDE_ALL_GCS
 
 static jint CurrentVersion = JNI_VERSION_1_8;
 

@@ -46,6 +46,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/fieldType.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 # include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #endif

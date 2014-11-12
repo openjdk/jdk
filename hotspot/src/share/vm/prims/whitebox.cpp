@@ -23,44 +23,37 @@
  */
 
 #include "precompiled.hpp"
-
+#include "classfile/classLoaderData.hpp"
+#include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compileBroker.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-
-#include "classfile/stringTable.hpp"
-#include "classfile/classLoaderData.hpp"
-
-#include "prims/whitebox.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
-
-#include "runtime/thread.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vm_version.hpp"
-
 #include "utilities/array.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/exceptions.hpp"
-
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
-
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
 
-#include "compiler/compileBroker.hpp"
-#include "runtime/compilationPolicy.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
