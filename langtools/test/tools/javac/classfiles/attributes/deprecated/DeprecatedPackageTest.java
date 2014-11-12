@@ -74,13 +74,13 @@ public class DeprecatedPackageTest extends TestResult {
         addTestCase(src);
         printf("Testing test case: \n%s\n", src);
         try {
-            ClassFile cf = ClassFile.read(compile(
+            ClassFile cf = readClassFile(compile(
                         new String[]{"package-info.java", package_info},
                         new String[]{"notDeprecated.java", src})
-                    .getClasses().get(CLASS_NAME).openInputStream());
+                    .getClasses().get(CLASS_NAME));
             Deprecated_attribute attr =
                     (Deprecated_attribute) cf.getAttribute(Attribute.Deprecated);
-            assertNull(attr, "Class can not have deprecated attribute : " + CLASS_NAME);
+            checkNull(attr, "Class can not have deprecated attribute : " + CLASS_NAME);
         } catch (Exception e) {
             addFailure(e);
         }
