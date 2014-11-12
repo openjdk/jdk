@@ -96,21 +96,21 @@ public class InnerClassesHierarchyTest extends TestResult {
                 ClassFile cf = readClassFile(currentClassName);
                 InnerClasses_attribute attr = (InnerClasses_attribute)
                         cf.getAttribute(Attribute.InnerClasses);
-                assertNotNull(attr, "Class should not contain "
+                checkNotNull(attr, "Class should not contain "
                         + "inner classes attribute : " + currentClassName);
-                assertTrue(innerClasses.containsKey(currentClassName),
+                checkTrue(innerClasses.containsKey(currentClassName),
                         "map contains class name : " + currentClassName);
                 Set<String> setClasses = innerClasses.get(currentClassName);
                 if (setClasses == null) {
                     continue;
                 }
-                assertEquals(attr.number_of_classes,
+                checkEquals(attr.number_of_classes,
                         setClasses.size(),
                         "Check number of inner classes : " + setClasses);
                 for (Info info : attr.classes) {
                     String innerClassName = info
                             .getInnerClassInfo(cf.constant_pool).getBaseName();
-                    assertTrue(setClasses.contains(innerClassName),
+                    checkTrue(setClasses.contains(innerClassName),
                             currentClassName + " contains inner class : "
                                     + innerClassName);
                     if (visitedClasses.add(innerClassName)) {
@@ -124,10 +124,10 @@ public class InnerClassesHierarchyTest extends TestResult {
 
             Set<String> a_b = removeAll(visitedClasses, allClasses);
             Set<String> b_a = removeAll(allClasses, visitedClasses);
-            assertEquals(visitedClasses, allClasses,
+            checkEquals(visitedClasses, allClasses,
                     "All classes are found\n"
-                    + "visited - all classes : " + a_b
-                    + "\nall classes - visited : " + b_a);
+                            + "visited - all classes : " + a_b
+                            + "\nall classes - visited : " + b_a);
         } catch (Exception e) {
             addFailure(e);
         } finally {
