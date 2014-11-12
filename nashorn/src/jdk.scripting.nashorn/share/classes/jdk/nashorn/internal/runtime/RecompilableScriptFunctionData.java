@@ -475,6 +475,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @return either the existing map, or a loaded map from the persistent type info cache, or a new empty map if
      * neither an existing map or a persistent cached type info is available.
      */
+    @SuppressWarnings("unused")
     private static Map<Integer, Type> getEffectiveInvalidatedProgramPoints(
             final Map<Integer, Type> invalidatedProgramPoints, final Object typeInformationFile) {
         if(invalidatedProgramPoints != null) {
@@ -727,7 +728,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         assert existingBest != null;
         //we are calling a vararg method with real args
-        boolean applyToCall = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
+        boolean varArgWithRealArgs = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
 
         //if the best one is an apply to call, it has to match the callsite exactly
         //or we need to regenerate
@@ -736,14 +737,16 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             if (best != null) {
                 return best;
             }
-            applyToCall = true;
+            varArgWithRealArgs = true;
         }
 
-        if (applyToCall) {
+        if (varArgWithRealArgs) {
+            // special case: we had an apply to call, but we failed to make it fit.
+            // Try to generate a specialized one for this callsite. It may
+            // be another apply to call specialization, or it may not, but whatever
+            // it is, it is a specialization that is guaranteed to fit
             final FunctionInitializer fnInit = compileTypeSpecialization(callSiteType, runtimeScope, false);
-            if ((fnInit.getFlags() & FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION) != 0) { //did the specialization work
-                existingBest = addCode(fnInit, callSiteType);
-            }
+            existingBest = addCode(fnInit, callSiteType);
         }
 
         return existingBest;

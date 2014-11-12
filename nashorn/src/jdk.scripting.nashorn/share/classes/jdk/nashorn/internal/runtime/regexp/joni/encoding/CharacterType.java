@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.encoding;
 
+@SuppressWarnings("javadoc")
 public interface CharacterType {
 
     final int NEWLINE   = 0;

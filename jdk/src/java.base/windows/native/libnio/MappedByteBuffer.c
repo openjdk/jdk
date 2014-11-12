@@ -83,9 +83,9 @@ Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jobject fdo,
         HANDLE h;
         if (handle_fdID == NULL) {
             jclass clazz = (*env)->FindClass(env, "java/io/FileDescriptor");
-            if (clazz == NULL)
-                return; // exception thrown
+            CHECK_NULL(clazz); //exception thrown
             handle_fdID = (*env)->GetFieldID(env, clazz, "handle", "J");
+            CHECK_NULL(handle_fdID);
         }
         h = jlong_to_ptr((*env)->GetLongField(env, fdo, handle_fdID));
         result = FlushFileBuffers(h);

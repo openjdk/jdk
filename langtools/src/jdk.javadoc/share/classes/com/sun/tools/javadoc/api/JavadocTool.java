@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.api.ClientCodeWrapper;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -111,8 +112,12 @@ public class JavadocTool implements DocumentationTool {
             else
                 context.put(Log.outKey, new PrintWriter(out, true));
 
-            if (fileManager == null)
+            if (fileManager == null) {
                 fileManager = getStandardFileManager(diagnosticListener, null, null);
+                if (fileManager instanceof BaseFileManager) {
+                    ((BaseFileManager) fileManager).autoClose = true;
+                }
+            }
             fileManager = ccw.wrap(fileManager);
             context.put(JavaFileManager.class, fileManager);
 
