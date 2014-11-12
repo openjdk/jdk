@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,25 @@
  * questions.
  */
 
-#define PACKAGE_NAME "openjdk"
-#define PACKAGE_TARNAME "openjdk"
-#define PACKAGE_VERSION "version-0.1"
-#define PACKAGE_STRING "openjdk version-0.1"
-#define PACKAGE_BUGREPORT "build-infra-dev@openjdk.java.net"
-#define PACKAGE_URL ""
-#define STDC_HEADERS
-#define HAVE_SYS_TYPES_H
-#define HAVE_SYS_STAT_H
-#define HAVE_STDLIB_H
-#define HAVE_STRING_H
-#define HAVE_MEMORY_H
-#define HAVE_STRINGS_H
-#define HAVE_INTTYPES_H
-#define HAVE_STDINT_H
-#define HAVE_UNISTD_H
-#define SIZEOF_INT_P 8
-#define HAVE_CUPS_CUPS_H
-#define HAVE_CUPS_PPD_H
-#define HAVE_LIBJPEG
-#define HAVE_LIBGIF
-#define HAVE_LIBZ
-#define HAVE_LIBM
-#define HAVE_ALTZONE
+/*
+ * @test
+ * @bug 6987475
+ *
+ * @summary Order of declarations affects whether abstract method considered overridden
+ * @compile T6987475pos.java
+ */
+
+class T6987475pos {
+    static abstract class Base<A> {
+        public void go(String s) { }
+        public abstract void go(A a);
+    }
+
+    static abstract class BaseReverse<A> {
+        public abstract void go(A a);
+        public void go(String s) { }
+    }
+
+    static class Impl1 extends Base<String> { }
+    static class Impl2 extends BaseReverse<String> { }
+}

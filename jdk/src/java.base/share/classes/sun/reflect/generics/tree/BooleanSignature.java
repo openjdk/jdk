@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type boolean. */
 public class BooleanSignature implements BaseType {
-    private static BooleanSignature singleton = new BooleanSignature();
+    private static final BooleanSignature singleton = new BooleanSignature();
 
     private BooleanSignature(){}
 

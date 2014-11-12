@@ -1475,7 +1475,11 @@ public class ToolBox {
                         @Override
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                             try {
-                                JarEntry e = new JarEntry(base.relativize(file).toString());
+                                String p = base.relativize(file)
+                                        .normalize()
+                                        .toString()
+                                        .replace(File.separatorChar, '/');
+                                JarEntry e = new JarEntry(p);
                                 jos.putNextEntry(e);
                                 jos.write(Files.readAllBytes(file));
                                 jos.closeEntry();

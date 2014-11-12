@@ -24,7 +24,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode;
 final class ApplyCaseFold {
 
     // i_apply_case_fold
-    public void apply(final int from, final int to, final Object o) {
+    public static void apply(final int from, final int to, final Object o) {
         final ApplyCaseFoldArg arg = (ApplyCaseFoldArg)o;
 
         final ScanEnvironment env = arg.env;
@@ -45,7 +45,9 @@ final class ApplyCaseFold {
         } else {
             if (inCC) {
                 if (to >= BitSet.SINGLE_BYTE_SIZE) {
-                    if (cc.isNot()) cc.clearNotFlag();
+                    if (cc.isNot()) {
+                        cc.clearNotFlag();
+                    }
                     cc.addCodeRange(env, to, to);
                 } else {
                     if (cc.isNot()) {

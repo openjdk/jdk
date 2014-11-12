@@ -28,7 +28,7 @@ package sun.reflect.generics.tree;
 import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 public class BottomSignature implements FieldTypeSignature {
-    private static BottomSignature singleton = new BottomSignature();
+    private static final BottomSignature singleton = new BottomSignature();
 
     private BottomSignature(){}
 

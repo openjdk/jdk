@@ -27,7 +27,6 @@ package jdk.nashorn.api.javaaccess;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.internal.junit.ArrayAsserts.assertArrayEquals;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -41,6 +40,7 @@ import org.testng.annotations.Test;
  * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.ObjectAccessTest
  * @run testng/othervm jdk.nashorn.api.javaaccess.ObjectAccessTest
  */
+@SuppressWarnings("javadoc")
 public class ObjectAccessTest {
 
     private static ScriptEngine e = null;

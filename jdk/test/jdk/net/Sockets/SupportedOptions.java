@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,28 @@
  * questions.
  */
 
-/**
- * @expert Expert tag text
+/*
+ * @test
+ * @bug 8062744
+ * @run main SupportedOptions
  */
 
-public class D extends C {}
+import java.net.*;
+import java.io.IOException;
+import jdk.net.*;
+
+public class SupportedOptions {
+
+    public static void main(String[] args) throws Exception {
+        if (!Sockets.supportedOptions(ServerSocket.class)
+              .contains(StandardSocketOptions.IP_TOS)) {
+            throw new RuntimeException("Test failed");
+        }
+        // Now set the option
+        ServerSocket ss = new ServerSocket();
+        if (!ss.supportedOptions().contains(StandardSocketOptions.IP_TOS)) {
+            throw new RuntimeException("Test failed");
+        }
+        Sockets.setOption(ss, java.net.StandardSocketOptions.IP_TOS, 128);
+    }
+}

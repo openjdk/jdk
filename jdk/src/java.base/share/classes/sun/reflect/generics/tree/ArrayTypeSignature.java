@@ -28,7 +28,7 @@ package sun.reflect.generics.tree;
 import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 public class ArrayTypeSignature implements FieldTypeSignature {
-    private TypeSignature componentType;
+    private final TypeSignature componentType;
 
     private ArrayTypeSignature(TypeSignature ct) {componentType = ct;}
 

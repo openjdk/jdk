@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public interface StackType {
     /** stack **/
     final int INVALID_STACK_INDEX           = -1;
