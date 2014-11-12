@@ -1,2 +1,3 @@
-ConditionalWithVoid.java:12:48: compiler.err.neither.conditional.subtype: java.lang.Integer, void
-1 error
+ConditionalWithVoid.java:12:71: compiler.err.void.not.allowed.here
+ConditionalWithVoid.java:14:30: compiler.err.neither.conditional.subtype: java.lang.Integer, void
+2 errors

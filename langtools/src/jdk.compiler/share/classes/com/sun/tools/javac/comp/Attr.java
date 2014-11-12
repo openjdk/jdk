@@ -1429,21 +1429,28 @@ public class Attr extends JCTree.Visitor {
                 case APPLY:
                     JCMethodInvocation speculativeMethodTree =
                             (JCMethodInvocation)deferredAttr.attribSpeculative(tree, env, unknownExprInfo);
-                    Type owntype = TreeInfo.symbol(speculativeMethodTree.meth).type.getReturnType();
-                    return types.unboxedTypeOrType(owntype).isPrimitive();
+                    Symbol msym = TreeInfo.symbol(speculativeMethodTree.meth);
+                    Type receiverType = speculativeMethodTree.meth.hasTag(IDENT) ?
+                            env.enclClass.type :
+                            ((JCFieldAccess)speculativeMethodTree.meth).selected.type;
+                    Type owntype = types.memberType(receiverType, msym).getReturnType();
+                    return primitiveOrBoxed(owntype);
                 case NEWCLASS:
                     JCExpression className =
                             removeClassParams.translate(((JCNewClass)tree).clazz);
                     JCExpression speculativeNewClassTree =
                             (JCExpression)deferredAttr.attribSpeculative(className, env, unknownTypeInfo);
-                    return types.unboxedTypeOrType(speculativeNewClassTree.type).isPrimitive();
+                    return primitiveOrBoxed(speculativeNewClassTree.type);
                 default:
                     Type speculativeType = deferredAttr.attribSpeculative(tree, env, unknownExprInfo).type;
-                    speculativeType = types.unboxedTypeOrType(speculativeType);
-                    return speculativeType.isPrimitive();
+                    return primitiveOrBoxed(speculativeType);
             }
         }
         //where
+            boolean primitiveOrBoxed(Type t) {
+                return (!t.hasTag(TYPEVAR) && types.unboxedTypeOrType(t).isPrimitive());
+            }
+
             TreeTranslator removeClassParams = new TreeTranslator() {
                 @Override
                 public void visitTypeApply(JCTypeApply tree) {
