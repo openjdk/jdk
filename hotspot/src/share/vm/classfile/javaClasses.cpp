@@ -944,7 +944,7 @@ void java_lang_Thread::compute_offsets() {
   assert(_group_offset == 0, "offsets should be initialized only once");
 
   Klass* k = SystemDictionary::Thread_klass();
-  compute_offset(_name_offset,      k, vmSymbols::name_name(),      vmSymbols::char_array_signature());
+  compute_offset(_name_offset,      k, vmSymbols::name_name(),      vmSymbols::string_signature());
   compute_offset(_group_offset,     k, vmSymbols::group_name(),     vmSymbols::threadgroup_signature());
   compute_offset(_contextClassLoader_offset, k, vmSymbols::contextClassLoader_name(), vmSymbols::classloader_signature());
   compute_offset(_inheritedAccessControlContext_offset, k, vmSymbols::inheritedAccessControlContext_name(), vmSymbols::accesscontrolcontext_signature());
@@ -974,15 +974,12 @@ void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
 }
 
 
-typeArrayOop java_lang_Thread::name(oop java_thread) {
-  oop name = java_thread->obj_field(_name_offset);
-  assert(name == NULL || (name->is_typeArray() && TypeArrayKlass::cast(name->klass())->element_type() == T_CHAR), "just checking");
-  return typeArrayOop(name);
+oop java_lang_Thread::name(oop java_thread) {
+  return java_thread->obj_field(_name_offset);
 }
 
 
-void java_lang_Thread::set_name(oop java_thread, typeArrayOop name) {
-  assert(java_thread->obj_field(_name_offset) == NULL, "name should be NULL");
+void java_lang_Thread::set_name(oop java_thread, oop name) {
   java_thread->obj_field_put(_name_offset, name);
 }
 
