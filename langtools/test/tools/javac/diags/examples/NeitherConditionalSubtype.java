@@ -24,9 +24,9 @@
 // key: compiler.err.neither.conditional.subtype
 
 class NeitherConditionalSubtype {
-    public int test(Object o) {
+    public int test(boolean cond, Object o) {
         // Should fail to compile since Object.wait() has a void return type.
-        System.out.println(o instanceof String ? o.hashCode() : o.wait());
+        (o instanceof String ? o.hashCode() : o.wait()).toString();
         return 0;
     }
 }

@@ -1213,7 +1213,10 @@ public class DeferredAttr extends JCTree.Visitor {
                 return;
             }
             scan(tree.falsepart);
-            result = reduce(ArgumentExpressionKind.PRIMITIVE);
+            result = reduce(ArgumentExpressionKind.PRIMITIVE).isPrimitive() ?
+                    ArgumentExpressionKind.PRIMITIVE :
+                    ArgumentExpressionKind.POLY;
+
         }
 
         @Override
