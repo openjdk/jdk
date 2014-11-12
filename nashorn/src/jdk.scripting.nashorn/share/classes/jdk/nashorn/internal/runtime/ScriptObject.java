@@ -1352,12 +1352,9 @@ public abstract class ScriptObject implements PropertyAccess {
         final PropertyMap  selfMap = this.getMap();
 
         final ArrayData array  = getArray();
-        final long length      = array.length();
 
-        for (long i = 0; i < length; i = array.nextIndex(i)) {
-            if (array.has((int)i)) {
-                keys.add(JSType.toString(i));
-            }
+        for (final Iterator<Long> iter = array.indexIterator(); iter.hasNext(); ) {
+            keys.add(JSType.toString(iter.next().longValue()));
         }
 
         for (final Property property : selfMap.getProperties()) {
@@ -1516,12 +1513,12 @@ public abstract class ScriptObject implements PropertyAccess {
      *
      * @return {@code true} if 'length' property is non-writable
      */
-    public final boolean isLengthNotWritable() {
+    public boolean isLengthNotWritable() {
         return (flags & IS_LENGTH_NOT_WRITABLE) != 0;
     }
 
     /**
-     * Flag this object as having non-writable length property
+     * Flag this object as having non-writable length property.
      */
     public void setIsLengthNotWritable() {
         flags |= IS_LENGTH_NOT_WRITABLE;
@@ -3151,7 +3148,6 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     public final void setObject(final FindProperty find, final int callSiteFlags, final String key, final Object value) {
         FindProperty f = find;
-
         if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty)) {
             final boolean isScope = NashornCallSiteDescriptor.isScopeFlag(callSiteFlags);
             // If the start object of the find is not this object it means the property was found inside a
@@ -3177,7 +3173,6 @@ public abstract class ScriptObject implements PropertyAccess {
                 if (NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)) {
                     throw typeError("property.not.writable", key, ScriptRuntime.safeToString(this));
                 }
-
                 return;
             }
 
@@ -3588,7 +3583,6 @@ public abstract class ScriptObject implements PropertyAccess {
             }
             return false;
         }
-
         return deleteObject(JSType.toObject(key), strict);
     }
 
