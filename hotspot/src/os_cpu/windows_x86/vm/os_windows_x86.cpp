@@ -635,7 +635,11 @@ void os::setup_fpu() {
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
 #ifdef AMD64
-  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+  // The current_stack_pointer() calls generated get_previous_sp stub routine.
+  // Only enable the assert after the routine becomes available.
+  if (StubRoutines::code1() != NULL) {
+    assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+  }
 #endif
 }
 #endif
