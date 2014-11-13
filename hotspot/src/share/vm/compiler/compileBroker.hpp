@@ -195,7 +195,6 @@ class CompilerCounters : public CHeapObj<mtCompiler> {
 class CompileQueue : public CHeapObj<mtCompiler> {
  private:
   const char* _name;
-  Monitor*    _lock;
 
   CompileTask* _first;
   CompileTask* _last;
@@ -206,9 +205,8 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   void purge_stale_tasks();
  public:
-  CompileQueue(const char* name, Monitor* lock) {
+  CompileQueue(const char* name) {
     _name = name;
-    _lock = lock;
     _first = NULL;
     _last = NULL;
     _size = 0;
@@ -216,7 +214,6 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   }
 
   const char*  name() const                      { return _name; }
-  Monitor*     lock() const                      { return _lock; }
 
   void         add(CompileTask* task);
   void         remove(CompileTask* task);
