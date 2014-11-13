@@ -33,11 +33,12 @@
 import java.util.function.*;
 import java.util.*;
 
+public class InvokespecialInterface {
 interface I {
   default void imethod() { System.out.println("I::imethod"); }
 }
 
-class C implements I {
+static class C implements I {
   public void foo() { I.super.imethod(); }  // invokespecial InterfaceMethod
   public void bar() { I i = this; i.imethod(); } // invokeinterface same
   public void doSomeInvokedynamic() {
@@ -48,7 +49,6 @@ class C implements I {
   }
 }
 
-public class InvokespecialInterface {
   public static void main(java.lang.String[] unused) {
      // need to create C and call I::foo()
      C c = new C();

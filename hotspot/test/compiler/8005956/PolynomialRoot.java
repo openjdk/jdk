@@ -1,4 +1,3 @@
-//package com.polytechnik.utils;
 /*
  * (C) Vladislav Malyshkin 2010
  * This file is under GPL version 3.
@@ -14,9 +13,13 @@
 * @test
 * @bug 8005956
 * @summary C2: assert(!def_outside->member(r)) failed: Use of external LRG overlaps the same LRG defined in this block
-*
+* @library /testlibrary
 * @run main/timeout=300 PolynomialRoot
 */
+
+import com.oracle.java.testlibrary.Utils;
+import java.util.Arrays;
+import java.util.Random;
 
 public class PolynomialRoot  {
 
@@ -57,7 +60,7 @@ private static final boolean PRINT_DEBUG=false;
 
 public static int root4(final double [] p,final double [] re_root,final double [] im_root)
 {
-  if(PRINT_DEBUG) System.err.println("=====================root4:p="+java.util.Arrays.toString(p));
+  if (PRINT_DEBUG) { System.err.println("=====================root4:p=" + Arrays.toString(p)); }
   final double vs=p[4];
   if(PRINT_DEBUG) System.err.println("p[4]="+p[4]);
   if(!(Math.abs(vs)>EPS))
@@ -367,7 +370,7 @@ public static int root4(final double [] p,final double [] re_root,final double [
 
 
 
-    static void setRandomP(final double [] p,final int n,java.util.Random r)
+    static void setRandomP(final double [] p, final int n, Random r)
     {
   if(r.nextDouble()<0.1)
   {
@@ -465,7 +468,7 @@ public static int root4(final double [] p,final double [] re_root,final double [
 
     static void testRoots(final int n,
         final int n_tests,
-        final java.util.Random rn,
+        final Random rn,
         final double eps)
     {
   final double [] p=new double [n+1];
@@ -763,7 +766,7 @@ public static int root4(final double [] p,final double [] re_root,final double [
         final long t0=System.currentTimeMillis();
         final double eps=1e-6;
         //checkRoots();
-        final java.util.Random r=new java.util.Random(-1381923);
+        final Random r = Utils.getRandomInstance();
         printSpecialValues();
 
         final int n_tests=100000;

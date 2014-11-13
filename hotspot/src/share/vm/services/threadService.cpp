@@ -597,7 +597,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
     GrowableArray<oop>* locked_monitors = frame->locked_monitors();
     for (int j = 0; j < len; j++) {
       oop monitor = locked_monitors->at(j);
-      assert(monitor != NULL && monitor->is_instance(), "must be a Java object");
+      assert(monitor != NULL, "must be a Java object");
       if (monitor == object) {
         found = true;
         break;

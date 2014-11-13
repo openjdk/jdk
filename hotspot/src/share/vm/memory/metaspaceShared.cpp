@@ -714,12 +714,17 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     int class_list_path_len = (int)strlen(class_list_path_str);
     if (class_list_path_len >= 3) {
       if (strcmp(class_list_path_str + class_list_path_len - 3, "lib") != 0) {
-        strcat(class_list_path_str, os::file_separator());
-        strcat(class_list_path_str, "lib");
+        if (class_list_path_len < JVM_MAXPATHLEN - 4) {
+          strncat(class_list_path_str, os::file_separator(), 1);
+          strncat(class_list_path_str, "lib", 3);
+        }
       }
     }
-    strcat(class_list_path_str, os::file_separator());
-    strcat(class_list_path_str, "classlist");
+    class_list_path_len = (int)strlen(class_list_path_str);
+    if (class_list_path_len < JVM_MAXPATHLEN - 10) {
+      strncat(class_list_path_str, os::file_separator(), 1);
+      strncat(class_list_path_str, "classlist", 9);
+    }
     class_list_path = class_list_path_str;
   } else {
     class_list_path = SharedClassListFile;

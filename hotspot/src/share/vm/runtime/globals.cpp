@@ -28,6 +28,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/top.hpp"
@@ -634,8 +635,8 @@ static void trace_flag_changed(const char* name, const T old_value, const T new_
   e.commit();
 }
 
-bool CommandLineFlags::boolAt(const char* name, size_t len, bool* value) {
-  Flag* result = Flag::find_flag(name, len);
+bool CommandLineFlags::boolAt(const char* name, size_t len, bool* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
   if (result == NULL) return false;
   if (!result->is_bool()) return false;
   *value = result->get_bool();
@@ -662,8 +663,8 @@ void CommandLineFlagsEx::boolAtPut(CommandLineFlagWithType flag, bool value, Fla
   faddr->set_origin(origin);
 }
 
-bool CommandLineFlags::intxAt(const char* name, size_t len, intx* value) {
-  Flag* result = Flag::find_flag(name, len);
+bool CommandLineFlags::intxAt(const char* name, size_t len, intx* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
   if (result == NULL) return false;
   if (!result->is_intx()) return false;
   *value = result->get_intx();
@@ -690,8 +691,8 @@ void CommandLineFlagsEx::intxAtPut(CommandLineFlagWithType flag, intx value, Fla
   faddr->set_origin(origin);
 }
 
-bool CommandLineFlags::uintxAt(const char* name, size_t len, uintx* value) {
-  Flag* result = Flag::find_flag(name, len);
+bool CommandLineFlags::uintxAt(const char* name, size_t len, uintx* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
   if (result == NULL) return false;
   if (!result->is_uintx()) return false;
   *value = result->get_uintx();
@@ -718,8 +719,8 @@ void CommandLineFlagsEx::uintxAtPut(CommandLineFlagWithType flag, uintx value, F
   faddr->set_origin(origin);
 }
 
-bool CommandLineFlags::uint64_tAt(const char* name, size_t len, uint64_t* value) {
-  Flag* result = Flag::find_flag(name, len);
+bool CommandLineFlags::uint64_tAt(const char* name, size_t len, uint64_t* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
   if (result == NULL) return false;
   if (!result->is_uint64_t()) return false;
   *value = result->get_uint64_t();
@@ -746,8 +747,8 @@ void CommandLineFlagsEx::uint64_tAtPut(CommandLineFlagWithType flag, uint64_t va
   faddr->set_origin(origin);
 }
 
-bool CommandLineFlags::size_tAt(const char* name, size_t len, size_t* value) {
-  Flag* result = Flag::find_flag(name, len);
+bool CommandLineFlags::size_tAt(const char* name, size_t len, size_t* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
   if (result == NULL) return false;
   if (!result->is_size_t()) return false;
   *value = result->get_size_t();
@@ -774,8 +775,8 @@ void CommandLineFlagsEx::size_tAtPut(CommandLineFlagWithType flag, size_t value,
   faddr->set_origin(origin);
 }
 
-bool CommandLineFlags::doubleAt(const char* name, size_t len, double* value) {
-  Flag* result = Flag::find_flag(name, len);
+bool CommandLineFlags::doubleAt(const char* name, size_t len, double* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
   if (result == NULL) return false;
   if (!result->is_double()) return false;
   *value = result->get_double();
@@ -802,8 +803,8 @@ void CommandLineFlagsEx::doubleAtPut(CommandLineFlagWithType flag, double value,
   faddr->set_origin(origin);
 }
 
-bool CommandLineFlags::ccstrAt(const char* name, size_t len, ccstr* value) {
-  Flag* result = Flag::find_flag(name, len);
+bool CommandLineFlags::ccstrAt(const char* name, size_t len, ccstr* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
   if (result == NULL) return false;
   if (!result->is_ccstr()) return false;
   *value = result->get_ccstr();
@@ -818,15 +819,12 @@ bool CommandLineFlags::ccstrAtPut(const char* name, size_t len, ccstr* value, Fl
   trace_flag_changed<EventStringFlagChanged, const char*>(name, old_value, *value, origin);
   char* new_value = NULL;
   if (*value != NULL) {
-    new_value = NEW_C_HEAP_ARRAY(char, strlen(*value)+1, mtInternal);
-    strcpy(new_value, *value);
+    new_value = os::strdup_check_oom(*value);
   }
   result->set_ccstr(new_value);
   if (result->is_default() && old_value != NULL) {
     // Prior value is NOT heap allocated, but was a literal constant.
-    char* old_value_to_free = NEW_C_HEAP_ARRAY(char, strlen(old_value)+1, mtInternal);
-    strcpy(old_value_to_free, old_value);
-    old_value = old_value_to_free;
+    old_value = os::strdup_check_oom(old_value);
   }
   *value = old_value;
   result->set_origin(origin);
@@ -838,8 +836,7 @@ void CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, F
   guarantee(faddr != NULL && faddr->is_ccstr(), "wrong flag type");
   ccstr old_value = faddr->get_ccstr();
   trace_flag_changed<EventStringFlagChanged, const char*>(faddr->_name, old_value, value, origin);
-  char* new_value = NEW_C_HEAP_ARRAY(char, strlen(value)+1, mtInternal);
-  strcpy(new_value, value);
+  char* new_value = os::strdup_check_oom(value);
   faddr->set_ccstr(new_value);
   if (!faddr->is_default() && old_value != NULL) {
     // Prior value is heap allocated so free it.

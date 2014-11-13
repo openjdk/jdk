@@ -571,17 +571,6 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
-#if INCLUDE_NMT
-  // NMT can not track malloc allocation size > MAX_MALLOC_SIZE, which is
-  // (1GB - 1) on 32-bit system. It is not an issue on 64-bit system, where
-  // MAX_MALLOC_SIZE = ((1 << 62) - 1).
-  // VM code does not have such large malloc allocation. However, it can come
-  // Unsafe call.
-  if (MemTracker::tracking_level() >= NMT_summary && size > MAX_MALLOC_SIZE) {
-    return NULL;
-  }
-#endif
-
 #ifdef ASSERT
   // checking for the WatcherThread and crash_protection first
   // since os::malloc can be called when the libjvm.{dll,so} is
@@ -652,12 +641,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
-#if INCLUDE_NMT
-  // See comments in os::malloc() above
-  if (MemTracker::tracking_level() >= NMT_summary && size > MAX_MALLOC_SIZE) {
-    return NULL;
-  }
-#endif
 
 #ifndef ASSERT
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
