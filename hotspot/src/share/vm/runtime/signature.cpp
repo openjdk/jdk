@@ -158,7 +158,7 @@ void SignatureIterator::iterate_parameters( uint64_t fingerprint ) {
   uint64_t saved_fingerprint = fingerprint;
 
   // Check for too many arguments
-  if ( fingerprint == UCONST64(-1) ) {
+  if (fingerprint == (uint64_t)CONST64(-1)) {
     SignatureIterator::iterate_parameters();
     return;
   }

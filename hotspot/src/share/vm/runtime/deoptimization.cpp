@@ -1173,7 +1173,7 @@ Deoptimization::get_method_data(JavaThread* thread, methodHandle m,
 void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int index, TRAPS) {
   // in case of an unresolved klass entry, load the class.
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
-    Klass* tk = constant_pool->klass_at(index, CHECK);
+    Klass* tk = constant_pool->klass_at_ignore_error(index, CHECK);
     return;
   }
 

@@ -178,90 +178,12 @@ inline int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return os::send(fd, buf, nBytes, flags);
 }
 
-inline int os::timeout(int fd, long timeout) {
-  julong prevtime,newtime;
-  struct timeval t;
-
-  gettimeofday(&t, NULL);
-  prevtime = ((julong)t.tv_sec * 1000) + t.tv_usec / 1000;
-
-  for(;;) {
-    struct pollfd pfd;
-
-    pfd.fd = fd;
-    pfd.events = POLLIN | POLLERR;
-
-    int res = ::poll(&pfd, 1, timeout);
-
-    if (res == OS_ERR && errno == EINTR) {
-
-      // On Linux any value < 0 means "forever"
-
-      if(timeout >= 0) {
-        gettimeofday(&t, NULL);
-        newtime = ((julong)t.tv_sec * 1000) + t.tv_usec / 1000;
-        timeout -= newtime - prevtime;
-        if(timeout <= 0)
-          return OS_OK;
-        prevtime = newtime;
-      }
-    } else
-      return res;
-  }
-}
-
-inline int os::listen(int fd, int count) {
-  return ::listen(fd, count);
-}
-
 inline int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 
-inline int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
-  // Linux doc says this can't return EINTR, unlike accept() on Solaris.
-  // But see attachListener_linux.cpp, LinuxAttachListener::dequeue().
-  return (int)::accept(fd, him, len);
-}
-
-inline int os::recvfrom(int fd, char* buf, size_t nBytes, uint flags,
-                        sockaddr* from, socklen_t* fromlen) {
-  RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
-}
-
-inline int os::sendto(int fd, char* buf, size_t len, uint flags,
-                      struct sockaddr* to, socklen_t tolen) {
-  RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
-}
-
-inline int os::socket_shutdown(int fd, int howto) {
-  return ::shutdown(fd, howto);
-}
-
-inline int os::bind(int fd, struct sockaddr* him, socklen_t len) {
-  return ::bind(fd, him, len);
-}
-
-inline int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
-  return ::getsockname(fd, him, len);
-}
-
-inline int os::get_host_name(char* name, int namelen) {
-  return ::gethostname(name, namelen);
-}
-
 inline struct hostent* os::get_host_by_name(char* name) {
   return ::gethostbyname(name);
-}
-
-inline int os::get_sock_opt(int fd, int level, int optname,
-                            char* optval, socklen_t* optlen) {
-  return ::getsockopt(fd, level, optname, optval, optlen);
-}
-
-inline int os::set_sock_opt(int fd, int level, int optname,
-                            const char* optval, socklen_t optlen) {
-  return ::setsockopt(fd, level, optname, optval, optlen);
 }
 
 inline bool os::supports_monotonic_clock() {

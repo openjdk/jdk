@@ -736,6 +736,41 @@ void InstanceKlass::link_methods(TRAPS) {
   }
 }
 
+// Eagerly initialize superinterfaces that declare default methods (concrete instance: any access)
+void InstanceKlass::initialize_super_interfaces(instanceKlassHandle this_k, TRAPS) {
+  if (this_k->has_default_methods()) {
+    for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
+      Klass* iface = this_k->local_interfaces()->at(i);
+      InstanceKlass* ik = InstanceKlass::cast(iface);
+      if (ik->should_be_initialized()) {
+        if (ik->has_default_methods()) {
+          ik->initialize_super_interfaces(ik, THREAD);
+        }
+        // Only initialize() interfaces that "declare" concrete methods.
+        // has_default_methods drives searching superinterfaces since it
+        // means has_default_methods in its superinterface hierarchy
+        if (!HAS_PENDING_EXCEPTION && ik->declares_default_methods()) {
+          ik->initialize(THREAD);
+        }
+        if (HAS_PENDING_EXCEPTION) {
+          Handle e(THREAD, PENDING_EXCEPTION);
+          CLEAR_PENDING_EXCEPTION;
+          {
+            EXCEPTION_MARK;
+            // Locks object, set state, and notify all waiting threads
+            this_k->set_initialization_state_and_notify(
+                initialization_error, THREAD);
+
+            // ignore any exception thrown, superclass initialization error is
+            // thrown below
+            CLEAR_PENDING_EXCEPTION;
+          }
+          THROW_OOP(e());
+        }
+      }
+    }
+  }
+}
 
 void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   // Make sure klass is linked (verified) before initialization
@@ -815,33 +850,11 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
     }
   }
 
+  // Recursively initialize any superinterfaces that declare default methods
+  // Only need to recurse if has_default_methods which includes declaring and
+  // inheriting default methods
   if (this_k->has_default_methods()) {
-    // Step 7.5: initialize any interfaces which have default methods
-    for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
-      Klass* iface = this_k->local_interfaces()->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(iface);
-      if (ik->has_default_methods() && ik->should_be_initialized()) {
-        ik->initialize(THREAD);
-
-        if (HAS_PENDING_EXCEPTION) {
-          Handle e(THREAD, PENDING_EXCEPTION);
-          CLEAR_PENDING_EXCEPTION;
-          {
-            EXCEPTION_MARK;
-            // Locks object, set state, and notify all waiting threads
-            this_k->set_initialization_state_and_notify(
-                initialization_error, THREAD);
-
-            // ignore any exception thrown, superclass initialization error is
-            // thrown below
-            CLEAR_PENDING_EXCEPTION;
-          }
-          DTRACE_CLASSINIT_PROBE_WAIT(
-              super__failed, InstanceKlass::cast(this_k()), -1, wait);
-          THROW_OOP(e());
-        }
-      }
-    }
+    this_k->initialize_super_interfaces(this_k, CHECK);
   }
 
   // Step 8
@@ -1717,6 +1730,25 @@ jmethodID InstanceKlass::get_jmethod_id(instanceKlassHandle ik_h, methodHandle m
   return id;
 }
 
+// Figure out how many jmethodIDs haven't been allocated, and make
+// sure space for them is pre-allocated.  This makes getting all
+// method ids much, much faster with classes with more than 8
+// methods, and has a *substantial* effect on performance with jvmti
+// code that loads all jmethodIDs for all classes.
+void InstanceKlass::ensure_space_for_methodids(int start_offset) {
+  int new_jmeths = 0;
+  int length = methods()->length();
+  for (int index = start_offset; index < length; index++) {
+    Method* m = methods()->at(index);
+    jmethodID id = m->find_jmethod_id_or_null();
+    if (id == NULL) {
+      new_jmeths++;
+    }
+  }
+  if (new_jmeths != 0) {
+    Method::ensure_jmethod_ids(class_loader_data(), new_jmeths);
+  }
+}
 
 // Common code to fetch the jmethodID from the cache or update the
 // cache with the new jmethodID. This function should never do anything
@@ -2486,7 +2518,7 @@ const char* InstanceKlass::signature_name() const {
   // If this is an anonymous class, append a hash to make the name unique
   if (is_anonymous()) {
     intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
-    sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
+    jio_snprintf(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, (uintx)hash);
     hash_len = (int)strlen(hash_buf);
   }
 
@@ -2779,19 +2811,18 @@ void InstanceKlass::adjust_default_methods(Method** old_methods, Method** new_me
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
   // only one compilation can be active
-  NEEDS_CLEANUP
-  // This is a short non-blocking critical region, so the no safepoint check is ok.
-  OsrList_lock->lock_without_safepoint_check();
-  assert(n->is_osr_method(), "wrong kind of nmethod");
-  n->set_osr_link(osr_nmethods_head());
-  set_osr_nmethods_head(n);
-  // Raise the highest osr level if necessary
-  if (TieredCompilation) {
-    Method* m = n->method();
-    m->set_highest_osr_comp_level(MAX2(m->highest_osr_comp_level(), n->comp_level()));
+  {
+    // This is a short non-blocking critical region, so the no safepoint check is ok.
+    MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+    assert(n->is_osr_method(), "wrong kind of nmethod");
+    n->set_osr_link(osr_nmethods_head());
+    set_osr_nmethods_head(n);
+    // Raise the highest osr level if necessary
+    if (TieredCompilation) {
+      Method* m = n->method();
+      m->set_highest_osr_comp_level(MAX2(m->highest_osr_comp_level(), n->comp_level()));
+    }
   }
-  // Remember to unlock again
-  OsrList_lock->unlock();
 
   // Get rid of the osr methods for the same bci that have lower levels.
   if (TieredCompilation) {
@@ -2807,7 +2838,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 
 void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  OsrList_lock->lock_without_safepoint_check();
+  MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = NULL;
   nmethod* cur  = osr_nmethods_head();
@@ -2844,13 +2875,27 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
     }
     m->set_highest_osr_comp_level(max_level);
   }
-  // Remember to unlock again
-  OsrList_lock->unlock();
+}
+
+int InstanceKlass::mark_osr_nmethods(const Method* m) {
+  // This is a short non-blocking critical region, so the no safepoint check is ok.
+  MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  nmethod* osr = osr_nmethods_head();
+  int found = 0;
+  while (osr != NULL) {
+    assert(osr->is_osr_method(), "wrong kind of nmethod found in chain");
+    if (osr->method() == m) {
+      osr->mark_for_deoptimization();
+      found++;
+    }
+    osr = osr->osr_link();
+  }
+  return found;
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  OsrList_lock->lock_without_safepoint_check();
+  MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = NULL;
   while (osr != NULL) {
@@ -2866,14 +2911,12 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
       if (match_level) {
         if (osr->comp_level() == comp_level) {
           // Found a match - return it.
-          OsrList_lock->unlock();
           return osr;
         }
       } else {
         if (best == NULL || (osr->comp_level() > best->comp_level())) {
           if (osr->comp_level() == CompLevel_highest_tier) {
             // Found the best possible - return it.
-            OsrList_lock->unlock();
             return osr;
           }
           best = osr;
@@ -2882,7 +2925,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
     }
     osr = osr->osr_link();
   }
-  OsrList_lock->unlock();
   if (best != NULL && best->comp_level() >= comp_level && match_level == false) {
     return best;
   }

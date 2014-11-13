@@ -836,6 +836,7 @@ vmType2Class["InterpreterCodelet"] = sapkg.interpreter.InterpreterCodelet;
 // Java Threads
 vmType2Class["JavaThread"] = sapkg.runtime.JavaThread;
 vmType2Class["CompilerThread"] = sapkg.runtime.CompilerThread;
+vmType2Class["CodeCacheSweeperThread"] = sapkg.runtime.CodeCacheSweeperThread;
 vmType2Class["SurrogateLockerThread"] = sapkg.runtime.JavaThread;
 vmType2Class["DebuggerThread"] = sapkg.runtime.DebuggerThread;
 
