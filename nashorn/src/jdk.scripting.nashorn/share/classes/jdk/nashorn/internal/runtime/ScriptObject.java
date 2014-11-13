@@ -510,6 +510,13 @@ public abstract class ScriptObject implements PropertyAccess {
         }
     }
 
+    private void invalidateGlobalConstant(final String key) {
+        final GlobalConstants globalConstants = getGlobalConstants();
+        if (globalConstants != null) {
+            globalConstants.delete(key);
+        }
+    }
+
     /**
      * ECMA 8.12.9 [[DefineOwnProperty]] (P, Desc, Throw)
      *
@@ -524,6 +531,8 @@ public abstract class ScriptObject implements PropertyAccess {
         final PropertyDescriptor desc    = toPropertyDescriptor(global, propertyDesc);
         final Object             current = getOwnPropertyDescriptor(key);
         final String             name    = JSType.toString(key);
+
+        invalidateGlobalConstant(key);
 
         if (current == UNDEFINED) {
             if (isExtensible()) {
@@ -923,10 +932,8 @@ public abstract class ScriptObject implements PropertyAccess {
                 if (property instanceof UserAccessorProperty) {
                     ((UserAccessorProperty)property).setAccessors(this, getMap(), null);
                 }
-                final GlobalConstants globalConstants = getGlobalConstants();
-                if (globalConstants != null) {
-                    globalConstants.delete(property.getKey());
-                }
+
+                invalidateGlobalConstant(property.getKey());
                 return true;
             }
         }
@@ -3148,6 +3155,9 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     public final void setObject(final FindProperty find, final int callSiteFlags, final String key, final Object value) {
         FindProperty f = find;
+
+        invalidateGlobalConstant(key);
+
         if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty)) {
             final boolean isScope = NashornCallSiteDescriptor.isScopeFlag(callSiteFlags);
             // If the start object of the find is not this object it means the property was found inside a
