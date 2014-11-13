@@ -26,7 +26,9 @@
 package idea;
 
 import org.apache.tools.ant.BuildEvent;
+import org.apache.tools.ant.BuildListener;
 import org.apache.tools.ant.DefaultLogger;
+import org.apache.tools.ant.Project;
 
 import java.util.EnumSet;
 import java.util.Stack;
@@ -166,21 +168,17 @@ public final class LangtoolsIdeaAntLogger extends DefaultLogger {
             }
         },
         /** build bootstrap tool target - executed when bootstrapping javac */
-        BUILD_BOOTSTRAP_TOOL("build-bootstrap-.*") {
+        BUILD_BOOTSTRAP_JAVAC("build-bootstrap-javac-classes") {
             @Override
             String getDisplayMessage(BuildEvent e) {
-                String targetName = e.getTarget().getName();
-                String tool = targetName.split("-")[2];
-                return "Building bootstrap " + tool + "...";
+                return "Building bootstrap javac...";
             }
         },
         /** build classes target - executed when building classes of given tool */
-        BUILD_TOOL("build-classes-.*") {
+        BUILD_ALL_CLASSES("build-all-classes") {
             @Override
             String getDisplayMessage(BuildEvent e) {
-                String targetName = e.getTarget().getName();
-                String tool = targetName.split("-")[2];
-                return "Building " + tool + "...";
+                return "Building all classes...";
             }
         },
         /** synthetic target catching any other target not in this list */
@@ -195,14 +193,14 @@ public final class LangtoolsIdeaAntLogger extends DefaultLogger {
             }
         };
 
-        String targetRegex;
+        String targetName;
 
-        Target(String targetRegex) {
-            this.targetRegex = targetRegex;
+        Target(String targetName) {
+            this.targetName = targetName;
         }
 
         boolean matches(String msg) {
-            return msg.matches(targetRegex);
+            return msg.equals(targetName);
         }
 
         abstract String getDisplayMessage(BuildEvent e);
@@ -253,8 +251,14 @@ public final class LangtoolsIdeaAntLogger extends DefaultLogger {
     /** stack of pending tasks */
     Stack<Task> tasks = new Stack<>();
 
-    public LangtoolsIdeaAntLogger(DefaultLogger logger) {
-        this.logger = logger;
+    public LangtoolsIdeaAntLogger(Project project) {
+        for (Object o : project.getBuildListeners()) {
+            if (o instanceof DefaultLogger) {
+                this.logger = (DefaultLogger)o;
+                project.removeBuildListener((BuildListener)o);
+                project.addBuildListener(this);
+            }
+        }
         tasks.push(Task.ROOT);
     }
 

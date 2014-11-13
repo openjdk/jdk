@@ -218,21 +218,21 @@ public class ClientMain {
             // Collect the name of all compiled packages.
             Set<String> recently_compiled = new HashSet<>();
             boolean[] rc = new boolean[1];
-            Sjavac sjavac;
             boolean background = Util.extractBooleanOption("background", options.getServerConf(), true);
+            Sjavac sjavac;
+            // Create an sjavac implementation to be used for compilation
+            if (background) {
+                sjavac = new SjavacClient(options);
+            } else {
+                int poolsize = Util.extractIntOption("poolsize", options.getServerConf());
+                if (poolsize <= 0)
+                    poolsize = Runtime.getRuntime().availableProcessors();
+                sjavac = new PooledSjavac(new SjavacImpl(), poolsize);
+            }
+
             do {
                 // Clean out artifacts in tainted packages.
                 javac_state.deleteClassArtifactsInTaintedPackages();
-                // Create an sjavac implementation to be used for compilation
-                if (background) {
-                    sjavac = new SjavacClient(options);
-                } else {
-                    int poolsize = Util.extractIntOption("poolsize", options.getServerConf());
-                    if (poolsize <= 0)
-                        poolsize = Runtime.getRuntime().availableProcessors();
-                    sjavac = new PooledSjavac(new SjavacImpl(), poolsize);
-                }
-
                 again = javac_state.performJavaCompilations(sjavac, options, recently_compiled, rc);
                 if (!rc[0]) break;
             } while (again);
