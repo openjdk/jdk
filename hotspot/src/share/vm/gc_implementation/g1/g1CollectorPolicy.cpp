@@ -1585,34 +1585,22 @@ public:
   }
 };
 
+uint G1CollectorPolicy::calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) {
+  assert(n_workers > 0, "Active gc workers should be greater than 0");
+  const uint overpartition_factor = 4;
+  const uint min_chunk_size = MAX2(n_regions / n_workers, 1U);
+  return MAX2(n_regions / (n_workers * overpartition_factor), min_chunk_size);
+}
+
 void
-G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
+G1CollectorPolicy::record_concurrent_mark_cleanup_end(uint n_workers) {
   _collectionSetChooser->clear();
 
-  uint region_num = _g1->num_regions();
-  const uint OverpartitionFactor = 4;
-  uint WorkUnit;
-  // The use of MinChunkSize = 8 in the original code
-  // causes some assertion failures when the total number of
-  // region is less than 8.  The code here tries to fix that.
-  // Should the original code also be fixed?
-  if (no_of_gc_threads > 0) {
-    const uint MinWorkUnit = MAX2(region_num / no_of_gc_threads, 1U);
-    WorkUnit = MAX2(region_num / (no_of_gc_threads * OverpartitionFactor),
-                    MinWorkUnit);
-  } else {
-    assert(no_of_gc_threads > 0,
-      "The active gc workers should be greater than 0");
-    // In a product build do something reasonable to avoid a crash.
-    const uint MinWorkUnit = MAX2(region_num / (uint) ParallelGCThreads, 1U);
-    WorkUnit =
-      MAX2(region_num / (uint) (ParallelGCThreads * OverpartitionFactor),
-           MinWorkUnit);
-  }
-  _collectionSetChooser->prepare_for_par_region_addition(_g1->num_regions(),
-                                                         WorkUnit);
-  ParKnownGarbageTask parKnownGarbageTask(_collectionSetChooser, WorkUnit, (uint) no_of_gc_threads);
-  _g1->workers()->run_task(&parKnownGarbageTask);
+  uint n_regions = _g1->num_regions();
+  uint chunk_size = calculate_parallel_work_chunk_size(n_workers, n_regions);
+  _collectionSetChooser->prepare_for_par_region_addition(n_regions, chunk_size);
+  ParKnownGarbageTask par_known_garbage_task(_collectionSetChooser, chunk_size, n_workers);
+  _g1->workers()->run_task(&par_known_garbage_task);
 
   _collectionSetChooser->sort_regions();
 

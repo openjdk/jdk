@@ -279,8 +279,7 @@ public class TestShrinkAuxiliaryData {
             "-XX:\\+UseConcMarkSweepGC",
             "-XX:\\+UseParallelOldGC",
             "-XX:\\+UseParNewGC",
-            "-Xconcgc",
-            "-Xincgc"
+            "-Xconcgc"
         };
     }
 }
