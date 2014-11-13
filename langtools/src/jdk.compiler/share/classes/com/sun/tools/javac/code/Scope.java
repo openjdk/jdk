@@ -305,7 +305,32 @@ public abstract class Scope {
          *  the table of its outer scope.
          */
         public WriteableScope dupUnshared(Symbol newOwner) {
-            return new ScopeImpl(this, newOwner, this.table.clone(), this.nelems);
+            if (shared > 0) {
+                //The nested Scopes might have already added something to the table, so all items
+                //that don't originate in this Scope or any of its outer Scopes need to be cleared:
+                Set<Scope> acceptScopes = Collections.newSetFromMap(new IdentityHashMap<>());
+                ScopeImpl c = this;
+                while (c != null) {
+                    acceptScopes.add(c);
+                    c = c.next;
+                }
+                int n = 0;
+                Entry[] oldTable = this.table;
+                Entry[] newTable = new Entry[this.table.length];
+                for (int i = 0; i < oldTable.length; i++) {
+                    Entry e = oldTable[i];
+                    while (e != null && e != sentinel && !acceptScopes.contains(e.scope)) {
+                        e = e.shadowed;
+                    }
+                    if (e != null) {
+                        n++;
+                        newTable[i] = e;
+                    }
+                }
+                return new ScopeImpl(this, newOwner, newTable, n);
+            } else {
+                return new ScopeImpl(this, newOwner, this.table.clone(), this.nelems);
+            }
         }
 
         /** Remove all entries of this scope from its table, if shared

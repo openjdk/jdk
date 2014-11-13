@@ -43,10 +43,9 @@ mylib="$mydir/../lib"
 # dependent jar files for additional dependencies.
 
 if [ "$LANGTOOLS_USE_BOOTCLASSPATH" != "no" ]; then
-   cp=`unzip -c "$mylib/#PROGRAM#.jar" META-INF/MANIFEST.MF |
-       grep "Class-Path:" |
-       sed -e 's|Class-Path: *||' -e 's|\([a-z]*\.jar\) *|'"$mylib"'/\1#PS#|g'`
-   bcp="$mylib/#PROGRAM#.jar#PS#$cp"
+   cp=`echo "$mylib"/*.jar |
+       sed -e 's|\([a-z.]*\.jar\) *|\1#PS#|g'`
+   bcp=$cp
 fi
 
 # tools currently assumes that assertions are enabled in the launcher
@@ -72,4 +71,4 @@ done
 unset DUALCASE
 
 IFS=$nl
-"#TARGET_JAVA#" "${bcp:+-Xbootclasspath/p:"$bcp"}" ${ea} ${javaOpts} -jar "${mylib}/#PROGRAM#.jar" ${toolOpts}
+"#TARGET_JAVA#" "${bcp:+-Xbootclasspath/p:"$bcp"}" ${ea} ${javaOpts} com.sun.tools.#PROGRAM#.Main ${toolOpts}

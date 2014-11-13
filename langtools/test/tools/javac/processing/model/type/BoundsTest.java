@@ -25,7 +25,6 @@
  * @test
  * @bug 6499673
  * @library /tools/javac/lib
- * @ignore 8062245 Test executes incorrect class
  * @build JavacTestingAbstractProcessor BoundsTest
  * @run main BoundsTest
  * @summary Assertion check for TypeVariable.getUpperBound() fails
@@ -86,8 +85,8 @@ public class BoundsTest {
     };
     private static final String[] NoBounds_supers = {};
 
-    private HashSet<CharSequence> expected_bounds;
-    private HashSet<CharSequence> expected_supers;
+    private HashSet<String> expected_bounds;
+    private HashSet<String> expected_supers;
 
     private static final File classesdir = new File("intersectionproperties");
     private static final JavaCompiler comp =
@@ -99,8 +98,8 @@ public class BoundsTest {
                        final String[] Test_bounds, final String[] Test_supers)
         throws IOException {
         System.err.println("Testing " + Test_name);
-        expected_bounds = new HashSet<CharSequence>(Arrays.asList(Test_bounds));
-        expected_supers = new HashSet<CharSequence>(Arrays.asList(Test_supers));
+        expected_bounds = new HashSet<>(Arrays.asList(Test_bounds));
+        expected_supers = new HashSet<>(Arrays.asList(Test_supers));
         final Iterable<? extends JavaFileObject> files =
             fm.getJavaFileObjectsFromFiles(Collections.singleton(writeFile(classesdir, Test_name, Test_contents)));
         final JavacTask ct =
@@ -130,7 +129,7 @@ public class BoundsTest {
     }
 
     public static void main(String... args) throws IOException {
-        new IntersectionPropertiesTest().run();
+        new BoundsTest().run();
     }
 
     private static File writeFile(File dir, String path, String body)
@@ -166,17 +165,16 @@ public class BoundsTest {
             final List<? extends TypeMirror> bounds = typeParameterElement.getBounds();
             final List<? extends TypeMirror> supers = processingEnv.getTypeUtils().directSupertypes(upperBound);
 
-            final HashSet<CharSequence> actual_bounds = new HashSet<CharSequence>();
-            final HashSet<CharSequence> actual_supers = new HashSet<CharSequence>();
+            final HashSet<String> actual_bounds = new HashSet<>();
+            final HashSet<String> actual_supers = new HashSet<>();
 
             for(TypeMirror ty : bounds) {
-                actual_bounds.add(((TypeElement)((DeclaredType)ty).asElement()).getQualifiedName());
+                actual_bounds.add(((TypeElement)((DeclaredType)ty).asElement()).getQualifiedName().toString());
             }
 
             for(TypeMirror ty : supers) {
-                actual_supers.add(((TypeElement)((DeclaredType)ty).asElement()).getQualifiedName());
+                actual_supers.add(((TypeElement)((DeclaredType)ty).asElement()).getQualifiedName().toString());
             }
-
 
             if (!expected_bounds.equals(actual_bounds)) {
                 System.err.println("Mismatched expected and actual bounds.");
@@ -190,7 +188,7 @@ public class BoundsTest {
             }
 
             if (!expected_supers.equals(actual_supers)) {
-                System.err.println("Mismatched expected and actual bounds.");
+                System.err.println("Mismatched expected and actual supers.");
                 System.err.println("Expected:");
                 for(CharSequence tm : expected_supers)
                     System.err.println("  " + tm);

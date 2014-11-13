@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,26 @@
  * questions.
  */
 
-// key: compiler.err.neither.conditional.subtype
+import javax.annotation.processing.*;
+import javax.tools.Diagnostic.Kind;
+import javax.lang.model.element.TypeElement;
+import java.util.Set;
 
-class NeitherConditionalSubtype {
-    public int test(boolean cond, Object o) {
-        // Should fail to compile since Object.wait() has a void return type.
-        (o instanceof String ? o.hashCode() : o.wait()).toString();
-        return 0;
+/*
+ * @test
+ * @bug 8060448
+ * @summary Test that javac doesn't throw ArrayIndexOutOfBoundsException
+ *          when logging the message "\n"
+ * @library /tools/javac/lib
+ * @build   JavacTestingAbstractProcessor NewlineOnlyDiagnostic
+ * @compile -processor NewlineOnlyDiagnostic NewlineOnlyDiagnostic.java
+ */
+
+public class NewlineOnlyDiagnostic extends JavacTestingAbstractProcessor {
+
+    @Override
+    public boolean process(Set<? extends TypeElement> types,RoundEnvironment rEnv) {
+        processingEnv.getMessager().printMessage(Kind.NOTE,"\n");
+        return true;
     }
 }
-
-

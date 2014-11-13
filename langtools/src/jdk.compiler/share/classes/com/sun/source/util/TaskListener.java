@@ -37,13 +37,19 @@ public interface TaskListener
 {
     /**
      * Invoked when an event has begun.
+     *
+     * @implSpec The default implementation of this method does nothing.
+     *
      * @param e the event
      */
-    public void started(TaskEvent e);
+    default void started(TaskEvent e) { }
 
     /**
      * Invoked when an event has been completed.
+     *
+     * @implSpec The default implementation of this method does nothing.
+     *
      * @param e the event
      */
-    public void finished(TaskEvent e);
+    default void finished(TaskEvent e) { }
 }
