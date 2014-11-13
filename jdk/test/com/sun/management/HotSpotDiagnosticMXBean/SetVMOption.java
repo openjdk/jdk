@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@ import com.sun.management.VMOption;
 import com.sun.management.VMOption.Origin;
 
 public class SetVMOption {
-    private static String PRINT_GC_DETAILS = "PrintGCDetails";
-    private static String EXPECTED_VALUE = "true";
-    private static String BAD_VALUE = "yes";
-    private static String NEW_VALUE = "false";
-    private static String MANAGEMENT_SERVER = "ManagementServer";
+    private static final String PRINT_GC_DETAILS = "PrintGCDetails";
+    private static final String EXPECTED_VALUE = "true";
+    private static final String BAD_VALUE = "yes";
+    private static final String NEW_VALUE = "false";
+    private static final String MANAGEMENT_SERVER = "ManagementServer";
     private static HotSpotDiagnosticMXBean mbean;
 
     public static void main(String[] args) throws Exception {

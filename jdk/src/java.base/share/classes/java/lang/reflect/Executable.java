@@ -286,6 +286,53 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
+     * Behaves like {@code getGenericParameterTypes}, but returns type
+     * information for all parameters, including synthetic parameters.
+     */
+    Type[] getAllGenericParameterTypes() {
+        final boolean genericInfo = hasGenericInformation();
+
+        // Easy case: we don't have generic parameter information.  In
+        // this case, we just return the result of
+        // getParameterTypes().
+        if (!genericInfo) {
+            return getParameterTypes();
+        } else {
+            final boolean realParamData = hasRealParameterData();
+            final Type[] genericParamTypes = getGenericParameterTypes();
+            final Type[] nonGenericParamTypes = getParameterTypes();
+            final Type[] out = new Type[nonGenericParamTypes.length];
+            final Parameter[] params = getParameters();
+            int fromidx = 0;
+            // If we have real parameter data, then we use the
+            // synthetic and mandate flags to our advantage.
+            if (realParamData) {
+                for (int i = 0; i < out.length; i++) {
+                    final Parameter param = params[i];
+                    if (param.isSynthetic() || param.isImplicit()) {
+                        // If we hit a synthetic or mandated parameter,
+                        // use the non generic parameter info.
+                        out[i] = nonGenericParamTypes[i];
+                    } else {
+                        // Otherwise, use the generic parameter info.
+                        out[i] = genericParamTypes[fromidx];
+                        fromidx++;
+                    }
+                }
+            } else {
+                // Otherwise, use the non-generic parameter data.
+                // Without method parameter reflection data, we have
+                // no way to figure out which parameters are
+                // synthetic/mandated, thus, no way to match up the
+                // indexes.
+                return genericParamTypes.length == nonGenericParamTypes.length ?
+                    genericParamTypes : nonGenericParamTypes;
+            }
+            return out;
+        }
+    }
+
+    /**
      * Returns an array of {@code Parameter} objects that represent
      * all the parameters to the underlying executable represented by
      * this object.  Returns an array of length 0 if the executable
@@ -646,7 +693,7 @@ public abstract class Executable extends AccessibleObject
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
-                getGenericParameterTypes(),
+                getAllGenericParameterTypes(),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
     }
 

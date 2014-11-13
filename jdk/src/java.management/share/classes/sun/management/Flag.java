@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ class Flag {
     // These set* methods are synchronized on the class object
     // to avoid multiple threads updating the same flag at the same time.
     static synchronized native void setLongValue(String name, long value);
+    static synchronized native void setDoubleValue(String name, double value);
     static synchronized native void setBooleanValue(String name, boolean value);
     static synchronized native void setStringValue(String name, String value);
 
