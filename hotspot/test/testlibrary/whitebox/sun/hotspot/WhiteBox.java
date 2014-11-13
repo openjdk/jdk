@@ -207,4 +207,13 @@ public class WhiteBox {
                        .findAny()
                        .orElse(null);
   }
+  public native int getOffsetForName0(String name);
+  public int getOffsetForName(String name) throws Exception {
+    int offset = getOffsetForName0(name);
+    if (offset == -1) {
+      throw new RuntimeException(name + " not found");
+    }
+    return offset;
+  }
+
 }
