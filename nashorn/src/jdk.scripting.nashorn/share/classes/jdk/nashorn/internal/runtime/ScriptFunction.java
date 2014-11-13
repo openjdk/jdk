@@ -603,16 +603,6 @@ public abstract class ScriptFunction extends ScriptObject {
                     log.info("Linking optimistic builtin function: '", name, "' args=", Arrays.toString(request.getArguments()), " desc=", desc);
                 }
 
-                final SwitchPoint[] msps = linkLogic.getModificationSwitchPoints();
-                if (msps != null) {
-                    for (final SwitchPoint sp : msps) {
-                        if (sp != null) {
-                            assert !sp.hasBeenInvalidated();
-                            sps.add(sp);
-                        }
-                    }
-                }
-
                 exceptionGuard = linkLogic.getRelinkException();
 
                 break;
