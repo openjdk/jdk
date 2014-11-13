@@ -313,6 +313,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseFastAccessorMethods",        JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "UseFastEmptyMethods",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
 #endif // ZERO
+  { "UseCompilerSafepoints",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
