@@ -143,8 +143,14 @@ public class WhiteBox {
   }
   public native boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci);
   public native void    clearMethodState(Executable method);
+  public native void    lockCompilation();
+  public native void    unlockCompilation();
   public native int     getMethodEntryBci(Executable method);
   public native Object[] getNMethod(Executable method, boolean isOsr);
+  public native long    allocateCodeBlob(int size, int type);
+  public native void    freeCodeBlob(long addr);
+  public native void    forceNMethodSweep();
+  public native Object[] getCodeHeapEntries(int type);
 
   // Intered strings
   public native boolean isInStringTable(String str);

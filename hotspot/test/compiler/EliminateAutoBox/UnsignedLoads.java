@@ -26,7 +26,7 @@
 /*
  * @test
  * @library /testlibrary
- * @run main/othervm -Xbatch -XX:+EliminateAutoBox
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
  *                   -XX:CompileOnly=::valueOf,::byteValue,::shortValue,::testUnsignedByte,::testUnsignedShort
  *                   UnsignedLoads
  */
