@@ -27,6 +27,7 @@
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
@@ -884,6 +885,20 @@ Node *PhaseIdealLoop::clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ct
   return n;
 }
 
+bool PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) {
+  Node* castii = new CastIINode(incr, TypeInt::INT, true);
+  castii->set_req(0, ctrl);
+  register_new_node(castii, ctrl);
+  for (DUIterator_Fast imax, i = incr->fast_outs(imax); i < imax; i++) {
+    Node* n = incr->fast_out(i);
+    if (n->is_Phi() && n->in(0) == loop) {
+      int nrep = n->replace_edge(incr, castii);
+      return true;
+    }
+  }
+  return false;
+}
+
 //------------------------------insert_pre_post_loops--------------------------
 // Insert pre and post loops.  If peel_only is set, the pre-loop can not have
 // more iterations added.  It acts as a 'peel' only, no lower-bound RCE, no
@@ -1079,6 +1094,24 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
       main_phi->set_req( LoopNode::EntryControl, fallpre );
     }
   }
+
+  // Nodes inside the loop may be control dependent on a predicate
+  // that was moved before the preloop. If the back branch of the main
+  // or post loops becomes dead, those nodes won't be dependent on the
+  // test that guards that loop nest anymore which could lead to an
+  // incorrect array access because it executes independently of the
+  // test that was guarding the loop nest. We add a special CastII on
+  // the if branch that enters the loop, between the input induction
+  // variable value and the induction variable Phi to preserve correct
+  // dependencies.
+
+  // CastII for the post loop:
+  bool inserted = cast_incr_before_loop(zer_opaq->in(1), zer_taken, post_head);
+  assert(inserted, "no castII inserted");
+
+  // CastII for the main loop:
+  inserted = cast_incr_before_loop(pre_incr, min_taken, main_head);
+  assert(inserted, "no castII inserted");
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
