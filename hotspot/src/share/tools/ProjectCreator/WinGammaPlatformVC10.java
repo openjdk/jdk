@@ -401,16 +401,18 @@ class CompilerInterfaceVC10 extends CompilerInterface {
     Vector getBaseLinkerFlags(String outDir, String outDll, String platformName) {
         Vector rv = new Vector();
 
-        addAttr(rv, "AdditionalOptions",
-                "/export:JNI_GetDefaultJavaVMInitArgs " +
-                "/export:JNI_CreateJavaVM " +
-                "/export:JVM_FindClassFromBootLoader "+
-                "/export:JNI_GetCreatedJavaVMs "+
-                "/export:jio_snprintf /export:jio_printf "+
-                "/export:jio_fprintf /export:jio_vfprintf "+
-                "/export:jio_vsnprintf "+
-                "/export:JVM_GetVersionInfo "+
-                "/export:JVM_InitAgentProperties");
+        if(platformName.equals("Win32")) {
+            addAttr(rv, "AdditionalOptions",
+                    "/export:JNI_GetDefaultJavaVMInitArgs " +
+                    "/export:JNI_CreateJavaVM " +
+                    "/export:JVM_FindClassFromBootLoader "+
+                    "/export:JNI_GetCreatedJavaVMs "+
+                    "/export:jio_snprintf /export:jio_printf "+
+                    "/export:jio_fprintf /export:jio_vfprintf "+
+                    "/export:jio_vsnprintf "+
+                    "/export:JVM_GetVersionInfo "+
+                    "/export:JVM_InitAgentProperties");
+        }
         addAttr(rv, "AdditionalDependencies", "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;Wsock32.lib;winmm.lib;psapi.lib;version.lib");
         addAttr(rv, "OutputFile", outDll);
         addAttr(rv, "SuppressStartupBanner", "true");
