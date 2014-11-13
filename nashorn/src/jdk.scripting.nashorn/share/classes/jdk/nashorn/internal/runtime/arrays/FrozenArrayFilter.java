@@ -26,9 +26,9 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
  * ArrayData after the array has been frozen by Object.freeze call.
@@ -78,5 +78,16 @@ final class FrozenArrayFilter extends SealedArrayFilter {
             throw typeError("cant.set.property", Integer.toString(index), "frozen array");
         }
         return this;
+    }
+
+    @Override
+    public ArrayData push(final boolean strict, final Object... items) {
+        return this; //nop
+    }
+
+    @Override
+    public Object pop() {
+        final int len = (int)underlying.length();
+        return len == 0 ? ScriptRuntime.UNDEFINED : underlying.getObject(len - 1);
     }
 }
