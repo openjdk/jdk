@@ -327,9 +327,12 @@ bool Arguments::is_newly_obsolete(const char *s, JDK_Version* version) {
     const ObsoleteFlag& flag_status = obsolete_jvm_flags[i];
     // <flag>=xxx form
     // [-|+]<flag> form
-    if ((strncmp(flag_status.name, s, strlen(flag_status.name)) == 0) ||
+    size_t len = strlen(flag_status.name);
+    if (((strncmp(flag_status.name, s, len) == 0) &&
+         (strlen(s) == len)) ||
         ((s[0] == '+' || s[0] == '-') &&
-        (strncmp(flag_status.name, &s[1], strlen(flag_status.name)) == 0))) {
+         (strncmp(flag_status.name, &s[1], len) == 0) &&
+         (strlen(&s[1]) == len))) {
       if (JDK_Version::current().compare(flag_status.accept_until) == -1) {
           *version = flag_status.obsoleted_in;
           return true;
@@ -934,10 +937,18 @@ bool Arguments::process_argument(const char* arg,
     Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
     if (fuzzy_matched != NULL) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Did you mean '%s%s%s'?\n",
+                  "Did you mean '%s%s%s'? ",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
                   fuzzy_matched->_name,
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
+      if (is_newly_obsolete(fuzzy_matched->_name, &since)) {
+        char version[256];
+        since.to_string(version, sizeof(version));
+        jio_fprintf(defaultStream::error_stream(),
+                    "Warning: support for %s was removed in %s\n",
+                    fuzzy_matched->_name,
+                    version);
+      }
     }
   }
 
