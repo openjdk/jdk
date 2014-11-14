@@ -635,7 +635,7 @@ objArrayHandle Reflection::get_parameter_types(methodHandle method, int paramete
 }
 
 objArrayHandle Reflection::get_exception_types(methodHandle method, TRAPS) {
-  return method->resolved_checked_exceptions(CHECK_(objArrayHandle()));
+  return method->resolved_checked_exceptions(THREAD);
 }
 
 

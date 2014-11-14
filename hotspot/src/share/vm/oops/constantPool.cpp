@@ -461,7 +461,7 @@ int ConstantPool::signature_ref_index_at(int which_nt) {
 
 
 Klass* ConstantPool::klass_ref_at(int which, TRAPS) {
-  return klass_at(klass_ref_index_at(which), CHECK_NULL);
+  return klass_at(klass_ref_index_at(which), THREAD);
 }
 
 

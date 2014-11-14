@@ -461,7 +461,7 @@ static char* get_user_name(int vmid, TRAPS) {
   // since the structured procfs and old procfs interfaces can't be
   // mixed, we attempt to find the file through a directory search.
 
-  return get_user_name_slow(vmid, CHECK_NULL);
+  return get_user_name_slow(vmid, THREAD);
 }
 
 // return the file name of the backing store file for the named
