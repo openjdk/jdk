@@ -300,11 +300,21 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Make a java array of certificate data from the chain.
             jclass byteArrayClass = (*env)->FindClass(env, "[B");
+            if (byteArrayClass == NULL) {
+                goto errOut;
+            }
             jobjectArray javaCertArray = (*env)->NewObjectArray(env, certCount, byteArrayClass, NULL);
+            // Cleanup first then check for a NULL return code
             (*env)->DeleteLocalRef(env, byteArrayClass);
+            if (javaCertArray == NULL) {
+                goto errOut;
+            }
 
             // And, make an array of the certificate refs.
             jlongArray certRefArray = (*env)->NewLongArray(env, certCount);
+            if (certRefArray == NULL) {
+                goto errOut;
+            }
 
             SecCertificateRef currCertRef = NULL;
 
@@ -319,6 +329,9 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
                 bzero(&currCertData, sizeof(CSSM_DATA));
                 err = SecCertificateGetData(currCertRef, &currCertData);
                 jbyteArray encodedCertData = (*env)->NewByteArray(env, currCertData.Length);
+                if (encodedCertData == NULL) {
+                    goto errOut;
+                }
                 (*env)->SetByteArrayRegion(env, encodedCertData, 0, currCertData.Length, (jbyte *)currCertData.Data);
                 (*env)->SetObjectArrayElement(env, javaCertArray, i, encodedCertData);
                 jlong certRefElement = ptr_to_jlong(currCertRef);
@@ -331,6 +344,9 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Find the label.  It's a 'blob', but we interpret as characters.
             jstring alias = getLabelFromItem(env, (SecKeychainItemRef)certificate);
+            if (alias == NULL) {
+                goto errOut;
+            }
 
             // Find the creation date.
             jlong creationDate = getModDateFromItem(env, (SecKeychainItemRef)certificate);
@@ -341,6 +357,7 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
         }
     } while (searchResult == noErr);
 
+errOut:
     if (identitySearch != NULL) {
         CFRelease(identitySearch);
     }
@@ -363,10 +380,16 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
             CSSM_DATA currCertificate;
             err = SecCertificateGetData(certRef, &currCertificate);
             jbyteArray certData = (*env)->NewByteArray(env, currCertificate.Length);
+            if (certData == NULL) {
+                goto errOut;
+            }
             (*env)->SetByteArrayRegion(env, certData, 0, currCertificate.Length, (jbyte *)currCertificate.Data);
 
             // Find the label.  It's a 'blob', but we interpret as characters.
             jstring alias = getLabelFromItem(env, theItem);
+            if (alias == NULL) {
+                goto errOut;
+            }
 
             // Find the creation date.
             jlong creationDate = getModDateFromItem(env, theItem);
@@ -377,6 +400,7 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
         }
     } while (searchResult == noErr);
 
+errOut:
     if (keychainItemSearch != NULL) {
         CFRelease(keychainItemSearch);
     }
@@ -405,6 +429,9 @@ JNIEXPORT jbyteArray JNICALL Java_apple_security_KeychainStore__1getEncodedKeyDa
 
         if (passwordLen > 0) {
             passwordChars = (*env)->GetCharArrayElements(env, passwordObj, NULL);
+            if (passwordChars == NULL) {
+                goto errOut;
+            }
             passwordStrRef = CFStringCreateWithCharacters(kCFAllocatorDefault, passwordChars, passwordLen);
         }
     }
@@ -424,9 +451,13 @@ JNIEXPORT jbyteArray JNICALL Java_apple_security_KeychainStore__1getEncodedKeyDa
     if (err == noErr) {
         CFIndex size = CFDataGetLength(exportedData);
         returnValue = (*env)->NewByteArray(env, size);
+        if (returnValue == NULL) {
+            goto errOut;
+        }
         (*env)->SetByteArrayRegion(env, returnValue, 0, size, (jbyte *)CFDataGetBytePtr(exportedData));
     }
 
+errOut:
     if (exportedData) CFRelease(exportedData);
     if (passwordStrRef) CFRelease(passwordStrRef);
 
@@ -467,6 +498,9 @@ JNF_COCOA_ENTER(env);
 
     jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
     jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
+    if (rawData == NULL) {
+        goto errOut;
+    }
 
     CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
     CFArrayRef createdItems = NULL;
@@ -522,6 +556,8 @@ JNF_COCOA_ENTER(env);
     if (createdItems != NULL) {
         CFRelease(createdItems);
     }
+
+errOut: ;
 
 JNF_COCOA_EXIT(env);
 
