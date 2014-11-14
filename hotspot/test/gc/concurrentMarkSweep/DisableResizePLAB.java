@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,23 @@
 */
 
 /*
-* @test TestIncGC
-* @key gc
-* @bug 8006398
-* @summary Test that the deprecated -Xincgc print a warning message
-* @library /testlibrary
-*/
+ * @test DisableResizePLAB
+ * @key gc
+ * @bug 8060467
+ * @author filipp.zhinkin@oracle.com, john.coomes@oracle.com
+ * @summary Run CMS with PLAB resizing disabled and a small OldPLABSize
+ * @run main/othervm -XX:+UseConcMarkSweepGC -XX:-ResizePLAB -XX:OldPLABSize=1k -Xmx256m -XX:+PrintGCDetails DisableResizePLAB
+ */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
-
-
-public class TestIncGC {
-
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xincgc", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("warning: Using incremental CMS is deprecated and will likely be removed in a future release");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
-
+public class DisableResizePLAB {
+    public static void main(String args[]) throws Exception {
+        Object garbage[] = new Object[1_000];
+        for (int i = 0; i < garbage.length; i++) {
+            garbage[i] = new byte[0];
+        }
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < 10_000) {
+            Object o = new byte[1024];
+        }
+    }
 }

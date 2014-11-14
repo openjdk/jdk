@@ -243,15 +243,15 @@ class MallocHeader VALUE_OBJ_CLASS_SPEC {
   size_t           _flags     : 8;
   size_t           _pos_idx   : 16;
   size_t           _bucket_idx: 40;
-#define MAX_MALLOCSITE_TABLE_SIZE ((size_t)1 << 40)
-#define MAX_BUCKET_LENGTH         ((size_t)(1 << 16))
+#define MAX_MALLOCSITE_TABLE_SIZE right_n_bits(40)
+#define MAX_BUCKET_LENGTH         right_n_bits(16)
 #else
   size_t           _size      : 32;
   size_t           _flags     : 8;
   size_t           _pos_idx   : 8;
   size_t           _bucket_idx: 16;
-#define MAX_MALLOCSITE_TABLE_SIZE  ((size_t)(1 << 16))
-#define MAX_BUCKET_LENGTH          ((size_t)(1 << 8))
+#define MAX_MALLOCSITE_TABLE_SIZE  right_n_bits(16)
+#define MAX_BUCKET_LENGTH          right_n_bits(8)
 #endif  // _LP64
 
  public:

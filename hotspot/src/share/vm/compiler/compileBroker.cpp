@@ -35,6 +35,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
@@ -1963,6 +1964,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (comp == NULL) {
       ci_env.record_method_not_compilable("no compiler", !TieredCompilation);
     } else {
+      if (WhiteBoxAPI && WhiteBox::compilation_locked) {
+        MonitorLockerEx locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
+        while (WhiteBox::compilation_locked) {
+          locker.wait(Mutex::_no_safepoint_check_flag);
+        }
+      }
       comp->compile_method(&ci_env, target, osr_bci);
     }
 

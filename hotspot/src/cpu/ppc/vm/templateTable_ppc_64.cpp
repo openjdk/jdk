@@ -3513,7 +3513,7 @@ void TemplateTable::_new() {
                  Rtags            = R3_ARG1,
                  Rindex           = R5_ARG3;
 
-  const bool allow_shared_alloc = Universe::heap()->supports_inline_contig_alloc() && !CMSIncrementalMode;
+  const bool allow_shared_alloc = Universe::heap()->supports_inline_contig_alloc();
 
   // --------------------------------------------------------------------------
   // Check if fast case is possible.

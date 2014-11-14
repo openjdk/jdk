@@ -960,6 +960,10 @@ void HeapRegion::verify() const {
   verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
 }
 
+void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
+  scan_and_forward(this, cp);
+}
+
 // G1OffsetTableContigSpace code; copied from space.cpp.  Hope this can go
 // away eventually.
 
@@ -1042,12 +1046,6 @@ void G1OffsetTableContigSpace::object_iterate(ObjectClosure* blk) {
     p += block_size(p);
   }
 }
-
-#define block_is_always_obj(q) true
-void G1OffsetTableContigSpace::prepare_for_compaction(CompactPoint* cp) {
-  SCAN_AND_FORWARD(cp, top, block_is_always_obj, block_size);
-}
-#undef block_is_always_obj
 
 G1OffsetTableContigSpace::
 G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
