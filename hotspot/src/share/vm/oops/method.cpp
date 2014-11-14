@@ -588,6 +588,15 @@ bool Method::is_accessor() const {
   return true;
 }
 
+bool Method::is_constant_getter() const {
+  int last_index = code_size() - 1;
+  // Check if the first 1-3 bytecodes are a constant push
+  // and the last bytecode is a return.
+  return (2 <= code_size() && code_size() <= 4 &&
+          Bytecodes::is_const(java_code_at(0)) &&
+          Bytecodes::length_for(java_code_at(0)) == last_index &&
+          Bytecodes::is_return(java_code_at(last_index)));
+}
 
 bool Method::is_initializer() const {
   return name() == vmSymbols::object_initializer_name() || is_static_initializer();

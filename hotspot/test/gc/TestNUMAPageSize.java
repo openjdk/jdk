@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.memory;
+/**
+ * @test TestNUMAPageSize
+ * @summary Make sure that start up with NUMA support does not cause problems.
+ * @bug 8061467
+ * @key gc
+ * @key regression
+ * @run main/othervm -Xmx8M -XX:+UseNUMA TestNUMAPageSize
+ */
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
-
-/** <P> Class EdenSpace describes eden-space in new
-    generation. (Currently it does not add any significant
-    functionality beyond ContiguousSpace.) */
-
-public class EdenSpace extends ContiguousSpace {
-  public EdenSpace(Address addr) {
-    super(addr);
+public class TestNUMAPageSize {
+  public static void main(String args[]) throws Exception {
+    // nothing to do
   }
 }

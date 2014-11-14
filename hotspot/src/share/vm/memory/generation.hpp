@@ -265,14 +265,6 @@ class Generation: public CHeapObj<mtGC> {
   // Like "allocate", but performs any necessary locking internally.
   virtual HeapWord* par_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // A 'younger' gen has reached an allocation limit, and uses this to notify
-  // the next older gen.  The return value is a new limit, or NULL if none.  The
-  // caller must do the necessary locking.
-  virtual HeapWord* allocation_limit_reached(Space* space, HeapWord* top,
-                                             size_t word_size) {
-    return NULL;
-  }
-
   // Some generation may offer a region for shared, contiguous allocation,
   // via inlined code (by exporting the address of the top and end fields
   // defining the extent of the contiguous allocation region.)

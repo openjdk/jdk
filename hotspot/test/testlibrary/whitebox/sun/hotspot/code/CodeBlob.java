@@ -22,12 +22,40 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.hpp"
+package sun.hotspot.code;
 
-bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
-                                                    jlong* totals,
-                                                    jbyte* accuracy,
-                                                    jint len) {
-  return false;
+import sun.hotspot.WhiteBox;
+
+public class CodeBlob {
+  private static final WhiteBox WB = WhiteBox.getWhiteBox();
+  public static CodeBlob[] getCodeBlobs(BlobType type) {
+    Object[] obj = WB.getCodeHeapEntries(type.id);
+    if (obj == null) {
+      return null;
+    }
+    CodeBlob[] result = new CodeBlob[obj.length];
+    for (int i = 0, n = result.length; i < n; ++i) {
+      result[i] = new CodeBlob((Object[]) obj[i]);
+    }
+    return result;
+  }
+  protected CodeBlob(Object[] obj) {
+    assert obj.length == 3;
+    name = (String) obj[0];
+    size = (Integer) obj[1];
+    code_blob_type = BlobType.values()[(Integer) obj[2]];
+    assert code_blob_type.id == (Integer) obj[2];
+  }
+  public final String name;
+  public final int size;
+  public final BlobType code_blob_type;
+
+  @Override
+  public String toString() {
+    return "CodeBlob{"
+        + "name=" + name
+        + ", size=" + size
+        + ", code_blob_type=" + code_blob_type
+        + '}';
+  }
 }

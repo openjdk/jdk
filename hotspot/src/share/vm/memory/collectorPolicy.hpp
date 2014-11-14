@@ -189,11 +189,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
     return CollectorPolicy::CollectorPolicyKind;
   }
 
-  // Returns true if a collector has eden space with soft end.
-  virtual bool has_soft_ended_eden() {
-    return false;
-  }
-
   // Do any updates required to global flags that are due to heap initialization
   // changes
   virtual void post_heap_initialize() = 0;
