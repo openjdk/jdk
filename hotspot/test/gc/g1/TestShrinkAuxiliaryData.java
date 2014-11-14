@@ -45,6 +45,7 @@ public class TestShrinkAuxiliaryData {
         "-XX:MaxHeapFreeRatio=11",
         "-XX:+UseG1GC",
         "-XX:G1HeapRegionSize=1m",
+        "-XX:-ExplicitGCInvokesConcurrent",
         "-XX:+PrintGCDetails"
     };
 
