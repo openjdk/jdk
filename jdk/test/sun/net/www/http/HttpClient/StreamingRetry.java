@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 6672144
- * @summary HttpURLConnection.getInputStream sends POST request after failed chunked send
+ * @bug 6672144 8050983
+ * @summary Do not retry failed request with a streaming body.
  */
 
 import java.net.HttpURLConnection;
@@ -33,6 +33,7 @@ import java.net.URL;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import static java.lang.System.out;
 
 public class StreamingRetry implements Runnable {
     static final int ACCEPT_TIMEOUT = 20 * 1000; // 20 seconds
@@ -43,11 +44,17 @@ public class StreamingRetry implements Runnable {
     }
 
     void instanceMain() throws IOException {
-        test();
+        out.println("Test with default method");
+        test(null);
+        out.println("Test with POST method");
+        test("POST");
+        out.println("Test with PUT method");
+        test("PUT");
+
         if (failed > 0) throw new RuntimeException("Some tests failed");
     }
 
-    void test() throws IOException {
+    void test(String method) throws IOException {
         ss = new ServerSocket(0);
         ss.setSoTimeout(ACCEPT_TIMEOUT);
         int port = ss.getLocalPort();
@@ -58,6 +65,8 @@ public class StreamingRetry implements Runnable {
             URL url = new URL("http://localhost:" + port + "/");
             HttpURLConnection uc = (HttpURLConnection) url.openConnection();
             uc.setDoOutput(true);
+            if (method != null)
+                uc.setRequestMethod(method);
             uc.setChunkedStreamingMode(4096);
             OutputStream os = uc.getOutputStream();
             os.write("Hello there".getBytes());
@@ -79,7 +88,7 @@ public class StreamingRetry implements Runnable {
             ss.close();
             fail("The server shouldn't accept a second connection");
          } catch (IOException e) {
-            //OK, the clien will close the server socket if successfull
+            //OK, the client will close the server socket if successful
         }
     }
 
