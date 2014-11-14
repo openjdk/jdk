@@ -532,7 +532,7 @@ bool InstanceKlass::verify_code(
   // 1) Verify the bytecodes
   Verifier::Mode mode =
     throw_verifyerror ? Verifier::ThrowException : Verifier::NoException;
-  return Verifier::verify(this_k, mode, this_k->should_verify_class(), CHECK_false);
+  return Verifier::verify(this_k, mode, this_k->should_verify_class(), THREAD);
 }
 
 
@@ -1130,7 +1130,7 @@ Klass* InstanceKlass::array_klass_impl(instanceKlassHandle this_k, bool or_null,
   if (or_null) {
     return oak->array_klass_or_null(n);
   }
-  return oak->array_klass(n, CHECK_NULL);
+  return oak->array_klass(n, THREAD);
 }
 
 Klass* InstanceKlass::array_klass_impl(bool or_null, TRAPS) {

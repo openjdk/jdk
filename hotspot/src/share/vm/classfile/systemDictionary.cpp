@@ -123,7 +123,7 @@ void SystemDictionary::compute_java_system_loader(TRAPS) {
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, TRAPS) {
   if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
-  return ClassLoaderDataGraph::find_or_create(class_loader, CHECK_NULL);
+  return ClassLoaderDataGraph::find_or_create(class_loader, THREAD);
 }
 
 // ----------------------------------------------------------------------------

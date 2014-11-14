@@ -472,7 +472,7 @@ void ClassLoaderData::free_deallocate_list() {
 // These anonymous class loaders are to contain classes used for JSR292
 ClassLoaderData* ClassLoaderData::anonymous_class_loader_data(oop loader, TRAPS) {
   // Add a new class loader data to the graph.
-  return ClassLoaderDataGraph::add(loader, true, CHECK_NULL);
+  return ClassLoaderDataGraph::add(loader, true, THREAD);
 }
 
 const char* ClassLoaderData::loader_name() {

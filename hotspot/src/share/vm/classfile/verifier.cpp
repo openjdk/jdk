@@ -1927,7 +1927,7 @@ Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
 
   return SystemDictionary::resolve_or_fail(
     name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
-    true, CHECK_NULL);
+    true, THREAD);
 }
 
 bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,

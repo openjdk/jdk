@@ -322,7 +322,7 @@ protected:
   void* operator new(size_t size, ClassLoaderData* loader_data, int length, bool read_only, TRAPS) throw() {
     size_t word_size = Array::size(length);
     return (void*) Metaspace::allocate(loader_data, word_size, read_only,
-                                       MetaspaceObj::array_type(sizeof(T)), CHECK_NULL);
+                                       MetaspaceObj::array_type(sizeof(T)), THREAD);
   }
 
   static size_t byte_sizeof(int length) { return sizeof(Array<T>) + MAX2(length - 1, 0) * sizeof(T); }

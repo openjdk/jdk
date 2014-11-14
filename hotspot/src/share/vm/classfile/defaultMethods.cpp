@@ -493,7 +493,7 @@ class MethodFamily : public ResourceObj {
 };
 
 Symbol* MethodFamily::generate_no_defaults_message(TRAPS) const {
-  return SymbolTable::new_symbol("No qualifying defaults found", CHECK_NULL);
+  return SymbolTable::new_symbol("No qualifying defaults found", THREAD);
 }
 
 Symbol* MethodFamily::generate_method_message(Symbol *klass_name, Method* method, TRAPS) const {
