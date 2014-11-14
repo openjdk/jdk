@@ -242,9 +242,15 @@ public class Flow {
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
             new AssignAnalyzer() {
+                WriteableScope enclosedSymbols = WriteableScope.create(env.enclClass.sym);
+                @Override
+                public void visitVarDef(JCVariableDecl tree) {
+                    enclosedSymbols.enter(tree.sym);
+                    super.visitVarDef(tree);
+                }
                 @Override
                 protected boolean trackable(VarSymbol sym) {
-                    return !env.info.scope.includes(sym) &&
+                    return enclosedSymbols.includes(sym) &&
                            sym.owner.kind == MTH;
                 }
             }.analyzeTree(env, that);
