@@ -1882,6 +1882,9 @@ public abstract class SunToolkit extends Toolkit
 
     public synchronized void setWindowDeactivationTime(Window w, long time) {
         AppContext ctx = getAppContext(w);
+        if (ctx == null) {
+            return;
+        }
         @SuppressWarnings("unchecked")
         WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
         if (map == null) {
@@ -1893,6 +1896,9 @@ public abstract class SunToolkit extends Toolkit
 
     public synchronized long getWindowDeactivationTime(Window w) {
         AppContext ctx = getAppContext(w);
+        if (ctx == null) {
+            return -1;
+        }
         @SuppressWarnings("unchecked")
         WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
         if (map == null) {
