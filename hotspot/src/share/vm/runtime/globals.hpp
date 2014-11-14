@@ -1332,9 +1332,6 @@ class CommandLineFlags {
   develop(bool, TraceJNIHandleAllocation, false,                            \
           "Trace allocation/deallocation of JNI handle blocks")             \
                                                                             \
-  develop(bool, TraceThreadEvents, false,                                   \
-          "Trace all thread events")                                        \
-                                                                            \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
