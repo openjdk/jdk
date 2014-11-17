@@ -89,7 +89,6 @@ public class Start extends ToolOption.Helper {
     private boolean apiMode;
 
     private JavaFileManager fileManager;
-    private boolean closeFileManagerOnExit;
 
     Start(String programName,
           PrintWriter errWriter,
@@ -242,7 +241,9 @@ public class Start extends ToolOption.Helper {
             messager.error(Messager.NOPOS, "main.fatal.exception");
             failed = true;
         } finally {
-            if (fileManager != null && closeFileManagerOnExit) {
+            if (fileManager != null
+                    && fileManager instanceof BaseFileManager
+                    && ((BaseFileManager) fileManager).autoClose) {
                 try {
                     fileManager.close();
                 } catch (IOException ignore) {
@@ -343,7 +344,9 @@ public class Start extends ToolOption.Helper {
         if (fileManager == null) {
             JavacFileManager.preRegister(context);
             fileManager = context.get(JavaFileManager.class);
-            closeFileManagerOnExit = true;
+            if (fileManager instanceof BaseFileManager) {
+                ((BaseFileManager) fileManager).autoClose = true;
+            }
         }
         if (fileManager instanceof BaseFileManager) {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);

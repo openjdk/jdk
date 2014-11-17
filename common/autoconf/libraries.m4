@@ -91,85 +91,93 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
   # Check for X Windows
   #
 
-  # Check if the user has specified sysroot, but not --x-includes or --x-libraries.
-  # Make a simple check for the libraries at the sysroot, and setup --x-includes and
-  # --x-libraries for the sysroot, if that seems to be correct.
-  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
-    if test "x$SYSROOT" != "x"; then
-      if test "x$x_includes" = xNONE; then
-        if test -f "$SYSROOT/usr/X11R6/include/X11/Xlib.h"; then
-          x_includes="$SYSROOT/usr/X11R6/include"
-        elif test -f "$SYSROOT/usr/include/X11/Xlib.h"; then
-          x_includes="$SYSROOT/usr/include"
+  if test "x$X11_NOT_NEEDED" = xyes; then
+    if test "x${with_x}" != x; then
+      AC_MSG_WARN([X11 is not used, so --with-x is ignored])
+    fi
+    X_CFLAGS=
+    X_LIBS=
+  else
+    # Check if the user has specified sysroot, but not --x-includes or --x-libraries.
+    # Make a simple check for the libraries at the sysroot, and setup --x-includes and
+    # --x-libraries for the sysroot, if that seems to be correct.
+    if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+      if test "x$SYSROOT" != "x"; then
+        if test "x$x_includes" = xNONE; then
+          if test -f "$SYSROOT/usr/X11R6/include/X11/Xlib.h"; then
+            x_includes="$SYSROOT/usr/X11R6/include"
+          elif test -f "$SYSROOT/usr/include/X11/Xlib.h"; then
+            x_includes="$SYSROOT/usr/include"
+          fi
         fi
-      fi
-      if test "x$x_libraries" = xNONE; then
-        if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
-          x_libraries="$SYSROOT/usr/X11R6/lib"
-        elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          x_libraries="$SYSROOT/usr/lib64"
-        elif test -f "$SYSROOT/usr/lib/libX11.so"; then
-          x_libraries="$SYSROOT/usr/lib"
+        if test "x$x_libraries" = xNONE; then
+          if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
+            x_libraries="$SYSROOT/usr/X11R6/lib"
+          elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+            x_libraries="$SYSROOT/usr/lib64"
+          elif test -f "$SYSROOT/usr/lib/libX11.so"; then
+            x_libraries="$SYSROOT/usr/lib"
+          fi
         fi
       fi
     fi
-  fi
 
-  # Now let autoconf do it's magic
-  AC_PATH_X
-  AC_PATH_XTRA
+    # Now let autoconf do it's magic
+    AC_PATH_X
+    AC_PATH_XTRA
 
-  # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
-  # this doesn't make sense so we remove it.
-  if test "x$COMPILE_TYPE" = xcross; then
-    X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
-  fi
+    # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
+    # this doesn't make sense so we remove it.
+    if test "x$COMPILE_TYPE" = xcross; then
+      X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
+    fi
 
-  if test "x$no_x" = xyes && test "x$X11_NOT_NEEDED" != xyes; then
-    HELP_MSG_MISSING_DEPENDENCY([x11])
-    AC_MSG_ERROR([Could not find X11 libraries. $HELP_MSG])
-  fi
+    if test "x$no_x" = xyes; then
+      HELP_MSG_MISSING_DEPENDENCY([x11])
+      AC_MSG_ERROR([Could not find X11 libraries. $HELP_MSG])
+    fi
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    OPENWIN_HOME="/usr/openwin"
-    X_CFLAGS="-I$SYSROOT$OPENWIN_HOME/include -I$SYSROOT$OPENWIN_HOME/include/X11/extensions"
-    X_LIBS="-L$SYSROOT$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
-        -L$SYSROOT$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR \
-        -R$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
-        -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
-  fi
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+      OPENWIN_HOME="/usr/openwin"
+      X_CFLAGS="-I$SYSROOT$OPENWIN_HOME/include -I$SYSROOT$OPENWIN_HOME/include/X11/extensions"
+      X_LIBS="-L$SYSROOT$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+          -L$SYSROOT$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR \
+          -R$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+          -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
+    fi
 
-  AC_LANG_PUSH(C)
-  OLD_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
+    AC_LANG_PUSH(C)
+    OLD_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
 
-  # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
-  AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h],
-      [X11_A_OK=yes],
-      [X11_A_OK=no; break],
-      [
-        # include <X11/Xlib.h>
-        # include <X11/Xutil.h>
-      ]
-  )
+    # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
+    AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h],
+        [X11_HEADERS_OK=yes],
+        [X11_HEADERS_OK=no; break],
+        [
+          # include <X11/Xlib.h>
+          # include <X11/Xutil.h>
+        ]
+    )
 
-  # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
-  # defined in libawt_xawt.
-  AC_MSG_CHECKING([if XlinearGradient is defined in Xrender.h])
-  AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([[#include <X11/extensions/Xrender.h>]],
-          [[XLinearGradient x;]])],
-      [AC_MSG_RESULT([yes])],
-      [AC_MSG_RESULT([no])
-       X_CFLAGS="$X_CFLAGS -DSOLARIS10_NO_XRENDER_STRUCTS"])
+    if test "x$X11_HEADERS_OK" = xno; then
+      HELP_MSG_MISSING_DEPENDENCY([x11])
+      AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG])
+    fi
 
-  CFLAGS="$OLD_CFLAGS"
-  AC_LANG_POP(C)
+    # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
+    # defined in libawt_xawt.
+    AC_MSG_CHECKING([if XlinearGradient is defined in Xrender.h])
+    AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <X11/extensions/Xrender.h>]],
+            [[XLinearGradient x;]])],
+        [AC_MSG_RESULT([yes])],
+        [AC_MSG_RESULT([no])
+         X_CFLAGS="$X_CFLAGS -DSOLARIS10_NO_XRENDER_STRUCTS"])
 
-  if test "x$X11_A_OK" = xno && test "x$X11_NOT_NEEDED" != xyes; then
-    HELP_MSG_MISSING_DEPENDENCY([x11])
-    AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG])
-  fi
+    CFLAGS="$OLD_CFLAGS"
+    AC_LANG_POP(C)
+  fi # X11_NOT_NEEDED
 
   AC_SUBST(X_CFLAGS)
   AC_SUBST(X_LIBS)
@@ -264,7 +272,7 @@ AC_DEFUN([LIB_BUILD_FREETYPE],
   fi
   # Now check if configure found a version of 'msbuild.exe'
   if test "x$BUILD_FREETYPE" = xyes && test "x$MSBUILD" == x ; then
-    AC_MSG_WARN([Can't find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src])
+    AC_MSG_WARN([Can not find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src])
     BUILD_FREETYPE=no
   fi
 
@@ -335,27 +343,50 @@ AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
   POTENTIAL_FREETYPE_LIB_PATH="$2"
   METHOD="$3"
 
-  # First check if the files exists.
-  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
-    # We found an arbitrary include file. That's a good sign.
-    AC_MSG_NOTICE([Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD])
-    FOUND_FREETYPE=yes
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
 
-    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
-    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
-      AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location.])
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
       FOUND_FREETYPE=no
+    fi
+  fi
+  
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
+    AC_MSG_NOTICE([Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD])
+
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        AC_MSG_NOTICE([Compensating for missing symlink by using version 6 explicitly])
+      else
+        AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location.])
+        FOUND_FREETYPE=no
+      fi
     else
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # On Windows, we will need both .lib and .dll file.
-        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
-          AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location.])
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location.])
           FOUND_FREETYPE=no
         fi
       elif test "x$OPENJDK_TARGET_OS" = xsolaris \
           && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
         # Found lib in isa dir, use that instead.
         POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        AC_MSG_NOTICE([Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead])
       fi
     fi
   fi
@@ -392,6 +423,8 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
   AC_ARG_ENABLE(freetype-bundling, [AS_HELP_STRING([--disable-freetype-bundling],
       [disable bundling of the freetype library with the build result @<:@enabled on Windows or when using --with-freetype, disabled otherwise@:>@])])
 
+  # Need to specify explicitly since it needs to be overridden on some versions of macosx
+  FREETYPE_BASE_NAME=freetype
   FREETYPE_CFLAGS=
   FREETYPE_LIBS=
   FREETYPE_BUNDLE_LIB_PATH=
@@ -575,9 +608,9 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
     if test "x$FREETYPE_LIBS" = x; then
       BASIC_FIXUP_PATH(FREETYPE_LIB_PATH)
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
-        FREETYPE_LIBS="$FREETYPE_LIB_PATH/freetype.lib"
+        FREETYPE_LIBS="$FREETYPE_LIB_PATH/$FREETYPE_BASE_NAME.lib"
       else
-        FREETYPE_LIBS="-L$FREETYPE_LIB_PATH -lfreetype"
+        FREETYPE_LIBS="-L$FREETYPE_LIB_PATH -l$FREETYPE_BASE_NAME"
       fi
     fi
 

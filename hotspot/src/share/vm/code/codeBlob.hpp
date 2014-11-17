@@ -221,7 +221,7 @@ class BufferBlob: public CodeBlob {
   BufferBlob(const char* name, int size);
   BufferBlob(const char* name, int size, CodeBuffer* cb);
 
-  void* operator new(size_t s, unsigned size, bool is_critical = false) throw();
+  void* operator new(size_t s, unsigned size) throw();
 
  public:
   // Creation

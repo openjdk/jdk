@@ -29,15 +29,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import javax.script.*;
-import java.io.*;
+import java.io.File;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
+@SuppressWarnings("javadoc")
 public class ScriptVars {
-    public static void main(String[] args) throws Exception {
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("nashorn");
+    public static void main(final String[] args) throws Exception {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("nashorn");
 
-        File f = new File("test.txt");
+        final File f = new File("test.txt");
         // expose File object as variable to script
         engine.put("file", f);
 

@@ -2677,10 +2677,19 @@ public class Types {
                 while (t.hasTag(TYPEVAR))
                     t = t.getUpperBound();
                 TypeSymbol c = t.tsym;
+                Symbol bestSoFar = null;
                 for (Symbol sym : c.members().getSymbolsByName(ms.name, implFilter)) {
-                    if (sym != null &&
-                             sym.overrides(ms, origin, Types.this, checkResult))
-                        return (MethodSymbol)sym;
+                    if (sym != null && sym.overrides(ms, origin, Types.this, checkResult)) {
+                        bestSoFar = sym;
+                        if ((sym.flags() & ABSTRACT) == 0) {
+                            //if concrete impl is found, exit immediately
+                            break;
+                        }
+                    }
+                }
+                if (bestSoFar != null) {
+                    //return either the (only) concrete implementation or the first abstract one
+                    return (MethodSymbol)bestSoFar;
                 }
             }
             return null;

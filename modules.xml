@@ -792,17 +792,8 @@
       <name>javax.management.timer</name>
     </export>
     <export>
-      <name>com.sun.jmx.defaults</name>
-      <to>jdk.snmp</to>
-    </export>
-    <export>
-      <name>com.sun.jmx.mbeanserver</name>
-      <to>jdk.snmp</to>
-    </export>
-    <export>
       <name>sun.management</name>
       <to>jdk.jconsole</to>
-      <to>jdk.snmp</to>
     </export>
   </module>
   <module>

@@ -150,7 +150,7 @@ class typeArrayOopDesc : public arrayOopDesc {
     DEBUG_ONLY(BasicType etype = Klass::layout_helper_element_type(lh));
     assert(length <= arrayOopDesc::max_array_length(etype), "no overflow");
 
-    julong size_in_bytes = length;
+    julong size_in_bytes = (juint)length;
     size_in_bytes <<= element_shift;
     size_in_bytes += instance_header_size;
     julong size_in_words = ((size_in_bytes + (HeapWordSize-1)) >> LogHeapWordSize);

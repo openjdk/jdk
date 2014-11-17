@@ -38,8 +38,7 @@ final class DeletedArrayFilter extends ArrayFilter {
 
     DeletedArrayFilter(final ArrayData underlying) {
         super(underlying);
-
-        this.deleted = new BitVector(underlying.length);
+        this.deleted = new BitVector(underlying.length());
     }
 
     @Override
@@ -79,25 +78,24 @@ final class DeletedArrayFilter extends ArrayFilter {
     @Override
     public void shiftLeft(final int by) {
         super.shiftLeft(by);
-        deleted.shiftLeft(by, length);
+        deleted.shiftLeft(by, length());
     }
 
     @Override
     public ArrayData shiftRight(final int by) {
         super.shiftRight(by);
-        deleted.shiftRight(by, length);
-
+        deleted.shiftRight(by, length());
         return this;
     }
 
     @Override
     public ArrayData ensure(final long safeIndex) {
-        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH && safeIndex >= length) {
+        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH && safeIndex >= length()) {
             return new SparseArrayData(this, safeIndex + 1);
         }
 
         super.ensure(safeIndex);
-        deleted.resize(length);
+        deleted.resize(length());
 
         return this;
     }
@@ -105,36 +103,31 @@ final class DeletedArrayFilter extends ArrayFilter {
     @Override
     public ArrayData shrink(final long newLength) {
         super.shrink(newLength);
-        deleted.resize(length);
-
+        deleted.resize(length());
         return this;
     }
 
     @Override
     public ArrayData set(final int index, final Object value, final boolean strict) {
         deleted.clear(ArrayIndex.toLongIndex(index));
-
         return super.set(index, value, strict);
     }
 
     @Override
     public ArrayData set(final int index, final int value, final boolean strict) {
         deleted.clear(ArrayIndex.toLongIndex(index));
-
         return super.set(index, value, strict);
     }
 
     @Override
     public ArrayData set(final int index, final long value, final boolean strict) {
         deleted.clear(ArrayIndex.toLongIndex(index));
-
         return super.set(index, value, strict);
     }
 
     @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         deleted.clear(ArrayIndex.toLongIndex(index));
-
         return super.set(index, value, strict);
     }
 
@@ -146,7 +139,7 @@ final class DeletedArrayFilter extends ArrayFilter {
     @Override
     public ArrayData delete(final int index) {
         final long longIndex = ArrayIndex.toLongIndex(index);
-        assert longIndex >= 0 && longIndex < length;
+        assert longIndex >= 0 && longIndex < length();
         deleted.set(longIndex);
         underlying.setEmpty(index);
         return this;
@@ -154,7 +147,7 @@ final class DeletedArrayFilter extends ArrayFilter {
 
     @Override
     public ArrayData delete(final long fromIndex, final long toIndex) {
-        assert fromIndex >= 0 && fromIndex <= toIndex && toIndex < length;
+        assert fromIndex >= 0 && fromIndex <= toIndex && toIndex < length();
         deleted.setRange(fromIndex, toIndex + 1);
         underlying.setEmpty(fromIndex, toIndex);
         return this;
@@ -162,7 +155,7 @@ final class DeletedArrayFilter extends ArrayFilter {
 
     @Override
     public Object pop() {
-        final long index = length - 1;
+        final long index = length() - 1;
 
         if (super.has((int)index)) {
             final boolean isDeleted = deleted.isSet(index);
@@ -179,7 +172,7 @@ final class DeletedArrayFilter extends ArrayFilter {
         final ArrayData newArray = underlying.slice(from, to);
         final DeletedArrayFilter newFilter = new DeletedArrayFilter(newArray);
         newFilter.getDeleted().copy(deleted);
-        newFilter.getDeleted().shiftLeft(from, newFilter.length);
+        newFilter.getDeleted().shiftLeft(from, newFilter.length());
 
         return newFilter;
     }
