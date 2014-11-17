@@ -26,7 +26,7 @@
  *
  * @test
  * @run
- * @littleendian
+ * @bigendian
  */
 
 var dir = typeof(__DIR__) == 'undefined' ? "test/script/basic/" : __DIR__;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-/*
- * NASHORN-377: Typed arrays.
+/**
+ * Verify DataView behavior with little/big endian
  *
  * @test
  * @run
@@ -30,4 +30,4 @@
  */
 
 var dir = typeof(__DIR__) == 'undefined' ? "test/script/basic/" : __DIR__;
-load(dir + "NASHORN-377-payload.js");
+load(dir + "JDK-8049407-payload.js");
