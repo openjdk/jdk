@@ -30,6 +30,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -54,6 +57,21 @@ public abstract class ArrayData {
     /** Untouched data - still link callsites as IntArrayData, but expands to
      *  a proper ArrayData when we try to write to it */
     public static final ArrayData EMPTY_ARRAY = new UntouchedArrayData();
+
+    /**
+     * Length of the array data. Not necessarily length of the wrapped array.
+     * This is private to ensure that no one in a subclass is able to touch the length
+     * without going through {@link setLength}. This is used to implement
+     * {@link LengthNotWritableFilter}s, ensuring that there are no ways past
+     * a {@link setLength} function replaced by a nop
+     */
+    private long length;
+
+    /**
+     * Method handle to throw an {@link UnwarrantedOptimismException} when getting an element
+     * of the wrong type
+     */
+    protected static final CompilerConstants.Call THROW_UNWARRANTED = staticCall(MethodHandles.lookup(), ArrayData.class, "throwUnwarranted", void.class, ArrayData.class, int.class, int.class);
 
     /**
      * Immutable empty array to get ScriptObjects started.
@@ -82,7 +100,7 @@ public abstract class ArrayData {
 
         @Override
         public ContinuousArrayData copy() {
-            return new UntouchedArrayData((int)length);
+            return new UntouchedArrayData((int)length());
         }
 
         @Override
@@ -98,6 +116,10 @@ public abstract class ArrayData {
         @Override
         public ArrayData ensure(final long safeIndex) {
             if (safeIndex > 0L) {
+                if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH) {
+                    return new SparseArrayData(this, safeIndex + 1);
+                }
+                //known to fit in int
                 return toRealArrayData((int)safeIndex).ensure(safeIndex);
            }
            return this;
@@ -106,6 +128,16 @@ public abstract class ArrayData {
         @Override
         public ArrayData convert(final Class<?> type) {
             return toRealArrayData(0).convert(type);
+        }
+
+        @Override
+        public ArrayData delete(final int index) {
+            return new DeletedRangeArrayFilter(this, index, index);
+        }
+
+        @Override
+        public ArrayData delete(final long fromIndex, final long toIndex) {
+            return new DeletedRangeArrayFilter(this, fromIndex, toIndex);
         }
 
         @Override
@@ -169,16 +201,6 @@ public abstract class ArrayData {
         }
 
         @Override
-        public ArrayData delete(final int index) {
-            return new DeletedRangeArrayFilter(this, index, index);
-        }
-
-        @Override
-        public ArrayData delete(final long fromIndex, final long toIndex) {
-            return new DeletedRangeArrayFilter(this, fromIndex, toIndex);
-        }
-
-        @Override
         public Object pop() {
             return ScriptRuntime.UNDEFINED;
         }
@@ -225,17 +247,6 @@ public abstract class ArrayData {
             return Integer.class;
         }
     };
-
-    /**
-     * Length of the array data. Not necessarily length of the wrapped array.
-     */
-    protected long length;
-
-    /**
-     * Method handle to throw an {@link UnwarrantedOptimismException} when getting an element
-     * of the wrong type
-     */
-    protected static final CompilerConstants.Call THROW_UNWARRANTED = staticCall(MethodHandles.lookup(), ArrayData.class, "throwUnwarranted", void.class, ArrayData.class, int.class, int.class);
 
     /**
      * Constructor
@@ -390,6 +401,16 @@ public abstract class ArrayData {
     }
 
     /**
+     * Prevent this array from having its length reset
+     *
+     * @param underlying the underlying ArrayDAta to wrap in the non extensible filter
+     * @return new array data, filtered
+     */
+    public static final ArrayData setIsLengthNotWritable(final ArrayData underlying) {
+        return new LengthNotWritableFilter(underlying);
+    }
+
+    /**
      * Return the length of the array data. This may differ from the actual
      * length of the array this wraps as length may be set or gotten as any
      * other JavaScript Property
@@ -442,6 +463,22 @@ public abstract class ArrayData {
     }
 
     /**
+     * Increase length by 1
+     * @return the new length, not the old one (i.e. pre-increment)
+     */
+    protected final long increaseLength() {
+        return ++this.length;
+    }
+
+    /**
+     * Decrease length by 1.
+     * @return the new length, not the old one (i.e. pre-decrement)
+     */
+    protected final long decreaseLength() {
+        return --this.length;
+    }
+
+    /**
      * Shift the array data left
      *
      * TODO: explore start at an index and not at zero, to make these operations
@@ -450,7 +487,7 @@ public abstract class ArrayData {
      *
      * @param by offset to shift
      */
-    public abstract void shiftLeft(int by);
+    public abstract void shiftLeft(final int by);
 
     /**
      * Shift the array right
@@ -459,7 +496,7 @@ public abstract class ArrayData {
 
      * @return New arraydata (or same)
      */
-    public abstract ArrayData shiftRight(int by);
+    public abstract ArrayData shiftRight(final int by);
 
     /**
      * Ensure that the given index exists and won't fail subsequent
@@ -467,7 +504,7 @@ public abstract class ArrayData {
      * @param safeIndex the index to ensure wont go out of bounds
      * @return new array data (or same)
      */
-    public abstract ArrayData ensure(long safeIndex);
+    public abstract ArrayData ensure(final long safeIndex);
 
     /**
      * Shrink the array to a new length, may or may not retain the
@@ -477,7 +514,7 @@ public abstract class ArrayData {
      *
      * @return new array data (or same)
      */
-    public abstract ArrayData shrink(long newLength);
+    public abstract ArrayData shrink(final long newLength);
 
     /**
      * Set an object value at a given index
@@ -487,7 +524,7 @@ public abstract class ArrayData {
      * @param strict are we in strict mode
      * @return new array data (or same)
      */
-    public abstract ArrayData set(int index, Object value, boolean strict);
+    public abstract ArrayData set(final int index, final Object value, final boolean strict);
 
     /**
      * Set an int value at a given index
@@ -497,7 +534,7 @@ public abstract class ArrayData {
      * @param strict are we in strict mode
      * @return new array data (or same)
      */
-    public abstract ArrayData set(int index, int value, boolean strict);
+    public abstract ArrayData set(final int index, final int value, final boolean strict);
 
     /**
      * Set a long value at a given index
@@ -507,7 +544,7 @@ public abstract class ArrayData {
      * @param strict are we in strict mode
      * @return new array data (or same)
      */
-    public abstract ArrayData set(int index, long value, boolean strict);
+    public abstract ArrayData set(final int index, final long value, final boolean strict);
 
     /**
      * Set an double value at a given index
@@ -517,7 +554,7 @@ public abstract class ArrayData {
      * @param strict are we in strict mode
      * @return new array data (or same)
      */
-    public abstract ArrayData set(int index, double value, boolean strict);
+    public abstract ArrayData set(final int index, final double value, final boolean strict);
 
     /**
      * Set an empty value at a given index. Should only affect Object array.
@@ -548,7 +585,7 @@ public abstract class ArrayData {
      * @param index the index
      * @return the value
      */
-    public abstract int getInt(int index);
+    public abstract int getInt(final int index);
 
     /**
      * Returns the optimistic type of this array data. Basically, when an array data object needs to throw an
@@ -577,7 +614,7 @@ public abstract class ArrayData {
      * @param index the index
      * @return the value
      */
-    public abstract long getLong(int index);
+    public abstract long getLong(final int index);
 
     /**
      * Get optimistic long - default is that it's impossible. Overridden
@@ -597,7 +634,7 @@ public abstract class ArrayData {
      * @param index the index
      * @return the value
      */
-    public abstract double getDouble(int index);
+    public abstract double getDouble(final int index);
 
     /**
      * Get optimistic double - default is that it's impossible. Overridden
@@ -617,14 +654,14 @@ public abstract class ArrayData {
      * @param index the index
      * @return the value
      */
-    public abstract Object getObject(int index);
+    public abstract Object getObject(final int index);
 
     /**
      * Tests to see if an entry exists (avoids boxing.)
      * @param index the index
      * @return true if entry exists
      */
-    public abstract boolean has(int index);
+    public abstract boolean has(final int index);
 
     /**
      * Returns if element at specific index can be deleted or not.
@@ -670,7 +707,7 @@ public abstract class ArrayData {
      * @param index the index
      * @return new array data (or same)
      */
-    public abstract ArrayData delete(int index);
+    public abstract ArrayData delete(final int index);
 
     /**
      * Delete a given range from this array;
@@ -680,7 +717,7 @@ public abstract class ArrayData {
      *
      * @return new ArrayData after deletion
      */
-    public abstract ArrayData delete(long fromIndex, long toIndex);
+    public abstract ArrayData delete(final long fromIndex, final long toIndex);
 
     /**
      * Convert the ArrayData to one with a different element type
@@ -690,7 +727,7 @@ public abstract class ArrayData {
      * @param type new element type
      * @return new array data
      */
-    public abstract ArrayData convert(Class<?> type);
+    public abstract ArrayData convert(final Class<?> type);
 
     /**
      * Push an array of items to the end of the array
@@ -774,7 +811,7 @@ public abstract class ArrayData {
      * @param to   end index + 1
      * @return new array data
      */
-    public abstract ArrayData slice(long from, long to);
+    public abstract ArrayData slice(final long from, final long to);
 
     /**
      * Fast splice operation. This just modifies the array according to the number of
@@ -819,6 +856,34 @@ public abstract class ArrayData {
     }
 
     /**
+     * Return a list of keys in the array for the iterators
+     * @return iterator key list
+     */
+    protected List<Long> computeIteratorKeys() {
+        final List<Long> keys = new ArrayList<>();
+
+        final long len = length();
+        for (long i = 0L; i < len; i = nextIndex(i)) {
+            if (has((int)i)) {
+                keys.add(i);
+            }
+        }
+
+        return keys;
+    }
+
+    /**
+     * Return an iterator that goes through all indexes of elements
+     * in this array. This includes those after array.length if
+     * they exist
+     *
+     * @return iterator
+     */
+    public Iterator<Long> indexIterator() {
+        return computeIteratorKeys().iterator();
+    }
+
+    /**
      * Exponential growth function for array size when in
      * need of resizing.
      *
@@ -837,7 +902,7 @@ public abstract class ArrayData {
      *
      * @return the next index
      */
-    public long nextIndex(final long index) {
+    long nextIndex(final long index) {
         return index + 1;
     }
 

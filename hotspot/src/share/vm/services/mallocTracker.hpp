@@ -239,67 +239,45 @@ class MallocMemorySummary : AllStatic {
 
 class MallocHeader VALUE_OBJ_CLASS_SPEC {
 #ifdef _LP64
-  size_t           _size      : 62;
-  size_t           _level     : 2;
+  size_t           _size      : 64;
   size_t           _flags     : 8;
   size_t           _pos_idx   : 16;
   size_t           _bucket_idx: 40;
 #define MAX_MALLOCSITE_TABLE_SIZE ((size_t)1 << 40)
 #define MAX_BUCKET_LENGTH         ((size_t)(1 << 16))
-#define MAX_MALLOC_SIZE           (((size_t)1 << 62) - 1)
 #else
-  size_t           _size      : 30;
-  size_t           _level     : 2;
+  size_t           _size      : 32;
   size_t           _flags     : 8;
   size_t           _pos_idx   : 8;
   size_t           _bucket_idx: 16;
 #define MAX_MALLOCSITE_TABLE_SIZE  ((size_t)(1 << 16))
 #define MAX_BUCKET_LENGTH          ((size_t)(1 << 8))
-// Max malloc size = 1GB - 1 on 32 bit system, such has total 4GB memory
-#define MAX_MALLOC_SIZE            ((size_t)(1 << 30) - 1)
 #endif  // _LP64
 
  public:
-  // Summary tracking header
-  MallocHeader(size_t size, MEMFLAGS flags) {
+  MallocHeader(size_t size, MEMFLAGS flags, const NativeCallStack& stack, NMT_TrackingLevel level) {
     assert(sizeof(MallocHeader) == sizeof(void*) * 2,
       "Wrong header size");
 
-    _level = NMT_summary;
-    _flags = flags;
-    set_size(size);
-    MallocMemorySummary::record_malloc(size, flags);
-    MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
-  }
-  // Detail tracking header
-  MallocHeader(size_t size, MEMFLAGS flags, const NativeCallStack& stack) {
-    assert(sizeof(MallocHeader) == sizeof(void*) * 2,
-      "Wrong header size");
-
-    _level = NMT_detail;
-    _flags = flags;
-    set_size(size);
-    size_t bucket_idx;
-    size_t pos_idx;
-    if (record_malloc_site(stack, size, &bucket_idx, &pos_idx)) {
-      assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE, "Overflow bucket index");
-      assert(pos_idx <= MAX_BUCKET_LENGTH, "Overflow bucket position index");
-      _bucket_idx = bucket_idx;
-      _pos_idx = pos_idx;
+    if (level == NMT_minimal) {
+      return;
     }
+
+    _flags = flags;
+    set_size(size);
+    if (level == NMT_detail) {
+      size_t bucket_idx;
+      size_t pos_idx;
+      if (record_malloc_site(stack, size, &bucket_idx, &pos_idx)) {
+        assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE, "Overflow bucket index");
+        assert(pos_idx <= MAX_BUCKET_LENGTH, "Overflow bucket position index");
+        _bucket_idx = bucket_idx;
+        _pos_idx = pos_idx;
+      }
+    }
+
     MallocMemorySummary::record_malloc(size, flags);
     MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
-  }
-  // Minimal tracking header
-  MallocHeader() {
-    assert(sizeof(MallocHeader) == sizeof(void*) * 2,
-      "Wrong header size");
-
-    _level = (unsigned short)NMT_minimal;
-  }
-
-  inline NMT_TrackingLevel tracking_level() const {
-    return (NMT_TrackingLevel)_level;
   }
 
   inline size_t   size()  const { return _size; }
@@ -311,7 +289,6 @@ class MallocHeader VALUE_OBJ_CLASS_SPEC {
 
  private:
   inline void set_size(size_t size) {
-    assert(size <= MAX_MALLOC_SIZE, "Malloc size too large, should use virtual memory?");
     _size = size;
   }
   bool record_malloc_site(const NativeCallStack& stack, size_t size,
@@ -347,10 +324,6 @@ class MallocTracker : AllStatic {
   // Record free on specified memory block
   static void* record_free(void* memblock);
 
-  // Get tracking level of specified memory block
-  static inline NMT_TrackingLevel get_memory_tracking_level(void* memblock);
-
-
   // Offset memory address to header address
   static inline void* get_base(void* memblock);
   static inline void* get_base(void* memblock, NMT_TrackingLevel level) {
@@ -361,16 +334,12 @@ class MallocTracker : AllStatic {
   // Get memory size
   static inline size_t get_size(void* memblock) {
     MallocHeader* header = malloc_header(memblock);
-    assert(header->tracking_level() >= NMT_summary,
-      "Wrong tracking level");
     return header->size();
   }
 
   // Get memory type
   static inline MEMFLAGS get_flags(void* memblock) {
     MallocHeader* header = malloc_header(memblock);
-    assert(header->tracking_level() >= NMT_summary,
-      "Wrong tracking level");
     return header->flags();
   }
 
@@ -394,7 +363,6 @@ class MallocTracker : AllStatic {
   static inline MallocHeader* malloc_header(void *memblock) {
     assert(memblock != NULL, "NULL pointer");
     MallocHeader* header = (MallocHeader*)((char*)memblock - sizeof(MallocHeader));
-    assert(header->tracking_level() >= NMT_minimal, "Bad header");
     return header;
   }
 };

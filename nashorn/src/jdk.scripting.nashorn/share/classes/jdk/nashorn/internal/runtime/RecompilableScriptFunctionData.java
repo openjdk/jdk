@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
-
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -475,6 +474,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @return either the existing map, or a loaded map from the persistent type info cache, or a new empty map if
      * neither an existing map or a persistent cached type info is available.
      */
+    @SuppressWarnings("unused")
     private static Map<Integer, Type> getEffectiveInvalidatedProgramPoints(
             final Map<Integer, Type> invalidatedProgramPoints, final Object typeInformationFile) {
         if(invalidatedProgramPoints != null) {
@@ -619,20 +619,25 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return f;
     }
 
-    MethodHandle lookup(final FunctionInitializer fnInit) {
+    private void logLookup(final boolean shouldLog, final MethodType targetType) {
+        if (shouldLog && log.isEnabled()) {
+            log.info("Looking up ", DebugLogger.quote(functionName), " type=", targetType);
+        }
+    }
+
+    private MethodHandle lookup(final FunctionInitializer fnInit, final boolean shouldLog) {
         final MethodType type = fnInit.getMethodType();
+        logLookup(shouldLog, type);
         return lookupCodeMethod(fnInit.getCode(), type);
     }
 
     MethodHandle lookup(final FunctionNode fn) {
         final MethodType type = new FunctionSignature(fn).getMethodType();
+        logLookup(true, type);
         return lookupCodeMethod(fn.getCompileUnit().getCode(), type);
     }
 
     MethodHandle lookupCodeMethod(final Class<?> codeClass, final MethodType targetType) {
-        if (log.isEnabled()) {
-            log.info("Looking up ", DebugLogger.quote(functionName), " type=", targetType);
-        }
         return MH.findStatic(LOOKUP, codeClass, functionName, targetType);
     }
 
@@ -648,7 +653,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if(!code.isEmpty()) {
             throw new IllegalStateException(name);
         }
-        addCode(lookup(initializer), null, null, initializer.getFlags());
+        addCode(lookup(initializer, true), null, null, initializer.getFlags());
     }
 
     private CompiledFunction addCode(final MethodHandle target, final Map<Integer, Type> invalidatedProgramPoints,
@@ -670,10 +675,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      */
     private CompiledFunction addCode(final FunctionInitializer fnInit, final MethodType callSiteType) {
         if (isVariableArity()) {
-            return addCode(lookup(fnInit), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
+            return addCode(lookup(fnInit, true), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
         }
 
-        final MethodHandle handle = lookup(fnInit);
+        final MethodHandle handle = lookup(fnInit, true);
         final MethodType fromType = handle.type();
         MethodType toType = needsCallee(fromType) ? callSiteType.changeParameterType(0, ScriptFunction.class) : callSiteType.dropParameterTypes(0, 1);
         toType = toType.changeReturnType(fromType.returnType());
@@ -698,7 +703,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             toType = toType.dropParameterTypes(fromCount, toCount);
         }
 
-        return addCode(lookup(fnInit).asType(toType), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
+        return addCode(lookup(fnInit, false).asType(toType), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
     }
 
     /**
@@ -727,7 +732,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         assert existingBest != null;
         //we are calling a vararg method with real args
-        boolean applyToCall = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
+        boolean varArgWithRealArgs = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
 
         //if the best one is an apply to call, it has to match the callsite exactly
         //or we need to regenerate
@@ -736,14 +741,16 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             if (best != null) {
                 return best;
             }
-            applyToCall = true;
+            varArgWithRealArgs = true;
         }
 
-        if (applyToCall) {
+        if (varArgWithRealArgs) {
+            // special case: we had an apply to call, but we failed to make it fit.
+            // Try to generate a specialized one for this callsite. It may
+            // be another apply to call specialization, or it may not, but whatever
+            // it is, it is a specialization that is guaranteed to fit
             final FunctionInitializer fnInit = compileTypeSpecialization(callSiteType, runtimeScope, false);
-            if ((fnInit.getFlags() & FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION) != 0) { //did the specialization work
-                existingBest = addCode(fnInit, callSiteType);
-            }
+            existingBest = addCode(fnInit, callSiteType);
         }
 
         return existingBest;

@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.MethodEmitter.LARGE_STRING_THRESHOLD;
+
 import java.util.HashMap;
 
 /**
@@ -66,27 +68,28 @@ public class Namespace {
     }
 
     /**
-     * Create a uniqueName name in the namespace in the form base$n where n varies
-     * .
-     * @param base Base of name.  Base will be returned if uniqueName.
+     * Create a uniqueName name in the namespace in the form base$n where n varies.
+     * Also truncates very long names that would otherwise break ASM.
      *
+     * @param base Base of name.  Base will be returned if uniqueName.
      * @return Generated uniqueName name.
      */
     public String uniqueName(final String base) {
+        final String truncatedBase = base.length() > LARGE_STRING_THRESHOLD ? base.substring(0, LARGE_STRING_THRESHOLD) : base;
         for (Namespace namespace = this; namespace != null; namespace = namespace.getParent()) {
             final HashMap<String, Integer> namespaceDirectory = namespace.directory;
-            final Integer                  counter            = namespaceDirectory.get(base);
+            final Integer                  counter            = namespaceDirectory.get(truncatedBase);
 
             if (counter != null) {
                 final int count = counter + 1;
-                namespaceDirectory.put(base, count);
-                return base + '-' + count;
+                namespaceDirectory.put(truncatedBase, count);
+                return truncatedBase + '-' + count;
             }
         }
 
-        directory.put(base, 0);
+        directory.put(truncatedBase, 0);
 
-        return base;
+        return truncatedBase;
     }
 
     @Override

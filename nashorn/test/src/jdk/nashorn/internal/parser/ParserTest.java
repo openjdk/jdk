@@ -27,7 +27,6 @@ package jdk.nashorn.internal.parser;
 
 import static jdk.nashorn.internal.runtime.Source.readFully;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
-
 import java.io.File;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
@@ -41,6 +40,7 @@ import org.testng.annotations.Test;
 /**
  * Run tests to check Nashorn's parser.
  */
+@SuppressWarnings("javadoc")
 public class ParserTest {
     private static final boolean VERBOSE   = Boolean.valueOf(System.getProperty("parsertest.verbose"));
     private static final boolean TEST262   = Boolean.valueOf(System.getProperty("parsertest.test262"));

@@ -36,10 +36,7 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
-/**
- *
- * @author Pavel Stepanov
- */
+@SuppressWarnings("javadoc")
 public class PerformanceWrapper extends jdk.nashorn.tools.Shell {
 
     int _numberOfIterations;

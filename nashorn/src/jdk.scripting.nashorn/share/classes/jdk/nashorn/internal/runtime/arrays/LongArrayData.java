@@ -27,7 +27,6 @@ package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -77,7 +76,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public LongArrayData copy() {
-        return new LongArrayData(array.clone(), (int)length);
+        return new LongArrayData(array.clone(), (int)length());
     }
 
     @Override
@@ -86,10 +85,11 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
     }
 
     private Object[] toObjectArray(final boolean trim) {
-        assert length <= array.length : "length exceeds internal array size";
-        final Object[] oarray = new Object[trim ? (int)length : array.length];
+        assert length() <= array.length : "length exceeds internal array size";
+        final int len = (int)length();
+        final Object[] oarray = new Object[trim ? len : array.length];
 
-        for (int index = 0; index < length; index++) {
+        for (int index = 0; index < len; index++) {
             oarray[index] = Long.valueOf(array[index]);
         }
 
@@ -99,16 +99,18 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
     @Override
     public Object asArrayOfType(final Class<?> componentType) {
         if (componentType == long.class) {
-            return array.length == length ? array.clone() : Arrays.copyOf(array, (int)length);
+            final int len = (int)length();
+            return array.length == len ? array.clone() : Arrays.copyOf(array, len);
         }
         return super.asArrayOfType(componentType);
     }
 
     private double[] toDoubleArray() {
-        assert length <= array.length : "length exceeds internal array size";
+        assert length() <= array.length : "length exceeds internal array size";
+        final int len = (int)length();
         final double[] darray = new double[array.length];
 
-        for (int index = 0; index < length; index++) {
+        for (int index = 0; index < len; index++) {
             darray[index] = array[index];
         }
 
@@ -120,7 +122,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
         if (type == Integer.class || type == Long.class) {
             return this;
         }
-        final int len = (int)length;
+        final int len = (int)length();
         if (type == Double.class) {
             return new NumberArrayData(toDoubleArray(), len);
         }
@@ -134,7 +136,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public ArrayData shiftRight(final int by) {
-        final ArrayData newData = ensure(by + length - 1);
+        final ArrayData newData = ensure(by + length() - 1);
         if (newData != this) {
             newData.shiftRight(by);
             return newData;
@@ -179,14 +181,14 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
     @Override
     public ArrayData set(final int index, final int value, final boolean strict) {
         array[index] = value;
-        setLength(Math.max(index + 1, length));
+        setLength(Math.max(index + 1, length()));
         return this;
     }
 
     @Override
     public ArrayData set(final int index, final long value, final boolean strict) {
         array[index] = value;
-        setLength(Math.max(index + 1, length));
+        setLength(Math.max(index + 1, length()));
         return this;
     }
 
@@ -194,7 +196,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
     public ArrayData set(final int index, final double value, final boolean strict) {
         if (JSType.isRepresentableAsLong(value)) {
             array[index] = (long)value;
-            setLength(Math.max(index + 1, length));
+            setLength(Math.max(index + 1, length()));
             return this;
         }
         return convert(Double.class).set(index, value, strict);
@@ -265,7 +267,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public boolean has(final int index) {
-        return 0 <= index && index < length;
+        return 0 <= index && index < length();
     }
 
     @Override
@@ -280,11 +282,12 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public Object pop() {
-        if (length == 0) {
+        final int len = (int)length();
+        if (len == 0) {
             return ScriptRuntime.UNDEFINED;
         }
 
-        final int newLength = (int)length - 1;
+        final int newLength = len - 1;
         final long elem = array[newLength];
         array[newLength] = 0;
         setLength(newLength);
@@ -294,14 +297,14 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public ArrayData slice(final long from, final long to) {
-        final long start     = from < 0 ? from + length : from;
+        final long start     = from < 0 ? from + length() : from;
         final long newLength = to - start;
         return new LongArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)newLength);
     }
 
     @Override
     public final ArrayData push(final boolean strict, final long item) {
-        final long      len     = length;
+        final long      len     = length();
         final ArrayData newData = ensure(len);
         if (newData == this) {
             array[(int)len] = item;
@@ -312,7 +315,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public ArrayData fastSplice(final int start, final int removed, final int added) throws UnsupportedOperationException {
-        final long oldLength = length;
+        final long oldLength = length();
         final long newLength = oldLength - removed + added;
         if (newLength > SparseArrayData.MAX_DENSE_LENGTH && newLength > array.length) {
             throw new UnsupportedOperationException();
@@ -345,20 +348,20 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public long fastPush(final long arg) {
-        final int len = (int)length;
+        final int len = (int)length();
         if (len == array.length) {
             array = Arrays.copyOf(array, nextSize(len));
         }
         array[len] = arg;
-        return ++length;
+        return increaseLength();
     }
 
     @Override
     public long fastPopLong() {
-        if (length == 0) {
-            throw new ClassCastException();
+        if (length() == 0) {
+            throw new ClassCastException(); //undefined result
         }
-        final int newLength = (int)--length;
+        final int newLength = (int)decreaseLength();
         final long elem = array[newLength];
         array[newLength] = 0;
         return elem;
@@ -376,8 +379,8 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public ContinuousArrayData fastConcat(final ContinuousArrayData otherData) {
-        final int   otherLength = (int)otherData.length;
-        final int   thisLength  = (int)length;
+        final int   otherLength = (int)otherData.length();
+        final int   thisLength  = (int)length();
         assert otherLength > 0 && thisLength > 0;
 
         final long[] otherArray  = ((LongArrayData)otherData).array;
@@ -392,13 +395,14 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public String toString() {
-        assert length <= array.length : length + " > " + array.length;
+        assert length() <= array.length : length() + " > " + array.length;
 
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName()).
                 append(": [");
-        for (int i = 0; i < length; i++) {
+        final int len = (int)length();
+        for (int i = 0; i < len; i++) {
             sb.append(array[i]).append('L'); //make sure L suffix is on elements, to discriminate this from IntArrayData.toString()
-            if (i + 1 < length) {
+            if (i + 1 < len) {
                 sb.append(", ");
             }
         }

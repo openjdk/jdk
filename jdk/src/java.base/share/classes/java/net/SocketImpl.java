@@ -446,6 +446,7 @@ public abstract class SocketImpl implements SocketOptions {
 
         serverSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
         serverSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
+        serverSocketOptions.add(StandardSocketOptions.IP_TOS);
     };
 
     /**

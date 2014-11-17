@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public interface EncloseType {
     final int MEMORY                = 1<<0;
     final int OPTION                = 1<<1;

@@ -191,7 +191,7 @@ public class BasicJavacTask extends JavacTask {
             }
         }
         for (List<String> p: pluginsToCall) {
-            Log.instance(context).error("msg.plugin.not.found", p.head);
+            Log.instance(context).error("plugin.not.found", p.head);
         }
     }
 

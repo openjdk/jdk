@@ -35,6 +35,7 @@
 
 public class IntxTest {
     private static final String FLAG_NAME = "OnStackReplacePercentage";
+    private static final String FLAG_DEBUG_NAME = "InlineFrequencyCount";
     private static final Long[] TESTS = {0L, 100L, -1L,
             (long) Integer.MAX_VALUE, (long) Integer.MIN_VALUE};
 
@@ -42,6 +43,7 @@ public class IntxTest {
         VmFlagTest.runTest(FLAG_NAME, TESTS,
             VmFlagTest.WHITE_BOX::setIntxVMFlag,
             VmFlagTest.WHITE_BOX::getIntxVMFlag);
+        VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getIntxVMFlag);
     }
 }
 

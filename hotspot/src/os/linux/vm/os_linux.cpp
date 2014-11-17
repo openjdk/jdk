@@ -163,35 +163,6 @@ static pthread_mutex_t dl_mutex;
 // Declarations
 static void unpackTime(timespec* absTime, bool isAbsolute, jlong time);
 
-#ifdef JAVASE_EMBEDDED
-class MemNotifyThread: public Thread {
-  friend class VMStructs;
- public:
-  virtual void run();
-
- private:
-  static MemNotifyThread* _memnotify_thread;
-  int _fd;
-
- public:
-
-  // Constructor
-  MemNotifyThread(int fd);
-
-  // Tester
-  bool is_memnotify_thread() const { return true; }
-
-  // Printing
-  char* name() const { return (char*)"Linux MemNotify Thread"; }
-
-  // Returns the single instance of the MemNotifyThread
-  static MemNotifyThread* memnotify_thread() { return _memnotify_thread; }
-
-  // Create and start the single instance of MemNotifyThread
-  static void start();
-};
-#endif // JAVASE_EMBEDDED
-
 // utility functions
 
 static int SR_initialize();
@@ -384,7 +355,10 @@ void os::init_system_properties_values() {
 
     // Found the full path to libjvm.so.
     // Now cut the path to <java_home>/jre if we can.
-    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
+    pslash = strrchr(buf, '/');
+    if (pslash != NULL) {
+      *pslash = '\0';            // Get rid of /libjvm.so.
+    }
     pslash = strrchr(buf, '/');
     if (pslash != NULL) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
@@ -1223,7 +1197,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
       i = 0;
       if (s) {
         // Skip blank chars
-        do s++; while (isspace(*s));
+        do { s++; } while (s && isspace(*s));
 
 #define _UFM UINTX_FORMAT
 #define _DFM INTX_FORMAT
@@ -2372,6 +2346,9 @@ void os::jvm_path(char *buf, jint buflen) {
 
         // Check the current module name "libjvm.so".
         p = strrchr(buf, '/');
+        if (p == NULL) {
+          return;
+        }
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
         rp = realpath(java_home_var, buf);
@@ -2405,6 +2382,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   strncpy(saved_jvm_path, buf, MAXPATHLEN);
+  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
@@ -4866,17 +4844,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-// this is called at the end of vm_initialization
-void os::init_3(void) {
-#ifdef JAVASE_EMBEDDED
-  // Start the MemNotifyThread
-  if (LowMemoryProtection) {
-    MemNotifyThread::start();
-  }
-  return;
-#endif
-}
-
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
   if (!guard_memory((char*)_polling_page, Linux::page_size())) {
@@ -5103,9 +5070,38 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  int fd;
 
-  fd = ::open64(path, oflag, mode);
+  // All file descriptors that are opened in the Java process and not
+  // specifically destined for a subprocess should have the close-on-exec
+  // flag set.  If we don't set it, then careless 3rd party native code
+  // might fork and exec without closing all appropriate file descriptors
+  // (e.g. as we do in closeDescriptors in UNIXProcess.c), and this in
+  // turn might:
+  //
+  // - cause end-of-file to fail to be detected on some file
+  //   descriptors, resulting in mysterious hangs, or
+  //
+  // - might cause an fopen in the subprocess to fail on a system
+  //   suffering from bug 1085341.
+  //
+  // (Yes, the default setting of the close-on-exec flag is a Unix
+  // design flaw)
+  //
+  // See:
+  // 1085341: 32-bit stdio routines should support file descriptors >255
+  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+  //
+  // Modern Linux kernels (after 2.6.23 2007) support O_CLOEXEC with open().
+  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
+  // because it saves a system call and removes a small window where the flag
+  // is unset.  On ancient Linux kernels the O_CLOEXEC flag will be ignored
+  // and we fall back to using FD_CLOEXEC (see below).
+#ifdef O_CLOEXEC
+  oflag |= O_CLOEXEC;
+#endif
+
+  int fd = ::open64(path, oflag, mode);
   if (fd == -1) return -1;
 
   //If the open succeeded, the file might still be a directory
@@ -5126,32 +5122,17 @@ int os::open(const char *path, int oflag, int mode) {
     }
   }
 
-  // All file descriptors that are opened in the JVM and not
-  // specifically destined for a subprocess should have the
-  // close-on-exec flag set.  If we don't set it, then careless 3rd
-  // party native code might fork and exec without closing all
-  // appropriate file descriptors (e.g. as we do in closeDescriptors in
-  // UNIXProcess.c), and this in turn might:
-  //
-  // - cause end-of-file to fail to be detected on some file
-  //   descriptors, resulting in mysterious hangs, or
-  //
-  // - might cause an fopen in the subprocess to fail on a system
-  //   suffering from bug 1085341.
-  //
-  // (Yes, the default setting of the close-on-exec flag is a Unix
-  // design flaw)
-  //
-  // See:
-  // 1085341: 32-bit stdio routines should support file descriptors >255
-  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-  //
 #ifdef FD_CLOEXEC
-  {
+  // Validate that the use of the O_CLOEXEC flag on open above worked.
+  // With recent kernels, we will perform this check exactly once.
+  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
+  if (!O_CLOEXEC_is_known_to_work) {
     int flags = ::fcntl(fd, F_GETFD);
     if (flags != -1) {
-      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+      if ((flags & FD_CLOEXEC) != 0)
+        O_CLOEXEC_is_known_to_work = 1;
+      else
+        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
     }
   }
 #endif
@@ -5209,15 +5190,6 @@ int os::available(int fd, jlong *bytes) {
   }
   *bytes = end - cur;
   return 1;
-}
-
-int os::socket_available(int fd, jint *pbytes) {
-  // Linux doc says EINTR not returned, unlike Solaris
-  int ret = ::ioctl(fd, FIONREAD, pbytes);
-
-  //%% note ioctl can return 0 when successful, JVM_SocketAvailable
-  // is expected to return 0 on failure and 1 on success to the jdk.
-  return (ret < 0) ? 0 : 1;
 }
 
 // Map a block of memory.
@@ -5349,7 +5321,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   if (s == NULL) return -1;
 
   // Skip blank chars
-  do s++; while (isspace(*s));
+  do { s++; } while (s && isspace(*s));
 
   count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
                  &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,
@@ -5410,7 +5382,18 @@ void os::pause() {
 }
 
 
-// Refer to the comments in os_solaris.cpp park-unpark.
+// Refer to the comments in os_solaris.cpp park-unpark. The next two
+// comment paragraphs are worth repeating here:
+//
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
+//
+// _Event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
 //
 // Beware -- Some versions of NPTL embody a flaw where pthread_cond_timedwait() can
 // hang indefinitely.  For instance NPTL 0.60 on 2.4.21-4ELsmp is vulnerable.
@@ -5509,6 +5492,11 @@ static struct timespec* compute_abstime(timespec* abstime, jlong millis) {
 }
 
 void os::PlatformEvent::park() {       // AKA "down()"
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   // TODO: assert that _Assoc != NULL or _Assoc == Self
@@ -5546,6 +5534,11 @@ void os::PlatformEvent::park() {       // AKA "down()"
 }
 
 int os::PlatformEvent::park(jlong millis) {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_nParked == 0, "invariant");
 
   int v;
@@ -5609,11 +5602,11 @@ int os::PlatformEvent::park(jlong millis) {
 
 void os::PlatformEvent::unpark() {
   // Transitions for _Event:
-  //    0 :=> 1
-  //    1 :=> 1
-  //   -1 :=> either 0 or 1; must signal target thread
-  //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1.
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _Event from -1 to either
+  //         0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
@@ -5636,15 +5629,16 @@ void os::PlatformEvent::unpark() {
   status = pthread_mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
   if (AnyWaiters != 0) {
+    // Note that we signal() *after* dropping the lock for "immortal" Events.
+    // This is safe and avoids a common class of  futile wakeups.  In rare
+    // circumstances this can cause a thread to return prematurely from
+    // cond_{timed}wait() but the spurious wakeup is benign and the victim
+    // will simply re-test the condition and re-park itself.
+    // This provides particular benefit if the underlying platform does not
+    // provide wait morphing.
     status = pthread_cond_signal(_cond);
     assert_status(status == 0, status, "cond_signal");
   }
-
-  // Note that we signal() _after dropping the lock for "immortal" Events.
-  // This is safe and avoids a common class of  futile wakeups.  In rare
-  // circumstances this can cause a thread to return prematurely from
-  // cond_{timed}wait() but the spurious wakeup is benign and the victim will
-  // simply re-test the condition and re-park itself.
 }
 
 
@@ -6005,82 +5999,6 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
   return strlen(buffer);
 }
-
-#ifdef JAVASE_EMBEDDED
-//
-// A thread to watch the '/dev/mem_notify' device, which will tell us when the OS is running low on memory.
-//
-MemNotifyThread* MemNotifyThread::_memnotify_thread = NULL;
-
-// ctor
-//
-MemNotifyThread::MemNotifyThread(int fd): Thread() {
-  assert(memnotify_thread() == NULL, "we can only allocate one MemNotifyThread");
-  _fd = fd;
-
-  if (os::create_thread(this, os::os_thread)) {
-    _memnotify_thread = this;
-    os::set_priority(this, NearMaxPriority);
-    os::start_thread(this);
-  }
-}
-
-// Where all the work gets done
-//
-void MemNotifyThread::run() {
-  assert(this == memnotify_thread(), "expected the singleton MemNotifyThread");
-
-  // Set up the select arguments
-  fd_set rfds;
-  if (_fd != -1) {
-    FD_ZERO(&rfds);
-    FD_SET(_fd, &rfds);
-  }
-
-  // Now wait for the mem_notify device to wake up
-  while (1) {
-    // Wait for the mem_notify device to signal us..
-    int rc = select(_fd+1, _fd != -1 ? &rfds : NULL, NULL, NULL, NULL);
-    if (rc == -1) {
-      perror("select!\n");
-      break;
-    } else if (rc) {
-      //ssize_t free_before = os::available_memory();
-      //tty->print ("Notified: Free: %dK \n",os::available_memory()/1024);
-
-      // The kernel is telling us there is not much memory left...
-      // try to do something about that
-
-      // If we are not already in a GC, try one.
-      if (!Universe::heap()->is_gc_active()) {
-        Universe::heap()->collect(GCCause::_allocation_failure);
-
-        //ssize_t free_after = os::available_memory();
-        //tty->print ("Post-Notify: Free: %dK\n",free_after/1024);
-        //tty->print ("GC freed: %dK\n", (free_after - free_before)/1024);
-      }
-      // We might want to do something like the following if we find the GC's are not helping...
-      // Universe::heap()->size_policy()->set_gc_time_limit_exceeded(true);
-    }
-  }
-}
-
-// See if the /dev/mem_notify device exists, and if so, start a thread to monitor it.
-//
-void MemNotifyThread::start() {
-  int fd;
-  fd = open("/dev/mem_notify", O_RDONLY, 0);
-  if (fd < 0) {
-    return;
-  }
-
-  if (memnotify_thread() == NULL) {
-    new MemNotifyThread(fd);
-  }
-}
-
-#endif // JAVASE_EMBEDDED
-
 
 /////////////// Unit tests ///////////////
 

@@ -25,10 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -78,8 +75,8 @@ public class TestBase {
     /**
      * Compiles sources in memory.
      *
-     * @param sources to compile.
-     * @return memory file manager which contains class files and class loader.
+     * @param sources to compile
+     * @return in-memory file manager which contains class files and class loader
      */
     public InMemoryFileManager compile(String... sources)
             throws IOException, CompilationException {
@@ -91,7 +88,7 @@ public class TestBase {
      *
      * @param options compiler options.
      * @param sources sources to compile.
-     * @return map where key is className, value is corresponding ClassFile.
+     * @return in-memory file manager which contains class files and class loader.
      */
     public InMemoryFileManager compile(List<String> options, String... sources)
             throws IOException, CompilationException {
@@ -102,7 +99,7 @@ public class TestBase {
      * Compiles sources in memory.
      *
      * @param sources sources[i][0] - name of file, sources[i][1] - sources.
-     * @return map where key is className, value is corresponding ClassFile.
+     * @return in-memory file manager which contains class files and class loader.
      */
     public InMemoryFileManager compile(String[]... sources) throws IOException,
             CompilationException {
@@ -114,7 +111,7 @@ public class TestBase {
      *
      * @param options compiler options
      * @param sources sources[i][0] - name of file, sources[i][1] - sources.
-     * @return map where key is className, value is corresponding ClassFile.
+     * @return in-memory file manager which contains class files and class loader.
      */
     public InMemoryFileManager compile(List<String> options, String[]... sources)
             throws IOException, CompilationException {
@@ -142,7 +139,9 @@ public class TestBase {
      * @throws ConstantPoolException if constant pool error occurs
      */
     public ClassFile readClassFile(JavaFileObject fileObject) throws IOException, ConstantPoolException {
-        return readClassFile(fileObject.openInputStream());
+        try (InputStream is = fileObject.openInputStream()) {
+            return readClassFile(is);
+        }
     }
 
     /**
@@ -203,6 +202,12 @@ public class TestBase {
 
     public void assertFalse(boolean actual, String message) {
         assertEquals(actual, false, message);
+    }
+
+    public void assertContains(Set<?> found, Set<?> expected, String message) {
+        Set<?> copy = new HashSet<>(expected);
+        copy.removeAll(found);
+        assertTrue(found.containsAll(expected), message + " : " + copy);
     }
 
     public File getSourceDir() {
