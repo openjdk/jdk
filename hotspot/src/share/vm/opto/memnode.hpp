@@ -730,7 +730,11 @@ public:
   virtual int Opcode() const;
   virtual bool      is_CFG() const  { return false; }
   virtual const Type *bottom_type() const {return Type::MEMORY;}
-  virtual const TypePtr *adr_type() const { return in(0)->in(MemNode::Memory)->adr_type();}
+  virtual const TypePtr *adr_type() const {
+    Node* ctrl = in(0);
+    if (ctrl == NULL)  return NULL; // node is dead
+    return ctrl->in(MemNode::Memory)->adr_type();
+  }
   virtual uint ideal_reg() const { return 0;} // memory projections don't have a register
   virtual const Type *Value( PhaseTransform *phase ) const;
 #ifndef PRODUCT
