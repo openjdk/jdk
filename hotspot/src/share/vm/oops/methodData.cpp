@@ -658,7 +658,7 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, methodHandle meth
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, false, MetaspaceObj::MethodDataType, THREAD)
-    MethodData(method(), size, CHECK_NULL);
+    MethodData(method(), size, THREAD);
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {

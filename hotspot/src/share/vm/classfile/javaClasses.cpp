@@ -1952,7 +1952,7 @@ Handle java_lang_reflect_Method::create(TRAPS) {
   // This class is eagerly initialized during VM initialization, since we keep a refence
   // to one of the methods
   assert(InstanceKlass::cast(klass)->is_initialized(), "must be initialized");
-  return InstanceKlass::cast(klass)->allocate_instance_handle(CHECK_NH);
+  return InstanceKlass::cast(klass)->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Method::clazz(oop reflect) {
@@ -2130,7 +2130,7 @@ Handle java_lang_reflect_Constructor::create(TRAPS) {
   instanceKlassHandle klass (THREAD, k);
   // Ensure it is initialized
   klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(CHECK_NH);
+  return klass->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Constructor::clazz(oop reflect) {
@@ -2270,7 +2270,7 @@ Handle java_lang_reflect_Field::create(TRAPS) {
   instanceKlassHandle klass (THREAD, k);
   // Ensure it is initialized
   klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(CHECK_NH);
+  return klass->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Field::clazz(oop reflect) {
@@ -2397,7 +2397,7 @@ Handle java_lang_reflect_Parameter::create(TRAPS) {
   instanceKlassHandle klass (THREAD, k);
   // Ensure it is initialized
   klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(CHECK_NH);
+  return klass->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Parameter::name(oop param) {
@@ -2447,7 +2447,7 @@ Handle sun_reflect_ConstantPool::create(TRAPS) {
   instanceKlassHandle klass (THREAD, k);
   // Ensure it is initialized
   klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(CHECK_NH);
+  return klass->allocate_instance_handle(THREAD);
 }
 
 
