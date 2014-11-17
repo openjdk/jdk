@@ -28,10 +28,6 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#if INCLUDE_CDS
-#include "classfile/sharedClassUtil.hpp"
-#include "classfile/systemDictionaryShared.hpp"
-#endif
 #include "classfile/vmSymbols.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/bytecode.hpp"
@@ -73,8 +69,13 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/top.hpp"
 #include "utilities/utf8.hpp"
+#if INCLUDE_CDS
+#include "classfile/sharedClassUtil.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "jvm_linux.h"
 #endif
@@ -3552,7 +3553,7 @@ JVM_ENTRY(jlong,JVM_DTraceActivate(
     JVM_DTraceProvider* providers))
   JVMWrapper("JVM_DTraceActivate");
   return DTraceJSDT::activate(
-    version, module_name, providers_count, providers, CHECK_0);
+    version, module_name, providers_count, providers, THREAD);
 JVM_END
 
 JVM_ENTRY(jboolean,JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method))

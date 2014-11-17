@@ -399,12 +399,12 @@ vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Klass* klass, Symb
 // convert the external string or reflective type to an internal signature
 Symbol* MethodHandles::lookup_signature(oop type_str, bool intern_if_not_found, TRAPS) {
   if (java_lang_invoke_MethodType::is_instance(type_str)) {
-    return java_lang_invoke_MethodType::as_signature(type_str, intern_if_not_found, CHECK_NULL);
+    return java_lang_invoke_MethodType::as_signature(type_str, intern_if_not_found, THREAD);
   } else if (java_lang_Class::is_instance(type_str)) {
-    return java_lang_Class::as_signature(type_str, false, CHECK_NULL);
+    return java_lang_Class::as_signature(type_str, false, THREAD);
   } else if (java_lang_String::is_instance(type_str)) {
     if (intern_if_not_found) {
-      return java_lang_String::as_symbol(type_str, CHECK_NULL);
+      return java_lang_String::as_symbol(type_str, THREAD);
     } else {
       return java_lang_String::as_symbol_or_null(type_str);
     }

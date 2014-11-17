@@ -4270,10 +4270,11 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 
   if (state == G1CollectedHeap::InCSet) {
     oop forwardee;
-    if (obj->is_forwarded()) {
-      forwardee = obj->forwardee();
+    markOop m = obj->mark();
+    if (m->is_marked()) {
+      forwardee = (oop) m->decode_pointer();
     } else {
-      forwardee = _par_scan_state->copy_to_survivor_space(obj);
+      forwardee = _par_scan_state->copy_to_survivor_space(obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
     oopDesc::encode_store_heap_oop(p, forwardee);
