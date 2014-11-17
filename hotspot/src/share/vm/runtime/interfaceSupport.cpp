@@ -187,19 +187,22 @@ void InterfaceSupport::zap_dead_locals_old() {
 
 # endif
 
-
+// invocation counter for InterfaceSupport::deoptimizeAll/zombieAll functions
 int deoptimizeAllCounter = 0;
 int zombieAllCounter = 0;
 
-
 void InterfaceSupport::zombieAll() {
-  if (is_init_completed() && zombieAllCounter > ZombieALotInterval) {
+  // This method is called by all threads when a thread make
+  // transition to VM state (for example, runtime calls).
+  // Divide number of calls by number of threads to avoid
+  // dependence of ZombieAll events frequency on number of threads.
+  int value = zombieAllCounter / Threads::number_of_threads();
+  if (is_init_completed() && value > ZombieALotInterval) {
     zombieAllCounter = 0;
     VM_ZombieAll op;
     VMThread::execute(&op);
-  } else {
-    zombieAllCounter++;
   }
+  zombieAllCounter++;
 }
 
 void InterfaceSupport::unlinkSymbols() {
@@ -208,12 +211,17 @@ void InterfaceSupport::unlinkSymbols() {
 }
 
 void InterfaceSupport::deoptimizeAll() {
-  if (is_init_completed() ) {
-    if (DeoptimizeALot && deoptimizeAllCounter > DeoptimizeALotInterval) {
+  // This method is called by all threads when a thread make
+  // transition to VM state (for example, runtime calls).
+  // Divide number of calls by number of threads to avoid
+  // dependence of DeoptimizeAll events frequency on number of threads.
+  int value = deoptimizeAllCounter / Threads::number_of_threads();
+  if (is_init_completed()) {
+    if (DeoptimizeALot && value > DeoptimizeALotInterval) {
       deoptimizeAllCounter = 0;
       VM_DeoptimizeAll op;
       VMThread::execute(&op);
-    } else if (DeoptimizeRandom && (deoptimizeAllCounter & 0x1f) == (os::random() & 0x1f)) {
+    } else if (DeoptimizeRandom && (value & 0x1F) == (os::random() & 0x1F)) {
       VM_DeoptimizeAll op;
       VMThread::execute(&op);
     }

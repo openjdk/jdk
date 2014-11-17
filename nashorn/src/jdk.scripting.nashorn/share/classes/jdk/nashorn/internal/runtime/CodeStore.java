@@ -82,10 +82,9 @@ public abstract class CodeStore implements Loggable {
      * Returns a new code store instance.
      *
      * @param context the current context
-     * @return The instance
-     * @throws IOException If an error occurs
+     * @return The instance, or null if code store could not be created
      */
-    public static CodeStore newCodeStore(final Context context) throws IOException {
+    public static CodeStore newCodeStore(final Context context) {
         final Class<CodeStore> baseClass = CodeStore.class;
         try {
             // security check first
@@ -103,9 +102,14 @@ public abstract class CodeStore implements Loggable {
         } catch (final AccessControlException e) {
             context.getLogger(CodeStore.class).warning("failed to load code store provider ", e);
         }
-        final CodeStore store = new DirectoryCodeStore(context);
-        store.initLogger(context);
-        return store;
+        try {
+            final CodeStore store = new DirectoryCodeStore(context);
+            store.initLogger(context);
+            return store;
+        } catch (final IOException e) {
+            context.getLogger(CodeStore.class).warning("failed to create cache directory ", e);
+            return null;
+        }
     }
 
 

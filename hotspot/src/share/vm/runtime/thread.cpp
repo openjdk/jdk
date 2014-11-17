@@ -66,6 +66,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
@@ -1553,6 +1554,7 @@ void JavaThread::block_if_vm_exited() {
 
 // Remove this ifdef when C1 is ported to the compiler interface.
 static void compiler_thread_entry(JavaThread* thread, TRAPS);
+static void sweeper_thread_entry(JavaThread* thread, TRAPS);
 
 JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
                        Thread()
@@ -3172,6 +3174,10 @@ static void compiler_thread_entry(JavaThread* thread, TRAPS) {
   CompileBroker::compiler_thread_loop();
 }
 
+static void sweeper_thread_entry(JavaThread* thread, TRAPS) {
+  NMethodSweeper::sweeper_loop();
+}
+
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
                                CompilerCounters* counters)
@@ -3182,7 +3188,6 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _queue = queue;
   _counters = counters;
   _buffer_blob = NULL;
-  _scanned_nmethod = NULL;
   _compiler = NULL;
 
 #ifndef PRODUCT
@@ -3190,7 +3195,12 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 #endif
 }
 
-void CompilerThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
+// Create sweeper thread
+CodeCacheSweeperThread::CodeCacheSweeperThread()
+: JavaThread(&sweeper_thread_entry) {
+  _scanned_nmethod = NULL;
+}
+void CodeCacheSweeperThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   JavaThread::oops_do(f, cld_f, cf);
   if (_scanned_nmethod != NULL && cf != NULL) {
     // Safepoints can occur when the sweeper is scanning an nmethod so
@@ -3607,9 +3617,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
   }
 
-  // Give os specific code one last chance to start
-  os::init_3();
-
   create_vm_timer.end();
 #ifdef ASSERT
   _vm_complete = true;
@@ -3632,7 +3639,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
 
   if (!agent->valid()) {
     char buffer[JVM_MAXPATHLEN];
-    char ebuf[1024];
+    char ebuf[1024] = "";
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 

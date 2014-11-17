@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -28,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.FilterWriter;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,12 +51,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -64,18 +69,20 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
+import javax.tools.JavaFileManager.Location;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
-import java.io.IOError;
 
 /**
  * Utility methods and classes for writing jtreg tests for
@@ -233,7 +240,7 @@ public class ToolBox {
     public void createDirectories(String... paths) throws IOException {
         if (paths.length == 0)
             throw new IllegalArgumentException("no directories specified");
-        for (String p: paths)
+        for (String p : paths)
             Files.createDirectories(Paths.get(p));
     }
 
@@ -248,7 +255,7 @@ public class ToolBox {
     public void createDirectories(Path... paths) throws IOException {
         if (paths.length == 0)
             throw new IllegalArgumentException("no directories specified");
-        for (Path p: paths)
+        for (Path p : paths)
             Files.createDirectories(p);
     }
 
@@ -262,7 +269,7 @@ public class ToolBox {
     public void deleteFiles(String... files) throws IOException {
         if (files.length == 0)
             throw new IllegalArgumentException("no files specified");
-        for (String file: files)
+        for (String file : files)
             Files.delete(Paths.get(file));
     }
 
@@ -392,7 +399,7 @@ public class ToolBox {
     public void writeJavaFiles(Path dir, String... contents) throws IOException {
         if (contents.length == 0)
             throw new IllegalArgumentException("no content specified for any files");
-        for (String c: contents) {
+        for (String c : contents) {
             new JavaSource(c).write(dir);
         }
     }
@@ -1090,7 +1097,7 @@ public class ToolBox {
 
         private List<File> toFiles(String path) {
             List<File> result = new ArrayList<>();
-            for (String s: path.split(File.pathSeparator)) {
+            for (String s : path.split(File.pathSeparator)) {
                 if (!s.isEmpty())
                     result.add(new File(s));
             }
@@ -1108,7 +1115,7 @@ public class ToolBox {
             if (fileObjects == null)
                 return filesAsFileObjects;
             List<JavaFileObject> combinedList = new ArrayList<>();
-            for (JavaFileObject o: filesAsFileObjects)
+            for (JavaFileObject o : filesAsFileObjects)
                 combinedList.add(o);
             combinedList.addAll(fileObjects);
             return combinedList;
@@ -1308,6 +1315,7 @@ public class ToolBox {
         private String mainClass;
         private Path baseDir;
         private List<Path> paths;
+        private Set<FileObject> fileObjects;
 
         /**
          * Creates a task to write jar files, using API mode.
@@ -1315,6 +1323,7 @@ public class ToolBox {
         public JarTask() {
             super(Mode.API);
             paths = Collections.emptyList();
+            fileObjects = new LinkedHashSet<>();
         }
 
         /**
@@ -1392,6 +1401,53 @@ public class ToolBox {
         }
 
         /**
+         * Adds a set of file objects to be written into the jar file, by copying them
+         * from a Location in a JavaFileManager.
+         * The file objects to be written are specified by a series of paths;
+         * each path can be in one of the following forms:
+         * <ul>
+         * <li>The name of a class. For example, java.lang.Object.
+         * In this case, the corresponding .class file will be written to the jar file.
+         * <li>the name of a package followed by {@code .*}. For example, {@code java.lang.*}.
+         * In this case, all the class files in the specified package will be written to
+         * the jar file.
+         * <li>the name of a package followed by {@code .**}. For example, {@code java.lang.**}.
+         * In this case, all the class files in the specified package, and any subpackages
+         * will be written to the jar file.
+         * </ul>
+         *
+         * @param fm the file manager in which to find the file objects
+         * @param l  the location in which to find the file objects
+         * @param paths the paths specifying the file objects to be copied
+         * @return this task object
+         * @throws IOException if errors occur while determining the set of file objects
+         */
+        public JarTask files(JavaFileManager fm, Location l, String... paths)
+                throws IOException {
+            for (String p : paths) {
+                if (p.endsWith(".**"))
+                    addPackage(fm, l, p.substring(0, p.length() - 3), true);
+                else if (p.endsWith(".*"))
+                    addPackage(fm, l, p.substring(0, p.length() - 2), false);
+                else
+                    addFile(fm, l, p);
+            }
+            return this;
+        }
+
+        private void addPackage(JavaFileManager fm, Location l, String pkg, boolean recurse)
+                throws IOException {
+            for (JavaFileObject fo : fm.list(l, pkg, EnumSet.allOf(JavaFileObject.Kind.class), recurse)) {
+                fileObjects.add(fo);
+            }
+        }
+
+        private void addFile(JavaFileManager fm, Location l, String path) throws IOException {
+            JavaFileObject fo = fm.getJavaFileForInput(l, path, Kind.CLASS);
+            fileObjects.add(fo);
+        }
+
+        /**
          * Provides limited jar command-like functionality.
          * The supported commands are:
          * <ul>
@@ -1464,42 +1520,19 @@ public class ToolBox {
             StreamOutput sysOut = new StreamOutput(System.out, System::setOut);
             StreamOutput sysErr = new StreamOutput(System.err, System::setErr);
 
-            int rc;
             Map<OutputKind, String> outputMap = new HashMap<>();
 
             try (OutputStream os = Files.newOutputStream(jar);
                     JarOutputStream jos = openJar(os, m)) {
-                Path base = (baseDir == null) ? currDir : baseDir;
-                for (Path path: paths) {
-                    Files.walkFileTree(base.resolve(path), new SimpleFileVisitor<Path>() {
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                            try {
-                                String p = base.relativize(file)
-                                        .normalize()
-                                        .toString()
-                                        .replace(File.separatorChar, '/');
-                                JarEntry e = new JarEntry(p);
-                                jos.putNextEntry(e);
-                                jos.write(Files.readAllBytes(file));
-                                jos.closeEntry();
-                                return FileVisitResult.CONTINUE;
-                            } catch (IOException e) {
-                                System.err.println("Error adding " + file + " to jar file: " + e);
-                                return FileVisitResult.TERMINATE;
-                            }
-                        }
-                    });
-                }
-                rc = 0;
+                writeFiles(jos);
+                writeFileObjects(jos);
             } catch (IOException e) {
-                System.err.println("Error opening " + jar + ": " + e);
-                rc = 1;
+                error("Exception while opening " + jar, e);
             } finally {
                 outputMap.put(OutputKind.STDOUT, sysOut.close());
                 outputMap.put(OutputKind.STDERR, sysErr.close());
             }
-            return checkExit(new Result(this, rc, outputMap));
+            return checkExit(new Result(this, (errors == 0) ? 0 : 1, outputMap));
         }
 
         private JarOutputStream openJar(OutputStream os, Manifest m) throws IOException {
@@ -1512,6 +1545,79 @@ public class ToolBox {
             }
         }
 
+        private void writeFiles(JarOutputStream jos) throws IOException {
+            Path base = (baseDir == null) ? currDir : baseDir;
+            for (Path path : paths) {
+                Files.walkFileTree(base.resolve(path), new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        try {
+                            String p = base.relativize(file)
+                                    .normalize()
+                                    .toString()
+                                    .replace(File.separatorChar, '/');
+                            JarEntry e = new JarEntry(p);
+                            jos.putNextEntry(e);
+                            try {
+                                jos.write(Files.readAllBytes(file));
+                            } finally {
+                                jos.closeEntry();
+                            }
+                            return FileVisitResult.CONTINUE;
+                        } catch (IOException e) {
+                            error("Exception while adding " + file + " to jar file", e);
+                            return FileVisitResult.TERMINATE;
+                        }
+                    }
+                });
+            }
+        }
+
+        private void writeFileObjects(JarOutputStream jos) throws IOException {
+            for (FileObject fo : fileObjects) {
+                String p = guessPath(fo);
+                JarEntry e = new JarEntry(p);
+                jos.putNextEntry(e);
+                try {
+                    byte[] buf = new byte[1024];
+                    try (BufferedInputStream in = new BufferedInputStream(fo.openInputStream())) {
+                        int n;
+                        while ((n = in.read(buf)) > 0)
+                            jos.write(buf, 0, n);
+                    } catch (IOException ex) {
+                        error("Exception while adding " + fo.getName() + " to jar file", ex);
+                    }
+                } finally {
+                    jos.closeEntry();
+                }
+            }
+        }
+
+        /*
+         * A jar: URL is of the form  jar:URL!/entry  where URL is a URL for the .jar file itself.
+         * In Symbol files (i.e. ct.sym) the underlying entry is prefixed META-INF/sym/<base>.
+         */
+        private final Pattern jarEntry = Pattern.compile(".*!/(?:META-INF/sym/[^/]+/)?(.*)");
+
+        private String guessPath(FileObject fo) {
+            URI u = fo.toUri();
+            switch (u.getScheme()) {
+                case "jar":
+                    Matcher m = jarEntry.matcher(u.getSchemeSpecificPart());
+                    if (m.matches()) {
+                        return m.group(1);
+                    }
+                    break;
+            }
+            throw new IllegalArgumentException(fo.getName());
+        }
+
+        private void error(String message, Throwable t) {
+            out.println("Error: " + message + ": " + t);
+            errors++;
+        }
+
+        private int errors;
     }
 
     /**

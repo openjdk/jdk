@@ -171,13 +171,13 @@ void CodeHeap::clear() {
 }
 
 
-void* CodeHeap::allocate(size_t instance_size, bool is_critical) {
+void* CodeHeap::allocate(size_t instance_size) {
   size_t number_of_segments = size_to_segments(instance_size + header_size());
   assert(segments_to_size(number_of_segments) >= sizeof(FreeBlock), "not enough room for FreeList");
 
   // First check if we can satisfy request from freelist
   NOT_PRODUCT(verify());
-  HeapBlock* block = search_freelist(number_of_segments, is_critical);
+  HeapBlock* block = search_freelist(number_of_segments);
   NOT_PRODUCT(verify());
 
   if (block != NULL) {
@@ -190,15 +190,6 @@ void* CodeHeap::allocate(size_t instance_size, bool is_critical) {
 
   // Ensure minimum size for allocation to the heap.
   number_of_segments = MAX2((int)CodeCacheMinBlockLength, (int)number_of_segments);
-
-  if (!is_critical) {
-    // Make sure the allocation fits in the unallocated heap without using
-    // the CodeCacheMimimumFreeSpace that is reserved for critical allocations.
-    if (segments_to_size(number_of_segments) > (heap_unallocated_capacity() - CodeCacheMinimumFreeSpace)) {
-      // Fail allocation
-      return NULL;
-    }
-  }
 
   if (_next_segment + number_of_segments <= _number_of_committed_segments) {
     mark_segmap_as_used(_next_segment, _next_segment + number_of_segments);
@@ -427,24 +418,17 @@ void CodeHeap::add_to_freelist(HeapBlock* a) {
  * Search freelist for an entry on the list with the best fit.
  * @return NULL, if no one was found
  */
-FreeBlock* CodeHeap::search_freelist(size_t length, bool is_critical) {
+FreeBlock* CodeHeap::search_freelist(size_t length) {
   FreeBlock* found_block = NULL;
   FreeBlock* found_prev  = NULL;
   size_t     found_length = 0;
 
   FreeBlock* prev = NULL;
   FreeBlock* cur = _freelist;
-  const size_t critical_boundary = (size_t)high_boundary() - CodeCacheMinimumFreeSpace;
 
   // Search for first block that fits
   while(cur != NULL) {
     if (cur->length() >= length) {
-      // Non critical allocations are not allowed to use the last part of the code heap.
-      // Make sure the end of the allocation doesn't cross into the last part of the code heap.
-      if (!is_critical && (((size_t)cur + length) > critical_boundary)) {
-        // The freelist is sorted by address - if one fails, all consecutive will also fail.
-        break;
-      }
       // Remember block, its previous element, and its length
       found_block = cur;
       found_prev  = prev;

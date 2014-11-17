@@ -21,34 +21,26 @@
  * questions.
  */
 
+import javax.annotation.processing.*;
+import javax.tools.Diagnostic.Kind;
+import javax.lang.model.element.TypeElement;
+import java.util.Set;
+
 /*
  * @test
- * @bug 8058818
- * @library /testlibrary
- * @build UnsafeMallocLimit2
- * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=off UnsafeMallocLimit2
+ * @bug 8060448
+ * @summary Test that javac doesn't throw ArrayIndexOutOfBoundsException
+ *          when logging the message "\n"
+ * @library /tools/javac/lib
+ * @build   JavacTestingAbstractProcessor NewlineOnlyDiagnostic
+ * @compile -processor NewlineOnlyDiagnostic NewlineOnlyDiagnostic.java
  */
 
-import com.oracle.java.testlibrary.*;
-import sun.misc.Unsafe;
+public class NewlineOnlyDiagnostic extends JavacTestingAbstractProcessor {
 
-public class UnsafeMallocLimit2 {
-
-    public static void main(String args[]) throws Exception {
-        if (Platform.is32bit()) {
-            Unsafe unsafe = Utils.getUnsafe();
-            try {
-                // Allocate greater than MALLOC_MAX and likely won't fail to allocate,
-                // so it hits the NMT code that asserted.
-                // Test that this doesn't cause an assertion with NMT off.
-                // The option above overrides if all the tests are run with NMT on.
-                unsafe.allocateMemory(0x40000000);
-                System.out.println("Allocation succeeded");
-            } catch (OutOfMemoryError e) {
-                System.out.println("Allocation failed");
-            }
-        } else {
-            System.out.println("Test only valid on 32-bit platforms");
-        }
+    @Override
+    public boolean process(Set<? extends TypeElement> types,RoundEnvironment rEnv) {
+        processingEnv.getMessager().printMessage(Kind.NOTE,"\n");
+        return true;
     }
 }

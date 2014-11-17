@@ -76,6 +76,8 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
                                        const char* format, va_list ap,
                                        bool add_cr,
                                        size_t& result_len) {
+  assert(buflen >= 2, "buffer too small");
+
   const char* result;
   if (add_cr)  buflen--;
   if (!strchr(format, '%')) {
@@ -88,14 +90,21 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
     result = va_arg(ap, const char*);
     result_len = strlen(result);
     if (add_cr && result_len >= buflen)  result_len = buflen-1;  // truncate
-  } else if (vsnprintf(buffer, buflen, format, ap) >= 0) {
-    result = buffer;
-    result_len = strlen(result);
   } else {
-    DEBUG_ONLY(warning("increase O_BUFLEN in ostream.hpp -- output truncated");)
+    // Handle truncation:
+    // posix: upon truncation, vsnprintf returns number of bytes which
+    //   would have been written (excluding terminating zero) had the buffer
+    //   been large enough
+    // windows: upon truncation, vsnprintf returns -1
+    const int written = vsnprintf(buffer, buflen, format, ap);
     result = buffer;
-    result_len = buflen - 1;
-    buffer[result_len] = 0;
+    if (written < (int) buflen && written >= 0) {
+      result_len = written;
+    } else {
+      DEBUG_ONLY(warning("increase O_BUFLEN in ostream.hpp -- output truncated");)
+      result_len = buflen - 1;
+      buffer[result_len] = 0;
+    }
   }
   if (add_cr) {
     if (result != buffer) {

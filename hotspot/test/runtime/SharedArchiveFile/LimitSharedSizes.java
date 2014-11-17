@@ -51,9 +51,12 @@ public class LimitSharedSizes {
         // Known issue, JDK-8038422 (assert() on Windows)
         // new SharedSizeTestData("-XX:SharedMiscDataSize", "500k",    "miscellaneous data"),
 
-        // This will cause a VM crash; commenting out for now; see bug JDK-8038268
-        // @ignore JDK-8038268
-        // new SharedSizeTestData("-XX:SharedMiscCodeSize", "20k",     "miscellaneous code"),
+        // Too small of a misc code size should not cause a vm crash.
+        // It should result in the following error message:
+        // The shared miscellaneous code space is not large enough
+        // to preload requested classes. Use -XX:SharedMiscCodeSize=
+        // to increase the initial size of shared miscellaneous code space.
+        new SharedSizeTestData("-XX:SharedMiscCodeSize", "20k",     "miscellaneous code"),
 
         // these values are larger than default ones, but should
         // be acceptable and not cause failure
