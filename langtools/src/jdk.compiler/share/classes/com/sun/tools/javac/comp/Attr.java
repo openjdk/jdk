@@ -1196,35 +1196,35 @@ public class Attr extends JCTree.Visitor {
             boolean hasDefault = false;      // Is there a default label?
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
+                if (c.pat != null) {
+                    if (enumSwitch) {
+                        Symbol sym = enumConstant(c.pat, seltype);
+                        if (sym == null) {
+                            log.error(c.pat.pos(), "enum.label.must.be.unqualified.enum");
+                        } else if (!labels.add(sym)) {
+                            log.error(c.pos(), "duplicate.case.label");
+                        }
+                    } else {
+                        Type pattype = attribExpr(c.pat, switchEnv, seltype);
+                        if (!pattype.hasTag(ERROR)) {
+                            if (pattype.constValue() == null) {
+                                log.error(c.pat.pos(),
+                                          (stringSwitch ? "string.const.req" : "const.expr.req"));
+                            } else if (labels.contains(pattype.constValue())) {
+                                log.error(c.pos(), "duplicate.case.label");
+                            } else {
+                                labels.add(pattype.constValue());
+                            }
+                        }
+                    }
+                } else if (hasDefault) {
+                    log.error(c.pos(), "duplicate.default.label");
+                } else {
+                    hasDefault = true;
+                }
                 Env<AttrContext> caseEnv =
                     switchEnv.dup(c, env.info.dup(switchEnv.info.scope.dup()));
                 try {
-                    if (c.pat != null) {
-                        if (enumSwitch) {
-                            Symbol sym = enumConstant(c.pat, seltype);
-                            if (sym == null) {
-                                log.error(c.pat.pos(), "enum.label.must.be.unqualified.enum");
-                            } else if (!labels.add(sym)) {
-                                log.error(c.pos(), "duplicate.case.label");
-                            }
-                        } else {
-                            Type pattype = attribExpr(c.pat, switchEnv, seltype);
-                            if (!pattype.hasTag(ERROR)) {
-                                if (pattype.constValue() == null) {
-                                    log.error(c.pat.pos(),
-                                              (stringSwitch ? "string.const.req" : "const.expr.req"));
-                                } else if (labels.contains(pattype.constValue())) {
-                                    log.error(c.pos(), "duplicate.case.label");
-                                } else {
-                                    labels.add(pattype.constValue());
-                                }
-                            }
-                        }
-                    } else if (hasDefault) {
-                        log.error(c.pos(), "duplicate.default.label");
-                    } else {
-                        hasDefault = true;
-                    }
                     attribStats(c.stats, caseEnv);
                 } finally {
                     caseEnv.info.scope.leave();
@@ -1429,21 +1429,28 @@ public class Attr extends JCTree.Visitor {
                 case APPLY:
                     JCMethodInvocation speculativeMethodTree =
                             (JCMethodInvocation)deferredAttr.attribSpeculative(tree, env, unknownExprInfo);
-                    Type owntype = TreeInfo.symbol(speculativeMethodTree.meth).type.getReturnType();
-                    return types.unboxedTypeOrType(owntype).isPrimitive();
+                    Symbol msym = TreeInfo.symbol(speculativeMethodTree.meth);
+                    Type receiverType = speculativeMethodTree.meth.hasTag(IDENT) ?
+                            env.enclClass.type :
+                            ((JCFieldAccess)speculativeMethodTree.meth).selected.type;
+                    Type owntype = types.memberType(receiverType, msym).getReturnType();
+                    return primitiveOrBoxed(owntype);
                 case NEWCLASS:
                     JCExpression className =
                             removeClassParams.translate(((JCNewClass)tree).clazz);
                     JCExpression speculativeNewClassTree =
                             (JCExpression)deferredAttr.attribSpeculative(className, env, unknownTypeInfo);
-                    return types.unboxedTypeOrType(speculativeNewClassTree.type).isPrimitive();
+                    return primitiveOrBoxed(speculativeNewClassTree.type);
                 default:
                     Type speculativeType = deferredAttr.attribSpeculative(tree, env, unknownExprInfo).type;
-                    speculativeType = types.unboxedTypeOrType(speculativeType);
-                    return speculativeType.isPrimitive();
+                    return primitiveOrBoxed(speculativeType);
             }
         }
         //where
+            boolean primitiveOrBoxed(Type t) {
+                return (!t.hasTag(TYPEVAR) && types.unboxedTypeOrType(t).isPrimitive());
+            }
+
             TreeTranslator removeClassParams = new TreeTranslator() {
                 @Override
                 public void visitTypeApply(JCTypeApply tree) {

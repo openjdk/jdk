@@ -212,6 +212,7 @@ public final class ScriptEnvironment {
      * @param out output print writer
      * @param err error print writer
      */
+    @SuppressWarnings("unused")
     public ScriptEnvironment(final Options options, final PrintWriter out, final PrintWriter err) {
         this.out = out;
         this.err = err;

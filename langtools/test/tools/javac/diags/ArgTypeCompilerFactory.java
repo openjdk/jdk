@@ -100,14 +100,18 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             JavacTool tool = JavacTool.create();
 
             StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
-            if (fmOpts != null)
-                fm = new FileManager(fm, fmOpts);
+            try {
+                if (fmOpts != null)
+                    fm = new FileManager(fm, fmOpts);
 
-            Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(files);
+                Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(files);
 
-            Context c = initContext();
-            JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos, c);
-            return t.call();
+                Context c = initContext();
+                JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos, c);
+                return t.call();
+            } finally {
+                close(fm);
+            }
         }
     }
 
@@ -136,9 +140,14 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             Main main = new Main("javac", out);
             Context c = initContext();
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
-            Main.Result result = main.compile(args.toArray(new String[args.size()]), c);
 
-            return result.isOK();
+            try {
+                Main.Result result = main.compile(args.toArray(new String[args.size()]), c);
+
+                return result.isOK();
+            } finally {
+                close(c.get(JavaFileManager.class));
+            }
         }
     }
 
@@ -160,10 +169,15 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
 
             Context c = initContext();
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
-            Main m = new Main("javac", out);
-            Main.Result result = m.compile(args.toArray(new String[args.size()]), c);
 
-            return result.isOK();
+            try {
+                Main m = new Main("javac", out);
+                Main.Result result = m.compile(args.toArray(new String[args.size()]), c);
+
+                return result.isOK();
+            } finally {
+                close(c.get(JavaFileManager.class));
+            }
         }
     }
 

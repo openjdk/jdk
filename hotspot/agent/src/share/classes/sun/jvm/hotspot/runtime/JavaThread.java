@@ -118,9 +118,10 @@ public class JavaThread extends Thread {
     return VM.getVM().getThreads().createJavaThreadWrapper(threadAddr);
   }
 
-  /** NOTE: for convenience, this differs in definition from the
-      underlying VM. Only "pure" JavaThreads return true;
-      CompilerThreads and JVMDIDebuggerThreads return false. FIXME:
+  /** NOTE: for convenience, this differs in definition from the underlying VM.
+      Only "pure" JavaThreads return true; CompilerThreads, the CodeCacheSweeperThread,
+      JVMDIDebuggerThreads return false.
+      FIXME:
       consider encapsulating platform-specific functionality in an
       object instead of using inheritance (which is the primary reason
       we can't traverse CompilerThreads, etc; didn't want to have, for

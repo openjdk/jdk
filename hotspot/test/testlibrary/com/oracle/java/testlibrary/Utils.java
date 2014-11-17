@@ -24,21 +24,21 @@
 package com.oracle.java.testlibrary;
 
 import static com.oracle.java.testlibrary.Asserts.assertTrue;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
-import java.lang.reflect.Field;
+import java.util.regex.Pattern;
 import sun.misc.Unsafe;
 
 /**
@@ -63,6 +63,21 @@ public final class Utils {
 
     private static Unsafe unsafe = null;
 
+    /**
+     * Defines property name for seed value.
+     */
+    public static final String SEED_PROPERTY_NAME = "com.oracle.java.testlibrary.random.seed";
+
+    /* (non-javadoc)
+     * Random generator with (or without) predefined seed. Depends on
+     * "com.oracle.java.testlibrary.random.seed" property value.
+     */
+    private static volatile Random RANDOM_GENERATOR;
+
+    /**
+     * Contains the seed value used for {@link java.util.Random} creation.
+     */
+    public static final long SEED = Long.getLong(SEED_PROPERTY_NAME, new Random().nextLong());
     /**
     * Returns the value of 'test.timeout.factor' system property
     * converted to {@code double}.
@@ -331,5 +346,25 @@ public final class Utils {
             hexView[i++] = ' ';
         }
         return new String(hexView);
+    }
+
+    /**
+     * Returns {@link java.util.Random} generator initialized with particular seed.
+     * The seed could be provided via system property {@link Utils#SEED_PROPERTY_NAME}
+     * In case no seed is provided, the method uses a random number.
+     * The used seed printed to stdout.
+     * @return {@link java.util.Random} generator with particular seed.
+     */
+    public static Random getRandomInstance() {
+        if (RANDOM_GENERATOR == null) {
+            synchronized (Utils.class) {
+                if (RANDOM_GENERATOR == null) {
+                    RANDOM_GENERATOR = new Random(SEED);
+                    System.out.printf("For random generator using seed: %d%n", SEED);
+                    System.out.printf("To re-run test with same seed value please add \"-D%s=%d\" to command line.%n", SEED_PROPERTY_NAME, SEED);
+                }
+            }
+        }
+        return RANDOM_GENERATOR;
     }
 }

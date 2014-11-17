@@ -8607,7 +8607,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param propertyName the programmatic name of the property
      *          that was changed
      * @param oldValue the old value of the property (as a short)
-     * @param newValue the old value of the property (as a short)
+     * @param newValue the new value of the property (as a short)
      * @see #firePropertyChange(java.lang.String, java.lang.Object,
      *          java.lang.Object)
      * @since 1.5

@@ -75,6 +75,10 @@ public class PortFileMonitor {
                 } catch (IOException e) {
                     e.printStackTrace(server.theLog);
                     server.flushLog();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    e.printStackTrace(server.theLog);
+                    server.flushLog();
                 }
             }
         };

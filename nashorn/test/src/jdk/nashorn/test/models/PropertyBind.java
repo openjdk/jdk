@@ -25,6 +25,7 @@
 
 package jdk.nashorn.test.models;
 
+@SuppressWarnings("javadoc")
 public class PropertyBind {
     public static int publicStaticInt;
     public static final int publicStaticFinalInt = 2112;

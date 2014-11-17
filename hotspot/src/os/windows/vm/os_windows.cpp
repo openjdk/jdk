@@ -96,7 +96,7 @@
 #include <vdmdbg.h>
 
 // for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+#define ALL_64_BITS CONST64(-1)
 
 // For DLL loading/load error detection
 // Values of PE COFF
@@ -211,6 +211,7 @@ void os::init_system_properties_values() {
     }
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
+    FREE_C_HEAP_ARRAY(char, home_path, mtInternal);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
@@ -220,6 +221,7 @@ void os::init_system_properties_values() {
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);
+    FREE_C_HEAP_ARRAY(char, dll_path, mtInternal);
 
     if (!set_boot_path('\\', ';')) {
       return;
@@ -297,6 +299,9 @@ void os::init_system_properties_values() {
     char * buf = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     sprintf(buf, "%s%s", Arguments::get_java_home(), ENDORSED_DIR);
     Arguments::set_endorsed_dirs(buf);
+    // (Arguments::set_endorsed_dirs() calls SystemProperty::set_value(), which
+    //  duplicates the input.)
+    FREE_C_HEAP_ARRAY(char, buf, mtInternal);
 #undef ENDORSED_DIR
   }
 
@@ -436,9 +441,9 @@ static unsigned __stdcall java_start(Thread* thread) {
   }
 
   // Diagnostic code to investigate JDK-6573254
-  int res = 90115;  // non-java thread
+  int res = 50115;  // non-java thread
   if (thread->is_Java_thread()) {
-    res = 60115;    // java thread
+    res = 40115;    // java thread
   }
 
   // Install a win32 structured exception handler around every thread created
@@ -1610,96 +1615,123 @@ void os::print_os_info(outputStream* st) {
 
 void os::win32::print_windows_version(outputStream* st) {
   OSVERSIONINFOEX osvi;
-  SYSTEM_INFO si;
+  VS_FIXEDFILEINFO *file_info;
+  TCHAR kernel32_path[MAX_PATH];
+  UINT len, ret;
 
+  // Use the GetVersionEx information to see if we're on a server or
+  // workstation edition of Windows. Starting with Windows 8.1 we can't
+  // trust the OS version information returned by this API.
   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-
   if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
-    st->print_cr("N/A");
+    st->print_cr("Call to GetVersionEx failed");
+    return;
+  }
+  bool is_workstation = (osvi.wProductType == VER_NT_WORKSTATION);
+
+  // Get the full path to \Windows\System32\kernel32.dll and use that for
+  // determining what version of Windows we're running on.
+  len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
+  ret = GetSystemDirectory(kernel32_path, len);
+  if (ret == 0 || ret > len) {
+    st->print_cr("Call to GetSystemDirectory failed");
+    return;
+  }
+  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+
+  DWORD version_size = GetFileVersionInfoSize(kernel32_path, NULL);
+  if (version_size == 0) {
+    st->print_cr("Call to GetFileVersionInfoSize failed");
     return;
   }
 
-  int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
+  LPTSTR version_info = (LPTSTR)os::malloc(version_size, mtInternal);
+  if (version_info == NULL) {
+    st->print_cr("Failed to allocate version_info");
+    return;
+  }
 
-  ZeroMemory(&si, sizeof(SYSTEM_INFO));
-  if (os_vers >= 5002) {
-    // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
-    // find out whether we are running on 64 bit processor or not.
-    if (os::Kernel32Dll::GetNativeSystemInfoAvailable()) {
-      os::Kernel32Dll::GetNativeSystemInfo(&si);
+  if (!GetFileVersionInfo(kernel32_path, NULL, version_size, version_info)) {
+    os::free(version_info);
+    st->print_cr("Call to GetFileVersionInfo failed");
+    return;
+  }
+
+  if (!VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len)) {
+    os::free(version_info);
+    st->print_cr("Call to VerQueryValue failed");
+    return;
+  }
+
+  int major_version = HIWORD(file_info->dwProductVersionMS);
+  int minor_version = LOWORD(file_info->dwProductVersionMS);
+  int build_number = HIWORD(file_info->dwProductVersionLS);
+  int build_minor = LOWORD(file_info->dwProductVersionLS);
+  int os_vers = major_version * 1000 + minor_version;
+  os::free(version_info);
+
+  st->print(" Windows ");
+  switch (os_vers) {
+
+  case 6000:
+    if (is_workstation) {
+      st->print("Vista");
     } else {
-      GetSystemInfo(&si);
+      st->print("Server 2008");
     }
+    break;
+
+  case 6001:
+    if (is_workstation) {
+      st->print("7");
+    } else {
+      st->print("Server 2008 R2");
+    }
+    break;
+
+  case 6002:
+    if (is_workstation) {
+      st->print("8");
+    } else {
+      st->print("Server 2012");
+    }
+    break;
+
+  case 6003:
+    if (is_workstation) {
+      st->print("8.1");
+    } else {
+      st->print("Server 2012 R2");
+    }
+    break;
+
+  case 6004:
+    if (is_workstation) {
+      st->print("10");
+    } else {
+      // The server version name of Windows 10 is not known at this time
+      st->print("%d.%d", major_version, minor_version);
+    }
+    break;
+
+  default:
+    // Unrecognized windows, print out its major and minor versions
+    st->print("%d.%d", major_version, minor_version);
+    break;
   }
 
-  if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-    switch (os_vers) {
-    case 3051: st->print(" Windows NT 3.51"); break;
-    case 4000: st->print(" Windows NT 4.0"); break;
-    case 5000: st->print(" Windows 2000"); break;
-    case 5001: st->print(" Windows XP"); break;
-    case 5002:
-      if (osvi.wProductType == VER_NT_WORKSTATION &&
-          si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
-        st->print(" Windows XP x64 Edition");
-      } else {
-        st->print(" Windows Server 2003 family");
-      }
-      break;
-
-    case 6000:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows Vista");
-      } else {
-        st->print(" Windows Server 2008");
-      }
-      break;
-
-    case 6001:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows 7");
-      } else {
-        st->print(" Windows Server 2008 R2");
-      }
-      break;
-
-    case 6002:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows 8");
-      } else {
-        st->print(" Windows Server 2012");
-      }
-      break;
-
-    case 6003:
-      if (osvi.wProductType == VER_NT_WORKSTATION) {
-        st->print(" Windows 8.1");
-      } else {
-        st->print(" Windows Server 2012 R2");
-      }
-      break;
-
-    default: // future os
-      // Unrecognized windows, print out its major and minor versions
-      st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-    }
-  } else {
-    switch (os_vers) {
-    case 4000: st->print(" Windows 95"); break;
-    case 4010: st->print(" Windows 98"); break;
-    case 4090: st->print(" Windows Me"); break;
-    default: // future windows, print out its major and minor versions
-      st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-    }
-  }
-
-  if (os_vers >= 6000 && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+  // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
+  // find out whether we are running on 64 bit processor or not
+  SYSTEM_INFO si;
+  ZeroMemory(&si, sizeof(SYSTEM_INFO));
+  os::Kernel32Dll::GetNativeSystemInfo(&si);
+  if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
     st->print(" , 64 bit");
   }
 
-  st->print(" Build %d", osvi.dwBuildNumber);
-  st->print(" %s", osvi.szCSDVersion);           // service pack
+  st->print(" Build %d", build_number);
+  st->print(" (%d.%d.%d.%d)", major_version, minor_version, build_number, build_minor);
   st->cr();
 }
 
@@ -1807,6 +1839,7 @@ void os::jvm_path(char *buf, jint buflen) {
     GetModuleFileName(vm_lib_handle, buf, buflen);
   }
   strncpy(saved_jvm_path, buf, MAX_PATH);
+  saved_jvm_path[MAX_PATH - 1] = '\0';
 }
 
 
@@ -3719,8 +3752,12 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
 
   // search system directory
   if ((size = GetSystemDirectory(path, pathLen)) > 0) {
-    strcat(path, "\\");
-    strcat(path, name);
+    if (size >= pathLen) {
+      return NULL; // truncated
+    }
+    if (jio_snprintf(path + size, pathLen - size, "\\%s", name) == -1) {
+      return NULL; // truncated
+    }
     if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
       return result;
     }
@@ -3728,8 +3765,12 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
 
   // try Windows directory
   if ((size = GetWindowsDirectory(path, pathLen)) > 0) {
-    strcat(path, "\\");
-    strcat(path, name);
+    if (size >= pathLen) {
+      return NULL; // truncated
+    }
+    if (jio_snprintf(path + size, pathLen - size, "\\%s", name) == -1) {
+      return NULL; // truncated
+    }
     if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
       return result;
     }
@@ -3740,68 +3781,134 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
-#define MIN_EXIT_MUTEXES 1
-#define MAX_EXIT_MUTEXES 16
+#define MAX_EXIT_HANDLES    16
+#define EXIT_TIMEOUT      1000 /* 1 sec */
 
-struct ExitMutexes {
-  DWORD count;
-  HANDLE handles[MAX_EXIT_MUTEXES];
-};
-
-static BOOL CALLBACK init_muts_call(PINIT_ONCE, PVOID ppmuts, PVOID*) {
-  static ExitMutexes muts;
-
-  muts.count = os::processor_count();
-  if (muts.count < MIN_EXIT_MUTEXES) {
-    muts.count = MIN_EXIT_MUTEXES;
-  } else if (muts.count > MAX_EXIT_MUTEXES) {
-    muts.count = MAX_EXIT_MUTEXES;
-  }
-
-  for (DWORD i = 0; i < muts.count; ++i) {
-    muts.handles[i] = CreateMutex(NULL, FALSE, NULL);
-    if (muts.handles[i] == NULL) {
-      return FALSE;
-    }
-  }
-  *((ExitMutexes**)ppmuts) = &muts;
+static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
+  InitializeCriticalSection((CRITICAL_SECTION*)pcrit_sect);
   return TRUE;
 }
 
 int os::win32::exit_process_or_thread(Ept what, int exit_code) {
-  if (os::win32::has_exit_bug()) {
-    static INIT_ONCE init_once_muts = INIT_ONCE_STATIC_INIT;
-    static ExitMutexes* pmuts;
+  // Basic approach:
+  //  - Each exiting thread registers its intent to exit and then does so.
+  //  - A thread trying to terminate the process must wait for all
+  //    threads currently exiting to complete their exit.
 
-    if (!InitOnceExecuteOnce(&init_once_muts, init_muts_call, &pmuts, NULL)) {
-      warning("ExitMutex initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else if (WaitForMultipleObjects(pmuts->count, pmuts->handles,
-                                      (what != EPT_THREAD), // exiting process waits for all mutexes
-                                      INFINITE) == WAIT_FAILED) {
-      warning("ExitMutex acquisition failed in %s: %d\n", __FILE__, __LINE__);
+  if (os::win32::has_exit_bug()) {
+    // The array holds handles of the threads that have started exiting by calling
+    // _endthreadex().
+    // Should be large enough to avoid blocking the exiting thread due to lack of
+    // a free slot.
+    static HANDLE handles[MAX_EXIT_HANDLES];
+    static int handle_count = 0;
+
+    static INIT_ONCE init_once_crit_sect = INIT_ONCE_STATIC_INIT;
+    static CRITICAL_SECTION crit_sect;
+    int i, j;
+    DWORD res;
+    HANDLE hproc, hthr;
+
+    // The first thread that reached this point, initializes the critical section.
+    if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
+      warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
+    } else {
+      EnterCriticalSection(&crit_sect);
+
+      if (what == EPT_THREAD) {
+        // Remove from the array those handles of the threads that have completed exiting.
+        for (i = 0, j = 0; i < handle_count; ++i) {
+          res = WaitForSingleObject(handles[i], 0 /* don't wait */);
+          if (res == WAIT_TIMEOUT) {
+            handles[j++] = handles[i];
+          } else {
+            if (res != WAIT_OBJECT_0) {
+              warning("WaitForSingleObject failed in %s: %d\n", __FILE__, __LINE__);
+              // Don't keep the handle, if we failed waiting for it.
+            }
+            CloseHandle(handles[i]);
+          }
+        }
+
+        // If there's no free slot in the array of the kept handles, we'll have to
+        // wait until at least one thread completes exiting.
+        if ((handle_count = j) == MAX_EXIT_HANDLES) {
+          res = WaitForMultipleObjects(MAX_EXIT_HANDLES, handles, FALSE, EXIT_TIMEOUT);
+          if (res >= WAIT_OBJECT_0 && res < (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
+            i = (res - WAIT_OBJECT_0);
+            handle_count = MAX_EXIT_HANDLES - 1;
+            for (; i < handle_count; ++i) {
+              handles[i] = handles[i + 1];
+            }
+          } else {
+            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+            // Don't keep handles, if we failed waiting for them.
+            for (i = 0; i < MAX_EXIT_HANDLES; ++i) {
+              CloseHandle(handles[i]);
+            }
+            handle_count = 0;
+          }
+        }
+
+        // Store a duplicate of the current thread handle in the array of handles.
+        hproc = GetCurrentProcess();
+        hthr = GetCurrentThread();
+        if (!DuplicateHandle(hproc, hthr, hproc, &handles[handle_count],
+                             0, FALSE, DUPLICATE_SAME_ACCESS)) {
+          warning("DuplicateHandle failed in %s: %d\n", __FILE__, __LINE__);
+        } else {
+          ++handle_count;
+        }
+
+        // The current exiting thread has stored its handle in the array, and now
+        // should leave the critical section before calling _endthreadex().
+
+      } else { // what != EPT_THREAD
+        if (handle_count > 0) {
+          // Before ending the process, make sure all the threads that had called
+          // _endthreadex() completed.
+          res = WaitForMultipleObjects(handle_count, handles, TRUE, EXIT_TIMEOUT);
+          if (res == WAIT_FAILED) {
+            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+          }
+          for (i = 0; i < handle_count; ++i) {
+            CloseHandle(handles[i]);
+          }
+          handle_count = 0;
+        }
+
+        // End the process, not leaving critical section.
+        // This makes sure no other thread executes exit-related code at the same
+        // time, thus a race is avoided.
+        if (what == EPT_PROCESS) {
+          ::exit(exit_code);
+        } else {
+          _exit(exit_code);
+        }
+      }
+
+      LeaveCriticalSection(&crit_sect);
     }
   }
 
-  switch (what) {
-  case EPT_THREAD:
+  // We are here if either
+  // - there's no 'race at exit' bug on this OS release;
+  // - initialization of the critical section failed (unlikely);
+  // - the current thread has stored its handle and left the critical section.
+  if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
-    break;
-
-  case EPT_PROCESS:
+  } else if (what == EPT_PROCESS) {
     ::exit(exit_code);
-    break;
-
-  case EPT_PROCESS_DIE:
+  } else {
     _exit(exit_code);
-    break;
   }
 
-  // should not reach here
+  // Should not reach here
   return exit_code;
 }
 
-#undef MIN_EXIT_MUTEXES
-#undef MAX_EXIT_MUTEXES
+#undef MAX_EXIT_HANDLES
+#undef EXIT_TIMEOUT
 
 void os::win32::setmode_streams() {
   _setmode(_fileno(stdin), _O_BINARY);
@@ -4045,10 +4152,6 @@ jint os::init_2(void) {
   }
 
   return JNI_OK;
-}
-
-void os::init_3(void) {
-  return;
 }
 
 // Mark the polling page as unreadable
@@ -4792,27 +4895,46 @@ bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
 // 3.  Collapse the interrupt_event, the JSR166 parker event, and the objectmonitor ParkEvent
 //     into a single win32 CreateEvent() handle.
 //
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
+//
 // _Event transitions in park()
 //   -1 => -1 : illegal
 //    1 =>  0 : pass - return immediately
-//    0 => -1 : block
+//    0 => -1 : block; then set _Event to 0 before returning
 //
-// _Event serves as a restricted-range semaphore :
-//    -1 : thread is blocked
-//     0 : neutral  - thread is running or ready
-//     1 : signaled - thread is running or ready
+// _Event transitions in unpark()
+//    0 => 1 : just return
+//    1 => 1 : just return
+//   -1 => either 0 or 1; must signal target thread
+//         That is, we can safely transition _Event from -1 to either
+//         0 or 1.
 //
-// Another possible encoding of _Event would be
-// with explicit "PARKED" and "SIGNALED" bits.
+// _Event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
+//
+// Another possible encoding of _Event would be with
+// explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
+//
 
 int os::PlatformEvent::park(jlong Millis) {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_ParkHandle != NULL , "Invariant");
   guarantee(Millis > 0          , "Invariant");
-  int v;
 
   // CONSIDER: defer assigning a CreateEvent() handle to the Event until
   // the initial park() operation.
+  // Consider: use atomic decrement instead of CAS-loop
 
+  int v;
   for (;;) {
     v = _Event;
     if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
@@ -4860,9 +4982,15 @@ int os::PlatformEvent::park(jlong Millis) {
 }
 
 void os::PlatformEvent::park() {
+  // Transitions for _Event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _Event to 0 before returning
+
   guarantee(_ParkHandle != NULL, "Invariant");
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
+  // Consider: use atomic decrement instead of CAS-loop
   int v;
   for (;;) {
     v = _Event;
@@ -4891,11 +5019,11 @@ void os::PlatformEvent::unpark() {
   guarantee(_ParkHandle != NULL, "Invariant");
 
   // Transitions for _Event:
-  //    0 :=> 1
-  //    1 :=> 1
-  //   -1 :=> either 0 or 1; must signal target thread
-  //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1.
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _Event from -1 to either
+  //         0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
@@ -5091,37 +5219,12 @@ int os::socket_close(int fd) {
   return ::closesocket(fd);
 }
 
-int os::socket_available(int fd, jint *pbytes) {
-  int ret = ::ioctlsocket(fd, FIONREAD, (u_long*)pbytes);
-  return (ret < 0) ? 0 : 1;
-}
-
 int os::socket(int domain, int type, int protocol) {
   return ::socket(domain, type, protocol);
 }
 
-int os::listen(int fd, int count) {
-  return ::listen(fd, count);
-}
-
 int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   return ::connect(fd, him, len);
-}
-
-int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
-  return ::accept(fd, him, len);
-}
-
-int os::sendto(int fd, char* buf, size_t len, uint flags,
-               struct sockaddr* to, socklen_t tolen) {
-
-  return ::sendto(fd, buf, (int)len, flags, to, tolen);
-}
-
-int os::recvfrom(int fd, char *buf, size_t nBytes, uint flags,
-                 sockaddr* from, socklen_t* fromlen) {
-
-  return ::recvfrom(fd, buf, (int)nBytes, flags, from, fromlen);
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
@@ -5134,45 +5237,6 @@ int os::send(int fd, char* buf, size_t nBytes, uint flags) {
 
 int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
-}
-
-int os::timeout(int fd, long timeout) {
-  fd_set tbl;
-  struct timeval t;
-
-  t.tv_sec  = timeout / 1000;
-  t.tv_usec = (timeout % 1000) * 1000;
-
-  tbl.fd_count    = 1;
-  tbl.fd_array[0] = fd;
-
-  return ::select(1, &tbl, 0, 0, &t);
-}
-
-int os::get_host_name(char* name, int namelen) {
-  return ::gethostname(name, namelen);
-}
-
-int os::socket_shutdown(int fd, int howto) {
-  return ::shutdown(fd, howto);
-}
-
-int os::bind(int fd, struct sockaddr* him, socklen_t len) {
-  return ::bind(fd, him, len);
-}
-
-int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
-  return ::getsockname(fd, him, len);
-}
-
-int os::get_sock_opt(int fd, int level, int optname,
-                     char* optval, socklen_t* optlen) {
-  return ::getsockopt(fd, level, optname, optval, optlen);
-}
-
-int os::set_sock_opt(int fd, int level, int optname,
-                     const char* optval, socklen_t optlen) {
-  return ::setsockopt(fd, level, optname, optval, optlen);
 }
 
 // WINDOWS CONTEXT Flags for THREAD_SAMPLING
@@ -5365,11 +5429,6 @@ inline BOOL os::Kernel32Dll::Module32First(HANDLE hSnapshot,
 inline BOOL os::Kernel32Dll::Module32Next(HANDLE hSnapshot,
                                           LPMODULEENTRY32 lpme) {
   return ::Module32Next(hSnapshot, lpme);
-}
-
-
-inline BOOL os::Kernel32Dll::GetNativeSystemInfoAvailable() {
-  return true;
 }
 
 inline void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {

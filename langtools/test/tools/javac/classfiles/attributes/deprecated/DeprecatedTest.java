@@ -240,7 +240,7 @@ public class DeprecatedTest extends TestResult {
                     ? "deprecated"
                     : "notDeprecated";
             echo("Testing outer class : " + outerClassName);
-            ClassFile cf = ClassFile.read(classes.get(outerClassName).openInputStream());
+            ClassFile cf = readClassFile(classes.get(outerClassName));
             Deprecated_attribute attr = (Deprecated_attribute)
                     cf.getAttribute(Attribute.Deprecated);
             testAttribute(outerClassName, attr, cf);
@@ -260,7 +260,7 @@ public class DeprecatedTest extends TestResult {
             String innerClassName = cf.constant_pool.
                     getClassInfo(innerClass.inner_class_info_index).getName();
             echo("Testing inner class : " + innerClassName);
-            ClassFile innerCf = ClassFile.read(classes.get(innerClassName).openInputStream());
+            ClassFile innerCf = readClassFile(classes.get(innerClassName));
             Deprecated_attribute attr = (Deprecated_attribute)
                     innerCf.getAttribute(Attribute.Deprecated);
             String innerClassSimpleName = innerClass.getInnerName(cf.constant_pool);
@@ -298,17 +298,18 @@ public class DeprecatedTest extends TestResult {
         if (name.contains("deprecated")) {
             testDeprecatedAttribute(name, attr, cf);
         } else {
-            assertNull(attr, name + " should not have deprecated attribute");
+            checkNull(attr, name + " should not have deprecated attribute");
         }
     }
 
     private void testDeprecatedAttribute(String name, Deprecated_attribute attr, ClassFile cf)
             throws ConstantPoolException {
-        assertNotNull(attr, name + " must have deprecated attribute");
-        assertEquals(0, attr.attribute_length,
-                "attribute_length should equal to 0");
-        assertEquals("Deprecated",
-                cf.constant_pool.getUTF8Value(attr.attribute_name_index),
-                name + " attribute_name_index");
+        if (checkNotNull(attr, name + " must have deprecated attribute")) {
+            checkEquals(0, attr.attribute_length,
+                    "attribute_length should equal to 0");
+            checkEquals("Deprecated",
+                    cf.constant_pool.getUTF8Value(attr.attribute_name_index),
+                    name + " attribute_name_index");
+        }
     }
 }
