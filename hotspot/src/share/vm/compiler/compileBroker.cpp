@@ -594,7 +594,7 @@ void CompileTask::log_task_done(CompileLog* log) {
  * Add a CompileTask to a CompileQueue.
  */
 void CompileQueue::add(CompileTask* task) {
-  assert(lock()->owned_by_self(), "must own lock");
+  assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
 
   task->set_next(NULL);
   task->set_prev(NULL);
@@ -625,7 +625,7 @@ void CompileQueue::add(CompileTask* task) {
   }
 
   // Notify CompilerThreads that a task is available.
-  lock()->notify_all();
+  MethodCompileQueue_lock->notify_all();
 }
 
 /**
@@ -635,7 +635,7 @@ void CompileQueue::add(CompileTask* task) {
  * compilation is disabled.
  */
 void CompileQueue::free_all() {
-  MutexLocker mu(lock());
+  MutexLocker mu(MethodCompileQueue_lock);
   CompileTask* next = _first;
 
   // Iterate over all tasks in the compile queue
@@ -653,14 +653,14 @@ void CompileQueue::free_all() {
   _first = NULL;
 
   // Wake up all threads that block on the queue.
-  lock()->notify_all();
+  MethodCompileQueue_lock->notify_all();
 }
 
 /**
  * Get the next CompileTask from a CompileQueue
  */
 CompileTask* CompileQueue::get() {
-  MutexLocker locker(lock());
+  MutexLocker locker(MethodCompileQueue_lock);
   // If _first is NULL we have no more compile jobs. There are two reasons for
   // having no compile jobs: First, we compiled everything we wanted. Second,
   // we ran out of code cache so compilation has been disabled. In the latter
@@ -681,7 +681,7 @@ CompileTask* CompileQueue::get() {
     // We need a timed wait here, since compiler threads can exit if compilation
     // is disabled forever. We use 5 seconds wait time; the exiting of compiler threads
     // is not critical and we do not want idle compiler threads to wake up too often.
-    lock()->wait(!Mutex::_no_safepoint_check_flag, 5*1000);
+    MethodCompileQueue_lock->wait(!Mutex::_no_safepoint_check_flag, 5*1000);
   }
 
   if (CompileBroker::is_compilation_disabled_forever()) {
@@ -701,7 +701,7 @@ CompileTask* CompileQueue::get() {
 // Clean & deallocate stale compile tasks.
 // Temporarily releases MethodCompileQueue lock.
 void CompileQueue::purge_stale_tasks() {
-  assert(lock()->owned_by_self(), "must own lock");
+  assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
   if (_first_stale != NULL) {
     // Stale tasks are purged when MCQ lock is released,
     // but _first_stale updates are protected by MCQ lock.
@@ -710,7 +710,7 @@ void CompileQueue::purge_stale_tasks() {
     CompileTask* head = _first_stale;
     _first_stale = NULL;
     {
-      MutexUnlocker ul(lock());
+      MutexUnlocker ul(MethodCompileQueue_lock);
       for (CompileTask* task = head; task != NULL; ) {
         CompileTask* next_task = task->next();
         CompileTaskWrapper ctw(task); // Frees the task
@@ -722,7 +722,7 @@ void CompileQueue::purge_stale_tasks() {
 }
 
 void CompileQueue::remove(CompileTask* task) {
-   assert(lock()->owned_by_self(), "must own lock");
+   assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
   if (task->prev() != NULL) {
     task->prev()->set_next(task->next());
   } else {
@@ -742,7 +742,7 @@ void CompileQueue::remove(CompileTask* task) {
 }
 
 void CompileQueue::remove_and_mark_stale(CompileTask* task) {
-  assert(lock()->owned_by_self(), "must own lock");
+  assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
   remove(task);
 
   // Enqueue the task for reclamation (should be done outside MCQ lock)
@@ -780,7 +780,7 @@ void CompileBroker::print_compile_queues(outputStream* st) {
 }
 
 void CompileQueue::print(outputStream* st) {
-  assert(lock()->owned_by_self(), "must own lock");
+  assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
   st->print_cr("Contents of %s", name());
   st->print_cr("----------------------------");
   CompileTask* task = _first;
@@ -1066,11 +1066,11 @@ void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_
 #endif // !ZERO && !SHARK
   // Initialize the compilation queue
   if (c2_compiler_count > 0) {
-    _c2_compile_queue  = new CompileQueue("C2 compile queue",  MethodCompileQueue_lock);
+    _c2_compile_queue  = new CompileQueue("C2 compile queue");
     _compilers[1]->set_num_compiler_threads(c2_compiler_count);
   }
   if (c1_compiler_count > 0) {
-    _c1_compile_queue  = new CompileQueue("C1 compile queue",  MethodCompileQueue_lock);
+    _c1_compile_queue  = new CompileQueue("C1 compile queue");
     _compilers[0]->set_num_compiler_threads(c1_compiler_count);
   }
 
@@ -1214,7 +1214,7 @@ void CompileBroker::compile_method_base(methodHandle method,
 
   // Acquire our lock.
   {
-    MutexLocker locker(queue->lock(), thread);
+    MutexLocker locker(MethodCompileQueue_lock, thread);
 
     // Make sure the method has not slipped into the queues since
     // last we checked; note that those checks were "fast bail-outs".
