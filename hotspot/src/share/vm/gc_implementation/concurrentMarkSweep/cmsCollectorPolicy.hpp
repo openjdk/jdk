@@ -42,9 +42,6 @@ class ConcurrentMarkSweepPolicy : public GenCollectorPolicy {
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
-
-  // Returns true if the incremental mode is enabled.
-  virtual bool has_soft_ended_eden();
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSCOLLECTORPOLICY_HPP

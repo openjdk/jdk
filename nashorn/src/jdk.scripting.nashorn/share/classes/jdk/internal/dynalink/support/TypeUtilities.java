@@ -520,4 +520,13 @@ public class TypeUtilities {
     public static Class<?> getWrapperType(final Class<?> primitiveType) {
         return WRAPPER_TYPES.get(primitiveType);
     }
+
+    /**
+     * Returns true if the passed type is a wrapper for a primitive type.
+     * @param type the examined type
+     * @return true if the passed type is a wrapper for a primitive type.
+     */
+    public static boolean isWrapperType(final Class<?> type) {
+        return PRIMITIVE_TYPES.containsKey(type);
+    }
 }

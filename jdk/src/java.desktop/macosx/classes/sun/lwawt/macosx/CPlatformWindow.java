@@ -678,7 +678,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         final long nsWindowPtr = getNSWindowPtr();
         LWCToolkit lwcToolkit = (LWCToolkit) Toolkit.getDefaultToolkit();
         Window w = DefaultKeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
-        if( w != null
+        if( w != null && w.getPeer() != null
                 && ((LWWindowPeer)w.getPeer()).getPeerType() == LWWindowPeer.PeerType.EMBEDDED_FRAME
                 && !lwcToolkit.isApplicationActive()) {
             lwcToolkit.activateApplicationIgnoringOtherApps();

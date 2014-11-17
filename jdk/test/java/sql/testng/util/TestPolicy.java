@@ -35,6 +35,7 @@ import java.sql.SQLPermission;
 import java.util.Enumeration;
 import java.util.PropertyPermission;
 import java.util.StringJoiner;
+import java.util.logging.LoggingPermission;
 
 /*
  * Simple Policy class that supports the required Permissions to validate the
@@ -57,7 +58,8 @@ public class TestPolicy extends Policy {
      * Policy used by the JDBC tests Possible values are: all (ALLPermissions),
      * setLog (SQLPemission("setLog"), deregisterDriver
      * (SQLPermission("deregisterDriver") (SQLPermission("deregisterDriver"),
-     * and setSyncFactory(SQLPermission(setSyncFactory),
+     * setSyncFactory(SQLPermission(setSyncFactory), and also
+     * LoggerPermission("control", null) when setting a Level
      *
      * @param policy Permissions to set
      */
@@ -78,6 +80,11 @@ public class TestPolicy extends Policy {
             case "setSyncFactory":
                 setMinimalPermissions();
                 permissions.add(new SQLPermission("setSyncFactory"));
+                break;
+            case "setSyncFactoryLogger":
+                setMinimalPermissions();
+                permissions.add(new SQLPermission("setSyncFactory"));
+                permissions.add(new LoggingPermission("control", null));
                 break;
             default:
                 setMinimalPermissions();

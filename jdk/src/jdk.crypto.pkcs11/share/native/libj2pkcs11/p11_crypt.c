@@ -141,8 +141,8 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckEncryptedPartLen);
 
-    (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
 
     ckAssertReturnValueOK(env, rv);
     return ckEncryptedPartLen;
@@ -214,7 +214,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
     }
 
     if (directOut == 0) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
     }
 
     ckAssertReturnValueOK(env, rv);
@@ -266,7 +266,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptFinal
     //printf("EF: ckLastEncryptedPartLen=%i", ckLastEncryptedPartLen);
 
     if (directOut == 0) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
     }
 
     ckAssertReturnValueOK(env, rv);
@@ -361,8 +361,8 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckPartLen);
 
-    (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
 
     ckAssertReturnValueOK(env, rv);
 
@@ -429,7 +429,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
     }
 
     if (directOut == 0) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
     }
 
     ckAssertReturnValueOK(env, rv);
@@ -478,7 +478,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptFinal
                                          &ckLastPartLen);
 
     if (directOut == 0) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
 
     }
 

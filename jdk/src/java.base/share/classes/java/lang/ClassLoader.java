@@ -29,12 +29,10 @@ import java.io.IOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.CodeSource;
-import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -54,7 +52,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import sun.misc.CompoundEnumeration;
 import sun.misc.Resource;
 import sun.misc.URLClassPath;
-import sun.misc.VM;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
@@ -268,8 +265,8 @@ public abstract class ClassLoader {
 
     // The packages defined in this class loader.  Each package name is mapped
     // to its corresponding Package object.
-    // @GuardedBy("itself")
-    private final HashMap<String, Package> packages = new HashMap<>();
+    private final ConcurrentHashMap<String, Package> packages
+            = new ConcurrentHashMap<>();
 
     private static Void checkCreateClassLoader() {
         SecurityManager security = System.getSecurityManager();
@@ -1575,17 +1572,17 @@ public abstract class ClassLoader {
                                     String implVendor, URL sealBase)
         throws IllegalArgumentException
     {
-        synchronized (packages) {
-            Package pkg = getPackage(name);
-            if (pkg != null) {
-                throw new IllegalArgumentException(name);
-            }
-            pkg = new Package(name, specTitle, specVersion, specVendor,
-                              implTitle, implVersion, implVendor,
-                              sealBase, this);
-            packages.put(name, pkg);
-            return pkg;
+        Package pkg = getPackage(name);
+        if (pkg != null) {
+            throw new IllegalArgumentException(name);
         }
+        pkg = new Package(name, specTitle, specVersion, specVendor,
+                          implTitle, implVersion, implVendor,
+                          sealBase, this);
+        if (packages.putIfAbsent(name, pkg) != null) {
+            throw new IllegalArgumentException(name);
+        }
+        return pkg;
     }
 
     /**
@@ -1601,25 +1598,12 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     protected Package getPackage(String name) {
-        Package pkg;
-        synchronized (packages) {
-            pkg = packages.get(name);
-        }
+        Package pkg = packages.get(name);
         if (pkg == null) {
             if (parent != null) {
                 pkg = parent.getPackage(name);
             } else {
                 pkg = Package.getSystemPackage(name);
-            }
-            if (pkg != null) {
-                synchronized (packages) {
-                    Package pkg2 = packages.get(name);
-                    if (pkg2 == null) {
-                        packages.put(name, pkg);
-                    } else {
-                        pkg = pkg2;
-                    }
-                }
             }
         }
         return pkg;
@@ -1635,22 +1619,18 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     protected Package[] getPackages() {
-        Map<String, Package> map;
-        synchronized (packages) {
-            map = new HashMap<>(packages);
-        }
         Package[] pkgs;
         if (parent != null) {
             pkgs = parent.getPackages();
         } else {
             pkgs = Package.getSystemPackages();
         }
+
+        Map<String, Package> map = packages;
         if (pkgs != null) {
+            map = new HashMap<>(packages);
             for (Package pkg : pkgs) {
-                String pkgName = pkg.getName();
-                if (map.get(pkgName) == null) {
-                    map.put(pkgName, pkg);
-                }
+                map.putIfAbsent(pkg.getName(), pkg);
             }
         }
         return map.values().toArray(new Package[map.size()]);

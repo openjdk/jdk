@@ -202,44 +202,44 @@ public abstract class InnerClassesTestBase extends TestResult {
                     ++count;
                 }
             }
-            assertEquals(1, count, "Number of inner classes attribute");
-            if (innerClasses == null) {
+            checkEquals(1, count, "Number of inner classes attribute");
+            if (!checkNotNull(innerClasses, "InnerClasses attribute should not be null")) {
                 return;
             }
-            assertEquals(cf.constant_pool.
+            checkEquals(cf.constant_pool.
                     getUTF8Info(innerClasses.attribute_name_index).value, "InnerClasses",
                     "innerClasses.attribute_name_index");
             // Inner Classes attribute consists of length (2 bytes)
             // and 8 bytes for each inner class's entry.
-            assertEquals(innerClasses.attribute_length,
+            checkEquals(innerClasses.attribute_length,
                     2 + 8 * class2Flags.size(), "innerClasses.attribute_length");
-            assertEquals(innerClasses.number_of_classes,
+            checkEquals(innerClasses.number_of_classes,
                     class2Flags.size(), "innerClasses.number_of_classes");
             Set<String> visitedClasses = new HashSet<>();
             for (Info e : innerClasses.classes) {
                 String baseName = cf.constant_pool.getClassInfo(
                         e.inner_class_info_index).getBaseName();
                 if (cf.major_version >= 51 && e.inner_name_index == 0) {
-                    assertEquals(e.outer_class_info_index, 0,
-                        "outer_class_info_index "
-                                + "in case of inner_name_index is zero : "
-                                + baseName);
+                    checkEquals(e.outer_class_info_index, 0,
+                            "outer_class_info_index "
+                                    + "in case of inner_name_index is zero : "
+                                    + baseName);
                 }
                 String className = baseName.replaceFirst(".*\\$", "");
-                assertTrue(class2Flags.containsKey(className),
+                checkTrue(class2Flags.containsKey(className),
                         className);
-                assertTrue(visitedClasses.add(className),
+                checkTrue(visitedClasses.add(className),
                         "there are no duplicates in attribute : " + className);
-                assertEquals(e.inner_class_access_flags.getInnerClassFlags(),
+                checkEquals(e.inner_class_access_flags.getInnerClassFlags(),
                         class2Flags.get(className),
                         "inner_class_access_flags " + className);
                 if (!Arrays.asList(skipClasses).contains(className)) {
-                        assertEquals(
-                            cf.constant_pool.getClassInfo(e.inner_class_info_index).getBaseName(),
-                            classToTest + "$" + className,
-                            "inner_class_info_index of " + className);
+                        checkEquals(
+                                cf.constant_pool.getClassInfo(e.inner_class_info_index).getBaseName(),
+                                classToTest + "$" + className,
+                                "inner_class_info_index of " + className);
                     if (e.outer_class_info_index > 0) {
-                        assertEquals(
+                        checkEquals(
                                 cf.constant_pool.getClassInfo(e.outer_class_info_index).getName(),
                                 classToTest,
                                 "outer_class_info_index of " + className);

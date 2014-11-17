@@ -186,6 +186,10 @@ ifdef JTREG_TIMEOUT_FACTOR
   JTREG_OPTIONS += -timeoutFactor:$(JTREG_TIMEOUT_FACTOR)
 endif
 
+ifdef JCK_TIMEOUT_FACTOR
+  JCK_OPTIONS += -timeout:$(JCK_TIMEOUT_FACTOR)
+endif
+
 # Default verbosity setting for jtreg
 JTREG_VERBOSE = fail,error,nopass
 
@@ -298,7 +302,7 @@ ifdef JTREG_REFERENCE
 endif
 
 jtreg-summary: FRC
-	if [ -r $(JTREG_OUTPUT_DIR)/status.txt ]; then \
+	@if [ -r $(JTREG_OUTPUT_DIR)/status.txt ]; then \
 	    echo ; echo "Summary of jtreg test failures" ; \
 	    cat $(JTREG_OUTPUT_DIR)/JTreport/text/summary.txt | \
 		grep -v 'Not run' | grep -v 'Passed' ; \
@@ -336,8 +340,8 @@ jck-compiler-tests: check-jck FRC
 	    $(JCK_COMPILER_OUTPUT_DIR)/diff.html $(JCK_COMPILER_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_COMPILER_OUTPUT_DIR)
 	$(JT_JAVA)/bin/java -Xmx512m \
-	    -jar $(JCK_HOME)/JCK-compiler-8/lib/jtjck.jar \
-	    $(if $(JCK_VERBOSE),-v:$(JCK_VERBOSE)) \
+	    -jar $(JCK_HOME)/JCK-compiler-9/lib/jtjck.jar \
+	    $(if $(JCK_VERBOSE),$(if $(filter $(JCK_VERBOSE),summary),-v,-v:$(JCK_VERBOSE))) \
             -r:$(JCK_COMPILER_OUTPUT_DIR)/report \
             -w:$(JCK_COMPILER_OUTPUT_DIR)/work \
             -jdk:$(TESTJAVA) \
@@ -353,7 +357,7 @@ ifdef JCK_COMPILER_REFERENCE
 endif
 
 jck-compiler-summary: FRC
-	if [ -r $(JCK_COMPILER_OUTPUT_DIR)/status.txt ]; then \
+	@if [ -r $(JCK_COMPILER_OUTPUT_DIR)/status.txt ]; then \
 	    echo ; echo "Summary of JCK-compiler test failures" ; \
 	    cat $(JCK_COMPILER_OUTPUT_DIR)/report/text/summary.txt | \
 		grep -v 'Not run' | grep -v 'Passed' ; \
@@ -387,8 +391,8 @@ jck-runtime-tests: check-jck FRC
 	    $(JCK_RUNTIME_OUTPUT_DIR)/diff.html $(JCK_RUNTIME_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_RUNTIME_OUTPUT_DIR)
 	$(JT_JAVA)/bin/java -Xmx512m \
-	    -jar $(JCK_HOME)/JCK-runtime-8/lib/jtjck.jar \
-	    $(if $(JCK_VERBOSE),-v:$(JCK_VERBOSE)) \
+	    -jar $(JCK_HOME)/JCK-runtime-9/lib/jtjck.jar \
+	    $(if $(JCK_VERBOSE),$(if $(filter $(JCK_VERBOSE),summary),-v,-v:$(JCK_VERBOSE))) \
             -r:$(JCK_RUNTIME_OUTPUT_DIR)/report \
             -w:$(JCK_RUNTIME_OUTPUT_DIR)/work \
             -jdk:$(TESTJAVA) \
@@ -405,7 +409,7 @@ ifdef JCK_RUNTIME_REFERENCE
 endif
 
 jck-runtime-summary: FRC
-	if [ -r $(JCK_RUNTIME_OUTPUT_DIR)/status.txt ]; then \
+	@if [ -r $(JCK_RUNTIME_OUTPUT_DIR)/status.txt ]; then \
 	    echo ; echo "Summary of JCK-runtime test failures" ; \
 	    cat $(JCK_RUNTIME_OUTPUT_DIR)/report/text/summary.txt | \
 		grep -v 'Not run' | grep -v 'Passed' ; \
@@ -417,7 +421,7 @@ jck-runtime-summary: FRC
 check-jck: $(JCK_HOME) $(PRODUCT_HOME)
 
 all-summary: FRC
-	if [ -n "`find $(TEST_OUTPUT_DIR) -name status.txt`" ]; then
+	@if [ -n "`find $(TEST_OUTPUT_DIR) -name status.txt`" ]; then
 	    echo ; echo "Summary of test failures" ; \
 	    cat `find $(TEST_OUTPUT_DIR) -name summary.txt` | \
 		grep -v 'Not run' | grep -v 'Passed' ; \

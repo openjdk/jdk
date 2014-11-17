@@ -3196,7 +3196,7 @@ void MacroAssembler::eden_allocate(
   assert(0 <= con_size_in_bytes && Assembler::is_simm13(con_size_in_bytes), "illegal object size");
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0, "object size is not multiple of alignment");
 
-  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
     ba(slow_case);
     delayed()->nop();
@@ -3331,7 +3331,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   assert_different_registers(top, t1, t2, t3, G4, G5 /* preserve G4 and G5 */);
   Label do_refill, discard_tlab;
 
-  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
     ba(slow_case);
     delayed()->nop();

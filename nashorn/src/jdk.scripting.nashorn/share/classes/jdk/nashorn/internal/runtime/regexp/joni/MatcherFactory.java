@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni;
 
+@SuppressWarnings("javadoc")
 public abstract class MatcherFactory {
     public abstract Matcher create(Regex regex, char[] chars, int p, int end);
 

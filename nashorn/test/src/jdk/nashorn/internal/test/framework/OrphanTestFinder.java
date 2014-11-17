@@ -34,6 +34,7 @@ import org.testng.annotations.Test;
  * Test case used by JSCompilerTest to complain if test files are marked as
  * neither test nor subtest.
  */
+@SuppressWarnings("javadoc")
 public final class OrphanTestFinder implements ITest {
     private final Set<String> orphanFiles;
 

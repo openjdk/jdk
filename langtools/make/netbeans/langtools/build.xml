@@ -46,48 +46,34 @@
      -->
     <import file="../../build.xml"/>
 
-    <!-- Build project. (action: build; F11)
-        If langtools.tool.name is set, then just build that tool; otherwise
-        build all tools.
-    -->
+    <!-- Build project. (action: build; F11) -->
 
-    <target name="build" depends="-get-tool-if-set,-build-tool,-build-all"
-        description="Build one or all langtools tools"
-        />
-
-    <condition property="use_bootstrap" value="bootstrap-" else="">
-        <isset property="langtools.tool.bootstrap"/>
-    </condition>
-    <condition property="with_bootclasspath" value="${build.bootstrap.dir}/classes" else="${build.classes.dir}">
-        <isset property="langtools.tool.bootstrap"/>
-    </condition>
-
-    <target name="-build-tool" if="langtools.tool.name">
-        <echo level="info" message="Building ${use_bootstrap}${langtools.tool.name}"/>
-        <echo level="verbose" message="(Unset langtools.tool.name to build all tools)"/>
-        <antcall target="build-${use_bootstrap}${langtools.tool.name}"/>
+    <target name="build" depends="-get-tool-if-set,-build-bootstrap-javac,-build-all" />
+    <target name="-build-bootstrap-javac" if="langtools.tool.bootstrap">
+        <antcall target="build-bootstrap-javac"/>
     </target>
-
-    <target name="-build-all" unless="langtools.tool.name">
-        <echo level="info" message="Building all tools"/>
-        <echo level="verbose" message="(Set langtools.tool.name to build a single tool)"/>
+    <target name="-build-all" unless="langtools.tool.bootstrap">
         <antcall target="build-all-tools"/>
     </target>
 
     <!-- Compile a single file. (action: compile.single; F9) -->
 
-    <target name="compile-single" depends="build-bootstrap-javac">
+    <target name="compile-single" depends="-get-tool-if-set,build-bootstrap-javac-classes" unless="langtools.tool.bootstrap">
         <fail unless="includes">Must set property 'includes'</fail>
-        <javac fork="true" executable="${build.bootstrap.dir}/bin/javac"
-               srcdir="${srcdir}"
-               destdir="${build.classes.dir}"
+        <mkdir dir="${build.dir}/${module.name}/classes" />
+        <javac fork="true" executable="${boot.java.home}/bin/javac"
+               srcdir="${basedir}/src/${module.name}/share/classes"
+               destdir="${build.dir}/${module.name}/classes"
                includes="${includes}"
                sourcepath=""
+               classpath="${langtools.classes}"
                includeAntRuntime="no"
                source="${javac.source}"
                target="${javac.target}"
                debug="${javac.debug}"
-               debuglevel="${javac.debuglevel}"/>
+               debuglevel="${javac.debuglevel}">
+            <compilerarg value="-J-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
+        </javac>
     </target>
 
     <!-- Run tool. (action: run; F6)
@@ -95,16 +81,24 @@
         the user.
     -->
 
-    <target name="run" depends="-check-target.java.home,build,-def-run,-get-tool-and-args"
+    <target name="run" depends="-check-target.java.home,-build-classes,-def-run,-get-tool-and-args,-setup-bootclasspath"
             description="run tool">
         <echo level="info" message="${with_bootclasspath}"/>
         <echo level="info" message="Run ${use_bootstrap}${langtools.tool.name} with args ${langtools.tool.args}"/>
         <run bcp="${with_bootclasspath}" mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}"/>
     </target>
 
+    <target name="-build-classes" depends="-get-tool-if-set,-build-classes-bootstrap-javac,-build-classes-all" />
+    <target name="-build-classes-bootstrap-javac" if="langtools.tool.bootstrap">
+        <antcall target="build-bootstrap-javac-classes"/>
+    </target>
+    <target name="-build-classes-all" unless="langtools.tool.bootstrap">
+        <antcall target="build-all-classes"/>
+    </target>
+
     <!-- Run a selected class. (action: run.single;  shift-F6) -->
 
-    <target name="run-single" depends="-check-target.java.home,-def-run">
+    <target name="run-single" depends="-check-target.java.home,-setup-bootclasspath,-def-run">
         <fail unless="run.classname">Must set property 'run.classname' </fail>
         <echo level="info" message="run ${run.classname}"/>
         <run mainclass="${run.classname}" args=""/>
@@ -115,22 +109,22 @@
         test all tools.
     -->
 
-    <target name="jtreg" depends="-get-tool-if-set,-jtreg-tool,-jtreg-all"
-        description="Test one or all langtools tools"
+    <target name="jtreg" depends="-get-tool-if-set,-jtreg-bootstrap-javac,-jtreg-all"
+        description="Test langtools tools or bootstrap javac"
         />
 
-    <target name="-jtreg-tool" if="langtools.tool.name">
-        <echo level="info" message="Testing ${langtools.tool.name}"/>
-        <echo level="verbose" message="(Unset langtools.tool.name to test all tools)"/>
+    <target name="-jtreg-bootstrap-javac" if="langtools.tool.bootstrap">
+        <echo level="info" message="Testing bootstrap javac"/>
+        <echo level="verbose" message="(Unset langtools.tool.bootstrap to test all tools)"/>
         <antcall>
-            <target name="jtreg-${langtools.tool.name}"/>
+            <target name="jtreg-bootstrap-javac"/>
             <target name="-show-jtreg"/>
         </antcall>
     </target>
 
-    <target name="-jtreg-all" unless="langtools.tool.name">
+    <target name="-jtreg-all" unless="langtools.tool.bootstrap">
         <echo level="info" message="Testing all tools"/>
-        <echo level="verbose" message="(Set langtools.tool.name to test a single tool)"/>
+        <echo level="verbose" message="(Set langtools.tool.bootstrap to test bootstrap javac)"/>
         <antcall>
             <target name="langtools.jtreg"/>
             <target name="-show-jtreg"/>
@@ -165,7 +159,7 @@
 
     <!-- Debug tool in NetBeans. -->
 
-    <target name="debug" depends="-check-target.java.home,-def-run,-def-start-debugger,-get-tool-and-args,build" if="netbeans.home">
+    <target name="debug" depends="-check-target.java.home,-def-run,-def-start-debugger,-get-tool-and-args,-setup-bootclasspath,-build-classes" if="netbeans.home">
         <echo level="info" message="Debug ${use_bootstrap}${langtools.tool.name} with args ${langtools.tool.args}"/>
         <start-debugger/>
         <run bcp="${with_bootclasspath}" mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}" jpda.jvmargs="${jpda.jvmargs}"/>
@@ -179,20 +173,29 @@
     </target>
 
     <!-- Debug a jtreg test. -->
-    <target name="debug-jtreg" depends="-check-target.java.home,-def-start-debugger,-def-jtreg">
+    <target name="debug-jtreg" depends="-check-target.java.home,-def-start-debugger,-def-jtreg,-get-tool-if-set,-setup-bootclasspath">
         <fail unless="jtreg.tests">Must set property 'jtreg.tests'</fail>
         <start-debugger/>
-        <jtreg-tool name="debug" samevm="false" tests="${jtreg.tests}" jpda.jvmargs="${jpda.jvmargs}"/>
+        <jtreg-tool name="debug"
+                    samevm="false"
+                    tests="${jtreg.tests}"
+                    jpda.jvmargs="${jpda.jvmargs}"
+                    langtools.classes="${with_bootclasspath}"/>
     </target>
 
     <!-- Update a class being debugged. -->
 
-    <target name="debug-fix">
+    <target name="debug-fix" depends="-get-tool-if-set">
         <fail unless="class">Must set property 'class'
         </fail>
         <antcall target="compile-single">
             <param name="includes" value="${class}.java"/>
         </antcall>
+        <condition property="build.classes.dir"
+                   value="${build.dir}/${module.name}/classes"
+                   else="${boot.build.dir}/${module.name}/classes">
+            <isset property="use_bootstrap"/>
+        </condition>
         <nbjpdareload>
             <fileset dir="${build.classes.dir}">
                 <include name="${class}.class"/>
@@ -205,31 +208,10 @@
         test all tools.
     -->
 
-    <target name="javadoc" depends="-javadoc-tool,-javadoc-all"
-        description="Generate javadoc for one or all langtools tools"
-        />
-
-    <target name="-javadoc-tool" if="langtools.tool.name">
-        <echo level="info" message="Generate javadoc for ${langtools.tool.name}"/>
-        <echo level="verbose" message="(Unset langtools.tool.name to generate javadoc for all tools)"/>
-        <antcall>
-            <target name="javadoc-${langtools.tool.name}"/>
-            <target name="-show-javadoc"/>
-        </antcall>
-    </target>
-
-    <target name="-javadoc-all" unless="langtools.tool.name">
-        <echo level="info" message="Generate javadoc for all tools"/>
-        <echo level="verbose" message="(Set langtools.tool.name to generate javadoc for a single tool)"/>
-        <antcall>
-            <target name="langtools.javadoc"/>
-            <target name="-show-javadoc"/>
-        </antcall>
-    </target>
+    <target name="javadoc" depends="langtools.javadoc,-show-javadoc" />
 
     <target name="-show-javadoc" if="netbeans.home">
-        <!-- what if doing javadoc for all? -->
-        <nbbrowse file="${build.javadoc.dir}/${langtools.tool.name}/index.html"/>
+        <nbbrowse file="${build.javadoc.dir}/index.html"/>
     </target>
 
     <!-- Prompt for values. -->
@@ -253,6 +235,15 @@
             />
     </target>
 
+    <target name="-setup-bootclasspath">
+        <condition property="use_bootstrap" value="bootstrap-" else="">
+            <isset property="langtools.tool.bootstrap"/>
+        </condition>
+        <condition property="with_bootclasspath" value="${langtools.boot.classes}" else="${langtools.classes}">
+            <isset property="langtools.tool.bootstrap"/>
+        </condition>
+    </target>
+
     <!-- Macro to run a tool or selected class - used by run* and debug* tasks -->
     <target name="-def-run">
         <macrodef name="run">
@@ -262,7 +253,7 @@
             <attribute name="jpda.jvmargs" default=""/>
 
             <sequential>
-                <java fork="true" jvm="${target.java}" classname="@{mainclass}">
+                <java fork="true" jvm="${target.java.home}/bin/java" classname="@{mainclass}">
                     <jvmarg line="-Xbootclasspath/p:@{bcp}"/>
                     <jvmarg line="@{jpda.jvmargs}"/>
                     <arg line="@{args}"/>
@@ -278,11 +269,11 @@
             <sequential>
                 <nbjpdastart name="${ant.project.name}" addressproperty="jpda.address" transport="dt_socket">
                     <bootclasspath>
-                        <pathelement location="${build.classes.dir}"/>
+                        <pathelement path="${langtools.classes}"/>
                         <pathelement location="${target.java.home}/jre/lib/rt.jar"/>
                     </bootclasspath>
                     <sourcepath>
-                        <path refid="src.dirs"/>
+                        <pathelement path="${langtools.sources}"/>
                     </sourcepath>
                 </nbjpdastart>
                 <property

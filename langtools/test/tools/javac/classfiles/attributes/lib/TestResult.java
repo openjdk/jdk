@@ -24,10 +24,7 @@
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
-import java.util.stream.Stream;
-
-import static java.lang.String.format;
-import static java.util.stream.Collectors.joining;
+import java.util.stream.Collectors;
 
 /**
  * This class accumulates test results. Test results can be checked with method @{code checkStatus}.
@@ -52,39 +49,46 @@ public class TestResult extends TestBase {
 
     private String errorMessage() {
         return testCases.stream().filter(Info::isFailed)
-                .map(tc -> format("Failure in test case:\n%s\n%s", tc.info(), tc.getMessage()))
-                .collect(joining("\n"));
+                .map(tc -> String.format("Failure in test case:\n%s\n%s", tc.info(), tc.getMessage()))
+                .collect(Collectors.joining("\n"));
     }
 
-    @Override
-    public void assertEquals(Object actual, Object expected, String message) {
-        getLastTestCase().assertEquals(actual, expected, message);
+    public boolean checkEquals(Object actual, Object expected, String message) {
+        echo("Testing : " + message);
+        if (!Objects.equals(actual, expected)) {
+            getLastTestCase().addAssert(new AssertionFailedException(
+                    String.format("%s%nGot: %s, Expected: %s", message, actual, expected)));
+            return false;
+        }
+        return true;
     }
 
-    @Override
-    public void assertNull(Object actual, String message) {
-        getLastTestCase().assertEquals(actual, null, message);
+    public boolean checkNull(Object actual, String message) {
+        return checkEquals(actual, null, message);
     }
 
-    @Override
-    public void assertNotNull(Object actual, String message) {
-        getLastTestCase().assertNotNull(actual, message);
+    public boolean checkNotNull(Object actual, String message) {
+        echo("Testing : " + message);
+        if (Objects.isNull(actual)) {
+            getLastTestCase().addAssert(new AssertionFailedException(
+                    message + " : Expected not null value"));
+            return false;
+        }
+        return true;
     }
 
-    @Override
-    public void assertFalse(boolean actual, String message) {
-        getLastTestCase().assertEquals(actual, false, message);
+    public boolean checkFalse(boolean actual, String message) {
+        return checkEquals(actual, false, message);
     }
 
-    @Override
-    public void assertTrue(boolean actual, String message) {
-        getLastTestCase().assertEquals(actual, true, message);
+    public boolean checkTrue(boolean actual, String message) {
+        return checkEquals(actual, true, message);
     }
 
-    public void assertContains(Set<?> found, Set<?> expected, String message) {
+    public boolean checkContains(Set<?> found, Set<?> expected, String message) {
         Set<?> copy = new HashSet<>(expected);
         copy.removeAll(found);
-        assertTrue(found.containsAll(expected), message + " : " + copy);
+        return checkTrue(found.containsAll(expected), message + " : " + copy);
     }
 
     public void addFailure(Throwable th) {
@@ -99,10 +103,10 @@ public class TestResult extends TestBase {
     }
 
     /**
-     * Throws {@code TestFailedException} if one of the asserts are failed
+     * Throws {@code TestFailedException} if one of the checks are failed
      * or an exception occurs. Prints error message of failed test cases.
      *
-     * @throws TestFailedException if one of the asserts are failed
+     * @throws TestFailedException if one of the checks are failed
      *                             or an exception occurs
      */
     public void checkStatus() throws TestFailedException {
@@ -115,7 +119,7 @@ public class TestResult extends TestBase {
     private class Info {
 
         private final String info;
-        private final List<String> asserts;
+        private final List<AssertionFailedException> asserts;
         private final List<Throwable> errors;
 
         private Info(String info) {
@@ -137,45 +141,20 @@ public class TestResult extends TestBase {
             printf("[ERROR] : %s\n", getStackTrace(th));
         }
 
-        public void addFailure(String message) {
-            String stackTrace = Stream.of(Thread.currentThread().getStackTrace())
-                    // just to get stack trace without TestResult and Thread
-                    .filter(e -> !"TestResult.java".equals(e.getFileName()) &&
-                            !"java.lang.Thread".equals(e.getClassName()))
-                    .map(e -> "\tat " + e)
-                    .collect(joining("\n"));
-            asserts.add(format("%s\n%s", message, stackTrace));
-            printf("[ASSERT] : %s\n", message);
-        }
-
-        public void assertEquals(Object actual, Object expected, String message) {
-            echo("Testing : " + message);
-            if (!Objects.equals(actual, expected)) {
-                addFailure(message + ": Got: " + actual + ", " + "Expected: " + expected);
-            }
-        }
-
-        public void assertNotNull(Object actual, String message) {
-            echo("Testing : " + message);
-            if (actual == null) {
-                addFailure(message + " : Expected not null value");
-            }
+        public void addAssert(AssertionFailedException e) {
+            asserts.add(e);
+            printf("[ASSERT] : %s\n", getStackTrace(e));
         }
 
         public String getMessage() {
-            return (asserts.size() > 0 ? getAssertMessage() + "\n" : "") + getErrorMessage();
+            return (asserts.size() > 0 ? getErrorMessage("[ASSERT]", asserts) + "\n" : "")
+                    + getErrorMessage("[ERROR]", errors);
         }
 
-        public String getAssertMessage() {
-            return asserts.stream()
-                    .map(failure -> "[ASSERT] : " + failure)
-                    .collect(joining("\n"));
-        }
-
-        public String getErrorMessage() {
-            return errors.stream()
-                    .map(throwable -> format("[ERROR] : %s", getStackTrace(throwable)))
-                    .collect(joining("\n"));
+        public String getErrorMessage(String header, List<? extends Throwable> list) {
+            return list.stream()
+                    .map(throwable -> String.format("%s : %s", header, getStackTrace(throwable)))
+                    .collect(Collectors.joining("\n"));
         }
 
         public String getStackTrace(Throwable throwable) {

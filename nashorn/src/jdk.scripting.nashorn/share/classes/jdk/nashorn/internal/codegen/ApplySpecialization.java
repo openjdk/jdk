@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS_VAR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EXPLODED_ARGUMENT_PREFIX;
 
 import java.lang.invoke.MethodType;
+import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -93,6 +94,8 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
 
     private final Deque<List<IdentNode>> explodedArguments = new ArrayDeque<>();
 
+    private final Deque<MethodType> callSiteTypes = new ArrayDeque<>();
+
     private static final String ARGUMENTS = ARGUMENTS_VAR.symbolName();
 
     /**
@@ -118,86 +121,113 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         return context.getLogger(this.getClass());
     }
 
+    @SuppressWarnings("serial")
+    private static class TransformFailedException extends RuntimeException {
+        TransformFailedException(final FunctionNode fn, final String message) {
+            super(massageURL(fn.getSource().getURL()) + '.' + fn.getName() + " => " + message, null, false, false);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private static class AppliesFoundException extends RuntimeException {
+        AppliesFoundException() {
+            super("applies_found", null, false, false);
+        }
+    }
+
+    private static final AppliesFoundException HAS_APPLIES = new AppliesFoundException();
+
+    private boolean hasApplies(final FunctionNode functionNode) {
+        try {
+            functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                @Override
+                public boolean enterFunctionNode(final FunctionNode fn) {
+                    return fn == functionNode;
+                }
+
+                @Override
+                public boolean enterCallNode(final CallNode callNode) {
+                    if (isApply(callNode)) {
+                        throw HAS_APPLIES;
+                    }
+                    return true;
+                }
+            });
+        } catch (final AppliesFoundException e) {
+            return true;
+        }
+
+        log.fine("There are no applies in ", DebugLogger.quote(functionNode.getName()), " - nothing to do.");
+        return false; // no applies
+    }
+
     /**
      * Arguments may only be used as args to the apply. Everything else is disqualified
      * We cannot control arguments if they escape from the method and go into an unknown
      * scope, thus we are conservative and treat any access to arguments outside the
      * apply call as a case of "we cannot apply the optimization".
-     *
-     * @return true if arguments escape
      */
-    private boolean argumentsEscape(final FunctionNode functionNode) {
-
-        @SuppressWarnings("serial")
-        final UnsupportedOperationException uoe = new UnsupportedOperationException() {
-            @Override
-            public synchronized Throwable fillInStackTrace() {
-                return null;
-            }
-        };
+    private static void checkValidTransform(final FunctionNode functionNode) {
 
         final Set<Expression> argumentsFound = new HashSet<>();
         final Deque<Set<Expression>> stack = new ArrayDeque<>();
-        //ensure that arguments is only passed as arg to apply
-        try {
-            functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                private boolean isCurrentArg(final Expression expr) {
-                    return !stack.isEmpty() && stack.peek().contains(expr); //args to current apply call
-                }
 
-                private boolean isArguments(final Expression expr) {
-                    if (expr instanceof IdentNode && ARGUMENTS.equals(((IdentNode)expr).getName())) {
-                        argumentsFound.add(expr);
+        //ensure that arguments is only passed as arg to apply
+        functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+
+            private boolean isCurrentArg(final Expression expr) {
+                return !stack.isEmpty() && stack.peek().contains(expr); //args to current apply call
+            }
+
+            private boolean isArguments(final Expression expr) {
+                if (expr instanceof IdentNode && ARGUMENTS.equals(((IdentNode)expr).getName())) {
+                    argumentsFound.add(expr);
+                    return true;
+               }
+                return false;
+            }
+
+            private boolean isParam(final String name) {
+                for (final IdentNode param : functionNode.getParameters()) {
+                    if (param.getName().equals(name)) {
                         return true;
                     }
-                    return false;
                 }
-
-                private boolean isParam(final String name) {
-                    for (final IdentNode param : functionNode.getParameters()) {
-                        if (param.getName().equals(name)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                @Override
-                public Node leaveIdentNode(final IdentNode identNode) {
-                    if (isParam(identNode.getName()) || isArguments(identNode) && !isCurrentArg(identNode)) {
-                        throw uoe; //avoid filling in stack trace
-                    }
-                    return identNode;
-                }
-
-                @Override
-                public boolean enterCallNode(final CallNode callNode) {
-                    final Set<Expression> callArgs = new HashSet<>();
-                    if (isApply(callNode)) {
-                        final List<Expression> argList = callNode.getArgs();
-                        if (argList.size() != 2 || !isArguments(argList.get(argList.size() - 1))) {
-                            throw new UnsupportedOperationException();
-                        }
-                        callArgs.addAll(callNode.getArgs());
-                    }
-                    stack.push(callArgs);
-                    return true;
-                }
-
-                @Override
-                public Node leaveCallNode(final CallNode callNode) {
-                    stack.pop();
-                    return callNode;
-                }
-            });
-        } catch (final UnsupportedOperationException e) {
-            if (!argumentsFound.isEmpty()) {
-                log.fine("'arguments' is used but escapes, or is reassigned in '" + functionNode.getName() + "'. Aborting");
+                return false;
             }
-            return true; //bad
-        }
 
-        return false;
+            @Override
+            public Node leaveIdentNode(final IdentNode identNode) {
+                if (isParam(identNode.getName())) {
+                    throw new TransformFailedException(lc.getCurrentFunction(), "parameter: " + identNode.getName());
+                }
+                // it's OK if 'argument' occurs as the current argument of an apply
+                if (isArguments(identNode) && !isCurrentArg(identNode)) {
+                    throw new TransformFailedException(lc.getCurrentFunction(), "is 'arguments': " + identNode.getName());
+                }
+                return identNode;
+            }
+
+            @Override
+            public boolean enterCallNode(final CallNode callNode) {
+                final Set<Expression> callArgs = new HashSet<>();
+                if (isApply(callNode)) {
+                    final List<Expression> argList = callNode.getArgs();
+                    if (argList.size() != 2 || !isArguments(argList.get(argList.size() - 1))) {
+                        throw new TransformFailedException(lc.getCurrentFunction(), "argument pattern not matched: " + argList);
+                    }
+                    callArgs.addAll(callNode.getArgs());
+                }
+                stack.push(callArgs);
+                return true;
+            }
+
+            @Override
+            public Node leaveCallNode(final CallNode callNode) {
+                stack.pop();
+                return callNode;
+            }
+       });
     }
 
     @Override
@@ -224,12 +254,14 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
 
             final CallNode newCallNode = callNode.setArgs(newArgs).setIsApplyToCall();
 
-            log.fine("Transformed ",
-                    callNode,
-                    " from apply to call => ",
-                    newCallNode,
-                    " in ",
-                    DebugLogger.quote(lc.getCurrentFunction().getName()));
+            if (log.isEnabled()) {
+                log.fine("Transformed ",
+                        callNode,
+                        " from apply to call => ",
+                        newCallNode,
+                        " in ",
+                        DebugLogger.quote(lc.getCurrentFunction().getName()));
+            }
 
             return newCallNode;
         }
@@ -237,12 +269,12 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         return callNode;
     }
 
-    private boolean pushExplodedArgs(final FunctionNode functionNode) {
+    private void pushExplodedArgs(final FunctionNode functionNode) {
         int start = 0;
 
         final MethodType actualCallSiteType = compiler.getCallSiteType(functionNode);
         if (actualCallSiteType == null) {
-            return false;
+            throw new TransformFailedException(lc.getCurrentFunction(), "No callsite type");
         }
         assert actualCallSiteType.parameterType(actualCallSiteType.parameterCount() - 1) != Object[].class : "error vararg callsite passed to apply2call " + functionNode.getName() + " " + actualCallSiteType;
 
@@ -264,8 +296,8 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
             }
         }
 
+        callSiteTypes.push(actualCallSiteType);
         explodedArguments.push(newParams);
-        return true;
     }
 
     @Override
@@ -288,11 +320,30 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
             return false;
         }
 
-        if (argumentsEscape(functionNode)) {
+        if (!hasApplies(functionNode)) {
             return false;
         }
 
-        return pushExplodedArgs(functionNode);
+        if (log.isEnabled()) {
+            log.info("Trying to specialize apply to call in '",
+                    functionNode.getName(),
+                    "' params=",
+                    functionNode.getParameters(),
+                    " id=",
+                    functionNode.getId(),
+                    " source=",
+                    massageURL(functionNode.getSource().getURL()));
+        }
+
+        try {
+            checkValidTransform(functionNode);
+            pushExplodedArgs(functionNode);
+        } catch (final TransformFailedException e) {
+            log.info("Failure: ", e.getMessage());
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -300,8 +351,8 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
      * @return true if successful, false otherwise
      */
     @Override
-    public Node leaveFunctionNode(final FunctionNode functionNode0) {
-        FunctionNode newFunctionNode = functionNode0;
+    public Node leaveFunctionNode(final FunctionNode functionNode) {
+        FunctionNode newFunctionNode = functionNode;
         final String functionName = newFunctionNode.getName();
 
         if (changed.contains(newFunctionNode.getId())) {
@@ -310,17 +361,18 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
                     setParameters(lc, explodedArguments.peek());
 
             if (log.isEnabled()) {
-                log.info("Successfully specialized apply to call in '",
+                log.info("Success: ",
+                        massageURL(newFunctionNode.getSource().getURL()),
+                        '.',
                         functionName,
-                        " params=",
-                        explodedArguments.peek(),
                         "' id=",
                         newFunctionNode.getId(),
-                        " source=",
-                        newFunctionNode.getSource().getURL());
+                        " params=",
+                        callSiteTypes.peek());
             }
         }
 
+        callSiteTypes.pop();
         explodedArguments.pop();
 
         return newFunctionNode.setState(lc, CompilationState.BUILTINS_TRANSFORMED);
@@ -331,4 +383,15 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         return f instanceof AccessNode && "apply".equals(((AccessNode)f).getProperty());
     }
 
+    private static String massageURL(final URL url) {
+        if (url == null) {
+            return "<null>";
+        }
+        final String str = url.toString();
+        final int slash = str.lastIndexOf('/');
+        if (slash == -1) {
+            return str;
+        }
+        return str.substring(slash + 1);
+    }
 }

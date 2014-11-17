@@ -73,6 +73,13 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   friend class CMSCollector;
   // Local alloc buffer for promotion into this space.
   friend class CFLS_LAB;
+  // Allow scan_and_* functions to call (private) overrides of the auxiliary functions on this class
+  template <typename SpaceType>
+  friend void CompactibleSpace::scan_and_adjust_pointers(SpaceType* space);
+  template <typename SpaceType>
+  friend void CompactibleSpace::scan_and_compact(SpaceType* space);
+  template <typename SpaceType>
+  friend void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* cp);
 
   // "Size" of chunks of work (executed during parallel remark phases
   // of CMS collection); this probably belongs in CMSCollector, although
@@ -286,6 +293,28 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   }
   void freed(HeapWord* start, size_t size) {
     _bt.freed(start, size);
+  }
+
+  // Auxiliary functions for scan_and_{forward,adjust_pointers,compact} support.
+  // See comments for CompactibleSpace for more information.
+  inline HeapWord* scan_limit() const {
+    return end();
+  }
+
+  inline bool scanned_block_is_obj(const HeapWord* addr) const {
+    return CompactibleFreeListSpace::block_is_obj(addr); // Avoid virtual call
+  }
+
+  inline size_t scanned_block_size(const HeapWord* addr) const {
+    return CompactibleFreeListSpace::block_size(addr); // Avoid virtual call
+  }
+
+  inline size_t adjust_obj_size(size_t size) const {
+    return adjustObjectSize(size);
+  }
+
+  inline size_t obj_size(const HeapWord* addr) const {
+    return adjustObjectSize(oop(addr)->size());
   }
 
  protected:

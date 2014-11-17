@@ -26,6 +26,7 @@ package jdk.nashorn.test.tools;
 
 import jdk.nashorn.internal.runtime.Undefined;
 
+@SuppressWarnings("javadoc")
 public class StaticTypeInspector {
 
     public static String inspect(final boolean x, final String w) {

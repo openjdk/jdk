@@ -35,6 +35,7 @@ import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
@@ -206,9 +207,8 @@ public class SamConversionComboTest {
         String clientFileStr = clientSourceFile.toString();
         System.out.println(clientFileStr.substring(0, clientFileStr.indexOf("\n\n")));
 
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, null, dc, null, null, Arrays.asList(samSourceFile, clientSourceFile));
+        JavacTask ct = (JavacTask)comp.getTask(null, fm, dc, null, null, Arrays.asList(samSourceFile, clientSourceFile));
         try {
             ct.analyze();
         } catch (Exception e) {
@@ -255,6 +255,9 @@ public class SamConversionComboTest {
     ReturnValue returnValue;
     static int count = 0;
 
+    static JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
+    static JavaFileManager fm = comp.getStandardFileManager(null, null, null);
+
     SamConversionComboTest(FInterface f, Context c, LambdaBody lb, LambdaKind lk, ReturnValue rv) {
         fInterface = f;
         context = c;
@@ -264,17 +267,21 @@ public class SamConversionComboTest {
     }
 
     public static void main(String[] args) throws Exception {
-        for(Context ct : Context.values()) {
-            for (FInterface fi : FInterface.values()) {
-                for (LambdaKind lk: LambdaKind.values()) {
-                    for (LambdaBody lb : LambdaBody.values()) {
-                        for(ReturnValue rv : ReturnValue.values()) {
-                            new SamConversionComboTest(fi, ct, lb, lk, rv).test();
+        try {
+            for(Context ct : Context.values()) {
+                for (FInterface fi : FInterface.values()) {
+                    for (LambdaKind lk: LambdaKind.values()) {
+                        for (LambdaBody lb : LambdaBody.values()) {
+                            for(ReturnValue rv : ReturnValue.values()) {
+                                new SamConversionComboTest(fi, ct, lb, lk, rv).test();
+                            }
                         }
                     }
                 }
             }
-        }
         System.out.println("total tests: " + count);
+        } finally {
+            fm.close();
+        }
     }
 }

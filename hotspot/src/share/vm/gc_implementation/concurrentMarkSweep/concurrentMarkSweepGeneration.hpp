@@ -356,7 +356,6 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
   size_t _gc0_promoted;         // bytes promoted per gc0
   double _cms_duration;
   double _cms_duration_pre_sweep; // time from initiation to start of sweep
-  double _cms_duration_per_mb;
   double _cms_period;
   size_t _cms_allocated;        // bytes of direct allocation per gc0 period
 
@@ -383,17 +382,7 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
 
   unsigned int _valid_bits;
 
-  unsigned int _icms_duty_cycle;        // icms duty cycle (0-100).
-
  protected:
-
-  // Return a duty cycle that avoids wild oscillations, by limiting the amount
-  // of change between old_duty_cycle and new_duty_cycle (the latter is treated
-  // as a recommended value).
-  static unsigned int icms_damped_duty_cycle(unsigned int old_duty_cycle,
-                                             unsigned int new_duty_cycle);
-  unsigned int icms_update_duty_cycle_impl();
-
   // In support of adjusting of cms trigger ratios based on history
   // of concurrent mode failure.
   double cms_free_adjustment_factor(size_t free) const;
@@ -426,7 +415,6 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
   size_t gc0_promoted() const   { return _gc0_promoted; }
   double cms_period() const          { return _cms_period; }
   double cms_duration() const        { return _cms_duration; }
-  double cms_duration_per_mb() const { return _cms_duration_per_mb; }
   size_t cms_allocated() const       { return _cms_allocated; }
 
   size_t cms_used_at_gc0_end() const { return _cms_used_at_gc0_end;}
@@ -457,12 +445,6 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
   double time_until_cms_start() const;
 
   // End of higher level statistics.
-
-  // Returns the cms incremental mode duty cycle, as a percentage (0-100).
-  unsigned int icms_duty_cycle() const { return _icms_duty_cycle; }
-
-  // Update the duty cycle and return the new value.
-  unsigned int icms_update_duty_cycle();
 
   // Debugging.
   void print_on(outputStream* st) const PRODUCT_RETURN;
@@ -725,13 +707,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Timing, allocation and promotion statistics, used for scheduling.
   CMSStats      _stats;
 
-  // Allocation limits installed in the young gen, used only in
-  // CMSIncrementalMode.  When an allocation in the young gen would cross one of
-  // these limits, the cms generation is notified and the cms thread is started
-  // or stopped, respectively.
-  HeapWord*     _icms_start_limit;
-  HeapWord*     _icms_stop_limit;
-
   enum CMS_op_type {
     CMS_op_checkpointRootsInitial,
     CMS_op_checkpointRootsFinal
@@ -867,10 +842,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   // collector.
   bool waitForForegroundGC();
 
-  // Incremental mode triggering:  recompute the icms duty cycle and set the
-  // allocation limits in the young gen.
-  void icms_update_allocation_limits();
-
   size_t block_size_using_printezis_bits(HeapWord* addr) const;
   size_t block_size_if_printezis_bits(HeapWord* addr) const;
   HeapWord* next_card_start_after_block(HeapWord* addr) const;
@@ -927,9 +898,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   // in its entirety.
   void promoted(bool par, HeapWord* start,
                 bool is_obj_array, size_t obj_size);
-
-  HeapWord* allocation_limit_reached(Space* space, HeapWord* top,
-                                     size_t word_size);
 
   void getFreelistLocks() const;
   void releaseFreelistLocks() const;
@@ -1000,14 +968,6 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Timers/stats for gc scheduling and incremental mode pacing.
   CMSStats& stats() { return _stats; }
-
-  // Convenience methods that check whether CMSIncrementalMode is enabled and
-  // forward to the corresponding methods in ConcurrentMarkSweepThread.
-  static void start_icms();
-  static void stop_icms();    // Called at the end of the cms cycle.
-  static void disable_icms(); // Called before a foreground collection.
-  static void enable_icms();  // Called after a foreground collection.
-  void icms_wait();          // Called at yield points.
 
   // Adaptive size policy
   AdaptiveSizePolicy* size_policy();
@@ -1211,9 +1171,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
     return allocate(size, tlab);
   }
 
-  // Incremental mode triggering.
-  HeapWord* allocation_limit_reached(Space* space, HeapWord* top,
-                                     size_t word_size);
 
   // Used by CMSStats to track direct allocation.  The value is sampled and
   // reset after each young gen collection.

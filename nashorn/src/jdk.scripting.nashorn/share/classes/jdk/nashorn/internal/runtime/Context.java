@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.CodeStore.newCodeStore;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -60,6 +61,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -262,6 +264,10 @@ public final class Context {
     // persistent code store
     private CodeStore codeStore;
 
+    // A factory for linking global properties as constant method handles. It is created when the first Global
+    // is created, and invalidated forever once the second global is created.
+    private final AtomicReference<GlobalConstants> globalConstantsRef = new AtomicReference<>();
+
     /**
      * Get the current global scope
      * @return the current global scope
@@ -293,7 +299,10 @@ public final class Context {
         assert getGlobal() != global;
         //same code can be cached between globals, then we need to invalidate method handle constants
         if (global != null) {
-            Global.getConstants().invalidateAll();
+            final GlobalConstants globalConstants = getContext(global).getGlobalConstants();
+            if (globalConstants != null) {
+                globalConstants.invalidateAll();
+            }
         }
         currentGlobal.set(global);
     }
@@ -500,11 +509,7 @@ public final class Context {
         }
 
         if (env._persistent_cache) {
-            try {
-                codeStore = newCodeStore(this);
-            } catch (final IOException e) {
-                throw new RuntimeException("Error initializing code cache", e);
-            }
+            codeStore = newCodeStore(this);
         }
 
         // print version info if asked.
@@ -526,6 +531,15 @@ public final class Context {
      */
     public ClassFilter getClassFilter() {
         return classFilter;
+    }
+
+    /**
+     * Returns the factory for constant method handles for global properties. The returned factory can be
+     * invalidated if this Context has more than one Global.
+     * @return the factory for constant method handles for global properties.
+     */
+    GlobalConstants getGlobalConstants() {
+        return globalConstantsRef.get();
     }
 
     /**
@@ -1016,7 +1030,30 @@ public final class Context {
      * @return the global script object
      */
     public Global newGlobal() {
+        createOrInvalidateGlobalConstants();
         return new Global(this);
+    }
+
+    private void createOrInvalidateGlobalConstants() {
+        for (;;) {
+            final GlobalConstants currentGlobalConstants = getGlobalConstants();
+            if (currentGlobalConstants != null) {
+                // Subsequent invocation; we're creating our second or later Global. GlobalConstants is not safe to use
+                // with more than one Global, as the constant method handle linkages it creates create a coupling
+                // between the Global and the call sites in the compiled code.
+                currentGlobalConstants.invalidateForever();
+                return;
+            }
+            final GlobalConstants newGlobalConstants = new GlobalConstants(getLogger(GlobalConstants.class));
+            if (globalConstantsRef.compareAndSet(null, newGlobalConstants)) {
+                // First invocation; we're creating the first Global in this Context. Create the GlobalConstants object
+                // for this Context.
+                return;
+            }
+
+            // If we reach here, then we started out as the first invocation, but another concurrent invocation won the
+            // CAS race. We'll just let the loop repeat and invalidate the CAS race winner.
+        }
     }
 
     /**
@@ -1057,12 +1094,19 @@ public final class Context {
      * @return current global's context
      */
     static Context getContextTrusted() {
-        return ((ScriptObject)Context.getGlobal()).getContext();
+        return getContext(getGlobal());
     }
 
     static Context getContextTrustedOrNull() {
         final Global global = Context.getGlobal();
-        return global == null ? null : ((ScriptObject)global).getContext();
+        return global == null ? null : getContext(global);
+    }
+
+    private static Context getContext(final Global global) {
+        // We can't invoke Global.getContext() directly, as it's a protected override, and Global isn't in our package.
+        // In order to access the method, we must cast it to ScriptObject first (which is in our package) and then let
+        // virtual invocation do its thing.
+        return ((ScriptObject)global).getContext();
     }
 
     /**
@@ -1150,10 +1194,9 @@ public final class Context {
 
         StoredScript storedScript = null;
         FunctionNode functionNode = null;
-        // We only use the code store here if optimistic types are disabled. With optimistic types,
-        // code is stored per function in RecompilableScriptFunctionData.
-        // TODO: This should really be triggered by lazy compilation, not optimistic types.
-        final boolean useCodeStore = env._persistent_cache && !env._parse_only && !env._optimistic_types;
+        // We only use the code store here if optimistic types are disabled. With optimistic types, initial compilation
+        // just creates a thin wrapper, and actual code is stored per function in RecompilableScriptFunctionData.
+        final boolean useCodeStore = codeStore != null && !env._parse_only && !env._optimistic_types;
         final String cacheKey = useCodeStore ? CodeStore.getCacheKey(0, null) : null;
 
         if (useCodeStore) {

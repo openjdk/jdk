@@ -41,7 +41,7 @@ import static java.awt.image.BufferedImage.*;
 
 /*
  * @test
- * @bug 8029253
+ * @bug 8029253 8059941
  * @summary Unmanaged images should be drawn fast.
  * @author Sergey Bylokhov
  */

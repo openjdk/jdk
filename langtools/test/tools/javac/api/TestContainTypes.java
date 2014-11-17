@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,19 +34,20 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.DeclaredType;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 
 public class TestContainTypes {
 
@@ -127,22 +128,28 @@ public class TestContainTypes {
         }
     }
 
+    static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+    static final JavaFileManager fm = tool.getStandardFileManager(null, null, null);
+
     public static void main(String... args) throws Exception {
-        for (ClassType ctA : ClassType.values()) {
-            for (ParameterType ptA : ParameterType.values()) {
-                for (ClassType ctB : ClassType.values()) {
-                    for (ParameterType ptB : ParameterType.values()) {
-                        compileAndCheck(ptA, ctA, ptB, ctB);
+        try {
+            for (ClassType ctA : ClassType.values()) {
+                for (ParameterType ptA : ParameterType.values()) {
+                    for (ClassType ctB : ClassType.values()) {
+                        for (ParameterType ptB : ParameterType.values()) {
+                            compileAndCheck(ptA, ctA, ptB, ctB);
+                        }
                     }
                 }
             }
+        } finally {
+            fm.close();
         }
     }
 
     static void compileAndCheck(ParameterType ptA, ClassType ctA, ParameterType ptB, ClassType ctB) throws Exception {
         JavaSource source = new JavaSource(ptA.instantiate(ctA), ptB.instantiate(ctB));
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavacTask ct = (JavacTask)tool.getTask(null, null, null,
+        JavacTask ct = (JavacTask)tool.getTask(null, fm, null,
                 null, null, Arrays.asList(source));
         ct.setProcessors(Arrays.asList(new ContainTypesTester(ParameterType.contains(ptA, ctA, ptB, ctB), source)));
         System.err.println("A = " + ptA +" / " + ptA.instantiate(ctA));
