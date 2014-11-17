@@ -49,9 +49,7 @@
 //     remove the nmethod, all inline caches (IC) that point to the the nmethod must be
 //     cleared. After that, the nmethod can be evicted from the code cache. Each nmethod's
 //     state change happens during separate sweeps. It may take at least 3 sweeps before an
-//     nmethod's space is freed. Sweeping is currently done by compiler threads between
-//     compilations or at least each 5 sec (NmethodSweepCheckInterval) when the code cache
-//     is full.
+//     nmethod's space is freed.
 
 class NMethodSweeper : public AllStatic {
   static long      _traversals;                   // Stack scan count, also sweep ID.
@@ -64,7 +62,6 @@ class NMethodSweeper : public AllStatic {
   static int       _zombified_count;              // Nof. nmethods made zombie in current sweep
   static int       _marked_for_reclamation_count; // Nof. nmethods marked for reclaim in current sweep
 
-  static volatile int  _sweep_fractions_left;     // Nof. invocations left until we are completed with this pass
   static volatile int  _sweep_started;            // Flag to control conc sweeper
   static volatile bool _should_sweep;             // Indicates if we should invoke the sweeper
   static volatile int _bytes_changed;             // Counts the total nmethod size if the nmethod changed from:
@@ -85,8 +82,12 @@ class NMethodSweeper : public AllStatic {
   static int  process_nmethod(nmethod *nm);
   static void release_nmethod(nmethod* nm);
 
-  static bool sweep_in_progress();
+  static void init_sweeper_log() NOT_DEBUG_RETURN;
+  static bool wait_for_stack_scanning();
   static void sweep_code_cache();
+  static void handle_safepoint_request();
+  static void do_stack_scanning();
+  static void possibly_sweep();
 
  public:
   static long traversal_count()              { return _traversals; }
@@ -106,7 +107,8 @@ class NMethodSweeper : public AllStatic {
 #endif
 
   static void mark_active_nmethods();      // Invoked at the end of each safepoint
-  static void possibly_sweep();            // Compiler threads call this to sweep
+  static void sweeper_loop();
+  static void notify(int code_blob_type);  // Possibly start the sweeper thread.
 
   static int hotness_counter_reset_val();
   static void report_state_change(nmethod* nm);

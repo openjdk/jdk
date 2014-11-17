@@ -120,36 +120,8 @@ inline int    os::socket(int domain, int type, int protocol) {
   return ::socket(domain, type, protocol);
 }
 
-inline int    os::listen(int fd, int count) {
-  if (fd < 0) return OS_ERR;
-
-  return ::listen(fd, count);
-}
-
-inline int os::socket_shutdown(int fd, int howto){
-  return ::shutdown(fd, howto);
-}
-
-inline int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len){
-  return ::getsockname(fd, him, len);
-}
-
-inline int os::get_host_name(char* name, int namelen){
-  return ::gethostname(name, namelen);
-}
-
 inline struct hostent* os::get_host_by_name(char* name) {
   return ::gethostbyname(name);
-}
-
-inline int os::get_sock_opt(int fd, int level, int optname,
-                            char* optval, socklen_t* optlen) {
-  return ::getsockopt(fd, level, optname, optval, optlen);
-}
-
-inline int os::set_sock_opt(int fd, int level, int optname,
-                            const char *optval, socklen_t optlen) {
-  return ::setsockopt(fd, level, optname, optval, optlen);
 }
 
 inline bool os::supports_monotonic_clock() {

@@ -74,7 +74,18 @@ public class SelectToolTask extends Task {
 
     enum ToolChoices {
         NONE(""),
-        JAVAC("javac"),
+        BOOSTRAP_JAVAC("bootstrap-javac", true) {
+            @Override
+            public ToolChoices baseTool() {
+                return JAVAC;
+            }
+        },
+        JAVAC("javac") {
+            @Override
+            public ToolChoices asBootstrap() {
+                return BOOSTRAP_JAVAC;
+            }
+        },
         JAVADOC("javadoc"),
         JAVAH("javah"),
         JAVAP("javap");
@@ -89,6 +100,14 @@ public class SelectToolTask extends Task {
         ToolChoices(String toolName, boolean bootstrap) {
             this.toolName = toolName;
             this.bootstrap = bootstrap;
+        }
+
+        public ToolChoices asBootstrap() {
+            return this;
+        }
+
+        public ToolChoices baseTool() {
+            return this;
         }
 
         @Override
@@ -176,9 +195,11 @@ public class SelectToolTask extends Task {
         JOptionPane p = createPane(guiProps);
         p.createDialog("Select Tool").setVisible(true);
 
-        toolName = ((ToolChoices)toolChoice.getSelectedItem()).toolName;
+        ToolChoices tool = (ToolChoices)toolChoice.getSelectedItem();
+
+        toolName = tool.baseTool().toolName;
+        toolBootstrap = tool.bootstrap;
         toolArgs = argsField.getText();
-        toolBootstrap = bootstrapCheckbox.isSelected();
         if (defaultCheck.isSelected()) {
             if (toolName.equals("")) {
                 fileProps.remove("tool.name");
@@ -213,30 +234,31 @@ public class SelectToolTask extends Task {
         EnumSet<ToolChoices> toolChoices = toolProperty == null ?
                 EnumSet.allOf(ToolChoices.class) : EnumSet.range(ToolChoices.JAVAC, ToolChoices.JAVAP);
         toolChoice = new JComboBox<>(toolChoices.toArray());
-        if (toolName != null)
-            toolChoice.setSelectedItem(ToolChoices.valueOf(toolName.toUpperCase()));
+        ToolChoices tool = toolName != null ? ToolChoices.valueOf(toolName.toUpperCase()) : null;
+        if (toolName != null) {
+            if (toolBootstrap)
+                tool = tool.asBootstrap();
+            toolChoice.setSelectedItem(tool);
+        }
         toolChoice.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                String tn = ((ToolChoices)e.getItem()).toolName;
-                argsField.setText(getDefaultArgsForTool(props, tn));
+                ToolChoices tool = (ToolChoices)e.getItem();
+                argsField.setText(getDefaultArgsForTool(props, tool));
                 if (toolProperty != null)
-                    okButton.setEnabled(!tn.equals(""));
+                    okButton.setEnabled(tool != ToolChoices.NONE);
             }
         });
-        GridBagConstraints checkConstraint = new GridBagConstraints();
         fc.anchor = GridBagConstraints.EAST;
 
         GridBagConstraints toolConstraint = new GridBagConstraints();
         fc.anchor = GridBagConstraints.WEST;
 
         toolPane.add(toolChoice, toolConstraint);
-        bootstrapCheckbox = new JCheckBox("bootstrap", toolBootstrap);
-        toolPane.add(bootstrapCheckbox, checkConstraint);
 
         body.add(toolPane, fc);
 
-        argsField = new JTextField(getDefaultArgsForTool(props, toolName), 40);
+        argsField = new JTextField(getDefaultArgsForTool(props, tool), 40);
         if (toolProperty == null || argsProperty != null) {
             JLabel argsLabel = new JLabel("Args:");
             body.add(argsLabel, lc);
@@ -322,8 +344,11 @@ public class SelectToolTask extends Task {
         }
     }
 
-    String getDefaultArgsForTool(Properties props, String tn) {
-        return (tn == null || tn.equals("")) ? "" : props.getProperty(tn + ".args", "");
+    String getDefaultArgsForTool(Properties props, ToolChoices tool) {
+        if (tool == null)
+            return "";
+        String toolName = tool.baseTool().toolName;
+        return toolName.equals("") ? "" : props.getProperty(toolName + ".args", "");
     }
 
     // Ant task parameters
@@ -335,7 +360,6 @@ public class SelectToolTask extends Task {
 
     // GUI components
     private JComboBox<?> toolChoice;
-    private JCheckBox bootstrapCheckbox;
     private JTextField argsField;
     private JCheckBox defaultCheck;
     private JButton okButton;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,39 @@
  * questions.
  */
 
-/*
+/**
+ * JDK-8035312_4 - pushes and pops for non writable length
+ *
  * @test
- * @bug 8055289
- * @library /testlibrary
- * @build UnsafeMallocLimit
- * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=summary UnsafeMallocLimit
+ * @run
  */
 
-import com.oracle.java.testlibrary.*;
-import sun.misc.Unsafe;
+var b = [1,2,3];
+Object.defineProperty(b, "length", { writable: false });
 
-public class UnsafeMallocLimit {
+try {
+    b.push(4);
+} catch (e) {
+    print("length = " + b.length);
+    print("i caught an error");
+}
+print(b);
+print(b[3]);
+print("length = " + b.length);
 
-    public static void main(String args[]) throws Exception {
-        if (Platform.is32bit()) {
-            Unsafe unsafe = Utils.getUnsafe();
-            try {
-                unsafe.allocateMemory(1 << 30);
-                throw new RuntimeException("Did not get expected OOME");
-            } catch (OutOfMemoryError e) {
-                // Expected exception
-            }
-        } else {
-            System.out.println("Test only valid on 32-bit platforms");
-        }
+var c = [1,2,3];
+Object.defineProperty(c, "length", { writable: false });
+
+for (var i = 0; i < 5; i++) {
+    try {
+	c.pop();
+    } catch (e) {
+	print("length = " + c.length);
+	print("I caught an error");
+	print(c);
     }
 }
+
+print(c);
+print(c[3]);
+print("length = " + b.length);
