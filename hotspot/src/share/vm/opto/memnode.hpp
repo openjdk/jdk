@@ -148,6 +148,8 @@ private:
 protected:
   virtual uint cmp(const Node &n) const;
   virtual uint size_of() const; // Size is bigger
+  // Should LoadNode::Ideal() attempt to remove control edges?
+  virtual bool can_remove_control() const;
   const Type* const _type;      // What kind of value is loaded?
 public:
 
@@ -171,8 +173,10 @@ public:
   // we are equivalent to.  We look for Load of a Store.
   virtual Node *Identity( PhaseTransform *phase );
 
-  // If the load is from Field memory and the pointer is non-null, we can
+  // If the load is from Field memory and the pointer is non-null, it might be possible to
   // zero out the control input.
+  // If the offset is constant and the base is an object allocation,
+  // try to hook me up to the exact initializing store.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Split instance field load through Phi.
@@ -431,6 +435,10 @@ public:
 //------------------------------LoadKlassNode----------------------------------
 // Load a Klass from an object
 class LoadKlassNode : public LoadPNode {
+protected:
+  // In most cases, LoadKlassNode does not have the control input set. If the control
+  // input is set, it must not be removed (by LoadNode::Ideal()).
+  virtual bool can_remove_control() const;
 public:
   LoadKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk, MemOrd mo)
     : LoadPNode(c, mem, adr, at, tk, mo) {}
@@ -440,8 +448,8 @@ public:
   virtual bool depends_only_on_test() const { return true; }
 
   // Polymorphic factory method:
-  static Node* make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* at,
-                     const TypeKlassPtr *tk = TypeKlassPtr::OBJECT );
+  static Node* make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at,
+                    const TypeKlassPtr* tk = TypeKlassPtr::OBJECT);
 };
 
 //------------------------------LoadNKlassNode---------------------------------

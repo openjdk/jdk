@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public interface NodeStatus {
     /* status bits */
     final int NST_MIN_FIXED            = (1<<0);

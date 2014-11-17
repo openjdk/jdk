@@ -38,7 +38,7 @@ import java.lang.reflect.TypeVariable;
 public class DummyScope implements Scope {
     // Caches the unique instance of this class; instances contain no data
     // so we can use the singleton pattern
-    private static DummyScope singleton = new DummyScope();
+    private static final DummyScope singleton = new DummyScope();
 
     // constructor is private to enforce use of factory method
     private DummyScope(){}

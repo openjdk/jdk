@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type short. */
 public class ShortSignature implements BaseType {
-    private static ShortSignature singleton = new ShortSignature();
+    private static final ShortSignature singleton = new ShortSignature();
 
     private ShortSignature(){}
 

@@ -1591,7 +1591,7 @@ public class MethodEmitter implements Emitter {
     /**
      * Abstraction for performing a conditional jump of any type
      *
-     * @see MethodEmitter.Condition
+     * @see Condition
      *
      * @param cond      the condition to test
      * @param trueLabel the destination label is condition is true
@@ -2217,6 +2217,10 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter dynamicGet(final Type valueType, final String name, final int flags, final boolean isMethod) {
+        if (name.length() > LARGE_STRING_THRESHOLD) { // use getIndex for extremely long names
+            return load(name).dynamicGetIndex(valueType, flags, isMethod);
+        }
+
         debug("dynamic_get", name, valueType, getProgramPoint(flags));
 
         Type type = valueType;
@@ -2240,9 +2244,14 @@ public class MethodEmitter implements Emitter {
      * @param name  name of property
      * @param flags call site flags
      */
-     void dynamicSet(final String name, final int flags) {
-         assert !isOptimistic(flags);
-         debug("dynamic_set", name, peekType());
+    void dynamicSet(final String name, final int flags) {
+        if (name.length() > LARGE_STRING_THRESHOLD) { // use setIndex for extremely long names
+            load(name).swap().dynamicSetIndex(flags);
+            return;
+        }
+
+        assert !isOptimistic(flags);
+        debug("dynamic_set", name, peekType());
 
         Type type = peekType();
         if (type.isObject() || type.isBoolean()) { //promote strings to objects etc

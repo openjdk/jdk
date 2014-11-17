@@ -30,7 +30,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the pseudo-type void. */
 public class VoidDescriptor implements ReturnType {
-    private static VoidDescriptor singleton = new VoidDescriptor();
+    private static final VoidDescriptor singleton = new VoidDescriptor();
 
     private VoidDescriptor(){}
 

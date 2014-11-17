@@ -53,15 +53,34 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
     // Object type arguments of Java method calls, field set and array set.
     private static final boolean MIRROR_ALWAYS = Options.getBooleanProperty("nashorn.mirror.always", true);
 
-    private static final MethodHandle EXPORT_ARGUMENT = new Lookup(MethodHandles.lookup()).findOwnStatic("exportArgument", Object.class, Object.class);
-    private static final MethodHandle EXPORT_NATIVE_ARRAY = new Lookup(MethodHandles.lookup()).findOwnStatic("exportNativeArray", Object.class, NativeArray.class);
-    private static final MethodHandle EXPORT_SCRIPT_OBJECT = new Lookup(MethodHandles.lookup()).findOwnStatic("exportScriptObject", Object.class, ScriptObject.class);
-    private static final MethodHandle IMPORT_RESULT = new Lookup(MethodHandles.lookup()).findOwnStatic("importResult", Object.class, Object.class);
+    private static final MethodHandle EXPORT_ARGUMENT;
+    private static final MethodHandle EXPORT_NATIVE_ARRAY;
+    private static final MethodHandle EXPORT_SCRIPT_OBJECT;
+    private static final MethodHandle IMPORT_RESULT;
+    private static final MethodHandle FILTER_CONSSTRING;
+
+    static {
+        final Lookup lookup  = new Lookup(MethodHandles.lookup());
+        EXPORT_ARGUMENT      = lookup.findOwnStatic("exportArgument", Object.class, Object.class);
+        EXPORT_NATIVE_ARRAY  = lookup.findOwnStatic("exportNativeArray", Object.class, NativeArray.class);
+        EXPORT_SCRIPT_OBJECT = lookup.findOwnStatic("exportScriptObject", Object.class, ScriptObject.class);
+        IMPORT_RESULT        = lookup.findOwnStatic("importResult", Object.class, Object.class);
+        FILTER_CONSSTRING    = lookup.findOwnStatic("consStringFilter", Object.class, Object.class);
+    }
 
     private final BeansLinker beansLinker = new BeansLinker();
 
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
+        if (linkRequest.getReceiver() instanceof ConsString) {
+            // In order to treat ConsString like a java.lang.String we need a link request with a string receiver.
+            final Object[] arguments = linkRequest.getArguments();
+            arguments[0] = "";
+            final LinkRequest forgedLinkRequest = linkRequest.replaceArguments(linkRequest.getCallSiteDescriptor(), arguments);
+            final GuardedInvocation invocation = getGuardedInvocation(beansLinker, forgedLinkRequest, linkerServices);
+            // If an invocation is found we add a filter that makes it work for both Strings and ConsStrings.
+            return invocation == null ? null : invocation.filterArguments(0, FILTER_CONSSTRING);
+        }
         return getGuardedInvocation(beansLinker, linkRequest, linkerServices);
     }
 
@@ -111,6 +130,11 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
     @SuppressWarnings("unused")
     private static Object importResult(final Object arg) {
         return ScriptUtils.unwrap(arg);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object consStringFilter(final Object arg) {
+        return arg instanceof ConsString ? arg.toString() : arg;
     }
 
     private static class NashornBeansLinkerServices implements LinkerServices {

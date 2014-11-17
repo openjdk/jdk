@@ -24,6 +24,7 @@
  */
 package jdk.nashorn.test.models;
 
+@SuppressWarnings("javadoc")
 public class IntFloatOverloadSelection {
 
     public static String overloadedMethod(final int i) {

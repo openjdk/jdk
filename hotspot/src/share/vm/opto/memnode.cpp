@@ -861,6 +861,10 @@ Node *MemNode::Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr ) {
 
 
 //=============================================================================
+// Should LoadNode::Ideal() attempt to remove control edges?
+bool LoadNode::can_remove_control() const {
+  return true;
+}
 uint LoadNode::size_of() const { return sizeof(*this); }
 uint LoadNode::cmp( const Node &n ) const
 { return !Type::cmp( _type, ((LoadNode&)n)._type ); }
@@ -1471,7 +1475,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
 }
 
 //------------------------------Ideal------------------------------------------
-// If the load is from Field memory and the pointer is non-null, we can
+// If the load is from Field memory and the pointer is non-null, it might be possible to
 // zero out the control input.
 // If the offset is constant and the base is an object allocation,
 // try to hook me up to the exact initializing store.
@@ -1498,6 +1502,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       && phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw) {
     // Check for useless control edge in some common special cases
     if (in(MemNode::Control) != NULL
+        && can_remove_control()
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
         && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
@@ -2019,8 +2024,7 @@ const Type* LoadSNode::Value(PhaseTransform *phase) const {
 //=============================================================================
 //----------------------------LoadKlassNode::make------------------------------
 // Polymorphic factory method:
-Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* at, const TypeKlassPtr *tk ) {
-  Node *ctl = NULL;
+Node* LoadKlassNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk) {
   // sanity check the alias category against the created node type
   const TypePtr *adr_type = adr->bottom_type()->isa_ptr();
   assert(adr_type != NULL, "expecting TypeKlassPtr");
@@ -2038,6 +2042,12 @@ Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* a
 //------------------------------Value------------------------------------------
 const Type *LoadKlassNode::Value( PhaseTransform *phase ) const {
   return klass_value_common(phase);
+}
+
+// In most cases, LoadKlassNode does not have the control input set. If the control
+// input is set, it must not be removed (by LoadNode::Ideal()).
+bool LoadKlassNode::can_remove_control() const {
+  return false;
 }
 
 const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {

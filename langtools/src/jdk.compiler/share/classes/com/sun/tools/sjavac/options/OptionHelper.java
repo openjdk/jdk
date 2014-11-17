@@ -25,7 +25,6 @@
 
 package com.sun.tools.sjavac.options;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -158,5 +157,10 @@ public abstract class OptionHelper {
                 sourceRoots(Arrays.asList(Paths.get(arg)));
             }
         }
+    }
+
+    public static String unescapeCmdArg(String arg) {
+        return arg.replaceAll("%20", " ")
+                  .replaceAll("%2C", ",");
     }
 }

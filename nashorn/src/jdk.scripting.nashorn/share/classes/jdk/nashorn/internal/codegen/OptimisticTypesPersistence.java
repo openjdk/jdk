@@ -33,6 +33,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -221,9 +223,35 @@ public final class OptimisticTypesPersistence {
     private static void reportError(final String msg, final File file, final Exception e) {
         final long now = System.currentTimeMillis();
         if(now - lastReportedError > ERROR_REPORT_THRESHOLD) {
-            getLogger().warning(String.format("Failed to %s %s", msg, file), e);
+            reportError(String.format("Failed to %s %s", msg, file), e);
             lastReportedError = now;
         }
+    }
+
+    /**
+     * Logs an error message with warning severity (reasoning being that we're reporting an error that'll disable the
+     * type info cache, but it's only logged as a warning because that doesn't prevent Nashorn from running, it just
+     * disables a performance-enhancing cache).
+     * @param msg the message to log
+     * @param e the exception that represents the error.
+     */
+    private static void reportError(final String msg, final Exception e) {
+        getLogger().warning(msg, "\n", exceptionToString(e));
+    }
+
+    /**
+     * A helper that prints an exception stack trace into a string. We have to do this as if we just pass the exception
+     * to {@link DebugLogger#warning(Object...)}, it will only log the exception message and not the stack, making
+     * problems harder to diagnose.
+     * @param e the exception
+     * @return the string representation of {@link Exception#printStackTrace()} output.
+     */
+    private static String exceptionToString(final Exception e) {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw, false);
+        e.printStackTrace(pw);
+        pw.flush();
+        return sw.toString();
     }
 
     private static File createBaseCacheDir() {
@@ -233,7 +261,7 @@ public final class OptimisticTypesPersistence {
         try {
             return createBaseCacheDirPrivileged();
         } catch(final Exception e) {
-            getLogger().warning("Failed to create cache dir", e);
+            reportError("Failed to create cache dir", e);
             return null;
         }
     }
@@ -267,7 +295,7 @@ public final class OptimisticTypesPersistence {
         try {
             return createCacheDirPrivileged(baseDir);
         } catch(final Exception e) {
-            getLogger().warning("Failed to create cache dir", e);
+            reportError("Failed to create cache dir", e);
             return null;
         }
     }
@@ -280,7 +308,7 @@ public final class OptimisticTypesPersistence {
                 try {
                     versionDirName = getVersionDirName();
                 } catch(final Exception e) {
-                    getLogger().warning("Failed to calculate version dir name", e);
+                    reportError("Failed to calculate version dir name", e);
                     return null;
                 }
                 final File versionDir = new File(baseDir, versionDirName);
@@ -323,10 +351,17 @@ public final class OptimisticTypesPersistence {
      * per-code-version directory. Normally, this will create the SHA-1 digest of the nashorn.jar. In case the classpath
      * for nashorn is local directory (e.g. during development), this will create the string "dev-" followed by the
      * timestamp of the most recent .class file.
-     * @return
+     *
+     * @return digest of currently running nashorn
+     * @throws Exception if digest could not be created
      */
-    private static String getVersionDirName() throws Exception {
-        final URL url = OptimisticTypesPersistence.class.getResource("");
+    public static String getVersionDirName() throws Exception {
+        // NOTE: getResource("") won't work if the JAR file doesn't have directory entries (and JAR files in JDK distro
+        // don't, or at least it's a bad idea counting on it). Alternatively, we could've tried
+        // getResource("OptimisticTypesPersistence.class") but behavior of getResource with regard to its willingness
+        // to hand out URLs to .class files is also unspecified. Therefore, the most robust way to obtain an URL to our
+        // package is to have a small non-class anchor file and start out from its URL.
+        final URL url = OptimisticTypesPersistence.class.getResource("anchor.properties");
         final String protocol = url.getProtocol();
         if (protocol.equals("jar")) {
             // Normal deployment: nashorn.jar
