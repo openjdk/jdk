@@ -34,6 +34,7 @@ import sun.jvmstat.monitor.VmIdentifier;
  * @bug 6672135
  * @summary setInterval() for local MonitoredHost and local MonitoredVm
  * @author Tomas Hurka
+ * @run main/othervm -XX:+UsePerfData CR6672135
  */
 public class CR6672135 {
 

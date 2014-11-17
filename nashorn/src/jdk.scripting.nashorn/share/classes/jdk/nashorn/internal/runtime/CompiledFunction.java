@@ -27,16 +27,17 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
-
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
@@ -727,34 +728,58 @@ final class CompiledFunction {
      * @param ipp
      * @return string describing the ipp map
      */
-    private static String toStringInvalidations(final Map<Integer, Type> ipp) {
+    private static List<String> toStringInvalidations(final Map<Integer, Type> ipp) {
         if (ipp == null) {
-            return "";
+            return Collections.emptyList();
         }
 
-        final StringBuilder sb = new StringBuilder();
+        final List<String> list = new ArrayList<>();
 
         for (final Iterator<Map.Entry<Integer, Type>> iter = ipp.entrySet().iterator(); iter.hasNext(); ) {
             final Map.Entry<Integer, Type> entry = iter.next();
             final char bct = entry.getValue().getBytecodeStackType();
+            final String type;
 
+            switch (entry.getValue().getBytecodeStackType()) {
+            case 'A':
+                type = "object";
+                break;
+            case 'I':
+                type = "int";
+                break;
+            case 'J':
+                type = "long";
+                break;
+            case 'D':
+                type = "double";
+                break;
+            default:
+                type = String.valueOf(bct);
+                break;
+            }
+
+            final StringBuilder sb = new StringBuilder();
             sb.append('[').
+                    append("program point: ").
                     append(entry.getKey()).
-                    append("->").
-                    append(bct == 'A' ? 'O' : bct).
+                    append(" -> ").
+                    append(type).
                     append(']');
 
-            if (iter.hasNext()) {
-                sb.append(' ');
-            }
+            list.add(sb.toString());
         }
 
-        return sb.toString();
+        return list;
     }
 
     private void logRecompile(final String reason, final FunctionNode fn, final MethodType type, final Map<Integer, Type> ipp) {
         if (log.isEnabled()) {
-            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", type, " ", toStringInvalidations(ipp));
+            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", type);
+            log.indent();
+            for (final String str : toStringInvalidations(ipp)) {
+                log.fine(str);
+            }
+            log.unindent();
         }
     }
 
@@ -770,14 +795,21 @@ final class CompiledFunction {
      */
     private synchronized MethodHandle handleRewriteException(final OptimismInfo oldOptInfo, final RewriteException re) {
         if (log.isEnabled()) {
-            log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "RewriteException ", re.getMessageShort());
+            log.info(
+                    new RecompilationEvent(
+                        Level.INFO,
+                        re,
+                        re.getReturnValueNonDestructive()),
+                    "caught RewriteException ",
+                    re.getMessageShort());
+            log.indent();
         }
 
         final MethodType type = type();
 
         // Compiler needs a call site type as its input, which always has a callee parameter, so we must add it if
         // this function doesn't have a callee parameter.
-        final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ?
+        final MethodType ct = type.parameterType(0) == ScriptFunction.class ?
                 type :
                 type.insertParameterTypes(0, ScriptFunction.class);
         final OptimismInfo currentOptInfo = optimismInfo;
@@ -788,43 +820,43 @@ final class CompiledFunction {
         final OptimismInfo effectiveOptInfo = currentOptInfo != null ? currentOptInfo : oldOptInfo;
         FunctionNode fn = effectiveOptInfo.reparse();
         final boolean serialized = effectiveOptInfo.isSerialized();
-        final Compiler compiler = effectiveOptInfo.getCompiler(fn, callSiteType, re); //set to non rest-of
+        final Compiler compiler = effectiveOptInfo.getCompiler(fn, ct, re); //set to non rest-of
 
         if (!shouldRecompile) {
             // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
             // recompiled a deoptimized version for an inner invocation.
             // We still need to do the rest of from the beginning
-            logRecompile("Rest-of compilation [STANDALONE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
+            logRecompile("Rest-of compilation [STANDALONE] ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
             return restOfHandle(effectiveOptInfo, compiler.compile(fn, serialized ? CompilationPhases.COMPILE_SERIALIZED_RESTOF : CompilationPhases.COMPILE_ALL_RESTOF), currentOptInfo != null);
         }
 
-        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
+        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
         fn = compiler.compile(fn, serialized ? CompilationPhases.RECOMPILE_SERIALIZED_UPTO_BYTECODE : CompilationPhases.COMPILE_UPTO_BYTECODE);
-        log.info("Reusable IR generated");
+        log.fine("Reusable IR generated");
 
         // compile the rest of the function, and install it
         log.info("Generating and installing bytecode from reusable IR...");
-        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
+        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
         final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.GENERATE_BYTECODE_AND_INSTALL);
 
         if (effectiveOptInfo.data.usePersistentCodeCache()) {
             final RecompilableScriptFunctionData data = effectiveOptInfo.data;
             final int functionNodeId = data.getFunctionNodeId();
-            final TypeMap typeMap = data.typeMap(callSiteType);
+            final TypeMap typeMap = data.typeMap(ct);
             final Type[] paramTypes = typeMap == null ? null : typeMap.getParameterTypes(functionNodeId);
             final String cacheKey = CodeStore.getCacheKey(functionNodeId, paramTypes);
             compiler.persistClassInfo(cacheKey, normalFn);
         }
 
-        log.info("Done.");
-
         final boolean canBeDeoptimized = normalFn.canBeDeoptimized();
 
         if (log.isEnabled()) {
-            log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ") ", canBeDeoptimized ? " can still be deoptimized." : " is completely deoptimized.");
-        }
+            log.unindent();
+            log.info("Done.");
 
-        log.info("Looking up invoker...");
+            log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ") ", canBeDeoptimized ? "can still be deoptimized." : " is completely deoptimized.");
+            log.finest("Looking up invoker...");
+        }
 
         final MethodHandle newInvoker = effectiveOptInfo.data.lookup(fn);
         invoker     = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));

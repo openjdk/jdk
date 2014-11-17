@@ -25,6 +25,7 @@
 
 package jdk.nashorn.test.models;
 
+@SuppressWarnings("javadoc")
 public class Nashorn401TestSubject {
     public String method2(final int arg) {
         return "int method 2";

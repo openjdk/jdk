@@ -91,7 +91,7 @@ public class CompileJavaPackages implements Transformer {
 
         // Get maximum heap size from the server!
         SysInfo sysinfo = sjavac.getSysInfo();
-        if (sysinfo.numCores == -1) {
+        if (sysinfo == null) {
             Log.error("Could not query server for sysinfo!");
             return false;
         }

@@ -78,16 +78,16 @@ public class InnerClassesIndexTest extends TestResult {
                     continue;
                 }
                 foundClasses.add(innerName);
-                assertEquals(info.outer_class_info_index, 0,
+                checkEquals(info.outer_class_info_index, 0,
                         "outer_class_info_index of " + innerName);
                 if (innerName.matches("\\$\\d+")) {
-                    assertEquals(info.inner_name_index, 0,
+                    checkEquals(info.inner_name_index, 0,
                             "inner_name_index of anonymous class");
                 }
             }
             Set<String> expectedClasses = getInnerClasses();
             expectedClasses.remove("InnerClassesIndexTest$Inner");
-            assertEquals(foundClasses, expectedClasses, "All classes are found");
+            checkEquals(foundClasses, expectedClasses, "All classes are found");
         } catch (Exception e) {
             addFailure(e);
         } finally {

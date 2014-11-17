@@ -111,6 +111,9 @@ void VM_Deoptimize::doit() {
   CodeCache::make_marked_nmethods_zombies();
 }
 
+void VM_MarkActiveNMethods::doit() {
+  NMethodSweeper::mark_active_nmethods();
+}
 
 VM_DeoptimizeFrame::VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id) {
   _thread = thread;
