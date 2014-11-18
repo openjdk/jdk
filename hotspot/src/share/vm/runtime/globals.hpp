@@ -1529,9 +1529,6 @@ class CommandLineFlags {
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
                                                                             \
-  product(bool, UseCMSCollectionPassing, true,                              \
-          "Use passing of collection from background to foreground")        \
-                                                                            \
   product(bool, UseParNewGC, false,                                         \
           "Use parallel threads in the new generation")                     \
                                                                             \
@@ -1706,16 +1703,6 @@ class CommandLineFlags {
   product(uintx, CMSClassUnloadingMaxInterval, 0,                           \
           "When CMS class unloading is enabled, the maximum CMS cycle "     \
           "count for which classes may not be unloaded")                    \
-                                                                            \
-  product(bool, CMSCompactWhenClearAllSoftRefs, true,                       \
-          "Compact when asked to collect CMS gen with "                     \
-          "clear_all_soft_refs()")                                          \
-                                                                            \
-  product(bool, UseCMSCompactAtFullCollection, true,                        \
-          "Use Mark-Sweep-Compact algorithm at full collections")           \
-                                                                            \
-  product(uintx, CMSFullGCsBeforeCompaction, 0,                             \
-          "Number of CMS full collection done before compaction if > 0")    \
                                                                             \
   develop(intx, CMSDictionaryChoice, 0,                                     \
           "Use BinaryTreeDictionary as default in the CMS generation")      \
