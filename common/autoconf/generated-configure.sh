@@ -1065,6 +1065,7 @@ with_milestone
 with_update_version
 with_user_release_suffix
 with_build_number
+with_copyright_year
 with_boot_jdk
 with_add_source_root
 with_override_source_root
@@ -1906,6 +1907,7 @@ Optional Packages:
                           Add a custom string to the version string if build
                           number is not set.[username_builddateb00]
   --with-build-number     Set build number value for build [b00]
+  --with-copyright-year   Set copyright year value for build [current year]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-add-source-root  for each and every source directory, look in this
                           additional source root for the same directory; if it
@@ -4328,7 +4330,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1415179461
+DATE_WHEN_GENERATED=1416323245
 
 ###############################################################################
 #
@@ -20134,7 +20136,19 @@ fi
 
 
 
-  COPYRIGHT_YEAR=`date +'%Y'`
+
+# Check whether --with-copyright-year was given.
+if test "${with_copyright_year+set}" = set; then :
+  withval=$with_copyright_year;
+fi
+
+  if test "x$with_copyright_year" = xyes; then
+    as_fn_error $? "Copyright year must have a value" "$LINENO" 5
+  elif test "x$with_copyright_year" != x; then
+    COPYRIGHT_YEAR="$with_copyright_year"
+  else
+    COPYRIGHT_YEAR=`date +'%Y'`
+  fi
 
 
   if test "x$JDK_UPDATE_VERSION" != x; then
