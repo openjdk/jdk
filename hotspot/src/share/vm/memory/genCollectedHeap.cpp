@@ -109,13 +109,11 @@ jint GenCollectedHeap::initialize() {
 
   char* heap_address;
   size_t total_reserved = 0;
-  int n_covered_regions = 0;
   ReservedSpace heap_rs;
 
   size_t heap_alignment = collector_policy()->heap_alignment();
 
-  heap_address = allocate(heap_alignment, &total_reserved,
-                          &n_covered_regions, &heap_rs);
+  heap_address = allocate(heap_alignment, &total_reserved, &heap_rs);
 
   if (!heap_rs.is_reserved()) {
     vm_shutdown_during_initialization(
@@ -125,7 +123,7 @@ jint GenCollectedHeap::initialize() {
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  _rem_set = collector_policy()->create_rem_set(reserved_region(), n_covered_regions);
+  _rem_set = collector_policy()->create_rem_set(reserved_region());
   set_barrier_set(rem_set()->bs());
 
   _gch = this;
@@ -152,14 +150,12 @@ jint GenCollectedHeap::initialize() {
 
 char* GenCollectedHeap::allocate(size_t alignment,
                                  size_t* _total_reserved,
-                                 int* _n_covered_regions,
                                  ReservedSpace* heap_rs){
   const char overflow_msg[] = "The size of the object heap + VM data exceeds "
     "the maximum representable size";
 
   // Now figure out the total size.
   size_t total_reserved = 0;
-  int n_covered_regions = 0;
   const size_t pageSize = UseLargePages ?
       os::large_page_size() : os::vm_page_size();
 
@@ -170,18 +166,12 @@ char* GenCollectedHeap::allocate(size_t alignment,
     if (total_reserved < _gen_specs[i]->max_size()) {
       vm_exit_during_initialization(overflow_msg);
     }
-    n_covered_regions += _gen_specs[i]->n_covered_regions();
   }
   assert(total_reserved % alignment == 0,
          err_msg("Gen size; total_reserved=" SIZE_FORMAT ", alignment="
                  SIZE_FORMAT, total_reserved, alignment));
 
-  // Needed until the cardtable is fixed to have the right number
-  // of covered regions.
-  n_covered_regions += 2;
-
   *_total_reserved = total_reserved;
-  *_n_covered_regions = n_covered_regions;
 
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
   return heap_rs->base();

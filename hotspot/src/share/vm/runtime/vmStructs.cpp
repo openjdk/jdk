@@ -473,7 +473,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
                                                                                                                                      \
   unchecked_nonstatic_field(ageTable,          sizes,                                         sizeof(ageTable::sizes))               \
                                                                                                                                      \
-  nonstatic_field(BarrierSet,                  _max_covered_regions,                          int)                                   \
   nonstatic_field(BarrierSet,                  _kind,                                         BarrierSet::Name)                      \
   nonstatic_field(BlockOffsetTable,            _bottom,                                       HeapWord*)                             \
   nonstatic_field(BlockOffsetTable,            _end,                                          HeapWord*)                             \
