@@ -1040,8 +1040,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // In support of MinChunkSize being larger than min object size
   const double _dilatation_factor;
 
-  bool _debug_concurrent_cycle;
-
   // True if a compacting collection was done.
   bool _did_compact;
   bool did_compact() { return _did_compact; }
@@ -1268,9 +1266,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Resize the generation after a non-compacting
   // collection.
   void compute_new_size_free_list();
-
-  bool debug_concurrent_cycle() { return _debug_concurrent_cycle; }
-  void rotate_debug_collection_type();
 };
 
 //

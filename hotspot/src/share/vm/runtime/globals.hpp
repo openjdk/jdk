@@ -1523,9 +1523,6 @@ class CommandLineFlags {
   develop(bool, UseAsyncConcMarkSweepGC, true,                              \
           "Use Asynchronous Concurrent Mark-Sweep GC in the old generation")\
                                                                             \
-  develop(bool, RotateCMSCollectionTypes, false,                            \
-          "Rotate the CMS collections among concurrent and STW")            \
-                                                                            \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
                                                                             \
