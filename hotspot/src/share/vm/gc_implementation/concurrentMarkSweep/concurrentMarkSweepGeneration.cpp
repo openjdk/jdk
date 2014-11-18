@@ -192,7 +192,6 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
      FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) :
   CardGeneration(rs, initial_byte_size, level, ct),
   _dilatation_factor(((double)MinChunkSize)/((double)(CollectedHeap::min_fill_size()))),
-  _debug_concurrent_cycle(true),
   _did_compact(false)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
@@ -1244,14 +1243,6 @@ bool CMSCollector::shouldConcurrentCollect() {
     }
     return true;
   }
-
-  // For debugging purposes, change the type of collection.
-  // Rotate between concurrent and stop-the-world full GCs.
-  NOT_PRODUCT(
-    if (RotateCMSCollectionTypes) {
-      return _cmsGen->debug_concurrent_cycle();
-    }
-  )
 
   FreelistLocker x(this);
   // ------------------------------------------------------------------
@@ -5830,17 +5821,6 @@ void ConcurrentMarkSweepGeneration::update_gc_stats(int current_level,
   }
 }
 
-void ConcurrentMarkSweepGeneration::rotate_debug_collection_type() {
-  if (PrintGCDetails && Verbose) {
-    if (_debug_concurrent_cycle) {
-      gclog_or_tty->print_cr("Rotate from concurrent to STW collections");
-    } else {
-      gclog_or_tty->print_cr("Rotate from STW to concurrent collections");
-    }
-  }
-  _debug_concurrent_cycle = !_debug_concurrent_cycle;
-}
-
 void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen) {
   // We iterate over the space(s) underlying this generation,
   // checking the mark bit map to see if the bits corresponding
@@ -5960,12 +5940,6 @@ void CMSCollector::reset(bool concurrent) {
     _markBitMap.clear_all();
     _collectorState = Idling;
   }
-
-  NOT_PRODUCT(
-    if (RotateCMSCollectionTypes) {
-      _cmsGen->rotate_debug_collection_type();
-    }
-  )
 
   register_gc_end();
 }
