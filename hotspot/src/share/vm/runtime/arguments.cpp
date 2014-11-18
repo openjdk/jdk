@@ -2202,15 +2202,6 @@ void Arguments::check_deprecated_gc_flags() {
     warning("DefaultMaxRAMFraction is deprecated and will likely be removed in a future release. "
         "Use MaxRAMFraction instead.");
   }
-  if (FLAG_IS_CMDLINE(UseCMSCompactAtFullCollection)) {
-    warning("UseCMSCompactAtFullCollection is deprecated and will likely be removed in a future release.");
-  }
-  if (FLAG_IS_CMDLINE(CMSFullGCsBeforeCompaction)) {
-    warning("CMSFullGCsBeforeCompaction is deprecated and will likely be removed in a future release.");
-  }
-  if (FLAG_IS_CMDLINE(UseCMSCollectionPassing)) {
-    warning("UseCMSCollectionPassing is deprecated and will likely be removed in a future release.");
-  }
 }
 
 // Check stack pages settings
