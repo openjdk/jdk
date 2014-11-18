@@ -30,7 +30,7 @@ then
 fi
 echo "TESTSRC=${TESTSRC}"
 ## Adding common setup Variables for running shell tests.
-. ${TESTSRC}/../../test_env.sh
+. ${TESTSRC}/../../../test_env.sh
 
 # Amount of physical memory in megabytes
 MEM=0

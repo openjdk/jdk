@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,25 @@ then
 fi
 echo "TESTSRC=${TESTSRC}"
 ## Adding common setup Variables for running shell tests.
-. ${TESTSRC}/../../test_env.sh
+. ${TESTSRC}/../../../test_env.sh
 
 set -x
 
-cp ${TESTSRC}/Stemmer.java .
-cp ${TESTSRC}/words .
+cp ${TESTSRC}/Test6857159.java .
+cp ${TESTSRC}/Test6857159.sh .
 
-${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Stemmer.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test6857159.java
 
-${TESTJAVA}/bin/java ${TESTOPTS} -Xbatch Stemmer words > test.out 2>&1
+${TESTJAVA}/bin/java  ${TESTOPTS} -Xbatch -XX:+PrintCompilation -XX:CompileOnly=Test6857159\$ct.run Test6857159 > test.out 2>&1
 
-exit $?
+grep "COMPILE SKIPPED" test.out
 
+result=$?
+if [ $result -eq 1 ]
+then
+  echo "Passed"
+  exit 0
+else
+  echo "Failed"
+  exit 1
+fi
