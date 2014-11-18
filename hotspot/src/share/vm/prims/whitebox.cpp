@@ -64,6 +64,7 @@
 #endif // INCLUDE_NMT
 
 #include "compiler/compileBroker.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "runtime/compilationPolicy.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
@@ -112,6 +113,31 @@ WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
 
   return closure.found();
 WB_END
+
+WB_ENTRY(void, WB_AddToBootstrapClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
+#if INCLUDE_JVMTI
+  ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  const char* seg = env->GetStringUTFChars(segment, NULL);
+  JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
+  jvmtiError err = jvmti_env->AddToBootstrapClassLoaderSearch(seg);
+  assert(err == JVMTI_ERROR_NONE, "must not fail");
+  env->ReleaseStringUTFChars(segment, seg);
+#endif
+}
+WB_END
+
+WB_ENTRY(void, WB_AddToSystemClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
+#if INCLUDE_JVMTI
+  ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  const char* seg = env->GetStringUTFChars(segment, NULL);
+  JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
+  jvmtiError err = jvmti_env->AddToSystemClassLoaderSearch(seg);
+  assert(err == JVMTI_ERROR_NONE, "must not fail");
+  env->ReleaseStringUTFChars(segment, seg);
+#endif
+}
+WB_END
+
 
 WB_ENTRY(jlong, WB_GetCompressedOopsMaxHeapSize(JNIEnv* env, jobject o)) {
   return (jlong)Arguments::max_heap_for_compressed_oops();
@@ -1102,6 +1128,10 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
+  {CC"addToBootstrapClassLoaderSearch", CC"(Ljava/lang/String;)V",
+                                                      (void*)&WB_AddToBootstrapClassLoaderSearch},
+  {CC"addToSystemClassLoaderSearch",    CC"(Ljava/lang/String;)V",
+                                                      (void*)&WB_AddToSystemClassLoaderSearch},
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
