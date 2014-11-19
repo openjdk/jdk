@@ -668,19 +668,19 @@ public class TCPTransport extends Transport {
         }
 
         public void run() {
-            AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
-                    Thread t = Thread.currentThread();
-                    String name = t.getName();
-                    try {
-                        t.setName("RMI TCP Connection(" +
-                                  connectionCount.incrementAndGet() +
-                                  ")-" + remoteHost);
-                        run0();
-                    } finally {
-                        t.setName(name);
-                    }
+            Thread t = Thread.currentThread();
+            String name = t.getName();
+            try {
+                t.setName("RMI TCP Connection(" +
+                          connectionCount.incrementAndGet() +
+                          ")-" + remoteHost);
+                AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
+                    run0();
                     return null;
                 }, NOPERMS_ACC);
+            } finally {
+                t.setName(name);
+            }
         }
 
         private void run0() {
