@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 # @bug     4530538
 # @summary 
 # @author  Mandy Chung
-#
 # @run compile InputArgument.java
 # @run shell TestInputArgument.sh
 #
@@ -48,8 +47,8 @@ runOne()
 
 runOne InputArgument 
 
-runOne -XX:+UseParallelGC -XX:+PrintGCDetails InputArgument -XX:+PrintGCDetails
-runOne -XX:+UseParallelGC -XX:+PrintGCDetails InputArgument -XX:+UseParallelGC
+runOne -XX:+UseFastJNIAccessors -XX:+PrintGCDetails InputArgument -XX:+PrintGCDetails
+runOne -XX:+UseFastJNIAccessors -XX:+PrintGCDetails InputArgument -XX:+UseFastJNIAccessors
 runOne "-Dprops=one two three" InputArgument "-Dprops=one two three"
 
 exit 0
