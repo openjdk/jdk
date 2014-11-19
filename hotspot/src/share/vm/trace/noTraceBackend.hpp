@@ -41,4 +41,4 @@ public:
 
 typedef NoTraceBackend Tracing;
 
-#endif
+#endif // SHARE_VM_TRACE_NOTRACEBACKEND_HPP
