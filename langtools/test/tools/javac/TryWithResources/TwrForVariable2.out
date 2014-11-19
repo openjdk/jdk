@@ -1,0 +1,7 @@
+TwrForVariable2.java:12:21: compiler.err.expected: token.identifier
+TwrForVariable2.java:15:27: compiler.err.expected: token.identifier
+TwrForVariable2.java:18:16: compiler.err.illegal.start.of.expr
+TwrForVariable2.java:21:14: compiler.err.try.with.resources.expr.needs.var
+TwrForVariable2.java:24:16: compiler.err.try.with.resources.expr.needs.var
+TwrForVariable2.java:27:31: compiler.err.try.with.resources.expr.needs.var
+6 errors
