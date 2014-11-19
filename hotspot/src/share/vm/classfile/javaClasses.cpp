@@ -41,6 +41,7 @@
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -2794,12 +2795,35 @@ Metadata* java_lang_invoke_MemberName::vmtarget(oop mname) {
   return (Metadata*)mname->address_field(_vmtarget_offset);
 }
 
+bool java_lang_invoke_MemberName::is_method(oop mname) {
+  assert(is_instance(mname), "must be MemberName");
+  return (flags(mname) & (MN_IS_METHOD | MN_IS_CONSTRUCTOR)) > 0;
+}
+
 #if INCLUDE_JVMTI
 // Can be executed on VM thread only
-void java_lang_invoke_MemberName::adjust_vmtarget(oop mname, Metadata* ref) {
-  assert((is_instance(mname) && (flags(mname) & (MN_IS_METHOD | MN_IS_CONSTRUCTOR)) > 0), "wrong type");
+void java_lang_invoke_MemberName::adjust_vmtarget(oop mname, Method* old_method,
+                                                  Method* new_method, bool* trace_name_printed) {
+  assert(is_method(mname), "wrong type");
   assert(Thread::current()->is_VM_thread(), "not VM thread");
-  mname->address_field_put(_vmtarget_offset, (address)ref);
+
+  Method* target = (Method*)mname->address_field(_vmtarget_offset);
+  if (target == old_method) {
+    mname->address_field_put(_vmtarget_offset, (address)new_method);
+
+    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (!(*trace_name_printed)) {
+        // RC_TRACE_MESG macro has an embedded ResourceMark
+        RC_TRACE_MESG(("adjust: name=%s",
+                       old_method->method_holder()->external_name()));
+        *trace_name_printed = true;
+      }
+      // RC_TRACE macro has an embedded ResourceMark
+      RC_TRACE(0x00400000, ("MemberName method update: %s(%s)",
+                            new_method->name()->as_C_string(),
+                            new_method->signature()->as_C_string()));
+    }
+  }
 }
 #endif // INCLUDE_JVMTI
 
