@@ -26,6 +26,7 @@
  * @key gc
  * @bug 8060467
  * @author filipp.zhinkin@oracle.com, john.coomes@oracle.com
+ * @requires vm.gc=="ConcMarkSweep" | vm.gc=="null"
  * @summary Run CMS with PLAB resizing disabled and a small OldPLABSize
  * @run main/othervm -XX:+UseConcMarkSweepGC -XX:-ResizePLAB -XX:OldPLABSize=1k -Xmx256m -XX:+PrintGCDetails DisableResizePLAB
  */
