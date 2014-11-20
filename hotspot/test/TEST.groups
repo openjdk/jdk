@@ -344,6 +344,7 @@ hotspot_compiler_2 = \
   compiler/codecache/ \
   compiler/codegen/ \
   compiler/cpuflags/ \
+  compiler/dependencies/ \
   compiler/eliminateAutobox/ \
   compiler/escapeAnalysis/ \
   compiler/exceptions/ \
