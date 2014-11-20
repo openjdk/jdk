@@ -148,7 +148,7 @@ public class Attr extends JCTree.Visitor {
         identifyLambdaCandidate = options.getBoolean("identifyLambdaCandidate", false);
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
-        varInfo = new ResultInfo(KindSelector.VAR, Type.noType);
+        varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
         unknownExprInfo = new ResultInfo(KindSelector.VAL, Type.noType);
         unknownAnyPolyInfo = new ResultInfo(KindSelector.VAL, Infer.anyPoly);
         unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
@@ -498,7 +498,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     final ResultInfo statInfo;
-    final ResultInfo varInfo;
+    final ResultInfo varAssignmentInfo;
     final ResultInfo unknownAnyPolyInfo;
     final ResultInfo unknownExprInfo;
     final ResultInfo unknownTypeInfo;
@@ -1293,7 +1293,7 @@ public class Attr extends JCTree.Visitor {
                         }
                     };
                     ResultInfo twrResult =
-                        new ResultInfo(KindSelector.VAL,
+                        new ResultInfo(KindSelector.VAR,
                                        syms.autoCloseableType,
                                        twrContext);
                     if (resource.hasTag(VARDEF)) {
@@ -2942,7 +2942,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitAssign(JCAssign tree) {
-        Type owntype = attribTree(tree.lhs, env.dup(tree), varInfo);
+        Type owntype = attribTree(tree.lhs, env.dup(tree), varAssignmentInfo);
         Type capturedType = capture(owntype);
         attribExpr(tree.rhs, env, owntype);
         result = check(tree, capturedType, KindSelector.VAL, resultInfo);
@@ -2950,7 +2950,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAssignop(JCAssignOp tree) {
         // Attribute arguments.
-        Type owntype = attribTree(tree.lhs, env, varInfo);
+        Type owntype = attribTree(tree.lhs, env, varAssignmentInfo);
         Type operand = attribExpr(tree.rhs, env);
         // Find operator.
         Symbol operator = tree.operator = rs.resolveBinaryOperator(
@@ -2976,7 +2976,7 @@ public class Attr extends JCTree.Visitor {
     public void visitUnary(JCUnary tree) {
         // Attribute arguments.
         Type argtype = (tree.getTag().isIncOrDecUnaryOp())
-            ? attribTree(tree.arg, env, varInfo)
+            ? attribTree(tree.arg, env, varAssignmentInfo)
             : chk.checkNonVoid(tree.arg.pos(), attribExpr(tree.arg, env));
 
         // Find operator.
@@ -3156,7 +3156,7 @@ public class Attr extends JCTree.Visitor {
 
             // If we are expecting a variable (as opposed to a value), check
             // that the variable is assignable in the current environment.
-            if (pkind() == KindSelector.VAR)
+            if (KindSelector.ASG.subset(pkind()))
                 checkAssignable(tree.pos(), v, null, env);
         }
 
@@ -3233,6 +3233,10 @@ public class Attr extends JCTree.Visitor {
         // Determine the symbol represented by the selection.
         env.info.pendingResolutionPhase = null;
         Symbol sym = selectSym(tree, sitesym, site, env, resultInfo);
+        if (sym.kind == VAR && sym.name != names._super && env.info.defaultSuperCallSite != null) {
+            log.error(tree.selected.pos(), "not.encl.class", site.tsym);
+            sym = syms.errSymbol;
+        }
         if (sym.exists() && !isType(sym) && pkind().contains(KindSelector.TYP_PCK)) {
             site = capture(site);
             sym = selectSym(tree, sitesym, site, env, resultInfo);
@@ -3255,7 +3259,7 @@ public class Attr extends JCTree.Visitor {
 
             // If we are expecting a variable (as opposed to a value), check
             // that the variable is assignable in the current environment.
-            if (pkind() == KindSelector.VAR)
+            if (KindSelector.ASG.subset(pkind()))
                 checkAssignable(tree.pos(), v, tree.selected, env);
         }
 
@@ -3538,7 +3542,7 @@ public class Attr extends JCTree.Visitor {
                 // Test (4): if symbol is an instance field of a raw type,
                 // which is being assigned to, issue an unchecked warning if
                 // its type changes under erasure.
-                if (resultInfo.pkind == KindSelector.VAR &&
+                if (KindSelector.ASG.subset(pkind()) &&
                     v.owner.kind == TYP &&
                     (v.flags() & STATIC) == 0 &&
                     (site.hasTag(CLASS) || site.hasTag(TYPEVAR))) {
