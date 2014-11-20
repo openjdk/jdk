@@ -116,24 +116,22 @@ WB_END
 
 WB_ENTRY(void, WB_AddToBootstrapClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
 #if INCLUDE_JVMTI
-  ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-  const char* seg = env->GetStringUTFChars(segment, NULL);
+  ResourceMark rm;
+  const char* seg = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(segment));
   JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
   jvmtiError err = jvmti_env->AddToBootstrapClassLoaderSearch(seg);
   assert(err == JVMTI_ERROR_NONE, "must not fail");
-  env->ReleaseStringUTFChars(segment, seg);
 #endif
 }
 WB_END
 
 WB_ENTRY(void, WB_AddToSystemClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
 #if INCLUDE_JVMTI
-  ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-  const char* seg = env->GetStringUTFChars(segment, NULL);
+  ResourceMark rm;
+  const char* seg = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(segment));
   JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
   jvmtiError err = jvmti_env->AddToSystemClassLoaderSearch(seg);
   assert(err == JVMTI_ERROR_NONE, "must not fail");
-  env->ReleaseStringUTFChars(segment, seg);
 #endif
 }
 WB_END
