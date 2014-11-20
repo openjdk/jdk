@@ -49,7 +49,7 @@ var nashornJarDir = nashornJar.parentFile.absolutePath;
 var jjsCmd = javahome + "/../bin/jjs";
 jjsCmd += " -J-Djava.ext.dirs=" + nashornJarDir;
 jjsCmd = jjsCmd.toString().replaceAll(/\//g, File.separater);
-
+$ENV.PWD=System.getProperty("user.dir") // to avoid RE on Cygwin
 $EXEC(jjsCmd, "var x = Object.create(null);\nx;\nprint('PASSED');\nexit(0)");
 
 // $ERR has all interactions including prompts! Just check for error substring.
