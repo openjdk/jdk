@@ -25,9 +25,11 @@
 
 package java.security;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.net.URL;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import sun.security.util.Debug;
 
@@ -48,7 +50,7 @@ public class SecureClassLoader extends ClassLoader {
     private final boolean initialized;
 
     /*
-     * HashMap that maps the CodeSource URL (as a String) to ProtectionDomain.
+     * Map that maps the CodeSource URL (as a String) to ProtectionDomain.
      * We use a String instead of a CodeSource/URL as the key to avoid
      * potential expensive name service lookups. This does mean that URLs that
      * are equivalent after nameservice lookup will be placed in separate
@@ -56,7 +58,8 @@ public class SecureClassLoader extends ClassLoader {
      * canonicalized and resolved resulting in a consistent set of granted
      * permissions.
      */
-    private final HashMap<String, ProtectionDomain> pdcache = new HashMap<>(11);
+    private final Map<String, ProtectionDomain> pdcache
+            = new ConcurrentHashMap<>(11);
 
     private static final Debug debug = Debug.getInstance("scl");
 
@@ -206,25 +209,28 @@ public class SecureClassLoader extends ClassLoader {
             return null;
         }
 
-        ProtectionDomain pd = null;
-        synchronized (pdcache) {
-            // Use a String form of the URL as the key. It should behave in the
-            // same manner as the URL when compared for equality except that no
-            // nameservice lookup is done on the hostname (String comparison
-            // only), and the fragment is not considered.
-            String key = cs.getLocationNoFragString();
-            pd = pdcache.get(key);
-            if (pd == null) {
-                PermissionCollection perms = getPermissions(cs);
-                pd = new ProtectionDomain(cs, perms, this, null);
-                pdcache.put(key, pd);
+        // Use a String form of the URL as the key. It should behave in the
+        // same manner as the URL when compared for equality except that no
+        // nameservice lookup is done on the hostname (String comparison
+        // only), and the fragment is not considered.
+        String key = cs.getLocationNoFragString();
+        if (key == null) {
+            key = "<null>";
+        }
+        return pdcache.computeIfAbsent(key, new Function<>() {
+            @Override
+            public ProtectionDomain apply(String key /* not used */) {
+                PermissionCollection perms
+                        = SecureClassLoader.this.getPermissions(cs);
+                ProtectionDomain pd = new ProtectionDomain(
+                        cs, perms, SecureClassLoader.this, null);
                 if (debug != null) {
-                    debug.println(" getPermissions "+ pd);
+                    debug.println(" getPermissions " + pd);
                     debug.println("");
                 }
+                return pd;
             }
-        }
-        return pd;
+        });
     }
 
     /*
