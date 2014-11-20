@@ -4039,7 +4039,7 @@ public class Resolve {
                             s : new MethodSymbol(
                                 s.flags(),
                                 s.name,
-                                types.createMethodTypeWithThrown(mt, allThrown),
+                                types.createMethodTypeWithThrown(s.type, allThrown),
                                 s.owner);
                 }
             }
