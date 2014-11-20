@@ -3172,7 +3172,7 @@ public class Resolve {
             super(referenceTree, name, site, argtypes.tail, typeargtypes, maxPhase);
             if (site.isRaw() && !argtypes.head.hasTag(NONE)) {
                 Type asSuperSite = types.asSuper(argtypes.head, site.tsym);
-                this.site = asSuperSite;
+                this.site = types.capture(asSuperSite);
             }
         }
 
