@@ -2624,10 +2624,11 @@ public final class Formatter implements Closeable, Flushable {
         private boolean dt = false;
         private char c;
 
-        private int index(String s) {
-            if (s != null) {
+        private int index(String s, int start, int end) {
+            if (start >= 0) {
                 try {
-                    index = Integer.parseInt(s.substring(0, s.length() - 1));
+                    // skip the trailing '$'
+                    index = Integer.parseInt(s, start, end - 1, 10);
                 } catch (NumberFormatException x) {
                     assert(false);
                 }
@@ -2648,11 +2649,11 @@ public final class Formatter implements Closeable, Flushable {
             return f;
         }
 
-        private int width(String s) {
+        private int width(String s, int start, int end) {
             width = -1;
-            if (s != null) {
+            if (start >= 0) {
                 try {
-                    width  = Integer.parseInt(s);
+                    width = Integer.parseInt(s, start, end, 10);
                     if (width < 0)
                         throw new IllegalFormatWidthException(width);
                 } catch (NumberFormatException x) {
@@ -2662,12 +2663,12 @@ public final class Formatter implements Closeable, Flushable {
             return width;
         }
 
-        private int precision(String s) {
+        private int precision(String s, int start, int end) {
             precision = -1;
-            if (s != null) {
+            if (start >= 0) {
                 try {
-                    // remove the '.'
-                    precision = Integer.parseInt(s.substring(1));
+                    // skip the leading '.'
+                    precision = Integer.parseInt(s, start + 1, end, 10);
                     if (precision < 0)
                         throw new IllegalFormatPrecisionException(precision);
                 } catch (NumberFormatException x) {
@@ -2695,23 +2696,19 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         FormatSpecifier(String s, Matcher m) {
-            int idx = 1;
+            index(s, m.start(1), m.end(1));
+            flags(s, m.start(2), m.end(2));
+            width(s, m.start(3), m.end(3));
+            precision(s, m.start(4), m.end(4));
 
-            index(m.group(idx++));
-            flags(s, m.start(idx), m.end(idx++));
-            width(m.group(idx++));
-            precision(m.group(idx++));
-
-            int tTStart = m.start(idx);
-            int tTEnd = m.end(idx++);
-            if (tTStart != -1 && tTEnd != -1) {
+            int tTStart = m.start(5);
+            if (tTStart >= 0) {
                 dt = true;
-                if (tTStart == tTEnd - 1 && s.charAt(tTStart) == 'T') {
+                if (s.charAt(tTStart) == 'T') {
                     f.add(Flags.UPPERCASE);
                 }
             }
-
-            conversion(s.charAt(m.start(idx)));
+            conversion(s.charAt(m.start(6)));
 
             if (dt)
                 checkDateTime();
