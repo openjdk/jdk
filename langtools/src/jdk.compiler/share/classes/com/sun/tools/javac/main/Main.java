@@ -160,6 +160,8 @@ public class Main {
             Option.HELP.process(new OptionHelper.GrumpyHelper(log) {
                 @Override
                 public String getOwnName() { return ownName; }
+                @Override
+                public void put(String name, String value) { }
             }, "-help");
             return Result.CMDERR;
         }
