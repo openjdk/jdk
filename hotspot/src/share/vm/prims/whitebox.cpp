@@ -944,6 +944,16 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
   return result;
 WB_END
 
+WB_ENTRY(jint, WB_GetCompilationActivityMode(JNIEnv* env, jobject o))
+  return CompileBroker::get_compilation_activity_mode();
+WB_END
+
+WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
+    ThreadToNativeFromVM ttn(thread);
+    CodeBlobStub stub((CodeBlob*) addr);
+    return codeBlob2objectArray(thread, env, &stub);
+WB_END
+
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
   return (jlong) Thread::current()->stack_size();
 WB_END
@@ -1194,6 +1204,9 @@ static JNINativeMethod methods[] = {
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
+  {CC"getCompilationActivityMode",
+                           CC"()I",                   (void*)&WB_GetCompilationActivityMode},
+  {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
 };

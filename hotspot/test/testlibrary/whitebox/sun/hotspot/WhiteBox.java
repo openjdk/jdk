@@ -151,6 +151,8 @@ public class WhiteBox {
   public native void    freeCodeBlob(long addr);
   public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
+  public native int     getCompilationActivityMode();
+  public native Object[] getCodeBlob(long addr);
 
   // Intered strings
   public native boolean isInStringTable(String str);
