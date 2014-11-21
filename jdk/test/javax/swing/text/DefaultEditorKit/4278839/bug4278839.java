@@ -33,19 +33,16 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class bug4278839 extends JFrame {
 
     private static boolean passed = true;
     private static JTextArea area;
     private static Robot robo;
-    private static SunToolkit toolkit;
 
     public static void main(String[] args) {
         try {
 
-            toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
             robo = new Robot();
             robo.setAutoDelay(100);
 
@@ -56,10 +53,10 @@ public class bug4278839 extends JFrame {
                 }
             });
 
-            toolkit.realSync();
+            robo.waitForIdle();
 
             clickMouse();
-            toolkit.realSync();
+            robo.waitForIdle();
 
 
             if ("Aqua".equals(UIManager.getLookAndFeel().getID())) {
@@ -67,7 +64,7 @@ public class bug4278839 extends JFrame {
             } else {
                 Util.hitKeys(robo, KeyEvent.VK_CONTROL, KeyEvent.VK_HOME);
             }
-            toolkit.realSync();
+            robo.waitForIdle();
 
             passed &= moveCaret(true) == 1;
             passed &= moveCaret(true) == 5;
@@ -97,7 +94,7 @@ public class bug4278839 extends JFrame {
     private static int moveCaret(boolean right) throws Exception {
         Util.hitKeys(robo, getCtrlKey(),
                 right ? KeyEvent.VK_RIGHT : KeyEvent.VK_LEFT);
-        toolkit.realSync();
+        robo.waitForIdle();
 
         final int[] result = new int[1];
 
@@ -127,6 +124,7 @@ public class bug4278839 extends JFrame {
 
         robo.mouseMove(rect.x + rect.width / 2, rect.y + rect.width / 2);
         robo.mousePress(InputEvent.BUTTON1_MASK);
+        robo.mouseRelease(InputEvent.BUTTON1_MASK);
     }
 
     /**
