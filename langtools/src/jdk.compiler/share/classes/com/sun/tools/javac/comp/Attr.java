@@ -4490,14 +4490,15 @@ public class Attr extends JCTree.Visitor {
             super.visitTypeTest(tree);
         }
         public void visitNewClass(JCNewClass tree) {
-            if (tree.clazz.hasTag(ANNOTATED_TYPE)) {
-                checkForDeclarationAnnotations(((JCAnnotatedType) tree.clazz).annotations,
-                        tree.clazz.type.tsym);
-            }
-            if (tree.def != null) {
-                checkForDeclarationAnnotations(tree.def.mods.annotations, tree.clazz.type.tsym);
-            }
-            if (tree.clazz.type != null) {
+            if (tree.clazz != null && tree.clazz.type != null) {
+                if (tree.clazz.hasTag(ANNOTATED_TYPE)) {
+                    checkForDeclarationAnnotations(((JCAnnotatedType) tree.clazz).annotations,
+                            tree.clazz.type.tsym);
+                }
+                if (tree.def != null) {
+                    checkForDeclarationAnnotations(tree.def.mods.annotations, tree.clazz.type.tsym);
+                }
+
                 validateAnnotatedType(tree.clazz, tree.clazz.type);
             }
             super.visitNewClass(tree);
