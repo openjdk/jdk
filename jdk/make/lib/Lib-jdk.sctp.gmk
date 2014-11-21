@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS_API), posix)
+ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
 
   ifeq (, $(filter $(OPENJDK_TARGET_OS), macosx aix))
 
@@ -40,11 +40,11 @@ ifeq ($(OPENJDK_TARGET_OS_API), posix)
     $(eval $(call SetupNativeCompilation,BUILD_LIBSCTP, \
         LIBRARY := sctp, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-        SRC := $(JDK_TOPDIR)/src/jdk.sctp/$(OPENJDK_TARGET_OS_API_DIR)/native/libsctp, \
+        SRC := $(JDK_TOPDIR)/src/jdk.sctp/$(OPENJDK_TARGET_OS_TYPE)/native/libsctp, \
         LANG := C, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) \
-            -I $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnio/ch \
+            -I $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/ch \
             -I $(JDK_TOPDIR)/src/java.base/share/native/libnio/ch \
             $(addprefix -I, $(call FindSrcDirsForLib, java.base, net)) \
             $(LIBJAVA_HEADER_FLAGS) \
@@ -55,7 +55,7 @@ ifeq ($(OPENJDK_TARGET_OS_API), posix)
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LDFLAGS_SUFFIX_linux := -lpthread $(LIBDL) -ljava -ljvm, \
-        LDFLAGS_SUFFIX_posix := -lnio -lnet, \
+        LDFLAGS_SUFFIX_unix := -lnio -lnet, \
         LDFLAGS_SUFFIX_solaris := -lsocket -ljava -ljvm -lc, \
         LDFLAGS_SUFFIX_macosx := -ljava -ljvm, \
         OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsctp, \
