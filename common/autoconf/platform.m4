@@ -104,44 +104,37 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
 
 # Support macro for PLATFORM_EXTRACT_TARGET_AND_BUILD.
 # Converts autoconf style OS name to OpenJDK style, into
-# VAR_OS and VAR_OS_API.
+# VAR_OS, VAR_OS_TYPE and VAR_OS_ENV.
 AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
 [
   case "$1" in
     *linux*)
       VAR_OS=linux
-      VAR_OS_API=posix
-      VAR_OS_ENV=linux
+      VAR_OS_TYPE=unix
       ;;
     *solaris*)
       VAR_OS=solaris
-      VAR_OS_API=posix
-      VAR_OS_ENV=solaris
+      VAR_OS_TYPE=unix
       ;;
     *darwin*)
       VAR_OS=macosx
-      VAR_OS_API=posix
-      VAR_OS_ENV=macosx
+      VAR_OS_TYPE=unix
       ;;
     *bsd*)
       VAR_OS=bsd
-      VAR_OS_API=posix
-      VAR_OS_ENV=bsd
+      VAR_OS_TYPE=unix
       ;;
     *cygwin*)
       VAR_OS=windows
-      VAR_OS_API=winapi
       VAR_OS_ENV=windows.cygwin
       ;;
     *mingw*)
       VAR_OS=windows
-      VAR_OS_API=winapi
       VAR_OS_ENV=windows.msys
       ;;
     *aix*)
       VAR_OS=aix
-      VAR_OS_API=posix
-      VAR_OS_ENV=aix
+      VAR_OS_TYPE=unix
       ;;
     *)
       AC_MSG_ERROR([unsupported operating system $1])
@@ -171,14 +164,22 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   PLATFORM_EXTRACT_VARS_FROM_CPU($build_cpu)
   # ..and setup our own variables. (Do this explicitely to facilitate searching)
   OPENJDK_BUILD_OS="$VAR_OS"
-  OPENJDK_BUILD_OS_API="$VAR_OS_API"
-  OPENJDK_BUILD_OS_ENV="$VAR_OS_ENV"
+  if test "x$VAR_OS_TYPE" != x; then
+    OPENJDK_BUILD_OS_TYPE="$VAR_OS_TYPE"
+  else
+    OPENJDK_BUILD_OS_TYPE="$VAR_OS"
+  fi
+  if test "x$VAR_OS_ENV" != x; then
+    OPENJDK_BUILD_OS_ENV="$VAR_OS_ENV"
+  else
+    OPENJDK_BUILD_OS_ENV="$VAR_OS"
+  fi
   OPENJDK_BUILD_CPU="$VAR_CPU"
   OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"
   OPENJDK_BUILD_CPU_ENDIAN="$VAR_CPU_ENDIAN"
   AC_SUBST(OPENJDK_BUILD_OS)
-  AC_SUBST(OPENJDK_BUILD_OS_API)
+  AC_SUBST(OPENJDK_BUILD_OS_TYPE)
   AC_SUBST(OPENJDK_BUILD_OS_ENV)
   AC_SUBST(OPENJDK_BUILD_CPU)
   AC_SUBST(OPENJDK_BUILD_CPU_ARCH)
@@ -193,14 +194,22 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   PLATFORM_EXTRACT_VARS_FROM_CPU($host_cpu)
   # ... and setup our own variables. (Do this explicitely to facilitate searching)
   OPENJDK_TARGET_OS="$VAR_OS"
-  OPENJDK_TARGET_OS_API="$VAR_OS_API"
-  OPENJDK_TARGET_OS_ENV="$VAR_OS_ENV"
+  if test "x$VAR_OS_TYPE" != x; then
+    OPENJDK_TARGET_OS_TYPE="$VAR_OS_TYPE"
+  else
+    OPENJDK_TARGET_OS_TYPE="$VAR_OS"
+  fi
+  if test "x$VAR_OS_ENV" != x; then
+    OPENJDK_TARGET_OS_ENV="$VAR_OS_ENV"
+  else
+    OPENJDK_TARGET_OS_ENV="$VAR_OS"
+  fi
   OPENJDK_TARGET_CPU="$VAR_CPU"
   OPENJDK_TARGET_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_TARGET_CPU_BITS="$VAR_CPU_BITS"
   OPENJDK_TARGET_CPU_ENDIAN="$VAR_CPU_ENDIAN"
   AC_SUBST(OPENJDK_TARGET_OS)
-  AC_SUBST(OPENJDK_TARGET_OS_API)
+  AC_SUBST(OPENJDK_TARGET_OS_TYPE)
   AC_SUBST(OPENJDK_TARGET_OS_ENV)
   AC_SUBST(OPENJDK_TARGET_CPU)
   AC_SUBST(OPENJDK_TARGET_CPU_ARCH)
@@ -337,19 +346,10 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
   fi
   AC_SUBST(OPENJDK_TARGET_CPU_JLI_CFLAGS)
 
-  # Setup OPENJDK_TARGET_OS_API_DIR, used in source paths.
-  if test "x$OPENJDK_TARGET_OS_API" = xposix; then
-    OPENJDK_TARGET_OS_API_DIR="unix"
-  fi
-  if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
-    OPENJDK_TARGET_OS_API_DIR="windows"
-  fi
-  AC_SUBST(OPENJDK_TARGET_OS_API_DIR)
-
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       OPENJDK_TARGET_OS_EXPORT_DIR=macosx
   else
-      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_API_DIR}
+      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_TYPE}
   fi
   AC_SUBST(OPENJDK_TARGET_OS_EXPORT_DIR)
 
@@ -478,8 +478,8 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
     # And -q on AIX because otherwise the compiler produces 32-bit objects by default
     PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS
   elif test "x$COMPILE_TYPE" = xreduced; then
-    if test "x$OPENJDK_TARGET_OS" != xwindows; then
-      # Specify -m if running reduced on other Posix platforms
+    if test "x$OPENJDK_TARGET_OS_TYPE" = xunix; then
+      # Specify -m if running reduced on unix platforms
       PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS
     fi
   fi
