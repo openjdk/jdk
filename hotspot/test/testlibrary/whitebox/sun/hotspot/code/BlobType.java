@@ -36,7 +36,13 @@ public enum BlobType {
     // Execution level 2 and 3 (profiled) nmethods
     MethodProfiled(1, "CodeHeap 'profiled nmethods'"),
     // Non-nmethods like Buffers, Adapters and Runtime Stubs
-    NonNMethod(2, "CodeHeap 'non-nmethods'"),
+    NonNMethod(2, "CodeHeap 'non-nmethods'") {
+        @Override
+        public boolean allowTypeWhenOverflow(BlobType type) {
+            return super.allowTypeWhenOverflow(type)
+                    || type == BlobType.MethodNonProfiled;
+        }
+    },
     // All types (No code cache segmentation)
     All(3, "CodeCache");
 
@@ -57,6 +63,11 @@ public enum BlobType {
         }
         return null;
     }
+
+    public boolean allowTypeWhenOverflow(BlobType type) {
+        return type == this;
+    }
+
     public static EnumSet<BlobType> getAvailable() {
         WhiteBox whiteBox = WhiteBox.getWhiteBox();
         if (!whiteBox.getBooleanVMFlag("SegmentedCodeCache")) {

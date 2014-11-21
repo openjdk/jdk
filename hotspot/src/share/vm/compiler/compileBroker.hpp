@@ -415,6 +415,7 @@ class CompileBroker: AllStatic {
     shutdown_compilaton = 2
   };
 
+  static jint get_compilation_activity_mode() { return _should_compile_new_jobs; }
   static bool should_compile_new_jobs() { return UseCompiler && (_should_compile_new_jobs == run_compilation); }
   static bool set_should_compile_new_jobs(jint new_state) {
     // Return success if the current caller set it
