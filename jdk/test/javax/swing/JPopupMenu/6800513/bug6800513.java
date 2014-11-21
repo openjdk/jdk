@@ -32,8 +32,6 @@
  * @run main bug6800513
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -47,10 +45,10 @@ public class bug6800513 {
     private static JPopupMenu popupMenu;
     private static JMenu menu;
     private static JFrame frame;
+    private static Robot robot;
 
     public static void testFrame(final boolean defaultLightWeightPopupEnabled,
             String expectedPopupClass) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -59,11 +57,11 @@ public class bug6800513 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickOnMenu();
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Field getPopup = JPopupMenu.class.getDeclaredField("popup");
         getPopup.setAccessible(true);
@@ -87,7 +85,7 @@ public class bug6800513 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 
 
@@ -99,7 +97,6 @@ public class bug6800513 {
             }
         });
 
-        Robot robot = new Robot();
         robot.setAutoDelay(100);
 
         robot.mouseMove(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
@@ -140,6 +137,7 @@ public class bug6800513 {
     }
 
     public static void main(String[] args) throws Exception {
+        robot = new Robot();
         testFrame(false, "javax.swing.PopupFactory$HeavyWeightPopup");
 
         testFrame(true, "javax.swing.PopupFactory$LightWeightPopup");

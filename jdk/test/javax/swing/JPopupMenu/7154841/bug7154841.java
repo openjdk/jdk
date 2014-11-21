@@ -26,16 +26,17 @@
   @bug 7154841
   @summary JPopupMenu is overlapped by a Dock on Mac OS X
   @author Petr Pchelko
+  @library ../../../../lib/testlibrary
+  @build ExtendedRobot jdk.testlibrary.OSInfo
+  @run main bug7154841
  */
-
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
 
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.util.concurrent.atomic.AtomicReference;
+import jdk.testlibrary.OSInfo;
 
 public class bug7154841 {
 
@@ -71,20 +72,20 @@ public class bug7154841 {
         }
 
         try {
-            Robot r = new Robot();
+            ExtendedRobot r = new ExtendedRobot();
             r.setAutoDelay(100);
             r.setAutoWaitForIdle(true);
             r.mouseMove(0, 0);
 
             SwingUtilities.invokeAndWait(bug7154841::initAndShowUI);
 
-            sleep();
+            r.waitForIdle(200);
 
             SwingUtilities.invokeAndWait(() -> {
                 popupMenu.show(frame, frame.getX() + frame.getWidth() / 2, frame.getY() + frame.getHeight() / 2);
             });
 
-            sleep();
+            r.waitForIdle(200);
 
             int y = (int)screenBounds.get().getY() + (int)screenBounds.get().getHeight() - 10;
             int center = (int)(screenBounds.get().getX() + screenBounds.get().getWidth() / 2);
@@ -112,10 +113,4 @@ public class bug7154841 {
                 .getBounds();
     }
 
-    private static void sleep() {
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException ignored) { }
-    }
 }
