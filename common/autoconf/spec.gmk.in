@@ -82,7 +82,7 @@ CONF_NAME:=@CONF_NAME@
 
 # The built jdk will run in this target system.
 OPENJDK_TARGET_OS:=@OPENJDK_TARGET_OS@
-OPENJDK_TARGET_OS_API:=@OPENJDK_TARGET_OS_API@
+OPENJDK_TARGET_OS_TYPE:=@OPENJDK_TARGET_OS_TYPE@
 OPENJDK_TARGET_OS_ENV:=@OPENJDK_TARGET_OS_ENV@
 
 OPENJDK_TARGET_CPU:=@OPENJDK_TARGET_CPU@
@@ -99,13 +99,12 @@ OPENJDK_TARGET_CPU_LEGACY:=@OPENJDK_TARGET_CPU_LEGACY@
 OPENJDK_TARGET_CPU_LEGACY_LIB:=@OPENJDK_TARGET_CPU_LEGACY_LIB@
 OPENJDK_TARGET_CPU_OSARCH:=@OPENJDK_TARGET_CPU_OSARCH@
 OPENJDK_TARGET_CPU_JLI_CFLAGS:=@OPENJDK_TARGET_CPU_JLI_CFLAGS@
-OPENJDK_TARGET_OS_API_DIR:=@OPENJDK_TARGET_OS_API_DIR@
 OPENJDK_TARGET_OS_EXPORT_DIR:=@OPENJDK_TARGET_OS_EXPORT_DIR@
 
 # We are building on this build system.
 # When not cross-compiling, it is the same as the target.
 OPENJDK_BUILD_OS:=@OPENJDK_BUILD_OS@
-OPENJDK_BUILD_OS_API:=@OPENJDK_BUILD_OS_API@
+OPENJDK_BUILD_OS_TYPE:=@OPENJDK_BUILD_OS_TYPE@
 OPENJDK_BUILD_OS_ENV:=@OPENJDK_BUILD_OS_ENV@
 
 OPENJDK_BUILD_CPU:=@OPENJDK_BUILD_CPU@
@@ -351,7 +350,7 @@ OBJC:=@CCACHE@ @OBJC@
 CPP:=@FIXPATH@ @CPP@
 #CPPFLAGS:=@CPPFLAGS@
 
-# The linker can be gcc or ld on posix systems, or link.exe on windows systems.
+# The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD:=@FIXPATH@ @LD@
 
 # Xcode SDK path
@@ -392,7 +391,7 @@ BUILD_LD:=@FIXPATH@ @BUILD_LD@
 
 AS:=@FIXPATH@ @AS@
 
-# AR is used to create a static library (is ar in posix, lib.exe in windows)
+# AR is used to create a static library (is ar in unix, lib.exe in windows)
 AR:=@FIXPATH@ @AR@
 ARFLAGS:=@ARFLAGS@
 
@@ -569,10 +568,10 @@ FIXPATH:=@FIXPATH@
 # Where the build output is stored for your convenience.
 BUILD_LOG:=@BUILD_LOG@
 BUILD_LOG_PREVIOUS:=@BUILD_LOG_PREVIOUS@
-# Disable the build log wrapper on sjavac+winapi until
+# Disable the build log wrapper on sjavac+windows until
 # we have solved how to prevent the log wrapper to wait
 # for the background sjavac server process.
-ifeq (@ENABLE_SJAVAC@X@OPENJDK_BUILD_OS_API@,yesXwinapi)
+ifeq (@ENABLE_SJAVAC@X@OPENJDK_BUILD_OS@,yesXwindows)
   BUILD_LOG_WRAPPER:=
 else
   BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
