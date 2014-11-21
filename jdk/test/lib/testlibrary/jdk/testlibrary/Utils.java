@@ -128,8 +128,7 @@ public final class Utils {
      */
     private static final Pattern useGcPattern = Pattern.compile(
             "(?:\\-XX\\:[\\+\\-]Use.+GC)"
-            + "|(?:\\-Xconcgc)"
-            + "|(?:\\-Xincgc)");
+            + "|(?:\\-Xconcgc)");
     public static List<String> removeGcOpts(List<String> opts) {
         List<String> optsWithoutGC = new ArrayList<String>();
         for (String opt : opts) {
