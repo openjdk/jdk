@@ -29,16 +29,19 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2014-05-31):
-# A good source for time zone historical data outside the U.S. is
+# From Paul Eggert (2014-10-31):
+#
+# Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
+# Unfortunately this book contains many errors and cites no sources.
 #
 # Gwillim Law writes that a good source
 # for recent time zone data is the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
-# of the IATA's data after 1990.
+# of the IATA's data after 1990.  Except where otherwise noted,
+# IATA SSIM is the source for entries after 1990.
 #
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
@@ -91,10 +94,11 @@
 #        0:00       WET WEST WEMT Western Europe
 #        0:19:32.13 AMT NST       Amsterdam, Netherlands Summer (1835-1937)*
 #        0:20       NET NEST      Netherlands (1937-1940)*
+#        1:00       BST           British Standard (1968-1971)
 #        1:00       CET CEST CEMT Central Europe
 #        1:00:14    SET           Swedish (1879-1899)*
 #        2:00       EET EEST      Eastern Europe
-#        3:00       FET           Further-eastern Europe*
+#        3:00       FET           Further-eastern Europe (2011-2014)*
 #        3:00       MSK MSD  MSM* Moscow
 
 # From Peter Ilieve (1994-12-04),
@@ -308,6 +312,14 @@
 #
 #   "Timeball on the ballast office is down.  Dunsink time."
 #   -- James Joyce, Ulysses
+
+# "Countess Markievicz ... claimed that the [1916] abolition of Dublin Mean Time
+# was among various actions undertaken by the 'English' government that
+# would 'put the whole country into the SF (Sinn Féin) camp'.  She claimed
+# Irish 'public feeling (was) outraged by forcing of English time on us'."
+# -- Parsons M. Dublin lost its time zone - and 25 minutes - after 1916 Rising.
+# Irish Times 2014-10-27.
+# http://www.irishtimes.com/news/politics/dublin-lost-its-time-zone-and-25-minutes-after-1916-rising-1.1977411
 
 # From Joseph S. Myers (2005-01-26):
 # Irish laws are available online at <http://www.irishstatutebook.ie>.
@@ -616,6 +628,7 @@ Rule	Russia	1992	only	-	Sep	lastSat	 23:00	0	-
 Rule	Russia	1993	2010	-	Mar	lastSun	 2:00s	1:00	S
 Rule	Russia	1993	1995	-	Sep	lastSun	 2:00s	0	-
 Rule	Russia	1996	2010	-	Oct	lastSun	 2:00s	0	-
+# As described below, Russia's 2014 change affects Zone data, not Rule data.
 
 # From Alexander Krivenyshev (2011-06-14):
 # According to Kremlin press service, Russian President Dmitry Medvedev
@@ -746,6 +759,13 @@ Zone	Europe/Vienna	1:05:21 -	LMT	1893 Apr
 # http://www.belta.by/ru/all_news/society/V-Belarusi-otmenjaetsja-perexod-na-sezonnoe-vremja_i_572952.html
 # http://naviny.by/rubrics/society/2011/09/16/ic_articles_116_175144/
 # http://news.tut.by/society/250578.html
+#
+# From Alexander Bokovoy (2014-10-09):
+# Belarussian government decided against changing to winter time....
+# http://eng.belta.by/all_news/society/Belarus-decides-against-adjusting-time-in-Russias-wake_i_76335.html
+# From Paul Eggert (2014-10-08):
+# Hence Belarus can share time zone abbreviations with Moscow again.
+#
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Minsk	1:50:16 -	LMT	1880
 			1:50	-	MMT	1924 May  2 # Minsk Mean Time
@@ -758,7 +778,8 @@ Zone	Europe/Minsk	1:50:16 -	LMT	1880
 			2:00	-	EET	1992 Mar 29  0:00s
 			2:00	1:00	EEST	1992 Sep 27  0:00s
 			2:00	Russia	EE%sT	2011 Mar 27  2:00s
-			3:00	-	FET
+			3:00	-	FET	2014 Oct 26  1:00s
+			3:00	-	MSK
 
 # Belgium
 #
@@ -2524,7 +2545,7 @@ Zone Asia/Novosibirsk	 5:31:40 -	LMT	1919 Dec 14  6:00
 # The Kemerovo region will remain at UTC+7 through the 2014-10-26 change, thus
 # realigning itself with KRAT.
 
-Zone Asia/Novokuznetsk	 5:48:48 -	NMT	1920 Jan  6
+Zone Asia/Novokuznetsk	 5:48:48 -	LMT	1924 May  1
 			 6:00	-	KRAT	1930 Jun 21 # Krasnoyarsk Time
 			 7:00	Russia	KRA%sT	1991 Mar 31  2:00s
 			 6:00	Russia	KRA%sT	1992 Jan 19  2:00s

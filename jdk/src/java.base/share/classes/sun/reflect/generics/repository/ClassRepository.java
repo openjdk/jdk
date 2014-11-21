@@ -42,8 +42,11 @@ public class ClassRepository extends GenericDeclRepository<ClassSignature> {
 
     public static final ClassRepository NONE = ClassRepository.make("Ljava/lang/Object;", null);
 
-    private Type superclass; // caches the generic superclass info
-    private Type[] superInterfaces; // caches the generic superinterface info
+    /** The generic superclass info.  Lazily initialized. */
+    private volatile Type superclass;
+
+    /** The generic superinterface info.  Lazily initialized. */
+    private volatile Type[] superInterfaces;
 
  // private, to enforce use of static factory
     private ClassRepository(String rawSig, GenericsFactory f) {
@@ -79,31 +82,34 @@ public class ClassRepository extends GenericDeclRepository<ClassSignature> {
  * with which the repository was created.
  */
 
-    public Type getSuperclass(){
+    public Type getSuperclass() {
+        Type superclass = this.superclass;
         if (superclass == null) { // lazily initialize superclass
             Reifier r = getReifier(); // obtain visitor
             // Extract superclass subtree from AST and reify
             getTree().getSuperclass().accept(r);
             // extract result from visitor and cache it
             superclass = r.getResult();
-            }
+            this.superclass = superclass;
+        }
         return superclass; // return cached result
     }
 
-    public Type[] getSuperInterfaces(){
+    public Type[] getSuperInterfaces() {
+        Type[] superInterfaces = this.superInterfaces;
         if (superInterfaces == null) { // lazily initialize super interfaces
             // first, extract super interface subtree(s) from AST
             TypeTree[] ts  = getTree().getSuperInterfaces();
             // create array to store reified subtree(s)
-            Type[] sis = new Type[ts.length];
+            superInterfaces = new Type[ts.length];
             // reify all subtrees
             for (int i = 0; i < ts.length; i++) {
                 Reifier r = getReifier(); // obtain visitor
                 ts[i].accept(r);// reify subtree
                 // extract result from visitor and store it
-                sis[i] = r.getResult();
+                superInterfaces[i] = r.getResult();
             }
-            superInterfaces = sis; // cache overall result
+            this.superInterfaces = superInterfaces;
         }
         return superInterfaces.clone(); // return cached result
     }

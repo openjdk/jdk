@@ -28,9 +28,9 @@ include LibCommon.gmk
 ################################################################################
 
 LIBJ2PCSC_SRC := $(JDK_TOPDIR)/src/java.smartcardio/share/native/libj2pcsc \
-    $(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_API_DIR)/native/libj2pcsc
+    $(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc
 LIBJ2PCSC_CPPFLAGS := $(addprefix -I,$(LIBJ2PCSC_SRC)) \
-    -I$(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_API_DIR)/native/libj2pcsc/MUSCLE \
+    -I$(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc/MUSCLE \
     -I$(JDK_OUTPUTDIR)/gensrc_headers/java.smartcardio
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
@@ -38,13 +38,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJ2PCSC_SRC), \
     LANG := C, \
-    CFLAGS_posix := -D__sun_jdk, \
+    CFLAGS_unix := -D__sun_jdk, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJ2PCSC_CPPFLAGS), \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2pcsc/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_posix := $(LIBDL), \
+    LDFLAGS_SUFFIX_unix := $(LIBDL), \
     LDFLAGS_SUFFIX_windows := winscard.lib, \
     LDFLAGS_SUFFIX_solaris := -lc, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
