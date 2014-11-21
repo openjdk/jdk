@@ -69,7 +69,7 @@ AC_DEFUN([BASIC_PREPEND_TO_PATH],
 
 # This will make sure the given variable points to a full and proper
 # path. This means:
-# 1) There will be no spaces in the path. On posix platforms,
+# 1) There will be no spaces in the path. On unix platforms,
 #    spaces in the path will result in an error. On Windows,
 #    the path will be rewritten using short-style to be space-free.
 # 2) The path will be absolute, and it will be in unix-style (on
@@ -82,7 +82,7 @@ AC_DEFUN([BASIC_FIXUP_PATH],
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     BASIC_FIXUP_PATH_MSYS($1)
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="[$]$1"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -102,7 +102,7 @@ AC_DEFUN([BASIC_FIXUP_PATH],
 
 # This will make sure the given variable points to a executable
 # with a full and proper path. This means:
-# 1) There will be no spaces in the path. On posix platforms,
+# 1) There will be no spaces in the path. On unix platforms,
 #    spaces in the path will result in an error. On Windows,
 #    the path will be rewritten using short-style to be space-free.
 # 2) The path will be absolute, and it will be in unix-style (on
@@ -118,7 +118,7 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     BASIC_FIXUP_EXECUTABLE_MSYS($1)
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="[$]$1"
