@@ -137,7 +137,8 @@ $(FULL_COMPANY_NAME) in the US and other countries.
 # command (newline or shell ; character)
 ALL_SOURCE_DIRS := $(wildcard \
       $(JDK_TOPDIR)/src/*/share/classes \
-      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
+      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
       $(LANGTOOLS_TOPDIR)/src/*/share/classes \
       $(CORBA_TOPDIR)/src/*/share/classes \
       $(JAXP_TOPDIR)/src/*/share/classes \
