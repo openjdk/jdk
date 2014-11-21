@@ -57,7 +57,7 @@ public class WhitespaceTest {
             if (line.endsWith(" "))
                 error("line has trailing whitespace: " + line);
             int comment = line.indexOf(doubleSlash);
-            if (comment > 0 && line.charAt(comment - 1) != ' ')
+            if (comment > 0 && line.charAt(comment - 1) != ' ' && !line.contains("file:///"))
                 error("no space before comment: " + line);
             if (line.matches(" +}"))
                 error("bad indentation: " + line);

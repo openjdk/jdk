@@ -321,12 +321,17 @@ class Example implements Comparable<Example> {
                     first = opts.get(0);
                     rest = opts.subList(1, opts.size()).toArray(new String[opts.size() - 1]);
                 }
+                // For more details on the different compilers,
+                // see their respective class doc comments.
+                // See also README.examples.txt in this directory.
                 if (first == null || first.equals("jsr199"))
                     return new Jsr199Compiler(verbose, rest);
                 else if (first.equals("simple"))
                     return new SimpleCompiler(verbose);
                 else if (first.equals("backdoor"))
                     return new BackdoorCompiler(verbose);
+                else if (first.equals("exec"))
+                    return new ExecCompiler(verbose);
                 else
                     throw new IllegalArgumentException(first);
             }
@@ -503,6 +508,84 @@ class Example implements Comparable<Example> {
                 if (t.startsWith("compiler."))
                     keys.add(t);
             }
+        }
+    }
+
+    /**
+     * Run the test in a separate process.
+     */
+    static class ExecCompiler extends Compiler {
+        ExecCompiler(boolean verbose) {
+            super(verbose);
+        }
+
+        @Override
+        boolean run(PrintWriter out, Set<String> keys, boolean raw, List<String> opts, List<File> files) {
+            if (out != null && keys != null)
+                throw new IllegalArgumentException();
+
+            if (verbose)
+                System.err.println("run_exec: " + opts + " " + files);
+
+            List<String> args = new ArrayList<String>();
+
+            File javaHome = new File(System.getProperty("java.home"));
+            if (javaHome.getName().equals("jre"))
+                javaHome = javaHome.getParentFile();
+            File javaExe = new File(new File(javaHome, "bin"), "java");
+            args.add(javaExe.getPath());
+
+            File toolsJar = new File(new File(javaHome, "lib"), "tools.jar");
+            if (toolsJar.exists()) {
+                args.add("-classpath");
+                args.add(toolsJar.getPath());
+            }
+
+            addOpts(args, "test.vm.opts");
+            addOpts(args, "test.java.opts");
+            args.add(com.sun.tools.javac.Main.class.getName());
+
+            if (keys != null || raw)
+                args.add("-XDrawDiagnostics");
+
+            args.addAll(opts);
+            for (File f: files)
+                args.add(f.getPath());
+
+            try {
+                ProcessBuilder pb = new ProcessBuilder(args);
+                pb.redirectErrorStream(true);
+                Process p = pb.start();
+                BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = in.readLine()) != null) {
+                    if (keys != null)
+                        scanForKeys(line, keys);
+                }
+                int rc = p.waitFor();
+
+                return (rc == 0);
+            } catch (IOException | InterruptedException e) {
+                System.err.println("Exception execing javac" + e);
+                System.err.println("Command line: " + opts);
+                return false;
+            }
+        }
+
+        private static void scanForKeys(String text, Set<String> keys) {
+            StringTokenizer st = new StringTokenizer(text, " ,\r\n():");
+            while (st.hasMoreElements()) {
+                String t = st.nextToken();
+                if (t.startsWith("compiler."))
+                    keys.add(t);
+            }
+        }
+
+        private static void addOpts(List<String> args, String propName) {
+            String propValue = System.getProperty(propName);
+            if (propValue == null || propValue.isEmpty())
+                return;
+            args.addAll(Arrays.asList(propValue.split(" +", 0)));
         }
     }
 

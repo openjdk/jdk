@@ -29,23 +29,27 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.CharBuffer;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.tools.JavaFileObject;
-import javax.tools.JavaFileManager;
 
-import com.sun.tools.javac.comp.Annotate;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.jvm.ClassFile.NameAndType;
+import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -2481,7 +2485,7 @@ public class ClassReader {
         }
 
         @Override
-        protected String inferBinaryName(Iterable<? extends File> path) {
+        protected String inferBinaryName(Iterable<? extends Path> path) {
             return flatname.toString();
         }
 
