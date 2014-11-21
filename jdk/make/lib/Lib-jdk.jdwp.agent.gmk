@@ -28,7 +28,7 @@ include LibCommon.gmk
 ################################################################################
 
 LIBDT_SOCKET_SRC := $(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libdt_socket \
-    $(JDK_TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_API_DIR)/native/libdt_socket
+    $(JDK_TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libdt_socket
 LIBDT_SOCKET_CPPFLAGS := \
     $(addprefix -I, $(LIBDT_SOCKET_SRC)) \
     -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
@@ -66,7 +66,7 @@ JDWP_LIBRARIES += $(BUILD_LIBDT_SOCKET)
 ################################################################################
 
 LIBJDWP_SRC := $(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp \
-    $(JDK_TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_API_DIR)/native/libjdwp
+    $(JDK_TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libjdwp
 LIBJDWP_CPPFLAGS := \
     -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
     -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/include \
