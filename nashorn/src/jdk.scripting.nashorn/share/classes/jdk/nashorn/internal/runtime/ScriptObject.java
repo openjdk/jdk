@@ -304,29 +304,44 @@ public abstract class ScriptObject implements PropertyAccess {
         PropertyMap newMap = this.getMap();
 
         for (final Property property : properties) {
-            final String key = property.getKey();
-            final Property oldProp = newMap.findProperty(key);
-            if (oldProp == null) {
-                if (property instanceof UserAccessorProperty) {
-                    // Note: we copy accessor functions to this object which is semantically different from binding.
-                    final UserAccessorProperty prop = this.newUserAccessors(key, property.getFlags(), property.getGetterFunction(source), property.getSetterFunction(source));
-                    newMap = newMap.addPropertyNoHistory(prop);
-                } else {
-                    newMap = newMap.addPropertyBind((AccessorProperty)property, source);
-                }
-            } else {
-                // See ECMA section 10.5 Declaration Binding Instantiation
-                // step 5 processing each function declaration.
-                if (property.isFunctionDeclaration() && !oldProp.isConfigurable()) {
-                     if (oldProp instanceof UserAccessorProperty ||
-                         !(oldProp.isWritable() && oldProp.isEnumerable())) {
-                         throw typeError("cant.redefine.property", key, ScriptRuntime.safeToString(this));
-                     }
-                }
-            }
+            newMap = addBoundProperty(newMap, source, property);
         }
 
         this.setMap(newMap);
+    }
+
+    /**
+     * Add a bound property from {@code source}, using the interim property map {@code propMap}, and return the
+     * new interim property map.
+     *
+     * @param propMap the property map
+     * @param source the source object
+     * @param property the property to be added
+     * @return the new property map
+     */
+    protected PropertyMap addBoundProperty(final PropertyMap propMap, final ScriptObject source, final Property property) {
+        PropertyMap newMap = propMap;
+        final String key = property.getKey();
+        final Property oldProp = newMap.findProperty(key);
+        if (oldProp == null) {
+            if (property instanceof UserAccessorProperty) {
+                // Note: we copy accessor functions to this object which is semantically different from binding.
+                final UserAccessorProperty prop = this.newUserAccessors(key, property.getFlags(), property.getGetterFunction(source), property.getSetterFunction(source));
+                newMap = newMap.addPropertyNoHistory(prop);
+            } else {
+                newMap = newMap.addPropertyBind((AccessorProperty)property, source);
+            }
+        } else {
+            // See ECMA section 10.5 Declaration Binding Instantiation
+            // step 5 processing each function declaration.
+            if (property.isFunctionDeclaration() && !oldProp.isConfigurable()) {
+                if (oldProp instanceof UserAccessorProperty ||
+                        !(oldProp.isWritable() && oldProp.isEnumerable())) {
+                    throw typeError("cant.redefine.property", key, ScriptRuntime.safeToString(this));
+                }
+            }
+        }
+        return newMap;
     }
 
     /**
@@ -510,7 +525,11 @@ public abstract class ScriptObject implements PropertyAccess {
         }
     }
 
-    private void invalidateGlobalConstant(final String key) {
+    /**
+     * Invalidate any existing global constant method handles that may exist for {@code key}.
+     * @param key the property name
+     */
+    protected void invalidateGlobalConstant(final String key) {
         final GlobalConstants globalConstants = getGlobalConstants();
         if (globalConstants != null) {
             globalConstants.delete(key);
