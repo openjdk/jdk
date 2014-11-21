@@ -99,7 +99,6 @@ public final class DOMXPathTransform extends ApacheTransform {
         xpathElem.appendChild(ownerDoc.createTextNode(xp.getXPath()));
 
         // add namespace attributes, if necessary
-        @SuppressWarnings("unchecked")
         Set<Map.Entry<String, String>> entries =
             xp.getNamespaceMap().entrySet();
         for (Map.Entry<String, String> entry : entries) {
