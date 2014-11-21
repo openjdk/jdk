@@ -25,12 +25,8 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.IOException;
-import java.util.Set;
-import javax.tools.JavaFileObject;
-
 import java.io.ByteArrayInputStream;
-import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
@@ -38,6 +34,10 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
+import java.nio.file.Path;
+import java.util.Set;
+
+import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager.Archive;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
@@ -56,7 +56,7 @@ import com.sun.tools.javac.util.List;
 public class ZipFileIndexArchive implements Archive {
 
     private final ZipFileIndex zfIndex;
-    private JavacFileManager fileManager;
+    private final JavacFileManager fileManager;
 
     public ZipFileIndexArchive(JavacFileManager fileManager, ZipFileIndex zdir) throws IOException {
         super();
@@ -111,10 +111,10 @@ public class ZipFileIndexArchive implements Archive {
 
         /** The name of the zip file where this entry resides.
          */
-        File zipName;
+        Path zipName;
 
 
-        ZipFileIndexFileObject(JavacFileManager fileManager, ZipFileIndex zfIndex, ZipFileIndex.Entry entry, File zipFileName) {
+        ZipFileIndexFileObject(JavacFileManager fileManager, ZipFileIndex zfIndex, ZipFileIndex.Entry entry, Path zipFileName) {
             super(fileManager);
             this.name = entry.getFileName();
             this.zfIndex = zfIndex;
@@ -134,7 +134,7 @@ public class ZipFileIndexArchive implements Archive {
 
         @Override
         public String getShortName() {
-            return zipName.getName() + "(" + entry.getName() + ")";
+            return zipName.getFileName() + "(" + entry.getName() + ")";
         }
 
         @Override @DefinedBy(Api.COMPILER)
@@ -194,7 +194,7 @@ public class ZipFileIndexArchive implements Archive {
         }
 
         @Override
-        protected String inferBinaryName(Iterable<? extends File> path) {
+        protected String inferBinaryName(Iterable<? extends Path> path) {
             String entryName = entry.getName();
             if (zfIndex.symbolFilePrefix != null) {
                 String prefix = zfIndex.symbolFilePrefix.path;
