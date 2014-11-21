@@ -356,6 +356,10 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
                         throwParserException(ECMAErrors.getMessage("syntax.error.redeclare.variable", name), origin);
                     } else {
                         symbol.setHasBeenDeclared();
+                        // Set scope flag on top-level block scoped symbols
+                        if (function.isProgram() && function.getBody() == block) {
+                            symbol.setIsScope();
+                        }
                     }
                 } else if ((flags & IS_INTERNAL) != 0) {
                     // Always create a new definition.
@@ -540,7 +544,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         final int flags;
         if (varNode.isAnonymousFunctionDeclaration()) {
             flags = IS_INTERNAL;
-        } else if (lc.getCurrentFunction().isProgram()) {
+        } else if (!varNode.isBlockScoped() && lc.getCurrentFunction().isProgram()) {
             flags = IS_SCOPE;
         } else {
             flags = 0;

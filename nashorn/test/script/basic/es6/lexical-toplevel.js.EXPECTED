@@ -1,0 +1,30 @@
+VAR
+LET
+CONST
+function FUNC() {}
+GLOBAL
+VAR
+undefined
+undefined
+function FUNC() {}
+GLOBAL
+true
+false
+false
+true
+true
+VAR
+LETLET
+CONST
+function FUNC() {}
+GLOBAL
+VAR
+undefined
+undefined
+function FUNC() {}
+GLOBAL
+true
+false
+false
+true
+true

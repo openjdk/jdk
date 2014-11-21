@@ -703,26 +703,12 @@ loop:
                 Collections.<IdentNode>emptyList());
         lc.push(script);
         final ParserContextBlockNode body = newBlock();
-        // If ES6 block scope is enabled add a per-script block for top-level LET and CONST declarations.
-        final int startLine = start;
-        final ParserContextBlockNode outer = useBlockScope() ? newBlock() : null;
-        functionDeclarations = new ArrayList<>();
 
-        try {
-            sourceElements(allowPropertyFunction);
-            addFunctionDeclarations(script);
-        } finally {
-            if (outer != null) {
-                restoreBlock(outer);
-                appendStatement(new BlockStatement(
-                        startLine,
-                        new Block(
-                                functionToken,
-                                startLine, outer.getFlags(),
-                                outer.getStatements())));
-            }
-        }
+        functionDeclarations = new ArrayList<>();
+        sourceElements(allowPropertyFunction);
+        addFunctionDeclarations(script);
         functionDeclarations = null;
+
         restoreBlock(body);
         body.setFlag(Block.NEEDS_SCOPE);
         final Block programBody = new Block(functionToken, functionLine, body.getFlags(), body.getStatements());
