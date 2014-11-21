@@ -127,6 +127,10 @@
 # 8058536
 java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
 
+# 8061177
+java/lang/instrument/RedefineBigClass.sh                        generic-all
+java/lang/instrument/RetransformBigClass.sh                     generic-all
+
 ############################################################################
 
 # jdk_management
