@@ -36,7 +36,7 @@ import java.lang.reflect.Method;
 class AnnotationTypeMismatchExceptionProxy extends ExceptionProxy {
     private static final long serialVersionUID = 7844069490309503934L;
     private Method member;
-    private String foundType;
+    private final String foundType;
 
     /**
      * It turns out to be convenient to construct these proxies in
