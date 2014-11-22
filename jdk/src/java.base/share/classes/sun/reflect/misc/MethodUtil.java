@@ -40,6 +40,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import sun.misc.IOUtils;
@@ -216,17 +217,21 @@ public final class MethodUtil extends SecureClassLoader {
      * key in the method cache.
      */
     private static class Signature {
-        private String methodName;
-        private Class<?>[] argClasses;
-
-        private volatile int hashCode = 0;
+        private final String methodName;
+        private final Class<?>[] argClasses;
+        private final int hashCode;
 
         Signature(Method m) {
             this.methodName = m.getName();
             this.argClasses = m.getParameterTypes();
+            this.hashCode = methodName.hashCode() + Arrays.hashCode(argClasses);
         }
 
-        public boolean equals(Object o2) {
+        @Override public int hashCode() {
+            return hashCode;
+        }
+
+        @Override public boolean equals(Object o2) {
             if (this == o2) {
                 return true;
             }
@@ -243,25 +248,6 @@ public final class MethodUtil extends SecureClassLoader {
                 }
             }
             return true;
-        }
-
-        /**
-         * Hash code computed using algorithm suggested in
-         * Effective Java, Item 8.
-         */
-        public int hashCode() {
-            if (hashCode == 0) {
-                int result = 17;
-                result = 37 * result + methodName.hashCode();
-                if (argClasses != null) {
-                    for (int i = 0; i < argClasses.length; i++) {
-                        result = 37 * result + ((argClasses[i] == null) ? 0 :
-                            argClasses[i].hashCode());
-                    }
-                }
-                hashCode = result;
-            }
-            return hashCode;
         }
     }
 
