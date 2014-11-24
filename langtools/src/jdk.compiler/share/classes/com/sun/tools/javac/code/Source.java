@@ -152,6 +152,9 @@ public enum Source {
     public boolean allowStringsInSwitch() {
         return compareTo(JDK1_7) >= 0;
     }
+    public boolean allowDeprecationOnImport() {
+        return compareTo(JDK1_9) < 0;
+    }
     public boolean allowSimplifiedVarargs() {
         return compareTo(JDK1_7) >= 0;
     }

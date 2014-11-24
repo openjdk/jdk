@@ -27,5 +27,5 @@
  * @summary Verify that deprecated warning is printed correctly for import
  *          statement when processing a file on demand while attributing another file.
  * @clean pack.ImplicitUse pack.ImplicitMain pack.Dep
- * @compile/ref=ImplicitTest.out -XDrawDiagnostics -Xlint:deprecation pack/ImplicitMain.java
+ * @compile/ref=ImplicitTest.out -source 8 -XDrawDiagnostics -Xlint:deprecation,-options pack/ImplicitMain.java
  */
