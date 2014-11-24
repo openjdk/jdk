@@ -43,7 +43,7 @@ endif
 $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
     LIBRARY := $(LIBJAAS_NAME), \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/jdk.security.auth/$(OPENJDK_TARGET_OS_API_DIR)/native/libjaas, \
+    SRC := $(JDK_TOPDIR)/src/jdk.security.auth/$(OPENJDK_TARGET_OS_TYPE)/native/libjaas, \
     LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.security.auth, \
