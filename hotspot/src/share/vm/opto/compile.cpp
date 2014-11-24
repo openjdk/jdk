@@ -67,7 +67,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 
 
@@ -3540,13 +3539,6 @@ void Compile::record_failure(const char* reason) {
   if (_failure_reason == NULL) {
     // Record the first failure reason.
     _failure_reason = reason;
-  }
-
-  EventCompilerFailure event;
-  if (event.should_commit()) {
-    event.set_compileID(Compile::compile_id());
-    event.set_failure(reason);
-    event.commit();
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {

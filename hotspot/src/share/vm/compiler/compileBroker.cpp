@@ -1985,6 +1985,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     if (ci_env.failing()) {
       task->set_failure_reason(ci_env.failure_reason());
+      ci_env.report_failure(ci_env.failure_reason());
       const char* retry_message = ci_env.retry_message();
       if (_compilation_log != NULL) {
         _compilation_log->log_failure(thread, task, ci_env.failure_reason(), retry_message);
