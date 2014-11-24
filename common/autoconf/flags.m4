@@ -348,10 +348,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       # Add runtime stack smashing and undefined behavior checks
       CFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
       CXXFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
-      if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
-        CFLAGS_DEBUG_OPTIONS="$CFLAGS_DEBUG_OPTIONS  $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIsOR_FLAG"
-      fi
       ;;
     esac
   fi
@@ -744,25 +740,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
-  fi
-
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    # If undefined behaviour detection is enabled then we need to tell linker.
-    case $DEBUG_LEVEL in
-      release | fastdebug )
-        ;;
-      slowdebug )
-        AC_MSG_WARN([$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR])
-        if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
-          # enable undefined behaviour checking
-          LDFLAGS_JDK="$LDFLAGS_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/[ ]*\([^ ]\+\)/ -Xlinker \1/g"`"
-          LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/[ ]*\([^ ]\+\)/ -Xlinker \1/g"`"
-        fi
-        ;;
-      * )
-        AC_MSG_ERROR([Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL])
-        ;;
-    esac
   fi
 
   # Customize LDFLAGS for executables
