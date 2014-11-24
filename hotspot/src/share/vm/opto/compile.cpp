@@ -661,7 +661,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
-                  _interpreter_frame_size(0) {
+                  _interpreter_frame_size(0),
+                  _max_node_limit(MaxNodeLimit) {
   C = this;
 
   CompileWrapper cw(this);
@@ -974,7 +975,8 @@ Compile::Compile( ciEnv* ci_env,
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
     _allowed_reasons(0),
-    _interpreter_frame_size(0) {
+    _interpreter_frame_size(0),
+    _max_node_limit(MaxNodeLimit) {
   C = this;
 
   TraceTime t1(NULL, &_t_totalCompilation, CITime, false);
@@ -1087,6 +1089,7 @@ void Compile::Init(int aliaslevel) {
   set_do_method_data_update(false);
   set_age_code(has_method() && method()->profile_aging());
   set_rtm_state(NoRTM); // No RTM lock eliding by default
+  method_has_option_value("MaxNodeLimit", _max_node_limit);
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && has_method() && (method()->method_data_or_null() != NULL)) {
     int rtm_state = method()->method_data()->rtm_state();

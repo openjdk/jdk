@@ -272,10 +272,9 @@ void IdealLoopTree::reassociate_invariants(PhaseIdealLoop *phase) {
 bool IdealLoopTree::policy_peeling( PhaseIdealLoop *phase ) const {
   Node *test = ((IdealLoopTree*)this)->tail();
   int  body_size = ((IdealLoopTree*)this)->_body.size();
-  int  live_node_count = phase->C->live_nodes();
   // Peeling does loop cloning which can result in O(N^2) node construction
   if( body_size > 255 /* Prevent overflow for large body_size */
-      || (body_size * body_size + live_node_count > MaxNodeLimit) ) {
+      || (body_size * body_size + phase->C->live_nodes()) > phase->C->max_node_limit() ) {
     return false;           // too large to safely clone
   }
   while( test != _head ) {      // Scan till run off top of loop
@@ -604,7 +603,7 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
     return false;
   if (new_body_size > unroll_limit ||
       // Unrolling can result in a large amount of node construction
-      new_body_size >= MaxNodeLimit - (uint) phase->C->live_nodes()) {
+      new_body_size >= phase->C->max_node_limit() - phase->C->live_nodes()) {
     return false;
   }
 
@@ -2281,8 +2280,8 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
 
   // Skip next optimizations if running low on nodes. Note that
   // policy_unswitching and policy_maximally_unroll have this check.
-  uint nodes_left = MaxNodeLimit - (uint) phase->C->live_nodes();
-  if ((2 * _body.size()) > nodes_left) {
+  int nodes_left = phase->C->max_node_limit() - phase->C->live_nodes();
+  if ((int)(2 * _body.size()) > nodes_left) {
     return true;
   }
 
