@@ -33,6 +33,7 @@ import java.util.Set;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
@@ -123,11 +124,17 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
+        allowDeprecationOnImport = source.allowDeprecationOnImport();
     }
 
     /** Switch: support type annotations.
      */
     boolean allowTypeAnnos;
+
+    /**
+     * Switch: should deprecation warnings be issued on import
+     */
+    boolean allowDeprecationOnImport;
 
     /** A queue for classes whose members still need to be entered into the
      *  symbol table.
@@ -771,6 +778,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
     Type attribImportType(JCTree tree, Env<AttrContext> env) {
         Assert.check(completionEnabled);
+        Lint prevLint = chk.setLint(allowDeprecationOnImport ?
+                lint : lint.suppress(LintCategory.DEPRECATION));
         try {
             // To prevent deep recursion, suppress completion of some
             // types.
@@ -778,6 +787,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             return attr.attribType(tree, env);
         } finally {
             completionEnabled = true;
+            chk.setLint(prevLint);
         }
     }
 
