@@ -4331,7 +4331,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1417011146
+DATE_WHEN_GENERATED=1417016445
 
 ###############################################################################
 #
@@ -41017,74 +41017,6 @@ $as_echo "$supports" >&6; }
   fi
 
 
-    # "-fsanitize=undefined" supported for GCC 4.9 and later
-    CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG="-fsanitize=undefined -fsanitize-recover"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG\"" >&5
-$as_echo_n "checking if compiler supports \"$CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG\"... " >&6; }
-  supports=yes
-
-  saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int i;
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-  supports=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  CFLAGS="$saved_cflags"
-
-  saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int i;
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-
-else
-  supports=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  CXXFLAGS="$saved_cxxflags"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
-$as_echo "$supports" >&6; }
-  if test "x$supports" = "xyes" ; then
-    HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=true
-  else
-    HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=false
-  fi
-
-
     # "-z relro" supported in GNU binutils 2.17 and later
     LINKER_RELRO_FLAG="-Xlinker -z -Xlinker relro"
 
@@ -42428,10 +42360,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # Add runtime stack smashing and undefined behavior checks
       CFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
       CXXFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
-      if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
-        CFLAGS_DEBUG_OPTIONS="$CFLAGS_DEBUG_OPTIONS  $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIsOR_FLAG"
-      fi
       ;;
     esac
   fi
@@ -42837,26 +42765,6 @@ fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
-  fi
-
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    # If undefined behaviour detection is enabled then we need to tell linker.
-    case $DEBUG_LEVEL in
-      release | fastdebug )
-        ;;
-      slowdebug )
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" >&5
-$as_echo "$as_me: WARNING: $HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" >&2;}
-        if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
-          # enable undefined behaviour checking
-          LDFLAGS_JDK="$LDFLAGS_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/ *\(^ \+\)/ -Xlinker \1/g"`"
-          LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/ *\(^ \+\)/ -Xlinker \1/g"`"
-        fi
-        ;;
-      * )
-        as_fn_error $? "Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL" "$LINENO" 5
-        ;;
-    esac
   fi
 
   # Customize LDFLAGS for executables
