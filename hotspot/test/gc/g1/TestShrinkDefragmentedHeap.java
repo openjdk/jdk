@@ -59,6 +59,7 @@ public class TestShrinkDefragmentedHeap {
                 "-XX:MaxHeapFreeRatio=11",
                 "-XX:+UseG1GC",
                 "-XX:G1HeapRegionSize=" + REGION_SIZE,
+                "-XX:-ExplicitGCInvokesConcurrent",
                 "-verbose:gc",
                 GCTest.class.getName()
         );
