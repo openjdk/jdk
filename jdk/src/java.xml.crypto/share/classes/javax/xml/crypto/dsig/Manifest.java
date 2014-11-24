@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import java.util.List;
  *
  * <pre>
  *   XMLSignatureFactory factory = XMLSignatureFactory.getInstance("DOM");
- *   List references = Collections.singletonList(factory.newReference
- *       ("#reference-1", DigestMethod.SHA1));
+ *   Reference ref = factory.newReference("#reference-1", DigestMethod.SHA1);
+ *   List<Reference> references = Collections.singletonList(ref);
  *   Manifest manifest = factory.newManifest(references, "manifest-1");
  * </pre>
  *
@@ -86,6 +86,5 @@ public interface Manifest extends XMLStructure {
      *
      * @return an unmodifiable list of one or more <code>Reference</code>s
      */
-    @SuppressWarnings("rawtypes")
-    List getReferences();
+    List<Reference> getReferences();
 }
