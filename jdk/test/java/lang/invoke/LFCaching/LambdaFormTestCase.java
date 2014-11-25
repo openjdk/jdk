@@ -27,6 +27,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.function.Function;
+import jdk.testlibrary.Utils;
 
 /**
  * Lambda forms caching test case class. Contains all necessary test routines to
@@ -41,6 +42,7 @@ public abstract class LambdaFormTestCase {
     private final static String INTERNAL_FORM_METHOD_NAME = "internalForm";
     private static final double ITERATIONS_TO_CODE_CACHE_SIZE_RATIO
             = 45 / (128.0 * 1024 * 1024);
+    private static final long TIMEOUT = Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
 
     /**
      * Reflection link to {@code j.l.i.MethodHandle.internalForm} method. It is
@@ -120,6 +122,7 @@ public abstract class LambdaFormTestCase {
         System.out.printf("Number of iterations is set to %d (%d cases)%n",
                 iterations, iterations * testCaseNum);
         System.out.flush();
+        long startTime = System.currentTimeMillis();
         for (long i = 0; i < iterations; i++) {
             System.err.println(String.format("Iteration %d:", i));
             for (TestMethods testMethod : testMethods) {
@@ -136,6 +139,14 @@ public abstract class LambdaFormTestCase {
                     failCounter++;
                 }
                 testCounter++;
+            }
+            long passedTime = System.currentTimeMillis() - startTime;
+            long avgIterTime = passedTime / (i + 1);
+            long remainTime = TIMEOUT - passedTime;
+            if (avgIterTime > 2 * remainTime) {
+                System.err.printf("Stopping iterations because of lack of time.%n"
+                        + "Increase timeout factor for more iterations.%n");
+                break;
             }
         }
         if (!passed) {
