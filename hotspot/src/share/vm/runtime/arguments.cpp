@@ -2300,7 +2300,7 @@ bool Arguments::check_vm_args_consistency() {
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);
   }
 
-  status = status && ArgumentsExt::check_gc_consistency_user();
+  status = status && check_gc_consistency_user();
   status = status && check_stack_pages();
 
   status = status && verify_percentage(CMSIncrementalSafetyFactor,
@@ -3556,7 +3556,7 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     }
   }
 
-  if (!ArgumentsExt::check_vm_args_consistency()) {
+  if (!check_vm_args_consistency()) {
     return JNI_ERR;
   }
 
@@ -3954,7 +3954,7 @@ jint Arguments::apply_ergo() {
   // Set heap size based on available physical memory
   set_heap_size();
 
-  set_gc_specific_flags();
+  ArgumentsExt::set_gc_specific_flags();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
