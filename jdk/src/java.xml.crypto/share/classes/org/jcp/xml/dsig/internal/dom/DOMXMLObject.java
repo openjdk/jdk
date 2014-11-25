@@ -70,18 +70,13 @@ public final class DOMXMLObject extends DOMStructure implements XMLObject {
     public DOMXMLObject(List<? extends XMLStructure> content, String id,
                         String mimeType, String encoding)
     {
-        if (content == null || content.isEmpty()) {
-            this.content = Collections.emptyList();
-        } else {
-            this.content = Collections.unmodifiableList(
-                new ArrayList<XMLStructure>(content));
-            for (int i = 0, size = this.content.size(); i < size; i++) {
-                if (!(this.content.get(i) instanceof XMLStructure)) {
-                    throw new ClassCastException
-                        ("content["+i+"] is not a valid type");
-                }
-            }
+        List<XMLStructure> tempList =
+            Collections.checkedList(new ArrayList<XMLStructure>(),
+                                    XMLStructure.class);
+        if (content != null) {
+            tempList.addAll(content);
         }
+        this.content = Collections.unmodifiableList(tempList);
         this.id = id;
         this.mimeType = mimeType;
         this.encoding = encoding;
@@ -204,7 +199,6 @@ public final class DOMXMLObject extends DOMStructure implements XMLObject {
             (mimeType == null ? oxo.getMimeType() == null
                               : mimeType.equals(oxo.getMimeType()));
 
-        @SuppressWarnings("unchecked")
         List<XMLStructure> oxoContent = oxo.getContent();
         return (idsEqual && encodingsEqual && mimeTypesEqual &&
                 equalsContent(oxoContent));

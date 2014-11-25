@@ -73,18 +73,13 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
         if (keyPacket == null) {
             throw new NullPointerException("keyPacket cannot be null");
         }
-        if (other == null || other.isEmpty()) {
-            this.externalElements = Collections.emptyList();
-        } else {
-            this.externalElements =
-                Collections.unmodifiableList(new ArrayList<XMLStructure>(other));
-            for (int i = 0, size = this.externalElements.size(); i < size; i++) {
-                if (!(this.externalElements.get(i) instanceof XMLStructure)) {
-                    throw new ClassCastException
-                        ("other["+i+"] is not a valid PGPData type");
-                }
-            }
+        List<XMLStructure> tempList =
+            Collections.checkedList(new ArrayList<XMLStructure>(),
+                                    XMLStructure.class);
+        if (other != null) {
+            tempList.addAll(other);
         }
+        this.externalElements = Collections.unmodifiableList(tempList);
         this.keyPacket = keyPacket.clone();
         checkKeyPacket(keyPacket);
         this.keyId = null;
@@ -120,18 +115,13 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
         if (keyId.length != 8) {
             throw new IllegalArgumentException("keyId must be 8 bytes long");
         }
-        if (other == null || other.isEmpty()) {
-            this.externalElements = Collections.emptyList();
-        } else {
-            this.externalElements =
-                Collections.unmodifiableList(new ArrayList<XMLStructure>(other));
-            for (int i = 0, size = this.externalElements.size(); i < size; i++) {
-                if (!(this.externalElements.get(i) instanceof XMLStructure)) {
-                    throw new ClassCastException
-                        ("other["+i+"] is not a valid PGPData type");
-                }
-            }
+        List<XMLStructure> tempList =
+            Collections.checkedList(new ArrayList<XMLStructure>(),
+                                    XMLStructure.class);
+        if (other != null) {
+            tempList.addAll(other);
         }
+        this.externalElements = Collections.unmodifiableList(tempList);
         this.keyId = keyId.clone();
         this.keyPacket = keyPacket == null ? null
                                            : keyPacket.clone();
