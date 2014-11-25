@@ -180,9 +180,32 @@ class ClearBitmapHRClosure : public HeapRegionClosure {
   }
 };
 
+class ParClearNextMarkBitmapTask : public AbstractGangTask {
+  ClearBitmapHRClosure* _cl;
+  HeapRegionClaimer     _hrclaimer;
+  bool                  _suspendible; // If the task is suspendible, workers must join the STS.
+
+public:
+  ParClearNextMarkBitmapTask(ClearBitmapHRClosure *cl, uint n_workers, bool suspendible) :
+      _cl(cl), _suspendible(suspendible), AbstractGangTask("Parallel Clear Bitmap Task"), _hrclaimer(n_workers) {}
+
+  void work(uint worker_id) {
+    if (_suspendible) {
+      SuspendibleThreadSet::join();
+    }
+    G1CollectedHeap::heap()->heap_region_par_iterate(_cl, worker_id, &_hrclaimer, true);
+    if (_suspendible) {
+      SuspendibleThreadSet::leave();
+    }
+  }
+};
+
 void CMBitMap::clearAll() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   ClearBitmapHRClosure cl(NULL, this, false /* may_yield */);
-  G1CollectedHeap::heap()->heap_region_iterate(&cl);
+  uint n_workers = g1h->workers()->active_workers();
+  ParClearNextMarkBitmapTask task(&cl, n_workers, false);
+  g1h->workers()->run_task(&task);
   guarantee(cl.complete(), "Must have completed iteration.");
   return;
 }
@@ -861,7 +884,8 @@ void ConcurrentMark::clearNextBitmap() {
   guarantee(!g1h->mark_in_progress(), "invariant");
 
   ClearBitmapHRClosure cl(this, _nextMarkBitMap, true /* may_yield */);
-  g1h->heap_region_iterate(&cl);
+  ParClearNextMarkBitmapTask task(&cl, parallel_marking_threads(), true);
+  _parallel_workers->run_task(&task);
 
   // Clear the liveness counting data. If the marking has been aborted, the abort()
   // call already did that.

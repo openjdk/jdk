@@ -280,7 +280,6 @@ void ConcurrentMarkThread::run() {
       // We may have aborted just before the remark. Do not bother clearing the
       // bitmap then, as it has been done during mark abort.
       if (!cm()->has_aborted()) {
-        SuspendibleThreadSetJoiner sts;
         _cm->clearNextBitmap();
       } else {
         assert(!G1VerifyBitmaps || _cm->nextMarkBitmapIsClear(), "Next mark bitmap must be clear");

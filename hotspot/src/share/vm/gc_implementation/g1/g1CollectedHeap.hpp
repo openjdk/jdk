@@ -1380,10 +1380,13 @@ public:
   // in the range [0..max(ParallelGCThreads-1, 1)]. Applies "blk->doHeapRegion"
   // to each of the regions, by attempting to claim the region using the
   // HeapRegionClaimer and, if successful, applying the closure to the claimed
-  // region.
+  // region. The concurrent argument should be set to true if iteration is
+  // performed concurrently, during which no assumptions are made for consistent
+  // attributes of the heap regions (as they might be modified while iterating).
   void heap_region_par_iterate(HeapRegionClosure* cl,
                                uint worker_id,
-                               HeapRegionClaimer* hrclaimer) const;
+                               HeapRegionClaimer* hrclaimer,
+                               bool concurrent = false) const;
 
   // Clear the cached cset start regions and (more importantly)
   // the time stamps. Called when we reset the GC time stamp.
