@@ -3781,8 +3781,8 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
-#define MAX_EXIT_HANDLES    16
-#define EXIT_TIMEOUT      1000 /* 1 sec */
+#define MAX_EXIT_HANDLES PRODUCT_ONLY(32)   NOT_PRODUCT(128)
+#define EXIT_TIMEOUT     PRODUCT_ONLY(1000) NOT_PRODUCT(4000) /* 1 sec in product, 4 sec in debug */
 
 static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   InitializeCriticalSection((CRITICAL_SECTION*)pcrit_sect);
@@ -3833,6 +3833,9 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
         // If there's no free slot in the array of the kept handles, we'll have to
         // wait until at least one thread completes exiting.
         if ((handle_count = j) == MAX_EXIT_HANDLES) {
+          // Raise the priority of the oldest exiting thread to increase its chances
+          // to complete sooner.
+          SetThreadPriority(handles[0], THREAD_PRIORITY_ABOVE_NORMAL);
           res = WaitForMultipleObjects(MAX_EXIT_HANDLES, handles, FALSE, EXIT_TIMEOUT);
           if (res >= WAIT_OBJECT_0 && res < (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
             i = (res - WAIT_OBJECT_0);
@@ -3841,7 +3844,8 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
               handles[i] = handles[i + 1];
             }
           } else {
-            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+            warning("WaitForMultipleObjects %s in %s: %d\n",
+                    (res == WAIT_FAILED ? "failed" : "timed out"), __FILE__, __LINE__);
             // Don't keep handles, if we failed waiting for them.
             for (i = 0; i < MAX_EXIT_HANDLES; ++i) {
               CloseHandle(handles[i]);
@@ -3867,9 +3871,20 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
         if (handle_count > 0) {
           // Before ending the process, make sure all the threads that had called
           // _endthreadex() completed.
+
+          // Set the priority level of the current thread to the same value as
+          // the priority level of exiting threads.
+          // This is to ensure it will be given a fair chance to execute if
+          // the timeout expires.
+          hthr = GetCurrentThread();
+          SetThreadPriority(hthr, THREAD_PRIORITY_ABOVE_NORMAL);
+          for (i = 0; i < handle_count; ++i) {
+            SetThreadPriority(handles[i], THREAD_PRIORITY_ABOVE_NORMAL);
+          }
           res = WaitForMultipleObjects(handle_count, handles, TRUE, EXIT_TIMEOUT);
-          if (res == WAIT_FAILED) {
-            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+          if (res < WAIT_OBJECT_0 || res >= (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
+            warning("WaitForMultipleObjects %s in %s: %d\n",
+                    (res == WAIT_FAILED ? "failed" : "timed out"), __FILE__, __LINE__);
           }
           for (i = 0; i < handle_count; ++i) {
             CloseHandle(handles[i]);
