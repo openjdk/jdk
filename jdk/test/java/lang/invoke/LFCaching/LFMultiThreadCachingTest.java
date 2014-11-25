@@ -31,7 +31,7 @@
  * @build LambdaFormTestCase
  * @build LFCachingTestCase
  * @build LFMultiThreadCachingTest
- * @run main/othervm/timeout=300 -Djava.lang.invoke.MethodHandle.USE_LF_EDITOR=true LFMultiThreadCachingTest
+ * @run main/othervm LFMultiThreadCachingTest
  */
 
 import java.lang.invoke.MethodHandle;
