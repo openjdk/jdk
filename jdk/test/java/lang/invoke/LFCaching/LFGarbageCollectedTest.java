@@ -31,7 +31,7 @@
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFGarbageCollectedTest
- * @run main/othervm/timeout=600 -DtestLimit=150 LFGarbageCollectedTest
+ * @run main/othervm LFGarbageCollectedTest
  */
 
 import java.lang.invoke.MethodHandle;
