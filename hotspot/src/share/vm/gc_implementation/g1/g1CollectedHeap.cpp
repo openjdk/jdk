@@ -2552,8 +2552,9 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
 void
 G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
                                          uint worker_id,
-                                         HeapRegionClaimer *hrclaimer) const {
-  _hrm.par_iterate(cl, worker_id, hrclaimer);
+                                         HeapRegionClaimer *hrclaimer,
+                                         bool concurrent) const {
+  _hrm.par_iterate(cl, worker_id, hrclaimer, concurrent);
 }
 
 // Clear the cached CSet starting regions and (more importantly)

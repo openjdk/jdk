@@ -260,7 +260,7 @@ uint HeapRegionManager::find_unavailable_from_idx(uint start_idx, uint* res_idx)
   return num_regions;
 }
 
-void HeapRegionManager::par_iterate(HeapRegionClosure* blk, uint worker_id, HeapRegionClaimer* hrclaimer) const {
+void HeapRegionManager::par_iterate(HeapRegionClosure* blk, uint worker_id, HeapRegionClaimer* hrclaimer, bool concurrent) const {
   const uint start_index = hrclaimer->start_region_for_worker(worker_id);
 
   // Every worker will actually look at all regions, skipping over regions that
@@ -279,7 +279,11 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, uint worker_id, Heap
     // We'll ignore "continues humongous" regions (we'll process them
     // when we come across their corresponding "start humongous"
     // region) and regions already claimed.
-    if (hrclaimer->is_region_claimed(index) || r->is_continues_humongous()) {
+    // However, if the iteration is specified as concurrent, the values for
+    // is_starts_humongous and is_continues_humongous can not be trusted,
+    // and we should just blindly iterate over regions regardless of their
+    // humongous status.
+    if (hrclaimer->is_region_claimed(index) || (!concurrent && r->is_continues_humongous())) {
       continue;
     }
     // OK, try to claim it
@@ -287,7 +291,9 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, uint worker_id, Heap
       continue;
     }
     // Success!
-    if (r->is_starts_humongous()) {
+    // As mentioned above, special treatment of humongous regions can only be
+    // done if we are iterating non-concurrently.
+    if (!concurrent && r->is_starts_humongous()) {
       // If the region is "starts humongous" we'll iterate over its
       // "continues humongous" first; in fact we'll do them
       // first. The order is important. In one case, calling the
