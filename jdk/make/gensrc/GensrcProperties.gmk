@@ -58,13 +58,15 @@ define SetupCompileProperties
   $1_CLASS := $3
 
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
-  # to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
+  # to .../support/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
   # Strip away prefix and suffix, leaving for example only: 
   # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
   $1_JAVAS := $$(patsubst $(JDK_TOPDIR)/src/%, \
       $(JDK_OUTPUTDIR)/gensrc/%, \
       $$(patsubst %.properties, %.java, \
-      $$(subst /share/classes,, $$($1_SRCS))))
+      $$(subst /$(OPENJDK_TARGET_OS)/classes,, \
+      $$(subst /$(OPENJDK_TARGET_OS_TYPE)/classes,, \
+      $$(subst /share/classes,, $$($1_SRCS))))))
 
   # Generate the package dirs for the to be generated java files. Sort to remove
   # duplicates.

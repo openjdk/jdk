@@ -461,11 +461,21 @@ final class ProcessImpl extends Process {
         if (getExitCodeProcess(handle) != STILL_ACTIVE) return true;
         if (timeout <= 0) return false;
 
-        long msTimeout = unit.toMillis(timeout);
+        long remainingNanos  = unit.toNanos(timeout);
+        long deadline = System.nanoTime() + remainingNanos ;
 
-        waitForTimeoutInterruptibly(handle, msTimeout);
-        if (Thread.interrupted())
-            throw new InterruptedException();
+        do {
+            // Round up to next millisecond
+            long msTimeout = TimeUnit.NANOSECONDS.toMillis(remainingNanos + 999_999L);
+            waitForTimeoutInterruptibly(handle, msTimeout);
+            if (Thread.interrupted())
+                throw new InterruptedException();
+            if (getExitCodeProcess(handle) != STILL_ACTIVE) {
+                return true;
+            }
+            remainingNanos = deadline - System.nanoTime();
+        } while (remainingNanos > 0);
+
         return (getExitCodeProcess(handle) != STILL_ACTIVE);
     }
 

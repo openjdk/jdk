@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,5 @@ public interface X509Data extends XMLStructure {
      * @return an unmodifiable list of the content in this <code>X509Data</code>
      *    (never <code>null</code> or empty)
      */
-    @SuppressWarnings("rawtypes")
-    List getContent();
+    List<?> getContent();
 }
