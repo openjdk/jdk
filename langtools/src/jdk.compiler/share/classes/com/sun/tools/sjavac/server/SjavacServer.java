@@ -24,7 +24,6 @@
  */
 package com.sun.tools.sjavac.server;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -34,16 +33,14 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.sun.tools.sjavac.ProblemException;
 import com.sun.tools.sjavac.Util;
-import com.sun.tools.sjavac.comp.SjavacImpl;
 import com.sun.tools.sjavac.comp.PooledSjavac;
+import com.sun.tools.sjavac.comp.SjavacImpl;
 
 /**
  * The JavacServer class contains methods both to setup a server that responds to requests and methods to connect to this server.
@@ -95,13 +92,26 @@ public class SjavacServer implements Terminable {
     private static Map<String, Long> maxServerMemory;
 
     public SjavacServer(String settings, PrintStream err) throws FileNotFoundException {
-        // Extract options. TODO: Change to proper constructor args
-        portfilename = Util.extractStringOption("portfile", settings);
-        logfile = Util.extractStringOption("logfile", settings);
-        stdouterrfile = Util.extractStringOption("stdouterrfile", settings);
-        keepalive = Util.extractIntOption("keepalive", settings, 120);
-        poolsize = Util.extractIntOption("poolsize", settings,
-                                         Runtime.getRuntime().availableProcessors());
+        this(Util.extractStringOption("portfile", settings),
+             Util.extractStringOption("logfile", settings),
+             Util.extractStringOption("stdouterrfile", settings),
+             Util.extractIntOption("poolsize", settings, Runtime.getRuntime().availableProcessors()),
+             Util.extractIntOption("keepalive", settings, 120),
+             err);
+    }
+
+    public SjavacServer(String portfilename,
+                        String logfile,
+                        String stdouterrfile,
+                        int poolsize,
+                        int keepalive,
+                        PrintStream err)
+                                throws FileNotFoundException {
+        this.portfilename = portfilename;
+        this.logfile = logfile;
+        this.stdouterrfile = stdouterrfile;
+        this.poolsize = poolsize;
+        this.keepalive = keepalive;
         this.err = err;
 
         myCookie = new Random().nextLong();
@@ -180,7 +190,7 @@ public class SjavacServer implements Terminable {
      * Start a server using a settings string. Typically: "--startserver:portfile=/tmp/myserver,poolsize=3" and the string "portfile=/tmp/myserver,poolsize=3"
      * is sent as the settings parameter. Returns 0 on success, -1 on failure.
      */
-    public int startServer() throws IOException {
+    public int startServer() throws IOException, InterruptedException {
         long serverStart = System.currentTimeMillis();
 
         // The port file is locked and the server port and cookie is written into it.
@@ -248,64 +258,6 @@ public class SjavacServer implements Terminable {
         sjavac.shutdown();
 
         return 0;
-    }
-
-    /**
-     * Fork a background process. Returns the command line used that can be printed if something failed.
-     */
-    public static String fork(String sjavac, String portfile, String logfile, int poolsize, int keepalive,
-            final PrintStream err, String stdouterrfile, boolean background)
-            throws IOException, ProblemException {
-        if (stdouterrfile != null && stdouterrfile.trim().equals("")) {
-            stdouterrfile = null;
-        }
-        final String startserver = "--startserver:portfile=" + portfile + ",logfile=" + logfile + ",stdouterrfile=" + stdouterrfile + ",poolsize=" + poolsize + ",keepalive="+ keepalive;
-
-        if (background) {
-            sjavac += "%20" + startserver;
-            sjavac = sjavac.replaceAll("%20", " ");
-            sjavac = sjavac.replaceAll("%2C", ",");
-            // If the java/sh/cmd launcher fails the failure will be captured by stdouterr because of the redirection here.
-            String[] cmd = {"/bin/sh", "-c", sjavac + " >> " + stdouterrfile + " 2>&1"};
-            if (!(new File("/bin/sh")).canExecute()) {
-                ArrayList<String> wincmd = new ArrayList<>();
-                wincmd.add("cmd");
-                wincmd.add("/c");
-                wincmd.add("start");
-                wincmd.add("cmd");
-                wincmd.add("/c");
-                wincmd.add(sjavac + " >> " + stdouterrfile + " 2>&1");
-                cmd = wincmd.toArray(new String[wincmd.size()]);
-            }
-            Process pp = null;
-            try {
-                pp = Runtime.getRuntime().exec(cmd);
-            } catch (Exception e) {
-                e.printStackTrace(err);
-                e.printStackTrace(new PrintWriter(stdouterrfile));
-            }
-            StringBuilder rs = new StringBuilder();
-            for (String s : cmd) {
-                rs.append(s + " ");
-            }
-            return rs.toString();
-        }
-
-        // Do not spawn a background server, instead run it within the same JVM.
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    SjavacServer server = new SjavacServer(startserver, err);
-                    server.startServer();
-                } catch (Throwable t) {
-                    t.printStackTrace(err);
-                }
-            }
-        };
-        t.setDaemon(true);
-        t.start();
-        return "";
     }
 
     @Override

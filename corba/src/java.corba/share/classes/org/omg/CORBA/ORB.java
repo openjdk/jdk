@@ -166,16 +166,15 @@ import sun.reflect.misc.ReflectUtil;
  *
  *
  * @implNote
- * As described above it is possible to specify, at runtime, an alternative ORBSingleton class and
- * an alternative ORB implementation class, via the system properties {@code org.omg.CORBA.ORBSingletonClass}
- * and {@code org.omg.CORBA.ORBClass} respectively.
- * The class loading strategy is organized, such that, in the case of the ORBSingleton
- * the system class loader is used to load the alternative singleton ORB.
- * Thus, it is necessary that an application's CLASSPATH
- * includes the classes for this alternative ORBSingleton, when specified.
+ * When a singleton ORB is configured via the system property,
+ * or orb.properties, it will be
+ * located, and loaded via the system class loader.
+ * Thus, where appropriate, it is necessary that
+ * the classes for this alternative ORBSingleton are available on the application's class path.
+ * It should be noted that the singleton ORB is system wide.
  *
- * In the case of specifying an alternative ORB implementation class, the loading
- * strategy will use the thread context class loader, as appropriate.
+ * When a per-application ORB is created via the 2-arg init methods,
+ * then it will be located using the thread context class loader.
  *
  * @since   JDK1.2
  */
@@ -295,6 +294,11 @@ abstract public class ORB {
      * creating <code>TypeCode</code> objects are invoked.
      *
      * @return the singleton ORB
+     *
+     * @implNote
+     * When configured via the system property, or orb.properties,
+     * the system-wide singleton ORB is located via the
+     * system class loader.
      */
     public static synchronized ORB init() {
         if (singleton == null) {
@@ -354,6 +358,10 @@ abstract public class ORB {
      *             method; may be <code>null</code>
      * @param props application-specific properties; may be <code>null</code>
      * @return the newly-created ORB instance
+     *
+     * @implNote
+     * When configured via the system property, or orb.properties,
+     * the ORB is located via the thread context class loader.
      */
     public static ORB init(String[] args, Properties props) {
         //
@@ -392,6 +400,10 @@ abstract public class ORB {
      * @param app the applet; may be <code>null</code>
      * @param props applet-specific properties; may be <code>null</code>
      * @return the newly-created ORB instance
+     *
+     * @implNote
+     * When configured via the system property, or orb.properties,
+     * the ORB is located via the thread context class loader.
      */
     public static ORB init(Applet app, Properties props) {
         String className;

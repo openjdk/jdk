@@ -23,7 +23,7 @@
 # questions.
 #
 
-javac -d . ../../../../make/tools/src/build/tools/spp/Spp.java
+javac -d . ../../../../make/src/classes/build/tools/spp/Spp.java
 
 gen() {
 #  if [ $3 = "true" ]

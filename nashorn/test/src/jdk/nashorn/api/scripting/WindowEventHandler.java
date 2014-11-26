@@ -25,8 +25,7 @@
 
 package jdk.nashorn.api.scripting;
 
+@SuppressWarnings("javadoc")
 public interface WindowEventHandler {
-
     public boolean loaded();
-
 }

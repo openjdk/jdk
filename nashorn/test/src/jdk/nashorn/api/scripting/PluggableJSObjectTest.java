@@ -44,6 +44,7 @@ import org.testng.annotations.Test;
  * JDK-8024615: Refactor ScriptObjectMirror and JSObject to support external
  * JSObject implementations.
  */
+@SuppressWarnings("javadoc")
 public class PluggableJSObjectTest {
     public static class MapWrapperObject extends AbstractJSObject {
         private final HashMap<String, Object> map = new LinkedHashMap<>();
@@ -202,6 +203,7 @@ public class PluggableJSObjectTest {
     }
 
     public static class Factory extends AbstractJSObject {
+        @SuppressWarnings("unused")
         @Override
         public Object newObject(final Object... args) {
             return new HashMap<Object, Object>();

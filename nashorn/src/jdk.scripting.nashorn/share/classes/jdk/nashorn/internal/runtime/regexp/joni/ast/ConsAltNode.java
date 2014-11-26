@@ -24,6 +24,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.WarnCallback;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 
+@SuppressWarnings("javadoc")
 public final class ConsAltNode extends Node {
     public Node car;
     public ConsAltNode cdr;
@@ -31,9 +32,13 @@ public final class ConsAltNode extends Node {
 
     private ConsAltNode(final Node car, final ConsAltNode cdr, final int type) {
         this.car = car;
-        if (car != null) car.parent = this;
+        if (car != null) {
+            car.parent = this;
+        }
         this.cdr = cdr;
-        if (cdr != null) cdr.parent = this;
+        if (cdr != null) {
+            cdr.parent = this;
+        }
 
         this.type = type;
     }
@@ -46,8 +51,9 @@ public final class ConsAltNode extends Node {
         return new ConsAltNode(left, right, LIST);
     }
 
-    public static ConsAltNode listAdd(ConsAltNode list, final Node x) {
+    public static ConsAltNode listAdd(final ConsAltNode listp, final Node x) {
         final ConsAltNode n = newListNode(x, null);
+        ConsAltNode list = listp;
 
         if (list != null) {
             while (list.cdr != null) {

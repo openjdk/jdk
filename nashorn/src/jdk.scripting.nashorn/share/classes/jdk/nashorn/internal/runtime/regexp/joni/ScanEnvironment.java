@@ -20,11 +20,11 @@
 package jdk.nashorn.internal.runtime.regexp.joni;
 
 import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsClear;
-
 import jdk.nashorn.internal.runtime.regexp.joni.ast.Node;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 
+@SuppressWarnings("javadoc")
 public final class ScanEnvironment {
 
     private static final int SCANENV_MEMNODES_SIZE = 8;
@@ -92,7 +92,10 @@ public final class ScanEnvironment {
             case 'b': return '\010';
             case 'e': return '\033';
             case 'v':
-                if (syntax.op2EscVVtab()) return 11; // ???
+                if (syntax.op2EscVVtab())
+                 {
+                    return 11; // ???
+                }
                 break;
             default:
                 break;

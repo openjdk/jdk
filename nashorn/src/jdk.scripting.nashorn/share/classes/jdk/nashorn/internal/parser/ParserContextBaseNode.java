@@ -56,7 +56,7 @@ abstract class ParserContextBaseNode implements ParserContextNode {
 
     /**
      * Returns a single flag
-     * @param flag
+     * @param flag flag
      * @return A single flag
      */
     protected int getFlag(final int flag) {
@@ -64,7 +64,7 @@ abstract class ParserContextBaseNode implements ParserContextNode {
     }
 
     /**
-     * @param flag
+     * @param flag flag
      * @return the new flags
      */
     @Override
@@ -82,7 +82,7 @@ abstract class ParserContextBaseNode implements ParserContextNode {
     }
 
     /**
-     * @param statements
+     * @param statements statements
      */
     @Override
     public void setStatements(final List<Statement> statements) {

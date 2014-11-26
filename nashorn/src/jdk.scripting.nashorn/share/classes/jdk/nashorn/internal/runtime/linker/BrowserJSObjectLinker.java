@@ -25,8 +25,10 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.*;
-
+import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_GETMEMBER;
+import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_GETSLOT;
+import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_SETMEMBER;
+import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_SETSLOT;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -114,12 +116,10 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             case "getMethod":
                 if (c > 2) {
                     return findGetMethod(desc);
-                } else {
-                    // For indexed get, we want GuardedInvocation from beans linker and pass it.
-                    // BrowserJSObjectLinker.get uses this fallback getter for explicit signature method access.
-                    final GuardedInvocation beanInv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
-                    return findGetIndexMethod(beanInv);
                 }
+            // For indexed get, we want GuardedInvocation from beans linker and pass it.
+            // BrowserJSObjectLinker.get uses this fallback getter for explicit signature method access.
+            return findGetIndexMethod(nashornBeansLinker.getGuardedInvocation(request, linkerServices));
             case "setProp":
             case "setElem":
                 return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
@@ -166,9 +166,8 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             final String name = (String)key;
             if (name.indexOf('(') != -1) {
                 return fallback.invokeExact(jsobj, key);
-            } else {
-                return JSOBJECT_GETMEMBER.invokeExact(jsobj, (String)key);
             }
+            return JSOBJECT_GETMEMBER.invokeExact(jsobj, (String)key);
         }
         return null;
     }

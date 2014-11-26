@@ -2421,8 +2421,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       // CodeCache is full, disable compilation
       // Ought to log this but compile log is only per compile thread
       // and we're some non descript Java thread.
-      MutexUnlocker mu(AdapterHandlerLibrary_lock);
-      CompileBroker::handle_full_code_cache(CodeBlobType::NonNMethod);
       return NULL; // Out of CodeCache space
     }
     entry->relocate(new_adapter->content_begin());
@@ -2594,9 +2592,6 @@ void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
       CompileTask::print_compilation(tty, nm, method->is_static() ? "(static)" : "");
     }
     nm->post_compiled_method_load_event();
-  } else {
-    // CodeCache is full, disable compilation
-    CompileBroker::handle_full_code_cache(CodeBlobType::MethodNonProfiled);
   }
 }
 

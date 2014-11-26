@@ -21,10 +21,10 @@
 package jdk.nashorn.internal.runtime.regexp.joni;
 
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isFindLongest;
-
 import jdk.nashorn.internal.runtime.regexp.joni.constants.AnchorType;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.IntHolder;
 
+@SuppressWarnings("javadoc")
 public abstract class Matcher extends IntHolder {
     protected final Regex regex;
 
@@ -73,7 +73,9 @@ public abstract class Matcher extends IntHolder {
     protected final void msaInit(final int option, final int start) {
         msaOptions = option;
         msaStart = start;
-        if (Config.USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE) msaBestLen = -1;
+        if (Config.USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE) {
+            msaBestLen = -1;
+        }
     }
 
     public final int match(final int at, final int range, final int option) {
@@ -83,20 +85,19 @@ public abstract class Matcher extends IntHolder {
 
         if (Config.USE_MATCH_RANGE_MUST_BE_INSIDE_OF_SPECIFIED_RANGE) {
             return matchAt(end /*range*/, at, prev);
-        } else {
-            return matchAt(range /*range*/, at, prev);
         }
+        return matchAt(range /*range*/, at, prev);
     }
 
     int low, high; // these are the return values
-    private boolean forwardSearchRange(final char[] chars, final int str, final int end, final int s, final int range, final IntHolder lowPrev) {
+    private boolean forwardSearchRange(final char[] ch, final int string, final int e, final int s, final int range, final IntHolder lowPrev) {
         int pprev = -1;
         int p = s;
 
         if (Config.DEBUG_SEARCH) {
             Config.log.println("forward_search_range: "+
-                                "str: " + str +
-                                ", end: " + end +
+                                "str: " + string +
+                                ", end: " + e +
                                 ", s: " + s +
                                 ", range: " + range);
         }
@@ -106,7 +107,7 @@ public abstract class Matcher extends IntHolder {
         }
 
         retry:while (true) {
-            p = regex.searchAlgorithm.search(regex, chars, p, end, range);
+            p = regex.searchAlgorithm.search(regex, ch, p, e, range);
 
             if (p != -1 && p < range) {
                 if (p - regex.dMin < s) {
@@ -119,9 +120,9 @@ public abstract class Matcher extends IntHolder {
                 if (regex.subAnchor != 0) {
                     switch (regex.subAnchor) {
                     case AnchorType.BEGIN_LINE:
-                        if (p != str) {
-                            final int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, p);
-                            if (!EncodingHelper.isNewLine(chars, prev, end)) {
+                        if (p != string) {
+                            final int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : string, p);
+                            if (!EncodingHelper.isNewLine(ch, prev, e)) {
                                 // goto retry_gate;
                                 pprev = p;
                                 p++;
@@ -131,23 +132,26 @@ public abstract class Matcher extends IntHolder {
                         break;
 
                     case AnchorType.END_LINE:
-                        if (p == end) {
+                        if (p == e) {
                             if (!Config.USE_NEWLINE_AT_END_OF_STRING_HAS_EMPTY_LINE) {
-                                final int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, p);
-                                if (prev != -1 && EncodingHelper.isNewLine(chars, prev, end)) {
+                                final int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : string, p);
+                                if (prev != -1 && EncodingHelper.isNewLine(ch, prev, e)) {
                                     // goto retry_gate;
                                     pprev = p;
                                     p++;
                                     continue retry;
                                 }
                             }
-                        } else if (!EncodingHelper.isNewLine(chars, p, end)) {
+                        } else if (!EncodingHelper.isNewLine(ch, p, e)) {
                             //if () break;
                             // goto retry_gate;
                             pprev = p;
                             p++;
                             continue retry;
                         }
+                        break;
+
+                    default:
                         break;
                     } // switch
                 }
@@ -158,7 +162,7 @@ public abstract class Matcher extends IntHolder {
                         if (low > s) {
                             lowPrev.value = EncodingHelper.prevCharHead(s, p);
                         } else {
-                            lowPrev.value = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, p);
+                            lowPrev.value = EncodingHelper.prevCharHead((pprev != -1) ? pprev : string, p);
                         }
                     }
                 } else {
@@ -172,7 +176,7 @@ public abstract class Matcher extends IntHolder {
                             }
                         } else {
                             if (lowPrev != null) {
-                                lowPrev.value = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, low);
+                                lowPrev.value = EncodingHelper.prevCharHead((pprev != -1) ? pprev : string, low);
                             }
                         }
                     }
@@ -182,8 +186,8 @@ public abstract class Matcher extends IntHolder {
 
                 if (Config.DEBUG_SEARCH) {
                     Config.log.println("forward_search_range success: "+
-                                        "low: " + (low - str) +
-                                        ", high: " + (high - str) +
+                                        "low: " + (low - string) +
+                                        ", high: " + (high - string) +
                                         ", dmin: " + regex.dMin +
                                         ", dmax: " + regex.dMax);
                 }
@@ -196,20 +200,21 @@ public abstract class Matcher extends IntHolder {
     }
 
     // low, high
-    private boolean backwardSearchRange(final char[] chars, final int str, final int end, final int s, int range, final int adjrange) {
-        range += regex.dMin;
+    private boolean backwardSearchRange(final char[] ch, final int string, final int e, final int s, final int range, final int adjrange) {
+        int r = range;
+        r += regex.dMin;
         int p = s;
 
         retry:while (true) {
-            p = regex.searchAlgorithm.searchBackward(regex, chars, range, adjrange, end, p, s, range);
+            p = regex.searchAlgorithm.searchBackward(regex, ch, r, adjrange, e, p, s, r);
 
             if (p != -1) {
                 if (regex.subAnchor != 0) {
                     switch (regex.subAnchor) {
                     case AnchorType.BEGIN_LINE:
-                        if (p != str) {
-                            final int prev = EncodingHelper.prevCharHead(str, p);
-                            if (!EncodingHelper.isNewLine(chars, prev, end)) {
+                        if (p != string) {
+                            final int prev = EncodingHelper.prevCharHead(string, p);
+                            if (!EncodingHelper.isNewLine(ch, prev, e)) {
                                 p = prev;
                                 continue retry;
                             }
@@ -217,20 +222,27 @@ public abstract class Matcher extends IntHolder {
                         break;
 
                     case AnchorType.END_LINE:
-                        if (p == end) {
+                        if (p == e) {
                             if (!Config.USE_NEWLINE_AT_END_OF_STRING_HAS_EMPTY_LINE) {
                                 final int prev = EncodingHelper.prevCharHead(adjrange, p);
-                                if (prev == -1) return false;
-                                if (EncodingHelper.isNewLine(chars, prev, end)) {
+                                if (prev == -1) {
+                                    return false;
+                                }
+                                if (EncodingHelper.isNewLine(ch, prev, e)) {
                                     p = prev;
                                     continue retry;
                                 }
                             }
-                        } else if (!EncodingHelper.isNewLine(chars, p, end)) {
+                        } else if (!EncodingHelper.isNewLine(ch, p, e)) {
                             p = EncodingHelper.prevCharHead(adjrange, p);
-                            if (p == -1) return false;
+                            if (p == -1) {
+                                return false;
+                            }
                             continue retry;
                         }
+                        break;
+
+                    default:
                         break;
                     } // switch
                 }
@@ -243,14 +255,16 @@ public abstract class Matcher extends IntHolder {
 
                 if (Config.DEBUG_SEARCH) {
                     Config.log.println("backward_search_range: "+
-                                        "low: " + (low - str) +
-                                        ", high: " + (high - str));
+                                        "low: " + (low - string) +
+                                        ", high: " + (high - string));
                 }
 
                 return true;
             }
 
-            if (Config.DEBUG_SEARCH) Config.log.println("backward_search_range: fail.");
+            if (Config.DEBUG_SEARCH) {
+                Config.log.println("backward_search_range: fail.");
+            }
             return false;
         } // while
     }
@@ -261,27 +275,36 @@ public abstract class Matcher extends IntHolder {
             if (Config.USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE) {
                 //range = upperRange;
                 if (matchAt(upperRange, s, prev) != -1) {
-                    if (!isFindLongest(regex.options)) return true;
+                    if (!isFindLongest(regex.options)) {
+                        return true;
+                    }
                 }
             } else {
                 //range = upperRange;
-                if (matchAt(upperRange, s, prev) != -1) return true;
+                if (matchAt(upperRange, s, prev) != -1) {
+                    return true;
+                }
             }
         } else {
             if (Config.USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE) {
                 if (matchAt(end, s, prev) != -1) {
                     //range = upperRange;
-                    if (!isFindLongest(regex.options)) return true;
+                    if (!isFindLongest(regex.options)) {
+                        return true;
+                    }
                 }
             } else {
                 //range = upperRange;
-                if (matchAt(end, s, prev) != -1) return true;
+                if (matchAt(end, s, prev) != -1) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    public final int search(int start, int range, final int option) {
+    public final int search(final int startp, final int rangep, final int option) {
+        int start = startp, range = rangep;
         int s, prev;
         int origStart = start;
         final int origRange = range;
@@ -294,7 +317,9 @@ public abstract class Matcher extends IntHolder {
                     ", range " + (range - str));
         }
 
-        if (start > end || start < str) return -1;
+        if (start > end || start < str) {
+            return -1;
+        }
 
         /* anchor optimize: resume search range */
         if (regex.anchor != 0 && str < end) {
@@ -311,7 +336,10 @@ public abstract class Matcher extends IntHolder {
             } else if ((regex.anchor & AnchorType.BEGIN_BUF) != 0) {
                 /* search str-position only */
                 if (range > start) {
-                    if (start != str) return -1; // mismatch_no_msa;
+                    if (start != str)
+                     {
+                        return -1; // mismatch_no_msa;
+                    }
                     range = str + 1;
                 } else {
                     if (range <= str) {
@@ -324,7 +352,10 @@ public abstract class Matcher extends IntHolder {
             } else if ((regex.anchor & AnchorType.END_BUF) != 0) {
                 minSemiEnd = maxSemiEnd = end;
                 // !end_buf:!
-                if (endBuf(start, range, minSemiEnd, maxSemiEnd)) return -1; // mismatch_no_msa;
+                if (endBuf(start, range, minSemiEnd, maxSemiEnd))
+                 {
+                    return -1; // mismatch_no_msa;
+                }
             } else if ((regex.anchor & AnchorType.SEMI_END_BUF) != 0) {
                 final int preEnd = EncodingHelper.stepBack(str, end, 1);
                 maxSemiEnd = end;
@@ -332,12 +363,18 @@ public abstract class Matcher extends IntHolder {
                     minSemiEnd = preEnd;
                     if (minSemiEnd > str && start <= minSemiEnd) {
                         // !goto end_buf;!
-                        if (endBuf(start, range, minSemiEnd, maxSemiEnd)) return -1; // mismatch_no_msa;
+                        if (endBuf(start, range, minSemiEnd, maxSemiEnd))
+                         {
+                            return -1; // mismatch_no_msa;
+                        }
                     }
                 } else {
                     minSemiEnd = end;
                     // !goto end_buf;!
-                    if (endBuf(start, range, minSemiEnd, maxSemiEnd)) return -1; // mismatch_no_msa;
+                    if (endBuf(start, range, minSemiEnd, maxSemiEnd))
+                     {
+                        return -1; // mismatch_no_msa;
+                    }
                 }
             } else if ((regex.anchor & AnchorType.ANYCHAR_STAR_ML) != 0) {
                 // goto !begin_position;!
@@ -359,7 +396,9 @@ public abstract class Matcher extends IntHolder {
                 prev = -1;
                 msaInit(option, start);
 
-                if (matchCheck(end, s, prev)) return match(s);
+                if (matchCheck(end, s, prev)) {
+                    return match(s);
+                }
                 return mismatch();
             }
             return -1; // goto mismatch_no_msa;
@@ -389,49 +428,62 @@ public abstract class Matcher extends IntHolder {
                         schRange = end;
                     } else {
                         schRange += regex.dMax;
-                        if (schRange > end) schRange = end;
+                        if (schRange > end) {
+                            schRange = end;
+                        }
                     }
                 }
-                if ((end - start) < regex.thresholdLength) return mismatch();
+                if ((end - start) < regex.thresholdLength) {
+                    return mismatch();
+                }
 
                 if (regex.dMax != MinMaxLen.INFINITE_DISTANCE) {
                     do {
-                        if (!forwardSearchRange(chars, str, end, s, schRange, this)) return mismatch(); // low, high, lowPrev
+                        if (!forwardSearchRange(chars, str, end, s, schRange, this)) {
+                            return mismatch(); // low, high, lowPrev
+                        }
                         if (s < low) {
                             s = low;
                             prev = value;
                         }
                         while (s <= high) {
-                            if (matchCheck(origRange, s, prev)) return match(s); // ???
+                            if (matchCheck(origRange, s, prev)) {
+                                return match(s); // ???
+                            }
                             prev = s;
                             s++;
                         }
                     } while (s < range);
+                }
+                /* check only. */
+                if (!forwardSearchRange(chars, str, end, s, schRange, null)) {
                     return mismatch();
+                }
 
-                } else { /* check only. */
-                    if (!forwardSearchRange(chars, str, end, s, schRange, null)) return mismatch();
-
-                    if ((regex.anchor & AnchorType.ANYCHAR_STAR) != 0) {
-                        do {
-                            if (matchCheck(origRange, s, prev)) return match(s);
-                            prev = s;
-                            s++;
-                        } while (s < range);
-                        return mismatch();
-                    }
-
+                if ((regex.anchor & AnchorType.ANYCHAR_STAR) != 0) {
+                    do {
+                        if (matchCheck(origRange, s, prev)) {
+                            return match(s);
+                        }
+                        prev = s;
+                        s++;
+                    } while (s < range);
+                    return mismatch();
                 }
             }
 
             do {
-                if (matchCheck(origRange, s, prev)) return match(s);
+                if (matchCheck(origRange, s, prev)) {
+                    return match(s);
+                }
                 prev = s;
                 s++;
             } while (s < range);
 
             if (s == range) { /* because empty match with /$/. */
-                if (matchCheck(origRange, s, prev)) return match(s);
+                if (matchCheck(origRange, s, prev)) {
+                    return match(s);
+                }
             }
         } else { /* backward search */
             if (Config.USE_MATCH_RANGE_MUST_BE_INSIDE_OF_SPECIFIED_RANGE) {
@@ -450,37 +502,51 @@ public abstract class Matcher extends IntHolder {
                 if (regex.dMax != MinMaxLen.INFINITE_DISTANCE && (end - range) >= regex.thresholdLength) {
                     do {
                         int schStart = s + regex.dMax;
-                        if (schStart > end) schStart = end;
-                        if (!backwardSearchRange(chars, str, end, schStart, range, adjrange)) return mismatch(); // low, high
-                        if (s > high) s = high;
+                        if (schStart > end) {
+                            schStart = end;
+                        }
+                        if (!backwardSearchRange(chars, str, end, schStart, range, adjrange))
+                         {
+                            return mismatch(); // low, high
+                        }
+                        if (s > high) {
+                            s = high;
+                        }
                         while (s != -1 && s >= low) {
                             prev = EncodingHelper.prevCharHead(str, s);
-                            if (matchCheck(origStart, s, prev)) return match(s);
+                            if (matchCheck(origStart, s, prev)) {
+                                return match(s);
+                            }
                             s = prev;
                         }
                     } while (s >= range);
                     return mismatch();
-                } else { /* check only. */
-                    if ((end - range) < regex.thresholdLength) return mismatch();
+                }
+                if ((end - range) < regex.thresholdLength) {
+                    return mismatch();
+                }
 
-                    int schStart = s;
-                    if (regex.dMax != 0) {
-                        if (regex.dMax == MinMaxLen.INFINITE_DISTANCE) {
+                int schStart = s;
+                if (regex.dMax != 0) {
+                    if (regex.dMax == MinMaxLen.INFINITE_DISTANCE) {
+                        schStart = end;
+                    } else {
+                        schStart += regex.dMax;
+                        if (schStart > end) {
                             schStart = end;
-                        } else {
-                            schStart += regex.dMax;
-                            if (schStart > end) {
-                                schStart = end;
-                            }
                         }
                     }
-                    if (!backwardSearchRange(chars, str, end, schStart, range, adjrange)) return mismatch();
+                }
+                if (!backwardSearchRange(chars, str, end, schStart, range, adjrange)) {
+                    return mismatch();
                 }
             }
 
             do {
                 prev = EncodingHelper.prevCharHead(str, s);
-                if (matchCheck(origStart, s, prev)) return match(s);
+                if (matchCheck(origStart, s, prev)) {
+                    return match(s);
+                }
                 s = prev;
             } while (s >= range);
 
@@ -488,8 +554,13 @@ public abstract class Matcher extends IntHolder {
         return mismatch();
     }
 
-    private boolean endBuf(int start, int range, final int minSemiEnd, final int maxSemiEnd) {
-        if ((maxSemiEnd - str) < regex.anchorDmin) return true; // mismatch_no_msa;
+    private boolean endBuf(final int startp, final int rangep, final int minSemiEnd, final int maxSemiEnd) {
+        int start = startp;
+        int range = rangep;
+
+        if ((maxSemiEnd - str) < regex.anchorDmin) {
+            return true; // mismatch_no_msa;
+        }
 
         if (range > start) {
             if ((minSemiEnd - start) > regex.anchorDmax) {
@@ -502,7 +573,10 @@ public abstract class Matcher extends IntHolder {
             if ((maxSemiEnd - (range - 1)) < regex.anchorDmin) {
                 range = maxSemiEnd - regex.anchorDmin + 1;
             }
-            if (start >= range) return true; // mismatch_no_msa;
+            if (start >= range)
+             {
+                return true; // mismatch_no_msa;
+            }
         } else {
             if ((minSemiEnd - range) > regex.anchorDmax) {
                 range = minSemiEnd - regex.anchorDmax;
@@ -510,7 +584,10 @@ public abstract class Matcher extends IntHolder {
             if ((maxSemiEnd - start) < regex.anchorDmin) {
                 start = maxSemiEnd - regex.anchorDmin;
             }
-            if (range > start) return true; // mismatch_no_msa;
+            if (range > start)
+             {
+                return true; // mismatch_no_msa;
+            }
         }
         return false;
     }
