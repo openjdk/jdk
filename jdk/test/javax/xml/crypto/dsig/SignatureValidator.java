@@ -78,9 +78,10 @@ class SignatureValidator {
 
         // Check reference cache
         if (cache) {
-            Iterator i = signature.getSignedInfo().getReferences().iterator();
-            for (int j=0; i.hasNext(); j++) {
-                Reference ref = (Reference) i.next();
+            Iterator<Reference> i =
+                signature.getSignedInfo().getReferences().iterator();
+            for (int j = 0; i.hasNext(); j++) {
+                Reference ref = i.next();
                 if (!digestInputEqual(ref)) {
                     throw new Exception
                         ("cached data for Reference[" + j + "] is not correct");
@@ -88,10 +89,10 @@ class SignatureValidator {
                 // check that dereferenced data does not contain comment nodes
                 if (ref.getURI() == "") {
                     System.out.println("checking deref data");
-                    NodeSetData data = (NodeSetData) ref.getDereferencedData();
-                    Iterator ni = data.iterator();
-                    while (ni.hasNext()) {
-                        Node n = (Node) ni.next();
+                    @SuppressWarnings("unchecked")
+                    NodeSetData<Node> data =
+                        (NodeSetData<Node>)ref.getDereferencedData();
+                    for (Node n : data) {
                         if (n.getNodeType() == Node.COMMENT_NODE) {
                             throw new Exception("dereferenced data for " +
                                 " Reference[" + j + " contains comment node");
