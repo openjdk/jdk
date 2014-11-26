@@ -293,7 +293,6 @@ int ConstMethod::method_parameters_length() const {
 MethodParametersElement* ConstMethod::method_parameters_start() const {
   u2* addr = method_parameters_length_addr();
   u2 length = *addr;
-  assert(length > 0, "should only be called if table is present");
   addr -= length * sizeof(MethodParametersElement) / sizeof(u2);
   return (MethodParametersElement*) addr;
 }

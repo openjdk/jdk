@@ -173,7 +173,7 @@
 #endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_TRACE
- #include "runtime/vmStructs_trace.hpp"
+#include "runtime/vmStructs_trace.hpp"
 #endif
 
 #ifdef COMPILER2
