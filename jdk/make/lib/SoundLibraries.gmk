@@ -25,7 +25,7 @@
 
 LIBJSOUND_SRC_DIRS := \
     $(JDK_TOPDIR)/src/java.desktop/share/native/libjsound \
-    $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/libjsound \
+    $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libjsound \
     #
 LIBJSOUND_CFLAGS := \
     -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
@@ -165,7 +165,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
         -framework CoreServices -framework AudioUnit $(LIBCXX) \
         -framework CoreMIDI -framework AudioToolbox, \
     LDFLAGS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
-    LDFLAGS_SUFFIX_posix := -ljava -ljvm, \
+    LDFLAGS_SUFFIX_unix := -ljava -ljvm, \
     LDFLAGS_SUFFIX_solaris := -lc, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \

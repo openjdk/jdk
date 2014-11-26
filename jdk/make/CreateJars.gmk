@@ -656,7 +656,7 @@ endif
 SRC_ZIP_SRCS := $(wildcard \
     $(JDK_TOPDIR)/src/*/share/classes \
     $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
-    $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+    $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
     $(LANGTOOLS_TOPDIR)/src/*/share/classes \
     $(CORBA_TOPDIR)/src/*/share/classes \
     $(JAXP_TOPDIR)/src/*/share/classes \
@@ -679,7 +679,7 @@ $(eval $(call SetupCopyFiles,COPY_LAUNCHER_SRC, \
     FILES := $(wildcard \
         $(JDK_TOPDIR)/src/java.base/share/native/launcher/* \
         $(JDK_TOPDIR)/src/java.base/share/native/libjli/* \
-        $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjli/java_md*)))
+        $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli/java_md*)))
 
 LAUNCHER_ZIP_SRC := $(COPY_LAUNCHER_SRC)
 
