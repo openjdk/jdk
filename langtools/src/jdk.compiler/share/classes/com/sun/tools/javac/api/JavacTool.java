@@ -43,6 +43,7 @@ import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -151,8 +152,12 @@ public final class JavacTool implements JavaCompiler {
             else
                 context.put(Log.outKey, new PrintWriter(out, true));
 
-            if (fileManager == null)
+            if (fileManager == null) {
                 fileManager = getStandardFileManager(diagnosticListener, null, null);
+                if (fileManager instanceof BaseFileManager) {
+                    ((BaseFileManager) fileManager).autoClose = true;
+                }
+            }
             fileManager = ccw.wrap(fileManager);
 
             context.put(JavaFileManager.class, fileManager);

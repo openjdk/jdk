@@ -383,6 +383,8 @@ public class XMLDocumentFragmentScannerImpl
 
     protected boolean foundBuiltInRefs = false;
 
+    /** Built-in reference character event */
+    protected boolean builtInRefCharacterHandled = false;
 
     //skip element algorithm
     static final short MAX_DEPTH_LIMIT = 5 ;
@@ -1949,7 +1951,10 @@ public class XMLDocumentFragmentScannerImpl
                 fDocumentHandler.startGeneralEntity(entity, null, null, null);
             }
             fTempString.setValues(fSingleChar, 0, 1);
-            //fDocumentHandler.characters(fTempString, null);
+            if(!fIsCoalesce){
+                fDocumentHandler.characters(fTempString, null);
+                builtInRefCharacterHandled = true;
+            }
 
             if (fNotifyBuiltInRefs) {
                 fDocumentHandler.endGeneralEntity(entity, null);
@@ -3068,7 +3073,12 @@ public class XMLDocumentFragmentScannerImpl
                             //return CHARACTERS
                             if(fScannerState == SCANNER_STATE_BUILT_IN_REFS && !fIsCoalesce){
                                 setScannerState(SCANNER_STATE_CONTENT);
-                                return XMLEvent.CHARACTERS;
+                                if (builtInRefCharacterHandled) {
+                                    builtInRefCharacterHandled = false;
+                                    return XMLEvent.ENTITY_REFERENCE;
+                                } else {
+                                    return XMLEvent.CHARACTERS;
+                                }
                             }
 
                             //if there was a text declaration, call next() it will be taken care.

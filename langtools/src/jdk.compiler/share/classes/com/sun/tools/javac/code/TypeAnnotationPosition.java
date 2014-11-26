@@ -145,7 +145,7 @@ public class TypeAnnotationPosition {
     public final int bound_index;
 
     // For type parameter and method parameter
-    public final int parameter_index;
+    public int parameter_index;
 
     // For class extends, implements, and throws clauses
     public final int type_index;

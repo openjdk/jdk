@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @run testng jdk.nashorn.api.scripting.MultipleEngineTest
  */
-
+@SuppressWarnings("javadoc")
 public class MultipleEngineTest {
     @Test
     public void createAndUseManyEngine() throws ScriptException {

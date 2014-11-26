@@ -86,8 +86,8 @@
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method of any class or interface in this package will cause a {@link
  * java.lang.NullPointerException NullPointerException} to be thrown. Additionally,
- * invoking a method with a collection containing a {@code null} element will
- * cause a {@code NullPointerException}, unless otherwise specified. </p>
+ * invoking a method with an array or collection containing a {@code null} element
+ * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
  * <p> Unless otherwise noted, methods that attempt to access the file system
  * will throw {@link java.nio.file.ClosedFileSystemException} when invoked on

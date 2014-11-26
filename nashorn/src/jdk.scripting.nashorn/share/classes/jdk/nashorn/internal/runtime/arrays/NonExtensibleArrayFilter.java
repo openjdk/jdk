@@ -7,13 +7,13 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 /**
  * Filter class that wrap arrays that have been tagged non extensible
  */
-public class NonExtensibleArrayFilter extends ArrayFilter {
+final class NonExtensibleArrayFilter extends ArrayFilter {
 
     /**
      * Constructor
      * @param underlying array
      */
-    public NonExtensibleArrayFilter(final ArrayData underlying) {
+    NonExtensibleArrayFilter(final ArrayData underlying) {
         super(underlying);
     }
 

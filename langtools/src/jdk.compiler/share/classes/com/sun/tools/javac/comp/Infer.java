@@ -676,13 +676,19 @@ public class Infer {
         ListBuffer<Pair<Type, Type>> commonSupertypes = new ListBuffer<>();
         for (Type sup : supertypesToCheck) {
             if (sup.isParameterized()) {
-                Type asSuperOfT = types.asSuper(t, sup.tsym);
-                Type asSuperOfS = types.asSuper(s, sup.tsym);
+                Type asSuperOfT = asSuper(t, sup);
+                Type asSuperOfS = asSuper(s, sup);
                 commonSupertypes.add(new Pair<>(asSuperOfT, asSuperOfS));
             }
         }
         return commonSupertypes.toList();
     }
+    //where
+        private Type asSuper(Type t, Type sup) {
+            return (sup.hasTag(ARRAY)) ?
+                    new ArrayType(asSuper(types.elemtype(t), types.elemtype(sup)), syms.arrayClass) :
+                    types.asSuper(t, sup.tsym);
+        }
 
     /**
      * This enumeration defines an entry point for doing inference variable

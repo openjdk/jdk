@@ -1388,16 +1388,26 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                                   Object a4, Object a5, Object a6, Object a7,
                                   Object a8, Object a9)
                 { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+
+    private static final int ARRAYS_COUNT = 11;
+
     private static MethodHandle[] makeArrays() {
-        ArrayList<MethodHandle> mhs = new ArrayList<>();
-        for (;;) {
-            MethodHandle mh = findCollector("array", mhs.size(), Object[].class);
-            if (mh == null)  break;
+        MethodHandle[] mhs = new MethodHandle[MAX_ARITY + 1];
+        for (int i = 0; i < ARRAYS_COUNT; i++) {
+            MethodHandle mh = findCollector("array", i, Object[].class);
             mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
-            mhs.add(mh);
+            mhs[i] = mh;
         }
-        assert(mhs.size() == 11);  // current number of methods
-        return mhs.toArray(new MethodHandle[MAX_ARITY+1]);
+        assert(assertArrayMethodCount(mhs));
+        return mhs;
+    }
+
+    private static boolean assertArrayMethodCount(MethodHandle[] mhs) {
+        assert(findCollector("array", ARRAYS_COUNT, Object[].class) == null);
+        for (int i = 0; i < ARRAYS_COUNT; i++) {
+            assert(mhs[i] != null);
+        }
+        return true;
     }
 
     // filling versions of the above:
@@ -1449,15 +1459,22 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     private static final int FILL_ARRAYS_COUNT = 11; // current number of fillArray methods
 
     private static MethodHandle[] makeFillArrays() {
-        ArrayList<MethodHandle> mhs = new ArrayList<>();
-        mhs.add(null);  // there is no empty fill; at least a0 is required
-        for (;;) {
-            MethodHandle mh = findCollector("fillArray", mhs.size(), Object[].class, Integer.class, Object[].class);
-            if (mh == null)  break;
-            mhs.add(mh);
+        MethodHandle[] mhs = new MethodHandle[FILL_ARRAYS_COUNT];
+        mhs[0] = null;  // there is no empty fill; at least a0 is required
+        for (int i = 1; i < FILL_ARRAYS_COUNT; i++) {
+            MethodHandle mh = findCollector("fillArray", i, Object[].class, Integer.class, Object[].class);
+            mhs[i] = mh;
         }
-        assert(mhs.size() == FILL_ARRAYS_COUNT);
-        return mhs.toArray(new MethodHandle[0]);
+        assert(assertFillArrayMethodCount(mhs));
+        return mhs;
+    }
+
+    private static boolean assertFillArrayMethodCount(MethodHandle[] mhs) {
+        assert(findCollector("fillArray", FILL_ARRAYS_COUNT, Object[].class, Integer.class, Object[].class) == null);
+        for (int i = 1; i < FILL_ARRAYS_COUNT; i++) {
+            assert(mhs[i] != null);
+        }
+        return true;
     }
 
     private static Object copyAsPrimitiveArray(Wrapper w, Object... boxes) {
@@ -1472,9 +1489,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static MethodHandle varargsArray(int nargs) {
         MethodHandle mh = Lazy.ARRAYS[nargs];
         if (mh != null)  return mh;
-        mh = findCollector("array", nargs, Object[].class);
-        if (mh != null)  mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
-        if (mh != null)  return Lazy.ARRAYS[nargs] = mh;
         mh = buildVarargsArray(Lazy.MH_fillNewArray, Lazy.MH_arrayIdentity, nargs);
         assert(assertCorrectArity(mh, nargs));
         mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);

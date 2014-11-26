@@ -25,6 +25,7 @@
 
 package jdk.nashorn.test.models;
 
+@SuppressWarnings("javadoc")
 public class OverrideObject {
     @Override
     public int hashCode() {

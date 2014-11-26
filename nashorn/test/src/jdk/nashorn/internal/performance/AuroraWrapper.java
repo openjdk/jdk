@@ -43,6 +43,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+@SuppressWarnings("javadoc")
 public class AuroraWrapper {
 
     public static String fileName = "report.xml";

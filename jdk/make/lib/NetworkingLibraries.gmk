@@ -24,7 +24,7 @@
 #
 
 LIBNET_SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/native/libnet \
-    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnet
+    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnet
 LIBNET_CFLAGS += -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base \
     $(LIBJAVA_HEADER_FLAGS)
 
@@ -77,4 +77,3 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
 $(BUILD_LIBNET): $(BUILD_LIBJAVA)
 
 BASE_LIBRARIES += $(BUILD_LIBNET)
-

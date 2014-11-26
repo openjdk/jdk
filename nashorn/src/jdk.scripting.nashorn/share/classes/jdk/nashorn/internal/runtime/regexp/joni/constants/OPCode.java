@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public interface OPCode {
     final int FINISH                        = 0;            /* matching process terminator (no more alternative) */
     final int END                           = 1;            /* pattern code terminator (success end) */

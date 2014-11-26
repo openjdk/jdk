@@ -26,7 +26,6 @@
 package jdk.nashorn.api.javaaccess;
 
 import static org.testng.AssertJUnit.assertEquals;
-
 import java.util.HashMap;
 import java.util.Map;
 import javax.script.Bindings;
@@ -40,6 +39,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("javadoc")
 public class ConsStringTest {
     private static ScriptEngine e = null;
 
@@ -48,7 +48,7 @@ public class ConsStringTest {
     }
 
     @BeforeClass
-    public static void setUpClass() throws ScriptException {
+    public static void setUpClass() {
         e = new ScriptEngineManager().getEngineByName("nashorn");
     }
 
@@ -69,7 +69,7 @@ public class ConsStringTest {
     @Test
     public void testConsStringFromMirror() throws ScriptException {
         final Bindings b = e.getBindings(ScriptContext.ENGINE_SCOPE);
-        final Map<Object, Object> m = new HashMap<>();
+        //final Map<Object, Object> m = new HashMap<>();
         e.eval("var x = 'f'; x += 'oo'; var obj = {x: x};");
         assertEquals("foo", ((JSObject)b.get("obj")).getMember("x"));
     }

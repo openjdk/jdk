@@ -237,7 +237,7 @@ IRT_ENTRY(address, InterpreterRuntime::slow_signature_handler(
   // handle arguments
   // Warning: We use reg arg slot 00 temporarily to return the RegArgSignature
   // back to the code that pops the arguments into the CPU registers
-  SlowSignatureHandler(m, (address)from, m->is_static() ? to+2 : to+1, to).iterate(UCONST64(-1));
+  SlowSignatureHandler(m, (address)from, m->is_static() ? to+2 : to+1, to).iterate((uint64_t)CONST64(-1));
   // return result handler
   return Interpreter::result_handler(m->result_type());
 IRT_END
