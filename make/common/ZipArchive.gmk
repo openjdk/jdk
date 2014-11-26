@@ -1,0 +1,113 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifndef _ZIP_ARCHIVE_GMK
+_ZIP_ARCHIVE_GMK := 1
+
+ifeq (,$(_MAKEBASE_GMK))
+  $(error You must include MakeBase.gmk prior to including ZipArchive.gmk)
+endif
+
+# Setup make rules for creating a zip archive.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   SRC
+#   ZIP
+#   INCLUDES
+#   INCLUDE_FILES
+#   EXCLUDES
+#   EXCLUDE_FILES
+#   SUFFIXES
+#   EXTRA_DEPS
+#   ZIP_OPTIONS extra options to pass to zip
+define SetupZipArchive
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update ZipArchive.gmk))
+  $(call EvalDebugWrapper,$(strip $1),$(call SetupZipArchiveInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
+endef
+
+define SetupZipArchiveInner
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupZipArchive($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update JavaCompilation.gmk))
+
+  # To avoid running find over too large sets of files, which causes make to crash
+  # on some configurations (cygwin), use INCLUDES and INCLUDE_FILES to build a set
+  # of directories to run find in, if available.
+  ifneq ($$($1_INCLUDES)$$($1_INCLUDE_FILES),)
+    $1_FIND_LIST := $$(wildcard $$(foreach i,$$($1_SRC), \
+        $$(addprefix $$i/,$$($1_INCLUDES) $$($1_INCLUDE_FILES))))
+  else
+    $1_FIND_LIST := $$($1_SRC)
+  endif
+
+  # Find all files in the source tree.
+  $1_ALL_SRCS := $$(call not-containing,_the.,$$(call CacheFind,$$($1_FIND_LIST)))
+
+  # Filter on suffixes if set
+  ifneq ($$($1_SUFFIXES),)
+    $1_ALL_SRCS := $$(filter $$(addprefix %, $$($1_SUFFIXES)), $$($1_ALL_SRCS))
+  endif
+
+  ifneq ($$($1_INCLUDES),)
+    ifneq ($$($1_SUFFIXES),)
+      $1_ZIP_INCLUDES := $$(foreach s,$$($1_SUFFIXES), \
+          $$(addprefix -i$(SPACE)$(DQUOTE),$$(addsuffix /*$$s$(DQUOTE),$$($1_INCLUDES))))
+    else
+      $1_ZIP_INCLUDES := $$(addprefix -i$(SPACE)$(DQUOTE),$$(addsuffix /*$(DQUOTE),$$($1_INCLUDES)))
+    endif
+  endif
+  ifneq ($$($1_INCLUDE_FILES),)
+    $1_ZIP_INCLUDES += $$(addprefix -i$(SPACE),$$($1_INCLUDE_FILES))
+  endif
+  ifneq ($$($1_EXCLUDES),)
+    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
+    $1_ZIP_EXCLUDES := $$(addprefix -x$(SPACE)$(DQUOTE),$$(addsuffix /*$(DQUOTE),$$($1_EXCLUDES)))
+    $1_ALL_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_SRCS))
+  endif
+
+  # Use a slightly shorter name for logging, but with enough path to identify this zip.
+  $1_NAME:=$$(subst $$(OUTPUT_ROOT)/,,$$($1_ZIP))
+
+  # Now $1_ALL_SRCS should contain all sources that are going to be put into the zip.
+  # I.e. the zip -i and -x options should match the filtering done in the makefile.
+  # Explicitly excluded files can be given with absolute path. The patsubst solution
+  # isn't perfect but the likelyhood of an absolute path to match something in a src
+  # dir is very small.
+  # If zip has nothing to do, it returns 12 and would fail the build. Check for 12
+  # and only fail if it's not.
+  $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
+	$(MKDIR) -p $$(@D)
+	$(ECHO) Updating $$($1_NAME)
+	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$($1_ZIP_OPTIONS) $$@ . $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* $$(addprefix -x$(SPACE),$$(patsubst $$i/%,%,$$($1_EXCLUDE_FILES))) || test "$$$$?" = "12" )$$(NEWLINE)) true
+	$(TOUCH) $$@
+
+  # Add zip to target list
+  $1 += $$($1_ZIP)
+endef
+
+endif # _ZIP_ARCHIVE_GMK

@@ -23,15 +23,9 @@
 # questions.
 #
 
-define EvalDebugWrapper
-  $(if $(DEBUG_$1),
-    $(info -------- <<< Begin expansion of $1)
-    $(info $2)
-    $(info -------- >>> End expansion of $1)
-  )
-    
-  $2
-endef
+ifeq (,$(_MAKEBASE_GMK))
+  $(error You must include MakeBase.gmk prior to including TextFileProcessing.gmk)
+endif
 
 # Helper function for SetupTextFileProcessing; adds a rule for a single file
 # to be processed.
@@ -52,18 +46,20 @@ define SetupSingleTextFileForProcessing
   $1 += $(strip $3)/$(strip $4)
 endef
 
-# Setup a text file for processing, in which specified markers are replaced with
-# a given text, or with the contents of a given file.
+# Setup make rules for processing one or more text files, in which specified
+# markers are replaced with a given text, or with the contents of a given file.
 #
-# param 1 is the name space for this setup, e.g. BUILD_VERSION_FILE
-# param 2, 3, .. etc are named args:
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
 #   SOURCE_DIRS one or more directory roots to search for files to process
 #   SOURCE_FILES complete paths to one or more files to process
 #   OUTPUT_DIR the directory where we store the processed files.
 #   OUTPUT_FILE the name of the resulting file. Only allowed if processing a
 #       single file.
 #   SOURCE_BASE_DIR a common root to all SOURCE_DIRS.
-#       If specified, files will keep the path relative to the base in the 
+#       If specified, files will keep the path relative to the base in the
 #       OUTPUT_DIR. Otherwise, the hierarchy will be flattened into the OUTPUT_DIR.
 #   INCLUDE_FILES only include files matching these patterns (used only with
 #       SOURCE_DIRS)
