@@ -36,6 +36,7 @@
 X:=
 SPACE:=$(X) $(X)
 COMMA:=,
+DOLLAR:=$$
 HASH:=\#
 LEFT_PAREN:=(
 RIGHT_PAREN:=)
