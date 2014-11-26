@@ -262,10 +262,33 @@ UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject
 UNSAFE_END
 
 #ifndef SUPPORTS_NATIVE_CX8
-// Keep old code for platforms which may not have atomic jlong (8 bytes) instructions
 
-// Volatile long versions must use locks if !VM_Version::supports_cx8().
-// support_cx8 is a surrogate for 'supports atomic long memory ops'.
+// VM_Version::supports_cx8() is a surrogate for 'supports atomic long memory ops'.
+//
+// On platforms which do not support atomic compare-and-swap of jlong (8 byte)
+// values we have to use a lock-based scheme to enforce atomicity. This has to be
+// applied to all Unsafe operations that set the value of a jlong field. Even so
+// the compareAndSwapLong operation will not be atomic with respect to direct stores
+// to the field from Java code. It is important therefore that any Java code that
+// utilizes these Unsafe jlong operations does not perform direct stores. To permit
+// direct loads of the field from Java code we must also use Atomic::store within the
+// locked regions. And for good measure, in case there are direct stores, we also
+// employ Atomic::load within those regions. Note that the field in question must be
+// volatile and so must have atomic load/store accesses applied at the Java level.
+//
+// The locking scheme could utilize a range of strategies for controlling the locking
+// granularity: from a lock per-field through to a single global lock. The latter is
+// the simplest and is used for the current implementation. Note that the Java object
+// that contains the field, can not, in general, be used for locking. To do so can lead
+// to deadlocks as we may introduce locking into what appears to the Java code to be a
+// lock-free path.
+//
+// As all the locked-regions are very short and themselves non-blocking we can treat
+// them as leaf routines and elide safepoint checks (ie we don't perform any thread
+// state transitions even when blocking for the lock). Note that if we do choose to
+// add safepoint checks and thread state transitions, we must ensure that we calculate
+// the address of the field _after_ we have acquired the lock, else the object may have
+// been moved by the GC
 
 UNSAFE_ENTRY(jlong, Unsafe_GetLongVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
   UnsafeWrapper("Unsafe_GetLongVolatile");
@@ -277,8 +300,8 @@ UNSAFE_ENTRY(jlong, Unsafe_GetLongVolatile(JNIEnv *env, jobject unsafe, jobject 
     else {
       Handle p (THREAD, JNIHandles::resolve(obj));
       jlong* addr = (jlong*)(index_oop_from_field_offset_long(p(), offset));
-      ObjectLocker ol(p, THREAD);
-      jlong value = *addr;
+      MutexLockerEx mu(UnsafeJlong_lock, Mutex::_no_safepoint_check_flag);
+      jlong value = Atomic::load(addr);
       return value;
     }
   }
@@ -293,8 +316,8 @@ UNSAFE_ENTRY(void, Unsafe_SetLongVolatile(JNIEnv *env, jobject unsafe, jobject o
     else {
       Handle p (THREAD, JNIHandles::resolve(obj));
       jlong* addr = (jlong*)(index_oop_from_field_offset_long(p(), offset));
-      ObjectLocker ol(p, THREAD);
-      *addr = x;
+      MutexLockerEx mu(UnsafeJlong_lock, Mutex::_no_safepoint_check_flag);
+      Atomic::store(x, addr);
     }
   }
 UNSAFE_END
@@ -403,8 +426,8 @@ UNSAFE_ENTRY(void, Unsafe_SetOrderedLong(JNIEnv *env, jobject unsafe, jobject ob
     else {
       Handle p (THREAD, JNIHandles::resolve(obj));
       jlong* addr = (jlong*)(index_oop_from_field_offset_long(p(), offset));
-      ObjectLocker ol(p, THREAD);
-      *addr = x;
+      MutexLockerEx mu(UnsafeJlong_lock, Mutex::_no_safepoint_check_flag);
+      Atomic::store(x, addr);
     }
   }
 #endif
@@ -1152,14 +1175,19 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSwapLong(JNIEnv *env, jobject unsafe, jo
   UnsafeWrapper("Unsafe_CompareAndSwapLong");
   Handle p (THREAD, JNIHandles::resolve(obj));
   jlong* addr = (jlong*)(index_oop_from_field_offset_long(p(), offset));
+#ifdef SUPPORTS_NATIVE_CX8
+  return (jlong)(Atomic::cmpxchg(x, addr, e)) == e;
+#else
   if (VM_Version::supports_cx8())
     return (jlong)(Atomic::cmpxchg(x, addr, e)) == e;
   else {
     jboolean success = false;
-    ObjectLocker ol(p, THREAD);
-    if (*addr == e) { *addr = x; success = true; }
+    MutexLockerEx mu(UnsafeJlong_lock, Mutex::_no_safepoint_check_flag);
+    jlong val = Atomic::load(addr);
+    if (val == e) { Atomic::store(x, addr); success = true; }
     return success;
   }
+#endif
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute, jlong time))
