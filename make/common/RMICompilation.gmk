@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,26 @@
 # questions.
 #
 
+# Setup make rules for creating an RMI compilation.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   CLASSES:=List of classes to generate stubs for
+#   CLASSES_DIR:=Directory where to look for classes
+#   STUB_CLASSES_DIR:=Directory in where to put stub classes
+#   RUN_V11:=Set to run rmic with -v1.1
+#   RUN_V12:=Set to run rmic with -v1.2
+#   RUN_IIOP:=Set to run rmic with -iiop
+#   RUN_IIOP_STDPKG:=Set to run rmic with -iiop -standardPackage
+#   KEEP_GENERATED:=Set to keep generated sources around
 define SetupRMICompilation
-  # param 1 is a name for a variable to depend on.
-  # param 2 and up are named args.
-  #   CLASSES:=List of classes to generate stubs for
-  #   CLASSES_DIR:=Directory where to look for classes
-  #   STUB_CLASSES_DIR:=Directory in where to put stub classes
-  #   RUN_V11:=Set to run rmic with -v1.1
-  #   RUN_V12:=Set to run rmic with -v1.2
-  #   RUN_IIOP:=Set to run rmic with -iiop
-  #   RUN_IIOP_STDPKG:=Set to run rmic with -iiop -standardPackage
-  #   KEEP_GENERATED:=Set to keep generated sources around
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
+  $(call EvalDebugWrapper,$(strip $1),$(call SetupRMICompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
+endef
+
+define SetupRMICompilationInner
   $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupRMICompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))

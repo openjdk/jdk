@@ -134,32 +134,43 @@ define add_native_source
   endif
 endef
 
+# Setup make rules for creating a native binary (a shared library or an
+# executable).
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   SRC one or more directory roots to scan for C/C++ files.
+#   LANG C or C++
+#   CFLAGS the compiler flags to be used, used both for C and C++.
+#   CXXFLAGS the compiler flags to be used for c++, if set overrides CFLAGS.
+#   LDFLAGS the linker flags to be used, used both for C and C++.
+#   LDFLAGS_SUFFIX the linker flags to be added last on the commandline
+#       typically the libraries linked to.
+#   ARFLAGS the archiver flags to be used
+#   OBJECT_DIR the directory where we store the object files
+#   LIBRARY the resulting library file
+#   PROGRAM the resulting exec file
+#   INCLUDES only pick source from these directories
+#   EXCLUDES do not pick source from these directories
+#   INCLUDE_FILES only compile exactly these files!
+#   EXCLUDE_FILES with these names
+#   EXTRA_FILES List of extra files not in any of the SRC dirs
+#   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
+#   RC_FLAGS flags for RC.
+#   MAPFILE mapfile
+#   REORDER reorder file
+#   DEBUG_SYMBOLS add debug symbols (if configured on)
+#   CC the compiler to use, default is $(CC)
+#   LDEXE the linker to use for linking executables, default is $(LDEXE)
+#   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
 define SetupNativeCompilation
-  # param 1 is for example BUILD_MYPACKAGE
-  # param 2,3,4,5,6,7,8 are named args.
-  #   SRC one or more directory roots to scan for C/C++ files.
-  #   LANG C or C++
-  #   CFLAGS the compiler flags to be used, used both for C and C++.
-  #   CXXFLAGS the compiler flags to be used for c++, if set overrides CFLAGS.
-  #   LDFLAGS the linker flags to be used, used both for C and C++.
-  #   LDFLAGS_SUFFIX the linker flags to be added last on the commandline
-  #       typically the libraries linked to.
-  #   ARFLAGS the archiver flags to be used
-  #   OBJECT_DIR the directory where we store the object files
-  #   LIBRARY the resulting library file
-  #   PROGRAM the resulting exec file
-  #   INCLUDES only pick source from these directories
-  #   EXCLUDES do not pick source from these directories
-  #   INCLUDE_FILES only compile exactly these files!
-  #   EXCLUDE_FILES with these names
-  #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
-  #   RC_FLAGS flags for RC.
-  #   MAPFILE mapfile
-  #   REORDER reorder file
-  #   DEBUG_SYMBOLS add debug symbols (if configured on)
-  #   CC the compiler to use, default is $(CC)
-  #   LDEXE the linker to use for linking executables, default is $(LDEXE)
-  #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
+  $(if $(27),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
+  $(call EvalDebugWrapper,$(strip $1),$(call SetupNativeCompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26)))
+endef
+
+define SetupNativeCompilationInner
   $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupNativeCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26))
   $(if $(27),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
