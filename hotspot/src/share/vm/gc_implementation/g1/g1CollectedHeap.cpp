@@ -6530,7 +6530,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
       // We really only need to do this for old regions given that we
       // should never scan survivors. But it doesn't hurt to do it
       // for survivors too.
-      new_alloc_region->record_top_and_timestamp();
+      new_alloc_region->record_timestamp();
       if (survivor) {
         new_alloc_region->set_survivor();
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);

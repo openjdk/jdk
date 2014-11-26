@@ -140,11 +140,9 @@ public:
 
     // Set the "from" region in the closure.
     _oc->set_region(r);
-    HeapWord* card_start = _bot_shared->address_for_index(index);
-    HeapWord* card_end = card_start + G1BlockOffsetSharedArray::N_words;
-    Space *sp = SharedHeap::heap()->space_containing(card_start);
-    MemRegion sm_region = sp->used_region_at_save_marks();
-    MemRegion mr = sm_region.intersection(MemRegion(card_start,card_end));
+    MemRegion card_region(_bot_shared->address_for_index(index), G1BlockOffsetSharedArray::N_words);
+    MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
+    MemRegion mr = pre_gc_allocated.intersection(card_region);
     if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
       // We make the card as "claimed" lazily (so races are possible
       // but they're benign), which reduces the number of duplicate
