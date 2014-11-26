@@ -777,9 +777,6 @@ class CommandLineFlags {
   develop(bool, TraceHandleAllocation, false,                               \
           "Print out warnings when suspiciously many handles are allocated")\
                                                                             \
-  product(bool, UseCompilerSafepoints, true,                                \
-          "Stop at safepoints in compiled code")                            \
-                                                                            \
   product(bool, FailOverToOldVerifier, true,                                \
           "Fail over to old verifier when split verifier fails")            \
                                                                             \
@@ -1334,9 +1331,6 @@ class CommandLineFlags {
                                                                             \
   develop(bool, TraceJNIHandleAllocation, false,                            \
           "Trace allocation/deallocation of JNI handle blocks")             \
-                                                                            \
-  develop(bool, TraceThreadEvents, false,                                   \
-          "Trace all thread events")                                        \
                                                                             \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \

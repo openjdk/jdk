@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_TRACE_TRACEMACROS_HPP
-#define SHARE_VM_TRACE_TRACEMACROS_HPP
+/*
+ * @test
+ * @bug 8060449
+ * @summary Newly obsolete command line options should still give useful error messages when used improperly.
+ * @library /testlibrary
+ */
 
-#define EVENT_THREAD_EXIT(thread)
-#define EVENT_THREAD_DESTRUCT(thread)
+import com.oracle.java.testlibrary.*;
 
-#define TRACE_INIT_ID(k)
-#define TRACE_DATA TraceThreadData
+public class ObsoleteFlagErrorMessage {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:UseBoundThreadsPlusJunk", "-version");
 
-#define TRACE_START() JNI_OK
-#define TRACE_INITIALIZE() JNI_OK
-
-#define TRACE_DEFINE_KLASS_METHODS typedef int ___IGNORED_hs_trace_type1
-#define TRACE_DEFINE_KLASS_TRACE_ID typedef int ___IGNORED_hs_trace_type2
-#define TRACE_DEFINE_OFFSET typedef int ___IGNORED_hs_trace_type3
-#define TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
-#define TRACE_TEMPLATES(template)
-#define TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)
-
-#endif // SHARE_VM_TRACE_TRACEMACROS_HPP
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldContain("Unrecognized VM option 'UseBoundThreadsPlusJunk'"); // Must identify bad option.
+    output.shouldContain("UseBoundThreads"); // Should apply fuzzy matching to find correct option.
+    output.shouldContain("support").shouldContain("removed"); // Should warn user that the option they are trying to use is no longer supported.
+    output.shouldHaveExitValue(1);
+  }
+}
