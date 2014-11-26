@@ -74,6 +74,7 @@ public class WhiteBox {
   // Memory
   public native long getObjectAddress(Object o);
   public native int  getHeapOopSize();
+  public native int  getVMPageSize();
   public native boolean isObjectInOldGen(Object o);
   public native long getObjectSize(Object o);
 
