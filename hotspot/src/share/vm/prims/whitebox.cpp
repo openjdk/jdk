@@ -82,6 +82,9 @@ WB_ENTRY(jint, WB_GetHeapOopSize(JNIEnv* env, jobject o))
   return heapOopSize;
 WB_END
 
+WB_ENTRY(jint, WB_GetVMPageSize(JNIEnv* env, jobject o))
+  return os::vm_page_size();
+WB_END
 
 class WBIsKlassAliveClosure : public KlassClosure {
     Symbol* _name;
@@ -1121,6 +1124,7 @@ static JNINativeMethod methods[] = {
   {CC"getObjectSize",      CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
   {CC"isObjectInOldGen",   CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
   {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
+  {CC"getVMPageSize",      CC"()I",                   (void*)&WB_GetVMPageSize     },
   {CC"isClassAlive0",      CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC"parseCommandLine",
       CC"(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
