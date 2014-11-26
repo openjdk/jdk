@@ -45,15 +45,17 @@ endif
 # elegant solution to this.
 WIN_JAVA_LIB := $(JDK_OUTPUTDIR)/objs/libjava/java.lib
 
-# Use this variable to set DEBUG_SYMBOLS true on windows for all libraries, but
-# not on other platforms.
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  DEBUG_ALL_BINARIES := true
-endif
-
-# Build everything with debugging on OpenJDK
 ifdef OPENJDK
+  # Build everything with debugging on OpenJDK
   DEBUG_ALL_BINARIES := true
+else
+  # Use this variable to set DEBUG_SYMBOLS true on windows for all libraries, but
+  # not on other platforms.
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    DEBUG_ALL_BINARIES := true
+  else
+    DEBUG_ALL_BINARIES := false
+  endif
 endif
 
 ################################################################################
