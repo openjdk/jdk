@@ -73,9 +73,9 @@ endef
 #   REPLACEMENTS one or more text replacement patterns, using the syntax:
 #       PATTERN => REPLACEMENT_TEXT ; ...
 #
-#   At least one of INCLUDES or REPLACEMENTS must be present. If both are
-#   present, then the includes will be processed first, and replacements will be
-#   done on the included fragments as well.
+#   If both INCLUDES or REPLACEMENTS are present, then the includes will be
+#   processed first, and replacements will be done on the included fragments as well.
+#   If neither is present, the files will just be copied without modifications.
 #
 define SetupTextFileProcessing
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupTextFileProcessing, please update TextFileProcessing.gmk))
@@ -86,10 +86,6 @@ define SetupTextFileProcessingInner
   $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupTextFileProcessing($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupTextFileProcessing, please update TextFileProcessing.gmk))
-
-  ifeq ($$($1_REPLACEMENTS)$$($1_INCLUDES),)
-    $$(error At least one of REPLACEMENTS or INCLUDES are required for $1)
-  endif
 
   ifneq ($$($1_SOURCE_FILES),)
     ifneq ($$($1_SOURCE_DIRS),)
@@ -102,6 +98,9 @@ define SetupTextFileProcessingInner
       $$(error Cannot INCLUDE/EXCLUDE_FILES with SOURCE_FILES (in $1))
     endif
   else
+    ifeq ($$($1_SOURCE_DIRS),)
+      $$(error Must specify either SOURCE_FILES or SOURCE_DIRS (in $1))
+    endif
     # Find all files in the source trees. Sort to remove duplicates.
     $$(foreach src, $$($1_SOURCE_DIRS), $$(if $$(wildcard $$(src)), , \
         $$(error SOURCE_DIRS contains missing directory $$(src) (in $1))))
@@ -154,7 +153,7 @@ define SetupTextFileProcessingInner
       $1_REPLACEMENTS += ;
     endif
 
-    # If we have a trailing ";", add a dummy replacement, since there is no easy 
+    # If we have a trailing ";", add a dummy replacement, since there is no easy
     # way to delete the last word in make.
     ifeq ($$(lastword $$($1_REPLACEMENTS)), ;)
       $1_REPLACEMENTS += DUMMY_REPLACEMENT => DUMMY_REPLACEMENT
@@ -163,11 +162,11 @@ define SetupTextFileProcessingInner
     # Convert the REPLACEMENTS syntax ( A => B ; C => D ; ...) to a sed command
     # line (-e "s/A/B/" -e "s/C/D/" ...), basically by replacing '=>' with '/'
     # and ';' with '/" -e "s/', and adjusting for edge cases.
-    $1_REPLACEMENTS_COMMAND_LINE := $(SED) -e "s$$($1_SEP)$$(subst $$(SPACE);$$(SPACE),$$($1_SEP)" \
-        -e "s$$($1_SEP),$$(subst $$(SPACE)=>$$(SPACE),$$($1_SEP),$$(subst $$(SPACE)=>$$(SPACE);$$(SPACE),//" \
-        -e "s$$($1_SEP),$$(strip $$($1_REPLACEMENTS)))))$$($1_SEP)"
+    $1_REPLACEMENTS_COMMAND_LINE := $(SED) -e 's$$($1_SEP)$$(subst $$(SPACE);$$(SPACE),$$($1_SEP)' \
+        -e 's$$($1_SEP),$$(subst $$(SPACE)=>$$(SPACE),$$($1_SEP),$$(subst $$(SPACE)=>$$(SPACE);$$(SPACE),$$($1_SEP)$$($1_SEP)' \
+        -e 's$$($1_SEP),$$(strip $$($1_REPLACEMENTS)))))$$($1_SEP)'
   else
-    # We don't have any replacements, just pipe the file through cat.  
+    # We don't have any replacements, just pipe the file through cat.
     $1_REPLACEMENTS_COMMAND_LINE := $(CAT)
   endif
 
@@ -176,8 +175,8 @@ define SetupTextFileProcessingInner
     # Convert an INCLUDE like this PATTERN_1 => file1 ; PATTERN_2 => file2 ;
     # into an awk script fragment like this:
     # {
-    #   if (matches("PATTERN_1")) { include("file1") } else 
-    #   if (matches("PATTERN_2")) { include("file2") } else 
+    #   if (matches("PATTERN_1")) { include("file1") } else
+    #   if (matches("PATTERN_2")) { include("file2") } else
     #   print
     # }
 
@@ -190,12 +189,12 @@ define SetupTextFileProcessingInner
     $1_INCLUDES_COMMAND_LINE := $(NAWK) '$$($1_INCLUDES_HEADER_AWK) \
         { if (matches("$$($1_INCLUDES_PARTIAL_AWK)") } else print }'
   else
-    # We don't have any includes, just pipe the file through cat.  
+    # We don't have any includes, just pipe the file through cat.
     $1_INCLUDES_COMMAND_LINE := $(CAT)
   endif
 
   # Reset target list before populating it
-  $1 := 
+  $1 :=
 
   ifneq ($$($1_OUTPUT_FILE),)
     ifneq ($$(words $$($1_SOURCE_FILES)), 1)
@@ -204,7 +203,7 @@ define SetupTextFileProcessingInner
 
     # Note that $1 is space sensitive and must disobey whitespace rules
     $$(eval $$(call SetupSingleTextFileForProcessing,$1, $$($1_SOURCE_FILES), \
-        $$(dir $$($1_OUTPUT_FILE)), $$(notdir $$($1_OUTPUT_FILE))))
+        $$(patsubst %/, %, $$(dir $$($1_OUTPUT_FILE))), $$(notdir $$($1_OUTPUT_FILE))))
   else
     ifeq ($$($1_OUTPUT_DIR),)
       $$(error Neither OUTPUT_FILE nor OUTPUT_DIR was specified (in $1))
@@ -212,19 +211,20 @@ define SetupTextFileProcessingInner
 
     # Now call add_native_source for each source file we are going to process.
     ifeq ($$($1_SOURCE_BASE_DIR),)
-      # With no base dir specified, put all files in target dir, flattening any 
+      # With no base dir specified, put all files in target dir, flattening any
       # hierarchies. Note that $1 is space sensitive and must disobey whitespace
       # rules.
       $$(foreach src, $$($1_SOURCE_FILES), \
           $$(eval $$(call SetupSingleTextFileForProcessing,$1, $$(src), \
-              $$($1_OUTPUT_DIR), $$(notdir $$(src)))))
+              $$(patsubst %/, %, $$($1_OUTPUT_DIR)), $$(notdir $$(src)))))
     else
       # With a base dir, extract the relative portion of the path. Note that $1
       # is space sensitive and must disobey whitespace rules, and so is the
       # arguments to patsubst.
       $$(foreach src, $$($1_SOURCE_FILES), \
           $$(eval $$(call SetupSingleTextFileForProcessing,$1, $$(src), \
-              $$($1_OUTPUT_DIR), $$(patsubst $$($1_SOURCE_BASE_DIR)/%,%,$$(src)))))
+              $$(patsubst %/, %, $$($1_OUTPUT_DIR)), \
+              $$(patsubst $$($1_SOURCE_BASE_DIR)/%,%,$$(src)))))
     endif
   endif
 endef

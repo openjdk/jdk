@@ -166,7 +166,7 @@ define SetupArchiveInner
   ifneq (,$2)
     $1_DEPS:=$2
   else
-    # Add all source roots to the find cache since we are likely going to run find 
+    # Add all source roots to the find cache since we are likely going to run find
     # on these more than once. The cache will only be updated if necessary.
     $$(eval $$(call FillCacheFind, $$($1_FIND_LIST)))
     $1_DEPS:=$$(filter $$(addprefix %,$$($1_SUFFIXES)), \
@@ -336,7 +336,7 @@ endef
 #
 # The sed expression does this:
 # 1. Add a backslash before any :, = or ! that do not have a backslash already.
-# 2. Apply the file unicode2x.sed which does a whole bunch of \u00XX to \xXX 
+# 2. Apply the file unicode2x.sed which does a whole bunch of \u00XX to \xXX
 #    conversions.
 # 3. Delete all lines starting with #.
 # 4. Delete empty lines.
@@ -345,7 +345,7 @@ endef
 #    as sed on macosx does not understand '\t'.
 # 7. Replace the first \= with just =.
 # 8. Finally it's all sorted to create a stable output.
-# 
+#
 # It is assumed that = is the character used for separating names and values.
 define add_file_to_clean
   # param 1 = BUILD_MYPACKAGE
@@ -431,7 +431,7 @@ define SetupJavaCompilationInner
   # Make sure the dirs exist.
   $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory $$d)))
   $$(eval $$(call MakeDir,$$($1_BIN)))
-  # Add all source roots to the find cache since we are likely going to run find 
+  # Add all source roots to the find cache since we are likely going to run find
   # on these more than once. The cache will only be updated if necessary.
   $$(eval $$(call FillCacheFind,$$($1_SRC)))
   # Find all files in the source trees. Preserve order of source roots for overrides to

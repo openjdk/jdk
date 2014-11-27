@@ -481,7 +481,7 @@ $(DOCLETAPI_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOCLETAPI_PKGS)) 
+$(DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOCLETAPI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(DOCLETAPI_PKGS))
 

@@ -40,9 +40,9 @@ $(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
     JAVAC := $(JAVAC), \
     FLAGS := -XDignore.symbol.file=true -g -Xlint:all$(COMMA)-deprecation -Werror))
 
-# Any java code executed during a JDK build to build other parts of the JDK must be 
-# executed by the bootstrap JDK (probably with -Xbootclasspath/p: ) and for this 
-# purpose must be built with -target PREVIOUS for bootstrapping purposes, which 
+# Any java code executed during a JDK build to build other parts of the JDK must be
+# executed by the bootstrap JDK (probably with -Xbootclasspath/p: ) and for this
+# purpose must be built with -target PREVIOUS for bootstrapping purposes, which
 # requires restricting to language level and api of previous JDK.
 #
 # The generate old bytecode javac setup uses the new compiler to compile for the

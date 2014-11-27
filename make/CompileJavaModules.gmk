@@ -321,7 +321,7 @@ jdk.compiler_COPY := javax.tools.JavaCompilerTool
 
 ################################################################################
 
-jdk.jcmd_COPY := _options 
+jdk.jcmd_COPY := _options
 
 ################################################################################
 
@@ -470,7 +470,7 @@ define SetupModuleCompilation
   $1_DEPS := $$(call FindDepsForModule, $1)
 
   $1_CLASSPATH := $$(addprefix $(JDK_OUTPUTDIR)/modules/,$$($1_DEPS))
-  # When crypto classes are prebuilt, need to look for classes already in 
+  # When crypto classes are prebuilt, need to look for classes already in
   # output dir.
   ifneq ($(BUILD_CRYPTO), true)
     $1_CLASSPATH += $(JDK_OUTPUTDIR)/modules/$1
@@ -495,7 +495,7 @@ define SetupModuleCompilation
 
   # Declare dependencies between java compilation of different modules.
   # Since not all modules have been declared yet, or might be declared
-  # in different invocations of this file, use the macro to find the 
+  # in different invocations of this file, use the macro to find the
   # correct target file to depend on.
   # Only the javac compilation actually depends on other modules so limit
   # dependency declaration to that by using the *_COMPILE_TARGET variable.

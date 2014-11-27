@@ -24,31 +24,31 @@
 #
 
 ########################################################################
-# This file handles detection of the Boot JDK. The Boot JDK detection 
-# process has been developed as a response to solve a complex real-world 
-# problem. Initially, it was simple, but it has grown as platform after 
+# This file handles detection of the Boot JDK. The Boot JDK detection
+# process has been developed as a response to solve a complex real-world
+# problem. Initially, it was simple, but it has grown as platform after
 # platform, idiosyncracy after idiosyncracy has been supported.
 #
 # The basic idea is this:
 # 1) You need an acceptable *) JDK to use as a Boot JDK
-# 2) There are several ways to locate a JDK, that are mostly platform 
+# 2) There are several ways to locate a JDK, that are mostly platform
 #    dependent **)
 # 3) You can have multiple JDKs installed
-# 4) If possible, configure should try to dig out an acceptable JDK 
+# 4) If possible, configure should try to dig out an acceptable JDK
 #    automatically, without having to resort to command-line options
 #
-# *)  acceptable means e.g. JDK7 for building JDK8, a complete JDK (with 
-#     javac) and not a JRE, etc. 
+# *)  acceptable means e.g. JDK7 for building JDK8, a complete JDK (with
+#     javac) and not a JRE, etc.
 #
-# **) On Windows we typically use a well-known path. 
+# **) On Windows we typically use a well-known path.
 #     On MacOSX we typically use the tool java_home.
-#     On Linux we typically find javac in the $PATH, and then follow a 
-#     chain of symlinks that often ends up in a real JDK. 
+#     On Linux we typically find javac in the $PATH, and then follow a
+#     chain of symlinks that often ends up in a real JDK.
 #
-# This leads to the code where we check in different ways to locate a 
-# JDK, and if one is found, check if it is acceptable. If not, we print 
-# our reasons for rejecting it (useful when debugging non-working 
-# configure situations) and continue checking the next one. 
+# This leads to the code where we check in different ways to locate a
+# JDK, and if one is found, check if it is acceptable. If not, we print
+# our reasons for rejecting it (useful when debugging non-working
+# configure situations) and continue checking the next one.
 ########################################################################
 
 # Execute the check given as argument, and verify the result
@@ -244,7 +244,7 @@ AC_DEFUN([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS],
 AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
 [
   # Use user overridden value if available, otherwise locate tool in the Boot JDK.
-  BASIC_SETUP_TOOL($1, 
+  BASIC_SETUP_TOOL($1,
     [
       AC_MSG_CHECKING([for $2 in Boot JDK])
       $1=$BOOT_JDK/bin/$2

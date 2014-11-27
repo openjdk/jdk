@@ -456,7 +456,7 @@ JAVA_FLAGS_SMALL:=@JAVA_FLAGS_SMALL@
 JAVA_TOOL_FLAGS_SMALL:=@JAVA_TOOL_FLAGS_SMALL@
 SJAVAC_SERVER_JAVA_FLAGS:=@SJAVAC_SERVER_JAVA_FLAGS@
 
-# The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk 
+# The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk
 # for bootcycle-images build. Make sure to keep them in sync. Do not use the *_CMD
 # versions of the variables directly.
 JAVA_CMD:=@JAVA@
@@ -713,7 +713,7 @@ JRE_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_BUNDLE_SUBDIR)
 
 # This macro is called to allow inclusion of closed source counterparts.
 # Unless overridden in closed sources, it expands to nothing.
-# Usage: This function is called in an open makefile, with the following 
+# Usage: This function is called in an open makefile, with the following
 # arguments:
 # $1 the name of the repo, or empty if the top-level repo.
 # $2 the name of the makefile

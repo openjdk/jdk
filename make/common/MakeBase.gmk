@@ -405,7 +405,7 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   # If the source and target parent directories are the same, recursive copy doesn't work
   # so we fall back on regular copy, which isn't preserving symlinks.
   define install-file
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p '$(@D)'
 	$(RM) '$@'
 	if [ "$(@D)" != "$(<D)" ]; then \
 	  $(CP) -f -r -P '$<' '$(@D)'; \
@@ -427,7 +427,7 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   # output dir. When these are copied again to images, xattr would fail. By only clearing
   # attributes when they are present, failing on this is avoided.
   define install-file
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p '$(@D)'
 	$(CP) -fRP '$<' '$@'
 	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
   endef
@@ -435,7 +435,7 @@ else
   # Running mkdir and cp in the same shell speeds up copy intensive tasks in Cygwin
   # significantly.
   define install-file
-	$(MKDIR) -p $(@D) && $(CP) -fP '$<' '$@'
+	$(MKDIR) -p '$(@D)' && $(CP) -fP '$<' '$@'
   endef
 endif
 
