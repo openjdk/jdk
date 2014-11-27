@@ -165,7 +165,7 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
      */
     @SuppressWarnings("unused")
     private static Object bindDynamicMethod(final Object dynamicMethod, final Object boundThis) {
-        return dynamicMethod == null ? ScriptRuntime.UNDEFINED : Bootstrap.bindDynamicMethod(dynamicMethod, boundThis);
+        return dynamicMethod == null ? ScriptRuntime.UNDEFINED : Bootstrap.bindCallable(dynamicMethod, boundThis, null);
     }
 
     /**
