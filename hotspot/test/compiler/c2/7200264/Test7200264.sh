@@ -31,7 +31,7 @@ then
 fi
 echo "TESTSRC=${TESTSRC}"
 ## Adding common setup Variables for running shell tests.
-. ${TESTSRC}/../../test_env.sh
+. ${TESTSRC}/../../../test_env.sh
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xinternalversion | sed 's/amd64/x86/' | grep "x86" | grep "Server VM" | grep "debug"
 

@@ -2417,7 +2417,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
       }
     }
   }
-  if ((int) (C->live_nodes() + 2*NodeLimitFudgeFactor) > MaxNodeLimit) {
+  if (C->live_nodes() + 2*NodeLimitFudgeFactor > C->max_node_limit()) {
     if (C->do_escape_analysis() == true && !C->failing()) {
       // Retry compilation without escape analysis.
       // If this is the first failure, the sentinel string will "stick"
