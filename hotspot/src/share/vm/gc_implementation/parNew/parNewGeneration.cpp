@@ -999,6 +999,11 @@ void ParNewGeneration::collect(bool   full,
   thread_state_set.reset(0 /* Bad value in debug if not reset */,
                          promotion_failed());
 
+  // Trace and reset failed promotion info.
+  if (promotion_failed()) {
+    thread_state_set.trace_promotion_failed(gc_tracer);
+  }
+
   // Process (weak) reference objects found during scavenge.
   ReferenceProcessor* rp = ref_processor();
   IsAliveClosure is_alive(this);
