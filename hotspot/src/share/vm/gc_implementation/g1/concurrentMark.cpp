@@ -2123,6 +2123,7 @@ void ConcurrentMark::cleanup() {
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
   g1h->g1mm()->update_sizes();
+  g1h->allocation_context_stats().update_after_mark();
 
   g1h->trace_heap_after_concurrent_cycle();
 }
@@ -3243,7 +3244,6 @@ void ConcurrentMark::aggregate_count_data() {
   _g1h->set_par_threads(n_workers);
   _g1h->workers()->run_task(&g1_par_agg_task);
   _g1h->set_par_threads(0);
-  _g1h->allocation_context_stats().update_at_remark();
 }
 
 // Clear the per-worker arrays used to store the per-region counting data
