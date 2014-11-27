@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -804,7 +805,7 @@ public final class NativeObject {
             // name and object linked with BeansLinker. (Actually, an even stronger assumption is true: return value is
             // constant for any given method name and object's class.)
             return MethodHandles.dropArguments(MethodHandles.constant(Object.class,
-                    Bootstrap.bindDynamicMethod(methodGetter.invoke(source), source)), 0, Object.class);
+                    Bootstrap.bindCallable(methodGetter.invoke(source), source, null)), 0, Object.class);
         } catch(RuntimeException|Error e) {
             throw e;
         } catch(final Throwable t) {
