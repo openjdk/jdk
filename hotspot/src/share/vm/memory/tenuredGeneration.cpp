@@ -64,45 +64,12 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _space_counters = new CSpaceCounters(gen_name, 0,
                                        _virtual_space.reserved_size(),
                                        _the_space, _gen_counters);
-#if INCLUDE_ALL_GCS
-  if (UseParNewGC) {
-    typedef ParGCAllocBufferWithBOT* ParGCAllocBufferWithBOTPtr;
-    _alloc_buffers = NEW_C_HEAP_ARRAY(ParGCAllocBufferWithBOTPtr,
-                                      ParallelGCThreads, mtGC);
-    if (_alloc_buffers == NULL)
-      vm_exit_during_initialization("Could not allocate alloc_buffers");
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _alloc_buffers[i] =
-        new ParGCAllocBufferWithBOT(OldPLABSize, _bts);
-      if (_alloc_buffers[i] == NULL)
-        vm_exit_during_initialization("Could not allocate alloc_buffers");
-    }
-  } else {
-    _alloc_buffers = NULL;
-  }
-#endif // INCLUDE_ALL_GCS
-}
-
-
-const char* TenuredGeneration::name() const {
-  return "tenured generation";
 }
 
 void TenuredGeneration::gc_prologue(bool full) {
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
-  if (VerifyBeforeGC) {
-    verify_alloc_buffers_clean();
-  }
 }
-
-void TenuredGeneration::gc_epilogue(bool full) {
-  if (VerifyAfterGC) {
-    verify_alloc_buffers_clean();
-  }
-  OneContigSpaceCardGeneration::gc_epilogue(full);
-}
-
 
 bool TenuredGeneration::should_collect(bool  full,
                                        size_t size,
@@ -149,15 +116,6 @@ bool TenuredGeneration::should_collect(bool  full,
   return result;
 }
 
-void TenuredGeneration::collect(bool   full,
-                                bool   clear_all_soft_refs,
-                                size_t size,
-                                bool   is_tlab) {
-  retire_alloc_buffers_before_full_gc();
-  OneContigSpaceCardGeneration::collect(full, clear_all_soft_refs,
-                                        size, is_tlab);
-}
-
 void TenuredGeneration::compute_new_size() {
   assert_locked_or_safepoint(Heap_lock);
 
@@ -171,6 +129,7 @@ void TenuredGeneration::compute_new_size() {
          err_msg("used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
          " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity()));
 }
+
 void TenuredGeneration::update_gc_stats(int current_level,
                                         bool full) {
   // If the next lower level(s) has been collected, gather any statistics
@@ -197,96 +156,6 @@ void TenuredGeneration::update_counters() {
     _gen_counters->update_all();
   }
 }
-
-
-#if INCLUDE_ALL_GCS
-oop TenuredGeneration::par_promote(int thread_num,
-                                   oop old, markOop m, size_t word_sz) {
-
-  ParGCAllocBufferWithBOT* buf = _alloc_buffers[thread_num];
-  HeapWord* obj_ptr = buf->allocate(word_sz);
-  bool is_lab = true;
-  if (obj_ptr == NULL) {
-#ifndef PRODUCT
-    if (Universe::heap()->promotion_should_fail()) {
-      return NULL;
-    }
-#endif  // #ifndef PRODUCT
-
-    // Slow path:
-    if (word_sz * 100 < ParallelGCBufferWastePct * buf->word_sz()) {
-      // Is small enough; abandon this buffer and start a new one.
-      size_t buf_size = buf->word_sz();
-      HeapWord* buf_space =
-        TenuredGeneration::par_allocate(buf_size, false);
-      if (buf_space == NULL) {
-        buf_space = expand_and_allocate(buf_size, false, true /* parallel*/);
-      }
-      if (buf_space != NULL) {
-        buf->retire(false, false);
-        buf->set_buf(buf_space);
-        obj_ptr = buf->allocate(word_sz);
-        assert(obj_ptr != NULL, "Buffer was definitely big enough...");
-      }
-    };
-    // Otherwise, buffer allocation failed; try allocating object
-    // individually.
-    if (obj_ptr == NULL) {
-      obj_ptr = TenuredGeneration::par_allocate(word_sz, false);
-      if (obj_ptr == NULL) {
-        obj_ptr = expand_and_allocate(word_sz, false, true /* parallel */);
-      }
-    }
-    if (obj_ptr == NULL) return NULL;
-  }
-  assert(obj_ptr != NULL, "program logic");
-  Copy::aligned_disjoint_words((HeapWord*)old, obj_ptr, word_sz);
-  oop obj = oop(obj_ptr);
-  // Restore the mark word copied above.
-  obj->set_mark(m);
-  return obj;
-}
-
-void TenuredGeneration::par_promote_alloc_undo(int thread_num,
-                                               HeapWord* obj,
-                                               size_t word_sz) {
-  ParGCAllocBufferWithBOT* buf = _alloc_buffers[thread_num];
-  if (buf->contains(obj)) {
-    guarantee(buf->contains(obj + word_sz - 1),
-              "should contain whole object");
-    buf->undo_allocation(obj, word_sz);
-  } else {
-    CollectedHeap::fill_with_object(obj, word_sz);
-  }
-}
-
-void TenuredGeneration::par_promote_alloc_done(int thread_num) {
-  ParGCAllocBufferWithBOT* buf = _alloc_buffers[thread_num];
-  buf->retire(true, ParallelGCRetainPLAB);
-}
-
-void TenuredGeneration::retire_alloc_buffers_before_full_gc() {
-  if (UseParNewGC) {
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _alloc_buffers[i]->retire(true /*end_of_gc*/, false /*retain*/);
-    }
-  }
-}
-
-// Verify that any retained parallel allocation buffers do not
-// intersect with dirty cards.
-void TenuredGeneration::verify_alloc_buffers_clean() {
-  if (UseParNewGC) {
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _rs->verify_aligned_region_empty(_alloc_buffers[i]->range());
-    }
-  }
-}
-
-#else  // INCLUDE_ALL_GCS
-void TenuredGeneration::retire_alloc_buffers_before_full_gc() {}
-void TenuredGeneration::verify_alloc_buffers_clean() {}
-#endif // INCLUDE_ALL_GCS
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = max_contiguous_available();

@@ -1256,8 +1256,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   virtual const char* short_name() const { return "CMS"; }
   void        print() const;
   void printOccupancy(const char* s);
-  bool must_be_youngest() const { return false; }
-  bool must_be_oldest()   const { return true; }
 
   // Resize the generation after a compacting GC.  The
   // generation can be treated as a contiguous space

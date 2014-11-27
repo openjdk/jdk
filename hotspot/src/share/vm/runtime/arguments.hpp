@@ -472,7 +472,6 @@ class Arguments : AllStatic {
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency_user();        // Check user-selected gc
   static inline bool check_gc_consistency_ergo(); // Check ergonomic-selected gc
-  static void check_deprecated_gcs();
   static void check_deprecated_gc_flags();
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
@@ -615,8 +614,7 @@ class Arguments : AllStatic {
 };
 
 bool Arguments::gc_selected() {
-  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC ||
-    UseParNewGC || UseSerialGC;
+  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC || UseSerialGC;
 }
 
 bool Arguments::check_gc_consistency_ergo() {

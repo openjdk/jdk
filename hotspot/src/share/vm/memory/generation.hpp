@@ -517,13 +517,6 @@ class Generation: public CHeapObj<mtGC> {
 
   int level() const { return _level; }
 
-  // Attributes
-
-  // True iff the given generation may only be the youngest generation.
-  virtual bool must_be_youngest() const = 0;
-  // True iff the given generation may only be the oldest generation.
-  virtual bool must_be_oldest() const = 0;
-
   // Reference Processing accessor
   ReferenceProcessor* const ref_processor() { return _ref_processor; }
 

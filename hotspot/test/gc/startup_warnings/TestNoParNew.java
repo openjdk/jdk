@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,25 @@
 */
 
 /*
- * @test TestSystemGC
- * @key gc
- * @requires vm.gc=="null"
- * @summary Runs System.gc() with different flags.
- * @run main/othervm TestSystemGC
- * @run main/othervm -XX:+UseSerialGC TestSystemGC
- * @run main/othervm -XX:+UseParallelGC TestSystemGC
- * @run main/othervm -XX:+UseParallelGC -XX:-UseParallelOldGC TestSystemGC
- * @run main/othervm -XX:+UseConcMarkSweepGC TestSystemGC
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
- * @run main/othervm -XX:+UseG1GC TestSystemGC
- * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
- * @run main/othervm -XX:+UseLargePages TestSystemGC
- * @run main/othervm -XX:+UseLargePages -XX:+UseLargePagesInMetaspace TestSystemGC
- */
+* @test TestNoParNew
+* @key gc
+* @bug 8065972
+* @summary Test that specifying -XX:-UseParNewGC on the command line logs a warning message
+* @library /testlibrary
+*/
 
-public class TestSystemGC {
+import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.oracle.java.testlibrary.ProcessTools;
+
+
+public class TestNoParNew {
+
   public static void main(String args[]) throws Exception {
-    System.gc();
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:-UseParNewGC", "-version");
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldContain("warning: The UseParNewGC flag is deprecated and will likely be removed in a future release");
+    output.shouldNotContain("error");
+    output.shouldHaveExitValue(0);
   }
+
 }

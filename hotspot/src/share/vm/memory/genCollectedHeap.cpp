@@ -182,10 +182,7 @@ void GenCollectedHeap::post_initialize() {
   SharedHeap::post_initialize();
   GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
   guarantee(policy->is_generation_policy(), "Illegal policy type");
-  DefNewGeneration* def_new_gen = (DefNewGeneration*) get_gen(0);
-  assert(def_new_gen->kind() == Generation::DefNew ||
-         def_new_gen->kind() == Generation::ParNew,
-         "Wrong generation kind");
+  DefNewGeneration* def_new_gen = get_gen(0)->as_DefNewGeneration();
 
   Generation* old_gen = get_gen(1);
   assert(old_gen->kind() == Generation::ConcurrentMarkSweep ||
@@ -1117,10 +1114,8 @@ void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 
 void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
 #if INCLUDE_ALL_GCS
-  if (UseParNewGC) {
-    workers()->print_worker_threads_on(st);
-  }
   if (UseConcMarkSweepGC) {
+    workers()->print_worker_threads_on(st);
     ConcurrentMarkSweepThread::print_all_on(st);
   }
 #endif // INCLUDE_ALL_GCS
