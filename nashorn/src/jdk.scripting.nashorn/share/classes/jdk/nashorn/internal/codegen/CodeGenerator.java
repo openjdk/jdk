@@ -3264,6 +3264,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             emitContinueLabel(continueLabel, liveLocalsOnContinue);
         }
 
+        if (loopNode.hasPerIterationScope() && lc.getParentBlock().needsScope()) {
+            // ES6 for loops with LET init need a new scope for each iteration. We just create a shallow copy here.
+            method.loadCompilerConstant(SCOPE);
+            method.invoke(virtualCallNoLookup(ScriptObject.class, "copy", ScriptObject.class));
+            method.storeCompilerConstant(SCOPE);
+        }
+
         if(method.isReachable()) {
             if(modify != null) {
                 lineNumber(loopNode);
