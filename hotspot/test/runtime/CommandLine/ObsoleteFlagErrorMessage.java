@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,47 +21,24 @@
  * questions.
  */
 
-/**
- * @test SystemGCOnForegroundCollector
- * @summary CMS: Call reset_after_compaction() only if a compaction has been done
- * @bug 8013184
- * @key gc
- * @key regression
+/*
+ * @test
+ * @bug 8060449
+ * @summary Newly obsolete command line options should still give useful error messages when used improperly.
  * @library /testlibrary
- * @run main/othervm SystemGCOnForegroundCollector
- * @author jon.masamitsu@oracle.com
  */
 
 import com.oracle.java.testlibrary.*;
 
-public class SystemGCOnForegroundCollector {
-  public static void main(String args[]) throws Exception {
-
+public class ObsoleteFlagErrorMessage {
+  public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-showversion",
-      "-XX:+UseConcMarkSweepGC",
-      "-XX:MaxTenuringThreshold=1",
-      "-XX:-UseCMSCompactAtFullCollection",
-      ThreePlusMSSystemGC.class.getName()
-      );
+        "-XX:UseBoundThreadsPlusJunk", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-    output.shouldNotContain("error");
-
-    output.shouldHaveExitValue(0);
-  }
-
-  static class ThreePlusMSSystemGC {
-    public static void main(String [] args) {
-      // From running this test 3 System.gc() were always
-      // enough to see the failure but the cause of the failure
-      // depends on how objects are allocated in the CMS generation
-      // which is non-deterministic.  Use 30 iterations for a more
-      // reliable test.
-      for (int i = 0; i < 30; i++) {
-        System.gc();
-      }
-    }
+    output.shouldContain("Unrecognized VM option 'UseBoundThreadsPlusJunk'"); // Must identify bad option.
+    output.shouldContain("UseBoundThreads"); // Should apply fuzzy matching to find correct option.
+    output.shouldContain("support").shouldContain("removed"); // Should warn user that the option they are trying to use is no longer supported.
+    output.shouldHaveExitValue(1);
   }
 }

@@ -398,8 +398,7 @@ inline void MarkFromRootsClosure::do_yield_check() {
 
 inline void Par_MarkFromRootsClosure::do_yield_check() {
   if (ConcurrentMarkSweepThread::should_yield() &&
-      !_collector->foregroundGCIsActive() &&
-      _yield) {
+      !_collector->foregroundGCIsActive()) {
     do_yield_work();
   }
 }

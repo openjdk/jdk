@@ -1297,6 +1297,17 @@ void Assembler::cmpxchgl(Register reg, Address adr) { // cmpxchg
   emit_operand(reg, adr);
 }
 
+// The 8-bit cmpxchg compares the value at adr with the contents of rax,
+// and stores reg into adr if so; otherwise, the value at adr is loaded into rax,.
+// The ZF is set if the compared values were equal, and cleared otherwise.
+void Assembler::cmpxchgb(Register reg, Address adr) { // cmpxchg
+  InstructionMark im(this);
+  prefix(adr, reg, true);
+  emit_int8(0x0F);
+  emit_int8((unsigned char)0xB0);
+  emit_operand(reg, adr);
+}
+
 void Assembler::comisd(XMMRegister dst, Address src) {
   // NOTE: dbx seems to decode this as comiss even though the
   // 0x66 is there. Strangly ucomisd comes out correct
