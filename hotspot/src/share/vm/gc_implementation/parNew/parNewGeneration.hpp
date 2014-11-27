@@ -372,7 +372,6 @@ class ParNewGeneration: public DefNewGeneration {
 
   // override
   virtual bool refs_discovery_is_mt()     const {
-    assert(UseParNewGC, "ParNewGeneration only when UseParNewGC");
     return ParallelGCThreads > 1;
   }
 

@@ -4094,10 +4094,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
   }
 
   if (clean_survivor) {  // preclean the active survivor space(s)
-    assert(_young_gen->kind() == Generation::DefNew ||
-           _young_gen->kind() == Generation::ParNew,
-         "incorrect type for cast");
-    DefNewGeneration* dng = (DefNewGeneration*)_young_gen;
+    DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
     PushAndMarkClosure pam_cl(this, _span, ref_processor(),
                              &_markBitMap, &_modUnionTable,
                              &_markStack, true /* precleaning phase */);
@@ -5168,7 +5165,7 @@ void
 CMSCollector::
 initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
   assert(n_threads > 0, "Unexpected n_threads argument");
-  DefNewGeneration* dng = (DefNewGeneration*)_young_gen;
+  DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
 
   // Eden space
   if (!dng->eden()->is_empty()) {

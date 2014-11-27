@@ -1260,10 +1260,8 @@ static void disable_adaptive_size_policy(const char* collector_name) {
 void Arguments::set_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC && !UseG1GC,
          "control point invariant");
-  assert(UseParNewGC, "Error");
-
-  // Turn off AdaptiveSizePolicy for parnew until it is complete.
-  disable_adaptive_size_policy("UseParNewGC");
+  assert(UseConcMarkSweepGC, "CMS is expected to be on here");
+  assert(UseParNewGC, "ParNew should always be used with CMS");
 
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
     FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
@@ -1304,21 +1302,12 @@ void Arguments::set_parnew_gc_flags() {
 void Arguments::set_cms_and_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC, "Error");
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
-
-  // If we are using CMS, we prefer to UseParNewGC,
-  // unless explicitly forbidden.
-  if (FLAG_IS_DEFAULT(UseParNewGC)) {
-    FLAG_SET_ERGO(bool, UseParNewGC, true);
-  }
+  assert(UseParNewGC, "ParNew should always be used with CMS");
 
   // Turn off AdaptiveSizePolicy by default for cms until it is complete.
   disable_adaptive_size_policy("UseConcMarkSweepGC");
 
-  // In either case, adjust ParallelGCThreads and/or UseParNewGC
-  // as needed.
-  if (UseParNewGC) {
-    set_parnew_gc_flags();
-  }
+  set_parnew_gc_flags();
 
   size_t max_heap = align_size_down(MaxHeapSize,
                                     CardTableRS::ct_max_alignment_constraint());
@@ -1788,14 +1777,11 @@ void Arguments::set_gc_specific_flags() {
   // Set per-collector flags
   if (UseParallelGC || UseParallelOldGC) {
     set_parallel_gc_flags();
-  } else if (UseConcMarkSweepGC) { // Should be done before ParNew check below
+  } else if (UseConcMarkSweepGC) {
     set_cms_and_parnew_gc_flags();
-  } else if (UseParNewGC) {  // Skipped if CMS is set above
-    set_parnew_gc_flags();
   } else if (UseG1GC) {
     set_g1_gc_flags();
   }
-  check_deprecated_gcs();
   check_deprecated_gc_flags();
   if (AssumeMP && !UseSerialGC) {
     if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
@@ -2156,17 +2142,11 @@ bool Arguments::verify_MaxHeapFreeRatio(FormatBuffer<80>& err_msg, uintx max_hea
 // Check consistency of GC selection
 bool Arguments::check_gc_consistency_user() {
   check_gclog_consistency();
-  bool status = true;
   // Ensure that the user has not selected conflicting sets
-  // of collectors. [Note: this check is merely a user convenience;
-  // collectors over-ride each other so that only a non-conflicting
-  // set is selected; however what the user gets is not what they
-  // may have expected from the combination they asked for. It's
-  // better to reduce user confusion by not allowing them to
-  // select conflicting combinations.
+  // of collectors.
   uint i = 0;
   if (UseSerialGC)                       i++;
-  if (UseConcMarkSweepGC || UseParNewGC) i++;
+  if (UseConcMarkSweepGC)                i++;
   if (UseParallelGC || UseParallelOldGC) i++;
   if (UseG1GC)                           i++;
   if (i > 1) {
@@ -2174,26 +2154,30 @@ bool Arguments::check_gc_consistency_user() {
                 "Conflicting collector combinations in option list; "
                 "please refer to the release notes for the combinations "
                 "allowed\n");
-    status = false;
+    return false;
   }
-  return status;
-}
 
-void Arguments::check_deprecated_gcs() {
   if (UseConcMarkSweepGC && !UseParNewGC) {
-    warning("Using the DefNew young collector with the CMS collector is deprecated "
-        "and will likely be removed in a future release");
+    jio_fprintf(defaultStream::error_stream(),
+        "It is not possible to combine the DefNew young collector with the CMS collector.\n");
+    return false;
   }
 
   if (UseParNewGC && !UseConcMarkSweepGC) {
     // !UseConcMarkSweepGC means that we are using serial old gc. Unfortunately we don't
     // set up UseSerialGC properly, so that can't be used in the check here.
-    warning("Using the ParNew young collector with the Serial old collector is deprecated "
-        "and will likely be removed in a future release");
+    jio_fprintf(defaultStream::error_stream(),
+        "It is not possible to combine the ParNew young collector with the Serial old collector.\n");
+    return false;
   }
+
+  return true;
 }
 
 void Arguments::check_deprecated_gc_flags() {
+  if (FLAG_IS_CMDLINE(UseParNewGC)) {
+    warning("The UseParNewGC flag is deprecated and will likely be removed in a future release");
+  }
   if (FLAG_IS_CMDLINE(MaxGCMinorPauseMillis)) {
     warning("Using MaxGCMinorPauseMillis as minor pause goal is deprecated"
             "and will likely be removed in future release");
@@ -3554,6 +3538,11 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
         }
       }
     }
+  }
+
+  if (UseConcMarkSweepGC && FLAG_IS_DEFAULT(UseParNewGC) && !UseParNewGC) {
+    // CMS can only be used with ParNew
+    FLAG_SET_ERGO(bool, UseParNewGC, true);
   }
 
   if (!check_vm_args_consistency()) {
