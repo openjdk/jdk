@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,57 +22,24 @@
  */
 
 /**
- * JDK-8051889: Implement block scoping in symbol assignment and scope computation
+ * JDK-8057980: let & const: remaining issues with lexical scoping
  *
  * @test
  * @run
- * @option --language=es6 */
+ * @option --language=es6
+ */
 
-"use strict";
-
-for (let i = 0; i < 10; i++) {
-    print(i);
-}
-
-try {
-    print(i);
-} catch (e) {
-    print(e);
-}
-
-let a = [];
-
-for (let i = 0; i < 10; i++) {
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
-a = [];
-
-for (let i = 0; i < 10; i++) {
-    if (i == 5) {
-        i = "foo";
+function tryEval(s) {
+    try {
+        eval(s);
+    } catch (e) {
+        print(String(e).replace(/\\/g, "/"));
     }
-    a.push(function() { print(i); });
 }
 
-a.forEach(function(f) { f(); });
+tryEval('var x = 0; switch (x) { case 0: { let   x = 1; print(x); } case 1: { let   x = 2; print(x); }} print(x);');
+tryEval('var x = 0; switch (x) { case 0: { const x = 1; print(x); } case 1: { const x = 2; print(x); }} print(x);');
 
-try {
-    print(i);
-} catch (e) {
-    print(e);
-}
-
-a = [];
-
-for (let i = 0; i < 20; i++) {
-    if (i % 2 == 1) {
-        i += 2;
-        continue;
-    }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
+// TODO: the following should not throw
+tryEval('switch (x) { case 0: let x = 1; }');
+tryEval('switch (x) { case 0: const x = 1; }');

@@ -40,22 +40,19 @@ load(__DIR__ + "let-load-lib.js");
 }
 
 print("imported var: " + a);
-try {
-    print("imported let: " + b);
-} catch (e) {
-    print(e);
-}
-
-try {
-    print("imported const: " + c);
-} catch (e) {
-    print(e);
-}
+print("imported let: " + b);
+print("imported const: " + c);
 
 top();
 
 try {
     block();
+} catch (e) {
+    print(e);
+}
+
+try {
+    c = "foo";
 } catch (e) {
     print(e);
 }

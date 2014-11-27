@@ -13,6 +13,7 @@ false
 false
 true
 true
+TypeError: Assignment to constant "CONST"
 VAR
 LETLET
 CONST
@@ -28,3 +29,4 @@ false
 false
 true
 true
+TypeError: Assignment to constant "CONST"

@@ -61,9 +61,9 @@ public abstract class ArrayData {
     /**
      * Length of the array data. Not necessarily length of the wrapped array.
      * This is private to ensure that no one in a subclass is able to touch the length
-     * without going through {@link setLength}. This is used to implement
+     * without going through {@link #setLength}. This is used to implement
      * {@link LengthNotWritableFilter}s, ensuring that there are no ways past
-     * a {@link setLength} function replaced by a nop
+     * a {@link #setLength} function replaced by a nop
      */
     private long length;
 
@@ -79,11 +79,7 @@ public abstract class ArrayData {
      */
     private static class UntouchedArrayData extends ContinuousArrayData {
         private UntouchedArrayData() {
-            this(0);
-        }
-
-        private UntouchedArrayData(final int length) {
-            super(length);
+            super(0);
         }
 
         private ArrayData toRealArrayData() {
@@ -100,7 +96,8 @@ public abstract class ArrayData {
 
         @Override
         public ContinuousArrayData copy() {
-            return new UntouchedArrayData((int)length());
+            assert length() == 0;
+            return this;
         }
 
         @Override
@@ -246,7 +243,7 @@ public abstract class ArrayData {
         public Class<?> getBoxedElementType() {
             return Integer.class;
         }
-    };
+    }
 
     /**
      * Constructor

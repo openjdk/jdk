@@ -46,6 +46,8 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.isScopeFlag;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.isStrictFlag;
 import static jdk.nashorn.internal.runtime.linker.NashornGuards.explicitInstanceOfCheck;
 
 import java.lang.invoke.MethodHandle;
@@ -98,7 +100,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
  * </ul>
  */
 
-public abstract class ScriptObject implements PropertyAccess {
+public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /** __proto__ special property name inside object literals. ES6 draft. */
     public static final String PROTO_PROPERTY_NAME   = "__proto__";
 
@@ -2202,6 +2204,9 @@ public abstract class ScriptObject implements PropertyAccess {
 
         if (find != null) {
             if (!find.getProperty().isWritable() && !NashornCallSiteDescriptor.isDeclaration(desc)) {
+                if (NashornCallSiteDescriptor.isScope(desc) && find.getProperty().isLexicalBinding()) {
+                    throw typeError("assign.constant", name); // Overwriting ES6 const should throw also in non-strict mode.
+                }
                 // Existing, non-writable property
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
             }
@@ -3103,7 +3108,7 @@ public abstract class ScriptObject implements PropertyAccess {
     private boolean doesNotHaveEnsureLength(final long longIndex, final long oldLength, final int callSiteFlags) {
         if (longIndex >= oldLength) {
             if (!isExtensible()) {
-                if (NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)) {
+                if (isStrictFlag(callSiteFlags)) {
                     throw typeError("object.non.extensible", JSType.toString(longIndex), ScriptRuntime.safeToString(this));
                 }
                 return true;
@@ -3127,7 +3132,7 @@ public abstract class ScriptObject implements PropertyAccess {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
-            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
+            final boolean strict = isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
@@ -3137,7 +3142,7 @@ public abstract class ScriptObject implements PropertyAccess {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
-            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
+            final boolean strict = isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
@@ -3147,7 +3152,7 @@ public abstract class ScriptObject implements PropertyAccess {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
-            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
+            final boolean strict = isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
@@ -3157,7 +3162,7 @@ public abstract class ScriptObject implements PropertyAccess {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
-            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
+            final boolean strict = isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
@@ -3178,7 +3183,7 @@ public abstract class ScriptObject implements PropertyAccess {
         invalidateGlobalConstant(key);
 
         if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty)) {
-            final boolean isScope = NashornCallSiteDescriptor.isScopeFlag(callSiteFlags);
+            final boolean isScope = isScopeFlag(callSiteFlags);
             // If the start object of the find is not this object it means the property was found inside a
             // 'with' statement expression (see WithObject.findProperty()). In this case we forward the 'set'
             // to the 'with' object.
@@ -3199,16 +3204,19 @@ public abstract class ScriptObject implements PropertyAccess {
 
         if (f != null) {
             if (!f.getProperty().isWritable()) {
-                if (NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)) {
+                if (isScopeFlag(callSiteFlags) && f.getProperty().isLexicalBinding()) {
+                    throw typeError("assign.constant", key); // Overwriting ES6 const should throw also in non-strict mode.
+                }
+                if (isStrictFlag(callSiteFlags)) {
                     throw typeError("property.not.writable", key, ScriptRuntime.safeToString(this));
                 }
                 return;
             }
 
-            f.setValue(value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags));
+            f.setValue(value, isStrictFlag(callSiteFlags));
 
         } else if (!isExtensible()) {
-            if (NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)) {
+            if (isStrictFlag(callSiteFlags)) {
                 throw typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
             }
         } else {
@@ -3235,7 +3243,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3255,7 +3263,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3275,7 +3283,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3295,7 +3303,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3314,7 +3322,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3333,7 +3341,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3352,7 +3360,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3371,7 +3379,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3390,7 +3398,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3409,7 +3417,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3428,7 +3436,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3447,7 +3455,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3465,7 +3473,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 final ArrayData data = getArray();
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3483,7 +3491,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3502,7 +3510,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3521,7 +3529,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
             if (data.has(index)) {
-                setArray(data.set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
@@ -3683,6 +3691,29 @@ public abstract class ScriptObject implements PropertyAccess {
         deleteOwnProperty(prop);
 
         return true;
+    }
+
+    /**
+     * Return a shallow copy of this ScriptObject.
+     * @return a shallow copy.
+     */
+    public final ScriptObject copy() {
+        try {
+            return clone();
+        } catch (final CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    protected ScriptObject clone() throws CloneNotSupportedException {
+        final ScriptObject clone = (ScriptObject) super.clone();
+        if (objectSpill != null) {
+            clone.objectSpill = objectSpill.clone();
+            clone.primitiveSpill = primitiveSpill.clone();
+        }
+        clone.arrayData = arrayData.copy();
+        return clone;
     }
 
     /**

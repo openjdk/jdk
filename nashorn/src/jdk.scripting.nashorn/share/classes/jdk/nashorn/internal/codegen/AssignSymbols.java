@@ -189,7 +189,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
      * @param body the body of the FunctionNode we are entering
      */
     private void acceptDeclarations(final FunctionNode functionNode, final Block body) {
-        // This visitor will assign symbol to all declared variables, except "var" declarations in for loop initializers.
+        // This visitor will assign symbol to all declared variables.
         body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             protected boolean enterDefault(final Node node) {
@@ -200,16 +200,17 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
             @Override
             public Node leaveVarNode(final VarNode varNode) {
-                if (varNode.isStatement()) {
-                    final IdentNode ident  = varNode.getName();
-                    final Block block = varNode.isBlockScoped() ? getLexicalContext().getCurrentBlock() : body;
-                    final Symbol symbol = defineSymbol(block, ident.getName(), ident, varNode.getSymbolFlags());
-                    if (varNode.isFunctionDeclaration()) {
-                        symbol.setIsFunctionDeclaration();
-                    }
-                    return varNode.setName(ident.setSymbol(symbol));
+                final IdentNode ident  = varNode.getName();
+                final boolean blockScoped = varNode.isBlockScoped();
+                if (blockScoped && lc.inUnprotectedSwitchContext()) {
+                    throwUnprotectedSwitchError(varNode);
                 }
-                return varNode;
+                final Block block = blockScoped ? lc.getCurrentBlock() : body;
+                final Symbol symbol = defineSymbol(block, ident.getName(), ident, varNode.getSymbolFlags());
+                if (varNode.isFunctionDeclaration()) {
+                    symbol.setIsFunctionDeclaration();
+                }
+                return varNode.setName(ident.setSymbol(symbol));
             }
         });
     }
@@ -1046,6 +1047,15 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         }
         final List<ArrayUnit> units = ((ArrayLiteralNode)expr).getUnits();
         return !(units == null || units.isEmpty());
+    }
+
+    private void throwUnprotectedSwitchError(final VarNode varNode) {
+        // Block scoped declarations in switch statements without explicit blocks should be declared
+        // in a common block that contains all the case clauses. We cannot support this without a
+        // fundamental rewrite of how switch statements are handled (case nodes contain blocks and are
+        // directly contained by switch node). As a temporary solution we throw a reference error here.
+        final String msg = ECMAErrors.getMessage("syntax.error.unprotected.switch.declaration", varNode.isLet() ? "let" : "const");
+        throwParserException(msg, varNode);
     }
 
     private void throwParserException(final String message, final Node origin) {
