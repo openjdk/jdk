@@ -4331,7 +4331,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1417016445
+DATE_WHEN_GENERATED=1417099232
 
 ###############################################################################
 #

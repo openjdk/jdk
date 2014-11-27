@@ -57,4 +57,3 @@ JAR_CMD:=$(BOOT_JDK)/bin/jar
 NATIVE2ASCII_CMD:=$(BOOT_JDK)/bin/native2ascii
 JARSIGNER_CMD:=$(BOOT_JDK)/bin/jarsigner
 SJAVAC_SERVER_JAVA_CMD:=$(JAVA_CMD)
-
