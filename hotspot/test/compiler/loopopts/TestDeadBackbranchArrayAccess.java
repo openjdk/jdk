@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,40 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
+/**
  * @test
- * @bug 8023014
- * @summary Test ensures that there is no crash if there is not enough ReservedCodeacacheSize
- *          to initialize all compiler threads. The option -Xcomp gives the VM more time to
- *          to trigger the old bug.
- * @library /testlibrary
+ * @bug 8054478
+ * @summary dead backbranch in main loop results in erroneous array access
+ * @run main/othervm -XX:CompileOnly=TestDeadBackbranchArrayAccess -Xcomp TestDeadBackbranchArrayAccess
+ *
  */
-import com.oracle.java.testlibrary.*;
 
-public class SmallCodeCacheStartup {
-  public static void main(String[] args) throws Exception {
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m",
-                                                                "-XX:CICompilerCount=64",
-                                                                "-Xcomp",
-                                                                "-version");
-      OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
-      analyzer.shouldHaveExitValue(0);
+public class TestDeadBackbranchArrayAccess {
+    static char[] pattern0 = {0};
+    static char[] pattern1 = {1};
 
-      System.out.println("TEST PASSED");
-  }
+    static void test(char[] array) {
+        if (pattern1 == null) return;
+
+        int i = 0;
+        int pos = 0;
+        char c = array[pos];
+
+        while (i >= 0 && (c == pattern0[i] || c == pattern1[i])) {
+            i--;
+            pos--;
+            if (pos != -1) {
+                c = array[pos];
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 1000000; i++) {
+            test(new char[1]);
+        }
+    }
 }

@@ -39,6 +39,13 @@ public class CodeBlob {
     }
     return result;
   }
+  public static CodeBlob getCodeBlob(long addr) {
+    Object[] obj = WB.getCodeBlob(addr);
+    if (obj == null) {
+      return null;
+    }
+    return new CodeBlob(obj);
+  }
   protected CodeBlob(Object[] obj) {
     assert obj.length == 3;
     name = (String) obj[0];
