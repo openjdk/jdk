@@ -192,7 +192,6 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
      FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) :
   CardGeneration(rs, initial_byte_size, level, ct),
   _dilatation_factor(((double)MinChunkSize)/((double)(CollectedHeap::min_fill_size()))),
-  _debug_collection_type(Concurrent_collection_type),
   _did_compact(false)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
@@ -611,8 +610,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Clip CMSBootstrapOccupancy between 0 and 100.
   _bootstrap_occupancy = ((double)CMSBootstrapOccupancy)/(double)100;
-
-  _full_gcs_since_conc_gc = 0;
 
   // Now tell CMS generations the identity of their collector
   ConcurrentMarkSweepGeneration::set_collector(this);
@@ -1247,20 +1244,6 @@ bool CMSCollector::shouldConcurrentCollect() {
     return true;
   }
 
-  // For debugging purposes, change the type of collection.
-  // If the rotation is not on the concurrent collection
-  // type, don't start a concurrent collection.
-  NOT_PRODUCT(
-    if (RotateCMSCollectionTypes &&
-        (_cmsGen->debug_collection_type() !=
-          ConcurrentMarkSweepGeneration::Concurrent_collection_type)) {
-      assert(_cmsGen->debug_collection_type() !=
-        ConcurrentMarkSweepGeneration::Unknown_collection_type,
-        "Bad cms collection type");
-      return false;
-    }
-  )
-
   FreelistLocker x(this);
   // ------------------------------------------------------------------
   // Print out lots of information which affects the initiation of
@@ -1441,16 +1424,6 @@ void CMSCollector::collect(bool   full,
                            size_t size,
                            bool   tlab)
 {
-  if (!UseCMSCollectionPassing && _collectorState > Idling) {
-    // For debugging purposes skip the collection if the state
-    // is not currently idle
-    if (TraceCMSState) {
-      gclog_or_tty->print_cr("Thread " INTPTR_FORMAT " skipped full:%d CMS state %d",
-        Thread::current(), full, _collectorState);
-    }
-    return;
-  }
-
   // The following "if" branch is present for defensive reasons.
   // In the current uses of this interface, it can be replaced with:
   // assert(!GC_locker.is_active(), "Can't be called otherwise");
@@ -1466,7 +1439,6 @@ void CMSCollector::collect(bool   full,
     return;
   }
   acquire_control_and_collect(full, clear_all_soft_refs);
-  _full_gcs_since_conc_gc++;
 }
 
 void CMSCollector::request_full_gc(unsigned int full_gc_count, GCCause::Cause cause) {
@@ -1636,66 +1608,52 @@ void CMSCollector::acquire_control_and_collect(bool full,
     gclog_or_tty->print_cr("    gets control with state %d", _collectorState);
   }
 
-  // Check if we need to do a compaction, or if not, whether
-  // we need to start the mark-sweep from scratch.
-  bool should_compact    = false;
-  bool should_start_over = false;
-  decide_foreground_collection_type(clear_all_soft_refs,
-    &should_compact, &should_start_over);
-
-NOT_PRODUCT(
-  if (RotateCMSCollectionTypes) {
-    if (_cmsGen->debug_collection_type() ==
-        ConcurrentMarkSweepGeneration::MSC_foreground_collection_type) {
-      should_compact = true;
-    } else if (_cmsGen->debug_collection_type() ==
-               ConcurrentMarkSweepGeneration::MS_foreground_collection_type) {
-      should_compact = false;
-    }
+  // Inform cms gen if this was due to partial collection failing.
+  // The CMS gen may use this fact to determine its expansion policy.
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  if (gch->incremental_collection_will_fail(false /* don't consult_young */)) {
+    assert(!_cmsGen->incremental_collection_failed(),
+           "Should have been noticed, reacted to and cleared");
+    _cmsGen->set_incremental_collection_failed();
   }
-)
 
   if (first_state > Idling) {
     report_concurrent_mode_interruption();
   }
 
-  set_did_compact(should_compact);
-  if (should_compact) {
-    // If the collection is being acquired from the background
-    // collector, there may be references on the discovered
-    // references lists that have NULL referents (being those
-    // that were concurrently cleared by a mutator) or
-    // that are no longer active (having been enqueued concurrently
-    // by the mutator).
-    // Scrub the list of those references because Mark-Sweep-Compact
-    // code assumes referents are not NULL and that all discovered
-    // Reference objects are active.
-    ref_processor()->clean_up_discovered_references();
+  set_did_compact(true);
 
-    if (first_state > Idling) {
-      save_heap_summary();
-    }
+  // If the collection is being acquired from the background
+  // collector, there may be references on the discovered
+  // references lists that have NULL referents (being those
+  // that were concurrently cleared by a mutator) or
+  // that are no longer active (having been enqueued concurrently
+  // by the mutator).
+  // Scrub the list of those references because Mark-Sweep-Compact
+  // code assumes referents are not NULL and that all discovered
+  // Reference objects are active.
+  ref_processor()->clean_up_discovered_references();
 
-    do_compaction_work(clear_all_soft_refs);
-
-    // Has the GC time limit been exceeded?
-    DefNewGeneration* young_gen = _young_gen->as_DefNewGeneration();
-    size_t max_eden_size = young_gen->max_capacity() -
-                           young_gen->to()->capacity() -
-                           young_gen->from()->capacity();
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    GCCause::Cause gc_cause = gch->gc_cause();
-    size_policy()->check_gc_overhead_limit(_young_gen->used(),
-                                           young_gen->eden()->used(),
-                                           _cmsGen->max_capacity(),
-                                           max_eden_size,
-                                           full,
-                                           gc_cause,
-                                           gch->collector_policy());
-  } else {
-    do_mark_sweep_work(clear_all_soft_refs, first_state,
-      should_start_over);
+  if (first_state > Idling) {
+    save_heap_summary();
   }
+
+  do_compaction_work(clear_all_soft_refs);
+
+  // Has the GC time limit been exceeded?
+  DefNewGeneration* young_gen = _young_gen->as_DefNewGeneration();
+  size_t max_eden_size = young_gen->max_capacity() -
+                         young_gen->to()->capacity() -
+                         young_gen->from()->capacity();
+  GCCause::Cause gc_cause = gch->gc_cause();
+  size_policy()->check_gc_overhead_limit(_young_gen->used(),
+                                         young_gen->eden()->used(),
+                                         _cmsGen->max_capacity(),
+                                         max_eden_size,
+                                         full,
+                                         gc_cause,
+                                         gch->collector_policy());
+
   // Reset the expansion cause, now that we just completed
   // a collection cycle.
   clear_expansion_cause();
@@ -1713,68 +1671,6 @@ void CMSCollector::compute_new_size() {
   _cmsGen->compute_new_size_free_list();
 }
 
-// A work method used by foreground collection to determine
-// what type of collection (compacting or not, continuing or fresh)
-// it should do.
-// NOTE: the intent is to make UseCMSCompactAtFullCollection
-// and CMSCompactWhenClearAllSoftRefs the default in the future
-// and do away with the flags after a suitable period.
-void CMSCollector::decide_foreground_collection_type(
-  bool clear_all_soft_refs, bool* should_compact,
-  bool* should_start_over) {
-  // Normally, we'll compact only if the UseCMSCompactAtFullCollection
-  // flag is set, and we have either requested a System.gc() or
-  // the number of full gc's since the last concurrent cycle
-  // has exceeded the threshold set by CMSFullGCsBeforeCompaction,
-  // or if an incremental collection has failed
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->collector_policy()->is_generation_policy(),
-         "You may want to check the correctness of the following");
-  // Inform cms gen if this was due to partial collection failing.
-  // The CMS gen may use this fact to determine its expansion policy.
-  if (gch->incremental_collection_will_fail(false /* don't consult_young */)) {
-    assert(!_cmsGen->incremental_collection_failed(),
-           "Should have been noticed, reacted to and cleared");
-    _cmsGen->set_incremental_collection_failed();
-  }
-  *should_compact =
-    UseCMSCompactAtFullCollection &&
-    ((_full_gcs_since_conc_gc >= CMSFullGCsBeforeCompaction) ||
-     GCCause::is_user_requested_gc(gch->gc_cause()) ||
-     gch->incremental_collection_will_fail(true /* consult_young */));
-  *should_start_over = false;
-  if (clear_all_soft_refs && !*should_compact) {
-    // We are about to do a last ditch collection attempt
-    // so it would normally make sense to do a compaction
-    // to reclaim as much space as possible.
-    if (CMSCompactWhenClearAllSoftRefs) {
-      // Default: The rationale is that in this case either
-      // we are past the final marking phase, in which case
-      // we'd have to start over, or so little has been done
-      // that there's little point in saving that work. Compaction
-      // appears to be the sensible choice in either case.
-      *should_compact = true;
-    } else {
-      // We have been asked to clear all soft refs, but not to
-      // compact. Make sure that we aren't past the final checkpoint
-      // phase, for that is where we process soft refs. If we are already
-      // past that phase, we'll need to redo the refs discovery phase and
-      // if necessary clear soft refs that weren't previously
-      // cleared. We do so by remembering the phase in which
-      // we came in, and if we are past the refs processing
-      // phase, we'll choose to just redo the mark-sweep
-      // collection from scratch.
-      if (_collectorState > FinalMarking) {
-        // We are past the refs processing phase;
-        // start over and do a fresh synchronous CMS cycle
-        _collectorState = Resetting; // skip to reset to start new cycle
-        reset(false /* == !asynch */);
-        *should_start_over = true;
-      } // else we can continue a possibly ongoing current cycle
-    }
-  }
-}
-
 // A work method used by the foreground collector to do
 // a mark-sweep-compact.
 void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
@@ -1787,10 +1683,6 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
   GCTraceTime t("CMS:MSC ", PrintGCDetails && Verbose, true, NULL, gc_tracer->gc_id());
-  if (PrintGC && Verbose && !(GCCause::is_user_requested_gc(gch->gc_cause()))) {
-    gclog_or_tty->print_cr("Compact ConcurrentMarkSweepGeneration after %d "
-      "collections passed to foreground collector", _full_gcs_since_conc_gc);
-  }
 
   // Temporarily widen the span of the weak reference processing to
   // the entire heap.
@@ -1852,7 +1744,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   _collectorState = Resetting;
   assert(_restart_addr == NULL,
          "Should have been NULL'd before baton was passed");
-  reset(false /* == !asynch */);
+  reset(false /* == !concurrent */);
   _cmsGen->reset_after_compaction();
   _concurrent_cycles_since_last_unload = 0;
 
@@ -1874,40 +1766,6 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   // For a mark-sweep-compact, compute_new_size() will be called
   // in the heap's do_collection() method.
 }
-
-// A work method used by the foreground collector to do
-// a mark-sweep, after taking over from a possibly on-going
-// concurrent mark-sweep collection.
-void CMSCollector::do_mark_sweep_work(bool clear_all_soft_refs,
-  CollectorState first_state, bool should_start_over) {
-  if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr("Pass concurrent collection to foreground "
-      "collector with count %d",
-      _full_gcs_since_conc_gc);
-  }
-  switch (_collectorState) {
-    case Idling:
-      if (first_state == Idling || should_start_over) {
-        // The background GC was not active, or should
-        // restarted from scratch;  start the cycle.
-        _collectorState = InitialMarking;
-      }
-      // If first_state was not Idling, then a background GC
-      // was in progress and has now finished.  No need to do it
-      // again.  Leave the state as Idling.
-      break;
-    case Precleaning:
-      // In the foreground case don't do the precleaning since
-      // it is not done concurrently and there is extra work
-      // required.
-      _collectorState = FinalMarking;
-  }
-  collect_in_foreground(clear_all_soft_refs, GenCollectedHeap::heap()->gc_cause());
-
-  // For a mark-sweep, compute_new_size() will be called
-  // in the heap's do_collection() method.
-}
-
 
 void CMSCollector::print_eden_and_survivor_chunk_arrays() {
   DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
@@ -1989,13 +1847,7 @@ class ReleaseForegroundGC: public StackObj {
   }
 };
 
-// There are separate collect_in_background and collect_in_foreground because of
-// the different locking requirements of the background collector and the
-// foreground collector.  There was originally an attempt to share
-// one "collect" method between the background collector and the foreground
-// collector but the if-then-else required made it cleaner to have
-// separate methods.
-void CMSCollector::collect_in_background(bool clear_all_soft_refs, GCCause::Cause cause) {
+void CMSCollector::collect_in_background(GCCause::Cause cause) {
   assert(Thread::current()->is_ConcurrentGC_thread(),
     "A CMS asynchronous collection is only allowed on a CMS thread.");
 
@@ -2036,7 +1888,7 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs, GCCause::Caus
   // Used for PrintGC
   size_t prev_used;
   if (PrintGC && Verbose) {
-    prev_used = _cmsGen->used(); // XXXPERM
+    prev_used = _cmsGen->used();
   }
 
   // The change of the collection state is normally done at this level;
@@ -2116,7 +1968,7 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs, GCCause::Caus
         break;
       case Marking:
         // initial marking in checkpointRootsInitialWork has been completed
-        if (markFromRoots(true)) { // we were successful
+        if (markFromRoots()) { // we were successful
           assert(_collectorState == Precleaning, "Collector state should "
             "have changed");
         } else {
@@ -2146,10 +1998,9 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs, GCCause::Caus
         break;
       case Sweeping:
         // final marking in checkpointRootsFinal has been completed
-        sweep(true);
+        sweep();
         assert(_collectorState == Resizing, "Collector state change "
           "to Resizing must be done under the free_list_lock");
-        _full_gcs_since_conc_gc = 0;
 
       case Resizing: {
         // Sweeping has been completed...
@@ -2222,12 +2073,6 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs, GCCause::Caus
   }
 }
 
-void CMSCollector::register_foreground_gc_start(GCCause::Cause cause) {
-  if (!_cms_start_registered) {
-    register_gc_start(cause);
-  }
-}
-
 void CMSCollector::register_gc_start(GCCause::Cause cause) {
   _cms_start_registered = true;
   _gc_timer_cm->register_gc_start();
@@ -2253,120 +2098,6 @@ void CMSCollector::save_heap_summary() {
 void CMSCollector::report_heap_summary(GCWhen::Type when) {
   _gc_tracer_cm->report_gc_heap_summary(when, _last_heap_summary);
   _gc_tracer_cm->report_metaspace_summary(when, _last_metaspace_summary);
-}
-
-void CMSCollector::collect_in_foreground(bool clear_all_soft_refs, GCCause::Cause cause) {
-  assert(_foregroundGCIsActive && !_foregroundGCShouldWait,
-         "Foreground collector should be waiting, not executing");
-  assert(Thread::current()->is_VM_thread(), "A foreground collection"
-    "may only be done by the VM Thread with the world stopped");
-  assert(ConcurrentMarkSweepThread::vm_thread_has_cms_token(),
-         "VM thread should have CMS token");
-
-  // The gc id is created in register_foreground_gc_start if this collection is synchronous
-  const GCId gc_id = _collectorState == InitialMarking ? GCId::peek() : _gc_tracer_cm->gc_id();
-  NOT_PRODUCT(GCTraceTime t("CMS:MS (foreground) ", PrintGCDetails && Verbose,
-    true, NULL, gc_id);)
-  COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact);
-
-  HandleMark hm;  // Discard invalid handles created during verification
-
-  if (VerifyBeforeGC &&
-      GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    Universe::verify();
-  }
-
-  // Snapshot the soft reference policy to be used in this collection cycle.
-  ref_processor()->setup_policy(clear_all_soft_refs);
-
-  // Decide if class unloading should be done
-  update_should_unload_classes();
-
-  bool init_mark_was_synchronous = false; // until proven otherwise
-  while (_collectorState != Idling) {
-    if (TraceCMSState) {
-      gclog_or_tty->print_cr("Thread " INTPTR_FORMAT " in CMS state %d",
-        Thread::current(), _collectorState);
-    }
-    switch (_collectorState) {
-      case InitialMarking:
-        register_foreground_gc_start(cause);
-        init_mark_was_synchronous = true;  // fact to be exploited in re-mark
-        checkpointRootsInitial(false);
-        assert(_collectorState == Marking, "Collector state should have changed"
-          " within checkpointRootsInitial()");
-        break;
-      case Marking:
-        // initial marking in checkpointRootsInitialWork has been completed
-        if (VerifyDuringGC &&
-            GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          Universe::verify("Verify before initial mark: ");
-        }
-        {
-          bool res = markFromRoots(false);
-          assert(res && _collectorState == FinalMarking, "Collector state should "
-            "have changed");
-          break;
-        }
-      case FinalMarking:
-        if (VerifyDuringGC &&
-            GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          Universe::verify("Verify before re-mark: ");
-        }
-        checkpointRootsFinal(false, clear_all_soft_refs,
-                             init_mark_was_synchronous);
-        assert(_collectorState == Sweeping, "Collector state should not "
-          "have changed within checkpointRootsFinal()");
-        break;
-      case Sweeping:
-        // final marking in checkpointRootsFinal has been completed
-        if (VerifyDuringGC &&
-            GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          Universe::verify("Verify before sweep: ");
-        }
-        sweep(false);
-        assert(_collectorState == Resizing, "Incorrect state");
-        break;
-      case Resizing: {
-        // Sweeping has been completed; the actual resize in this case
-        // is done separately; nothing to be done in this state.
-        _collectorState = Resetting;
-        break;
-      }
-      case Resetting:
-        // The heap has been resized.
-        if (VerifyDuringGC &&
-            GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          Universe::verify("Verify before reset: ");
-        }
-        save_heap_summary();
-        reset(false);
-        assert(_collectorState == Idling, "Collector state should "
-          "have changed");
-        break;
-      case Precleaning:
-      case AbortablePreclean:
-        // Elide the preclean phase
-        _collectorState = FinalMarking;
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-    if (TraceCMSState) {
-      gclog_or_tty->print_cr("  Thread " INTPTR_FORMAT " done - next CMS state %d",
-        Thread::current(), _collectorState);
-    }
-  }
-
-  if (VerifyAfterGC &&
-      GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    Universe::verify();
-  }
-  if (TraceCMSState) {
-    gclog_or_tty->print_cr("CMS Thread " INTPTR_FORMAT
-      " exiting collection CMS state %d",
-      Thread::current(), _collectorState);
-  }
 }
 
 bool CMSCollector::waitForForegroundGC() {
@@ -3345,7 +3076,7 @@ class CMSParInitialMarkTask: public CMSParMarkTask {
 // Checkpoint the roots into this generation from outside
 // this generation. [Note this initial checkpoint need only
 // be approximate -- we'll do a catch up phase subsequently.]
-void CMSCollector::checkpointRootsInitial(bool asynch) {
+void CMSCollector::checkpointRootsInitial() {
   assert(_collectorState == InitialMarking, "Wrong collector state");
   check_correct_thread_executing();
   TraceCMSMemoryManagerStats tms(_collectorState,GenCollectedHeap::heap()->gc_cause());
@@ -3356,32 +3087,19 @@ void CMSCollector::checkpointRootsInitial(bool asynch) {
   ReferenceProcessor* rp = ref_processor();
   SpecializationStats::clear();
   assert(_restart_addr == NULL, "Control point invariant");
-  if (asynch) {
+  {
     // acquire locks for subsequent manipulations
     MutexLockerEx x(bitMapLock(),
                     Mutex::_no_safepoint_check_flag);
-    checkpointRootsInitialWork(asynch);
+    checkpointRootsInitialWork();
     // enable ("weak") refs discovery
     rp->enable_discovery(true /*verify_disabled*/, true /*check_no_refs*/);
-    _collectorState = Marking;
-  } else {
-    // (Weak) Refs discovery: this is controlled from genCollectedHeap::do_collection
-    // which recognizes if we are a CMS generation, and doesn't try to turn on
-    // discovery; verify that they aren't meddling.
-    assert(!rp->discovery_is_atomic(),
-           "incorrect setting of discovery predicate");
-    assert(!rp->discovery_enabled(), "genCollectedHeap shouldn't control "
-           "ref discovery for this generation kind");
-    // already have locks
-    checkpointRootsInitialWork(asynch);
-    // now enable ("weak") refs discovery
-    rp->enable_discovery(true /*verify_disabled*/, false /*verify_no_refs*/);
     _collectorState = Marking;
   }
   SpecializationStats::print();
 }
 
-void CMSCollector::checkpointRootsInitialWork(bool asynch) {
+void CMSCollector::checkpointRootsInitialWork() {
   assert(SafepointSynchronize::is_at_safepoint(), "world should be stopped");
   assert(_collectorState == InitialMarking, "just checking");
 
@@ -3483,9 +3201,9 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
   verify_overflow_empty();
 }
 
-bool CMSCollector::markFromRoots(bool asynch) {
+bool CMSCollector::markFromRoots() {
   // we might be tempted to assert that:
-  // assert(asynch == !SafepointSynchronize::is_at_safepoint(),
+  // assert(!SafepointSynchronize::is_at_safepoint(),
   //        "inconsistent argument?");
   // However that wouldn't be right, because it's possible that
   // a safepoint is indeed in progress as a younger generation
@@ -3494,37 +3212,28 @@ bool CMSCollector::markFromRoots(bool asynch) {
   check_correct_thread_executing();
   verify_overflow_empty();
 
-  bool res;
-  if (asynch) {
-    // Weak ref discovery note: We may be discovering weak
-    // refs in this generation concurrent (but interleaved) with
-    // weak ref discovery by a younger generation collector.
+  // Weak ref discovery note: We may be discovering weak
+  // refs in this generation concurrent (but interleaved) with
+  // weak ref discovery by a younger generation collector.
 
-    CMSTokenSyncWithLocks ts(true, bitMapLock());
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    CMSPhaseAccounting pa(this, "mark", _gc_tracer_cm->gc_id(), !PrintGCDetails);
-    res = markFromRootsWork(asynch);
-    if (res) {
-      _collectorState = Precleaning;
-    } else { // We failed and a foreground collection wants to take over
-      assert(_foregroundGCIsActive, "internal state inconsistency");
-      assert(_restart_addr == NULL,  "foreground will restart from scratch");
-      if (PrintGCDetails) {
-        gclog_or_tty->print_cr("bailing out to foreground collection");
-      }
+  CMSTokenSyncWithLocks ts(true, bitMapLock());
+  TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
+  CMSPhaseAccounting pa(this, "mark", _gc_tracer_cm->gc_id(), !PrintGCDetails);
+  bool res = markFromRootsWork();
+  if (res) {
+    _collectorState = Precleaning;
+  } else { // We failed and a foreground collection wants to take over
+    assert(_foregroundGCIsActive, "internal state inconsistency");
+    assert(_restart_addr == NULL,  "foreground will restart from scratch");
+    if (PrintGCDetails) {
+      gclog_or_tty->print_cr("bailing out to foreground collection");
     }
-  } else {
-    assert(SafepointSynchronize::is_at_safepoint(),
-           "inconsistent with asynch == false");
-    // already have locks
-    res = markFromRootsWork(asynch);
-    _collectorState = FinalMarking;
   }
   verify_overflow_empty();
   return res;
 }
 
-bool CMSCollector::markFromRootsWork(bool asynch) {
+bool CMSCollector::markFromRootsWork() {
   // iterate over marked bits in bit map, doing a full scan and mark
   // from these roots using the following algorithm:
   // . if oop is to the right of the current scan pointer,
@@ -3549,9 +3258,9 @@ bool CMSCollector::markFromRootsWork(bool asynch) {
   verify_overflow_empty();
   bool result = false;
   if (CMSConcurrentMTEnabled && ConcGCThreads > 0) {
-    result = do_marking_mt(asynch);
+    result = do_marking_mt();
   } else {
-    result = do_marking_st(asynch);
+    result = do_marking_st();
   }
   return result;
 }
@@ -3591,7 +3300,6 @@ class CMSConcMarkingTerminatorTerminator: public TerminatorTerminator {
 class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   CMSCollector* _collector;
   int           _n_workers;                  // requested/desired # workers
-  bool          _asynch;
   bool          _result;
   CompactibleFreeListSpace*  _cms_space;
   char          _pad_front[64];   // padding to ...
@@ -3612,13 +3320,12 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
  public:
   CMSConcMarkingTask(CMSCollector* collector,
                  CompactibleFreeListSpace* cms_space,
-                 bool asynch,
                  YieldingFlexibleWorkGang* workers,
                  OopTaskQueueSet* task_queues):
     YieldingFlexibleGangTask("Concurrent marking done multi-threaded"),
     _collector(collector),
     _cms_space(cms_space),
-    _asynch(asynch), _n_workers(0), _result(true),
+    _n_workers(0), _result(true),
     _task_queues(task_queues),
     _term(_n_workers, task_queues, _collector),
     _bit_map_lock(collector->bitMapLock())
@@ -3645,8 +3352,7 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   void work(uint worker_id);
   bool should_yield() {
     return    ConcurrentMarkSweepThread::should_yield()
-           && !_collector->foregroundGCIsActive()
-           && _asynch;
+           && !_collector->foregroundGCIsActive();
   }
 
   virtual void coordinator_yield();  // stuff done by coordinator
@@ -3878,8 +3584,7 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
         Par_MarkFromRootsClosure cl(this, _collector, my_span,
                                     &_collector->_markBitMap,
                                     work_queue(i),
-                                    &_collector->_markStack,
-                                    _asynch);
+                                    &_collector->_markStack);
         _collector->_markBitMap.iterate(&cl, my_span.start(), my_span.end());
       } // else nothing to do for this task
     }   // else nothing to do for this task
@@ -4084,7 +3789,7 @@ void CMSConcMarkingTask::coordinator_yield() {
   _collector->startTimer();
 }
 
-bool CMSCollector::do_marking_mt(bool asynch) {
+bool CMSCollector::do_marking_mt() {
   assert(ConcGCThreads > 0 && conc_workers() != NULL, "precondition");
   int num_workers = AdaptiveSizePolicy::calc_active_conc_workers(
                                        conc_workers()->total_workers(),
@@ -4096,7 +3801,6 @@ bool CMSCollector::do_marking_mt(bool asynch) {
 
   CMSConcMarkingTask tsk(this,
                          cms_space,
-                         asynch,
                          conc_workers(),
                          task_queues());
 
@@ -4125,7 +3829,7 @@ bool CMSCollector::do_marking_mt(bool asynch) {
     // If _restart_addr is non-NULL, a marking stack overflow
     // occurred; we need to do a fresh marking iteration from the
     // indicated restart address.
-    if (_foregroundGCIsActive && asynch) {
+    if (_foregroundGCIsActive) {
       // We may be running into repeated stack overflows, having
       // reached the limit of the stack size, while making very
       // slow forward progress. It may be best to bail out and
@@ -4154,14 +3858,14 @@ bool CMSCollector::do_marking_mt(bool asynch) {
   return true;
 }
 
-bool CMSCollector::do_marking_st(bool asynch) {
+bool CMSCollector::do_marking_st() {
   ResourceMark rm;
   HandleMark   hm;
 
   // Temporarily make refs discovery single threaded (non-MT)
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(ref_processor(), false);
   MarkFromRootsClosure markFromRootsClosure(this, _span, &_markBitMap,
-    &_markStack, CMSYield && asynch);
+    &_markStack, CMSYield);
   // the last argument to iterate indicates whether the iteration
   // should be incremental with periodic yields.
   _markBitMap.iterate(&markFromRootsClosure);
@@ -4169,7 +3873,7 @@ bool CMSCollector::do_marking_st(bool asynch) {
   // occurred; we need to do a fresh iteration from the
   // indicated restart address.
   while (_restart_addr != NULL) {
-    if (_foregroundGCIsActive && asynch) {
+    if (_foregroundGCIsActive) {
       // We may be running into repeated stack overflows, having
       // reached the limit of the stack size, while making very
       // slow forward progress. It may be best to bail out and
@@ -4703,8 +4407,7 @@ void CMSCollector::preclean_klasses(MarkRefsIntoAndScanClosure* cl, Mutex* freel
   verify_overflow_empty();
 }
 
-void CMSCollector::checkpointRootsFinal(bool asynch,
-  bool clear_all_soft_refs, bool init_mark_was_synchronous) {
+void CMSCollector::checkpointRootsFinal() {
   assert(_collectorState == FinalMarking, "incorrect state transition?");
   check_correct_thread_executing();
   // world is stopped at this checkpoint
@@ -4721,7 +4424,7 @@ void CMSCollector::checkpointRootsFinal(bool asynch,
                         _young_gen->used() / K,
                         _young_gen->capacity() / K);
   }
-  if (asynch) {
+  {
     if (CMSScavengeBeforeRemark) {
       GenCollectedHeap* gch = GenCollectedHeap::heap();
       // Temporarily set flag to false, GCH->do_collection will
@@ -4742,21 +4445,14 @@ void CMSCollector::checkpointRootsFinal(bool asynch,
     FreelistLocker x(this);
     MutexLockerEx y(bitMapLock(),
                     Mutex::_no_safepoint_check_flag);
-    assert(!init_mark_was_synchronous, "but that's impossible!");
-    checkpointRootsFinalWork(asynch, clear_all_soft_refs, false);
-  } else {
-    // already have all the locks
-    checkpointRootsFinalWork(asynch, clear_all_soft_refs,
-                             init_mark_was_synchronous);
+    checkpointRootsFinalWork();
   }
   verify_work_stacks_empty();
   verify_overflow_empty();
   SpecializationStats::print();
 }
 
-void CMSCollector::checkpointRootsFinalWork(bool asynch,
-  bool clear_all_soft_refs, bool init_mark_was_synchronous) {
-
+void CMSCollector::checkpointRootsFinalWork() {
   NOT_PRODUCT(GCTraceTime tr("checkpointRootsFinalWork", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());)
 
   assert(haveFreelistLocks(), "must have free list locks");
@@ -4773,60 +4469,54 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
   assert(haveFreelistLocks(), "must have free list locks");
   assert_lock_strong(bitMapLock());
 
-  if (!init_mark_was_synchronous) {
-    // We might assume that we need not fill TLAB's when
-    // CMSScavengeBeforeRemark is set, because we may have just done
-    // a scavenge which would have filled all TLAB's -- and besides
-    // Eden would be empty. This however may not always be the case --
-    // for instance although we asked for a scavenge, it may not have
-    // happened because of a JNI critical section. We probably need
-    // a policy for deciding whether we can in that case wait until
-    // the critical section releases and then do the remark following
-    // the scavenge, and skip it here. In the absence of that policy,
-    // or of an indication of whether the scavenge did indeed occur,
-    // we cannot rely on TLAB's having been filled and must do
-    // so here just in case a scavenge did not happen.
-    gch->ensure_parsability(false);  // fill TLAB's, but no need to retire them
-    // Update the saved marks which may affect the root scans.
-    gch->save_marks();
+  // We might assume that we need not fill TLAB's when
+  // CMSScavengeBeforeRemark is set, because we may have just done
+  // a scavenge which would have filled all TLAB's -- and besides
+  // Eden would be empty. This however may not always be the case --
+  // for instance although we asked for a scavenge, it may not have
+  // happened because of a JNI critical section. We probably need
+  // a policy for deciding whether we can in that case wait until
+  // the critical section releases and then do the remark following
+  // the scavenge, and skip it here. In the absence of that policy,
+  // or of an indication of whether the scavenge did indeed occur,
+  // we cannot rely on TLAB's having been filled and must do
+  // so here just in case a scavenge did not happen.
+  gch->ensure_parsability(false);  // fill TLAB's, but no need to retire them
+  // Update the saved marks which may affect the root scans.
+  gch->save_marks();
 
-    if (CMSPrintEdenSurvivorChunks) {
-      print_eden_and_survivor_chunk_arrays();
+  if (CMSPrintEdenSurvivorChunks) {
+    print_eden_and_survivor_chunk_arrays();
+  }
+
+  {
+    COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
+
+    // Note on the role of the mod union table:
+    // Since the marker in "markFromRoots" marks concurrently with
+    // mutators, it is possible for some reachable objects not to have been
+    // scanned. For instance, an only reference to an object A was
+    // placed in object B after the marker scanned B. Unless B is rescanned,
+    // A would be collected. Such updates to references in marked objects
+    // are detected via the mod union table which is the set of all cards
+    // dirtied since the first checkpoint in this GC cycle and prior to
+    // the most recent young generation GC, minus those cleaned up by the
+    // concurrent precleaning.
+    if (CMSParallelRemarkEnabled && CollectedHeap::use_parallel_gc_threads()) {
+      GCTraceTime t("Rescan (parallel) ", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());
+      do_remark_parallel();
+    } else {
+      GCTraceTime t("Rescan (non-parallel) ", PrintGCDetails, false,
+                  _gc_timer_cm, _gc_tracer_cm->gc_id());
+      do_remark_non_parallel();
     }
-
-    {
-      COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
-
-      // Note on the role of the mod union table:
-      // Since the marker in "markFromRoots" marks concurrently with
-      // mutators, it is possible for some reachable objects not to have been
-      // scanned. For instance, an only reference to an object A was
-      // placed in object B after the marker scanned B. Unless B is rescanned,
-      // A would be collected. Such updates to references in marked objects
-      // are detected via the mod union table which is the set of all cards
-      // dirtied since the first checkpoint in this GC cycle and prior to
-      // the most recent young generation GC, minus those cleaned up by the
-      // concurrent precleaning.
-      if (CMSParallelRemarkEnabled && CollectedHeap::use_parallel_gc_threads()) {
-        GCTraceTime t("Rescan (parallel) ", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());
-        do_remark_parallel();
-      } else {
-        GCTraceTime t("Rescan (non-parallel) ", PrintGCDetails, false,
-                    _gc_timer_cm, _gc_tracer_cm->gc_id());
-        do_remark_non_parallel();
-      }
-    }
-  } else {
-    assert(!asynch, "Can't have init_mark_was_synchronous in asynch mode");
-    // The initial mark was stop-world, so there's no rescanning to
-    // do; go straight on to the next step below.
   }
   verify_work_stacks_empty();
   verify_overflow_empty();
 
   {
     NOT_PRODUCT(GCTraceTime ts("refProcessingWork", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());)
-    refProcessingWork(asynch, clear_all_soft_refs);
+    refProcessingWork();
   }
   verify_work_stacks_empty();
   verify_overflow_empty();
@@ -5872,8 +5562,7 @@ void CMSRefProcTaskExecutor::execute(EnqueueTask& task)
   workers->run_task(&enq_task);
 }
 
-void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
-
+void CMSCollector::refProcessingWork() {
   ResourceMark rm;
   HandleMark   hm;
 
@@ -5881,7 +5570,7 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
   assert(rp->span().equals(_span), "Spans should be equal");
   assert(!rp->enqueuing_is_done(), "Enqueuing should not be complete");
   // Process weak references.
-  rp->setup_policy(clear_all_soft_refs);
+  rp->setup_policy(false);
   verify_work_stacks_empty();
 
   CMSKeepAliveClosure cmsKeepAliveClosure(this, _span, &_markBitMap,
@@ -6005,7 +5694,7 @@ void CMSCollector::check_correct_thread_executing() {
 }
 #endif
 
-void CMSCollector::sweep(bool asynch) {
+void CMSCollector::sweep() {
   assert(_collectorState == Sweeping, "just checking");
   check_correct_thread_executing();
   verify_work_stacks_empty();
@@ -6019,14 +5708,14 @@ void CMSCollector::sweep(bool asynch) {
   assert(!_intra_sweep_timer.is_active(), "Should not be active");
   _intra_sweep_timer.reset();
   _intra_sweep_timer.start();
-  if (asynch) {
+  {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     CMSPhaseAccounting pa(this, "sweep", _gc_tracer_cm->gc_id(), !PrintGCDetails);
     // First sweep the old gen
     {
       CMSTokenSyncWithLocks ts(true, _cmsGen->freelistLock(),
                                bitMapLock());
-      sweepWork(_cmsGen, asynch);
+      sweepWork(_cmsGen);
     }
 
     // Update Universe::_heap_*_at_gc figures.
@@ -6040,13 +5729,6 @@ void CMSCollector::sweep(bool asynch) {
       Universe::update_heap_info_at_gc();
       _collectorState = Resizing;
     }
-  } else {
-    // already have needed locks
-    sweepWork(_cmsGen,  asynch);
-    // Update heap occupancy information which is used as
-    // input to soft ref clearing policy at the next gc.
-    Universe::update_heap_info_at_gc();
-    _collectorState = Resizing;
   }
   verify_work_stacks_empty();
   verify_overflow_empty();
@@ -6139,20 +5821,7 @@ void ConcurrentMarkSweepGeneration::update_gc_stats(int current_level,
   }
 }
 
-void ConcurrentMarkSweepGeneration::rotate_debug_collection_type() {
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print("Rotate from %d ", _debug_collection_type);
-  }
-  _debug_collection_type = (CollectionTypes) (_debug_collection_type + 1);
-  _debug_collection_type =
-    (CollectionTypes) (_debug_collection_type % Unknown_collection_type);
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print_cr("to %d ", _debug_collection_type);
-  }
-}
-
-void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
-  bool asynch) {
+void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen) {
   // We iterate over the space(s) underlying this generation,
   // checking the mark bit map to see if the bits corresponding
   // to specific blocks are marked or not. Blocks that are
@@ -6180,9 +5849,7 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
 
   // check that we hold the requisite locks
   assert(have_cms_token(), "Should hold cms token");
-  assert(   (asynch && ConcurrentMarkSweepThread::cms_thread_has_cms_token())
-         || (!asynch && ConcurrentMarkSweepThread::vm_thread_has_cms_token()),
-        "Should possess CMS token to sweep");
+  assert(ConcurrentMarkSweepThread::cms_thread_has_cms_token(), "Should possess CMS token to sweep");
   assert_lock_strong(gen->freelistLock());
   assert_lock_strong(bitMapLock());
 
@@ -6194,8 +5861,7 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
   gen->setNearLargestChunk();
 
   {
-    SweepClosure sweepClosure(this, gen, &_markBitMap,
-                            CMSYield && asynch);
+    SweepClosure sweepClosure(this, gen, &_markBitMap, CMSYield);
     gen->cmsSpace()->blk_iterate_careful(&sweepClosure);
     // We need to free-up/coalesce garbage/blocks from a
     // co-terminal free run. This is done in the SweepClosure
@@ -6213,8 +5879,8 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
 
 // Reset CMS data structures (for now just the marking bit map)
 // preparatory for the next cycle.
-void CMSCollector::reset(bool asynch) {
-  if (asynch) {
+void CMSCollector::reset(bool concurrent) {
+  if (concurrent) {
     CMSTokenSyncWithLocks ts(true, bitMapLock());
 
     // If the state is not "Resetting", the foreground  thread
@@ -6275,12 +5941,6 @@ void CMSCollector::reset(bool asynch) {
     _collectorState = Idling;
   }
 
-  NOT_PRODUCT(
-    if (RotateCMSCollectionTypes) {
-      _cmsGen->rotate_debug_collection_type();
-    }
-  )
-
   register_gc_end();
 }
 
@@ -6293,7 +5953,7 @@ void CMSCollector::do_CMS_operation(CMS_op_type op, GCCause::Cause gc_cause) {
   switch (op) {
     case CMS_op_checkpointRootsInitial: {
       SvcGCMarker sgcm(SvcGCMarker::OTHER);
-      checkpointRootsInitial(true);       // asynch
+      checkpointRootsInitial();
       if (PrintGC) {
         _cmsGen->printOccupancy("initial-mark");
       }
@@ -6301,9 +5961,7 @@ void CMSCollector::do_CMS_operation(CMS_op_type op, GCCause::Cause gc_cause) {
     }
     case CMS_op_checkpointRootsFinal: {
       SvcGCMarker sgcm(SvcGCMarker::OTHER);
-      checkpointRootsFinal(true,    // asynch
-                           false,   // !clear_all_soft_refs
-                           false);  // !init_mark_was_synchronous
+      checkpointRootsFinal();
       if (PrintGC) {
         _cmsGen->printOccupancy("remark");
       }
@@ -7193,8 +6851,7 @@ Par_MarkFromRootsClosure::Par_MarkFromRootsClosure(CMSConcMarkingTask* task,
                        CMSCollector* collector, MemRegion span,
                        CMSBitMap* bit_map,
                        OopTaskQueue* work_queue,
-                       CMSMarkStack*  overflow_stack,
-                       bool should_yield):
+                       CMSMarkStack*  overflow_stack):
   _collector(collector),
   _whole_span(collector->_span),
   _span(span),
@@ -7202,7 +6859,6 @@ Par_MarkFromRootsClosure::Par_MarkFromRootsClosure(CMSConcMarkingTask* task,
   _mut(&collector->_modUnionTable),
   _work_queue(work_queue),
   _overflow_stack(overflow_stack),
-  _yield(should_yield),
   _skip_bits(0),
   _task(task)
 {

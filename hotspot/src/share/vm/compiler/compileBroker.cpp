@@ -1807,7 +1807,7 @@ void CompileBroker::init_compiler_thread_log() {
                      os::file_separator(), thread_id, os::current_process_id());
       }
 
-      fp = fopen(file_name, "at");
+      fp = fopen(file_name, "wt");
       if (fp != NULL) {
         if (LogCompilation && Verbose) {
           tty->print_cr("Opening compilation log %s", file_name);
@@ -1985,6 +1985,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     if (ci_env.failing()) {
       task->set_failure_reason(ci_env.failure_reason());
+      ci_env.report_failure(ci_env.failure_reason());
       const char* retry_message = ci_env.retry_message();
       if (_compilation_log != NULL) {
         _compilation_log->log_failure(thread, task, ci_env.failure_reason(), retry_message);

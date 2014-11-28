@@ -1004,10 +1004,13 @@ HeapWord* G1OffsetTableContigSpace::cross_threshold(HeapWord* start,
 HeapWord* G1OffsetTableContigSpace::saved_mark_word() const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert( _gc_time_stamp <= g1h->get_gc_time_stamp(), "invariant" );
-  if (_gc_time_stamp < g1h->get_gc_time_stamp())
-    return top();
-  else
+  HeapWord* local_top = top();
+  OrderAccess::loadload();
+  if (_gc_time_stamp < g1h->get_gc_time_stamp()) {
+    return local_top;
+  } else {
     return Space::saved_mark_word();
+  }
 }
 
 void G1OffsetTableContigSpace::record_top_and_timestamp() {

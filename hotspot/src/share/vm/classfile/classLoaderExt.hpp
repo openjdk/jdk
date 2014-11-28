@@ -63,6 +63,9 @@ public:
                                    ClassPathEntry* new_entry) {
     ClassLoader::add_to_list(new_entry);
   }
+  static void append_boot_classpath(ClassPathEntry* new_entry) {
+    ClassLoader::add_to_list(new_entry);
+  }
   static void setup_search_paths() {}
 };
 

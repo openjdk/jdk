@@ -76,6 +76,23 @@
       xchgl    (%ecx), %eax
       .end
 
+  // Support for jbyte Atomic::cmpxchg(jbyte exchange_value, 
+  //                                   volatile jbyte *dest, 
+  //                                   jbyte compare_value)
+  // An additional bool (os::is_MP()) is passed as the last argument.
+      .inline _Atomic_cmpxchg_byte,4
+      movb     8(%esp), %al   // compare_value
+      movb     0(%esp), %cl   // exchange_value
+      movl     4(%esp), %edx   // dest
+      cmp      $0, 12(%esp)    // MP test
+      jne      1f
+      cmpxchgb %cl, (%edx)
+      jmp      2f
+1:    lock
+      cmpxchgb %cl, (%edx)
+2:
+      .end
+
   // Support for jint Atomic::cmpxchg(jint exchange_value, 
   //                                  volatile jint *dest, 
   //                                  jint compare_value)
