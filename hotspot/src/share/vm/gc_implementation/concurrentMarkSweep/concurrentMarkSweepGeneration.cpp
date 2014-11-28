@@ -1203,14 +1203,6 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
 
 void
 ConcurrentMarkSweepGeneration::
-par_promote_alloc_undo(int thread_num,
-                       HeapWord* obj, size_t word_sz) {
-  // CMS does not support promotion undo.
-  ShouldNotReachHere();
-}
-
-void
-ConcurrentMarkSweepGeneration::
 par_promote_alloc_done(int thread_num) {
   CMSParGCThreadState* ps = _par_gc_thread_states[thread_num];
   ps->lab.retire(thread_num);

@@ -25,7 +25,7 @@
 * @test TestParNewSerialOld
 * @key gc
 * @bug 8065972
-* @summary Test that the deprecated ParNew+SerialOld combination print a warning message
+* @summary Test that the unsupported ParNew+SerialOld combination does not start
 * @library /testlibrary
 */
 

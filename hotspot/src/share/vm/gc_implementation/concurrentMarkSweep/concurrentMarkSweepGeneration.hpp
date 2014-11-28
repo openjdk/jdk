@@ -1151,9 +1151,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Overrides for parallel promotion.
   virtual oop par_promote(int thread_num,
                           oop obj, markOop m, size_t word_sz);
-  // This one should not be called for CMS.
-  virtual void par_promote_alloc_undo(int thread_num,
-                                      HeapWord* obj, size_t word_sz);
   virtual void par_promote_alloc_done(int thread_num);
   virtual void par_oop_since_save_marks_iterate_done(int thread_num);
 

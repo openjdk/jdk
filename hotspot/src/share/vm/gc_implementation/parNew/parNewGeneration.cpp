@@ -884,8 +884,6 @@ void EvacuateFollowersClosureGeneral::do_void() {
 
 // A Generation that does parallel young-gen collection.
 
-bool ParNewGeneration::_avoid_promotion_undo = false;
-
 void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set, ParNewTracer& gc_tracer) {
   assert(_promo_failure_scan_stack.is_empty(), "post condition");
   _promo_failure_scan_stack.clear(true); // Clear cached segments.
@@ -934,10 +932,6 @@ void ParNewGeneration::collect(bool   full,
   assert(gch->n_gens() == 2,
          "Par collection currently only works with single older gen.");
   _next_gen = gch->next_gen(this);
-  // Do we have to avoid promotion_undo?
-  if (gch->collector_policy()->is_concurrent_mark_sweep_policy()) {
-    set_avoid_promotion_undo(true);
-  }
 
   // If the next generation is too full to accommodate worst-case promotion
   // from this generation, pass on collection; let the next generation
@@ -1141,7 +1135,7 @@ oop ParNewGeneration::real_forwardee_slow(oop obj) {
 #ifdef ASSERT
 bool ParNewGeneration::is_legal_forward_ptr(oop p) {
   return
-    (_avoid_promotion_undo && p == ClaimedForwardPtr)
+    (p == ClaimedForwardPtr)
     || Universe::heap()->is_in_reserved(p);
 }
 #endif
@@ -1162,7 +1156,7 @@ void ParNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
 // thus avoiding the need to undo the copy as in
 // copy_to_survivor_space_avoiding_with_undo.
 
-oop ParNewGeneration::copy_to_survivor_space_avoiding_promotion_undo(
+oop ParNewGeneration::copy_to_survivor_space(
         ParScanThreadState* par_scan_state, oop old, size_t sz, markOop m) {
   // In the sequential version, this assert also says that the object is
   // not forwarded.  That might not be the case here.  It is the case that
@@ -1277,131 +1271,6 @@ oop ParNewGeneration::copy_to_survivor_space_avoiding_promotion_undo(
       forward_ptr = real_forwardee(old);
     }
     par_scan_state->undo_alloc_in_to_space((HeapWord*)new_obj, sz);
-  }
-
-  return forward_ptr;
-}
-
-
-// Multiple GC threads may try to promote the same object.  If two
-// or more GC threads copy the object, only one wins the race to install
-// the forwarding pointer.  The other threads have to undo their copy.
-
-oop ParNewGeneration::copy_to_survivor_space_with_undo(
-        ParScanThreadState* par_scan_state, oop old, size_t sz, markOop m) {
-
-  // In the sequential version, this assert also says that the object is
-  // not forwarded.  That might not be the case here.  It is the case that
-  // the caller observed it to be not forwarded at some time in the past.
-  assert(is_in_reserved(old), "shouldn't be scavenging this oop");
-
-  // The sequential code read "old->age()" below.  That doesn't work here,
-  // since the age is in the mark word, and that might be overwritten with
-  // a forwarding pointer by a parallel thread.  So we must save the mark
-  // word here, install it in a local oopDesc, and then analyze it.
-  oopDesc dummyOld;
-  dummyOld.set_mark(m);
-  assert(!dummyOld.is_forwarded(),
-         "should not be called with forwarding pointer mark word.");
-
-  bool failed_to_promote = false;
-  oop new_obj = NULL;
-  oop forward_ptr;
-
-  // Try allocating obj in to-space (unless too old)
-  if (dummyOld.age() < tenuring_threshold()) {
-    new_obj = (oop)par_scan_state->alloc_in_to_space(sz);
-    if (new_obj == NULL) {
-      set_survivor_overflow(true);
-    }
-  }
-
-  if (new_obj == NULL) {
-    // Either to-space is full or we decided to promote
-    // try allocating obj tenured
-    new_obj = _next_gen->par_promote(par_scan_state->thread_num(),
-                                       old, m, sz);
-
-    if (new_obj == NULL) {
-      // promotion failed, forward to self
-      forward_ptr = old->forward_to_atomic(old);
-      new_obj = old;
-
-      if (forward_ptr != NULL) {
-        return forward_ptr;   // someone else succeeded
-      }
-
-      _promotion_failed = true;
-      failed_to_promote = true;
-
-      preserve_mark_if_necessary(old, m);
-      par_scan_state->register_promotion_failure(sz);
-    }
-  } else {
-    // Is in to-space; do copying ourselves.
-    Copy::aligned_disjoint_words((HeapWord*)old, (HeapWord*)new_obj, sz);
-    // Restore the mark word copied above.
-    new_obj->set_mark(m);
-    // Increment age if new_obj still in new generation
-    new_obj->incr_age();
-    par_scan_state->age_table()->add(new_obj, sz);
-  }
-  assert(new_obj != NULL, "just checking");
-
-#ifndef PRODUCT
-  // This code must come after the CAS test, or it will print incorrect
-  // information.
-  if (TraceScavenge) {
-    gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
-       is_in_reserved(new_obj) ? "copying" : "tenuring",
-       new_obj->klass()->internal_name(), (void *)old, (void *)new_obj, new_obj->size());
-  }
-#endif
-
-  // Now attempt to install the forwarding pointer (atomically).
-  // We have to copy the mark word before overwriting with forwarding
-  // ptr, so we can restore it below in the copy.
-  if (!failed_to_promote) {
-    forward_ptr = old->forward_to_atomic(new_obj);
-  }
-
-  if (forward_ptr == NULL) {
-    oop obj_to_push = new_obj;
-    if (par_scan_state->should_be_partially_scanned(obj_to_push, old)) {
-      // Length field used as index of next element to be scanned.
-      // Real length can be obtained from real_forwardee()
-      arrayOop(old)->set_length(0);
-      obj_to_push = old;
-      assert(obj_to_push->is_forwarded() && obj_to_push->forwardee() != obj_to_push,
-             "push forwarded object");
-    }
-    // Push it on one of the queues of to-be-scanned objects.
-    bool simulate_overflow = false;
-    NOT_PRODUCT(
-      if (ParGCWorkQueueOverflowALot && should_simulate_overflow()) {
-        // simulate a stack overflow
-        simulate_overflow = true;
-      }
-    )
-    if (simulate_overflow || !par_scan_state->work_queue()->push(obj_to_push)) {
-      // Add stats for overflow pushes.
-      push_on_overflow_list(old, par_scan_state);
-      TASKQUEUE_STATS_ONLY(par_scan_state->taskqueue_stats().record_overflow(0));
-    }
-
-    return new_obj;
-  }
-
-  // Oops.  Someone beat us to it.  Undo the allocation.  Where did we
-  // allocate it?
-  if (is_in_reserved(new_obj)) {
-    // Must be in to_space.
-    assert(to()->is_in_reserved(new_obj), "Checking");
-    par_scan_state->undo_alloc_in_to_space((HeapWord*)new_obj, sz);
-  } else {
-    assert(!_avoid_promotion_undo, "Should not be here if avoiding.");
-    _next_gen->par_promote_alloc_undo(par_scan_state->thread_num(),
-                                      (HeapWord*)new_obj, sz);
   }
 
   return forward_ptr;
