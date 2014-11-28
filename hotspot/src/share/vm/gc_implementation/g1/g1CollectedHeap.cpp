@@ -2257,6 +2257,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_java_lang_system_gc:     return ExplicitGCInvokesConcurrent;
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_update_allocation_context_stats_inc: return true;
+    case GCCause::_wb_conc_mark:            return true;
     default:                                return false;
   }
 }
