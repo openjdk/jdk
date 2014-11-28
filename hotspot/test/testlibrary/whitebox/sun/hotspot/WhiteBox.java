@@ -94,7 +94,7 @@ public class WhiteBox {
   public native boolean g1IsHumongous(Object o);
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
-  public native Object[]    parseCommandLine(String commandline, DiagnosticCommand[] args);
+  public native Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args);
 
   // NMT
   public native long NMTMalloc(long size);

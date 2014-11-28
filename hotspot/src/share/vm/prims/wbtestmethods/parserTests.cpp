@@ -70,38 +70,63 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
   const char* desc = WhiteBox::lookup_jstring("desc", argument);
   const char* default_value = WhiteBox::lookup_jstring("defaultValue", argument);
   bool mandatory = WhiteBox::lookup_bool("mandatory", argument);
+  bool isarg = WhiteBox::lookup_bool("argument", argument);
   const char*  type = lookup_diagnosticArgumentEnum("type", argument);
 
    if (strcmp(type, "STRING") == 0) {
      DCmdArgument<char*>* argument = new DCmdArgument<char*>(
      name, desc,
      "STRING", mandatory, default_value);
-     parser->add_dcmd_option(argument);
+     if (isarg) {
+      parser->add_dcmd_argument(argument);
+     } else {
+      parser->add_dcmd_option(argument);
+     }
    } else if (strcmp(type, "NANOTIME") == 0) {
      DCmdArgument<NanoTimeArgument>* argument = new DCmdArgument<NanoTimeArgument>(
      name, desc,
      "NANOTIME", mandatory, default_value);
-     parser->add_dcmd_option(argument);
+     if (isarg) {
+      parser->add_dcmd_argument(argument);
+     } else {
+      parser->add_dcmd_option(argument);
+     }
    } else if (strcmp(type, "JLONG") == 0) {
      DCmdArgument<jlong>* argument = new DCmdArgument<jlong>(
      name, desc,
      "JLONG", mandatory, default_value);
-     parser->add_dcmd_option(argument);
+     if (isarg) {
+      parser->add_dcmd_argument(argument);
+     } else {
+      parser->add_dcmd_option(argument);
+     }
    } else if (strcmp(type, "BOOLEAN") == 0) {
      DCmdArgument<bool>* argument = new DCmdArgument<bool>(
      name, desc,
      "BOOLEAN", mandatory, default_value);
-     parser->add_dcmd_option(argument);
+     if (isarg) {
+      parser->add_dcmd_argument(argument);
+     } else {
+      parser->add_dcmd_option(argument);
+     }
    } else if (strcmp(type, "MEMORYSIZE") == 0) {
      DCmdArgument<MemorySizeArgument>* argument = new DCmdArgument<MemorySizeArgument>(
      name, desc,
      "MEMORY SIZE", mandatory, default_value);
-     parser->add_dcmd_option(argument);
+     if (isarg) {
+      parser->add_dcmd_argument(argument);
+     } else {
+      parser->add_dcmd_option(argument);
+     }
    } else if (strcmp(type, "STRINGARRAY") == 0) {
      DCmdArgument<StringArrayArgument*>* argument = new DCmdArgument<StringArrayArgument*>(
      name, desc,
      "STRING SET", mandatory);
-     parser->add_dcmd_option(argument);
+     if (isarg) {
+      parser->add_dcmd_argument(argument);
+     } else {
+      parser->add_dcmd_option(argument);
+     }
    }
 }
 
@@ -111,11 +136,12 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
  * { name, value, name, value ... }
  * This can then be checked from java.
  */
-WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmdline, jobjectArray arguments))
+WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmdline, jchar j_delim, jobjectArray arguments))
   ResourceMark rm;
   DCmdParser parser;
 
   const char* c_cmdline = java_lang_String::as_utf8_string(JNIHandles::resolve(j_cmdline));
+  const char c_delim = j_delim & 0xff;
   objArrayOop argumentArray = objArrayOop(JNIHandles::resolve_non_null(arguments));
   objArrayHandle argumentArray_ah(THREAD, argumentArray);
 
@@ -127,20 +153,29 @@ WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmd
   }
 
   CmdLine cmdline(c_cmdline, strlen(c_cmdline), true);
-  parser.parse(&cmdline,',',CHECK_NULL);
+  parser.parse(&cmdline,c_delim,CHECK_NULL);
 
   Klass* k = SystemDictionary::Object_klass();
   objArrayOop returnvalue_array = oopFactory::new_objArray(k, parser.num_arguments() * 2, CHECK_NULL);
   objArrayHandle returnvalue_array_ah(THREAD, returnvalue_array);
 
   GrowableArray<const char *>*parsedArgNames = parser.argument_name_array();
+  GenDCmdArgument* arglist = parser.arguments_list();
 
   for (int i = 0; i < parser.num_arguments(); i++) {
     oop parsedName = java_lang_String::create_oop_from_str(parsedArgNames->at(i), CHECK_NULL);
     returnvalue_array_ah->obj_at_put(i*2, parsedName);
     GenDCmdArgument* arg = parser.lookup_dcmd_option(parsedArgNames->at(i), strlen(parsedArgNames->at(i)));
+    if (!arg) {
+      arg = arglist;
+      arglist = arglist->next();
+    }
     char buf[VALUE_MAXLEN];
-    arg->value_as_str(buf, sizeof(buf));
+    if (arg) {
+      arg->value_as_str(buf, sizeof(buf));
+    } else {
+      sprintf(buf, "<null>");
+    }
     oop parsedValue = java_lang_String::create_oop_from_str(buf, CHECK_NULL);
     returnvalue_array_ah->obj_at_put(i*2+1, parsedValue);
   }
