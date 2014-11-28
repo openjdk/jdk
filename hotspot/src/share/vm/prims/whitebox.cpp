@@ -49,6 +49,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -266,8 +267,16 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  ConcurrentMark* cm = g1->concurrent_mark();
-  return cm->concurrent_marking_in_progress();
+  return g1->concurrent_mark()->cmThread()->during_cycle();
+WB_END
+
+WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
+    g1h->collect(GCCause::_wb_conc_mark);
+    return true;
+  }
+  return false;
 WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
@@ -1106,6 +1115,7 @@ static JNINativeMethod methods[] = {
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
+  {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
