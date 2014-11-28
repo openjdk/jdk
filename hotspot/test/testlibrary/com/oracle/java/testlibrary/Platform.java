@@ -23,6 +23,8 @@
 
 package com.oracle.java.testlibrary;
 
+import java.util.regex.Pattern;
+
 public class Platform {
     private static final String osName      = System.getProperty("os.name");
     private static final String dataModel   = System.getProperty("sun.arch.data.model");
@@ -94,29 +96,31 @@ public class Platform {
 
     // Returns true for sparc and sparcv9.
     public static boolean isSparc() {
-        return isArch("sparc");
+        return isArch("sparc.*");
     }
 
     public static boolean isARM() {
-        return isArch("arm");
+        return isArch("arm.*");
     }
 
     public static boolean isPPC() {
-        return isArch("ppc");
+        return isArch("ppc.*");
     }
 
     public static boolean isX86() {
-        // On Linux it's 'i386', Windows 'x86'
-        return (isArch("i386") || isArch("x86"));
+        // On Linux it's 'i386', Windows 'x86' without '_64' suffix.
+        return isArch("(i386)|(x86(?!_64))");
     }
 
     public static boolean isX64() {
         // On OSX it's 'x86_64' and on other (Linux, Windows and Solaris) platforms it's 'amd64'
-        return (isArch("amd64") || isArch("x86_64"));
+        return isArch("(amd64)|(x86_64)");
     }
 
-    private static boolean isArch(String archname) {
-        return osArch.toLowerCase().startsWith(archname.toLowerCase());
+    private static boolean isArch(String archnameRE) {
+        return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
+                .matcher(osArch)
+                .matches();
     }
 
     public static String getOsArch() {
