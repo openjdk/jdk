@@ -162,11 +162,15 @@ public class WhiteBox {
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
 
-  // force Young GC
+  // Force Young GC
   public native void youngGC();
 
-  // force Full GC
+  // Force Full GC
   public native void fullGC();
+
+  // Method tries to start concurrent mark cycle.
+  // It returns false if CM Thread is always in concurrent cycle.
+  public native boolean g1StartConcMarkCycle();
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
