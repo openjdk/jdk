@@ -25,7 +25,13 @@
 #include "precompiled.hpp"
 #include "runtime/atomic.inline.hpp"
 
-jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
+/*
+ * This is the default implementation of byte-sized cmpxchg. It emulates jbyte-sized cmpxchg
+ * in terms of jint-sized cmpxchg. Platforms may override this by defining their own inline definition
+ * as well as defining VM_HAS_SPECIALIZED_CMPXCHG_BYTE. This will cause the platform specific
+ * implementation to be used instead.
+ */
+jbyte Atomic::cmpxchg_general(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
   assert(sizeof(jbyte) == 1, "assumption.");
   uintptr_t dest_addr = (uintptr_t)dest;
   uintptr_t offset = dest_addr % sizeof(jint);

@@ -26,9 +26,7 @@
 #define SHARE_VM_TRACE_TRACESTREAM_HPP
 
 #include "utilities/macros.hpp"
-
 #if INCLUDE_TRACE
-
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
@@ -117,5 +115,5 @@ class TraceStream : public StackObj {
   }
 };
 
-#endif /* INCLUDE_TRACE */
-#endif /* SHARE_VM_TRACE_TRACESTREAM_HPP */
+#endif // INCLUDE_TRACE
+#endif // SHARE_VM_TRACE_TRACESTREAM_HPP
