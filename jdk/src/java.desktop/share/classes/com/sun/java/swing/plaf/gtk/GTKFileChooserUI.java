@@ -1304,7 +1304,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
      * Render different filters
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public class FilterComboBoxRenderer extends DefaultListCellRenderer implements UIResource {
+    public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         public String getName() {
             // As SynthComboBoxRenderer's are asked for a size BEFORE they
             // are parented getName is overriden to force the name to be
