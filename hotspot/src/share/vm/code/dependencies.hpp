@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ class Dependencies: public ResourceObj {
   // In that case, there would be a middle ground between concrete
   // and abstract (as defined by the Java language and VM).
   static bool is_concrete_klass(Klass* k);    // k is instantiable
-  static bool is_concrete_method(Method* m);  // m is invocable
+  static bool is_concrete_method(Method* m, Klass* k);  // m is invocable
   static Klass* find_finalizable_subclass(Klass* k);
 
   // These versions of the concreteness queries work through the CI.
@@ -302,7 +302,6 @@ class Dependencies: public ResourceObj {
   // not go back into the VM to get their value; they must cache the
   // bit in the CI, either eagerly or lazily.)
   static bool is_concrete_klass(ciInstanceKlass* k); // k appears instantiable
-  static bool is_concrete_method(ciMethod* m);       // m appears invocable
   static bool has_finalizable_subclass(ciInstanceKlass* k);
 
   // As a general rule, it is OK to compile under the assumption that
@@ -349,7 +348,6 @@ class Dependencies: public ResourceObj {
   static Klass*    find_unique_concrete_subtype(Klass* ctxk);
   static Method*   find_unique_concrete_method(Klass* ctxk, Method* m);
   static int       find_exclusive_concrete_subtypes(Klass* ctxk, int klen, Klass* k[]);
-  static int       find_exclusive_concrete_methods(Klass* ctxk, int mlen, Method* m[]);
 
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();
