@@ -140,13 +140,6 @@ public class AccessibleObject implements AnnotatedElement {
                 throw new SecurityException("Cannot make a java.lang.Class" +
                                             " constructor accessible");
             }
-        } else if (obj instanceof Field && flag == true) {
-            Field f = (Field)obj;
-            if (f.getDeclaringClass() == Class.class &&
-                f.getName().equals("classLoader")) {
-                throw new SecurityException("Cannot make java.lang.Class.classLoader" +
-                                            " accessible");
-            }
         }
         obj.override = flag;
     }
