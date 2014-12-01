@@ -283,14 +283,14 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
   // Convert the assertion check to a warning if we are running
   // CMS+ParNew until related bug is fixed.
   MemRegion ur    = sp->used_region();
-  assert(ur.contains(urasm) || (UseConcMarkSweepGC && UseParNewGC),
+  assert(ur.contains(urasm) || (UseConcMarkSweepGC),
          err_msg("Did you forget to call save_marks()? "
                  "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
                  "[" PTR_FORMAT ", " PTR_FORMAT ")",
                  p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end())));
   // In the case of CMS+ParNew, issue a warning
   if (!ur.contains(urasm)) {
-    assert(UseConcMarkSweepGC && UseParNewGC, "Tautology: see assert above");
+    assert(UseConcMarkSweepGC, "Tautology: see assert above");
     warning("CMS+ParNew: Did you forget to call save_marks()? "
             "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
             "[" PTR_FORMAT ", " PTR_FORMAT ")",
@@ -609,21 +609,3 @@ void CardTableRS::verify() {
     _ct_bs->verify();
     }
   }
-
-
-void CardTableRS::verify_aligned_region_empty(MemRegion mr) {
-  if (!mr.is_empty()) {
-    jbyte* cur_entry = byte_for(mr.start());
-    jbyte* limit = byte_after(mr.last());
-    // The region mr may not start on a card boundary so
-    // the first card may reflect a write to the space
-    // just prior to mr.
-    if (!is_aligned(mr.start())) {
-      cur_entry++;
-    }
-    for (;cur_entry < limit; cur_entry++) {
-      guarantee(*cur_entry == CardTableModRefBS::clean_card,
-                "Unexpected dirty card found");
-    }
-  }
-}

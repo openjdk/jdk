@@ -220,12 +220,6 @@ oop Generation::par_promote(int thread_num,
   return NULL;
 }
 
-void Generation::par_promote_alloc_undo(int thread_num,
-                                        HeapWord* obj, size_t word_sz) {
-  // Could do a bad general impl here that gets a lock.  But no.
-  guarantee(false, "No good general implementation.");
-}
-
 Space* Generation::space_containing(const void* p) const {
   GenerationIsInReservedClosure blk(p);
   // Cast away const

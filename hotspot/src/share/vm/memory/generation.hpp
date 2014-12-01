@@ -317,11 +317,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual oop par_promote(int thread_num,
                           oop obj, markOop m, size_t word_sz);
 
-  // Undo, if possible, the most recent par_promote_alloc allocation by
-  // "thread_num" ("obj", of "word_sz").
-  virtual void par_promote_alloc_undo(int thread_num,
-                                      HeapWord* obj, size_t word_sz);
-
   // Informs the current generation that all par_promote_alloc's in the
   // collection have been completed; any supporting data structures can be
   // reset.  Default is to do nothing.
@@ -516,13 +511,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual const char* short_name() const = 0;
 
   int level() const { return _level; }
-
-  // Attributes
-
-  // True iff the given generation may only be the youngest generation.
-  virtual bool must_be_youngest() const = 0;
-  // True iff the given generation may only be the oldest generation.
-  virtual bool must_be_oldest() const = 0;
 
   // Reference Processing accessor
   ReferenceProcessor* const ref_processor() { return _ref_processor; }
