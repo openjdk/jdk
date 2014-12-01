@@ -495,7 +495,6 @@ class GenSpaceMangler;
 // A space in which the free area is contiguous.  It therefore supports
 // faster allocation, and compaction.
 class ContiguousSpace: public CompactibleSpace {
-  friend class OneContigSpaceCardGeneration;
   friend class VMStructs;
   // Allow scan_and_forward function to call (private) overrides for auxiliary functions on this class
   template <typename SpaceType>

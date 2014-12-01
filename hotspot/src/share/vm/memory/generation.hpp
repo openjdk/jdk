@@ -45,9 +45,7 @@
 //   - ParNewGeneration            - a DefNewGeneration that is collected by
 //                                   several threads
 // - CardGeneration                 - abstract class adding offset array behavior
-//   - OneContigSpaceCardGeneration - abstract class holding a single
-//                                    contiguous space with card marking
-//     - TenuredGeneration         - tenured (old object) space (markSweepCompact)
+//   - TenuredGeneration             - tenured (old object) space (markSweepCompact)
 //   - ConcurrentMarkSweepGeneration - Mostly Concurrent Mark Sweep Generation
 //                                       (Detlefs-Printezis refinement of
 //                                       Boehm-Demers-Schenker)
@@ -55,9 +53,7 @@
 // The system configurations currently allowed are:
 //
 //   DefNewGeneration + TenuredGeneration
-//   DefNewGeneration + ConcurrentMarkSweepGeneration
 //
-//   ParNewGeneration + TenuredGeneration
 //   ParNewGeneration + ConcurrentMarkSweepGeneration
 //
 
@@ -639,101 +635,6 @@ class CardGeneration: public Generation {
   virtual bool grow_by(size_t bytes) = 0;
   // Grow generation to reserved size.
   virtual bool grow_to_reserved() = 0;
-};
-
-// OneContigSpaceCardGeneration models a heap of old objects contained in a single
-// contiguous space.
-//
-// Garbage collection is performed using mark-compact.
-
-class OneContigSpaceCardGeneration: public CardGeneration {
-  friend class VMStructs;
-  // Abstractly, this is a subtype that gets access to protected fields.
-  friend class VM_PopulateDumpSharedSpace;
-
- protected:
-  ContiguousSpace*  _the_space;       // actual space holding objects
-  WaterMark  _last_gc;                // watermark between objects allocated before
-                                      // and after last GC.
-
-  // Grow generation with specified size (returns false if unable to grow)
-  virtual bool grow_by(size_t bytes);
-  // Grow generation to reserved size.
-  virtual bool grow_to_reserved();
-  // Shrink generation with specified size (returns false if unable to shrink)
-  void shrink_by(size_t bytes);
-
-  // Allocation failure
-  virtual bool expand(size_t bytes, size_t expand_bytes);
-  void shrink(size_t bytes);
-
-  // Accessing spaces
-  ContiguousSpace* the_space() const { return _the_space; }
-
- public:
-  OneContigSpaceCardGeneration(ReservedSpace rs, size_t initial_byte_size,
-                               int level, GenRemSet* remset,
-                               ContiguousSpace* space) :
-    CardGeneration(rs, initial_byte_size, level, remset),
-    _the_space(space)
-  {}
-
-  inline bool is_in(const void* p) const;
-
-  // Space enquiries
-  size_t capacity() const;
-  size_t used() const;
-  size_t free() const;
-
-  MemRegion used_region() const;
-
-  size_t unsafe_max_alloc_nogc() const;
-  size_t contiguous_available() const;
-
-  // Iteration
-  void object_iterate(ObjectClosure* blk);
-  void space_iterate(SpaceClosure* blk, bool usedOnly = false);
-
-  void younger_refs_iterate(OopsInGenClosure* blk);
-
-  inline CompactibleSpace* first_compaction_space() const;
-
-  virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
-  virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
-
-  // Accessing marks
-  inline WaterMark top_mark();
-  inline WaterMark bottom_mark();
-
-#define OneContig_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)      \
-  void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl);
-  OneContig_SINCE_SAVE_MARKS_DECL(OopsInGenClosure,_v)
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(OneContig_SINCE_SAVE_MARKS_DECL)
-
-  void save_marks();
-  void reset_saved_marks();
-  bool no_allocs_since_save_marks();
-
-  inline size_t block_size(const HeapWord* addr) const;
-
-  inline bool block_is_obj(const HeapWord* addr) const;
-
-  virtual void collect(bool full,
-                       bool clear_all_soft_refs,
-                       size_t size,
-                       bool is_tlab);
-  HeapWord* expand_and_allocate(size_t size,
-                                bool is_tlab,
-                                bool parallel = false);
-
-  virtual void prepare_for_verify();
-
-  virtual void gc_epilogue(bool full);
-
-  virtual void record_spaces_top();
-
-  virtual void verify();
-  virtual void print_on(outputStream* st) const;
 };
 
 #endif // SHARE_VM_MEMORY_GENERATION_HPP

@@ -29,7 +29,6 @@
 #include "gc_implementation/shared/cSpaceCounters.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
-#include "memory/generation.inline.hpp"
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;

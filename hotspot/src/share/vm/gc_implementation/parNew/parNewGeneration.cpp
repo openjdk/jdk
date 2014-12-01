@@ -39,7 +39,6 @@
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/generation.hpp"
-#include "memory/generation.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/sharedHeap.hpp"
