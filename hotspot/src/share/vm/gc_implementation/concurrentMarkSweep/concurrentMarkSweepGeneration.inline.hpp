@@ -31,6 +31,7 @@
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/shared/gcUtil.hpp"
+#include "memory/genCollectedHeap.hpp"
 
 inline void CMSBitMap::clear_all() {
   assert_locked();

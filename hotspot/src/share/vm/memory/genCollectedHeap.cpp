@@ -36,7 +36,6 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genOopClosures.inline.hpp"
-#include "memory/generation.inline.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/sharedHeap.hpp"

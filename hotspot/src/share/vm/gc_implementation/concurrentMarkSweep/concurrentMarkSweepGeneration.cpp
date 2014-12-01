@@ -2812,7 +2812,7 @@ ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
 }
 
 // YSR: All of this generation expansion/shrinking stuff is an exact copy of
-// OneContigSpaceCardGeneration, which makes me wonder if we should move this
+// TenuredGeneration, which makes me wonder if we should move this
 // to CardGeneration and share it...
 bool ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes) {
   return CardGeneration::expand(bytes, expand_bytes);
