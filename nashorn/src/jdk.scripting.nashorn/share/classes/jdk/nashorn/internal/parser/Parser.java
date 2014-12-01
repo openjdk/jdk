@@ -2291,9 +2291,14 @@ loop:
         final ParserContextFunctionNode functionNode = createParserContextFunctionNode(getNameNode, getSetToken, FunctionNode.Kind.GETTER, functionLine, Collections.<IdentNode>emptyList());
         lc.push(functionNode);
 
-        final Block functionBody = functionBody(functionNode);
+        Block functionBody;
 
-        lc.pop(functionNode);
+
+        try {
+            functionBody = functionBody(functionNode);
+        } finally {
+            lc.pop(functionNode);
+        }
 
         final FunctionNode  function = createFunctionNode(
                 functionNode,
@@ -2331,9 +2336,13 @@ loop:
         final ParserContextFunctionNode functionNode = createParserContextFunctionNode(setNameNode, getSetToken, FunctionNode.Kind.SETTER, functionLine, parameters);
         lc.push(functionNode);
 
-        final Block functionBody = functionBody(functionNode);
+        Block functionBody;
+        try {
+            functionBody = functionBody(functionNode);
+        } finally {
+            lc.pop(functionNode);
+        }
 
-        lc.pop(functionNode);
 
         final FunctionNode  function = createFunctionNode(
                 functionNode,
