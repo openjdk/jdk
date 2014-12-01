@@ -3561,7 +3561,7 @@ G1CollectedHeap::update_surviving_young_words(size_t* surv_young_words) {
 void
 G1CollectedHeap::cleanup_surviving_young_words() {
   guarantee( _surviving_young_words != NULL, "pre-condition" );
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words, mtGC);
+  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words);
   _surviving_young_words = NULL;
 }
 

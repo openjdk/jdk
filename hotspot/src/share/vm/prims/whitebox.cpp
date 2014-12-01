@@ -328,7 +328,7 @@ WB_END
 
 // Free the memory allocated by NMTAllocTest
 WB_ENTRY(void, WB_NMTFree(JNIEnv* env, jobject o, jlong mem))
-  os::free((void*)(uintptr_t)mem, mtTest);
+  os::free((void*)(uintptr_t)mem);
 WB_END
 
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
@@ -754,7 +754,7 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
     env->ReleaseStringUTFChars(value, ccstrValue);
   }
   if (needFree) {
-    FREE_C_HEAP_ARRAY(char, ccstrResult, mtInternal);
+    FREE_C_HEAP_ARRAY(char, ccstrResult);
   }
 WB_END
 

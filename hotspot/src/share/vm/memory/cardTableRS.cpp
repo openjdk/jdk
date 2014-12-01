@@ -73,7 +73,7 @@ CardTableRS::~CardTableRS() {
     _ct_bs = NULL;
   }
   if (_last_cur_val_in_gen) {
-    FREE_C_HEAP_ARRAY(jbyte, _last_cur_val_in_gen, mtInternal);
+    FREE_C_HEAP_ARRAY(jbyte, _last_cur_val_in_gen);
   }
 }
 

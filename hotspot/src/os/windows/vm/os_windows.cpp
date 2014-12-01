@@ -211,7 +211,7 @@ void os::init_system_properties_values() {
     }
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
-    FREE_C_HEAP_ARRAY(char, home_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, home_path);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
@@ -221,7 +221,7 @@ void os::init_system_properties_values() {
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);
-    FREE_C_HEAP_ARRAY(char, dll_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, dll_path);
 
     if (!set_boot_path('\\', ';')) {
       return;
@@ -276,7 +276,7 @@ void os::init_system_properties_values() {
     strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
-    FREE_C_HEAP_ARRAY(char, library_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, library_path);
   }
 
   // Default extensions directory
@@ -301,7 +301,7 @@ void os::init_system_properties_values() {
     Arguments::set_endorsed_dirs(buf);
     // (Arguments::set_endorsed_dirs() calls SystemProperty::set_value(), which
     //  duplicates the input.)
-    FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+    FREE_C_HEAP_ARRAY(char, buf);
 #undef ENDORSED_DIR
   }
 
@@ -1136,7 +1136,7 @@ DIR * os::opendir(const char *dirname) {
 
   dirp->path = (char *)malloc(strlen(dirname) + 5, mtInternal);
   if (dirp->path == 0) {
-    free(dirp, mtInternal);
+    free(dirp);
     errno = ENOMEM;
     return 0;
   }
@@ -1144,13 +1144,13 @@ DIR * os::opendir(const char *dirname) {
 
   fattr = GetFileAttributes(dirp->path);
   if (fattr == 0xffffffff) {
-    free(dirp->path, mtInternal);
-    free(dirp, mtInternal);
+    free(dirp->path);
+    free(dirp);
     errno = ENOENT;
     return 0;
   } else if ((fattr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-    free(dirp->path, mtInternal);
-    free(dirp, mtInternal);
+    free(dirp->path);
+    free(dirp);
     errno = ENOTDIR;
     return 0;
   }
@@ -1168,8 +1168,8 @@ DIR * os::opendir(const char *dirname) {
   dirp->handle = FindFirstFile(dirp->path, &dirp->find_data);
   if (dirp->handle == INVALID_HANDLE_VALUE) {
     if (GetLastError() != ERROR_FILE_NOT_FOUND) {
-      free(dirp->path, mtInternal);
-      free(dirp, mtInternal);
+      free(dirp->path);
+      free(dirp);
       errno = EACCES;
       return 0;
     }
@@ -1207,8 +1207,8 @@ int os::closedir(DIR *dirp) {
     }
     dirp->handle = INVALID_HANDLE_VALUE;
   }
-  free(dirp->path, mtInternal);
-  free(dirp, mtInternal);
+  free(dirp->path);
+  free(dirp);
   return 0;
 }
 
@@ -1275,11 +1275,11 @@ bool os::dll_build_name(char *buffer, size_t buflen,
     // release the storage
     for (int i = 0; i < n; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
+      FREE_C_HEAP_ARRAY(char*, pelements);
     }
   } else {
     jio_snprintf(buffer, buflen, "%s\\%s.dll", pname, fname);
@@ -2745,7 +2745,7 @@ class NUMANodeListHolder {
 
   void free_node_list() {
     if (_numa_used_node_list != NULL) {
-      FREE_C_HEAP_ARRAY(int, _numa_used_node_list, mtInternal);
+      FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
     }
   }
 
@@ -4642,7 +4642,7 @@ static int stdinAvailable(int fd, long *pbytes) {
 
   error = ::PeekConsoleInput(han, lpBuffer, numEvents, &numEventsRead);
   if (error == 0) {
-    os::free(lpBuffer, mtInternal);
+    os::free(lpBuffer);
     return FALSE;
   }
 
@@ -4663,7 +4663,7 @@ static int stdinAvailable(int fd, long *pbytes) {
   }
 
   if (lpBuffer != NULL) {
-    os::free(lpBuffer, mtInternal);
+    os::free(lpBuffer);
   }
 
   *pbytes = (long) actualLength;

@@ -58,8 +58,8 @@ CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
 CompileLog::~CompileLog() {
   delete _out;
   _out = NULL;
-  FREE_C_HEAP_ARRAY(char, _identities, mtCompiler);
-  FREE_C_HEAP_ARRAY(char, _file, mtCompiler);
+  FREE_C_HEAP_ARRAY(char, _identities);
+  FREE_C_HEAP_ARRAY(char, _file);
 }
 
 
