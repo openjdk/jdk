@@ -449,7 +449,7 @@ HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
 
 HeapRegionClaimer::~HeapRegionClaimer() {
   if (_claims != NULL) {
-    FREE_C_HEAP_ARRAY(uint, _claims, mtGC);
+    FREE_C_HEAP_ARRAY(uint, _claims);
   }
 }
 

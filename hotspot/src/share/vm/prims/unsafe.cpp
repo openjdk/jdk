@@ -898,10 +898,10 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
     result = JVM_DefineClass(env, utfName, loader, body, length, pd);
 
     if (utfName && utfName != buf)
-        FREE_C_HEAP_ARRAY(char, utfName, mtInternal);
+        FREE_C_HEAP_ARRAY(char, utfName);
 
  free_body:
-    FREE_C_HEAP_ARRAY(jbyte, body, mtInternal);
+    FREE_C_HEAP_ARRAY(jbyte, body);
     return result;
   }
 }
@@ -1086,7 +1086,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass(JNIEnv *env, jobject unsafe, jc
 
   // try/finally clause:
   if (temp_alloc != NULL) {
-    FREE_C_HEAP_ARRAY(HeapWord, temp_alloc, mtInternal);
+    FREE_C_HEAP_ARRAY(HeapWord, temp_alloc);
   }
 
   // The anonymous class loader data has been artificially been kept alive to

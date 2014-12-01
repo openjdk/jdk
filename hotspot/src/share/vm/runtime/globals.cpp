@@ -840,7 +840,7 @@ void CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, F
   faddr->set_ccstr(new_value);
   if (!faddr->is_default() && old_value != NULL) {
     // Prior value is heap allocated so free it.
-    FREE_C_HEAP_ARRAY(char, old_value, mtInternal);
+    FREE_C_HEAP_ARRAY(char, old_value);
   }
   faddr->set_origin(origin);
 }
@@ -874,7 +874,7 @@ void CommandLineFlags::printSetFlags(outputStream* out) {
     }
   }
   out->cr();
-  FREE_C_HEAP_ARRAY(Flag*, array, mtInternal);
+  FREE_C_HEAP_ARRAY(Flag*, array);
 }
 
 #ifndef PRODUCT
@@ -908,5 +908,5 @@ void CommandLineFlags::printFlags(outputStream* out, bool withComments) {
       array[i]->print_on(out, withComments);
     }
   }
-  FREE_C_HEAP_ARRAY(Flag*, array, mtInternal);
+  FREE_C_HEAP_ARRAY(Flag*, array);
 }

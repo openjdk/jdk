@@ -1365,7 +1365,7 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
       cl->do_field(&fd);
     }
   }
-  FREE_C_HEAP_ARRAY(int, fields_sorted, mtClass);
+  FREE_C_HEAP_ARRAY(int, fields_sorted);
 }
 
 
@@ -2473,7 +2473,7 @@ void InstanceKlass::release_C_heap_structures() {
 
   // deallocate the cached class file
   if (_cached_class_file != NULL) {
-    os::free(_cached_class_file, mtClass);
+    os::free(_cached_class_file);
     _cached_class_file = NULL;
   }
 
@@ -2482,7 +2482,7 @@ void InstanceKlass::release_C_heap_structures() {
   // unreference array name derived from this class name (arrays of an unloaded
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
-  if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension, mtClass);
+  if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension);
 
   assert(_total_instanceKlass_count >= 1, "Sanity check");
   Atomic::dec(&_total_instanceKlass_count);

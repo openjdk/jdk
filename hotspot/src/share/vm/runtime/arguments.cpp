@@ -437,7 +437,7 @@ inline void SysClassPath::add_suffix(const char* suffix) {
 inline void SysClassPath::reset_item_at(int index) {
   assert(index < _scp_nitems && index != _scp_base, "just checking");
   if (_items[index] != NULL) {
-    FREE_C_HEAP_ARRAY(char, _items[index], mtInternal);
+    FREE_C_HEAP_ARRAY(char, _items[index]);
     _items[index] = NULL;
   }
 }
@@ -473,7 +473,7 @@ void SysClassPath::expand_endorsed() {
       memcpy(dirpath, path, tmp_end - path);
       dirpath[tmp_end - path] = '\0';
       expanded_path = add_jars_to_path(expanded_path, dirpath);
-      FREE_C_HEAP_ARRAY(char, dirpath, mtInternal);
+      FREE_C_HEAP_ARRAY(char, dirpath);
       path = tmp_end + 1;
     }
   }
@@ -540,7 +540,7 @@ SysClassPath::add_to_path(const char* path, const char* str, bool prepend) {
       cp_tmp += str_len;
       *cp_tmp = separator;
       memcpy(++cp_tmp, path, old_len + 1);      // copy the trailing null
-      FREE_C_HEAP_ARRAY(char, path, mtInternal);
+      FREE_C_HEAP_ARRAY(char, path);
     } else {
       cp = REALLOC_C_HEAP_ARRAY(char, path, len, mtInternal);
       char* cp_tmp = cp + old_len;
@@ -575,10 +575,10 @@ char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
       char* jarpath = NEW_C_HEAP_ARRAY(char, directory_len + 2 + strlen(name), mtInternal);
       sprintf(jarpath, "%s%s%s", directory, dir_sep, name);
       path = add_to_path(path, jarpath, false);
-      FREE_C_HEAP_ARRAY(char, jarpath, mtInternal);
+      FREE_C_HEAP_ARRAY(char, jarpath);
     }
   }
-  FREE_C_HEAP_ARRAY(char, dbuf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, dbuf);
   os::closedir(dir);
   return path;
 }
@@ -713,7 +713,7 @@ static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
 static bool set_string_flag(char* name, const char* value, Flag::Flags origin) {
   if (!CommandLineFlags::ccstrAtPut(name, &value, origin))  return false;
   // Contract:  CommandLineFlags always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value, mtInternal);
+  FREE_C_HEAP_ARRAY(char, value);
   return true;
 }
 
@@ -737,10 +737,10 @@ static bool append_to_string_flag(char* name, const char* new_value, Flag::Flags
   }
   (void) CommandLineFlags::ccstrAtPut(name, &value, origin);
   // CommandLineFlags always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value, mtInternal);
+  FREE_C_HEAP_ARRAY(char, value);
   if (free_this_too != NULL) {
     // CommandLineFlags made its own copy, so I must delete my own temp. buffer.
-    FREE_C_HEAP_ARRAY(char, free_this_too, mtInternal);
+    FREE_C_HEAP_ARRAY(char, free_this_too);
   }
   return true;
 }

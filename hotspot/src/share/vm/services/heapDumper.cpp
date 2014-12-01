@@ -1404,7 +1404,7 @@ class VM_HeapDumper : public VM_GC_Operation {
       for (int i=0; i < _num_threads; i++) {
         delete _stack_traces[i];
       }
-      FREE_C_HEAP_ARRAY(ThreadStackTrace*, _stack_traces, mtInternal);
+      FREE_C_HEAP_ARRAY(ThreadStackTrace*, _stack_traces);
     }
     delete _klass_map;
   }
