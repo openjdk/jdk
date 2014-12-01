@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,7 +560,7 @@ void Dependencies::print_dependency(DepType dept, GrowableArray<DepArgument>* ar
       put_star = !Dependencies::is_concrete_klass((Klass*)arg.metadata_value());
     } else if (arg.is_method()) {
       what = "method ";
-      put_star = !Dependencies::is_concrete_method((Method*)arg.metadata_value());
+      put_star = !Dependencies::is_concrete_method((Method*)arg.metadata_value(), NULL);
     } else if (arg.is_klass()) {
       what = "class  ";
     } else {
@@ -878,8 +878,8 @@ class ClassHierarchyWalker {
         // Static methods don't override non-static so punt
         return true;
       }
-      if (   !Dependencies::is_concrete_method(lm)
-          && !Dependencies::is_concrete_method(m)
+      if (   !Dependencies::is_concrete_method(lm, k)
+          && !Dependencies::is_concrete_method(m, ctxk)
           && lm->method_holder()->is_subtype_of(m->method_holder()))
         // Method m is overridden by lm, but both are non-concrete.
         return true;
@@ -915,8 +915,17 @@ class ClassHierarchyWalker {
     } else if (!k->oop_is_instance()) {
       return false; // no methods to find in an array type
     } else {
-      Method* m = InstanceKlass::cast(k)->find_method(_name, _signature);
-      if (m == NULL || !Dependencies::is_concrete_method(m))  return false;
+      // Search class hierarchy first.
+      Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature);
+      if (!Dependencies::is_concrete_method(m, k)) {
+        // Check interface defaults also, if any exist.
+        Array<Method*>* default_methods = InstanceKlass::cast(k)->default_methods();
+        if (default_methods == NULL)
+            return false;
+        m = InstanceKlass::cast(k)->find_method(default_methods, _name, _signature);
+        if (!Dependencies::is_concrete_method(m, NULL))
+            return false;
+      }
       _found_methods[_num_participants] = m;
       // Note:  If add_participant(k) is called,
       // the method m will already be memoized for it.
@@ -1209,15 +1218,17 @@ bool Dependencies::is_concrete_klass(Klass* k) {
   return true;
 }
 
-bool Dependencies::is_concrete_method(Method* m) {
-  // Statics are irrelevant to virtual call sites.
-  if (m->is_static())  return false;
-
-  // We could also return false if m does not yet appear to be
-  // executed, if the VM version supports this distinction also.
-  // Default methods are considered "concrete" as well.
-  return !m->is_abstract() &&
-         !m->is_overpass(); // error functions aren't concrete
+bool Dependencies::is_concrete_method(Method* m, Klass * k) {
+  // NULL is not a concrete method,
+  // statics are irrelevant to virtual call sites,
+  // abstract methods are not concrete,
+  // overpass (error) methods are not concrete if k is abstract
+  //
+  // note "true" is conservative answer --
+  //     overpass clause is false if k == NULL, implies return true if
+  //     answer depends on overpass clause.
+  return ! ( m == NULL || m -> is_static() || m -> is_abstract() ||
+             m->is_overpass() && k != NULL && k -> is_abstract() );
 }
 
 
@@ -1241,16 +1252,6 @@ bool Dependencies::is_concrete_klass(ciInstanceKlass* k) {
   //if (k->is_not_instantiated())  return false;
   return true;
 }
-
-bool Dependencies::is_concrete_method(ciMethod* m) {
-  // Statics are irrelevant to virtual call sites.
-  if (m->is_static())  return false;
-
-  // We could also return false if m does not yet appear to be
-  // executed, if the VM version supports this distinction also.
-  return !m->is_abstract();
-}
-
 
 bool Dependencies::has_finalizable_subclass(ciInstanceKlass* k) {
   return k->has_finalizable_subclass();
@@ -1469,7 +1470,7 @@ Method* Dependencies::find_unique_concrete_method(Klass* ctxk, Method* m) {
   Klass* wit = wf.find_witness_definer(ctxk);
   if (wit != NULL)  return NULL;  // Too many witnesses.
   Method* fm = wf.found_method(0);  // Will be NULL if num_parts == 0.
-  if (Dependencies::is_concrete_method(m)) {
+  if (Dependencies::is_concrete_method(m, ctxk)) {
     if (fm == NULL) {
       // It turns out that m was always the only implementation.
       fm = m;
@@ -1499,68 +1500,12 @@ Klass* Dependencies::check_exclusive_concrete_methods(Klass* ctxk,
   return wf.find_witness_definer(ctxk, changes);
 }
 
-// Find the set of all non-abstract methods under ctxk that match m[0].
-// (The method m[0] must be defined or inherited in ctxk.)
-// Include m itself in the set, unless it is abstract.
-// Fill the given array m[0..(mlen-1)] with this set, and return the length.
-// (The length may be zero if no concrete methods are found anywhere.)
-// If there are too many concrete methods to fit in marray, return -1.
-int Dependencies::find_exclusive_concrete_methods(Klass* ctxk,
-                                                  int mlen,
-                                                  Method* marray[]) {
-  Method* m0 = marray[0];
-  ClassHierarchyWalker wf(m0);
-  assert(wf.check_method_context(ctxk, m0), "proper context");
-  wf.record_witnesses(mlen);
-  bool participants_hide_witnesses = true;
-  Klass* wit = wf.find_witness_definer(ctxk);
-  if (wit != NULL)  return -1;  // Too many witnesses.
-  int num = wf.num_participants();
-  assert(num <= mlen, "oob");
-  // Keep track of whether m is also part of the result set.
-  int mfill = 0;
-  assert(marray[mfill] == m0, "sanity");
-  if (Dependencies::is_concrete_method(m0))
-    mfill++;  // keep m0 as marray[0], the first result
-  for (int i = 0; i < num; i++) {
-    Method* fm = wf.found_method(i);
-    if (fm == m0)  continue;  // Already put this guy in the list.
-    if (mfill == mlen) {
-      return -1;              // Oops.  Too many methods after all!
-    }
-    marray[mfill++] = fm;
-  }
-#ifndef PRODUCT
-  // Make sure the dependency mechanism will pass this discovery:
-  if (VerifyDependencies) {
-    // Turn off dependency tracing while actually testing deps.
-    FlagSetting fs(TraceDependencies, false);
-    switch (mfill) {
-    case 1:
-      guarantee(NULL == (void *)check_unique_concrete_method(ctxk, marray[0]),
-                "verify dep.");
-      break;
-    case 2:
-      guarantee(NULL == (void *)
-                check_exclusive_concrete_methods(ctxk, marray[0], marray[1]),
-                "verify dep.");
-      break;
-    default:
-      ShouldNotReachHere();  // mlen > 2 yet supported
-    }
-  }
-#endif //PRODUCT
-  return mfill;
-}
-
-
 Klass* Dependencies::check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes) {
   Klass* search_at = ctxk;
   if (changes != NULL)
     search_at = changes->new_type(); // just look at the new bit
   return find_finalizable_subclass(search_at);
 }
-
 
 Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes) {
   assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "sanity");

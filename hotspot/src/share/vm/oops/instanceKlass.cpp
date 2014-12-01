@@ -1420,30 +1420,39 @@ Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
 }
 
 Method* InstanceKlass::find_method_impl(Symbol* name, Symbol* signature, bool skipping_overpass) const {
-  return InstanceKlass::find_method_impl(methods(), name, signature, skipping_overpass);
+  return InstanceKlass::find_method_impl(methods(), name, signature, skipping_overpass, false);
 }
 
 // find_instance_method looks up the name/signature in the local methods array
 // and skips over static methods
 Method* InstanceKlass::find_instance_method(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  Method* meth = InstanceKlass::find_method(methods, name, signature);
-  if (meth != NULL && meth->is_static()) {
-      meth = NULL;
-  }
+  Method* meth = InstanceKlass::find_method_impl(methods, name, signature, false, true);
   return meth;
+}
+
+// find_instance_method looks up the name/signature in the local methods array
+// and skips over static methods
+Method* InstanceKlass::find_instance_method(Symbol* name, Symbol* signature) {
+    return InstanceKlass::find_instance_method(methods(), name, signature);
 }
 
 // find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  return InstanceKlass::find_method_impl(methods, name, signature, false);
+  return InstanceKlass::find_method_impl(methods, name, signature, false, false);
 }
 
 Method* InstanceKlass::find_method_impl(
-    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass) {
-  int hit = find_method_index(methods, name, signature, skipping_overpass);
+    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass, bool skipping_static) {
+  int hit = find_method_index(methods, name, signature, skipping_overpass, skipping_static);
   return hit >= 0 ? methods->at(hit): NULL;
+}
+
+bool InstanceKlass::method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static) {
+    return (m->signature() == signature) &&
+            (!skipping_overpass || !m->is_overpass()) &&
+            (!skipping_static || !m->is_static());
 }
 
 // Used directly for default_methods to find the index into the
@@ -1454,13 +1463,14 @@ Method* InstanceKlass::find_method_impl(
 // is important during method resolution to prefer a static method, for example,
 // over an overpass method.
 int InstanceKlass::find_method_index(
-    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass) {
+    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass, bool skipping_static) {
   int hit = binary_search(methods, name);
   if (hit != -1) {
     Method* m = methods->at(hit);
+
     // Do linear search to find matching signature.  First, quick check
     // for common case, ignoring overpasses if requested.
-    if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return hit;
+    if (method_matches(m, signature, skipping_overpass, skipping_static)) return hit;
 
     // search downwards through overloaded methods
     int i;
@@ -1468,18 +1478,18 @@ int InstanceKlass::find_method_index(
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return i;
+        if (method_matches(m, signature, skipping_overpass, skipping_static)) return i;
     }
     // search upwards
     for (i = hit + 1; i < methods->length(); ++i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return i;
+        if (method_matches(m, signature, skipping_overpass, skipping_static)) return i;
     }
     // not found
 #ifdef ASSERT
-    int index = skipping_overpass ? -1 : linear_search(methods, name, signature);
+    int index = skipping_overpass || skipping_static ? -1 : linear_search(methods, name, signature);
     assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
   }
