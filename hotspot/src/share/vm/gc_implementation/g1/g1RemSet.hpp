@@ -58,7 +58,6 @@ protected:
   };
 
   CardTableModRefBS*     _ct_bs;
-  SubTasksDone*          _seq_task;
   G1CollectorPolicy*     _g1p;
 
   ConcurrentG1Refine*    _cg1r;

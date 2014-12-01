@@ -626,7 +626,7 @@ void DefNewGeneration::collect(bool   full,
                          true,  // Process younger gens, if any,
                                 // as strong roots.
                          true,  // activate StrongRootsScope
-                         SharedHeap::SO_ScavengeCodeCache,
+                         GenCollectedHeap::SO_ScavengeCodeCache,
                          GenCollectedHeap::StrongAndWeakRoots,
                          &fsc_with_no_gc_barrier,
                          &fsc_with_gc_barrier,
