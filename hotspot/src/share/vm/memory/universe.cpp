@@ -76,7 +76,7 @@
 #include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy_ext.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_CDS
@@ -799,7 +799,7 @@ jint Universe::initialize_heap() {
 
   } else if (UseG1GC) {
 #if INCLUDE_ALL_GCS
-    G1CollectorPolicy* g1p = new G1CollectorPolicy();
+    G1CollectorPolicyExt* g1p = new G1CollectorPolicyExt();
     g1p->initialize_all();
     G1CollectedHeap* g1h = new G1CollectedHeap(g1p);
     Universe::_collectedHeap = g1h;

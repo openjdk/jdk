@@ -340,9 +340,6 @@ protected:
   virtual const char* name() const;
   virtual const char* short_name() const { return "DefNew"; }
 
-  bool must_be_youngest() const { return true; }
-  bool must_be_oldest() const { return false; }
-
   // PrintHeapAtGC support.
   void print_on(outputStream* st) const;
 

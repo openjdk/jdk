@@ -1222,7 +1222,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     // Timing
     assert(gc_cause() != GCCause::_java_lang_system_gc || explicit_gc, "invariant");
-    gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
     {
@@ -2258,6 +2257,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_java_lang_system_gc:     return ExplicitGCInvokesConcurrent;
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_update_allocation_context_stats_inc: return true;
+    case GCCause::_wb_conc_mark:            return true;
     default:                                return false;
   }
 }
@@ -2552,8 +2552,9 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
 void
 G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
                                          uint worker_id,
-                                         HeapRegionClaimer *hrclaimer) const {
-  _hrm.par_iterate(cl, worker_id, hrclaimer);
+                                         HeapRegionClaimer *hrclaimer,
+                                         bool concurrent) const {
+  _hrm.par_iterate(cl, worker_id, hrclaimer, concurrent);
 }
 
 // Clear the cached CSet starting regions and (more importantly)
@@ -6530,7 +6531,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
       // We really only need to do this for old regions given that we
       // should never scan survivors. But it doesn't hurt to do it
       // for survivors too.
-      new_alloc_region->record_top_and_timestamp();
+      new_alloc_region->record_timestamp();
       if (survivor) {
         new_alloc_region->set_survivor();
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);

@@ -329,9 +329,6 @@ class ParNewGeneration: public DefNewGeneration {
   oop _overflow_list;
   NOT_PRODUCT(ssize_t _num_par_pushes;)
 
-  // If true, older generation does not support promotion undo, so avoid.
-  static bool _avoid_promotion_undo;
-
   // This closure is used by the reference processor to filter out
   // references to live referent.
   DefNewGeneration::IsAliveClosure _is_alive_closure;
@@ -348,9 +345,6 @@ class ParNewGeneration: public DefNewGeneration {
  protected:
 
   bool _survivor_overflow;
-
-  bool avoid_promotion_undo() { return _avoid_promotion_undo; }
-  void set_avoid_promotion_undo(bool v) { _avoid_promotion_undo = v; }
 
   bool survivor_overflow() { return _survivor_overflow; }
   void set_survivor_overflow(bool v) { _survivor_overflow = v; }
@@ -372,7 +366,6 @@ class ParNewGeneration: public DefNewGeneration {
 
   // override
   virtual bool refs_discovery_is_mt()     const {
-    assert(UseParNewGC, "ParNewGeneration only when UseParNewGC");
     return ParallelGCThreads > 1;
   }
 
@@ -386,20 +379,7 @@ class ParNewGeneration: public DefNewGeneration {
   // "obj" is the object to be copied, "m" is a recent value of its mark
   // that must not contain a forwarding pointer (though one might be
   // inserted in "obj"s mark word by a parallel thread).
-  inline oop copy_to_survivor_space(ParScanThreadState* par_scan_state,
-                             oop obj, size_t obj_sz, markOop m) {
-    if (_avoid_promotion_undo) {
-       return copy_to_survivor_space_avoiding_promotion_undo(par_scan_state,
-                                                             obj, obj_sz, m);
-    }
-
-    return copy_to_survivor_space_with_undo(par_scan_state, obj, obj_sz, m);
-  }
-
-  oop copy_to_survivor_space_avoiding_promotion_undo(ParScanThreadState* par_scan_state,
-                             oop obj, size_t obj_sz, markOop m);
-
-  oop copy_to_survivor_space_with_undo(ParScanThreadState* par_scan_state,
+  oop copy_to_survivor_space(ParScanThreadState* par_scan_state,
                              oop obj, size_t obj_sz, markOop m);
 
   // in support of testing overflow code
