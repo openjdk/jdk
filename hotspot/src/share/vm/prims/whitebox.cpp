@@ -26,45 +26,39 @@
 
 #include <new>
 
+#include "classfile/classLoaderData.hpp"
+#include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-
-#include "classfile/stringTable.hpp"
-#include "classfile/classLoaderData.hpp"
-
-#include "prims/whitebox.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
-
-#include "runtime/thread.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
 #include "runtime/sweeper.hpp"
-
+#include "runtime/thread.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/array.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/exceptions.hpp"
-
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
-
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
 
-#include "compiler/compileBroker.hpp"
-#include "runtime/compilationPolicy.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
@@ -112,6 +106,29 @@ WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
 
   return closure.found();
 WB_END
+
+WB_ENTRY(void, WB_AddToBootstrapClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
+#if INCLUDE_JVMTI
+  ResourceMark rm;
+  const char* seg = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(segment));
+  JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
+  jvmtiError err = jvmti_env->AddToBootstrapClassLoaderSearch(seg);
+  assert(err == JVMTI_ERROR_NONE, "must not fail");
+#endif
+}
+WB_END
+
+WB_ENTRY(void, WB_AddToSystemClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
+#if INCLUDE_JVMTI
+  ResourceMark rm;
+  const char* seg = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(segment));
+  JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
+  jvmtiError err = jvmti_env->AddToSystemClassLoaderSearch(seg);
+  assert(err == JVMTI_ERROR_NONE, "must not fail");
+#endif
+}
+WB_END
+
 
 WB_ENTRY(jlong, WB_GetCompressedOopsMaxHeapSize(JNIEnv* env, jobject o)) {
   return (jlong)Arguments::max_heap_for_compressed_oops();
@@ -1112,6 +1129,10 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
+  {CC"addToBootstrapClassLoaderSearch", CC"(Ljava/lang/String;)V",
+                                                      (void*)&WB_AddToBootstrapClassLoaderSearch},
+  {CC"addToSystemClassLoaderSearch",    CC"(Ljava/lang/String;)V",
+                                                      (void*)&WB_AddToSystemClassLoaderSearch},
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
