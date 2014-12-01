@@ -48,10 +48,25 @@ class ConstraintCastNode: public TypeNode {
 //------------------------------CastIINode-------------------------------------
 // cast integer to integer (different range)
 class CastIINode: public ConstraintCastNode {
+  private:
+  // Can this node be removed post CCP or does it carry a required dependency?
+  const bool _carry_dependency;
+
+  protected:
+  virtual uint cmp( const Node &n ) const;
+  virtual uint size_of() const;
+
   public:
-  CastIINode (Node *n, const Type *t ): ConstraintCastNode(n,t) {}
+  CastIINode(Node *n, const Type *t, bool carry_dependency = false)
+    : ConstraintCastNode(n,t), _carry_dependency(carry_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Ideal_DU_postCCP( PhaseCCP * );
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 };
 
 //------------------------------CastPPNode-------------------------------------
