@@ -418,7 +418,8 @@ class GraphKit : public Phase {
   // Cast obj to type and emit guard unless we had too many traps here already
   Node* maybe_cast_profiled_obj(Node* obj,
                                 ciKlass* type,
-                                bool not_null = false);
+                                bool not_null = false,
+                                SafePointNode* sfpt = NULL);
 
   // Cast obj to not-null on this path
   Node* cast_not_null(Node* obj, bool do_replace_in_map = true);
