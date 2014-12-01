@@ -618,7 +618,7 @@ void ParNewGenTask::work(uint worker_id) {
                          true,  // Process younger gens, if any,
                                 // as strong roots.
                          false, // no scope; this is parallel code
-                         SharedHeap::SO_ScavengeCodeCache,
+                         GenCollectedHeap::SO_ScavengeCodeCache,
                          GenCollectedHeap::StrongAndWeakRoots,
                          &par_scan_state.to_space_root_closure(),
                          &par_scan_state.older_gen_closure(),
