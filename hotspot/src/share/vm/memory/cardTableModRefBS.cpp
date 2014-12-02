@@ -275,29 +275,26 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     // the new_end_aligned does not intrude onto the committed
     // space of another region.
     int ri = 0;
-    for (ri = 0; ri < _cur_covered_regions; ri++) {
-      if (ri != ind) {
-        if (_committed[ri].contains(new_end_aligned)) {
-          // The prior check included in the assert
-          // (new_end_aligned >= _committed[ri].start())
-          // is redundant with the "contains" test.
-          // Any region containing the new end
-          // should start at or beyond the region found (ind)
-          // for the new end (committed regions are not expected to
-          // be proper subsets of other committed regions).
-          assert(_committed[ri].start() >= _committed[ind].start(),
-                 "New end of committed region is inconsistent");
-          new_end_aligned = _committed[ri].start();
-          // new_end_aligned can be equal to the start of its
-          // committed region (i.e., of "ind") if a second
-          // region following "ind" also start at the same location
-          // as "ind".
-          assert(new_end_aligned >= _committed[ind].start(),
-            "New end of committed region is before start");
-          debug_only(collided = true;)
-          // Should only collide with 1 region
-          break;
-        }
+    for (ri = ind + 1; ri < _cur_covered_regions; ri++) {
+      if (new_end_aligned > _committed[ri].start()) {
+        assert(new_end_aligned <= _committed[ri].end(),
+               "An earlier committed region can't cover a later committed region");
+        // Any region containing the new end
+        // should start at or beyond the region found (ind)
+        // for the new end (committed regions are not expected to
+        // be proper subsets of other committed regions).
+        assert(_committed[ri].start() >= _committed[ind].start(),
+               "New end of committed region is inconsistent");
+        new_end_aligned = _committed[ri].start();
+        // new_end_aligned can be equal to the start of its
+        // committed region (i.e., of "ind") if a second
+        // region following "ind" also start at the same location
+        // as "ind".
+        assert(new_end_aligned >= _committed[ind].start(),
+          "New end of committed region is before start");
+        debug_only(collided = true;)
+        // Should only collide with 1 region
+        break;
       }
     }
 #ifdef ASSERT
