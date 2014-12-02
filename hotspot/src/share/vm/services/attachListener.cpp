@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
 #include "services/diagnosticCommand.hpp"
+#include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 
 volatile bool AttachListener::_initialized;
@@ -229,133 +230,6 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
   return JNI_OK;
 }
 
-// set a boolean global flag using value from AttachOperation
-static jint set_bool_flag(const char* name, AttachOperation* op, outputStream* out) {
-  bool value = true;
-  const char* arg1;
-  if ((arg1 = op->arg(1)) != NULL) {
-    int tmp;
-    int n = sscanf(arg1, "%d", &tmp);
-    if (n != 1) {
-      out->print_cr("flag value must be a boolean (1 or 0)");
-      return JNI_ERR;
-    }
-    value = (tmp != 0);
-  }
-  bool res = CommandLineFlags::boolAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
-  if (! res) {
-    out->print_cr("setting flag %s failed", name);
-  }
-  return res? JNI_OK : JNI_ERR;
-}
-
-// set a intx global flag using value from AttachOperation
-static jint set_intx_flag(const char* name, AttachOperation* op, outputStream* out) {
-  intx value;
-  const char* arg1;
-  if ((arg1 = op->arg(1)) != NULL) {
-    int n = sscanf(arg1, INTX_FORMAT, &value);
-    if (n != 1) {
-      out->print_cr("flag value must be an integer");
-      return JNI_ERR;
-    }
-  }
-  bool res = CommandLineFlags::intxAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
-  if (! res) {
-    out->print_cr("setting flag %s failed", name);
-  }
-
-  return res? JNI_OK : JNI_ERR;
-}
-
-// set a uintx global flag using value from AttachOperation
-static jint set_uintx_flag(const char* name, AttachOperation* op, outputStream* out) {
-  uintx value;
-  const char* arg1;
-  if ((arg1 = op->arg(1)) != NULL) {
-    int n = sscanf(arg1, UINTX_FORMAT, &value);
-    if (n != 1) {
-      out->print_cr("flag value must be an unsigned integer");
-      return JNI_ERR;
-    }
-  }
-
-  if (strncmp(name, "MaxHeapFreeRatio", 17) == 0) {
-    FormatBuffer<80> err_msg("%s", "");
-    if (!Arguments::verify_MaxHeapFreeRatio(err_msg, value)) {
-      out->print_cr("%s", err_msg.buffer());
-      return JNI_ERR;
-    }
-  } else if (strncmp(name, "MinHeapFreeRatio", 17) == 0) {
-    FormatBuffer<80> err_msg("%s", "");
-    if (!Arguments::verify_MinHeapFreeRatio(err_msg, value)) {
-      out->print_cr("%s", err_msg.buffer());
-      return JNI_ERR;
-    }
-  }
-  bool res = CommandLineFlags::uintxAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
-  if (! res) {
-    out->print_cr("setting flag %s failed", name);
-  }
-
-  return res? JNI_OK : JNI_ERR;
-}
-
-// set a uint64_t global flag using value from AttachOperation
-static jint set_uint64_t_flag(const char* name, AttachOperation* op, outputStream* out) {
-  uint64_t value;
-  const char* arg1;
-  if ((arg1 = op->arg(1)) != NULL) {
-    int n = sscanf(arg1, UINT64_FORMAT, &value);
-    if (n != 1) {
-      out->print_cr("flag value must be an unsigned 64-bit integer");
-      return JNI_ERR;
-    }
-  }
-  bool res = CommandLineFlags::uint64_tAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
-  if (! res) {
-    out->print_cr("setting flag %s failed", name);
-  }
-
-  return res? JNI_OK : JNI_ERR;
-}
-
-// set a size_t global flag using value from AttachOperation
-static jint set_size_t_flag(const char* name, AttachOperation* op, outputStream* out) {
-  size_t value;
-  const char* arg1;
-  if ((arg1 = op->arg(1)) != NULL) {
-    int n = sscanf(arg1, SIZE_FORMAT, &value);
-    if (n != 1) {
-      out->print_cr("flag value must be an unsigned integer");
-      return JNI_ERR;
-    }
-  }
-  bool res = CommandLineFlags::size_tAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
-  if (! res) {
-    out->print_cr("setting flag %s failed", name);
-  }
-
-  return res? JNI_OK : JNI_ERR;
-}
-
-// set a string global flag using value from AttachOperation
-static jint set_ccstr_flag(const char* name, AttachOperation* op, outputStream* out) {
-  const char* value;
-  if ((value = op->arg(1)) == NULL) {
-    out->print_cr("flag value must be a string");
-    return JNI_ERR;
-  }
-  bool res = CommandLineFlags::ccstrAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
-  if (res) {
-    FREE_C_HEAP_ARRAY(char, value);
-  } else {
-    out->print_cr("setting flag %s failed", name);
-  }
-
-  return res? JNI_OK : JNI_ERR;
-}
-
 // Implementation of "setflag" command
 static jint set_flag(AttachOperation* op, outputStream* out) {
 
@@ -365,27 +239,21 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
     return JNI_ERR;
   }
 
-  Flag* f = Flag::find_flag((char*)name, strlen(name));
-  if (f && f->is_external() && f->is_writeable()) {
-    if (f->is_bool()) {
-      return set_bool_flag(name, op, out);
-    } else if (f->is_intx()) {
-      return set_intx_flag(name, op, out);
-    } else if (f->is_uintx()) {
-      return set_uintx_flag(name, op, out);
-    } else if (f->is_uint64_t()) {
-      return set_uint64_t_flag(name, op, out);
-    } else if (f->is_size_t()) {
-      return set_size_t_flag(name, op, out);
-    } else if (f->is_ccstr()) {
-      return set_ccstr_flag(name, op, out);
+  FormatBuffer<80> err_msg("%s", "");
+
+  int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), Flag::ATTACH_ON_DEMAND, err_msg);
+  if (ret != WriteableFlags::SUCCESS) {
+    if (ret == WriteableFlags::NON_WRITABLE) {
+      // if the flag is not manageable try to change it through
+      // the platform dependent implementation
+      return AttachListener::pd_set_flag(op, out);
     } else {
-      ShouldNotReachHere();
-      return JNI_ERR;
+      out->print_cr("%s", err_msg.buffer());
     }
-  } else {
-    return AttachListener::pd_set_flag(op, out);
+
+    return JNI_ERR;
   }
+  return JNI_OK;
 }
 
 // Implementation of "printflag" command
