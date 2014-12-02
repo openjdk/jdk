@@ -50,7 +50,7 @@ public class Bug4991857 {
             Assert.assertNotNull(xpath);
 
             Double result = (Double) xpath.evaluate("1+2", d, XPathConstants.NUMBER);
-        } catch (XPathExpressionException _) {
+        } catch (XPathExpressionException unused) {
             Assert.fail("Unexpected XPathExpressionException thrown");
         }
     }
