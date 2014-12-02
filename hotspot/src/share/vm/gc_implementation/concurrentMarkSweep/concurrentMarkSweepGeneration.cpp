@@ -623,7 +623,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing young gen rescan
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  _young_gen = gch->prev_gen(_cmsGen);
+  assert(gch->prev_gen(_cmsGen)->kind() == Generation::ParNew, "CMS can only be used with ParNew");
+  _young_gen = (ParNewGeneration*)gch->prev_gen(_cmsGen);
   if (gch->supports_inline_contig_alloc()) {
     _top_addr = gch->top_addr();
     _end_addr = gch->end_addr();
@@ -1633,13 +1634,12 @@ void CMSCollector::acquire_control_and_collect(bool full,
   do_compaction_work(clear_all_soft_refs);
 
   // Has the GC time limit been exceeded?
-  DefNewGeneration* young_gen = _young_gen->as_DefNewGeneration();
-  size_t max_eden_size = young_gen->max_capacity() -
-                         young_gen->to()->capacity() -
-                         young_gen->from()->capacity();
+  size_t max_eden_size = _young_gen->max_capacity() -
+                         _young_gen->to()->capacity() -
+                         _young_gen->from()->capacity();
   GCCause::Cause gc_cause = gch->gc_cause();
   size_policy()->check_gc_overhead_limit(_young_gen->used(),
-                                         young_gen->eden()->used(),
+                                         _young_gen->eden()->used(),
                                          _cmsGen->max_capacity(),
                                          max_eden_size,
                                          full,
@@ -1760,10 +1760,9 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 }
 
 void CMSCollector::print_eden_and_survivor_chunk_arrays() {
-  DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
-  ContiguousSpace* eden_space = dng->eden();
-  ContiguousSpace* from_space = dng->from();
-  ContiguousSpace* to_space   = dng->to();
+  ContiguousSpace* eden_space = _young_gen->eden();
+  ContiguousSpace* from_space = _young_gen->from();
+  ContiguousSpace* to_space   = _young_gen->to();
   // Eden
   if (_eden_chunk_array != NULL) {
     gclog_or_tty->print_cr("eden " PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "(" SIZE_FORMAT ")",
@@ -4086,7 +4085,6 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
   }
 
   if (clean_survivor) {  // preclean the active survivor space(s)
-    DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
     PushAndMarkClosure pam_cl(this, _span, ref_processor(),
                              &_markBitMap, &_modUnionTable,
                              &_markStack, true /* precleaning phase */);
@@ -4099,8 +4097,8 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
     SurvivorSpacePrecleanClosure
       sss_cl(this, _span, &_markBitMap, &_markStack,
              &pam_cl, before_count, CMSYield);
-    dng->from()->object_iterate_careful(&sss_cl);
-    dng->to()->object_iterate_careful(&sss_cl);
+    _young_gen->from()->object_iterate_careful(&sss_cl);
+    _young_gen->to()->object_iterate_careful(&sss_cl);
   }
   MarkRefsIntoAndScanClosure
     mrias_cl(_span, ref_processor(), &_markBitMap, &_modUnionTable,
@@ -4685,10 +4683,10 @@ class RemarkKlassClosure : public KlassClosure {
 };
 
 void CMSParMarkTask::work_on_young_gen_roots(uint worker_id, OopsInGenClosure* cl) {
-  DefNewGeneration* dng = _collector->_young_gen->as_DefNewGeneration();
-  ContiguousSpace* eden_space = dng->eden();
-  ContiguousSpace* from_space = dng->from();
-  ContiguousSpace* to_space   = dng->to();
+  ParNewGeneration* young_gen = _collector->_young_gen;
+  ContiguousSpace* eden_space = young_gen->eden();
+  ContiguousSpace* from_space = young_gen->from();
+  ContiguousSpace* to_space   = young_gen->to();
 
   HeapWord** eca = _collector->_eden_chunk_array;
   size_t     ect = _collector->_eden_chunk_index;
@@ -5157,11 +5155,10 @@ void
 CMSCollector::
 initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
   assert(n_threads > 0, "Unexpected n_threads argument");
-  DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
 
   // Eden space
-  if (!dng->eden()->is_empty()) {
-    SequentialSubTasksDone* pst = dng->eden()->par_seq_tasks();
+  if (!_young_gen->eden()->is_empty()) {
+    SequentialSubTasksDone* pst = _young_gen->eden()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
     // Each valid entry in [0, _eden_chunk_index) represents a task.
     size_t n_tasks = _eden_chunk_index + 1;
@@ -5174,14 +5171,14 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
 
   // Merge the survivor plab arrays into _survivor_chunk_array
   if (_survivor_plab_array != NULL) {
-    merge_survivor_plab_arrays(dng->from(), n_threads);
+    merge_survivor_plab_arrays(_young_gen->from(), n_threads);
   } else {
     assert(_survivor_chunk_index == 0, "Error");
   }
 
   // To space
   {
-    SequentialSubTasksDone* pst = dng->to()->par_seq_tasks();
+    SequentialSubTasksDone* pst = _young_gen->to()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
     // Sets the condition for completion of the subtask (how many threads
     // need to finish in order to be done).
@@ -5192,7 +5189,7 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
 
   // From space
   {
-    SequentialSubTasksDone* pst = dng->from()->par_seq_tasks();
+    SequentialSubTasksDone* pst = _young_gen->from()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
     size_t n_tasks = _survivor_chunk_index + 1;
     assert(n_tasks == 1 || _survivor_chunk_array != NULL, "Error");

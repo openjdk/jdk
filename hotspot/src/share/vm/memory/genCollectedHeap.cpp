@@ -182,7 +182,10 @@ void GenCollectedHeap::post_initialize() {
   SharedHeap::post_initialize();
   GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
   guarantee(policy->is_generation_policy(), "Illegal policy type");
-  DefNewGeneration* def_new_gen = get_gen(0)->as_DefNewGeneration();
+  assert((get_gen(0)->kind() == Generation::DefNew) ||
+         (get_gen(0)->kind() == Generation::ParNew),
+    "Wrong youngest generation type");
+  DefNewGeneration* def_new_gen = (DefNewGeneration*)get_gen(0);
 
   Generation* old_gen = get_gen(1);
   assert(old_gen->kind() == Generation::ConcurrentMarkSweep ||

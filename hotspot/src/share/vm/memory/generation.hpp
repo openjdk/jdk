@@ -229,10 +229,6 @@ class Generation: public CHeapObj<mtGC> {
     return _reserved.contains(p);
   }
 
-  // Check that the generation kind is DefNewGeneration or a sub
-  // class of DefNewGeneration and return a DefNewGeneration*
-  DefNewGeneration*  as_DefNewGeneration();
-
   // If some space in the generation contains the given "addr", return a
   // pointer to that space, else return "NULL".
   virtual Space* space_containing(const void* addr) const;
