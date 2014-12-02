@@ -1498,7 +1498,7 @@ Java_sun_awt_X11GraphicsConfig_isTranslucencyCapable
     if (aData == NULL) {
         return JNI_FALSE;
     }
-    return (jboolean)aData->isTranslucencySupported;
+    return aData->isTranslucencySupported ? JNI_TRUE : JNI_FALSE;
 #endif
 }
 
@@ -1578,9 +1578,9 @@ Java_sun_awt_X11GraphicsEnvironment_pRunningXinerama(JNIEnv *env,
     jobject this)
 {
 #ifdef HEADLESS
-    return false;
+    return JNI_FALSE;
 #else
-    return usingXinerama;
+    return usingXinerama ? JNI_TRUE : JNI_FALSE;
 #endif /* HEADLESS */
 }
 
