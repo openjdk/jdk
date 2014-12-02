@@ -749,6 +749,7 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class JavaThread: public Thread {
   friend class VMStructs;
+  friend class WhiteBox;
  private:
   JavaThread*    _next;                          // The next thread in the Threads list
   oop            _threadObj;                     // The Java level thread object
@@ -1000,7 +1001,7 @@ class JavaThread: public Thread {
   ThreadFunction entry_point() const             { return _entry_point; }
 
   // Allocates a new Java level thread object for this thread. thread_name may be NULL.
-  void allocate_threadObj(Handle thread_group, char* thread_name, bool daemon, TRAPS);
+  void allocate_threadObj(Handle thread_group, const char* thread_name, bool daemon, TRAPS);
 
   // Last frame anchor routines
 

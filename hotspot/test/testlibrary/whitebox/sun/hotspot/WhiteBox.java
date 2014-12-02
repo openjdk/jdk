@@ -153,7 +153,14 @@ public class WhiteBox {
   public native Object[] getNMethod(Executable method, boolean isOsr);
   public native long    allocateCodeBlob(int size, int type);
   public native void    freeCodeBlob(long addr);
-  public native void    forceNMethodSweep();
+  public        void    forceNMethodSweep() {
+    try {
+        forceNMethodSweep0().join();
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+  }
+  public native Thread  forceNMethodSweep0();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
   public native Object[] getCodeBlob(long addr);

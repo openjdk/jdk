@@ -1076,7 +1076,7 @@ static void reset_vm_info_property(TRAPS) {
 }
 
 
-void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
+void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
                                     bool daemon, TRAPS) {
   assert(thread_group.not_null(), "thread group should be specified");
   assert(threadObj() == NULL, "should only create Java thread object once");
@@ -1123,8 +1123,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
     return;
   }
 
-  KlassHandle group(this, SystemDictionary::ThreadGroup_klass());
-  Handle threadObj(this, this->threadObj());
+  KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
+  Handle threadObj(THREAD, this->threadObj());
 
   JavaCalls::call_special(&result,
                           thread_group,
@@ -1133,8 +1133,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
                           vmSymbols::thread_void_signature(),
                           threadObj,          // Arg 1
                           THREAD);
-
-
 }
 
 // NamedThread --  non-JavaThread subclasses with multiple
