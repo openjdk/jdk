@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include "jni_util.h"
 #include "awt_p.h"
 #include "awt.h"
 #include "color.h"
@@ -763,6 +764,7 @@ awt_init_Display(JNIEnv *env, jobject this)
     XSetIOErrorHandler(xioerror_handler);
     JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XErrorHandlerUtil", "init", "(J)V",
         ptr_to_jlong(awt_display));
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
 
     /* set awt_numScreens, and whether or not we're using Xinerama */
     xineramaInit();
@@ -789,6 +791,7 @@ awt_init_Display(JNIEnv *env, jobject this)
             x11Screens[i].root = RootWindow(awt_display, i);
         }
         x11Screens[i].defaultConfig = makeDefaultConfig(env, i);
+        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
     }
 
     return dpy;
