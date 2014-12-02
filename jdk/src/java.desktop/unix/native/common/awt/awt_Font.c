@@ -587,6 +587,7 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
         Disposer_AddRecord(env, font, pDataDisposeMethod, ptr_to_jlong(fdata));
         return fdata;
     } else {
+        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
         Display *display = NULL;
         struct FontData *fdata = NULL;
         char fontSpec[1024];

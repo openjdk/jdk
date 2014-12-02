@@ -42,7 +42,7 @@ struct EventIDs eventIDs;
 JNIEXPORT void JNICALL
 Java_java_awt_Event_initIDs(JNIEnv *env, jclass cls)
 {
-    eventIDs.data = (*env)->GetFieldID(env, cls, "data", "J");
-    eventIDs.consumed = (*env)->GetFieldID(env, cls, "consumed", "Z");
-    eventIDs.id = (*env)->GetFieldID(env, cls, "id", "I");
+    CHECK_NULL(eventIDs.data = (*env)->GetFieldID(env, cls, "data", "J"));
+    CHECK_NULL(eventIDs.consumed = (*env)->GetFieldID(env, cls, "consumed", "Z"));
+    CHECK_NULL(eventIDs.id = (*env)->GetFieldID(env, cls, "id", "I"));
 }
