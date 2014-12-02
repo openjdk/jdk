@@ -152,13 +152,6 @@ bool Generation::is_in(const void* p) const {
   return blk.sp != NULL;
 }
 
-DefNewGeneration* Generation::as_DefNewGeneration() {
-  assert((kind() == Generation::DefNew) ||
-         (kind() == Generation::ParNew),
-    "Wrong youngest generation type");
-  return (DefNewGeneration*) this;
-}
-
 Generation* Generation::next_gen() const {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   int next = level() + 1;

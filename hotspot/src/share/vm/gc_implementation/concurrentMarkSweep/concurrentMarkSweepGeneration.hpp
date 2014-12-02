@@ -721,7 +721,8 @@ class CMSCollector: public CHeapObj<mtGC> {
 
  private:
   // Support for parallelizing young gen rescan in CMS remark phase
-  Generation* _young_gen;  // the younger gen
+  ParNewGeneration* _young_gen;  // the younger gen
+
   HeapWord** _top_addr;    // ... Top of Eden
   HeapWord** _end_addr;    // ... End of Eden
   Mutex*     _eden_chunk_lock;
