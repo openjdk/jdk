@@ -52,11 +52,11 @@ public class Bug4969089 {
         StringReader reader = new StringReader(xsd1);
         StreamSource source = new StreamSource(reader);
         DefaultHandler errorHandler = new DefaultHandler() {
-            public void fatalError(SAXParseException _) throws SAXException {
+            public void fatalError(SAXParseException unused) throws SAXException {
                 throw EUREKA;
             }
 
-            public void error(SAXParseException _) throws SAXException {
+            public void error(SAXParseException unused) throws SAXException {
                 throw EUREKA;
             }
         };
