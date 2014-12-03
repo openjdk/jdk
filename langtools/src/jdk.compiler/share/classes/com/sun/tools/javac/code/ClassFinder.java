@@ -58,6 +58,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 import static com.sun.tools.javac.main.Option.*;
+import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
 /**
  *  This class provides operations to locate class definitions
@@ -270,7 +271,7 @@ public class ClassFinder {
         if (sym.kind == TYP) {
             try {
                 ClassSymbol c = (ClassSymbol) sym;
-                dependencies.push(c);
+                dependencies.push(c, CompletionCause.CLASS_READER);
                 c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
                 annotate.enterStart();
                 try {
