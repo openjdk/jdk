@@ -87,6 +87,7 @@ public class Attr extends JCTree.Visitor {
     final Check chk;
     final Flow flow;
     final MemberEnter memberEnter;
+    final TypeEnter typeEnter;
     final TreeMaker make;
     final ConstFold cfolder;
     final Enter enter;
@@ -116,6 +117,7 @@ public class Attr extends JCTree.Visitor {
         chk = Check.instance(context);
         flow = Flow.instance(context);
         memberEnter = MemberEnter.instance(context);
+        typeEnter = TypeEnter.instance(context);
         make = TreeMaker.instance(context);
         enter = Enter.instance(context);
         infer = Infer.instance(context);
@@ -949,7 +951,7 @@ public class Attr extends JCTree.Visitor {
                     if (body.stats.isEmpty() ||
                             !TreeInfo.isSelfCall(body.stats.head)) {
                         body.stats = body.stats.
-                                prepend(memberEnter.SuperCall(make.at(body.pos),
+                                prepend(typeEnter.SuperCall(make.at(body.pos),
                                         List.<Type>nil(),
                                         List.<JCVariableDecl>nil(),
                                         false));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,20 @@
  * questions.
  */
 
-// key: compiler.err.import.requires.canonical
+package annotations;
 
-import java.util.HashMap.Entry;
+import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
-class ImportRequiredCanonical { }
+public enum Phase {
+    IMPORTS(CompletionCause.IMPORTS_PHASE),
+    HIERARCHY(CompletionCause.HIERARCHY_PHASE),
+    HEADER(CompletionCause.HEADER_PHASE),
+    MEMBERS(CompletionCause.MEMBERS_PHASE);
+
+    public final CompletionCause cause;
+
+    private Phase(CompletionCause cause) {
+        this.cause = cause;
+    }
+
+}

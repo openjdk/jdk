@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,13 @@
  * questions.
  */
 
-// key: compiler.err.import.requires.canonical
+import annotations.*;
 
-import java.util.HashMap.Entry;
-
-class ImportRequiredCanonical { }
+@TriggersComplete(of = Bar.class, at = Phase.HEADER)
+@TriggersComplete(of = Sup.class, at = Phase.HIERARCHY)
+class Foo<X extends Bar> extends Sup {
+}
+class Bar {
+}
+class Sup {
+}

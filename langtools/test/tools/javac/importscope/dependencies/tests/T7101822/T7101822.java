@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,27 @@
  * questions.
  */
 
-// key: compiler.err.import.requires.canonical
+package a;
 
-import java.util.HashMap.Entry;
+import annotations.*;
 
-class ImportRequiredCanonical { }
+import a.T7101822.B.C;
+import z.T7101822Aux;
+
+@TriggersComplete(of=T7101822.B.class, at=Phase.IMPORTS)
+public class T7101822 {
+
+    @TriggersComplete(of=z.T7101822Aux.class, at=Phase.HIERARCHY)
+    class B extends T7101822Aux {
+
+        class C {
+        }
+    }
+
+    class D {
+
+        Class foo() {
+            return C.class;
+        }
+    }
+}
