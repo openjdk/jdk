@@ -31,7 +31,7 @@ $(eval $(call IncludeCustomExtension, jdk, copy/Copy-java.base.gmk))
 #
 # Copy exported header files to outputdir.
 #
-JAVA_BASE_HEADERS := \
+TARGETS += \
     $(INCLUDE_DST_DIR)/jni.h \
     $(INCLUDE_DST_DIR)/jvmti.h \
     $(INCLUDE_DST_DIR)/jvmticmlr.h \
@@ -55,7 +55,7 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), windows aix),)
   $(LIB_DST_DIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
 	$(call install-file)
 
-  BASE_CONF_FILES += $(LIB_DST_DIR)/tzmappings
+  TARGETS += $(LIB_DST_DIR)/tzmappings
 
 endif
 
@@ -63,11 +63,13 @@ endif
 # Copy msvcrXX.dll on windows
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  MSVCR_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCR_DLL))
+  MSVCR_TARGET := $(LIB_DST_DIR)/$(notdir $(MSVCR_DLL))
   # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
   $(MSVCR_TARGET): $(MSVCR_DLL)
 	$(call install-file)
 	$(CHMOD) a+rx $@
+
+  TARGETS += $(MSVCR_TARGET)
 endif
 
 ################################################################################
@@ -85,7 +87,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 else
   JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/conf/$(JVMCFG_ARCH)/jvm.cfg
 endif
-JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+JVMCFG_DIR := $(LIB_DST_DIR)$(OPENJDK_TARGET_CPU_LIBDIR)
 JVMCFG := $(JVMCFG_DIR)/jvm.cfg
 
 # To do: should this also support -zeroshark?
@@ -143,12 +145,12 @@ else
         endif
 endif
 
-BASE_CONF_FILES += $(JVMCFG)
+TARGETS += $(JVMCFG)
 
 ################################################################################
 
 POLICY_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.policy
-POLICY_DST := $(JDK_OUTPUTDIR)/lib/security/java.policy
+POLICY_DST := $(CONF_DST_DIR)/security/java.policy
 
 POLICY_SRC_LIST :=
 
@@ -167,40 +169,34 @@ $(POLICY_DST): $(POLICY_SRC_LIST)
 	$(foreach f,$(POLICY_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
 	$(MV) $@.tmp $@
 
-BASE_CONF_FILES += $(POLICY_DST)
+TARGETS += $(POLICY_DST)
 
 ################################################################################
 
 ifeq ($(CACERTS_FILE), )
   CACERTS_FILE := $(JDK_TOPDIR)/src/java.base/share/conf/security/cacerts
 endif
-CACERTS_DST := $(JDK_OUTPUTDIR)/lib/security/cacerts
+CACERTS_DST := $(LIB_DST_DIR)/security/cacerts
 
 $(CACERTS_DST): $(CACERTS_FILE)
 	$(call install-file)
 
-BASE_CONF_FILES += $(CACERTS_DST)
+TARGETS += $(CACERTS_DST)
 
 ################################################################################
 
-$(JDK_OUTPUTDIR)/lib/net.properties: $(JDK_TOPDIR)/src/java.base/share/conf/net.properties
+$(CONF_DST_DIR)/net.properties: $(JDK_TOPDIR)/src/java.base/share/conf/net.properties
 	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(call install-file)
 
-NET_CONF_FILES += $(JDK_OUTPUTDIR)/lib/net.properties
+TARGETS += $(CONF_DST_DIR)/net.properties
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template: $(JDK_TOPDIR)/src/java.base/${OPENJDK_TARGET_OS_API_DIR}/conf/sdp/sdp.conf.template
+  $(CONF_DST_DIR)/sdp/sdp.conf.template: $(JDK_TOPDIR)/src/java.base/${OPENJDK_TARGET_OS_API_DIR}/conf/sdp/sdp.conf.template
 	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(call install-file)
 
-  NET_CONF_FILES += $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template
+  TARGETS += $(CONF_DST_DIR)/sdp/sdp.conf.template
 endif
 
 ################################################################################
-
-java.base: $(BASE_CONF_FILES) $(NET_CONF_FILES) $(JAVA_BASE_HEADERS) $(MSVCR_TARGET)
-
-all: java.base
-
-.PHONY: all java.base

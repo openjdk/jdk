@@ -38,7 +38,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2PKCS11_SRC)) \
         $(LIBJAVA_HEADER_FLAGS) \
-        -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.crypto.pkcs11, \
+        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.crypto.pkcs11, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2pkcs11/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -49,15 +49,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11, \
         -D "JDK_FNAME=j2pkcs11.dll" \
         -D "JDK_INTERNAL_NAME=j2pkcs11" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libj2pkcs11, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2pkcs11, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-SECURITY_PKCS11_LIBRARIES += $(BUILD_LIBJ2PKCS11)
+TARGETS += $(BUILD_LIBJ2PKCS11)
 
 ################################################################################
-
-jdk.crypto.pkcs11: $(SECURITY_PKCS11_LIBRARIES)
-
-all: jdk.crypto.pkcs11
-
-.PHONY: all jdk.crypto.pkcs11

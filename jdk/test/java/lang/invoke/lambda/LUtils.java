@@ -43,12 +43,10 @@ class LUtils {
     static final String JAVAHOME = System.getProperty("java.home");
     static final boolean isWindows =
             System.getProperty("os.name", "unknown").startsWith("Windows");
-    //static final boolean isSDK = JAVAHOME.endsWith("jre");
     static final File JAVA_BIN_FILE = new File(JAVAHOME, "bin");
     static final File JAVA_CMD = new File(JAVA_BIN_FILE,
             isWindows ? "java.exe" : "java");
-    static final File JAR_BIN_FILE =
-            new File(new File(JAVAHOME).getParentFile(), "bin");
+    static final File JAR_BIN_FILE = new File(JAVAHOME, "bin");
     static final File JAR_CMD = new File(JAR_BIN_FILE,
             isWindows ? "jar.exe" : "jar");
 

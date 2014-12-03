@@ -544,10 +544,9 @@ public class Attributes implements Map<Object,Object>, Cloneable {
 
         /**
          * <code>Name</code> object for <code>Class-Path</code>
-         * manifest attribute. Bundled extensions can use this attribute
-         * to find other JAR files containing needed classes.
-         * @see <a href="../../../../technotes/guides/extensions/spec.html#bundled">
-         *      Extensions Specification</a>
+         * manifest attribute.
+         * @see <a href="../../../../technotes/guides/jar/jar.html#classpath">
+         *      JAR file specification</a>
          */
         public static final Name CLASS_PATH = new Name("Class-Path");
 
@@ -563,96 +562,82 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         /**
          * <code>Name</code> object for <code>Sealed</code> manifest attribute
          * used for sealing.
-         * @see <a href="../../../../technotes/guides/extensions/spec.html#sealing">
-         *      Extension Sealing</a>
+         * @see <a href="../../../../technotes/guides/jar/jar.html#sealing">
+         *      Package Sealing</a>
          */
         public static final Name SEALED = new Name("Sealed");
 
        /**
          * <code>Name</code> object for <code>Extension-List</code> manifest attribute
-         * used for declaring dependencies on installed extensions.
-         * @see <a href="../../../../technotes/guides/extensions/spec.html#dependency">
-         *      Installed extension dependency</a>
+         * used for the extension mechanism that is no longer supported.
          */
         public static final Name EXTENSION_LIST = new Name("Extension-List");
 
         /**
-         * <code>Name</code> object for <code>Extension-Name</code> manifest attribute
-         * used for declaring dependencies on installed extensions.
-         * @see <a href="../../../../technotes/guides/extensions/spec.html#dependency">
-         *      Installed extension dependency</a>
+         * <code>Name</code> object for <code>Extension-Name</code> manifest attribute.
+         * used for the extension mechanism that is no longer supported.
          */
         public static final Name EXTENSION_NAME = new Name("Extension-Name");
 
         /**
-         * <code>Name</code> object for <code>Extension-Name</code> manifest attribute
-         * used for declaring dependencies on installed extensions.
-         * @see <a href="../../../../technotes/guides/extensions/spec.html#dependency">
-         *      Installed extension dependency</a>
+         * <code>Name</code> object for <code>Extension-Installation</code> manifest attribute.
+         *
+         * @deprecated Extension mechanism is no longer supported.
          */
+        @Deprecated
         public static final Name EXTENSION_INSTALLATION = new Name("Extension-Installation");
 
         /**
          * <code>Name</code> object for <code>Implementation-Title</code>
          * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
          */
         public static final Name IMPLEMENTATION_TITLE = new Name("Implementation-Title");
 
         /**
          * <code>Name</code> object for <code>Implementation-Version</code>
          * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
          */
         public static final Name IMPLEMENTATION_VERSION = new Name("Implementation-Version");
 
         /**
          * <code>Name</code> object for <code>Implementation-Vendor</code>
          * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
          */
         public static final Name IMPLEMENTATION_VENDOR = new Name("Implementation-Vendor");
 
         /**
          * <code>Name</code> object for <code>Implementation-Vendor-Id</code>
-         * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
+         * manifest attribute.
+         *
+         * @deprecated Extension mechanism is no longer supported.
          */
+        @Deprecated
         public static final Name IMPLEMENTATION_VENDOR_ID = new Name("Implementation-Vendor-Id");
 
        /**
          * <code>Name</code> object for <code>Implementation-URL</code>
-         * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
+         * manifest attribute.
+         *
+         * @deprecated Extension mechanism is no longer supported.
          */
+        @Deprecated
         public static final Name IMPLEMENTATION_URL = new Name("Implementation-URL");
 
         /**
          * <code>Name</code> object for <code>Specification-Title</code>
          * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
          */
         public static final Name SPECIFICATION_TITLE = new Name("Specification-Title");
 
         /**
          * <code>Name</code> object for <code>Specification-Version</code>
          * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
          */
         public static final Name SPECIFICATION_VERSION = new Name("Specification-Version");
 
         /**
          * <code>Name</code> object for <code>Specification-Vendor</code>
          * manifest attribute used for package versioning.
-         * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
-         *      Java Product Versioning Specification</a>
          */
         public static final Name SPECIFICATION_VENDOR = new Name("Specification-Vendor");
     }
