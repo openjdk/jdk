@@ -28,7 +28,6 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 
 import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
@@ -40,6 +39,7 @@ import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Scope.CompoundScope;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Type.*;
@@ -3415,56 +3415,69 @@ public class Check {
         }
     }
 
-    /** Check that single-type import is not already imported or top-level defined,
-     *  but make an exception for two single-type imports which denote the same type.
-     *  @param pos           Position for error reporting.
-     *  @param toplevel      The file in which in the check is performed.
-     *  @param sym           The symbol.
+    /**Check that types imported through the ordinary imports don't clash with types imported
+     * by other (static or ordinary) imports. Note that two static imports may import two clashing
+     * types without an error on the imports.
+     * @param toplevel       The toplevel tree for which the test should be performed.
      */
-    boolean checkUniqueImport(DiagnosticPosition pos, JCCompilationUnit toplevel, Symbol sym) {
-        return checkUniqueImport(pos, toplevel, sym, false);
-    }
-
-    /** Check that static single-type import is not already imported or top-level defined,
-     *  but make an exception for two single-type imports which denote the same type.
-     *  @param pos           Position for error reporting.
-     *  @param toplevel      The file in which in the check is performed.
-     *  @param sym           The symbol.
-     */
-    boolean checkUniqueStaticImport(DiagnosticPosition pos, JCCompilationUnit toplevel, Symbol sym) {
-        return checkUniqueImport(pos, toplevel, sym, true);
-    }
-
-    /** Check that single-type import is not already imported or top-level defined,
-     *  but make an exception for two single-type imports which denote the same type.
-     *  @param pos           Position for error reporting.
-     *  @param toplevel      The file in which in the check is performed.
-     *  @param sym           The symbol.
-     *  @param staticImport  Whether or not this was a static import
-     */
-    private boolean checkUniqueImport(DiagnosticPosition pos, JCCompilationUnit toplevel, Symbol sym, boolean staticImport) {
-        NamedImportScope namedImportScope = toplevel.namedImportScope;
+    void checkImportsUnique(JCCompilationUnit toplevel) {
+        WriteableScope ordinallyImportedSoFar = WriteableScope.create(toplevel.packge);
+        WriteableScope staticallyImportedSoFar = WriteableScope.create(toplevel.packge);
         WriteableScope topLevelScope = toplevel.toplevelScope;
 
-        for (Symbol byName : namedImportScope.getSymbolsByName(sym.name)) {
-            // is encountered class entered via a class declaration?
-            boolean isClassDecl = namedImportScope.getOrigin(byName) == topLevelScope;
-            if ((isClassDecl || sym != byName) &&
-                sym.kind == byName.kind &&
-                sym.name != names.error &&
-                (!staticImport || !namedImportScope.isStaticallyImported(byName))) {
-                if (!byName.type.isErroneous()) {
-                    if (!isClassDecl) {
-                        if (staticImport)
-                            log.error(pos, "already.defined.static.single.import", byName);
-                        else
-                        log.error(pos, "already.defined.single.import", byName);
-                    }
-                    else if (sym != byName)
-                        log.error(pos, "already.defined.this.unit", byName);
+        for (JCTree def : toplevel.defs) {
+            if (!def.hasTag(IMPORT))
+                continue;
+
+            JCImport imp = (JCImport) def;
+
+            if (imp.importScope == null)
+                continue;
+
+            for (Symbol sym : imp.importScope.getSymbols(sym -> sym.kind == TYP)) {
+                if (imp.isStatic()) {
+                    checkUniqueImport(imp.pos(), ordinallyImportedSoFar, staticallyImportedSoFar, topLevelScope, sym, true);
+                    staticallyImportedSoFar.enter(sym);
+                } else {
+                    checkUniqueImport(imp.pos(), ordinallyImportedSoFar, staticallyImportedSoFar, topLevelScope, sym, false);
+                    ordinallyImportedSoFar.enter(sym);
                 }
-                return false;
             }
+
+            imp.importScope = null;
+        }
+    }
+
+    /** Check that single-type import is not already imported or top-level defined,
+     *  but make an exception for two single-type imports which denote the same type.
+     *  @param pos                     Position for error reporting.
+     *  @param ordinallyImportedSoFar  A Scope containing types imported so far through
+     *                                 ordinary imports.
+     *  @param staticallyImportedSoFar A Scope containing types imported so far through
+     *                                 static imports.
+     *  @param topLevelScope           The current file's top-level Scope
+     *  @param sym                     The symbol.
+     *  @param staticImport            Whether or not this was a static import
+     */
+    private boolean checkUniqueImport(DiagnosticPosition pos, Scope ordinallyImportedSoFar,
+                                      Scope staticallyImportedSoFar, Scope topLevelScope,
+                                      Symbol sym, boolean staticImport) {
+        Filter<Symbol> duplicates = candidate -> candidate != sym && !candidate.type.isErroneous();
+        Symbol clashing = ordinallyImportedSoFar.findFirst(sym.name, duplicates);
+        if (clashing == null && !staticImport) {
+            clashing = staticallyImportedSoFar.findFirst(sym.name, duplicates);
+        }
+        if (clashing != null) {
+            if (staticImport)
+                log.error(pos, "already.defined.static.single.import", clashing);
+            else
+                log.error(pos, "already.defined.single.import", clashing);
+            return false;
+        }
+        clashing = topLevelScope.findFirst(sym.name, duplicates);
+        if (clashing != null) {
+            log.error(pos, "already.defined.this.unit", clashing);
+            return false;
         }
         return true;
     }
@@ -3570,18 +3583,13 @@ public class Check {
             if (select.name == names.asterisk || (origin = TreeInfo.symbol(select.selected)) == null || origin.kind != TYP)
                 continue;
 
-            JavaFileObject prev = log.useSource(toplevel.sourcefile);
-            try {
-                TypeSymbol site = (TypeSymbol) TreeInfo.symbol(select.selected);
-                if (!checkTypeContainsImportableElement(site, site, toplevel.packge, select.name, new HashSet<Symbol>())) {
-                    log.error(imp.pos(), "cant.resolve.location",
-                              KindName.STATIC,
-                              select.name, List.<Type>nil(), List.<Type>nil(),
-                              Kinds.typeKindName(TreeInfo.symbol(select.selected).type),
-                              TreeInfo.symbol(select.selected).type);
-                }
-            } finally {
-                log.useSource(prev);
+            TypeSymbol site = (TypeSymbol) TreeInfo.symbol(select.selected);
+            if (!checkTypeContainsImportableElement(site, site, toplevel.packge, select.name, new HashSet<Symbol>())) {
+                log.error(imp.pos(), "cant.resolve.location",
+                          KindName.STATIC,
+                          select.name, List.<Type>nil(), List.<Type>nil(),
+                          Kinds.typeKindName(TreeInfo.symbol(select.selected).type),
+                          TreeInfo.symbol(select.selected).type);
             }
         }
     }

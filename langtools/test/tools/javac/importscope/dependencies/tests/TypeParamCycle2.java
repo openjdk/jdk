@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,17 @@
  * questions.
  */
 
-// key: compiler.err.import.requires.canonical
+package pkg;
 
-import java.util.HashMap.Entry;
+import pkg.A.Outer.Inner;
 
-class ImportRequiredCanonical { }
+@annotations.TriggersComplete(of=A.class, at=annotations.Phase.IMPORTS)
+@annotations.TriggersComplete(of=A.Outer.class, at=annotations.Phase.IMPORTS)
+@annotations.TriggersComplete(of=A.Outer.Inner.class, at=annotations.Phase.HIERARCHY)
+class B extends Inner {
+}
+
+class A {
+   static class Outer<X extends Inner> { static class Inner {} }
+}
+

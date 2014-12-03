@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,22 @@
  * questions.
  */
 
-// key: compiler.err.import.requires.canonical
+/**
+ * @test
+ * @bug 7101822
+ * @summary Verify that imports are declarations are processed in the correct order.
+ * @compile ImportResolvedTooSoon.java
+ */
+package pkg;
 
-import java.util.HashMap.Entry;
+import static pkg.B.SubInner.Foo;
 
-class ImportRequiredCanonical { }
+class B extends A {
+     static class SubInner extends Inner { }
+}
+
+class A {
+     static class Inner {
+         static class Foo { }
+     }
+}
