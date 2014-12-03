@@ -28,6 +28,7 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Dependency.Location;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
@@ -38,8 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Represents the source of the class files.
  */
 public class Archive {
-    public static Archive getInstance(Path p) throws IOException {
-        return new Archive(p, ClassFileReader.newInstance(p));
+    public static Archive getInstance(Path p) {
+        try {
+            return new Archive(p, ClassFileReader.newInstance(p));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private final Path path;

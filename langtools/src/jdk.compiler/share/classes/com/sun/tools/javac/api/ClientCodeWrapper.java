@@ -26,6 +26,7 @@
 
 package com.sun.tools.javac.api;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -55,6 +56,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
+import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
@@ -115,11 +117,13 @@ public class ClientCodeWrapper {
     public JavaFileManager wrap(JavaFileManager fm) {
         if (isTrusted(fm))
             return fm;
+        if (fm instanceof StandardJavaFileManager)
+            return new WrappedStandardJavaFileManager((StandardJavaFileManager) fm);
         return new WrappedJavaFileManager(fm);
     }
 
     public FileObject wrap(FileObject fo) {
-        if (isTrusted(fo))
+        if (fo == null || isTrusted(fo))
             return fo;
         return new WrappedFileObject(fo);
     }
@@ -132,7 +136,7 @@ public class ClientCodeWrapper {
     }
 
     public JavaFileObject wrap(JavaFileObject fo) {
-        if (isTrusted(fo))
+        if (fo == null || isTrusted(fo))
             return fo;
         return new WrappedJavaFileObject(fo);
     }
@@ -360,6 +364,79 @@ public class ClientCodeWrapper {
         }
     }
 
+    protected class WrappedStandardJavaFileManager extends WrappedJavaFileManager
+            implements StandardJavaFileManager {
+        WrappedStandardJavaFileManager(StandardJavaFileManager clientJavaFileManager) {
+            super(clientJavaFileManager);
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends JavaFileObject> getJavaFileObjectsFromFiles(Iterable<? extends File> files) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjectsFromFiles(files);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjects(files);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjectsFromStrings(names);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends JavaFileObject> getJavaFileObjects(String... names) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjects(names);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public void setLocation(Location location, Iterable<? extends File> path) throws IOException {
+            try {
+                ((StandardJavaFileManager)clientJavaFileManager).setLocation(location, path);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends File> getLocation(Location location) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getLocation(location);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+    }
+
     protected class WrappedFileObject implements FileObject {
         protected FileObject clientFileObject;
         WrappedFileObject(FileObject clientFileObject) {
@@ -558,47 +635,47 @@ public class ClientCodeWrapper {
             this.d = d;
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public Diagnostic.Kind getKind() {
             return d.getKind();
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public JavaFileObject getSource() {
             return unwrap(d.getSource());
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public long getPosition() {
             return d.getPosition();
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public long getStartPosition() {
             return d.getStartPosition();
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public long getEndPosition() {
             return d.getEndPosition();
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public long getLineNumber() {
             return d.getLineNumber();
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public long getColumnNumber() {
             return d.getColumnNumber();
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public String getCode() {
             return d.getCode();
         }
 
-        @DefinedBy(Api.COMPILER)
+        @Override @DefinedBy(Api.COMPILER)
         public String getMessage(Locale locale) {
             return d.getMessage(locale);
         }
