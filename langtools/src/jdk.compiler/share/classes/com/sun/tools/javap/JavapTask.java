@@ -681,6 +681,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 final URI uri = new URI(className);
                 final URL url = uri.toURL();
                 final URLConnection conn = url.openConnection();
+                conn.setUseCaches(false);
                 return new JavaFileObject() {
                     @DefinedBy(Api.COMPILER)
                     public Kind getKind() {
@@ -709,7 +710,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
                     @DefinedBy(Api.COMPILER)
                     public String getName() {
-                        return url.toString();
+                        return uri.toString();
                     }
 
                     @DefinedBy(Api.COMPILER)

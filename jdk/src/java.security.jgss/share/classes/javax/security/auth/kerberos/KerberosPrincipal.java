@@ -88,8 +88,8 @@ public final class KerberosPrincipal
 
 
     /**
-     * Constructs a KerberosPrincipal from the provided string input. The
-     * name type for this  principal defaults to
+     * Constructs a {@code KerberosPrincipal} from the provided string input.
+     * The name type for this principal defaults to
      * {@link #KRB_NT_PRINCIPAL KRB_NT_PRINCIPAL}
      * This string is assumed to contain a name in the format
      * that is specified in Section 2.1.1. (Kerberos Principal Name Form) of
@@ -127,7 +127,7 @@ public final class KerberosPrincipal
     }
 
     /**
-     * Constructs a KerberosPrincipal from the provided string and
+     * Constructs a {@code KerberosPrincipal} from the provided string and
      * name type input.  The string is assumed to contain a name in the
      * format that is specified in Section 2.1 (Mandatory Name Forms) of
      * <a href=http://www.ietf.org/rfc/rfc1964.txt>RFC 1964</a>.
@@ -137,7 +137,7 @@ public final class KerberosPrincipal
      * (for example, <i>duke@FOO.COM</i>, is a valid input string for the
      * name type, KRB_NT_PRINCIPAL where <i>duke</i>
      * represents a principal, and <i>FOO.COM</i> represents a realm).
-
+     *
      * <p> If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
      * configuration file or via the java.security.krb5.realm
@@ -179,28 +179,28 @@ public final class KerberosPrincipal
     }
 
     /**
-     * Returns a hashcode for this principal. The hash code is defined to
-     * be the result of the following  calculation:
+     * Returns a hash code for this {@code KerberosPrincipal}. The hash code
+     * is defined to be the result of the following calculation:
      * <pre>{@code
      *  hashCode = getName().hashCode();
      * }</pre>
      *
-     * @return a hashCode() for the {@code KerberosPrincipal}
+     * @return a hash code for this {@code KerberosPrincipal}.
      */
     public int hashCode() {
         return getName().hashCode();
     }
 
     /**
-     * Compares the specified Object with this Principal for equality.
+     * Compares the specified object with this principal for equality.
      * Returns true if the given object is also a
      * {@code KerberosPrincipal} and the two
      * {@code KerberosPrincipal} instances are equivalent.
      * More formally two {@code KerberosPrincipal} instances are equal
      * if the values returned by {@code getName()} are equal.
      *
-     * @param other the Object to compare to
-     * @return true if the Object passed in represents the same principal
+     * @param other the object to compare to
+     * @return true if the object passed in represents the same principal
      * as this one, false otherwise.
      */
     public boolean equals(Object other) {
@@ -217,11 +217,11 @@ public final class KerberosPrincipal
     }
 
     /**
-     * Save the KerberosPrincipal object to a stream
+     * Save the {@code KerberosPrincipal} object to a stream
      *
      * @serialData this {@code KerberosPrincipal} is serialized
      *          by writing out the PrincipalName and the
-     *          realm in their DER-encoded form as specified in Section 5.2.2 of
+     *          Realm in their DER-encoded form as specified in Section 5.2.2 of
      *          <a href=http://www.ietf.org/rfc/rfc4120.txt> RFC4120</a>.
      */
     private void writeObject(ObjectOutputStream oos)
@@ -268,7 +268,7 @@ public final class KerberosPrincipal
     }
 
     /**
-     * Returns the name type of the KerberosPrincipal. Valid name types
+     * Returns the name type of the {@code KerberosPrincipal}. Valid name types
      * are specified in Section 6.2 of
      * <a href=http://www.ietf.org/rfc/rfc4120.txt> RFC4120</a>.
      *
@@ -278,7 +278,11 @@ public final class KerberosPrincipal
         return nameType;
     }
 
-    // Inherits javadocs from Object
+    /**
+     * Returns an informative textual representation of this {@code KerberosPrincipal}.
+     *
+     * @return an informative textual representation of this {@code KerberosPrincipal}.
+     */
     public String toString() {
         return getName();
     }

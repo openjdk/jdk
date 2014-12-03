@@ -229,6 +229,11 @@ final class JceSecurityManager extends SecurityManager {
 
     // See  bug 4341369 & 4334690 for more info.
     boolean isCallerTrusted(Provider provider) {
+        if (ProviderVerifier.isTrustedCryptoProvider(provider)) {
+            // fast path
+            return true;
+        }
+
         // Get the caller and its codebase.
         Class<?>[] context = getClassContext();
         URL callerCodeBase = null;

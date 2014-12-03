@@ -39,9 +39,6 @@ include $(SRC_ROOT)/make/MakeHelpers.gmk
 include $(SRC_ROOT)/make/common/MakeBase.gmk
 include $(SRC_ROOT)/make/common/Modules.gmk
 
-# Load common profile names definitions
-include $(JDK_TOPDIR)/make/ProfileNames.gmk
-
 # Declare ALL_TARGETS as an immediate variable. This variable is a list of all
 # valid top level targets. It's used to declare them all as PHONY and to 
 # generate the -only targets.
@@ -64,19 +61,23 @@ ALL_MODULES := $(call FindAllModules) jdk.hotspot.agent
 ################################################################################
 # Interim/build tools targets, compiling tools used during the build
 
+buildtools-langtools:
+	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Tools.gmk)
+
 interim-langtools:
 	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterim.gmk)
 
 interim-corba:
-	+($(CD) $(CORBA_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileCorba.gmk)
+	+($(CD) $(CORBA_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterim.gmk)
 
 interim-rmic:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimRmic.gmk)
 
-build-tools-jdk:
+buildtools-jdk:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Tools.gmk java-tools)
 
-ALL_TARGETS += interim-langtools interim-corba build-tools-jdk
+ALL_TARGETS += buildtools-langtools interim-langtools interim-corba \
+    interim-rmic buildtools-jdk
 
 ################################################################################
 # Special targets for certain modules
@@ -87,56 +88,42 @@ import-hotspot:
 unpack-sec:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UnpackSecurity.gmk)
 
-policy-jars:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreatePolicyJars.gmk)
-
-ALL_TARGETS += import-hotspot unpack-sec policy-jars
+ALL_TARGETS += import-hotspot unpack-sec
 
 ################################################################################
 # Gensrc targets, generating source before java compilation can be done
-JDK_GENSRC_MODULES := $(call FindModulesWithMakefileFor, gensrc, Gensrc)
-LANGTOOLS_GENSRC_MODULES := jdk.compiler.tools
-CORBA_GENSRC_MODULES := java.corba
-GENSRC_MODULES := $(JDK_GENSRC_MODULES) $(LANGTOOLS_GENSRC_MODULES) \
-    $(CORBA_GENSRC_MODULES)
-JDK_GENSRC_TARGETS := $(addsuffix -gensrc, $(JDK_GENSRC_MODULES))
-LANGTOOLS_GENSRC_TARGETS := $(addsuffix -gensrc, $(LANGTOOLS_GENSRC_MODULES))
-CORBA_GENSRC_TARGETS := $(addsuffix -gensrc, $(CORBA_GENSRC_MODULES))
-GENSRC_TARGETS := $(addsuffix -gensrc, $(GENSRC_MODULES))
+$(eval $(call DeclareRecipesForPhase, GENSRC, \
+    TARGET_SUFFIX := gensrc, \
+    FILE_PREFIX := Gensrc, \
+    MAKE_SUBDIR := gensrc, \
+    CHECK_MODULES := $(ALL_MODULES), \
+    MULTIPLE_MAKEFILES := true))
 
-jdk.compiler.tools-gensrc:
-	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GensrcLangtools.gmk)
-
-java.corba-gensrc:
-	+($(CD) $(CORBA_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GensrcCorba.gmk)
-
-# Declare recipes for all jdk <module>-gensrc targets
-$(foreach m, $(JDK_GENSRC_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
-    $m, gensrc, gensrc, Gensrc)))
+JDK_GENSRC_TARGETS := $(filter %-gensrc-jdk, $(GENSRC_TARGETS))
+LANGTOOLS_GENSRC_TARGETS := $(filter %-gensrc-langtools, $(GENSRC_TARGETS))
+CORBA_GENSRC_TARGETS := $(filter %-gensrc-corba, $(GENSRC_TARGETS))
 
 ALL_TARGETS += $(GENSRC_TARGETS)
 
 ################################################################################
 # Generate data targets
-GENDATA_MODULES := $(call FindModulesWithMakefileFor, gendata, Gendata)
-GENDATA_TARGETS := $(addsuffix -gendata, $(GENDATA_MODULES))
-
-# Declare recipes for all <module>-gendata targets
-$(foreach m, $(GENDATA_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
-    $m, gendata, gendata, Gendata)))
-
-$(foreach m, $(GENDATA_MODULES), $(eval $(call DeclareGendataRecipe,$m)))
+$(eval $(call DeclareRecipesForPhase, GENDATA, \
+    TARGET_SUFFIX := gendata, \
+    FILE_PREFIX := Gendata, \
+    MAKE_SUBDIR := gendata, \
+    CHECK_MODULES := $(ALL_MODULES), \
+    USE_WRAPPER := true))
 
 ALL_TARGETS += $(GENDATA_TARGETS)
 
 ################################################################################
 # Copy files targets
-COPY_MODULES := $(call FindModulesWithMakefileFor, copy, Copy)
-COPY_TARGETS := $(addsuffix -copy, $(COPY_MODULES))
-
-# Declare recipes for all <module>-copy targets
-$(foreach m, $(COPY_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
-    $m, copy, copy, Copy)))
+$(eval $(call DeclareRecipesForPhase, COPY, \
+    TARGET_SUFFIX := copy, \
+    FILE_PREFIX := Copy, \
+    MAKE_SUBDIR := copy, \
+    CHECK_MODULES := $(ALL_MODULES), \
+    USE_WRAPPER := true))
 
 ALL_TARGETS += $(COPY_TARGETS)
 
@@ -163,36 +150,33 @@ ALL_TARGETS += $(JAVA_TARGETS)
 
 ################################################################################
 # Targets for running rmic.
-RMIC_MODULES := $(call FindModulesWithMakefileFor, rmic, Rmic)
-RMIC_TARGETS := $(addsuffix -rmic, $(RMIC_MODULES))
-
-# Declare recipes for all <module>-rmic targets
-$(foreach m, $(RMIC_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
-    $m, rmic, rmic, Rmic)))
+$(eval $(call DeclareRecipesForPhase, RMIC, \
+    TARGET_SUFFIX := rmic, \
+    FILE_PREFIX := Rmic, \
+    MAKE_SUBDIR := rmic, \
+    CHECK_MODULES := $(ALL_MODULES)))
 
 ALL_TARGETS += $(RMIC_TARGETS)
 
 ################################################################################
 # Targets for compiling native libraries
-ALL_LIB_MODULES := $(call FindModulesWithMakefileFor, lib, Lib)
-LIB_MODULES := $(filter $(ALL_MODULES), $(ALL_LIB_MODULES))
-LIB_TARGETS := $(addsuffix -libs, $(LIB_MODULES))
+$(eval $(call DeclareRecipesForPhase, LIBS, \
+    TARGET_SUFFIX := libs, \
+    FILE_PREFIX := Lib, \
+    MAKE_SUBDIR := lib, \
+    CHECK_MODULES := $(ALL_MODULES), \
+    USE_WRAPPER := true))
 
-# Declare recipes for all <module>-libs targets
-$(foreach m, $(LIB_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
-    $m, libs, lib, Lib)))
-
-ALL_TARGETS += $(LIB_TARGETS)
+ALL_TARGETS += $(LIBS_TARGETS)
 
 ################################################################################
 # Targets for compiling native executables
-ALL_LAUNCHER_MODULES := $(call FindModulesWithMakefileFor, launcher, Launcher)
-LAUNCHER_MODULES := $(filter $(ALL_MODULES), $(ALL_LAUNCHER_MODULES))
-LAUNCHER_TARGETS := $(addsuffix -launchers, $(LAUNCHER_MODULES))
-
-# Declare recipes for all <module>-launchers targets
-$(foreach m, $(LAUNCHER_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
-    $m, launchers, launcher, Launcher)))
+$(eval $(call DeclareRecipesForPhase, LAUNCHER, \
+    TARGET_SUFFIX := launchers, \
+    FILE_PREFIX := Launcher, \
+    MAKE_SUBDIR := launcher, \
+    CHECK_MODULES := $(ALL_MODULES), \
+    USE_WRAPPER := true))
 
 ALL_TARGETS += $(LAUNCHER_TARGETS)
 
@@ -222,53 +206,40 @@ ALL_TARGETS += demos samples
 
 # Stores the tips for each repository. This file is be used when constructing the jdk image and can be
 # used to track the exact sources used to build that image.
-source-tips: $(OUTPUT_ROOT)/source_tips
-$(OUTPUT_ROOT)/source_tips: FRC
+source-tips: $(SUPPORT_OUTPUTDIR)/source_tips
+$(SUPPORT_OUTPUTDIR)/source_tips: FRC
 	@$(MKDIR) -p $(@D)
 	@$(RM) $@
 	@$(call GetSourceTips)
 
-security-jars:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateSecurityJars.gmk)
-
-nashorn-jar:
-	+($(CD) $(NASHORN_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk all)
-
-# Creates the jar files (rt.jar resources.jar etc)
-main-jars:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE="" -f CreateJars.gmk)
-
-# Creates the images (j2sdk-image j2re-image etc)
-images:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE="" -f Images.gmk)
-        ifeq ($(OPENJDK_TARGET_OS), macosx)
-	  +($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk)
-        endif
-
-# Create Compact Profile jars
-PROFILE_JARS_TARGETS := $(addsuffix -jars, $(ALL_PROFILES))
-$(PROFILE_JARS_TARGETS):
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE=$(@:%-jars=%) -f CreateJars.gmk)
-
-# Create Compact Profile images
-PROFILE_IMAGES_TARGETS := $(addsuffix -images, $(ALL_PROFILES))
-$(PROFILE_IMAGES_TARGETS):
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE=$(@:%-images=%) \
-	    JRE_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/j2re-$(word $(call profile_number,$(@:%-images=%)),$(PROFILE_NAMES))-image \
-	    -f Images.gmk profile-image)
-
-profiles-oscheck:
-        ifneq ($(OPENJDK_TARGET_OS), linux)
-	  @echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
-        endif
-
+BOOTCYCLE_TARGET := images
 bootcycle-images:
 	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
-	+$(MAKE) $(MAKE_ARGS) -f Main.gmk SPEC=$(dir $(SPEC))bootcycle-spec.gmk images
+	+$(MAKE) $(MAKE_ARGS) -f Main.gmk SPEC=$(dir $(SPEC))bootcycle-spec.gmk $(BOOTCYCLE_TARGET)
 
-ALL_TARGETS += source-tips security-jars nashorn-jar main-jars images \
-    $(PROFILE_JARS_TARGETS) $(PROFILE_IMAGES_TARGETS) profiles-oscheck \
-    bootcycle-images
+zip-security:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ZipSecurity.gmk)
+
+zip-source:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ZipSource.gmk)
+
+strip-binaries:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f StripBinaries.gmk)
+
+jrtfs-jar:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f JrtfsJar.gmk)
+
+jimages:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk jimages)
+
+profiles:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk profiles)
+
+mac-bundles:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
+
+ALL_TARGETS += source-tips bootcycle-images zip-security zip-source strip-binaries \
+    jrtfs-jar jimages profiles mac-bundles
 
 ################################################################################
 # Docs targets
@@ -331,17 +302,19 @@ ALL_TARGETS += install
 ifneq ($(findstring -only, $(MAKECMDGOALS)), )
   .NOTPARALLEL:
 else
+  $(LANGTOOLS_GENSRC_TARGETS): buildtools-langtools
+
   interim-langtools: $(LANGTOOLS_GENSRC_TARGETS)
 
-  build-tools-jdk: interim-langtools
+  buildtools-jdk: interim-langtools
 
   $(CORBA_GENSRC_TARGETS): interim-langtools
 
-  $(JDK_GENSRC_TARGETS): interim-langtools build-tools-jdk
+  $(JDK_GENSRC_TARGETS): interim-langtools buildtools-jdk
 
   interim-corba: $(CORBA_GENSRC_TARGETS)
 
-  $(GENDATA_TARGETS): interim-langtools build-tools-jdk
+  $(GENDATA_TARGETS): interim-langtools buildtools-jdk
 
   interim-rmic: interim-langtools
 
@@ -349,7 +322,7 @@ else
 
   import-hotspot: hotspot
 
-  $(LIB_TARGETS): import-hotspot
+  $(LIBS_TARGETS): import-hotspot
 
   $(LAUNCHER_TARGETS): java.base-libs
 
@@ -371,55 +344,53 @@ else
 
   # Declare dependencies from <module>-lib to <module>-java
   # Skip jdk.jdwp.agent as it contains no java code.
-  $(foreach m, $(filter-out jdk.jdwp.agent, $(LIB_MODULES)), $(eval $m-libs: $m-java))
+  $(foreach m, $(filter-out jdk.jdwp.agent, $(LIBS_MODULES)), $(eval $m-libs: $m-java))
 
   # Declare dependencies from all other <module>-lib to java.base-lib
-  $(foreach t, $(filter-out java.base-libs, $(LIB_TARGETS)), \
+  $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
       $(eval $t: java.base-libs))
   # Declare the special case dependency for jdk.deploy.osx where libosx 
   # links against libosxapp.
   jdk.deploy.osx-libs: java.desktop-libs
 
-  # This dependency needs to be explicitly declared. jdk.jdi-gensrc generates a 
-  # header file used by jdk.jdwp libs.
-  jdk.jdwp.agent-libs: jdk.jdi-gensrc
+  # This dependency needs to be explicitly declared as jdk.jdi-gensrc generates a 
+  # header file used by jdk.jdwp.agent-libs. The jdk.jdwp.agent-gensrc is a
+  # virtual target.
+  jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
+
+  # Until the module system is in place, jdk.jdi-gensrc needs to combine service
+  # loader configuration with jdk.hotspot.agent so is dependent on importing
+  # hotspot.
+  jdk.jdi-gensrc-jdk: import-hotspot
 
   # The swing beans need to have java base properly generated to avoid errors
   # in javadoc.
-  java.desktop-gensrc: java.base-gensrc
+  java.desktop-gensrc-jdk: java.base-gensrc
 
   # Explicitly add dependencies for special targets
   java.base-java: unpack-sec
 
   jdk.dev-gendata: java rmic
 
-  security-jars: java
+  zip-security: java.base-java java.security.jgss-java java.security.jgss-libs \
+      $(filter jdk.crypto%, $(JAVA_TARGETS))
 
-  nashorn-jar: jdk.scripting.nashorn-java
+  zip-source: gensrc rmic
 
-  main-jars: java rmic security-jars nashorn-jar policy-jars import-hotspot gendata
+  strip-binaries: libs launchers gendata copy
 
-  # On windows, the jars target needs to wait for jgss libs to be built.
-  # Should ideally split out the sec-bin zip file generation to avoid
-  # this dependency.
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    main-jars: java.security.jgss-libs
-  endif
+  jrtfs-jar: buildtools-jdk
 
-  images: jars demos samples exploded-image verify-modules source-tips
+  jimages: exploded-image zip-source strip-binaries source-tips demos samples \
+      jrtfs-jar
 
-  bootcycle-images: images
+  profiles: exploded-image strip-binaries source-tips
 
-  # Need to depend on jars as otherwise there will a race between all the
-  # invocations of CreateJars.gmk.
-  $(PROFILE_JARS_TARGETS): jars profiles-oscheck
+  mac-bundles: jimages
 
-  $(PROFILE_IMAGES_TARGETS): demos samples exploded-image source-tips
+  bootcycle-images: jimages
 
-  # Declare dependencies from <profile>-images to <profile>-jars
-  $(foreach p, $(ALL_PROFILES), $(eval $p-images: $p-jars))
-
-  docs-javadoc: $(GENSRC_TARGETS) rmic
+  docs-javadoc: gensrc rmic
 
   docs-jvmtidoc: hotspot
 
@@ -432,6 +403,9 @@ endif
 ################################################################################
 # Virtual targets without recipes
 
+buildtools: buildtools-langtools interim-langtools interim-corba interim-rmic \
+    buildtools-jdk
+
 gensrc: $(GENSRC_TARGETS)
 
 gendata: $(GENDATA_TARGETS)
@@ -442,12 +416,13 @@ java: $(JAVA_TARGETS)
 
 rmic: $(RMIC_TARGETS)
 
-libs: $(LIB_TARGETS)
+libs: $(LIBS_TARGETS)
 
 launchers: $(LAUNCHER_TARGETS)
 
-# Explicitly add dependencies for these special targets
-java.base: import-hotspot policy-jars
+# Explicitly declare dependency for virtual target jdk.jdwp.agent-gensrc which
+# is actually handled by jdk.jdi-gensrc
+jdk.jdwp.agent-gensrc: jdk.jdi-gensrc
 
 # Declare dependencies from <module> to all the individual targets specific
 # to that module <module>-*.
@@ -455,34 +430,33 @@ $(foreach m, $(GENSRC_MODULES), $(eval $m: $m-gensrc))
 $(foreach m, $(JAVA_MODULES), $(eval $m: $m-java))
 $(foreach m, $(GENDATA_MODULES), $(eval $m: $m-gendata))
 $(foreach m, $(RMIC_MODULES), $(eval $m: $m-rmic))
-$(foreach m, $(LIB_MODULES), $(eval $m: $m-libs))
+$(foreach m, $(LIBS_MODULES), $(eval $m: $m-libs))
 $(foreach m, $(LAUNCHER_MODULES), $(eval $m: $m-launchers))
 $(foreach m, $(COPY_MODULES), $(eval $m: $m-copy))
 
 ALL_MODULE_TARGETS := $(sort $(GENSRC_MODULES) $(JAVA_MODULES) \
-    $(GENDATA_MODULES) $(LIB_MODULES) $(LAUNCHER_MODULES) $(COPY_MODULES))
+    $(GENDATA_MODULES) $(LIBS_MODULES) $(LAUNCHER_MODULES) $(COPY_MODULES))
 
 exploded-image: $(ALL_MODULE_TARGETS)
 # The old 'jdk' target most closely matches the new exploded-image. Keep an
 # alias for ease of use.
 jdk: exploded-image
 
-jars: main-jars nashorn-jar security-jars policy-jars
+images: jimages demos samples zip-security
 
-# Make each profile name a target that depends on it's images target.
-$(foreach p, $(ALL_PROFILES), $(eval $(p): $(p)-images $(p)-jars))
-
-profiles: $(ALL_PROFILES)
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  images: mac-bundles
+endif
 
 docs: docs-javadoc docs-jvmtidoc
 
-ALL_TARGETS += gensrc gendata copy java rmic libs launchers \
-    $(ALL_MODULE_TARGETS) exploded-image jdk jars \
-    $(ALL_PROFILES) profiles docs
+ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers \
+    jdk.jdwp.agent-gensrc $(ALL_MODULE_TARGETS) exploded-image jdk images \
+    docs
 
 ################################################################################
 
-all: images docs
+all: images
 default: exploded-image
 
 ALL_TARGETS += default all
@@ -496,17 +470,38 @@ ALL_TARGETS += default all
 # Clean targets are automatically run serially by the Makefile calling this 
 # file.
 
-CLEAN_COMPONENTS += langtools corba hotspot jdk nashorn images \
-    bootcycle-build docs docstemp test make-support
-CLEAN_TARGETS := $(addprefix clean-, $(CLEAN_COMPONENTS))
+CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
+    images make-support
+CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
+CLEAN_PHASES := gensrc java native include
+CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))
+CLEAN_MODULE_TARGETS := $(addprefix clean-, $(ALL_MODULES))
+# Construct targets of the form clean-$module-$phase
+CLEAN_MODULE_PHASE_TARGETS := $(addprefix clean-, $(foreach m, $(ALL_MODULES), \
+    $(addprefix $m-, $(CLEAN_PHASES))))
 
 # Remove everything, except the output from configure.
-clean: $(CLEAN_TARGETS)
-	($(CD) $(OUTPUT_ROOT) && $(RM) -r tmp source_tips build.log* build-trace*.log*)
+clean: $(CLEAN_DIR_TARGETS)
+	($(CD) $(OUTPUT_ROOT) && $(RM) -r source_tips build.log* build-trace*.log*)
 	$(ECHO) Cleaned all build artifacts.
 
-$(CLEAN_TARGETS):
-	$(call CleanComponent,$(patsubst clean-%, %, $@))
+$(CLEAN_DIR_TARGETS):
+	$(call CleanDir,$(patsubst clean-%, %, $@))
+
+$(CLEAN_PHASE_TARGETS):
+	$(call Clean-$(patsubst clean-%,%, $@))
+
+$(CLEAN_MODULE_TARGETS):
+	$(call CleanModule,$(patsubst clean-%, %, $@))
+
+$(CLEAN_MODULE_PHASE_TARGETS):
+	$(call Clean-$(word 3, $(subst -,$(SPACE),$@)), \
+	    $(word 2, $(subst -,$(SPACE),$@)))
+
+# When removing the support dir, we must also remove jdk. Building classes has
+# the side effect of generating native headers. The headers end up in support
+# while classes and touch files end up in jdk.
+clean-support: clean-jdk
 
 clean-docs: clean-docstemp
 
@@ -525,7 +520,8 @@ dist-clean: clean
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-ALL_TARGETS += clean dist-clean $(CLEAN_TARGETS)
+ALL_TARGETS += clean dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_PHASE_TARGETS) \
+    $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 
 ################################################################################
 
@@ -557,7 +553,7 @@ ALL_TARGETS += reconfigure
 # Declare *-only targets for each normal target
 $(foreach t, $(ALL_TARGETS), $(eval $(t)-only: $(t)))
 
-ALL_TARGETS += $(addsuffix -only, $(ALL_TARGETS))
+ALL_TARGETS += $(addsuffix -only, $(filter-out clean%, $(ALL_TARGETS)))
 
 ################################################################################
 

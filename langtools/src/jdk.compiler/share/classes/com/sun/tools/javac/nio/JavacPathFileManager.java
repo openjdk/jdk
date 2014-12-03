@@ -368,7 +368,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 Path name = dir.getFileName();
-                if (name == null || SourceVersion.isIdentifier(name.toString())) // JSR 292?
+                if (name == null || SourceVersion.isIdentifier(name.toString()))
                     return FileVisitResult.CONTINUE;
                 else
                     return FileVisitResult.SKIP_SUBTREE;
@@ -377,6 +377,9 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 if (attrs.isRegularFile() && kinds.contains(getKind(file.getFileName().toString()))) {
+                    // WORKAROUND for .jimage files
+                    if (!file.isAbsolute())
+                        file = pathDir.resolve(file);
                     JavaFileObject fe =
                         PathFileObject.createDirectoryPathFileObject(
                             JavacPathFileManager.this, file, pathDir);

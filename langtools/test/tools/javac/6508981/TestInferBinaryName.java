@@ -49,8 +49,6 @@ import static javax.tools.StandardLocation.*;
  * the impl of inferBinaryName for that file object.
  */
 public class TestInferBinaryName {
-    static final boolean IGNORE_SYMBOL_FILE = false;
-    static final boolean USE_SYMBOL_FILE = true;
     static final boolean DONT_USE_ZIP_FILE_INDEX = false;
     static final boolean USE_ZIP_FILE_INDEX = true;
 
@@ -59,15 +57,14 @@ public class TestInferBinaryName {
     }
 
     void run() throws Exception {
-        //System.err.println(System.getProperties());
         testDirectory();
-        testSymbolArchive();
 
         File testJar = createJar();
 
         testZipArchive(testJar);
         testZipFileIndexArchive(testJar);
         testZipFileIndexArchive2(testJar);
+
         if (errors > 0)
             throw new Exception(errors + " error found");
     }
@@ -87,19 +84,9 @@ public class TestInferBinaryName {
         String testClassName = "p.A";
         List<File> testClasses = Arrays.asList(new File(System.getProperty("test.classes")));
         try (JavaFileManager fm =
-                getFileManager(testClasses, USE_SYMBOL_FILE, USE_ZIP_FILE_INDEX)) {
+                getFileManager(testClasses, USE_ZIP_FILE_INDEX)) {
             test("testDirectory",
                 fm, testClassName, "com.sun.tools.javac.file.RegularFileObject");
-        }
-    }
-
-    void testSymbolArchive() throws IOException {
-        String testClassName = "java.lang.String";
-        List<File> path = getPath(System.getProperty("sun.boot.class.path"));
-        try (JavaFileManager fm =
-                getFileManager(path, USE_SYMBOL_FILE, DONT_USE_ZIP_FILE_INDEX)) {
-            test("testSymbolArchive",
-                    fm, testClassName, "com.sun.tools.javac.file.SymbolArchive$SymbolFileObject");
         }
     }
 
@@ -107,7 +94,7 @@ public class TestInferBinaryName {
         String testClassName = "java.lang.String";
         List<File> path = Arrays.asList(testJar);
         try (JavaFileManager fm =
-                getFileManager(path, IGNORE_SYMBOL_FILE, DONT_USE_ZIP_FILE_INDEX)) {
+                getFileManager(path, DONT_USE_ZIP_FILE_INDEX)) {
             test("testZipArchive",
                  fm, testClassName, "com.sun.tools.javac.file.ZipArchive$ZipFileObject");
         }
@@ -117,7 +104,7 @@ public class TestInferBinaryName {
         String testClassName = "java.lang.String";
         List<File> path = Arrays.asList(testJar);
         try (JavaFileManager fm =
-                getFileManager(path, USE_SYMBOL_FILE, USE_ZIP_FILE_INDEX)) {
+                getFileManager(path, USE_ZIP_FILE_INDEX)) {
             test("testZipFileIndexArchive",
                  fm, testClassName, "com.sun.tools.javac.file.ZipFileIndexArchive$ZipFileIndexFileObject");
         }
@@ -127,7 +114,7 @@ public class TestInferBinaryName {
         String testClassName = "java.lang.String";
         List<File> path = Arrays.asList(testJar);
         try (JavaFileManager fm =
-                getFileManager(path, IGNORE_SYMBOL_FILE, USE_ZIP_FILE_INDEX)) {
+                getFileManager(path, USE_ZIP_FILE_INDEX)) {
             test("testZipFileIndexArchive2",
                  fm, testClassName, "com.sun.tools.javac.file.ZipFileIndexArchive$ZipFileIndexFileObject");
         }
@@ -159,7 +146,6 @@ public class TestInferBinaryName {
     }
 
     JavaFileManager getFileManager(List<File> path,
-                                   boolean symFileKind,
                                    boolean zipFileIndexKind)
             throws IOException {
         Context ctx = new Context();
@@ -167,8 +153,6 @@ public class TestInferBinaryName {
         options.put("useOptimizedZip",
                 Boolean.toString(zipFileIndexKind == USE_ZIP_FILE_INDEX));
 
-        if (symFileKind == IGNORE_SYMBOL_FILE)
-            options.put("ignore.symbol.file", "true");
         JavacFileManager fm = new JavacFileManager(ctx, false, null);
         fm.setLocation(CLASS_PATH, path);
         return fm;

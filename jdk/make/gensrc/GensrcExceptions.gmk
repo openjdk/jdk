@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 
 GENSRC_EXCEPTIONS :=
 
-GENSRC_EXCEPTIONS_TMP := $(JDK_OUTPUTDIR)/gensrc
-GENSRC_EXCEPTIONS_DST := $(JDK_OUTPUTDIR)/gensrc/java.base/java/nio
+GENSRC_EXCEPTIONS_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio
 
 GENSRC_EXCEPTIONS_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/java/nio
 GENSRC_EXCEPTIONS_CMD := $(JDK_TOPDIR)/make/scripts/genExceptions.sh

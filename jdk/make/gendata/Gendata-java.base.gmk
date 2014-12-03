@@ -29,15 +29,14 @@ include GendataCommon.gmk
 $(eval $(call IncludeCustomExtension, jdk, gendata/Gendata-java.base.gmk))
 
 include GendataBreakIterator.gmk
-GENDATA += $(BREAK_ITERATOR)
 
 include GendataTZDB.gmk
-GENDATA += $(GENDATA_TZDB)
 
 include GendataBlacklistedCerts.gmk
-GENDATA += $(GENDATA_BLACKLISTED_CERTS)
 
-##########################################################################################
+include GendataPolicyJars.gmk
+
+################################################################################
 
 GENDATA_UNINAME := $(JDK_OUTPUTDIR)/modules/java.base/java/lang/uniName.dat
 
@@ -45,9 +44,9 @@ $(GENDATA_UNINAME): $(JDK_TOPDIR)/make/data/unicodedata/UnicodeData.txt $(BUILD_
 	$(MKDIR) -p $(@D)
 	$(TOOL_CHARACTERNAME) $< $@
 
-GENDATA += $(GENDATA_UNINAME)
+TARGETS += $(GENDATA_UNINAME)
 
-##########################################################################################
+################################################################################
 
 GENDATA_CURDATA := $(JDK_OUTPUTDIR)/modules/java.base/java/util/currency.data
 
@@ -58,12 +57,12 @@ $(GENDATA_CURDATA): $(JDK_TOPDIR)/make/data/currency/CurrencyData.properties $(B
 	$(MV) $@.tmp $@
 	$(CHMOD) 444 $@
 
-GENDATA += $(GENDATA_CURDATA)
+TARGETS += $(GENDATA_CURDATA)
 
-##########################################################################################
+################################################################################
 
 GENDATA_JAVA_SECURITY_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.security
-GENDATA_JAVA_SECURITY := $(JDK_OUTPUTDIR)/lib/security/java.security
+GENDATA_JAVA_SECURITY := $(SUPPORT_OUTPUTDIR)/modules_conf/java.base/security/java.security
 
 # RESTRICTED_PKGS_SRC is optionally set in custom extension for this makefile
 
@@ -73,14 +72,17 @@ $(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICT
 	$(TOOL_MAKEJAVASECURITY) $(GENDATA_JAVA_SECURITY_SRC) $@ $(OPENJDK_TARGET_OS) \
 		$(RESTRICTED_PKGS_SRC) || exit 1
 
-GENDATA += $(GENDATA_JAVA_SECURITY)
+TARGETS += $(GENDATA_JAVA_SECURITY)
 
-##########################################################################################
+################################################################################
 
-$(GENDATA): $(BUILD_TOOLS_JDK)
+$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist: \
+    $(JDK_TOPDIR)/make/data/classlist/classlist.$(OPENJDK_TARGET_OS)
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
+	$(TOOL_ADDJSUM) $< $@.tmp
+	$(MV) $@.tmp $@
 
-java.base: $(GENDATA)
+TARGETS += $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist
 
-all: java.base
-
-.PHONY: all java.base
+################################################################################

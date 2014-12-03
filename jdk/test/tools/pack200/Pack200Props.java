@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ public class Pack200Props {
         Utils.cleanup();
     }
 
-    static void verifySegmentLimit(File outFile) {
+    static void verifySegmentLimit(File outFile) throws IOException {
         File sdkHome = Utils.JavaSDK;
-        File testJar = new File(new File(sdkHome, "lib"), "tools.jar");
+        File testJar = Utils.createRtJar();
 
         System.out.println("using pack200: " + Utils.getPack200Cmd());
 

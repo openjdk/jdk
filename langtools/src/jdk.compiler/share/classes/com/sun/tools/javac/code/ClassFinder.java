@@ -27,20 +27,32 @@ package com.sun.tools.javac.code;
 
 import java.io.*;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+
 import javax.lang.model.SourceVersion;
-import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
-import static javax.tools.StandardLocation.*;
-
-import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.Completer;
+import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
+import com.sun.tools.javac.comp.Annotate;
+import com.sun.tools.javac.file.JRTIndex;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.util.*;
+
+import static javax.tools.StandardLocation.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -126,6 +138,18 @@ public class ClassFinder {
     protected Symbol currentOwner = null;
 
     /**
+     * The currently selected profile.
+     */
+    private final Profile profile;
+
+    /**
+     * Use direct access to the JRTIndex to access the temporary
+     * replacement for the info that used to be in ct.sym.
+     * In time, this will go away and be replaced by the module system.
+     */
+    private final JRTIndex jrtIndex;
+
+    /**
      * Completer that delegates to the complete-method of this class.
      */
     private final Completer thisCompleter = new Completer() {
@@ -168,12 +192,72 @@ public class ClassFinder {
         preferSource = "source".equals(options.get("-Xprefer"));
         userPathsFirst = options.isSet(XXUSERPATHSFIRST);
 
-
         completionFailureName =
             options.isSet("failcomplete")
             ? names.fromString(options.get("failcomplete"))
             : null;
+
+        // Temporary, until more info is available from the module system.
+        boolean useCtProps;
+        JavaFileManager fm = context.get(JavaFileManager.class);
+        if (fm instanceof JavacFileManager) {
+            JavacFileManager jfm = (JavacFileManager) fm;
+            useCtProps = jfm.isDefaultBootClassPath() && jfm.isSymbolFileEnabled();
+        } else if (fm.getClass().getName().equals("com.sun.tools.sjavac.comp.SmartFileManager")) {
+            useCtProps = !options.isSet("ignore.symbol.file");
+        } else {
+            useCtProps = false;
+        }
+        jrtIndex = useCtProps && JRTIndex.isAvailable() ? JRTIndex.getSharedInstance() : null;
+
+        profile = Profile.instance(context);
     }
+
+
+/************************************************************************
+ * Temporary ct.sym replacement
+ *
+ * The following code is a temporary substitute for the ct.sym mechanism
+ * used in JDK 6 thru JDK 8.
+ * This mechanism will eventually be superseded by the Jigsaw module system.
+ ***********************************************************************/
+
+    /**
+     * Returns any extra flags for a class symbol.
+     * This information used to be provided using private annotations
+     * in the class file in ct.sym; in time, this information will be
+     * available from the module system.
+     */
+    long getSupplementaryFlags(ClassSymbol c) {
+        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile)) {
+            return 0;
+        }
+
+        if (supplementaryFlags == null) {
+            supplementaryFlags = new HashMap<>();
+        }
+
+        Long flags = supplementaryFlags.get(c.packge());
+        if (flags == null) {
+            long newFlags = 0;
+            try {
+                JRTIndex.CtSym ctSym = jrtIndex.getCtSym(c.packge().flatName());
+                Profile minProfile = Profile.DEFAULT;
+                if (ctSym.proprietary)
+                    newFlags |= PROPRIETARY;
+                if (ctSym.minProfile != null)
+                    minProfile = Profile.lookup(ctSym.minProfile);
+                if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
+                    newFlags |= NOT_IN_PROFILE;
+                }
+            } catch (IOException ignore) {
+            }
+            supplementaryFlags.put(c.packge(), flags = newFlags);
+        }
+        return flags;
+    }
+
+    private Map<PackageSymbol, Long> supplementaryFlags;
 
 /************************************************************************
  * Loading Classes
@@ -259,6 +343,7 @@ public class ClassFinder {
                 }
                 if (classfile.getKind() == JavaFileObject.Kind.CLASS) {
                     reader.readClassFile(c);
+                    c.flags_field |= getSupplementaryFlags(c);
                 } else {
                     if (sourceCompleter != null) {
                         sourceCompleter.complete(c);
@@ -271,13 +356,15 @@ public class ClassFinder {
                 currentClassFile = previousClassFile;
             }
         } else {
-            JCDiagnostic diag =
-                diagFactory.fragment("class.file.not.found", c.flatname);
-            throw
-                newCompletionFailure(c, diag);
+            throw classFileNotFound(c);
         }
     }
     // where
+        private CompletionFailure classFileNotFound(ClassSymbol c) {
+            JCDiagnostic diag =
+                diagFactory.fragment("class.file.not.found", c.flatname);
+            return newCompletionFailure(c, diag);
+        }
         /** Static factory for CompletionFailure objects.
          *  In practice, only one can be used at a time, so we share one
          *  to reduce the expense of allocating new exception objects.
@@ -296,7 +383,7 @@ public class ClassFinder {
                 return result;
             }
         }
-        private CompletionFailure cachedCompletionFailure =
+        private final CompletionFailure cachedCompletionFailure =
             new CompletionFailure(null, (JCDiagnostic) null);
         {
             cachedCompletionFailure.setStackTrace(new StackTraceElement[0]);

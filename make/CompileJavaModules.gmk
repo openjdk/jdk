@@ -235,6 +235,11 @@ endif
 
 ################################################################################
 
+java.scripting_COPY := .js
+java.scripting_CLEAN := .properties
+
+################################################################################
+
 java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
 ################################################################################
@@ -318,6 +323,9 @@ jdk.charsets_COPY := .dat
 ################################################################################
 
 jdk.compiler_COPY := javax.tools.JavaCompilerTool
+jdk.compiler_CLEAN_FILES := $(wildcard \
+    $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
+        sun/tools/serialver/resources))
 
 ################################################################################
 
@@ -363,12 +371,6 @@ jdk.jconsole_COPY := .gif .png
 
 jdk.jconsole_CLEAN_FILES := $(wildcard \
     $(JDK_TOPDIR)/src/jdk.jconsole/share/classes/sun/tools/jconsole/resources/*.properties)
-
-################################################################################
-
-jdk.compiler_CLEAN_FILES := $(wildcard \
-    $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
-        sun/tools/serialver/resources))
 
 ################################################################################
 
@@ -426,10 +428,8 @@ jdk.localedata_EXCLUDE_FILES += sun/text/resources/th/BreakIteratorRules_th.java
 #
 # To use this variable, use $(call ALL_SRC_DIRS,module) with no space.
 GENERATED_SRC_DIRS += \
-    $(JDK_OUTPUTDIR)/gensrc/$1 \
-    $(LANGTOOLS_OUTPUTDIR)/gensrc/$1 \
-    $(CORBA_OUTPUTDIR)/gensrc/$1 \
-    $(JDK_OUTPUTDIR)/gensrc_no_srczip/$1 \
+    $(SUPPORT_OUTPUTDIR)/gensrc/$1 \
+    $(SUPPORT_OUTPUTDIR)/gensrc_no_docs/$1 \
     #
 
 OS_SRC_DIRS += $(JDK_TOPDIR)/src/$1/$(OPENJDK_TARGET_OS)/classes
@@ -488,7 +488,7 @@ define SetupModuleCompilation
       SRC := $$(wildcard $$(call ALL_SRC_DIRS,$1)), \
       INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
       BIN := $(JDK_OUTPUTDIR)/modules/$1, \
-      HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers/$1, \
+      HEADERS := $(SUPPORT_OUTPUTDIR)/headers/$1, \
       ADD_JAVAC_FLAGS := $$($1_JAVAC_FLAGS)))
 
   $1: $$($1) $$($1_COPY_EXTRA)
