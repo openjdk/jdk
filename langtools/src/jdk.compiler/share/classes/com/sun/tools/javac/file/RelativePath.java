@@ -57,12 +57,6 @@ public abstract class RelativePath implements Comparable<RelativePath> {
 
     public abstract String basename();
 
-    public File getFile(File directory) {
-        if (path.length() == 0)
-            return directory;
-        return new File(directory, path.replace('/', File.separatorChar));
-    }
-
     public Path getFile(Path directory) throws /*unchecked*/ InvalidPathException {
         if (directory == null) {
             String sep = FileSystems.getDefault().getSeparator();
@@ -73,6 +67,7 @@ public abstract class RelativePath implements Comparable<RelativePath> {
         }
     }
 
+    @Override
     public int compareTo(RelativePath other) {
         return path.compareTo(other.path);
     }

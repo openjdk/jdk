@@ -1,8 +1,3 @@
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.file.Paths;
-
 /*
  * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,6 +26,10 @@ import java.nio.file.Paths;
  * @bug 6181889
  * @summary Empty try/finally results in bytecodes being generated
  */
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Paths;
 
 public class EmptyFinallyTest {
     private static final String assertionErrorMsg =

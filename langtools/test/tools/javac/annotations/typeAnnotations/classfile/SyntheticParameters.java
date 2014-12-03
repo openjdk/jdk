@@ -24,9 +24,11 @@
 /*
  * @test SyntheticParameters
  * @summary Test generation of annotations on inner class parameters.
- * @build ClassfileInspector
+ * @library /lib/annotations/
  * @run main SyntheticParameters
  */
+
+import annotations.classfile.ClassfileInspector;
 
 import java.io.*;
 import java.lang.annotation.*;
@@ -111,7 +113,8 @@ public class SyntheticParameters extends ClassfileInspector {
 
     public static void main(String... args) throws Exception {
         new SyntheticParameters().run(
-            new ClassFile[] { getClassFile(Inner_class), getClassFile(Foo_class) },
+            new ClassFile[] { getClassFile(Inner_class, Inner.class),
+                              getClassFile(Foo_class, Foo.class) },
             new Expected[] { Inner_expected, Foo_expected });
     }
 
