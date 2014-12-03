@@ -551,10 +551,11 @@ class JdepsTask {
         if (options.includePattern != null) {
             initialArchives.addAll(classpaths);
         }
-        classpaths.addAll(PlatformClassPath.getArchives(options.mpath));
+        classpaths.addAll(PlatformClassPath.getModules(options.mpath));
         if (options.mpath != null) {
-            initialArchives.addAll(PlatformClassPath.getArchives(options.mpath));
+            initialArchives.addAll(PlatformClassPath.getModules(options.mpath));
         }
+        classpaths.addAll(PlatformClassPath.getJarFiles());
         // add all classpath archives to the source locations for reporting
         sourceLocations.addAll(classpaths);
     }

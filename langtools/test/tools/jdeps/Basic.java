@@ -41,27 +41,6 @@ import java.util.regex.*;
 import static java.nio.file.StandardCopyOption.*;
 
 public class Basic {
-    private static boolean symbolFileExist = initProfiles();
-    private static boolean initProfiles() {
-        // check if ct.sym exists; if not use the profiles.properties file
-        Path home = Paths.get(System.getProperty("java.home"));
-        if (home.endsWith("jre")) {
-            home = home.getParent();
-        }
-        Path ctsym = home.resolve("lib").resolve("ct.sym");
-        boolean symbolExists = ctsym.toFile().exists();
-        if (!symbolExists) {
-            Path testSrcProfiles =
-                Paths.get(System.getProperty("test.src", "."), "profiles.properties");
-            if (!testSrcProfiles.toFile().exists())
-                throw new Error(testSrcProfiles + " does not exist");
-            System.out.format("%s doesn't exist.%nUse %s to initialize profiles info%n",
-                ctsym, testSrcProfiles);
-            System.setProperty("jdeps.profiles", testSrcProfiles.toString());
-        }
-        return symbolExists;
-    }
-
     public static void main(String... args) throws Exception {
         int errors = 0;
         errors += new Basic().run();
