@@ -292,6 +292,65 @@ jdk_desktop = \
     :jdk_sound \
     :jdk_imageio
 
+###############################################################################
+#
+# Serviceability sanity groups
+#
+# These groups specify a subset of Serviceability tests that are supposed to
+# guard against breakage of Serviceability features by other component teams.
+# They are added to the "hotspot" testset in JPRT so that they will run on all
+# full-forest pushes through JPRT.
+#
+
+jdk_svc_sanity = \
+    :jdk_management_sanity \
+    :jdk_instrument_sanity \
+    :jdk_jmx_sanity \
+    :jdk_jdi_sanity \
+    :svc_tools_sanity
+
+jdk_management_sanity =
+
+jdk_instrument_sanity =
+
+jdk_jmx_sanity =
+
+jdk_jdi_sanity = \
+    com/sun/jdi/AcceptTimeout.java \
+    com/sun/jdi/AccessSpecifierTest.java \
+    com/sun/jdi/AfterThreadDeathTest.java \
+    com/sun/jdi/ArrayRangeTest.java \
+    com/sun/jdi/ConstantPoolInfo.java \
+    com/sun/jdi/CountFilterTest.java \
+    com/sun/jdi/EarlyReturnNegativeTest.java \
+    com/sun/jdi/EarlyReturnTest.java \
+    com/sun/jdi/FieldWatchpoints.java \
+    com/sun/jdi/FramesTest.java \
+    com/sun/jdi/InstanceFilter.java \
+    com/sun/jdi/InterfaceMethodsTest.java \
+    com/sun/jdi/InvokeTest.java \
+    com/sun/jdi/LocalVariableEqual.java \
+    com/sun/jdi/LocationTest.java \
+    com/sun/jdi/ModificationWatchpoints.java \
+    com/sun/jdi/MonitorEventTest.java \
+    com/sun/jdi/MonitorFrameInfo.java \
+    com/sun/jdi/NullThreadGroupNameTest.java \
+    com/sun/jdi/PopAndStepTest.java \
+    com/sun/jdi/PopAsynchronousTest.java \
+    com/sun/jdi/ProcessAttachTest.java \
+    com/sun/jdi/ReferrersTest.java \
+    com/sun/jdi/RequestReflectionTest.java \
+    com/sun/jdi/ResumeOneThreadTest.java \
+    com/sun/jdi/RunToExit.java \
+    com/sun/jdi/SourceNameFilterTest.java \
+    com/sun/jdi/VarargsTest.java \
+    com/sun/jdi/Vars.java \
+    com/sun/jdi/redefineMethod/RedefineTest.java \
+    com/sun/jdi/sde/MangleTest.java \
+    com/sun/jdi/sde/TemperatureTableTest.java
+
+svc_tools_sanity =
+
 #############################
 #
 # Stable test groups

@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: ApacheCanonicalizer.java 1333869 2012-05-04 10:42:44Z coheigea $
@@ -166,11 +166,9 @@ public abstract class ApacheCanonicalizer extends TransformService {
                          (subTree.getRoot())));
                 }
             } else if (data instanceof NodeSetData) {
-                NodeSetData nsd = (NodeSetData)data;
-                // convert Iterator to Set
-                @SuppressWarnings("unchecked")
-                Set<Node> ns = Utils.toNodeSet(nsd.iterator());
-                nodeSet = ns;
+                NodeSetData<?> nsd = (NodeSetData<?>)data;
+                // convert Iterator to Set<Node>
+                nodeSet = Utils.toNodeSet(nsd.iterator());
                 if (log.isLoggable(java.util.logging.Level.FINE)) {
                     log.log(java.util.logging.Level.FINE, "Canonicalizing " + nodeSet.size() + " nodes");
                 }
@@ -236,7 +234,6 @@ public abstract class ApacheCanonicalizer extends TransformService {
                 in = new XMLSignatureInput(subTree.getRoot());
                 in.setExcludeComments(subTree.excludeComments());
             } else {
-                @SuppressWarnings("unchecked")
                 Set<Node> nodeSet =
                     Utils.toNodeSet(((NodeSetData)data).iterator());
                 in = new XMLSignatureInput(nodeSet);

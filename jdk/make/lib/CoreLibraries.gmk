@@ -99,7 +99,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_posix := -ljvm -lc, \
+    LDFLAGS_SUFFIX_unix := -ljvm -lc, \
     LDFLAGS_SUFFIX_windows := jvm.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
@@ -160,7 +160,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_posix := -ljvm -lverify, \
+    LDFLAGS_SUFFIX_unix := -ljvm -lverify, \
     LDFLAGS_SUFFIX_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
     LDFLAGS_SUFFIX_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
     LDFLAGS_SUFFIX_aix := $(LIBDL) $(BUILD_LIBFDLIBM) -lm,\
@@ -216,9 +216,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(ZLIB_CPPFLAGS) \
         -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-        -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava \
+        -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
-    CFLAGS_posix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
+    CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
     REORDER := $(BUILD_LIBZIP_REORDER), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -248,7 +248,7 @@ TARGETS += $(BUILD_LIBZIP)
 ##########################################################################################
 
 BUILD_LIBJLI_SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/native/libjli \
-    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjli
+    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli
 
 LIBJLI_CFLAGS := $(CFLAGS_JDKLIB)
 
@@ -292,7 +292,7 @@ else ifneq ($(OPENJDK_TARGET_OS), macosx)
 
   # if the architecture specific ergo file exists then
   # use it, else use the generic definitions from ergo.c
-  ifneq ($(wildcard $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjli/$(ERGO_ARCH_FILE)), )
+  ifneq ($(wildcard $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli/$(ERGO_ARCH_FILE)), )
     BUILD_LIBJLI_FILES += $(ERGO_ARCH_FILE)
   else # !ERGO_ARCH_FILE
     LIBJLI_CFLAGS += -DUSE_GENERIC_ERGO

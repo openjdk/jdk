@@ -21,8 +21,6 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -62,8 +60,9 @@ public class SlideNotResizableTest {
         }
     }
 
-    private static void sync() throws InterruptedException {
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+    private static void sync() throws Exception {
+        Robot robot = new Robot();
+        robot.waitForIdle();
         Thread.sleep(1000);
     }
 }

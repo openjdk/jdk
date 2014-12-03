@@ -1116,7 +1116,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
          *
          * @return true if the connection is valid, false otherwise
          * @exception SQLException if the value supplied for <code>timeout</code>
-         * is less then 0
+         * is less than 0
          * @since 1.6
          *
          * @see java.sql.DatabaseMetaData#getClientInfoProperties

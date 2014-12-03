@@ -22,7 +22,6 @@
  */
 
 import java.awt.BorderLayout;
-import sun.awt.SunToolkit;
 
 import java.awt.Container;
 import java.awt.Rectangle;
@@ -41,7 +40,10 @@ import javax.swing.UIManager.LookAndFeelInfo;
  * @test
  * @bug 7024235
  * @summary Tests JFrame.pack() with the JTabbedPane
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
  * @author Sergey Malenkov
+ * @run main Test7024235
  */
 
 public class Test7024235 implements Runnable {
@@ -50,13 +52,17 @@ public class Test7024235 implements Runnable {
 
     public static void main(String[] args) throws Exception {
         Test7024235 test = new Test7024235();
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
             UIManager.setLookAndFeel(info.getClassName());
 
             test.test();
-            toolkit.realSync();
-            Thread.sleep(1000);
+            try {
+                ExtendedRobot robot = new ExtendedRobot();
+                robot.waitForIdle(1000);
+            }catch(Exception ex) {
+                ex.printStackTrace();
+                throw new Error("Unexpected Failure");
+            }
             test.test();
         }
     }

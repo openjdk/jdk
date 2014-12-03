@@ -28,8 +28,6 @@
  * @author Pavel Porvatov
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
@@ -49,7 +47,8 @@ public class bug7045593 {
             }
         });
 
-        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
