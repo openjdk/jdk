@@ -77,6 +77,15 @@
       movq     %rdi, %rax
       .end
 
+  // Support for jbyte Atomic::cmpxchg(jbyte exchange_value, 
+  //                                   volatile jbyte *dest, 
+  //                                   jbyte compare_value)
+      .inline _Atomic_cmpxchg_byte,3
+      movb     %dl, %al      // compare_value
+      lock
+      cmpxchgb %dil, (%rsi)
+      .end
+
   // Support for jint Atomic::cmpxchg(jint exchange_value, 
   //                                  volatile jint *dest, 
   //                                  jint compare_value)

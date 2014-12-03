@@ -42,8 +42,12 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 void VM_CMS_Operation::acquire_pending_list_lock() {
   // The caller may block while communicating
   // with the SLT thread in order to acquire/release the PLL.
-  ConcurrentMarkSweepThread::slt()->
-    manipulatePLL(SurrogateLockerThread::acquirePLL);
+  SurrogateLockerThread* slt = ConcurrentMarkSweepThread::slt();
+  if (slt != NULL) {
+    slt->manipulatePLL(SurrogateLockerThread::acquirePLL);
+  } else {
+    SurrogateLockerThread::report_missing_slt();
+  }
 }
 
 void VM_CMS_Operation::release_and_notify_pending_list_lock() {
@@ -207,12 +211,6 @@ void VM_GenCollectFullConcurrent::doit() {
   MutexLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
   assert(_full_gc_count_before <= gch->total_full_collections(), "Error");
   if (gch->total_full_collections() == _full_gc_count_before) {
-    // Disable iCMS until the full collection is done, and
-    // remember that we did so.
-    CMSCollector::disable_icms();
-    _disabled_icms = true;
-    // In case CMS thread was in icms_wait(), wake it up.
-    CMSCollector::start_icms();
     // Nudge the CMS thread to start a concurrent collection.
     CMSCollector::request_full_gc(_full_gc_count_before, _gc_cause);
   } else {
@@ -275,9 +273,5 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
     while (gch->total_full_collections_completed() <= _full_gc_count_before) {
       FullGCCount_lock->wait(Mutex::_no_safepoint_check_flag);
     }
-  }
-  // Enable iCMS back if we disabled it earlier.
-  if (_disabled_icms) {
-    CMSCollector::enable_icms();
   }
 }

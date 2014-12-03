@@ -50,8 +50,7 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size, bool read_only,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has it's own operator new
-  return Metaspace::allocate(loader_data, word_size, read_only,
-                             type, CHECK_NULL);
+  return Metaspace::allocate(loader_data, word_size, read_only, type, THREAD);
 }
 
 bool MetaspaceObj::is_shared() const {

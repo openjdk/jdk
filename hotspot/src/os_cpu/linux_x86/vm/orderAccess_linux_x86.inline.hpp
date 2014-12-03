@@ -31,6 +31,11 @@
 
 // Implementation of class OrderAccess.
 
+// A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
+static inline void compiler_barrier() {
+  __asm__ volatile ("" : : : "memory");
+}
+
 inline void OrderAccess::loadload()   { acquire(); }
 inline void OrderAccess::storestore() { release(); }
 inline void OrderAccess::loadstore()  { acquire(); }
@@ -46,9 +51,7 @@ inline void OrderAccess::acquire() {
 }
 
 inline void OrderAccess::release() {
-  // Avoid hitting the same cache-line from
-  // different threads.
-  volatile jint local_dummy = 0;
+  compiler_barrier();
 }
 
 inline void OrderAccess::fence() {
@@ -62,34 +65,34 @@ inline void OrderAccess::fence() {
   }
 }
 
-inline jbyte    OrderAccess::load_acquire(volatile jbyte*   p) { return *p; }
-inline jshort   OrderAccess::load_acquire(volatile jshort*  p) { return *p; }
-inline jint     OrderAccess::load_acquire(volatile jint*    p) { return *p; }
-inline jlong    OrderAccess::load_acquire(volatile jlong*   p) { return Atomic::load(p); }
-inline jubyte   OrderAccess::load_acquire(volatile jubyte*  p) { return *p; }
-inline jushort  OrderAccess::load_acquire(volatile jushort* p) { return *p; }
-inline juint    OrderAccess::load_acquire(volatile juint*   p) { return *p; }
-inline julong   OrderAccess::load_acquire(volatile julong*  p) { return Atomic::load((volatile jlong*)p); }
-inline jfloat   OrderAccess::load_acquire(volatile jfloat*  p) { return *p; }
-inline jdouble  OrderAccess::load_acquire(volatile jdouble* p) { return jdouble_cast(Atomic::load((volatile jlong*)p)); }
+inline jbyte    OrderAccess::load_acquire(volatile jbyte*   p) { jbyte   v = *p; compiler_barrier(); return v; }
+inline jshort   OrderAccess::load_acquire(volatile jshort*  p) { jshort  v = *p; compiler_barrier(); return v; }
+inline jint     OrderAccess::load_acquire(volatile jint*    p) { jint    v = *p; compiler_barrier(); return v; }
+inline jlong    OrderAccess::load_acquire(volatile jlong*   p) { jlong   v = Atomic::load(p); compiler_barrier(); return v; }
+inline jubyte   OrderAccess::load_acquire(volatile jubyte*  p) { jubyte  v = *p; compiler_barrier(); return v; }
+inline jushort  OrderAccess::load_acquire(volatile jushort* p) { jushort v = *p; compiler_barrier(); return v; }
+inline juint    OrderAccess::load_acquire(volatile juint*   p) { juint   v = *p; compiler_barrier(); return v; }
+inline julong   OrderAccess::load_acquire(volatile julong*  p) { julong  v = Atomic::load((volatile jlong*)p); compiler_barrier(); return v; }
+inline jfloat   OrderAccess::load_acquire(volatile jfloat*  p) { jfloat  v = *p; compiler_barrier(); return v; }
+inline jdouble  OrderAccess::load_acquire(volatile jdouble* p) { jdouble v = jdouble_cast(Atomic::load((volatile jlong*)p)); compiler_barrier(); return v; }
 
-inline intptr_t OrderAccess::load_ptr_acquire(volatile intptr_t*   p) { return *p; }
-inline void*    OrderAccess::load_ptr_acquire(volatile void*       p) { return *(void* volatile *)p; }
-inline void*    OrderAccess::load_ptr_acquire(const volatile void* p) { return *(void* const volatile *)p; }
+inline intptr_t OrderAccess::load_ptr_acquire(volatile intptr_t*   p) { intptr_t v = *p; compiler_barrier(); return v; }
+inline void*    OrderAccess::load_ptr_acquire(volatile void*       p) { void*    v = *(void* volatile *)p; compiler_barrier(); return v; }
+inline void*    OrderAccess::load_ptr_acquire(const volatile void* p) { void*    v = *(void* const volatile *)p; compiler_barrier(); return v; }
 
-inline void     OrderAccess::release_store(volatile jbyte*   p, jbyte   v) { *p = v; }
-inline void     OrderAccess::release_store(volatile jshort*  p, jshort  v) { *p = v; }
-inline void     OrderAccess::release_store(volatile jint*    p, jint    v) { *p = v; }
-inline void     OrderAccess::release_store(volatile jlong*   p, jlong   v) { Atomic::store(v, p); }
-inline void     OrderAccess::release_store(volatile jubyte*  p, jubyte  v) { *p = v; }
-inline void     OrderAccess::release_store(volatile jushort* p, jushort v) { *p = v; }
-inline void     OrderAccess::release_store(volatile juint*   p, juint   v) { *p = v; }
-inline void     OrderAccess::release_store(volatile julong*  p, julong  v) { Atomic::store((jlong)v, (volatile jlong*)p); }
-inline void     OrderAccess::release_store(volatile jfloat*  p, jfloat  v) { *p = v; }
+inline void     OrderAccess::release_store(volatile jbyte*   p, jbyte   v) { compiler_barrier(); *p = v; }
+inline void     OrderAccess::release_store(volatile jshort*  p, jshort  v) { compiler_barrier(); *p = v; }
+inline void     OrderAccess::release_store(volatile jint*    p, jint    v) { compiler_barrier(); *p = v; }
+inline void     OrderAccess::release_store(volatile jlong*   p, jlong   v) { compiler_barrier(); Atomic::store(v, p); }
+inline void     OrderAccess::release_store(volatile jubyte*  p, jubyte  v) { compiler_barrier(); *p = v; }
+inline void     OrderAccess::release_store(volatile jushort* p, jushort v) { compiler_barrier(); *p = v; }
+inline void     OrderAccess::release_store(volatile juint*   p, juint   v) { compiler_barrier(); *p = v; }
+inline void     OrderAccess::release_store(volatile julong*  p, julong  v) { compiler_barrier(); Atomic::store((jlong)v, (volatile jlong*)p); }
+inline void     OrderAccess::release_store(volatile jfloat*  p, jfloat  v) { compiler_barrier(); *p = v; }
 inline void     OrderAccess::release_store(volatile jdouble* p, jdouble v) { release_store((volatile jlong *)p, jlong_cast(v)); }
 
-inline void     OrderAccess::release_store_ptr(volatile intptr_t* p, intptr_t v) { *p = v; }
-inline void     OrderAccess::release_store_ptr(volatile void*     p, void*    v) { *(void* volatile *)p = v; }
+inline void     OrderAccess::release_store_ptr(volatile intptr_t* p, intptr_t v) { compiler_barrier(); *p = v; }
+inline void     OrderAccess::release_store_ptr(volatile void*     p, void*    v) { compiler_barrier(); *(void* volatile *)p = v; }
 
 inline void     OrderAccess::store_fence(jbyte*  p, jbyte  v) {
   __asm__ volatile (  "xchgb (%2),%0"

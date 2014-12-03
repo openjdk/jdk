@@ -736,7 +736,7 @@ static bool merge_point_too_heavy(Compile* C, Node* region) {
   for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
     weight += region->fast_out(i)->outcnt();
   }
-  int nodes_left = MaxNodeLimit - C->live_nodes();
+  int nodes_left = C->max_node_limit() - C->live_nodes();
   if (weight * 8 > nodes_left) {
 #ifndef PRODUCT
     if (PrintOpto)

@@ -223,7 +223,7 @@ void Dictionary::remove_classes_in_error_state() {
         }
         free_entry(probe);
         ResourceMark rm;
-        tty->print_cr("Removed error class: %s", ik->external_name());
+        tty->print_cr("Preload Warning: Removed error class: %s", ik->external_name());
         continue;
       }
 
