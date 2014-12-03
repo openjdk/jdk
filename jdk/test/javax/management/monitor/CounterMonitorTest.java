@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4981829
  * @summary Test that the counter monitor, when running in difference mode,
  *          emits a notification every time the threshold is exceeded.
- * @author Luis-Miguel Alventosa
+ * @author Luis-Miguel Alventosa, Shanliang JIANG
  * @run clean CounterMonitorTest
  * @run build CounterMonitorTest
  * @run main CounterMonitorTest
@@ -50,23 +50,31 @@ public class CounterMonitorTest implements NotificationListener {
     private boolean notifyFlag = true;
 
     // granularity period
-    private int granularityperiod = 500;
+    private int granularityperiod = 10;
 
-    // counter values
-    private int[] values = new int[] {4, 6, 9, 11};
+    // derived gauge
+    private volatile int derivedGauge = 2;
 
     // flag to notify that a message has been received
     private volatile boolean messageReceived = false;
 
+    private volatile Object observedValue = null;
+
     // MBean class
     public class StdObservedObject implements StdObservedObjectMBean {
         public Object getNbObjects() {
+            echo(">>> StdObservedObject.getNbObjects: " + count);
+            synchronized(CounterMonitorTest.class) {
+                observedValue = count;
+                CounterMonitorTest.class.notifyAll();
+            }
             return count;
         }
         public void setNbObjects(Object n) {
+            echo(">>> StdObservedObject.setNbObjects: " + n);
             count = n;
         }
-        private Object count= null;
+        private volatile Object count= null;
     }
 
     // MBean interface
@@ -166,18 +174,18 @@ public class CounterMonitorTest implements NotificationListener {
             Attribute attrib = new Attribute("NbObjects", data);
             server.setAttribute(stdObsObjName, attrib);
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
+            waitObservation(data);
 
             // Loop through the values
             //
-            for (int i = 0; i < values.length; i++) {
-                data = new Integer(values[i]);
-                echo(">>> Set data = " + data.intValue());
+            while (derivedGauge++ < 10) {
+                System.out.print(">>> Set data from " + data.intValue());
+                data = new Integer(data.intValue() + derivedGauge);
+                echo(" to " + data.intValue());
 
                 attrib = new Attribute("NbObjects", data);
                 server.setAttribute(stdObsObjName, attrib);
+                waitObservation(data);
 
                 echo("\tdoWait in Counter Monitor");
                 doWait();
@@ -210,6 +218,20 @@ public class CounterMonitorTest implements NotificationListener {
                 System.err.println("Got unexpected exception: " + e);
                 e.printStackTrace();
                 break;
+            }
+        }
+    }
+
+    private void waitObservation(Object value) {
+        synchronized (CounterMonitorTest.class) {
+            while (value != observedValue) {
+                try {
+                    CounterMonitorTest.class.wait();
+                } catch (InterruptedException e) {
+                    System.err.println("Got unexpected exception: " + e);
+                    e.printStackTrace();
+                    break;
+                }
             }
         }
     }

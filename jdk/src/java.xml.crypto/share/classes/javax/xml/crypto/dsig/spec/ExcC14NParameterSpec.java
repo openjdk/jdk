@@ -59,7 +59,7 @@ import java.util.List;
  */
 public final class ExcC14NParameterSpec implements C14NMethodParameterSpec {
 
-    private List<String> preList;
+    private final List<String> prefixList;
 
     /**
      * Indicates the default namespace ("#default").
@@ -71,7 +71,7 @@ public final class ExcC14NParameterSpec implements C14NMethodParameterSpec {
      * list.
      */
     public ExcC14NParameterSpec() {
-        preList = Collections.emptyList();
+        prefixList = Collections.emptyList();
     }
 
     /**
@@ -86,22 +86,14 @@ public final class ExcC14NParameterSpec implements C14NMethodParameterSpec {
      * @throws ClassCastException if any of the entries in the list are not
      *    of type <code>String</code>
      */
-    @SuppressWarnings("rawtypes")
-    public ExcC14NParameterSpec(List prefixList) {
+    public ExcC14NParameterSpec(List<String> prefixList) {
         if (prefixList == null) {
             throw new NullPointerException("prefixList cannot be null");
         }
-        List<?> copy = new ArrayList<>((List<?>)prefixList);
-        for (int i = 0, size = copy.size(); i < size; i++) {
-            if (!(copy.get(i) instanceof String)) {
-                throw new ClassCastException("not a String");
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        List<String> temp = (List<String>)copy;
-
-        preList = Collections.unmodifiableList(temp);
+        List<String> tempList = Collections.checkedList(new ArrayList<>(),
+                                                        String.class);
+        tempList.addAll(prefixList);
+        this.prefixList = Collections.unmodifiableList(tempList);
     }
 
     /**
@@ -114,8 +106,7 @@ public final class ExcC14NParameterSpec implements C14NMethodParameterSpec {
      * @return the inclusive namespace prefix list (may be empty but never
      *    <code>null</code>)
      */
-    @SuppressWarnings("rawtypes")
-    public List getPrefixList() {
-        return preList;
+    public List<String> getPrefixList() {
+        return prefixList;
     }
 }
