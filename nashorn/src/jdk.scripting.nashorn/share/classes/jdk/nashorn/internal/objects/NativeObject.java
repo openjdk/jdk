@@ -499,7 +499,7 @@ public final class NativeObject {
         final Object obj = JSType.toScriptObject(self);
         if (obj instanceof ScriptObject) {
             final InvokeByName toStringInvoker = getTO_STRING();
-            final ScriptObject sobj = (ScriptObject)self;
+            final ScriptObject sobj = (ScriptObject)obj;
             try {
                 final Object toString = toStringInvoker.getGetter().invokeExact(sobj);
 
