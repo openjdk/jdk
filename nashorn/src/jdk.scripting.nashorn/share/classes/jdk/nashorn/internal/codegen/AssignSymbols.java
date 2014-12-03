@@ -135,15 +135,11 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
             functionNode.compilerConstant(SCOPE).setNeedsSlot(false);
         }
         // Named function expressions that end up not referencing themselves won't need a local slot for the self symbol.
-        if(!functionNode.isDeclared() && !functionNode.usesSelfSymbol() && !functionNode.isAnonymous()) {
+        if(functionNode.isNamedFunctionExpression() && !functionNode.usesSelfSymbol()) {
             final Symbol selfSymbol = functionNode.getBody().getExistingSymbol(functionNode.getIdent().getName());
-            if(selfSymbol != null) {
-                if(selfSymbol.isFunctionSelf()) {
-                    selfSymbol.setNeedsSlot(false);
-                    selfSymbol.clearFlag(Symbol.IS_VAR);
-                }
-            } else {
-                assert functionNode.isProgram();
+            if(selfSymbol != null && selfSymbol.isFunctionSelf()) {
+                selfSymbol.setNeedsSlot(false);
+                selfSymbol.clearFlag(Symbol.IS_VAR);
             }
         }
         return functionNode;
@@ -490,20 +486,31 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         final Block body = lc.getCurrentBlock();
 
         initFunctionWideVariables(functionNode, body);
+        acceptDeclarations(functionNode, body);
+        defineFunctionSelfSymbol(functionNode, body);
+    }
 
-        if (!functionNode.isProgram() && !functionNode.isDeclared() && !functionNode.isAnonymous()) {
-            // It's neither declared nor program - it's a function expression then; assign it a self-symbol unless it's
-            // anonymous.
-            final String name = functionNode.getIdent().getName();
-            assert name != null;
-            assert body.getExistingSymbol(name) == null;
-            defineSymbol(body, name, functionNode, IS_VAR | IS_FUNCTION_SELF | HAS_OBJECT_VALUE);
-            if(functionNode.allVarsInScope()) { // basically, has deep eval
-                lc.setFlag(functionNode, FunctionNode.USES_SELF_SYMBOL);
-            }
+    private void defineFunctionSelfSymbol(final FunctionNode functionNode, final Block body) {
+        // Function self-symbol is only declared as a local variable for named function expressions. Declared functions
+        // don't need it as they are local variables in their declaring scope.
+        if (!functionNode.isNamedFunctionExpression()) {
+            return;
         }
 
-        acceptDeclarations(functionNode, body);
+        final String name = functionNode.getIdent().getName();
+        assert name != null; // As it's a named function expression.
+
+        if (body.getExistingSymbol(name) != null) {
+            // Body already has a declaration for the name. It's either a parameter "function x(x)" or a
+            // top-level variable "function x() { ... var x; ... }".
+            return;
+        }
+
+        defineSymbol(body, name, functionNode, IS_VAR | IS_FUNCTION_SELF | HAS_OBJECT_VALUE);
+        if(functionNode.allVarsInScope()) { // basically, has deep eval
+            // We must conservatively presume that eval'd code can dynamically use the function symbol.
+            lc.setFlag(functionNode, FunctionNode.USES_SELF_SYMBOL);
+        }
     }
 
     @Override
