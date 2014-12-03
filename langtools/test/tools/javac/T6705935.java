@@ -41,8 +41,6 @@ public class T6705935 {
 
     public void run() throws Exception {
         File java_home = new File(System.getProperty("java.home"));
-        if (java_home.getName().equals("jre"))
-            java_home = java_home.getParentFile();
 
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {

@@ -27,16 +27,9 @@ include CopyCommon.gmk
 
 ################################################################################
 
-
-JDK_DEBUG_AGENT_HEADERS := $(INCLUDE_DST_DIR)/jdwpTransport.h
+TARGETS := $(INCLUDE_DST_DIR)/jdwpTransport.h
 
 $(INCLUDE_DST_DIR)/%.h: $(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/include/%.h
 	$(call install-file)
 
 ################################################################################
-
-jdk.jdwp.agent: $(JDK_DEBUG_AGENT_HEADERS)
-
-all: jdk.jdwp.agent
-
-.PHONY: all jdk.jdwp.agent

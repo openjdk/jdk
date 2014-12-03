@@ -29,134 +29,93 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.zip.*;
 
 /**
- * This class is used to represent a file loaded from the class path, and
- * can either be a regular file or a zip file entry.
+ * Abstract class to represent a class file.
  *
  * WARNING: The contents of this source file are not part of any
  * supported API.  Code that depends on them does so at its own risk:
  * they are subject to change or removal without notice.
  */
 public
-class ClassFile {
-    /*
-     * Non-null if this represents a regular file
-     */
-    private File file;
-
-    /*
-     * Non-null if this represents a zip file entry
-     */
-    private ZipFile zipFile;
-    private ZipEntry zipEntry;
-
+abstract class ClassFile {
     /**
-     * Constructor for instance representing a regular file
+     * Factory method to create a ClassFile backed by a File.
+     *
+     * @param file a File object
+     * @return a new ClassFile
      */
-    public ClassFile(File file) {
-        this.file = file;
+    public static ClassFile newClassFile(File file) {
+        return new FileClassFile(file);
     }
 
     /**
-     * Constructor for instance representing a zip file entry
+     * Factory method to create a ClassFile backed by a ZipEntry.
+     *
+     * @param zf a ZipFile
+     * @param ze a ZipEntry within the zip file
+     * @return a new ClassFile
      */
-    public ClassFile(ZipFile zf, ZipEntry ze) {
-        this.zipFile = zf;
-        this.zipEntry = ze;
+    public static ClassFile newClassFile(ZipFile zf, ZipEntry ze) {
+        return new ZipClassFile(zf, ze);
+    }
+
+    /**
+     * Factory method to create a ClassFile backed by a nio Path.
+     *
+     * @param path nio Path object
+     * @return a new ClassFile
+     */
+    public static ClassFile newClassFile(Path path) {
+        return Files.exists(path)? new PathClassFile(path) : null;
     }
 
     /**
      * Returns true if this is zip file entry
      */
-    public boolean isZipped() {
-        return zipFile != null;
-    }
+    public abstract boolean isZipped();
 
     /**
      * Returns input stream to either regular file or zip file entry
      */
-    public InputStream getInputStream() throws IOException {
-        if (file != null) {
-            return new FileInputStream(file);
-        } else {
-            try {
-                return zipFile.getInputStream(zipEntry);
-            } catch (ZipException e) {
-                throw new IOException(e.getMessage());
-            }
-        }
-    }
+    public abstract InputStream getInputStream() throws IOException;
 
     /**
      * Returns true if file exists.
      */
-    public boolean exists() {
-        return file != null ? file.exists() : true;
-    }
+    public abstract boolean exists();
 
     /**
      * Returns true if this is a directory.
      */
-    public boolean isDirectory() {
-        return file != null ? file.isDirectory() :
-                              zipEntry.getName().endsWith("/");
-    }
+    public abstract boolean isDirectory();
 
     /**
      * Return last modification time
      */
-    public long lastModified() {
-        return file != null ? file.lastModified() : zipEntry.getTime();
-    }
+    public abstract long lastModified();
 
     /**
      * Get file path. The path for a zip file entry will also include
      * the zip file name.
      */
-    public String getPath() {
-        if (file != null) {
-            return file.getPath();
-        } else {
-            return zipFile.getName() + "(" + zipEntry.getName() + ")";
-        }
-    }
+    public abstract String getPath();
 
     /**
      * Get name of file entry excluding directory name
      */
-    public String getName() {
-        return file != null ? file.getName() : zipEntry.getName();
-    }
+    public abstract String getName();
 
-//JCOV
     /**
      * Get absolute name of file entry
      */
-    public String getAbsoluteName() {
-        String absoluteName;
-        if (file != null) {
-            try {
-                absoluteName = file.getCanonicalPath();
-            } catch (IOException e) {
-                absoluteName = file.getAbsolutePath();
-            }
-        } else {
-            absoluteName = zipFile.getName() + "(" + zipEntry.getName() + ")";
-        }
-        return absoluteName;
-    }
-// end JCOV
+    public abstract String getAbsoluteName();
 
     /**
      * Get length of file
      */
-    public long length() {
-        return file != null ? file.length() : zipEntry.getSize();
-    }
-
-    public String toString() {
-        return (file != null) ? file.toString() : zipEntry.toString();
-    }
+    public abstract long length();
 }

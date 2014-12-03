@@ -160,17 +160,15 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
     static BatchEnvironment create(OutputStream out,
                                    String srcPathString,
                                    String classPathString,
-                                   String sysClassPathString,
-                                   String extDirsString){
+                                   String sysClassPathString) {
         ClassPath[] classPaths = classPaths(srcPathString, classPathString,
-                                            sysClassPathString, extDirsString);
+                                            sysClassPathString);
         return new BatchEnvironment(out, classPaths[0], classPaths[1]);
     }
 
     protected static ClassPath[] classPaths(String srcPathString,
                                             String classPathString,
-                                            String sysClassPathString,
-                                            String extDirsString) {
+                                            String sysClassPathString) {
         // Create our source classpath and our binary classpath
         ClassPath sourcePath;
         ClassPath binaryPath;
@@ -195,30 +193,6 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
             }
         }
         appendPath(binaryPathBuffer, sysClassPathString);
-
-        if (extDirsString == null) {
-            extDirsString = System.getProperty("java.ext.dirs");
-        }
-        if (extDirsString != null) {
-            StringTokenizer st = new StringTokenizer(extDirsString,
-                                                     File.pathSeparator);
-            while (st.hasMoreTokens()) {
-                String dirName = st.nextToken();
-                File dir = new File(dirName);
-                if (!dirName.endsWith(File.separator)) {
-                    dirName += File.separator;
-                }
-                if (dir.isDirectory()) {
-                    String[] files = dir.list();
-                    for (int i = 0; i < files.length; ++i) {
-                        String name = files[i];
-                        if (name.endsWith(".jar")) {
-                            appendPath(binaryPathBuffer, dirName + name);
-                        }
-                    }
-                }
-            }
-        }
 
         appendPath(binaryPathBuffer, classPathString);
 
@@ -718,7 +692,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
 
                 // Couldn't find the source, try the one mentioned in the binary
                 if (bc.getSource() != null) {
-                    srcfile = new ClassFile(new File((String)bc.getSource()));
+                    srcfile = ClassFile.newClassFile(new File((String)bc.getSource()));
                     // Look for the source file
                     srcfile = pkg.getSourceFile(srcfile.getName());
                     if ((srcfile != null) && srcfile.exists()) {
@@ -863,7 +837,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
                 }
                 if (srcfile == null) {
                     String fn = (String)c.getClassDefinition().getSource();
-                    srcfile = new ClassFile(new File(fn));
+                    srcfile = ClassFile.newClassFile(new File(fn));
                 }
             } else {
                 // Get a source file name from the package

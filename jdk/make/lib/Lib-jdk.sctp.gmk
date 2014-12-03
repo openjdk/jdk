@@ -48,8 +48,8 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
             -I $(JDK_TOPDIR)/src/java.base/share/native/libnio/ch \
             $(addprefix -I, $(call FindSrcDirsForLib, java.base, net)) \
             $(LIBJAVA_HEADER_FLAGS) \
-            -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.sctp \
-            -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base, \
+            -I$(SUPPORT_OUTPUTDIR)/headers/jdk.sctp \
+            -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
         CFLAGS_linux := $(SCTP_WERROR), \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsctp/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -58,19 +58,13 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
         LDFLAGS_SUFFIX_unix := -lnio -lnet, \
         LDFLAGS_SUFFIX_solaris := -lsocket -ljava -ljvm -lc, \
         LDFLAGS_SUFFIX_macosx := -ljava -ljvm, \
-        OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsctp, \
+        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsctp, \
         DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-    SCTP_LIBRARIES += $(BUILD_LIBSCTP)
+    TARGETS += $(BUILD_LIBSCTP)
 
-    $(BUILD_LIBSCTP): $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)nio$(SHARED_LIBRARY_SUFFIX)
+    $(BUILD_LIBSCTP): $(call FindLib, java.base, nio)
   endif
 endif
 
 ################################################################################
-
-jdk.sctp: $(SCTP_LIBRARIES)
-
-all: jdk.sctp
-
-.PHONY: all jdk.sctp

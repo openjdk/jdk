@@ -44,16 +44,20 @@ JAR="$COMPILEJAVA/bin/jar"
 OS=`uname -s`
 case "$OS" in
     SunOS | Darwin | AIX )
+      FS='/'
       SEP=':' ;;
     Linux )
+      FS='/'
       SEP=':' ;;
     * )
+      FS='\\'
       SEP='\;' ;;
 esac
 
 JARD=x.jar
 EXTD=x.ext
 TESTD=x.test
+P3JAR=${EXTD}${FS}p3.jar
 
 if [ \! -d $EXTD ]; then
     # Initialize
@@ -103,8 +107,7 @@ go() {
 # Java-level tests
 
 T=Basic
-go ".${SEP}$TESTD${SEP}p2.jar" "-Djava.ext.dirs=$EXTD"
-
+go ".${SEP}$TESTD${SEP}p2.jar" ""
 
 # Success cases
 
@@ -114,18 +117,14 @@ go "$TESTD" "" FooProvider1
 
 go ".${SEP}p2.jar" "" FooProvider2
 
-go "" "-Djava.ext.dirs=$EXTD" FooProvider3
+go "${P3JAR}${SEP}p2.jar" "" FooProvider3 FooProvider2
 
 go "$TESTD${SEP}p2.jar" "" FooProvider1 FooProvider2
 
-go "$TESTD" "-Djava.ext.dirs=$EXTD" FooProvider3 FooProvider1
+go "${P3JAR}${SEP}$TESTD" "" FooProvider3 FooProvider1
 
-go "$TESTD${SEP}p2.jar" "-Djava.ext.dirs=$EXTD" \
+go "${P3JAR}${SEP}$TESTD${SEP}p2.jar" "" \
   FooProvider3 FooProvider1 FooProvider2
-
-# Should only find the installed provider
-go "$TESTD${SEP}p2.jar" "-Djava.ext.dirs=$EXTD" -i FooProvider3
-
 
 # Failure cases
 
@@ -141,8 +140,8 @@ done
 echo FooProvider42 >x.meta/META-INF/services/FooService
 go "$TESTD${SEP}x.meta" "" FooProvider1 fail
 go "x.meta${SEP}$TESTD" "" fail FooProvider1
-go "$TESTD${SEP}x.meta${SEP}${SEP}p2.jar" "-Djava.ext.dirs=$EXTD" \
-  FooProvider3 FooProvider1 fail FooProvider2
+go "$TESTD${SEP}x.meta${SEP}${SEP}p2.jar" "" \
+  FooProvider1 fail FooProvider2
 
 
 # Summary

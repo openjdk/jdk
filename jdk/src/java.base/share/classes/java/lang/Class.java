@@ -691,6 +691,8 @@ public final class Class<T> implements java.io.Serializable,
     ClassLoader getClassLoader0() { return classLoader; }
 
     // Initialized in JVM not by private constructor
+    // This field is filtered from reflection access, i.e. getDeclaredField
+    // will throw NoSuchFieldException
     private final ClassLoader classLoader;
 
     /**

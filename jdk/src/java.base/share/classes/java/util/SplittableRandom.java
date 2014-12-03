@@ -25,7 +25,6 @@
 
 package java.util;
 
-import java.net.NetworkInterface;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
@@ -140,11 +139,10 @@ public final class SplittableRandom {
      * other cases, this split must be performed in a thread-safe
      * manner, so we use an AtomicLong to represent the seed rather
      * than use an explicit SplittableRandom. To bootstrap the
-     * defaultGen, we start off using a seed based on current time and
-     * network interface address unless the java.util.secureRandomSeed
-     * property is set. This serves as a slimmed-down (and insecure)
-     * variant of SecureRandom that also avoids stalls that may occur
-     * when using /dev/random.
+     * defaultGen, we start off using a seed based on current time
+     * unless the java.util.secureRandomSeed property is set. This
+     * serves as a slimmed-down (and insecure) variant of SecureRandom
+     * that also avoids stalls that may occur when using /dev/random.
      *
      * It is a relatively simple matter to apply the basic design here
      * to use 128 bit seeds. However, emulating 128bit arithmetic and
@@ -237,34 +235,7 @@ public final class SplittableRandom {
                 s = (s << 8) | ((long)(seedBytes[i]) & 0xffL);
             return s;
         }
-        long h = 0L;
-        try {
-            Enumeration<NetworkInterface> ifcs =
-                    NetworkInterface.getNetworkInterfaces();
-            boolean retry = false; // retry once if getHardwareAddress is null
-            while (ifcs.hasMoreElements()) {
-                NetworkInterface ifc = ifcs.nextElement();
-                if (!ifc.isVirtual()) { // skip fake addresses
-                    byte[] bs = ifc.getHardwareAddress();
-                    if (bs != null) {
-                        int n = bs.length;
-                        int m = Math.min(n >>> 1, 4);
-                        for (int i = 0; i < m; ++i)
-                            h = (h << 16) ^ (bs[i] << 8) ^ bs[n-1-i];
-                        if (m < 4)
-                            h = (h << 8) ^ bs[n-1-m];
-                        h = mix64(h);
-                        break;
-                    }
-                    else if (!retry)
-                        retry = true;
-                    else
-                        break;
-                }
-            }
-        } catch (Exception ignore) {
-        }
-        return (h ^ mix64(System.currentTimeMillis()) ^
+        return (mix64(System.currentTimeMillis()) ^
                 mix64(System.nanoTime()));
     }
 

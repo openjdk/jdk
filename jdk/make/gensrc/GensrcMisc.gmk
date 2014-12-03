@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,32 @@
 # questions.
 #
 
-include ProfileNames.gmk
-
 ##########################################################################################
 # Install the launcher name, release version string, full version
 # string and the runtime name into the Version.java file.
 # To be printed by java -version
 
-$(JDK_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java \
-$(PROFILE_VERSION_JAVA_TARGETS): \
+$(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/misc/Version.java.template
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
-	$(ECHO) Generating sun/misc/Version.java $(call profile_version_name, $@)
+	$(ECHO) Generating sun/misc/Version.java
 	$(SED) -e 's/@@launcher_name@@/$(LAUNCHER_NAME)/g' \
 	    -e 's/@@java_version@@/$(RELEASE)/g' \
 	    -e 's/@@java_runtime_version@@/$(FULL_VERSION)/g' \
 	    -e 's/@@java_runtime_name@@/$(RUNTIME_NAME)/g' \
-	    -e 's/@@java_profile_name@@/$(call profile_version_name, $@)/g' \
 	    $< > $@.tmp
 	$(MV) $@.tmp $@
 
-GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java \
-    $(PROFILE_VERSION_JAVA_TARGETS)
+GENSRC_JAVA_BASE += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java
 
 ##########################################################################################
 
-GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java
+GENSRC_JAVA_BASE += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java
 
 GENSRC_SOR_SRC := $(JDK_TOPDIR)/make/src/native/genconstants/ch
 GENSRC_SOR_SRC_FILE := genSocketOptionRegistry.c
-GENSRC_SOR_BIN := $(JDK_OUTPUTDIR)/btnative/genSocketOptionRegistry
+GENSRC_SOR_BIN := $(BUILDTOOLS_OUTPUTDIR)/native/genSocketOptionRegistry
 
 SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOR_SRC)/$(GENSRC_SOR_SRC_FILE) | \
     $(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
@@ -71,14 +66,15 @@ $(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOR_EXE, \
 SOR_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/classes/sun/nio/ch/SocketOptionRegistry-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
 
 ifeq ($(wildcard $(SOR_PREGEN_FILE)), )
-  $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(BUILD_GENSRC_SOR_EXE)
+  $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(BUILD_GENSRC_SOR_EXE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@.tmp
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e \
+	    $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@.tmp
 	$(BUILD_GENSRC_SOR_EXE) >> $@.tmp
 	$(MV) $@.tmp $@
 else
-  $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(SOR_PREGEN_FILE)
+  $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(SOR_PREGEN_FILE)
 	$(call install-file)
 endif
 
@@ -86,11 +82,11 @@ endif
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
 
-  GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java
+  GENSRC_JAVA_BASE += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java
 
   GENSRC_UC_SRC := $(JDK_TOPDIR)/make/src/native/genconstants/fs
   GENSRC_UC_SRC_FILE := genUnixConstants.c
-  GENSRC_UC_BIN := $(JDK_OUTPUTDIR)/btnative/genUnixConstants
+  GENSRC_UC_BIN := $(BUILDTOOLS_OUTPUTDIR)/native/genUnixConstants
 
   UC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_UC_SRC)/$(GENSRC_UC_SRC_FILE) | \
       $(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
@@ -109,14 +105,15 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   UC_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/classes/sun/nio/fs/UnixConstants-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
 
   ifeq ($(wildcard $(UC_PREGEN_FILE)), )
-    $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(BUILD_GENSRC_UC_EXE)
+    $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(BUILD_GENSRC_UC_EXE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(UC_COPYRIGHT_YEARS)" > $@.tmp
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e \
+	    $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(UC_COPYRIGHT_YEARS)" > $@.tmp
 	$(BUILD_GENSRC_UC_EXE) >> $@.tmp
 	$(MV) $@.tmp $@
   else
-    $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(UC_PREGEN_FILE)
+    $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(UC_PREGEN_FILE)
 	$(call install-file)
   endif
 
@@ -126,11 +123,11 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
-  GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java
+  GENSRC_JAVA_BASE += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java
 
   GENSRC_SOL_SRC := $(JDK_TOPDIR)/make/src/native/genconstants/fs
   GENSRC_SOL_SRC_FILE := genSolarisConstants.c
-  GENSRC_SOL_BIN := $(JDK_OUTPUTDIR)/btnative/genSolarisConstants
+  GENSRC_SOL_BIN := $(BUILDTOOLS_OUTPUTDIR)/native/genSolarisConstants
 
   SOL_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOL_SRC)/$(GENSRC_SOL_SRC_FILE) | \
       $(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
@@ -145,10 +142,11 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       OUTPUT_DIR := $(GENSRC_SOL_BIN), \
       PROGRAM := genSolarisConstants))
 
-  $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java: $(BUILD_GENSRC_SOL_EXE)
+  $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java: $(BUILD_GENSRC_SOL_EXE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOL_COPYRIGHT_YEARS)" > $@.tmp
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e \
+	    $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOL_COPYRIGHT_YEARS)" > $@.tmp
 	$(BUILD_GENSRC_SOL_EXE) >> $@.tmp
 	$(MV) $@.tmp $@
 

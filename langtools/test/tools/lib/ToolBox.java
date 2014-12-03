@@ -1546,31 +1546,31 @@ public class ToolBox {
         }
 
         private void writeFiles(JarOutputStream jos) throws IOException {
-            Path base = (baseDir == null) ? currDir : baseDir;
-            for (Path path : paths) {
-                Files.walkFileTree(base.resolve(path), new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        try {
+                Path base = (baseDir == null) ? currDir : baseDir;
+                for (Path path : paths) {
+                    Files.walkFileTree(base.resolve(path), new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                            try {
                             String p = base.relativize(file)
                                     .normalize()
                                     .toString()
                                     .replace(File.separatorChar, '/');
                             JarEntry e = new JarEntry(p);
-                            jos.putNextEntry(e);
+                                jos.putNextEntry(e);
                             try {
                                 jos.write(Files.readAllBytes(file));
                             } finally {
                                 jos.closeEntry();
                             }
-                            return FileVisitResult.CONTINUE;
-                        } catch (IOException e) {
+                                return FileVisitResult.CONTINUE;
+                            } catch (IOException e) {
                             error("Exception while adding " + file + " to jar file", e);
-                            return FileVisitResult.TERMINATE;
+                                return FileVisitResult.TERMINATE;
+                            }
                         }
-                    }
-                });
-            }
+                    });
+                }
         }
 
         private void writeFileObjects(JarOutputStream jos) throws IOException {
@@ -1587,9 +1587,9 @@ public class ToolBox {
                     } catch (IOException ex) {
                         error("Exception while adding " + fo.getName() + " to jar file", ex);
                     }
-                } finally {
+            } finally {
                     jos.closeEntry();
-                }
+            }
             }
         }
 
@@ -1599,17 +1599,30 @@ public class ToolBox {
          */
         private final Pattern jarEntry = Pattern.compile(".*!/(?:META-INF/sym/[^/]+/)?(.*)");
 
+        /*
+         * A jrt: URL is of the form  jrt:/module/package/file
+         */
+        private final Pattern jrtEntry = Pattern.compile("/([^/]+)/(.*)");
+
         private String guessPath(FileObject fo) {
             URI u = fo.toUri();
             switch (u.getScheme()) {
-                case "jar":
+                case "jar": {
                     Matcher m = jarEntry.matcher(u.getSchemeSpecificPart());
                     if (m.matches()) {
                         return m.group(1);
                     }
                     break;
+                }
+                case "jrt": {
+                    Matcher m = jrtEntry.matcher(u.getSchemeSpecificPart());
+                    if (m.matches()) {
+                        return m.group(2);
+                    }
+                    break;
+                }
             }
-            throw new IllegalArgumentException(fo.getName());
+            throw new IllegalArgumentException(fo.getName() + "--" + fo.toUri());
         }
 
         private void error(String message, Throwable t) {

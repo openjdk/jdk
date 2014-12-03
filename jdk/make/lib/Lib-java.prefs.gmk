@@ -54,17 +54,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
         -D "JDK_FNAME=prefs.dll" \
         -D "JDK_INTERNAL_NAME=prefs" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libprefs, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libprefs, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-$(BUILD_LIBPREFS): $(BUILD_LIBJAVA)
+$(BUILD_LIBPREFS): $(call FindLib, java.base, java)
 
-PREFS_LIBRARIES += $(BUILD_LIBPREFS)
+TARGETS += $(BUILD_LIBPREFS)
 
 ################################################################################
-
-java.prefs: $(PREFS_LIBRARIES)
-
-all: java.prefs
-
-.PHONY: all java.prefs

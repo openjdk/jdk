@@ -36,14 +36,12 @@ $(eval $(call SetupLauncher,jdeps, \
     -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.jdeps.Main"$(COMMA) }'))
 
+$(eval $(call SetupLauncher,jimage,\
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "jdk.tools.jimage.Main"$(COMMA) }'))
+
 $(eval $(call SetupLauncher,jhat, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.hat.Main"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,native2ascii, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.native2ascii.Main"$(COMMA) }'))
 
-jdk.dev: $(LAUNCHERS)
-
-all: jdk.dev
-
-.PHONY: all jdk.dev

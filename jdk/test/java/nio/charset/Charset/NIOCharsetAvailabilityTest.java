@@ -31,10 +31,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -45,7 +41,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import sun.misc.Launcher;
 
 
 public class NIOCharsetAvailabilityTest {
@@ -109,18 +104,6 @@ public class NIOCharsetAvailabilityTest {
                 classPath = classPath.substring(0, i);
             }
             classPathSegments.insertElementAt(dir, 0);
-        }
-
-        // add extensions from the extension class loader
-        ClassLoader appLoader = Launcher.getLauncher().getClassLoader();
-        URLClassLoader extLoader = (URLClassLoader) appLoader.getParent();
-        URL[] urls = extLoader.getURLs();
-        for (int i = 0; i < urls.length; i++) {
-            try {
-                URI uri = new URI(urls[i].toString());
-                classPathSegments.insertElementAt(uri.getPath(), 0);
-            } catch (URISyntaxException e) {
-            }
         }
 
         String[] classList = (String[])

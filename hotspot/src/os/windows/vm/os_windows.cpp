@@ -292,19 +292,6 @@ void os::init_system_properties_values() {
   #undef BIN_DIR
   #undef PACKAGE_DIR
 
-  // Default endorsed standards directory.
-  {
-#define ENDORSED_DIR "\\lib\\endorsed"
-    size_t len = strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR);
-    char * buf = NEW_C_HEAP_ARRAY(char, len, mtInternal);
-    sprintf(buf, "%s%s", Arguments::get_java_home(), ENDORSED_DIR);
-    Arguments::set_endorsed_dirs(buf);
-    // (Arguments::set_endorsed_dirs() calls SystemProperty::set_value(), which
-    //  duplicates the input.)
-    FREE_C_HEAP_ARRAY(char, buf, mtInternal);
-#undef ENDORSED_DIR
-  }
-
 #ifndef _WIN64
   // set our UnhandledExceptionFilter and save any previous one
   prev_uef_handler = SetUnhandledExceptionFilter(Handle_FLT_Exception);
@@ -4375,6 +4362,23 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::_lseeki64(fd, offset, whence);
 }
+
+size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
+  OVERLAPPED ov;
+  DWORD nread;
+  BOOL result;
+
+  ZeroMemory(&ov, sizeof(ov));
+  ov.Offset = (DWORD)offset;
+  ov.OffsetHigh = (DWORD)(offset >> 32);
+
+  HANDLE h = (HANDLE)::_get_osfhandle(fd);
+
+  result = ReadFile(h, (LPVOID)buf, nBytes, &nread, &ov);
+
+  return result ? nread : 0;
+}
+
 
 // This method is a slightly reworked copy of JDK's sysNativePath
 // from src/windows/hpi/src/path_md.c

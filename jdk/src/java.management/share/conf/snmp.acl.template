@@ -10,12 +10,12 @@
 # ----------------------------------------------------------------------
 
 ############################################################
-#            SNMP Access Control List File  
+#            SNMP Access Control List File
 ############################################################
 #
-# Default location of this file is $JRE/lib/management/snmp.acl.
-# You can specify an alternate location by specifying a property in 
-# the management config file $JRE/lib/management/management.properties
+# Default location of this file is $JRE/conf/management/snmp.acl.
+# You can specify an alternate location by specifying a property in
+# the management config file $JRE/conf/management/management.properties
 # or by specifying a system property (See that file for details).
 #
 
@@ -23,10 +23,10 @@
 ##############################################################
 #        File permissions of the snmp.acl file
 ##############################################################
-# 
+#
 #      Since there are cleartext community strings stored in this file,
 #      this ACL file must be readable by ONLY the owner,
-#      otherwise the program will exit with an error. 
+#      otherwise the program will exit with an error.
 #
 ##############################################################
 #		Format of the acl group
@@ -41,8 +41,8 @@
 #    Each can be expressed as any one of the following:
 #    - hostname: hubble
 #    - ip v4 and v6 addresses: 123.456.789.12 , fe80::a00:20ff:fe9b:ea82
-#    - ip v4 and v6 netmask prefix notation: 123.456.789.0/24, 
-#         fe80::a00:20ff:fe9b:ea82/64  
+#    - ip v4 and v6 netmask prefix notation: 123.456.789.0/24,
+#         fe80::a00:20ff:fe9b:ea82/64
 #      see RFC 2373 (http://www.ietf.org/rfc/rfc2373.txt)
 #
 # An example of two community groups for multiple hosts:
@@ -58,7 +58,7 @@
 #       managers = hubble, telescope
 #     }
 #    }
-# 
+#
 ##############################################################
 #                   Format of the trap group
 ##############################################################
@@ -84,7 +84,7 @@
 #
 #  Update the community strings (public and private) below
 #  before copying this template file
-# 	
+#
 # Common SNMP ACL Example
 # ------------------------
 #
@@ -100,11 +100,11 @@
 #    managers = localhost
 #  }
 # }
-# 
-# 
+#
+#
 # trap = {
 #   {
 #     trap-community = public
-#     hosts = localhost 
+#     hosts = localhost
 #   }
 # }

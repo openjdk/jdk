@@ -42,14 +42,14 @@ LOCALE_FILES := $(shell $(FIND) $(JDK_TOPDIR)/src/java.base/share/classes \
 LOCALE_RESOURCES := $(sort $(subst .properties,,$(subst .java,,$(notdir $(LOCALE_FILES)))))
 
 # Include the list of resources found during the previous compile.
--include $(JDK_OUTPUTDIR)/gensrc/_the.locale_resources
+-include $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_the.locale_resources
 
 MISSING_RESOURCES := $(filter-out $(LOCALE_RESOURCES), $(PREV_LOCALE_RESOURCES))
 NEW_RESOURCES := $(filter-out $(PREV_LOCALE_RESOURCES), $(LOCALE_RESOURCES))
 
 ifneq (, $(MISSING_RESOURCES)$(NEW_RESOURCES))
   # There is a difference in the number of supported resources. Trigger a regeneration.
-  $(shell $(RM) $(JDK_OUTPUTDIR)/gensrc/sun/util/locale/provider/LocaleDataMetaInfo.java)
+  $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/LocaleDataMetaInfo.java)
 endif
 
 # The EN locales
@@ -116,26 +116,28 @@ $(eval $(call CaptureLocale,CalendarData))
 SED_ENARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_EN_LOCALES))/g'
 SED_NONENARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_NON_EN_LOCALES))/g'
 
-$(JDK_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java: \
+$(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating sun/util/locale/provider/EnLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
-	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc/_the.locale_resources
+	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
+	    > $(SUPPORT_OUTPUTDIR)/gensrc/_the.locale_resources
 	$(SED) $(SED_ENARGS) $< > $@
 
-$(JDK_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java: \
+$(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating sun/util/resources/provider/NonEnLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
-	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc/_the.locale_resources
+	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
+	    > $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/_the.locale_resources
 	$(SED) $(SED_NONENARGS) $< > $@
 
-GENSRC_BASELOCALEDATA := $(JDK_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java
-GENSRC_LOCALEDATA := $(JDK_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java
+GENSRC_BASELOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java
+GENSRC_LOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java
 
 ################################################################################
 
-GENSRC_CRBC_DST := $(JDK_OUTPUTDIR)/gensrc/java.base/sun/util/CoreResourceBundleControl.java
+GENSRC_CRBC_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/CoreResourceBundleControl.java
 GENSRC_CRBC_CMD := $(JDK_TOPDIR)/make/scripts/localelist.sh
 
 JRE_NONEXIST_LOCALES := en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
