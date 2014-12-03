@@ -3080,6 +3080,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if (isConditionalCatch) {
                 loadExpressionAsBoolean(exceptionCondition);
                 nextCatch = new Label("next_catch");
+                nextCatch.markAsBreakTarget();
                 method.ifeq(nextCatch);
             } else {
                 nextCatch = null;
@@ -3092,7 +3093,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method._goto(afterCatch);
             }
             if(nextCatch != null) {
-                method.label(nextCatch);
+                method.breakLabel(nextCatch, lc.getUsedSlotCount());
             }
         }
 
@@ -3262,6 +3263,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         body.accept(this);
         if(repeatLabel != continueLabel) {
             emitContinueLabel(continueLabel, liveLocalsOnContinue);
+        }
+
+        if (loopNode.hasPerIterationScope() && lc.getParentBlock().needsScope()) {
+            // ES6 for loops with LET init need a new scope for each iteration. We just create a shallow copy here.
+            method.loadCompilerConstant(SCOPE);
+            method.invoke(virtualCallNoLookup(ScriptObject.class, "copy", ScriptObject.class));
+            method.storeCompilerConstant(SCOPE);
         }
 
         if(method.isReachable()) {

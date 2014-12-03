@@ -525,7 +525,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
         if (isAlwaysTrue(test)) {
             //turn it into a for node without a test.
-            final ForNode forNode = (ForNode)new ForNode(whileNode.getLineNumber(), whileNode.getToken(), whileNode.getFinish(), body, ForNode.IS_FOR).accept(this);
+            final ForNode forNode = (ForNode)new ForNode(whileNode.getLineNumber(), whileNode.getToken(), whileNode.getFinish(), body, 0).accept(this);
             lc.replace(whileNode, forNode);
             return forNode;
         }

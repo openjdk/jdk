@@ -54,6 +54,7 @@ if (! new File(jjsCmd).isFile()) {
 }
 jjsCmd += " -J-Xbootclasspath/a:" + nashornJarDir;
 
+$ENV.PWD=System.getProperty("user.dir") // to avoid RE on Cygwin
 $EXEC(jjsCmd, "var x = Object.create(null);\nx;\nprint('PASSED');\nexit(0)");
 
 // $ERR has all interactions including prompts! Just check for error substring.
