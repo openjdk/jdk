@@ -582,8 +582,6 @@ public final class System {
      *     <td>Default temp file path</td></tr>
      * <tr><td><code>java.compiler</code></td>
      *     <td>Name of JIT compiler to use</td></tr>
-     * <tr><td><code>java.ext.dirs</code></td>
-     *     <td>Path of extension directory or directories</td></tr>
      * <tr><td><code>os.name</code></td>
      *     <td>Operating system name</td></tr>
      * <tr><td><code>os.arch</code></td>

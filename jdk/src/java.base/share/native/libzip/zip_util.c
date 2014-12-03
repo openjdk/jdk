@@ -1411,6 +1411,7 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
             }
         } while (strm.avail_in > 0);
     }
+
     inflateEnd(&strm);
     return JNI_TRUE;
 }
@@ -1480,5 +1481,54 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
 
     ZIP_FreeEntry(zip, entry);
 
+    return JNI_TRUE;
+}
+
+jboolean JNICALL
+ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg)
+{
+    z_stream strm;
+    int i = 0;
+    memset(&strm, 0, sizeof(z_stream));
+
+    *pmsg = 0; /* Reset error message */
+
+    if (inflateInit2(&strm, MAX_WBITS) != Z_OK) {
+        *pmsg = strm.msg;
+        return JNI_FALSE;
+    }
+
+    strm.next_out = (Bytef *) outBuf;
+    strm.avail_out = (uInt)outLen;
+    strm.next_in = (Bytef *) inBuf;
+    strm.avail_in = (uInt)inLen;
+
+    do {
+        switch (inflate(&strm, Z_PARTIAL_FLUSH)) {
+            case Z_OK:
+                break;
+            case Z_STREAM_END:
+                if (strm.total_out != outLen) {
+                    *pmsg = "INFLATER_inflateFully: Unexpected end of stream";
+                    inflateEnd(&strm);
+                    return JNI_FALSE;
+                }
+                break;
+            case Z_DATA_ERROR:
+                *pmsg = "INFLATER_inflateFully: Compressed data corrupted";
+                inflateEnd(&strm);
+                return JNI_FALSE;
+            case Z_MEM_ERROR:
+                *pmsg = "INFLATER_inflateFully: out of memory";
+                inflateEnd(&strm);
+                return JNI_FALSE;
+            default:
+                *pmsg = "INFLATER_inflateFully: internal error";
+                inflateEnd(&strm);
+                return JNI_FALSE;
+        }
+    } while (strm.avail_in > 0);
+
+    inflateEnd(&strm);
     return JNI_TRUE;
 }

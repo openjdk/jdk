@@ -106,7 +106,7 @@ import sun.awt.AWTAccessor;
  *       use its value as the default look and feel class name. The location
  *       that is checked for <code>swing.properties</code> may vary depending
  *       upon the implementation of the Java platform. Typically the
- *       <code>swing.properties</code> file is located in the <code>lib</code>
+ *       <code>swing.properties</code> file is located in the <code>conf</code>
  *       subdirectory of the Java installation directory.
  *       Refer to the release notes of the implementation being used for
  *       further details.
@@ -281,7 +281,7 @@ public class UIManager implements Serializable
     /**
      * The location of the <code>swing.properties</code> property file is
      * implementation-specific.
-     * It is typically located in the <code>lib</code> subdirectory of the Java
+     * It is typically located in the <code>conf</code> subdirectory of the Java
      * installation directory. This method returns a bogus filename
      * if <code>java.home</code> isn't defined.
      */
@@ -293,7 +293,7 @@ public class UIManager implements Serializable
         if (javaHome == null) {
             javaHome = "<java.home undefined>";
         }
-        return javaHome + sep + "lib" + sep + "swing.properties";
+        return javaHome + sep + "conf" + sep + "swing.properties";
     }
 
 

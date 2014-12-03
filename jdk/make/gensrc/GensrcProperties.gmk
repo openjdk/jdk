@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 # Helper macro for SetupCopy-zh_HK.
 define SetupOneCopy-zh_HK
   $1_$2_TARGET := $$(patsubst $(JDK_TOPDIR)/src/$(MODULE)/share/classes/%, \
-      $(JDK_OUTPUTDIR)/gensrc/$(MODULE)/%, \
+      $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/%, \
       $$(subst _zh_TW,_zh_HK, $2))
 
   $$($1_$2_TARGET): $2
@@ -62,7 +62,7 @@ define SetupCompileProperties
   # Strip away prefix and suffix, leaving for example only: 
   # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
   $1_JAVAS := $$(patsubst $(JDK_TOPDIR)/src/%, \
-      $(JDK_OUTPUTDIR)/gensrc/%, \
+      $(SUPPORT_OUTPUTDIR)/gensrc/%, \
       $$(patsubst %.properties, %.java, \
       $$(subst /share/classes,, $$($1_SRCS))))
 
@@ -78,10 +78,10 @@ define SetupCompileProperties
       $$(addsuffix _SPACE_$$($1_CLASS), \
       $$(addprefix _SPACE_, $$($1_JAVAS)))))
 
-  $1_TARGET := $(JDK_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.done
-  $1_CMDLINE_FILE := $(JDK_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.cmdline
+  $1_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.done
+  $1_CMDLINE_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.cmdline
 
-  # Now setup the rule for the generation of the resource bundles.
+# Now setup the rule for the generation of the resource bundles.
   $$($1_TARGET): $$($1_SRCS) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $$(@D) $$($1_DIRS)
 	$(ECHO) Compiling $$(words $$($1_SRCS)) properties into resource bundles for $(MODULE)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 LIBNET_SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/native/libnet \
     $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnet
-LIBNET_CFLAGS += -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base \
+LIBNET_CFLAGS += -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     $(LIBJAVA_HEADER_FLAGS)
 
 LIBNET_CFLAGS += $(foreach dir, $(LIBNET_SRC_DIRS), -I$(dir))
@@ -71,10 +71,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
         -D "JDK_FNAME=net.dll" \
         -D "JDK_INTERNAL_NAME=net" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libnet, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBNET): $(BUILD_LIBJAVA)
 
-BASE_LIBRARIES += $(BUILD_LIBNET)
+TARGETS += $(BUILD_LIBNET)
 

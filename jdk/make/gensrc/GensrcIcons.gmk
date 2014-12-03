@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 GENSRC_AWT_ICONS :=
 GENSRC_AWT_ICONS_SRC :=
-GENSRC_AWT_ICONS_TMP := $(JDK_OUTPUTDIR)/gensrc
-GENSRC_AWT_ICONS_DST := $(GENSRC_AWT_ICONS_TMP)/java.desktop/sun/awt/
+GENSRC_AWT_ICONS_TMP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop
+GENSRC_AWT_ICONS_DST := $(GENSRC_AWT_ICONS_TMP)/sun/awt/
 
 ifdef OPENJDK
   X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)
@@ -62,14 +62,14 @@ GENSRC_AWT_ICONS_FILES := $(notdir $(GENSRC_AWT_ICONS_SRC))
 GENSRC_AWT_ICONS_SHORT_NAME = $(subst .,_,$(subst -,_,$(1)))
 GENSRC_AWT_ICONS_DST_NAME = AWTIcon$(2)_$(subst .,_,$(subst -,_,$(1)))
 
-###
+################################################################################
 
 $(GENSRC_AWT_ICONS_TMP)/_the.icons.dir:
 	$(ECHO) Generating icon classes
 	$(MKDIR) -p $(GENSRC_AWT_ICONS_DST)
 	$(TOUCH) $@
 
-###
+################################################################################
 
 define SetupGensrcAWTIcon
   # param 1 is for src-file
@@ -107,11 +107,11 @@ $(foreach I, $(GENSRC_AWT_ICONS_SRC), $(eval $(call SetupGensrcAWTIcon,$(notdir 
 
 GENSRC_JAVA_DESKTOP += $(GENSRC_AWT_ICONS)
 
-###
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-  GENSRC_OSX_ICONS_DST := $(JDK_OUTPUTDIR)/gensrc_headers_icons
+  GENSRC_OSX_ICONS_DST := $(SUPPORT_OUTPUTDIR)/headers/java.desktop
   GENSRC_OSX_ICONS := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h
 
   ifdef OPENJDK

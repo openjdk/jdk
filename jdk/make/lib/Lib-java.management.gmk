@@ -34,7 +34,7 @@ BUILD_LIBMANAGEMENT_SRC += $(JDK_TOPDIR)/src/java.management/share/native/libman
     $(JDK_TOPDIR)/src/java.management/$(OPENJDK_TARGET_OS_API_DIR)/native/libmanagement
 BUILD_LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
     $(addprefix -I,$(BUILD_LIBMANAGEMENT_SRC)) \
-    -I$(JDK_OUTPUTDIR)/gensrc_headers/java.management \
+    -I$(SUPPORT_OUTPUTDIR)/headers/java.management \
     $(LIBJAVA_HEADER_FLAGS) \
     #
 
@@ -82,17 +82,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
         -D "JDK_FNAME=management.dll" \
         -D "JDK_INTERNAL_NAME=management" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libmanagement, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement, \
     DEBUG_SYMBOLS := true))
 
-$(BUILD_LIBMANAGEMENT): $(BUILD_LIBJAVA)
+$(BUILD_LIBMANAGEMENT): $(call FindLib, java.base, java)
 
-MANAGEMENT_LIBRARIES += $(BUILD_LIBMANAGEMENT)
+TARGETS += $(BUILD_LIBMANAGEMENT)
 
 ################################################################################
-
-java.management: $(MANAGEMENT_LIBRARIES)
-
-all: java.management
-
-.PHONY: all java.management

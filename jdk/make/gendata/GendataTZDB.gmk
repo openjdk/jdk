@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@ TZDATA_DIR := $(JDK_TOPDIR)/make/data/tzdata
 TZDATA_TZFILE := africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera gmt jdk11_backward
 TZDATA_TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZDATA_TZFILE))
 
-GENDATA_TZDB_DAT := $(JDK_OUTPUTDIR)/lib/tzdb.dat
+GENDATA_TZDB_DAT := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/tzdb.dat
 
 $(GENDATA_TZDB_DAT): $(TZDATA_TZFILES)
 	$(RM) $(GENDATA_TZDB_DAT)
 	$(MKDIR) -p $(@D)
 	$(TOOL_TZDB) -srcdir $(TZDATA_DIR) -dstfile $(GENDATA_TZDB_DAT) $(TZDATA_TZFILE)
 
-GENDATA_TZDB += $(GENDATA_TZDB_DAT)
+TARGETS += $(GENDATA_TZDB_DAT)

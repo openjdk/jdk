@@ -78,7 +78,7 @@ import sun.misc.SharedSecrets;
  * <p>
  * If neither of these properties is defined then the LogManager uses its
  * default configuration. The default configuration is typically loaded from the
- * properties file "{@code lib/logging.properties}" in the Java installation
+ * properties file "{@code conf/logging.properties}" in the Java installation
  * directory.
  * <p>
  * The properties for loggers and Handlers will have names starting
@@ -1210,7 +1210,7 @@ public class LogManager {
             if (fname == null) {
                 throw new Error("Can't find java.home ??");
             }
-            File f = new File(fname, "lib");
+            File f = new File(fname, "conf");
             f = new File(f, "logging.properties");
             fname = f.getCanonicalPath();
         }

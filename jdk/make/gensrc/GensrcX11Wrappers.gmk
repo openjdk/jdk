@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@
 GENSRC_X11WRAPPERS :=
 # Put temporary c-code and executable to calculate offsets here.
 # Also put verification offset file here as well.
-GENSRC_X11WRAPPERS_TMP := $(JDK_OUTPUTDIR)/gensrc_x11wrappers
+GENSRC_X11WRAPPERS_TMP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_x11wrappers
 # Put the generated Java classes used to interface X11 from awt here.
-GENSRC_X11WRAPPERS_DST := $(JDK_OUTPUTDIR)/gensrc/java.desktop/sun/awt/X11
+GENSRC_X11WRAPPERS_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/sun/awt/X11
 
 # The pre-calculated offset file are stored here:
 GENSRC_SIZER_DIR := $(JDK_TOPDIR)/make/data/x11wrappergen
@@ -69,12 +69,12 @@ $(GENSRC_X11WRAPPERS_TMP)/sizes.%: $(GENSRC_SIZER_DIR)/sizes.%
 
 # Run the tool on the offset files copied from the source repository to generate several Java classes
 # used in awt.
-$(JDK_OUTPUTDIR)/gensrc/_the.generated.x11: $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS_JDK)
+$(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated.x11: $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(GENSRC_X11WRAPPERS_DST)
 	$(TOOL_WRAPPERGENERATOR) $(GENSRC_X11WRAPPERS_DST) $(GENSRC_SIZER_DIR)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizes
 	$(TOUCH) $@
 
-GENSRC_X11WRAPPERS += $(JDK_OUTPUTDIR)/gensrc/_the.generated.x11
+GENSRC_X11WRAPPERS += $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated.x11
 
 ifneq ($(COMPILE_TYPE), cross)
   # This is not a cross compile, regenerate the offset file, so that we
@@ -91,7 +91,7 @@ ifneq ($(COMPILE_TYPE), cross)
     MEMORY_MODEL_FLAG="$(COMPILER_TARGET_BITS_FLAG)$*"
   endif
 
-  SIZER_CFLAGS := -I$(JDK_OUTPUTDIR)/include \
+  SIZER_CFLAGS := \
       -I$(JDK_TOPDIR)/src/java.base/share/native/include \
       -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include \
       -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \

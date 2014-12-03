@@ -32,9 +32,3 @@ $(eval $(call FillCacheFind, $(wildcard $(JDK_TOPDIR)/src/java.desktop/*/native 
 include PlatformLibraries.gmk
 include Awt2dLibraries.gmk
 include SoundLibraries.gmk
-
-java.desktop: $(DESKTOP_LIBRARIES)
-
-all: java.desktop
-
-.PHONY: all java.desktop

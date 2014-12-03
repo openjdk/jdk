@@ -83,14 +83,6 @@ import sun.security.util.ResourcesMgr;
 
 public class PolicyParser {
 
-    private static final String EXTDIRS_PROPERTY = "java.ext.dirs";
-    private static final String OLD_EXTDIRS_EXPANSION =
-        "${" + EXTDIRS_PROPERTY + "}";
-
-    // package-private: used by PolicyFile for static policy
-    static final String EXTDIRS_EXPANSION = "${{" + EXTDIRS_PROPERTY + "}}";
-
-
     private Vector<GrantEntry> grantEntries;
     private Map<String, DomainEntry> domainEntries;
 
@@ -576,35 +568,8 @@ public class PolicyParser {
         try {
             if (e.signedBy != null) e.signedBy = expand(e.signedBy);
             if (e.codeBase != null) {
-
-                // For backward compatibility with 1.4
-                if (e.codeBase.equals(OLD_EXTDIRS_EXPANSION)) {
-                    e.codeBase = EXTDIRS_EXPANSION;
-                }
-                int es;
-                if ((es=e.codeBase.indexOf(EXTDIRS_EXPANSION)) < 0) {
-                    e.codeBase = expand(e.codeBase, true).replace
-                                        (File.separatorChar, '/');
-                } else {
-                    // expand the system property "java.ext.dirs",
-                    // parse it into its path components,
-                    // and then create a grant entry for each component
-                    String[] extDirs = parseExtDirs(e.codeBase, es);
-                    if (extDirs != null && extDirs.length > 0) {
-                        for (int i = 0; i < extDirs.length; i++) {
-                            GrantEntry newGe = (GrantEntry)e.clone();
-                            newGe.codeBase = extDirs[i];
-                            add(newGe);
-
-                            if (debug != null) {
-                                debug.println("creating policy entry for " +
-                                        "expanded java.ext.dirs path:\n\t\t" +
-                                        extDirs[i]);
-                            }
-                        }
-                    }
-                    ignoreEntry = true;
-                }
+                e.codeBase = expand(e.codeBase, true).replace
+                                    (File.separatorChar, '/');
             }
         } catch (PropertyExpander.ExpandException peee) {
             if (debug != null) {
@@ -711,41 +676,6 @@ public class PolicyParser {
         }
 
         return properties;
-    }
-
-    // package-private: used by PolicyFile for static policy
-    static String[] parseExtDirs(String codebase, int start) {
-
-        String s = System.getProperty(EXTDIRS_PROPERTY);
-        String globalPrefix = (start > 0 ? codebase.substring(0, start) : "file:");
-        int end = start + EXTDIRS_EXPANSION.length();
-        String globalSuffix = (end < codebase.length() ? codebase.substring(end) :
-            (String) null);
-
-        String[] dirs = null;
-        String localSuffix;
-        if (s != null) {
-            StringTokenizer st =
-                new StringTokenizer(s, File.pathSeparator);
-            int count = st.countTokens();
-            dirs = new String[count];
-            for (int i = 0; i < count; i++) {
-                File file = new File(st.nextToken());
-                dirs[i] = sun.net.www.ParseUtil.encodePath
-                        (file.getAbsolutePath());
-
-                if (!dirs[i].startsWith("/")) {
-                    dirs[i] = "/" + dirs[i];
-                }
-
-                localSuffix = (globalSuffix == null ?
-                    (dirs[i].endsWith("/") ? "*" : "/*") :
-                    globalSuffix);
-
-                dirs[i] = globalPrefix + dirs[i] + localSuffix;
-            }
-        }
-        return dirs;
     }
 
     private boolean peekAndMatch(String expect)

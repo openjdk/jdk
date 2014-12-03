@@ -615,11 +615,11 @@ public final class ConnectorBootstrap {
     /**
      * Compute the full path name for a default file.
      * @param basename basename (with extension) of the default file.
-     * @return ${JRE}/lib/management/${basename}
+     * @return ${JRE}/conf/management/${basename}
      **/
     private static String getDefaultFileName(String basename) {
         final String fileSeparator = File.separator;
-        return System.getProperty("java.home") + fileSeparator + "lib" +
+        return System.getProperty("java.home") + fileSeparator + "conf" +
                 fileSeparator + "management" + fileSeparator +
                 basename;
     }
