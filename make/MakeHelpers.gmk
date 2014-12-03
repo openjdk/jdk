@@ -46,7 +46,7 @@ list_alt_overrides_with_origins=$(filter ALT_%=environment ALT_%=command,$(forea
 list_alt_overrides=$(subst =command,,$(subst =environment,,$(list_alt_overrides_with_origins)))
 
 # Store the build times in this directory.
-BUILDTIMESDIR=$(OUTPUT_ROOT)/tmp/buildtimes
+BUILDTIMESDIR=$(OUTPUT_ROOT)/make-support/build-times
 
 # Global targets are possible to run either with or without a SPEC. The prototypical
 # global target is "help".
@@ -296,38 +296,139 @@ endef
 
 ### Convenience functions from Main.gmk
 
-# Cleans the component given as $1
-define CleanComponent
+# Cleans the dir given as $1
+define CleanDir
 	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
 	@($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
 	@$(PRINTF) " done\n"
 endef
 
+define Clean-gensrc
+	@$(PRINTF) "Cleaning gensrc $(if $1,for $(strip $1) )..."
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc_no_docs/$(strip $1)
+	@$(PRINTF) " done\n"
+endef
+
+define Clean-java
+	@$(PRINTF) "Cleaning java $(if $1,for $(strip $1) )..."
+	@$(RM) -r $(JDK_OUTPUTDIR)/modules/$(strip $1)
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/misc/$(strip $1)
+	@$(PRINTF) " done\n"
+	@$(PRINTF) "Cleaning headers $(if $1,for $(strip $1)) ..."
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)
+	@$(PRINTF) " done\n"
+endef
+
+define Clean-native
+	@$(PRINTF) "Cleaning native $(if $1,for $(strip $1) )..."
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/native/$(strip $1)
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs-stripped/$(strip $1)
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped/$(strip $1)
+	@$(PRINTF) " done\n"
+endef
+
+define Clean-include
+	@$(PRINTF) "Cleaning include $(if $1,for $(strip $1) )..."
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_include/$(strip $1)
+	@$(PRINTF) " done\n"
+endef
+
+define CleanModule
+  $(call Clean-gensrc, $1)
+  $(call Clean-java, $1)
+  $(call Clean-native, $1)
+  $(call Clean-include, $1)
+endef
+
+
 ################################################################################
 
-MAKE_DIR_LIST := $(JDK_TOPDIR)/make
+MAKE_TOPDIR_LIST := $(JDK_TOPDIR) $(CORBA_TOPDIR) $(LANGTOOLS_TOPDIR)
+MAKE_MAKEDIR_LIST := make
 
-# Find all modules that has a makefile for a certain build phase
-# Param 1: Make subdir to look in
-# Param 2: File prefix to look for
-FindModulesWithMakefileFor = $(sort $(foreach d, $(MAKE_DIR_LIST), \
-    $(patsubst $d/$(strip $1)/$(strip $2)-%.gmk,%, \
-    $(wildcard $d/$(strip $1)/$(strip $2)-*.gmk))))
-
-# Declare a recipe for calling such a makefile
-# Param 1: Module name
-# Param 2: Suffix for rule
-# Param 3: Make subdir
-# Param 4: Makefile prefix
+# Helper macro for DeclareRecipesForPhase
+# Declare a recipe for calling the module and phase specific makefile.
+# If there are multiple makefiles to call, create a rule for each topdir
+# that contains a makefile with the target $module-$suffix-$repodir, 
+# (i.e: java.base-gensrc-jdk)
+# Normally there is only one makefile, and the target will just be
+# $module-$suffix
+# Param 1: Name of list to add targets to
+# Param 2: Module name
+# Param 3: Topdir
 define DeclareRecipeForModuleMakefile
-  $$(strip $1)-$$(strip $2):
-	+($(CD) $$(dir $$(firstword $$(wildcard $$(addsuffix /$$(strip $3)/$$(strip $4)-$$(strip $1).gmk, \
-	        $(MAKE_DIR_LIST))))) \
+  ifeq ($$($1_MULTIPLE_MAKEFILES), true)
+    $2-$$($1_TARGET_SUFFIX): $2-$$($1_TARGET_SUFFIX)-$$(notdir $3)
+    $1 += $2-$$($1_TARGET_SUFFIX)-$$(notdir $3)
+
+    $2-$$($1_TARGET_SUFFIX)-$$(notdir $3):
+  else
+    $2-$$($1_TARGET_SUFFIX):
+  endif
+	$(ECHO) $(LOG_INFO) "Building $$@"
+        ifeq ($$($1_USE_WRAPPER), true)
+	  +($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) \
+	      -f ModuleWrapper.gmk \
+	          $$(addprefix -I, $$(wildcard $$(addprefix $3/, $(MAKE_MAKEDIR_LIST)) \
+	          $$(addsuffix /$$($1_MAKE_SUBDIR), $$(addprefix $3/, $(MAKE_MAKEDIR_LIST))))) \
+	          MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX))
+        else
+	  +($(CD) $$(dir $$(firstword $$(wildcard $$(patsubst %, \
+	          $3/%/$$($1_MAKE_SUBDIR)/$$($1_FILE_PREFIX)-$2.gmk, $(MAKE_MAKEDIR_LIST))))) \
 	    && $(MAKE) $(MAKE_ARGS) \
-	        -f $$(strip $4)-$$(strip $1).gmk \
-	        $$(addprefix -I, $$(wildcard $(MAKE_DIR_LIST) \
-	            $$(addsuffix /$$(strip $3), $(MAKE_DIR_LIST)))) \
-	        MODULE=$$(strip $1))
+	          -f $$($1_FILE_PREFIX)-$2.gmk \
+	          $$(addprefix -I, $$(wildcard $$(addprefix $3/, $(MAKE_MAKEDIR_LIST)) \
+	          $$(addsuffix /$3, $$(addprefix $3/, $(MAKE_MAKEDIR_LIST))))) \
+	          MODULE=$2)
+        endif
+
+endef
+
+# Helper macro for DeclareRecipesForPhase
+# Param 1: Name of list to add targets to
+# Param 2: Module name
+define DeclareRecipesForPhaseAndModule
+  $1_$2_TOPDIRS := $$(strip $$(sort $$(foreach d, $(MAKE_TOPDIR_LIST), \
+      $$(patsubst $$d/%, $$d, $$(filter $$d/%, \
+          $$(wildcard $$(patsubst %, %/$$($1_MAKE_SUBDIR)/$$($1_FILE_PREFIX)-$2.gmk, \
+          $$(foreach s, $(MAKE_MAKEDIR_LIST), \
+              $$(addsuffix /$$s, $(MAKE_TOPDIR_LIST))))))))))
+
+  # Only declare recipes if there are makefiles to call
+  ifneq ($$($1_$2_TOPDIRS), )
+    $$(foreach d, $$($1_$2_TOPDIRS), \
+        $$(eval $$(call DeclareRecipeForModuleMakefile,$1,$2,$$d)))
+    $1 += $2-$$($1_TARGET_SUFFIX)
+    $1_MODULES += $2
+  endif
+endef
+
+# Declare recipes for a specific module and build phase if there are makefiles
+# present for the specific combination.
+# Param 1: Name of list to add targets to
+# Named params:
+# TARGET_SUFFIX : Suffix of target to create for recipe
+# MAKE_SUBDIR : Subdir for this build phase
+# FILE_PREFIX : File prefix for this build phase
+# USE_WRAPPER : Set to true to use ModuleWrapper.gmk
+# CHECK_MODULES : List of modules to try
+# MULTIPLE_MAKEFILES : Set to true to handle makefils for the same module in
+#                      phase in multiple repos
+# Exported variables:
+# $1_MODULES : All modules that had rules generated
+# $1_TARGETS : All targets generated
+define DeclareRecipesForPhase
+  $(foreach i,2 3 4 5 6 7, $(if $($i),$(strip $1)_$(strip $($i)))$(NEWLINE))
+  $(if $(8),$(error Internal makefile error: Too many arguments to \
+      DeclareRecipesForPhase, please update MakeHelper.gmk))
+
+  $$(foreach m, $$($(strip $1)_CHECK_MODULES), \
+      $$(eval $$(call DeclareRecipesForPhaseAndModule,$(strip $1),$$m)))
+
+  $(strip $1)_TARGETS := $$($(strip $1))
 endef
 
 ################################################################################
