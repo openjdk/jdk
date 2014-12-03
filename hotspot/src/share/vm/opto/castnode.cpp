@@ -83,6 +83,101 @@ Node *ConstraintCastNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
   return this;
 }
 
+uint CastIINode::size_of() const {
+  return sizeof(*this);
+}
+
+uint CastIINode::cmp(const Node &n) const {
+  return TypeNode::cmp(n) && ((CastIINode&)n)._carry_dependency == _carry_dependency;
+}
+
+Node *CastIINode::Identity(PhaseTransform *phase) {
+  if (_carry_dependency) {
+    return this;
+  }
+  return ConstraintCastNode::Identity(phase);
+}
+
+const Type *CastIINode::Value(PhaseTransform *phase) const {
+  const Type *res = ConstraintCastNode::Value(phase);
+
+  // Try to improve the type of the CastII if we recognize a CmpI/If
+  // pattern.
+  if (_carry_dependency) {
+    if (in(0) != NULL && (in(0)->is_IfFalse() || in(0)->is_IfTrue())) {
+      Node* proj = in(0);
+      if (proj->in(0)->in(1)->is_Bool()) {
+        Node* b = proj->in(0)->in(1);
+        if (b->in(1)->Opcode() == Op_CmpI) {
+          Node* cmp = b->in(1);
+          if (cmp->in(1) == in(1) && phase->type(cmp->in(2))->isa_int()) {
+            const TypeInt* in2_t = phase->type(cmp->in(2))->is_int();
+            const Type* t = TypeInt::INT;
+            BoolTest test = b->as_Bool()->_test;
+            if (proj->is_IfFalse()) {
+              test = test.negate();
+            }
+            BoolTest::mask m = test._test;
+            jlong lo_long = min_jint;
+            jlong hi_long = max_jint;
+            if (m == BoolTest::le || m == BoolTest::lt) {
+              hi_long = in2_t->_hi;
+              if (m == BoolTest::lt) {
+                hi_long -= 1;
+              }
+            } else if (m == BoolTest::ge || m == BoolTest::gt) {
+              lo_long = in2_t->_lo;
+              if (m == BoolTest::gt) {
+                lo_long += 1;
+              }
+            } else if (m == BoolTest::eq) {
+              lo_long = in2_t->_lo;
+              hi_long = in2_t->_hi;
+            } else if (m == BoolTest::ne) {
+              // can't do any better
+            } else {
+              stringStream ss;
+              test.dump_on(&ss);
+              fatal(err_msg_res("unexpected comparison %s", ss.as_string()));
+            }
+            int lo_int = (int)lo_long;
+            int hi_int = (int)hi_long;
+
+            if (lo_long != (jlong)lo_int) {
+              lo_int = min_jint;
+            }
+            if (hi_long != (jlong)hi_int) {
+              hi_int = max_jint;
+            }
+
+            t = TypeInt::make(lo_int, hi_int, Type::WidenMax);
+
+            res = res->filter_speculative(t);
+
+            return res;
+          }
+        }
+      }
+    }
+  }
+  return res;
+}
+
+Node *CastIINode::Ideal_DU_postCCP(PhaseCCP *ccp) {
+  if (_carry_dependency) {
+    return NULL;
+  }
+  return ConstraintCastNode::Ideal_DU_postCCP(ccp);
+}
+
+#ifndef PRODUCT
+void CastIINode::dump_spec(outputStream *st) const {
+  TypeNode::dump_spec(st);
+  if (_carry_dependency) {
+    st->print(" carry dependency");
+  }
+}
+#endif
 
 //=============================================================================
 

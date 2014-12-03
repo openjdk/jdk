@@ -308,6 +308,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseFastAccessorMethods",        JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "UseFastEmptyMethods",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
 #endif // ZERO
+  { "UseCompilerSafepoints",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -322,9 +323,12 @@ bool Arguments::is_newly_obsolete(const char *s, JDK_Version* version) {
     const ObsoleteFlag& flag_status = obsolete_jvm_flags[i];
     // <flag>=xxx form
     // [-|+]<flag> form
-    if ((strncmp(flag_status.name, s, strlen(flag_status.name)) == 0) ||
+    size_t len = strlen(flag_status.name);
+    if (((strncmp(flag_status.name, s, len) == 0) &&
+         (strlen(s) == len)) ||
         ((s[0] == '+' || s[0] == '-') &&
-        (strncmp(flag_status.name, &s[1], strlen(flag_status.name)) == 0))) {
+         (strncmp(flag_status.name, &s[1], len) == 0) &&
+         (strlen(&s[1]) == len))) {
       if (JDK_Version::current().compare(flag_status.accept_until) == -1) {
           *version = flag_status.obsoleted_in;
           return true;
@@ -884,10 +888,18 @@ bool Arguments::process_argument(const char* arg,
     Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
     if (fuzzy_matched != NULL) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Did you mean '%s%s%s'?\n",
+                  "Did you mean '%s%s%s'? ",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
                   fuzzy_matched->_name,
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
+      if (is_newly_obsolete(fuzzy_matched->_name, &since)) {
+        char version[256];
+        since.to_string(version, sizeof(version));
+        jio_fprintf(defaultStream::error_stream(),
+                    "Warning: support for %s was removed in %s\n",
+                    fuzzy_matched->_name,
+                    version);
+      }
     }
   }
 
@@ -1727,7 +1739,7 @@ void Arguments::set_g1_gc_flags() {
 #ifdef ASSERT
 static bool verify_serial_gc_flags() {
   return (UseSerialGC &&
-        !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
+        !(UseParNewGC || (UseConcMarkSweepGC) || UseG1GC ||
           UseParallelGC || UseParallelOldGC));
 }
 #endif // ASSERT
@@ -2141,10 +2153,6 @@ void Arguments::check_deprecated_gcs() {
     warning("Using the ParNew young collector with the Serial old collector is deprecated "
         "and will likely be removed in a future release");
   }
-
-  if (CMSIncrementalMode) {
-    warning("Using incremental CMS is deprecated and will likely be removed in a future release");
-  }
 }
 
 void Arguments::check_deprecated_gc_flags() {
@@ -2155,15 +2163,6 @@ void Arguments::check_deprecated_gc_flags() {
   if (FLAG_IS_CMDLINE(DefaultMaxRAMFraction)) {
     warning("DefaultMaxRAMFraction is deprecated and will likely be removed in a future release. "
         "Use MaxRAMFraction instead.");
-  }
-  if (FLAG_IS_CMDLINE(UseCMSCompactAtFullCollection)) {
-    warning("UseCMSCompactAtFullCollection is deprecated and will likely be removed in a future release.");
-  }
-  if (FLAG_IS_CMDLINE(CMSFullGCsBeforeCompaction)) {
-    warning("CMSFullGCsBeforeCompaction is deprecated and will likely be removed in a future release.");
-  }
-  if (FLAG_IS_CMDLINE(UseCMSCollectionPassing)) {
-    warning("UseCMSCollectionPassing is deprecated and will likely be removed in a future release.");
   }
 }
 
@@ -2266,31 +2265,8 @@ bool Arguments::check_vm_args_consistency() {
   status = status && ArgumentsExt::check_gc_consistency_user();
   status = status && check_stack_pages();
 
-  if (CMSIncrementalMode) {
-    if (!UseConcMarkSweepGC) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "error:  invalid argument combination.\n"
-                  "The CMS collector (-XX:+UseConcMarkSweepGC) must be "
-                  "selected in order\nto use CMSIncrementalMode.\n");
-      status = false;
-    } else {
-      status = status && verify_percentage(CMSIncrementalDutyCycle,
-                                  "CMSIncrementalDutyCycle");
-      status = status && verify_percentage(CMSIncrementalDutyCycleMin,
-                                  "CMSIncrementalDutyCycleMin");
-      status = status && verify_percentage(CMSIncrementalSafetyFactor,
-                                  "CMSIncrementalSafetyFactor");
-      status = status && verify_percentage(CMSIncrementalOffset,
-                                  "CMSIncrementalOffset");
-      status = status && verify_percentage(CMSExpAvgFactor,
-                                  "CMSExpAvgFactor");
-      // If it was not set on the command line, set
-      // CMSInitiatingOccupancyFraction to 1 so icms can initiate cycles early.
-      if (CMSInitiatingOccupancyFraction < 0) {
-        FLAG_SET_DEFAULT(CMSInitiatingOccupancyFraction, 1);
-      }
-    }
-  }
+  status = status && verify_percentage(CMSIncrementalSafetyFactor,
+                                    "CMSIncrementalSafetyFactor");
 
   // CMS space iteration, which FLSVerifyAllHeapreferences entails,
   // insists that we hold the requisite locks so that the iteration is
@@ -2824,14 +2800,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xnoclassgc
     } else if (match_option(option, "-Xnoclassgc", &tail)) {
       FLAG_SET_CMDLINE(bool, ClassUnloading, false);
-    // -Xincgc: i-CMS
-    } else if (match_option(option, "-Xincgc", &tail)) {
-      FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, true);
-      FLAG_SET_CMDLINE(bool, CMSIncrementalMode, true);
-    // -Xnoincgc: no i-CMS
-    } else if (match_option(option, "-Xnoincgc", &tail)) {
-      FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, false);
-      FLAG_SET_CMDLINE(bool, CMSIncrementalMode, false);
     // -Xconcgc
     } else if (match_option(option, "-Xconcgc", &tail)) {
       FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, true);
@@ -3753,7 +3721,6 @@ void Arguments::set_shared_spaces_flags() {
 #if !INCLUDE_ALL_GCS
 static void force_serial_gc() {
   FLAG_SET_DEFAULT(UseSerialGC, true);
-  FLAG_SET_DEFAULT(CMSIncrementalMode, false);  // special CMS suboption
   UNSUPPORTED_GC_OPTION(UseG1GC);
   UNSUPPORTED_GC_OPTION(UseParallelGC);
   UNSUPPORTED_GC_OPTION(UseParallelOldGC);

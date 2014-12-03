@@ -336,13 +336,13 @@ class ConstantPool : public Metadata {
 
   Klass* klass_at(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, true, CHECK_NULL);
+    return klass_at_impl(h_this, which, true, THREAD);
   }
 
   // Version of klass_at that doesn't save the resolution error, called during deopt
   Klass* klass_at_ignore_error(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, false, CHECK_NULL);
+    return klass_at_impl(h_this, which, false, THREAD);
   }
 
   Symbol* klass_name_at(int which);  // Returns the name, w/o resolving.

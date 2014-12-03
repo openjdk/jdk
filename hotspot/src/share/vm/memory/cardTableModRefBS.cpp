@@ -53,9 +53,8 @@ size_t CardTableModRefBS::compute_byte_map_size()
   return align_size_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
 
-CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
-                                     int max_covered_regions):
-  ModRefBarrierSet(max_covered_regions),
+CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap) :
+  ModRefBarrierSet(),
   _whole_heap(whole_heap),
   _guard_index(0),
   _guard_region(),

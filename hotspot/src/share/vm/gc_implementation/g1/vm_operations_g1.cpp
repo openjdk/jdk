@@ -213,8 +213,12 @@ void VM_CGC_Operation::acquire_pending_list_lock() {
   assert(_needs_pll, "don't call this otherwise");
   // The caller may block while communicating
   // with the SLT thread in order to acquire/release the PLL.
-  ConcurrentMarkThread::slt()->
-    manipulatePLL(SurrogateLockerThread::acquirePLL);
+  SurrogateLockerThread* slt = ConcurrentMarkThread::slt();
+  if (slt != NULL) {
+    slt->manipulatePLL(SurrogateLockerThread::acquirePLL);
+  } else {
+    SurrogateLockerThread::report_missing_slt();
+  }
 }
 
 void VM_CGC_Operation::release_and_notify_pending_list_lock() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,18 +236,14 @@ class MemberNameTable : public GrowableArray<jweak> {
  public:
   MemberNameTable(int methods_cnt);
   ~MemberNameTable();
-  void add_member_name(int index, jweak mem_name_ref);
-  oop  get_member_name(int index);
+  void add_member_name(jweak mem_name_ref);
 
 #if INCLUDE_JVMTI
- public:
   // RedefineClasses() API support:
   // If a MemberName refers to old_method then update it
   // to refer to new_method.
   void adjust_method_entries(Method** old_methods, Method** new_methods,
                              int methods_length, bool *trace_name_printed);
- private:
-  oop find_member_name_by_method(Method* old_method);
 #endif // INCLUDE_JVMTI
 };
 

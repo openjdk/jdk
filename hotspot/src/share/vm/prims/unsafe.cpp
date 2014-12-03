@@ -24,10 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
 #include "memory/allocation.inline.hpp"
 #include "prims/jni.h"
 #include "prims/jvm.h"
@@ -43,6 +39,10 @@
 #include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif // INCLUDE_ALL_GCS
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 

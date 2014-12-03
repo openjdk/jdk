@@ -29,10 +29,10 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/top.hpp"
-#include "trace/tracing.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1_globals.hpp"
 #endif // INCLUDE_ALL_GCS
