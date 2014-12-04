@@ -85,7 +85,7 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/macosx/conf/$(JVMCFG_ARCH)/jvm.cfg
 else
-  JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/conf/$(JVMCFG_ARCH)/jvm.cfg
+  JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/$(JVMCFG_ARCH)/jvm.cfg
 endif
 JVMCFG_DIR := $(LIB_DST_DIR)$(OPENJDK_TARGET_CPU_LIBDIR)
 JVMCFG := $(JVMCFG_DIR)/jvm.cfg
@@ -192,7 +192,7 @@ $(CONF_DST_DIR)/net.properties: $(JDK_TOPDIR)/src/java.base/share/conf/net.prope
 TARGETS += $(CONF_DST_DIR)/net.properties
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  $(CONF_DST_DIR)/sdp/sdp.conf.template: $(JDK_TOPDIR)/src/java.base/${OPENJDK_TARGET_OS_API_DIR}/conf/sdp/sdp.conf.template
+  $(CONF_DST_DIR)/sdp/sdp.conf.template: $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/sdp/sdp.conf.template
 	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(call install-file)
 

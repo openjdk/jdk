@@ -767,7 +767,7 @@ public final class ConnectorBootstrap {
                     JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
             connServer.start();
         } catch (IOException e) {
-            if (connServer == null) {
+            if (connServer == null || connServer.getAddress() == null) {
                 throw new AgentConfigurationError(CONNECTOR_SERVER_IO_ERROR,
                         e, url.toString());
             } else {

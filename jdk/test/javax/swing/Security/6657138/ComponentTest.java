@@ -28,8 +28,6 @@
  * @author Alexander Potochkin
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -50,14 +48,14 @@ public class ComponentTest extends JFrame {
 
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 frame = new ComponentTest();
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
         for (final UIManager.LookAndFeelInfo laf : lafs) {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -70,7 +68,7 @@ public class ComponentTest extends JFrame {
                     SwingUtilities.updateComponentTreeUI(frame);
                 }
             });
-            toolkit.realSync();
+            robot.waitForIdle();
         }
     }
 }
