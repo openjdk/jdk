@@ -40,7 +40,7 @@ public class MemoryLeak {
             try {
                 s.read(bytes);
                 throw new Error("expected IOException");
-            } catch (IOException _) {
+            } catch (IOException expected) {
                 /* OK */
             } catch (OutOfMemoryError oome) {
                 System.out.printf("Got OutOfMemoryError, i=%d%n", i);

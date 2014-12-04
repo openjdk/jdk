@@ -44,6 +44,7 @@ public final class TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
     private final static String MSG = "TlsRsaPremasterSecretGenerator must be "
         + "initialized using a TlsRsaPremasterSecretParameterSpec";
 
+    @SuppressWarnings("deprecation")
     private TlsRsaPremasterSecretParameterSpec spec;
     private SecureRandom random;
 
@@ -54,6 +55,7 @@ public final class TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
         if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {

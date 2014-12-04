@@ -28,7 +28,7 @@ package java.util.jar;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
@@ -46,6 +46,9 @@ import sun.misc.ASCIICaseInsensitiveComparator;
  * will be UTF8-encoded when written to the output stream.  See the
  * <a href="../../../../technotes/guides/jar/jar.html">JAR File Specification</a>
  * for more information about valid attribute names and values.
+ *
+ * <p>This map and its views have a predictable iteration order, namely the
+ * order that keys were inserted into the map, as with {@link LinkedHashMap}.
  *
  * @author  David Connelly
  * @see     Manifest
@@ -71,7 +74,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * @param size the initial number of attributes
      */
     public Attributes(int size) {
-        map = new HashMap<>(size);
+        map = new LinkedHashMap<>(size);
     }
 
     /**
@@ -81,7 +84,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * @param attr the specified Attributes
      */
     public Attributes(Attributes attr) {
-        map = new HashMap<>(attr);
+        map = new LinkedHashMap<>(attr);
     }
 
 
@@ -295,6 +298,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * Writes the current attributes to the specified data output stream.
      * XXX Need to handle UTF8 values and break up lines longer than 72 bytes
      */
+     @SuppressWarnings("deprecation")
      void write(DataOutputStream os) throws IOException {
          for (Entry<Object, Object> e : entrySet()) {
              StringBuffer buffer = new StringBuffer(
@@ -322,6 +326,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      *
      * XXX Need to handle UTF8 values and break up lines longer than 72 bytes
      */
+    @SuppressWarnings("deprecation")
     void writeMain(DataOutputStream out) throws IOException
     {
         // write out the *-Version header first, if it exists
@@ -364,6 +369,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * Reads attributes from the specified input stream.
      * XXX Need to handle UTF8 values.
      */
+    @SuppressWarnings("deprecation")
     void read(Manifest.FastInputStream is, byte[] lbuf) throws IOException {
         String name = null, value = null;
         byte[] lastline = null;

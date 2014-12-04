@@ -68,16 +68,13 @@ public final class DOMKeyInfo extends DOMStructure implements KeyInfo {
         if (content == null) {
             throw new NullPointerException("content cannot be null");
         }
-        this.keyInfoTypes =
-            Collections.unmodifiableList(new ArrayList<XMLStructure>(content));
+        List<XMLStructure> tempList =
+            Collections.checkedList(new ArrayList<XMLStructure>(),
+                                    XMLStructure.class);
+        tempList.addAll(content);
+        this.keyInfoTypes = Collections.unmodifiableList(tempList);
         if (this.keyInfoTypes.isEmpty()) {
             throw new IllegalArgumentException("content cannot be empty");
-        }
-        for (int i = 0, size = this.keyInfoTypes.size(); i < size; i++) {
-            if (!(this.keyInfoTypes.get(i) instanceof XMLStructure)) {
-                throw new ClassCastException
-                    ("content["+i+"] is not a valid KeyInfo type");
-            }
         }
         this.id = id;
     }

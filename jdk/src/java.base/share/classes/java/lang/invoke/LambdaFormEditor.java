@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
@@ -58,10 +59,9 @@ class LambdaFormEditor {
      *  The sequence is unterminated, ending with an indefinite number of zero bytes.
      *  Sequences that are simple (short enough and with small enough values) pack into a 64-bit long.
      */
-    private static final class Transform {
+    private static final class Transform extends SoftReference<LambdaForm> {
         final long packedBytes;
         final byte[] fullBytes;
-        final LambdaForm result;  // result of transform, or null, if there is none available
 
         private enum Kind {
             NO_KIND,  // necessary because ordinal must be greater than zero
@@ -140,9 +140,9 @@ class LambdaFormEditor {
         Kind kind() { return Kind.values()[byteAt(0)]; }
 
         private Transform(long packedBytes, byte[] fullBytes, LambdaForm result) {
+            super(result);
             this.packedBytes = packedBytes;
             this.fullBytes = fullBytes;
-            this.result = result;
         }
         private Transform(long packedBytes) {
             this(packedBytes, null, null);
@@ -243,6 +243,7 @@ class LambdaFormEditor {
                 buf.append("unpacked");
                 buf.append(Arrays.toString(fullBytes));
             }
+            LambdaForm result = get();
             if (result != null) {
                 buf.append(" result=");
                 buf.append(result);
@@ -253,7 +254,7 @@ class LambdaFormEditor {
 
     /** Find a previously cached transform equivalent to the given one, and return its result. */
     private LambdaForm getInCache(Transform key) {
-        assert(key.result == null);
+        assert(key.get() == null);
         // The transformCache is one of null, Transform, Transform[], or ConcurrentHashMap.
         Object c = lambdaForm.transformCache;
         Transform k = null;
@@ -276,7 +277,7 @@ class LambdaFormEditor {
             }
         }
         assert(k == null || key.equals(k));
-        return k == null ? null : k.result;
+        return (k != null) ? k.get() : null;
     }
 
     /** Arbitrary but reasonable limits on Transform[] size for cache. */
@@ -293,7 +294,17 @@ class LambdaFormEditor {
                 @SuppressWarnings("unchecked")
                 ConcurrentHashMap<Transform,Transform> m = (ConcurrentHashMap<Transform,Transform>) c;
                 Transform k = m.putIfAbsent(key, key);
-                return k != null ? k.result : form;
+                if (k == null) return form;
+                LambdaForm result = k.get();
+                if (result != null) {
+                    return result;
+                } else {
+                    if (m.replace(key, k, key)) {
+                        return form;
+                    } else {
+                        continue;
+                    }
+                }
             }
             assert(pass == 0);
             synchronized (lambdaForm) {
@@ -308,17 +319,27 @@ class LambdaFormEditor {
                 if (c instanceof Transform) {
                     Transform k = (Transform)c;
                     if (k.equals(key)) {
-                        return k.result;
+                        LambdaForm result = k.get();
+                        if (result == null) {
+                            lambdaForm.transformCache = key;
+                            return form;
+                        } else {
+                            return result;
+                        }
+                    } else if (k.get() == null) { // overwrite stale entry
+                        lambdaForm.transformCache = key;
+                        return form;
                     }
                     // expand one-element cache to small array
                     ta = new Transform[MIN_CACHE_ARRAY_SIZE];
                     ta[0] = k;
-                    lambdaForm.transformCache = c = ta;
+                    lambdaForm.transformCache = ta;
                 } else {
                     // it is already expanded
                     ta = (Transform[])c;
                 }
                 int len = ta.length;
+                int stale = -1;
                 int i;
                 for (i = 0; i < len; i++) {
                     Transform k = ta[i];
@@ -326,10 +347,18 @@ class LambdaFormEditor {
                         break;
                     }
                     if (k.equals(key)) {
-                        return k.result;
+                        LambdaForm result = k.get();
+                        if (result == null) {
+                            ta[i] = key;
+                            return form;
+                        } else {
+                            return result;
+                        }
+                    } else if (stale < 0 && k.get() == null) {
+                        stale = i; // remember 1st stale entry index
                     }
                 }
-                if (i < len) {
+                if (i < len || stale >= 0) {
                     // just fall through to cache update
                 } else if (len < MAX_CACHE_ARRAY_SIZE) {
                     len = Math.min(len * 2, MAX_CACHE_ARRAY_SIZE);
@@ -344,7 +373,8 @@ class LambdaFormEditor {
                     // The second iteration will update for this query, concurrently.
                     continue;
                 }
-                ta[i] = key;
+                int idx = (stale >= 0) ? stale : i;
+                ta[idx] = key;
                 return form;
             }
         }

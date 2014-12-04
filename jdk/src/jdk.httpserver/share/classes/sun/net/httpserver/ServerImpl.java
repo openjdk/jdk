@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ class ServerImpl implements TimeSource {
 
     private Timer timer, timer1;
     private Logger logger;
+    private Thread dispatcherThread;
 
     ServerImpl (
         HttpServer wrapper, String protocol, InetSocketAddress addr, int backlog
@@ -141,9 +142,9 @@ class ServerImpl implements TimeSource {
         if (executor == null) {
             executor = new DefaultExecutor();
         }
-        Thread t = new Thread (dispatcher);
+        dispatcherThread = new Thread (dispatcher);
         started = true;
-        t.start();
+        dispatcherThread.start();
     }
 
     public void setExecutor (Executor executor) {
@@ -204,6 +205,14 @@ class ServerImpl implements TimeSource {
         timer.cancel();
         if (timer1Enabled) {
             timer1.cancel();
+        }
+        if (dispatcherThread != null) {
+            try {
+                dispatcherThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.log(Level.FINER, "ServerImpl.stop: ", e);
+            }
         }
     }
 

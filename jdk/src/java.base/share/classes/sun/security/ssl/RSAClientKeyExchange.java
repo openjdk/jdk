@@ -63,6 +63,7 @@ final class RSAClientKeyExchange extends HandshakeMessage {
      * it, using its RSA private key.  Result is the same size as the
      * server's public key, and uses PKCS #1 block format 02.
      */
+    @SuppressWarnings("deprecation")
     RSAClientKeyExchange(ProtocolVersion protocolVersion,
             ProtocolVersion maxVersion,
             SecureRandom generator, PublicKey publicKey) throws IOException {
@@ -92,6 +93,7 @@ final class RSAClientKeyExchange extends HandshakeMessage {
      * Server gets the PKCS #1 (block format 02) data, decrypts
      * it with its private key.
      */
+    @SuppressWarnings("deprecation")
     RSAClientKeyExchange(ProtocolVersion currentVersion,
             ProtocolVersion maxVersion,
             SecureRandom generator, HandshakeInStream input,

@@ -58,9 +58,8 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         return new DOMXMLSignature(si, ki, null, null, null);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public XMLSignature newXMLSignature(SignedInfo si, KeyInfo ki,
-        List objects, String id, String signatureValueId) {
+        List<? extends XMLObject> objects, String id, String signatureValueId) {
         return new DOMXMLSignature(si, ki, objects, id, signatureValueId);
     }
 
@@ -68,16 +67,14 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         return newReference(uri, dm, null, null, null);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public Reference newReference(String uri, DigestMethod dm, List transforms,
-        String type, String id) {
+    public Reference newReference(String uri, DigestMethod dm,
+        List<? extends Transform> transforms, String type, String id) {
         return new DOMReference(uri, type, dm, transforms, id, getProvider());
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Reference newReference(String uri, DigestMethod dm,
-        List appliedTransforms, Data result, List transforms, String type,
-        String id) {
+        List<? extends Transform> appliedTransforms, Data result,
+        List<? extends Transform> transforms, String type, String id) {
         if (appliedTransforms == null) {
             throw new NullPointerException("appliedTransforms cannot be null");
         }
@@ -91,9 +88,9 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
             (uri, type, dm, appliedTransforms, result, transforms, id, getProvider());
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public Reference newReference(String uri, DigestMethod dm, List transforms,
-        String type, String id, byte[] digestValue) {
+    public Reference newReference(String uri, DigestMethod dm,
+        List<? extends Transform> transforms, String type, String id,
+        byte[] digestValue) {
         if (digestValue == null) {
             throw new NullPointerException("digestValue cannot be null");
         }
@@ -101,43 +98,38 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
             (uri, type, dm, null, null, transforms, id, digestValue, getProvider());
     }
 
-    @SuppressWarnings("rawtypes")
     public SignedInfo newSignedInfo(CanonicalizationMethod cm,
-        SignatureMethod sm, List references) {
+        SignatureMethod sm, List<? extends Reference> references) {
         return newSignedInfo(cm, sm, references, null);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public SignedInfo newSignedInfo(CanonicalizationMethod cm,
-        SignatureMethod sm, List references, String id) {
+        SignatureMethod sm, List<? extends Reference> references, String id) {
         return new DOMSignedInfo(cm, sm, references, id);
     }
 
     // Object factory methods
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public XMLObject newXMLObject(List content, String id, String mimeType,
-        String encoding) {
+    public XMLObject newXMLObject(List<? extends XMLStructure> content,
+        String id, String mimeType, String encoding) {
         return new DOMXMLObject(content, id, mimeType, encoding);
     }
 
-    @SuppressWarnings("rawtypes")
-    public Manifest newManifest(List references) {
+    public Manifest newManifest(List<? extends Reference> references) {
         return newManifest(references, null);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public Manifest newManifest(List references, String id) {
+    public Manifest newManifest(List<? extends Reference> references,
+        String id) {
         return new DOMManifest(references, id);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public SignatureProperties newSignatureProperties(List props, String id) {
+    public SignatureProperties newSignatureProperties(
+        List<? extends SignatureProperty> props, String id) {
         return new DOMSignatureProperties(props, id);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public SignatureProperty newSignatureProperty
-        (List info, String target, String id) {
+        (List<? extends XMLStructure> info, String target, String id) {
         return new DOMSignatureProperty(info, target, id);
     }
 
