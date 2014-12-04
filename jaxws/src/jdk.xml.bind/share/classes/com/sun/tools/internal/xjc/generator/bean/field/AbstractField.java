@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ import com.sun.tools.internal.xjc.model.CTypeInfo;
 import com.sun.tools.internal.xjc.model.CTypeRef;
 import com.sun.tools.internal.xjc.model.CValuePropertyInfo;
 import com.sun.tools.internal.xjc.model.nav.NClass;
-import com.sun.tools.internal.xjc.outline.Aspect;
-import static com.sun.tools.internal.xjc.outline.Aspect.IMPLEMENTATION;
+import com.sun.tools.internal.xjc.model.Aspect;
+import static com.sun.tools.internal.xjc.model.Aspect.IMPLEMENTATION;
 import com.sun.tools.internal.xjc.outline.ClassOutline;
 import com.sun.tools.internal.xjc.outline.FieldAccessor;
 import com.sun.tools.internal.xjc.outline.FieldOutline;
