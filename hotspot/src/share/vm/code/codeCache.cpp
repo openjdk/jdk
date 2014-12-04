@@ -305,7 +305,7 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, size_t size_initial
   MemoryService::add_code_heap_memory_pool(heap, name);
 }
 
-CodeHeap* CodeCache::get_code_heap(CodeBlob* cb) {
+CodeHeap* CodeCache::get_code_heap(const CodeBlob* cb) {
   assert(cb != NULL, "CodeBlob is null");
   FOR_ALL_HEAPS(heap) {
     if ((*heap)->contains(cb)) {

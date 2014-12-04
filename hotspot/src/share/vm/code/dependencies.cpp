@@ -912,6 +912,8 @@ class ClassHierarchyWalker {
   bool is_witness(Klass* k) {
     if (doing_subtype_search()) {
       return Dependencies::is_concrete_klass(k);
+    } else if (!k->oop_is_instance()) {
+      return false; // no methods to find in an array type
     } else {
       Method* m = InstanceKlass::cast(k)->find_method(_name, _signature);
       if (m == NULL || !Dependencies::is_concrete_method(m))  return false;
@@ -1118,7 +1120,7 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(Klass* context_type,
   Klass* chain;       // scratch variable
 #define ADD_SUBCLASS_CHAIN(k)                     {  \
     assert(chaini < CHAINMAX, "oob");                \
-    chain = InstanceKlass::cast(k)->subklass();      \
+    chain = k->subklass();                           \
     if (chain != NULL)  chains[chaini++] = chain;    }
 
   // Look for non-abstract subclasses.
@@ -1129,35 +1131,37 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(Klass* context_type,
   // (Their subclasses are additional indirect implementors.
   // See InstanceKlass::add_implementor.)
   // (Note:  nof_implementors is always zero for non-interfaces.)
-  int nof_impls = InstanceKlass::cast(context_type)->nof_implementors();
-  if (nof_impls > 1) {
-    // Avoid this case: *I.m > { A.m, C }; B.m > C
-    // Here, I.m has 2 concrete implementations, but m appears unique
-    // as A.m, because the search misses B.m when checking C.
-    // The inherited method B.m was getting missed by the walker
-    // when interface 'I' was the starting point.
-    // %%% Until this is fixed more systematically, bail out.
-    // (Old CHA had the same limitation.)
-    return context_type;
-  }
-  if (nof_impls > 0) {
-    Klass* impl = InstanceKlass::cast(context_type)->implementor();
-    assert(impl != NULL, "just checking");
-    // If impl is the same as the context_type, then more than one
-    // implementor has seen. No exact info in this case.
-    if (impl == context_type) {
-      return context_type;  // report an inexact witness to this sad affair
+  if (top_level_call) {
+    int nof_impls = InstanceKlass::cast(context_type)->nof_implementors();
+    if (nof_impls > 1) {
+      // Avoid this case: *I.m > { A.m, C }; B.m > C
+      // Here, I.m has 2 concrete implementations, but m appears unique
+      // as A.m, because the search misses B.m when checking C.
+      // The inherited method B.m was getting missed by the walker
+      // when interface 'I' was the starting point.
+      // %%% Until this is fixed more systematically, bail out.
+      // (Old CHA had the same limitation.)
+      return context_type;
     }
-    if (do_counts)
-      { NOT_PRODUCT(deps_find_witness_steps++); }
-    if (is_participant(impl)) {
-      if (!participants_hide_witnesses) {
+    if (nof_impls > 0) {
+      Klass* impl = InstanceKlass::cast(context_type)->implementor();
+      assert(impl != NULL, "just checking");
+      // If impl is the same as the context_type, then more than one
+      // implementor has seen. No exact info in this case.
+      if (impl == context_type) {
+        return context_type;  // report an inexact witness to this sad affair
+      }
+      if (do_counts)
+        { NOT_PRODUCT(deps_find_witness_steps++); }
+      if (is_participant(impl)) {
+        if (!participants_hide_witnesses) {
+          ADD_SUBCLASS_CHAIN(impl);
+        }
+      } else if (is_witness(impl) && !ignore_witness(impl)) {
+        return impl;
+      } else {
         ADD_SUBCLASS_CHAIN(impl);
       }
-    } else if (is_witness(impl) && !ignore_witness(impl)) {
-      return impl;
-    } else {
-      ADD_SUBCLASS_CHAIN(impl);
     }
   }
 

@@ -658,7 +658,7 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, methodHandle meth
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, false, MetaspaceObj::MethodDataType, THREAD)
-    MethodData(method(), size, CHECK_NULL);
+    MethodData(method(), size, THREAD);
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
@@ -1134,7 +1134,7 @@ void MethodData::init() {
   _tenure_traps = 0;
   _num_loops = 0;
   _num_blocks = 0;
-  _would_profile = true;
+  _would_profile = unknown;
 
 #if INCLUDE_RTM_OPT
   _rtm_state = NoRTM; // No RTM lock eliding by default

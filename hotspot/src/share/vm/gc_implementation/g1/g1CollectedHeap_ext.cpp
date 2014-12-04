@@ -25,8 +25,9 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 
-void G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
+bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
                                                     jlong* totals,
                                                     jbyte* accuracy,
                                                     jint len) {
+  return false;
 }

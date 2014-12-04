@@ -90,7 +90,7 @@ $(shell uname -r -v \
 #SOLARIS_11_B159_OR_LATER=-DSOLARIS_11_B159_OR_LATER
 
 
-$(LIBSAPROC): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(SASRCFILES) $(SADISOBJ) $(SAMAPFILE)
+$(LIBSAPROC): $(SASRCFILES) $(SADISOBJ) $(SAMAPFILE)
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \
@@ -121,17 +121,8 @@ $(SADISOBJ): $(SADISSRCFILES)
 	           -c -o $(SADISOBJ)
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-# gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
-# Clear the SHF_ALLOC flag (if set) from empty section headers.
-# An empty section header has sh_addr == 0 and sh_size == 0.
-# This problem has only been seen on Solaris X64, but we call this tool
-# on all Solaris builds just in case.
-	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)
-# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
-# Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
-#	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
-	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBSAPROC_DEBUGINFO) $@
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
