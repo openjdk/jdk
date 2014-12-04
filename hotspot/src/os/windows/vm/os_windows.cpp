@@ -211,7 +211,7 @@ void os::init_system_properties_values() {
     }
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
-    FREE_C_HEAP_ARRAY(char, home_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, home_path);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
@@ -221,7 +221,7 @@ void os::init_system_properties_values() {
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);
-    FREE_C_HEAP_ARRAY(char, dll_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, dll_path);
 
     if (!set_boot_path('\\', ';')) {
       return;
@@ -276,7 +276,7 @@ void os::init_system_properties_values() {
     strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
-    FREE_C_HEAP_ARRAY(char, library_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, library_path);
   }
 
   // Default extensions directory
@@ -301,7 +301,7 @@ void os::init_system_properties_values() {
     Arguments::set_endorsed_dirs(buf);
     // (Arguments::set_endorsed_dirs() calls SystemProperty::set_value(), which
     //  duplicates the input.)
-    FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+    FREE_C_HEAP_ARRAY(char, buf);
 #undef ENDORSED_DIR
   }
 
@@ -1136,7 +1136,7 @@ DIR * os::opendir(const char *dirname) {
 
   dirp->path = (char *)malloc(strlen(dirname) + 5, mtInternal);
   if (dirp->path == 0) {
-    free(dirp, mtInternal);
+    free(dirp);
     errno = ENOMEM;
     return 0;
   }
@@ -1144,13 +1144,13 @@ DIR * os::opendir(const char *dirname) {
 
   fattr = GetFileAttributes(dirp->path);
   if (fattr == 0xffffffff) {
-    free(dirp->path, mtInternal);
-    free(dirp, mtInternal);
+    free(dirp->path);
+    free(dirp);
     errno = ENOENT;
     return 0;
   } else if ((fattr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-    free(dirp->path, mtInternal);
-    free(dirp, mtInternal);
+    free(dirp->path);
+    free(dirp);
     errno = ENOTDIR;
     return 0;
   }
@@ -1168,8 +1168,8 @@ DIR * os::opendir(const char *dirname) {
   dirp->handle = FindFirstFile(dirp->path, &dirp->find_data);
   if (dirp->handle == INVALID_HANDLE_VALUE) {
     if (GetLastError() != ERROR_FILE_NOT_FOUND) {
-      free(dirp->path, mtInternal);
-      free(dirp, mtInternal);
+      free(dirp->path);
+      free(dirp);
       errno = EACCES;
       return 0;
     }
@@ -1207,8 +1207,8 @@ int os::closedir(DIR *dirp) {
     }
     dirp->handle = INVALID_HANDLE_VALUE;
   }
-  free(dirp->path, mtInternal);
-  free(dirp, mtInternal);
+  free(dirp->path);
+  free(dirp);
   return 0;
 }
 
@@ -1275,11 +1275,11 @@ bool os::dll_build_name(char *buffer, size_t buflen,
     // release the storage
     for (int i = 0; i < n; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
+      FREE_C_HEAP_ARRAY(char*, pelements);
     }
   } else {
     jio_snprintf(buffer, buflen, "%s\\%s.dll", pname, fname);
@@ -2745,7 +2745,7 @@ class NUMANodeListHolder {
 
   void free_node_list() {
     if (_numa_used_node_list != NULL) {
-      FREE_C_HEAP_ARRAY(int, _numa_used_node_list, mtInternal);
+      FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
     }
   }
 
@@ -3781,8 +3781,8 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
-#define MAX_EXIT_HANDLES    16
-#define EXIT_TIMEOUT      1000 /* 1 sec */
+#define MAX_EXIT_HANDLES PRODUCT_ONLY(32)   NOT_PRODUCT(128)
+#define EXIT_TIMEOUT     PRODUCT_ONLY(1000) NOT_PRODUCT(4000) /* 1 sec in product, 4 sec in debug */
 
 static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   InitializeCriticalSection((CRITICAL_SECTION*)pcrit_sect);
@@ -3833,6 +3833,9 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
         // If there's no free slot in the array of the kept handles, we'll have to
         // wait until at least one thread completes exiting.
         if ((handle_count = j) == MAX_EXIT_HANDLES) {
+          // Raise the priority of the oldest exiting thread to increase its chances
+          // to complete sooner.
+          SetThreadPriority(handles[0], THREAD_PRIORITY_ABOVE_NORMAL);
           res = WaitForMultipleObjects(MAX_EXIT_HANDLES, handles, FALSE, EXIT_TIMEOUT);
           if (res >= WAIT_OBJECT_0 && res < (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
             i = (res - WAIT_OBJECT_0);
@@ -3841,7 +3844,8 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
               handles[i] = handles[i + 1];
             }
           } else {
-            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+            warning("WaitForMultipleObjects %s in %s: %d\n",
+                    (res == WAIT_FAILED ? "failed" : "timed out"), __FILE__, __LINE__);
             // Don't keep handles, if we failed waiting for them.
             for (i = 0; i < MAX_EXIT_HANDLES; ++i) {
               CloseHandle(handles[i]);
@@ -3867,9 +3871,20 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
         if (handle_count > 0) {
           // Before ending the process, make sure all the threads that had called
           // _endthreadex() completed.
+
+          // Set the priority level of the current thread to the same value as
+          // the priority level of exiting threads.
+          // This is to ensure it will be given a fair chance to execute if
+          // the timeout expires.
+          hthr = GetCurrentThread();
+          SetThreadPriority(hthr, THREAD_PRIORITY_ABOVE_NORMAL);
+          for (i = 0; i < handle_count; ++i) {
+            SetThreadPriority(handles[i], THREAD_PRIORITY_ABOVE_NORMAL);
+          }
           res = WaitForMultipleObjects(handle_count, handles, TRUE, EXIT_TIMEOUT);
-          if (res == WAIT_FAILED) {
-            warning("WaitForMultipleObjects failed in %s: %d\n", __FILE__, __LINE__);
+          if (res < WAIT_OBJECT_0 || res >= (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
+            warning("WaitForMultipleObjects %s in %s: %d\n",
+                    (res == WAIT_FAILED ? "failed" : "timed out"), __FILE__, __LINE__);
           }
           for (i = 0; i < handle_count; ++i) {
             CloseHandle(handles[i]);
@@ -4627,7 +4642,7 @@ static int stdinAvailable(int fd, long *pbytes) {
 
   error = ::PeekConsoleInput(han, lpBuffer, numEvents, &numEventsRead);
   if (error == 0) {
-    os::free(lpBuffer, mtInternal);
+    os::free(lpBuffer);
     return FALSE;
   }
 
@@ -4648,7 +4663,7 @@ static int stdinAvailable(int fd, long *pbytes) {
   }
 
   if (lpBuffer != NULL) {
-    os::free(lpBuffer, mtInternal);
+    os::free(lpBuffer);
   }
 
   *pbytes = (long) actualLength;

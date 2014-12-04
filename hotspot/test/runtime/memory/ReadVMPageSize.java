@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,26 @@
  * questions.
  */
 
-#ifndef SHARE_VM_PRIMS_WBTESTMETHODS_PARSERTESTS_H
-#define SHARE_VM_PRIMS_WBTESTMETHODS_PARSERTESTS_H
+/*
+ * @test
+ * @summary Using WhiteBox to get VM page size
+ * @library /testlibrary /testlibrary/whitebox
+ * @build ReadVMPageSize
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  ReadVMPageSize
+ */
 
-#include "prims/jni.h"
-#include "prims/whitebox.hpp"
+import com.oracle.java.testlibrary.*;
+import sun.hotspot.WhiteBox;
 
-WB_METHOD_DECLARE(jobjectArray) WB_ParseCommandLine(JNIEnv* env, jobject o, jstring args, jchar delim, jobjectArray arguments);
-
-#endif //SHARE_VM_PRIMS_WBTESTMETHODS_PARSERTESTS_H
+public class ReadVMPageSize {
+  public static void main(String args[]) throws Exception {
+    WhiteBox wb = WhiteBox.getWhiteBox();
+    int pageSize = wb.getVMPageSize();
+    if (pageSize < 0) {
+      throw new Exception("pageSize < 0");
+    } else {
+      System.out.println("Page size = " + pageSize);
+    }
+  }
+}
