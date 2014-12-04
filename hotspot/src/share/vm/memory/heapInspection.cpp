@@ -153,7 +153,7 @@ KlassInfoTable::~KlassInfoTable() {
     for (int index = 0; index < _size; index++) {
       _buckets[index].empty();
     }
-    FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets, mtInternal);
+    FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets);
     _size = 0;
   }
 }

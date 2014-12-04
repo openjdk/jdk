@@ -1757,7 +1757,7 @@ class JNIMethodBlockNode : public CHeapObj<mtClass> {
 
   JNIMethodBlockNode(int num_methods = min_block_size);
 
-  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods, mtInternal); }
+  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods); }
 
   void ensure_methods(int num_addl_methods) {
     if (_top < _number_of_methods) {

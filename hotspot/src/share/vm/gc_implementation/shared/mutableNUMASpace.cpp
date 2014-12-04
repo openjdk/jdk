@@ -276,7 +276,7 @@ bool MutableNUMASpace::update_layout(bool force) {
       }
     }
 
-    FREE_C_HEAP_ARRAY(int, lgrp_ids, mtGC);
+    FREE_C_HEAP_ARRAY(int, lgrp_ids);
 
     if (changed) {
       for (JavaThread *thread = Threads::first(); thread; thread = thread->next()) {

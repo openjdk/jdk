@@ -58,7 +58,7 @@ void xmlStream::initialize(outputStream* out) {
 
 #ifdef ASSERT
 xmlStream::~xmlStream() {
-  FREE_C_HEAP_ARRAY(char, _element_close_stack_low, mtInternal);
+  FREE_C_HEAP_ARRAY(char, _element_close_stack_low);
 }
 #endif
 
@@ -162,7 +162,7 @@ void xmlStream::see_tag(const char* tag, bool push) {
     _element_close_stack_high = new_high;
     _element_close_stack_low  = new_low;
     _element_close_stack_ptr  = new_ptr;
-    FREE_C_HEAP_ARRAY(char, old_low, mtInternal);
+    FREE_C_HEAP_ARRAY(char, old_low);
     push_ptr = new_ptr - (tag_len+1);
   }
   assert(push_ptr >= _element_close_stack_low, "in range");

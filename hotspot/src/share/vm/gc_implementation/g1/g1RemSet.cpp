@@ -94,7 +94,7 @@ G1RemSet::~G1RemSet() {
   for (uint i = 0; i < n_workers(); i++) {
     assert(_cset_rs_update_cl[i] == NULL, "it should be");
   }
-  FREE_C_HEAP_ARRAY(OopsInHeapRegionClosure*, _cset_rs_update_cl, mtGC);
+  FREE_C_HEAP_ARRAY(OopsInHeapRegionClosure*, _cset_rs_update_cl);
 }
 
 class ScanRSClosure : public HeapRegionClosure {
@@ -351,7 +351,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   for (uint i = 0; i < n_workers(); ++i) {
     _total_cards_scanned += _cards_scanned[i];
   }
-  FREE_C_HEAP_ARRAY(size_t, _cards_scanned, mtGC);
+  FREE_C_HEAP_ARRAY(size_t, _cards_scanned);
   _cards_scanned = NULL;
   // Cleanup after copy
   _g1->set_refine_cte_cl_concurrency(true);

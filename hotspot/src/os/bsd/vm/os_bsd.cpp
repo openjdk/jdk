@@ -418,7 +418,7 @@ void os::init_system_properties_values() {
                                                      mtInternal);
     sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
-    FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
 
   // Extensions directories.
@@ -429,7 +429,7 @@ void os::init_system_properties_values() {
   sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
   Arguments::set_endorsed_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, buf);
 
 #else // __APPLE__
 
@@ -513,7 +513,7 @@ void os::init_system_properties_values() {
     sprintf(ld_library_path, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     Arguments::set_library_path(ld_library_path);
-    FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
 
   // Extensions directories.
@@ -529,7 +529,7 @@ void os::init_system_properties_values() {
   sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
   Arguments::set_endorsed_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, buf);
 
 #undef SYS_EXTENSIONS_DIR
 #undef SYS_EXTENSIONS_DIRS
@@ -1315,11 +1315,11 @@ bool os::dll_build_name(char* buffer, size_t buflen,
     // release the storage
     for (int i = 0; i < n; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
+      FREE_C_HEAP_ARRAY(char*, pelements);
     }
   } else {
     snprintf(buffer, buflen, "%s/" JNI_LIB_PREFIX "%s" JNI_LIB_SUFFIX, pname, fname);
