@@ -33,7 +33,7 @@ default:
 
 # The shell code below will be executed on /usr/ccs/bin/make on Solaris, but not in GNU make.
 # /usr/ccs/bin/make lacks basically every other flow control mechanism.
-TEST_FOR_NON_GNUMAKE:sh=echo You are not using GNU make/gmake, this is a requirement. Check your path. 1>&2 && exit 1
+.TEST_FOR_NON_GNUMAKE:sh=echo You are not using GNU make/gmake, this is a requirement. Check your path. 1>&2 && exit 1
 
 # Assume we have GNU make, but check version.
 ifeq ($(strip $(foreach v, 3.81% 3.82% 4.%, $(filter $v, $(MAKE_VERSION)))), )
@@ -46,7 +46,17 @@ ifeq ($(filter /%,$(lastword $(MAKEFILE_LIST))),)
 else
   makefile_path:=$(lastword $(MAKEFILE_LIST))
 endif
-root_dir:=$(dir $(makefile_path))
+root_dir:=$(patsubst %/,%,$(dir $(makefile_path)))
+
+ifneq ($(findstring qp,$(MAKEFLAGS)),)
+  # When called with -qp, assume an external part (e.g. bash completion) is trying
+  # to understand our targets.
+  # Duplication of global targets, needed before ParseConfAndSpec in case we have
+  # no configurations.
+  help:
+  # If CONF is not set, look for all available configurations
+  CONF?=
+endif
 
 # ... and then we can include our helper functions
 include $(root_dir)/make/MakeHelpers.gmk
@@ -89,6 +99,7 @@ else
     # The wrapper target was called so we now have a single configuration. Load the spec file
     # and call the real Main.gmk.
     include $(SPEC)
+    include $(SRC_ROOT)/make/common/MakeBase.gmk
 
     ### Clean up from previous run
     # Remove any build.log from a previous run, if they exist

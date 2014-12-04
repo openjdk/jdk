@@ -74,6 +74,7 @@ JCONSOLE_FIRST_COPYRIGHT_YEAR = 2006
 SCTPAPI_FIRST_COPYRIGHT_YEAR = 2009
 TRACING_FIRST_COPYRIGHT_YEAR = 2008
 TREEAPI_FIRST_COPYRIGHT_YEAR = 2005
+NASHORNAPI_FIRST_COPYRIGHT_YEAR = 2014
 JNLP_FIRST_COPYRIGHT_YEAR = 1998
 PLUGIN2_FIRST_COPYRIGHT_YEAR = 2007
 JDKNET_FIRST_COPYRIGHT_YEAR = 2014
@@ -137,8 +138,10 @@ $(FULL_COMPANY_NAME) in the US and other countries.
 # command (newline or shell ; character)
 ALL_SOURCE_DIRS := $(wildcard \
       $(JDK_TOPDIR)/src/*/share/classes \
-      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
+      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
       $(LANGTOOLS_TOPDIR)/src/*/share/classes \
+      $(NASHORN_TOPDIR)/src/*/share/classes \
       $(CORBA_TOPDIR)/src/*/share/classes \
       $(JAXP_TOPDIR)/src/*/share/classes \
       $(JAXWS_TOPDIR)/src/*/share/classes \
@@ -473,7 +476,7 @@ $(DOCLETAPI_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOCLETAPI_PKGS)) 
+$(DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOCLETAPI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(DOCLETAPI_PKGS))
 
@@ -1118,6 +1121,60 @@ $(TREEAPI_OPTIONS_FILE):
 $(TREEAPI_PACKAGES_FILE): $(call PackageDependencies,$(TREEAPI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(TREEAPI_PKGS))
+
+#############################################################
+#
+# nashornapidocs
+#
+
+ALL_OTHER_TARGETS += nashornapidocs
+
+NASHORNAPI_DOCDIR := $(JDK_API_DOCSDIR)/nashorn
+NASHORNAPI2COREAPI := ../$(JDKJRE2COREAPI)
+NASHORNAPI_DOCTITLE := Nashorn API
+NASHORNAPI_WINDOWTITLE := Nashorn API
+NASHORNAPI_HEADER := <strong>Nashorn API</strong>
+NASHORNAPI_BOTTOM := $(call CommonBottom,$(NASHORNAPI_FIRST_COPYRIGHT_YEAR))
+NASHORNAPI_GROUPNAME := Packages
+NASHORNAPI_REGEXP := jdk.nashorn.api.scripting.*
+# NASHORNAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+NASHORNAPI_INDEX_HTML = $(NASHORNAPI_DOCDIR)/index.html
+NASHORNAPI_OPTIONS_FILE = $(DOCSTMPDIR)/nashornapi.options
+NASHORNAPI_PACKAGES_FILE = $(DOCSTMPDIR)/nashornapi.packages
+
+nashornapidocs: $(NASHORNAPI_INDEX_HTML)
+
+# Set relative location to core api document root
+$(NASHORNAPI_INDEX_HTML): GET2DOCSDIR=$(NASHORNAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(NASHORNAPI_INDEX_HTML): $(NASHORNAPI_OPTIONS_FILE) $(NASHORNAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(NASHORNAPI_OPTIONS_FILE),$(NASHORNAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) -d $(@D) \
+	    @$(NASHORNAPI_OPTIONS_FILE) @$(NASHORNAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(NASHORNAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(call COMMON_JAVADOCFLAGS) ; \
+          $(call COMMON_JAVADOCTAGS) ; \
+	  $(call OptionOnly,-Xdoclint:all) ; \
+	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionPair,-doctitle,$(NASHORNAPI_DOCTITLE)) ; \
+	  $(call OptionPair,-windowtitle,$(NASHORNAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
+	  $(call OptionPair,-header,$(NASHORNAPI_HEADER)$(DRAFT_HEADER)) ; \
+	  $(call OptionPair,-bottom,$(NASHORNAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
+	  $(call OptionTrip,-group,$(NASHORNAPI_GROUPNAME),$(NASHORNAPI_REGEXP)); \
+	  $(call OptionTrip,-linkoffline,$(NASHORNAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
+	) >> $@
+
+# Create a file with the package names in it
+$(NASHORNAPI_PACKAGES_FILE): $(call PackageDependencies,$(NASHORNAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(NASHORNAPI_PKGS))
 
 #############################################################
 #

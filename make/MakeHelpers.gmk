@@ -228,17 +228,17 @@ define ParseConfAndSpec
     # If we only have global targets, no need to bother with SPEC or CONF
     ifneq ($$(origin SPEC),undefined)
       # We have been given a SPEC, check that it works out properly
-      ifeq ($$(wildcard $$(SPEC)),)
-        $$(info Cannot locate spec.gmk, given by SPEC=$$(SPEC))
-        $$(eval $$(call FatalError))
-      endif
       ifneq ($$(origin CONF),undefined)
         # We also have a CONF argument. This is OK only if this is a repeated call by ourselves,
         # but complain if this is the top-level make call.
         ifeq ($$(MAKELEVEL),0)
-          $$(info Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
+          $$(info Error: Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
           $$(eval $$(call FatalError))
         endif
+      endif
+      ifeq ($$(wildcard $$(SPEC)),)
+        $$(info Error: Cannot locate spec.gmk, given by SPEC=$$(SPEC).)
+        $$(eval $$(call FatalError))
       endif
       # ... OK, we're satisfied, we'll use this SPEC later on
     else
@@ -246,7 +246,8 @@ define ParseConfAndSpec
       output_dir=$$(root_dir)/build
       all_spec_files=$$(wildcard $$(output_dir)/*/spec.gmk)
       ifeq ($$(all_spec_files),)
-        $$(info No configurations found for $$(root_dir)! Please run configure to create a configuration.)
+        $$(info Error: No configurations found for $$(root_dir).)
+        $$(info Please run 'bash configure' to create a configuration.)
         $$(eval $$(call FatalError))
       endif
       # Extract the configuration names from the path
@@ -262,15 +263,15 @@ define ParseConfAndSpec
           matching_confs=$$(strip $$(foreach var,$$(all_confs),$$(if $$(findstring $$(CONF),$$(var)),$$(var))))
         endif
         ifeq ($$(matching_confs),)
-          $$(info No configurations found matching CONF=$$(CONF))
-          $$(info Available configurations:)
+          $$(info Error: No configurations found matching CONF=$$(CONF).)
+          $$(info Available configurations in $$(output_dir):)
           $$(foreach var,$$(all_confs),$$(info * $$(var)))
           $$(eval $$(call FatalError))
         else
           ifeq ($$(words $$(matching_confs)),1)
             $$(info Building '$$(matching_confs)' (matching CONF=$$(CONF)))
           else
-            $$(info Building target '$(call GetRealTarget)' in the following configurations (matching CONF=$$(CONF)):)
+            $$(info Building target '$(call GetRealTarget)' in these configurations (matching CONF=$$(CONF)):)
             $$(foreach var,$$(matching_confs),$$(info * $$(var)))
           endif
         endif
@@ -280,10 +281,10 @@ define ParseConfAndSpec
       else
         # No CONF or SPEC given, check the available configurations
         ifneq ($$(words $$(all_spec_files)),1)
-          $$(info No CONF given, but more than one configuration found in $$(output_dir).)
-          $$(info Available configurations:)
+          $$(info Error: No CONF given, but more than one configuration found.)
+          $$(info Available configurations in $$(output_dir):)
           $$(foreach var,$$(all_confs),$$(info * $$(var)))
-          $$(info Please retry building with CONF=<config pattern> (or SPEC=<specfile>))
+          $$(info Please retry building with CONF=<config pattern> (or SPEC=<specfile>).)
           $$(eval $$(call FatalError))
         endif
 
