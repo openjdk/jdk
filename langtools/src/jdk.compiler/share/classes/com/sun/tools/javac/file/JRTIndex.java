@@ -31,8 +31,10 @@ import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.ProviderNotFoundException;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 import java.util.HashMap;
@@ -79,11 +81,12 @@ public class JRTIndex {
     }
 
     public static boolean isAvailable() {
-        for (FileSystemProvider p: FileSystemProvider.installedProviders()) {
-            if (p.getScheme().equals("jrt"))
-                return true;
+        try {
+            FileSystems.getFileSystem(URI.create("jrt:/"));
+            return true;
+        } catch (ProviderNotFoundException | FileSystemNotFoundException e) {
+            return false;
         }
-        return false;
     }
 
 

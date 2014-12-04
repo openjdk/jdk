@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class T7018098 extends JavacTestingAbstractProcessor {
         round++;
         if (round == 1) {
             boolean expect = Boolean.valueOf(options.get("expect"));
-            checkEqual("cache result", fsInfo.isDirectory(testDir), expect);
+            checkEqual("cache result", fsInfo.isDirectory(testDir.toPath()), expect);
             initialFSInfo = fsInfo;
         } else {
             checkEqual("fsInfo", fsInfo, initialFSInfo);
