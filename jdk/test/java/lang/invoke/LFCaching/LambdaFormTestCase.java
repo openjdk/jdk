@@ -23,9 +23,12 @@
 
 import com.oracle.testlibrary.jsr292.Helper;
 import com.sun.management.HotSpotDiagnosticMXBean;
+
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 import jdk.testlibrary.Utils;
 
@@ -49,6 +52,11 @@ public abstract class LambdaFormTestCase {
      * used to get a lambda form from a method handle.
      */
     protected final static Method INTERNAL_FORM;
+    private static final List<GarbageCollectorMXBean> gcInfo;
+
+    private static long gcCount() {
+        return gcInfo.stream().mapToLong(GarbageCollectorMXBean::getCollectionCount).sum();
+    }
 
     static {
         try {
@@ -58,10 +66,15 @@ public abstract class LambdaFormTestCase {
         } catch (Exception ex) {
             throw new Error("Unexpected exception: ", ex);
         }
+
+        gcInfo = ManagementFactory.getGarbageCollectorMXBeans();
+        if (gcInfo.size() == 0)  {
+            throw new Error("No GarbageCollectorMXBeans found.");
+        }
     }
 
     private final TestMethods testMethod;
-
+    private long gcCountAtStart;
     /**
      * Test case constructor. Generates test cases with random method types for
      * given methods form {@code j.l.i.MethodHandles} class.
@@ -71,10 +84,15 @@ public abstract class LambdaFormTestCase {
      */
     protected LambdaFormTestCase(TestMethods testMethod) {
         this.testMethod = testMethod;
+        this.gcCountAtStart = gcCount();
     }
 
     public TestMethods getTestMethod() {
         return testMethod;
+    }
+
+    protected boolean noGCHappened() {
+        return gcCount() == gcCountAtStart;
     }
 
     /**
