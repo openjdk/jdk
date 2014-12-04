@@ -298,6 +298,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * Writes the current attributes to the specified data output stream.
      * XXX Need to handle UTF8 values and break up lines longer than 72 bytes
      */
+     @SuppressWarnings("deprecation")
      void write(DataOutputStream os) throws IOException {
          for (Entry<Object, Object> e : entrySet()) {
              StringBuffer buffer = new StringBuffer(
@@ -325,6 +326,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      *
      * XXX Need to handle UTF8 values and break up lines longer than 72 bytes
      */
+    @SuppressWarnings("deprecation")
     void writeMain(DataOutputStream out) throws IOException
     {
         // write out the *-Version header first, if it exists
@@ -367,6 +369,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * Reads attributes from the specified input stream.
      * XXX Need to handle UTF8 values.
      */
+    @SuppressWarnings("deprecation")
     void read(Manifest.FastInputStream is, byte[] lbuf) throws IOException {
         String name = null, value = null;
         byte[] lastline = null;
