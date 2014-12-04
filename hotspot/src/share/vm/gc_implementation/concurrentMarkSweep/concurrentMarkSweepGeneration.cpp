@@ -650,15 +650,15 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         || _cursor == NULL) {
       warning("Failed to allocate survivor plab/chunk array");
       if (_survivor_plab_array  != NULL) {
-        FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array, mtGC);
+        FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
         _survivor_plab_array = NULL;
       }
       if (_survivor_chunk_array != NULL) {
-        FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array, mtGC);
+        FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
         _survivor_chunk_array = NULL;
       }
       if (_cursor != NULL) {
-        FREE_C_HEAP_ARRAY(size_t, _cursor, mtGC);
+        FREE_C_HEAP_ARRAY(size_t, _cursor);
         _cursor = NULL;
       }
     } else {
@@ -668,10 +668,10 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         if (vec == NULL) {
           warning("Failed to allocate survivor plab array");
           for (int j = i; j > 0; j--) {
-            FREE_C_HEAP_ARRAY(HeapWord*, _survivor_plab_array[j-1].array(), mtGC);
+            FREE_C_HEAP_ARRAY(HeapWord*, _survivor_plab_array[j-1].array());
           }
-          FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array, mtGC);
-          FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array, mtGC);
+          FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
+          FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
           _survivor_plab_array = NULL;
           _survivor_chunk_array = NULL;
           _survivor_chunk_capacity = 0;

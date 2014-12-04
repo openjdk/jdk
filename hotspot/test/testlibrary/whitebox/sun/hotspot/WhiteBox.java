@@ -74,6 +74,7 @@ public class WhiteBox {
   // Memory
   public native long getObjectAddress(Object o);
   public native int  getHeapOopSize();
+  public native int  getVMPageSize();
   public native boolean isObjectInOldGen(Object o);
   public native long getObjectSize(Object o);
 
@@ -93,7 +94,7 @@ public class WhiteBox {
   public native boolean g1IsHumongous(Object o);
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
-  public native Object[]    parseCommandLine(String commandline, DiagnosticCommand[] args);
+  public native Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args);
 
   // NMT
   public native long NMTMalloc(long size);
