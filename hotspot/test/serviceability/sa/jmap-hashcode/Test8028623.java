@@ -41,12 +41,12 @@ import java.io.File;
 
 public class Test8028623 {
 
-  public static int Ã = 1;
+  public static int \u00CB = 1;
   public static String dumpFile = "heap.out";
 
   public static void main (String[] args) {
 
-    System.out.println(Ã);
+    System.out.println(\u00CB);
 
     try {
         if (!Platform.shouldSAAttach()) {
