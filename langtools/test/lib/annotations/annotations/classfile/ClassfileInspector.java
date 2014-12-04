@@ -21,7 +21,8 @@
  * questions.
  */
 
-import java.lang.annotation.*;
+package annotations.classfile;
+
 import java.io.*;
 import java.net.URL;
 import java.util.List;
@@ -54,37 +55,109 @@ public class ClassfileInspector {
          * The expected class annotations.  These will be checked
          * against the class' attributes.
          */
-        public final ExpectedTypeAnnotation[] classAnnos;
+        public final ExpectedAnnotation[] classAnnos;
 
         /**
          * The expected method annotations.  These will be checked
          * against all methods in the class.
          */
-        public final ExpectedMethodTypeAnnotation[] methodAnnos;
+        public final ExpectedMethodAnnotation[] methodAnnos;
 
         /**
-         * The expected field annotations.  These will be checked
+         * The expected method parameter annotations.  These will be checked
+         * against all methods in the class.
+         */
+        public final ExpectedParameterAnnotation[] methodParamAnnos;
+
+        /**
+         * The expected field type annotations.  These will be checked
          * against all fields in the class.
          */
-        public final ExpectedFieldTypeAnnotation[] fieldAnnos;
+        public final ExpectedFieldAnnotation[] fieldAnnos;
 
         /**
-         * Create an {@code Expected} from its components.
+         * The expected class type annotations.  These will be checked
+         * against the class' attributes.
+         */
+        public final ExpectedTypeAnnotation[] classTypeAnnos;
+
+        /**
+         * The expected method type annotations.  These will be checked
+         * against all methods in the class.
+         */
+        public final ExpectedMethodTypeAnnotation[] methodTypeAnnos;
+
+        /**
+         * The expected field type annotations.  These will be checked
+         * against all fields in the class.
+         */
+        public final ExpectedFieldTypeAnnotation[] fieldTypeAnnos;
+
+        /**
+         * Create an {@code Expected} from all components.
          *
          * @param classname The name of the class to match, or {@code
          *                  null} for all classes.
          * @param classAnnos The expected class annotations.
          * @param methodAnnos The expected method annotations.
+         * @param methodParamAnnos The expected method parameter annotations.
          * @param fieldAnnos The expected field annotations.
+         * @param classTypeAnnos The expected class type annotations.
+         * @param methodTypeAnnos The expected method type annotations.
+         * @param fieldTypeAnnos The expected field type annotations.
          */
         public Expected(String classname,
-                        ExpectedTypeAnnotation[] classAnnos,
-                        ExpectedMethodTypeAnnotation[] methodAnnos,
-                        ExpectedFieldTypeAnnotation[] fieldAnnos) {
+                        ExpectedAnnotation[] classAnnos,
+                        ExpectedMethodAnnotation[] methodAnnos,
+                        ExpectedParameterAnnotation[] methodParamAnnos,
+                        ExpectedFieldAnnotation[] fieldAnnos,
+                        ExpectedTypeAnnotation[] classTypeAnnos,
+                        ExpectedMethodTypeAnnotation[] methodTypeAnnos,
+                        ExpectedFieldTypeAnnotation[] fieldTypeAnnos) {
             this.classname = classname;
             this.classAnnos = classAnnos;
             this.methodAnnos = methodAnnos;
+            this.methodParamAnnos = methodParamAnnos;
             this.fieldAnnos = fieldAnnos;
+            this.classTypeAnnos = classTypeAnnos;
+            this.methodTypeAnnos = methodTypeAnnos;
+            this.fieldTypeAnnos = fieldTypeAnnos;
+        }
+
+        /**
+         * Create an {@code Expected} from regular annotation components.
+         *
+         * @param classname The name of the class to match, or {@code
+         *                  null} for all classes.
+         * @param classAnnos The expected class annotations.
+         * @param methodAnnos The expected method annotations.
+         * @param methodParamAnnos The expected method parameter annotations.
+         * @param fieldAnnos The expected field annotations.
+         */
+        public Expected(String classname,
+                        ExpectedAnnotation[] classAnnos,
+                        ExpectedMethodAnnotation[] methodAnnos,
+                        ExpectedParameterAnnotation[] methodParamAnnos,
+                        ExpectedFieldAnnotation[] fieldAnnos) {
+            this(classname, classAnnos, methodAnnos, methodParamAnnos,
+                 fieldAnnos, null, null, null);
+        }
+
+        /**
+         * Create an {@code Expected} from type annotation components.
+         *
+         * @param classname The name of the class to match, or {@code
+         *                  null} for all classes.
+         * @param classTypeAnnos The expected class type annotations.
+         * @param methodTypeAnnos The expected method type annotations.
+         * @param fieldTypeAnnos The expected field type annotations.
+         */
+        public Expected(String classname,
+                        ExpectedTypeAnnotation[] classTypeAnnos,
+                        ExpectedMethodTypeAnnotation[] methodTypeAnnos,
+                        ExpectedFieldTypeAnnotation[] fieldTypeAnnos) {
+            this(classname, null, null, null, null,
+                 classTypeAnnos, methodTypeAnnos, fieldTypeAnnos);
         }
 
         public String toString() {
@@ -93,19 +166,43 @@ public class ClassfileInspector {
             sb.append("Expected on class ").append(classname);
             if (null != classAnnos) {
                 sb.append(newline).append("Class annotations:").append(newline);
-                for(ExpectedTypeAnnotation anno : classAnnos) {
+                for(ExpectedAnnotation anno : classAnnos) {
                     sb.append(anno).append(newline);
                 }
             }
             if (null != methodAnnos) {
                 sb.append(newline).append("Method annotations:").append(newline);
-                for(ExpectedTypeAnnotation anno : methodAnnos) {
+                for(ExpectedAnnotation anno : methodAnnos) {
+                    sb.append(anno).append(newline);
+                }
+            }
+            if (null != methodParamAnnos) {
+                sb.append(newline).append("Method param annotations:").append(newline);
+                for(ExpectedAnnotation anno : methodParamAnnos) {
                     sb.append(anno).append(newline);
                 }
             }
             if (null != fieldAnnos) {
                 sb.append(newline).append("Field annotations:").append(newline);
-                for(ExpectedTypeAnnotation anno : fieldAnnos) {
+                for(ExpectedAnnotation anno : fieldAnnos) {
+                    sb.append(anno).append(newline);
+                }
+            }
+            if (null != classTypeAnnos) {
+                sb.append(newline).append("Class type annotations:").append(newline);
+                for(ExpectedAnnotation anno : classTypeAnnos) {
+                    sb.append(anno).append(newline);
+                }
+            }
+            if (null != methodTypeAnnos) {
+                sb.append(newline).append("Method type annotations:").append(newline);
+                for(ExpectedAnnotation anno : methodTypeAnnos) {
+                    sb.append(anno).append(newline);
+                }
+            }
+            if (null != fieldTypeAnnos) {
+                sb.append(newline).append("Field type annotations:").append(newline);
+                for(ExpectedAnnotation anno : fieldTypeAnnos) {
                     sb.append(anno).append(newline);
                 }
             }
@@ -131,21 +228,49 @@ public class ClassfileInspector {
         public int check() {
             int count = 0;
             if (classAnnos != null) {
-                for(ExpectedTypeAnnotation expected : classAnnos) {
+                for(ExpectedAnnotation expected : classAnnos) {
                     if (!expected.check()) {
                         count++;
                     }
                 }
             }
             if (methodAnnos != null) {
-                for(ExpectedMethodTypeAnnotation expected : methodAnnos) {
+                for(ExpectedAnnotation expected : methodAnnos) {
+                    if (!expected.check()) {
+                        count++;
+                    }
+                }
+            }
+            if (methodParamAnnos != null) {
+                for(ExpectedAnnotation expected : methodParamAnnos) {
                     if (!expected.check()) {
                         count++;
                     }
                 }
             }
             if (fieldAnnos != null) {
-                for(ExpectedFieldTypeAnnotation expected : fieldAnnos) {
+                for(ExpectedAnnotation expected : fieldAnnos) {
+                    if (!expected.check()) {
+                        count++;
+                    }
+                }
+            }
+            if (classTypeAnnos != null) {
+                for(ExpectedAnnotation expected : classTypeAnnos) {
+                    if (!expected.check()) {
+                        count++;
+                    }
+                }
+            }
+            if (methodTypeAnnos != null) {
+                for(ExpectedAnnotation expected : methodTypeAnnos) {
+                    if (!expected.check()) {
+                        count++;
+                    }
+                }
+            }
+            if (fieldTypeAnnos != null) {
+                for(ExpectedAnnotation expected : fieldTypeAnnos) {
                     if (!expected.check()) {
                         count++;
                     }
@@ -156,21 +281,251 @@ public class ClassfileInspector {
     }
 
     /**
+     * An expected annotation.  This is both a superclass for
+     * method, field, and type annotations, as well as a class for
+     * annotations on a class.
+     */
+    public static class ExpectedAnnotation {
+        protected int count = 0;
+        protected final String expectedName;
+        protected final int expectedCount;
+        protected final boolean visibility;
+
+        /**
+         * Create an {@code ExpectedAnnotation} from its
+         * components.  It is usually a better idea to use a {@code
+         * Builder} to do this.
+         *
+         * @param expectedName The expected annotation name.
+         * @param visibility Whether this annotation should be runtime-visible.
+         * @param expectedCount The number of annotations that should
+         *                      be seen.  If 0, this asserts that the
+         *                      described annotation is not present.
+         */
+        public ExpectedAnnotation(String expectedName,
+                                  boolean visibility,
+                                  int expectedCount) {
+            this.expectedName = expectedName;
+            this.visibility = visibility;
+            this.expectedCount = expectedCount;
+        }
+
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Expected ");
+            sb.append(expectedCount);
+            sb.append(" annotation ");
+            sb.append(expectedName);
+            sb.append(visibility ? ", runtime visibile " : ", runtime invisibile ");
+            return sb.toString();
+        }
+
+        /**
+         * See if this template matches the given visibility.
+         *
+         * @param Whether or not the annotation is visible at runtime.
+         * @return Whether or not this template matches the visibility.
+         */
+        public boolean matchVisibility(boolean visibility) {
+            return this.visibility == visibility;
+        }
+
+        /**
+         * Attempty to match this template against an annotation.  If
+         * it does match, then the match count for the template will
+         * be incremented.  Otherwise, nothing will be done.
+         *
+         * @param anno The annotation to attempt to match.
+         */
+        public void matchAnnotation(ConstantPool cpool,
+                                    Annotation anno) {
+            if (checkMatch(cpool, anno)) {
+                count++;
+            }
+        }
+
+        /**
+         * Indicate whether an annotation matches this expected
+         * annotation.
+         *
+         * @param ConstantPool The constant pool to use.
+         * @param anno The annotation to check.
+         * @return Whether the annotation matches.
+         */
+        protected boolean checkMatch(ConstantPool cpool,
+                                     Annotation anno) {
+            try {
+                return cpool.getUTF8Info(anno.type_index).value.equals("L" + expectedName + ";");
+            } catch(Exception e) {
+                return false;
+            }
+        }
+
+        /**
+         * After all matching, check to see if the expected number of
+         * matches equals the actual number.  If not, then print a
+         * failure message and return {@code false}.
+         *
+         * @return Whether or not the expected number of matched
+         *         equals the actual number.
+         */
+        public boolean check() {
+            if (count != expectedCount) {
+                System.err.println(this + ", but saw " + count);
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    /**
+     * An annotation found on a method.
+     */
+    public static class ExpectedMethodAnnotation extends ExpectedAnnotation {
+        protected final String methodname;
+
+        /**
+         * Create an {@code ExpectedMethodAnnotation} from its
+         * components.  It is usually a better idea to use a {@code
+         * Builder} to do this.
+         *
+         * @param methodname The expected method name.
+         * @param expectedName The expected annotation name.
+         * @param visibility Whether this annotation should be runtime-visible.
+         * @param expectedCount The number of annotations that should be seen.
+         */
+        public ExpectedMethodAnnotation(String methodname,
+                                        String expectedName,
+                                        boolean visibility,
+                                        int expectedCount) {
+            super(expectedName, visibility, expectedCount);
+            this.methodname = methodname;
+        }
+
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Expected ");
+            sb.append(expectedCount);
+            sb.append(" annotation ");
+            sb.append(expectedName);
+            sb.append(visibility ? ", runtime visibile " : ", runtime invisibile ");
+            sb.append(" on method ");
+            sb.append(methodname);
+            return sb.toString();
+        }
+
+        /**
+         * See if this template applies to a method.
+         *
+         * @param methodname The method name to check.
+         * @return Whether or not this template should apply.
+         */
+        public boolean matchMethodName(String methodname) {
+            return this.methodname.equals(methodname);
+        }
+
+    }
+
+    /**
+     * An annotation found on a method parameter.
+     */
+    public static class ExpectedParameterAnnotation
+        extends ExpectedMethodAnnotation {
+        protected final int index;
+
+        /**
+         * Create an {@code ExpectedParameterAnnotation} from its
+         * components.  It is usually a better idea to use a {@code
+         * Builder} to do this.
+         *
+         * @param methodname The expected method name.
+         * @param index The parameter index.
+         * @param expectedName The expected annotation name.
+         * @param visibility Whether this annotation should be runtime-visible.
+         * @param expectedCount The number of annotations that should be seen.
+         */
+        public ExpectedParameterAnnotation(String methodname,
+                                           int index,
+                                           String expectedName,
+                                           boolean visibility,
+                                           int expectedCount) {
+            super(methodname, expectedName, visibility, expectedCount);
+            this.index = index;
+        }
+
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Expected ");
+            sb.append(expectedCount);
+            sb.append(" annotation ");
+            sb.append(expectedName);
+            sb.append(visibility ? ", runtime visibile " : ", runtime invisibile ");
+            sb.append(" on method ");
+            sb.append(methodname);
+            sb.append(" parameter " + index);
+            return sb.toString();
+        }
+
+    }
+
+    /**
+     * An annotation found on a field.
+     */
+    public static class ExpectedFieldAnnotation extends ExpectedAnnotation {
+        private final String fieldname;
+
+        /**
+         * Create an {@code ExpectedFieldAnnotation} from its
+         * components.  It is usually a better idea to use a {@code
+         * Builder} to do this.
+         *
+         * @param fieldname The expected field name.
+         * @param expectedName The expected annotation name.
+         * @param visibility Whether this annotation should be runtime-visible.
+         * @param expectedCount The number of annotations that should be seen.
+         */
+        public ExpectedFieldAnnotation(String fieldname,
+                                       String expectedName,
+                                       boolean visibility,
+                                       int expectedCount) {
+            super(expectedName, visibility, expectedCount);
+            this.fieldname = fieldname;
+        }
+
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Expected ").append(expectedCount)
+            .append(" annotation ").append(expectedName)
+            .append(visibility ? ", runtime visibile " : ", runtime invisibile ")
+            .append(" on field ").append(fieldname);
+            return sb.toString();
+        }
+
+        /**
+         * See if this template applies to a field.
+         *
+         * @param fieldname The field name to check.
+         * @return Whether or not this template should apply.
+         */
+        public boolean matchFieldName(String fieldname) {
+            return this.fieldname.equals(fieldname);
+        }
+
+    }
+
+    /**
      * An expected type annotation.  This is both a superclass for
      * method and field type annotations, as well as a class for type
      * annotations on a class.
      */
-    public static class ExpectedTypeAnnotation {
-        private int count = 0;
-        protected final String expectedName;
-        protected final int expectedCount;
+    public static class ExpectedTypeAnnotation extends ExpectedAnnotation {
         protected final TypeAnnotation.TargetType targetType;
         protected final int bound_index;
         protected final int parameter_index;
         protected final int type_index;
         protected final int exception_index;
         protected final TypeAnnotation.Position.TypePathEntry[] typePath;
-        protected final boolean visibility;
 
         /**
          * Create an {@code ExpectedTypeAnnotation} from its
@@ -200,9 +555,7 @@ public class ClassfileInspector {
                                       int type_index,
                                       int exception_index,
                                       TypeAnnotation.Position.TypePathEntry... typePath) {
-            this.expectedName = expectedName;
-            this.visibility = visibility;
-            this.expectedCount = expectedCount;
+            super(expectedName, visibility, expectedCount);
             this.targetType = targetType;
             this.bound_index = bound_index;
             this.parameter_index = parameter_index;
@@ -238,31 +591,18 @@ public class ClassfileInspector {
             return sb.toString();
         }
 
-        /**
-         * See if this template matches the given visibility.
-         *
-         * @param Whether or not the annotation is visible at runtime.
-         * @return Whether or not this template matches the visibility.
-         */
-        public boolean matchVisibility(boolean visibility) {
-            return this.visibility == visibility;
+        @Override
+        public void matchAnnotation(ConstantPool cpool,
+                                    Annotation anno) {}
+
+        public void matchAnnotation(TypeAnnotation anno) {
+            if (checkMatch(anno)) {
+                count++;
+            }
         }
 
-        /**
-         * Attempty to match this template against an annotation.  If
-         * it does match, then the match count for the template will
-         * be incremented.  Otherwise, nothing will be done.
-         *
-         * @param anno The annotation to attempt to match.
-         */
-        public void matchAnnotation(TypeAnnotation anno) {
-            boolean matches = true;
-
-            try {
-                matches = anno.constant_pool.getUTF8Info(anno.annotation.type_index).value.equals("L" + expectedName + ";");
-            } catch(Exception e) {
-                matches = false;
-            }
+        public boolean checkMatch(TypeAnnotation anno) {
+            boolean matches = checkMatch(anno.constant_pool, anno.annotation);
 
             matches = matches && anno.position.type == targetType;
             matches = matches && anno.position.bound_index == bound_index;
@@ -279,26 +619,7 @@ public class ClassfileInspector {
                 }
             }
 
-            if (matches) {
-                count++;
-            }
-        }
-
-        /**
-         * After all matching, check to see if the expected number of
-         * matches equals the actual number.  If not, then print a
-         * failure message and return {@code false}.
-         *
-         * @return Whether or not the expected number of matched
-         *         equals the actual number.
-         */
-        public boolean check() {
-            if (count != expectedCount) {
-                System.err.println(this + ", but saw " + count);
-                return false;
-            } else {
-                return true;
-            }
+            return matches;
         }
 
         /**
@@ -311,9 +632,9 @@ public class ClassfileInspector {
          */
         public static class Builder {
             protected final String expectedName;
+            protected final boolean visibility;
             protected final int expectedCount;
             protected final TypeAnnotation.TargetType targetType;
-            protected final boolean visibility;
             protected int bound_index = Integer.MIN_VALUE;
             protected int parameter_index = Integer.MIN_VALUE;
             protected int type_index = Integer.MIN_VALUE;
@@ -648,6 +969,50 @@ public class ClassfileInspector {
         }
     }
 
+    private void matchClassAnnotation(ClassFile classfile,
+                                      ExpectedAnnotation expected)
+        throws ConstantPoolException {
+        for(Attribute attr : classfile.attributes) {
+            attr.accept(annoMatcher(classfile.constant_pool), expected);
+        }
+    }
+
+    private void matchMethodAnnotation(ClassFile classfile,
+                                       ExpectedMethodAnnotation expected)
+        throws ConstantPoolException {
+        for(Method meth : classfile.methods) {
+            if (expected.matchMethodName(meth.getName(classfile.constant_pool))) {
+                for(Attribute attr : meth.attributes) {
+                    attr.accept(annoMatcher(classfile.constant_pool), expected);
+                }
+            }
+        }
+    }
+
+    private void matchParameterAnnotation(ClassFile classfile,
+                                          ExpectedParameterAnnotation expected)
+        throws ConstantPoolException {
+        for(Method meth : classfile.methods) {
+            if (expected.matchMethodName(meth.getName(classfile.constant_pool))) {
+                for(Attribute attr : meth.attributes) {
+                    attr.accept(paramMatcher(classfile.constant_pool), expected);
+                }
+            }
+        }
+    }
+
+    private void matchFieldAnnotation(ClassFile classfile,
+                                      ExpectedFieldAnnotation expected)
+        throws ConstantPoolException {
+        for(Field field : classfile.fields) {
+            if (expected.matchFieldName(field.getName(classfile.constant_pool))) {
+                for(Attribute attr : field.attributes) {
+                    attr.accept(annoMatcher(classfile.constant_pool), expected);
+                }
+            }
+        }
+    }
+
     private void matchClassTypeAnnotation(ClassFile classfile,
                                           ExpectedTypeAnnotation expected)
         throws ConstantPoolException {
@@ -677,6 +1042,38 @@ public class ClassfileInspector {
                     attr.accept(typeAnnoMatcher, expected);
                 }
             }
+        }
+    }
+
+    private void matchClassAnnotations(ClassFile classfile,
+                                       ExpectedAnnotation[] expected)
+        throws ConstantPoolException {
+        for(ExpectedAnnotation one : expected) {
+            matchClassAnnotation(classfile, one);
+        }
+    }
+
+    private void matchMethodAnnotations(ClassFile classfile,
+                                        ExpectedMethodAnnotation[] expected)
+        throws ConstantPoolException {
+        for(ExpectedMethodAnnotation one : expected) {
+            matchMethodAnnotation(classfile, one);
+        }
+    }
+
+    private void matchParameterAnnotations(ClassFile classfile,
+                                           ExpectedParameterAnnotation[] expected)
+        throws ConstantPoolException {
+        for(ExpectedParameterAnnotation one : expected) {
+            matchParameterAnnotation(classfile, one);
+        }
+    }
+
+    private void matchFieldAnnotations(ClassFile classfile,
+                                       ExpectedFieldAnnotation[] expected)
+        throws ConstantPoolException {
+        for(ExpectedFieldAnnotation one : expected) {
+            matchFieldAnnotation(classfile, one);
         }
     }
 
@@ -729,11 +1126,19 @@ public class ClassfileInspector {
             for(Expected one : expected) {
                 if (one.matchClassName(classfile.getName())) {
                     if (one.classAnnos != null)
-                        matchClassTypeAnnotations(classfile, one.classAnnos);
+                        matchClassAnnotations(classfile, one.classAnnos);
                     if (one.methodAnnos != null)
-                        matchMethodTypeAnnotations(classfile, one.methodAnnos);
+                        matchMethodAnnotations(classfile, one.methodAnnos);
+                    if (one.methodParamAnnos != null)
+                        matchParameterAnnotations(classfile, one.methodParamAnnos);
                     if (one.fieldAnnos != null)
-                        matchFieldTypeAnnotations(classfile, one.fieldAnnos);
+                        matchFieldAnnotations(classfile, one.fieldAnnos);
+                    if (one.classTypeAnnos != null)
+                        matchClassTypeAnnotations(classfile, one.classTypeAnnos);
+                    if (one.methodTypeAnnos != null)
+                        matchMethodTypeAnnotations(classfile, one.methodTypeAnnos);
+                    if (one.fieldTypeAnnos != null)
+                        matchFieldTypeAnnotations(classfile, one.fieldTypeAnnos);
                 }
             }
         }
@@ -751,11 +1156,13 @@ public class ClassfileInspector {
      * Get a {@code ClassFile} from its file name.
      *
      * @param name The class' file name.
+     * @param host A class in the same package.
      * @return The {@code ClassFile}
      */
-    public static ClassFile getClassFile(String name)
+    public static ClassFile getClassFile(String name,
+                                         Class<?> host)
         throws IOException, ConstantPoolException {
-        final URL url = ClassfileInspector.class.getResource(name);
+        final URL url = host.getResource(name);
         final InputStream in = url.openStream();
         try {
             return ClassFile.read(in);
@@ -947,4 +1354,380 @@ public class ClassfileInspector {
             return null;
         }
     };
+
+    private static Attribute.Visitor<Void, ExpectedAnnotation> annoMatcher(ConstantPool cpool) {
+        return new Attribute.Visitor<Void, ExpectedAnnotation>() {
+
+            @Override
+                public Void visitBootstrapMethods(BootstrapMethods_attribute attr,
+                                                  ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitDefault(DefaultAttribute attr,
+                                         ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitAnnotationDefault(AnnotationDefault_attribute attr,
+                                                   ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr,
+                                                     ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitCode(Code_attribute attr,
+                                      ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitCompilationID(CompilationID_attribute attr,
+                                               ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitConstantValue(ConstantValue_attribute attr,
+                                               ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitDeprecated(Deprecated_attribute attr,
+                                            ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitEnclosingMethod(EnclosingMethod_attribute attr,
+                                                 ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitExceptions(Exceptions_attribute attr,
+                                            ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitInnerClasses(InnerClasses_attribute attr,
+                                              ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitLineNumberTable(LineNumberTable_attribute attr,
+                                                 ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitLocalVariableTable(LocalVariableTable_attribute attr,
+                                                    ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr,
+                                                        ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitMethodParameters(MethodParameters_attribute attr,
+                                                  ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr,
+                                                                    ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr,
+                                                                      ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr,
+                                                               ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr,
+                                                                 ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSignature(Signature_attribute attr,
+                                           ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr,
+                                                      ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSourceFile(SourceFile_attribute attr,
+                                            ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSourceID(SourceID_attribute attr,
+                                          ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitStackMap(StackMap_attribute attr,
+                                          ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitStackMapTable(StackMapTable_attribute attr,
+                                               ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSynthetic(Synthetic_attribute attr,
+                                           ExpectedAnnotation expected) {
+                return null;
+            }
+
+            @Override
+            public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr,
+                                                       ExpectedAnnotation expected) {
+                if (expected.matchVisibility(true)) {
+                    for(Annotation anno : attr.annotations) {
+                        expected.matchAnnotation(cpool, anno);
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr,
+                                                         ExpectedAnnotation expected) {
+                if (expected.matchVisibility(false)) {
+                    for(Annotation anno : attr.annotations) {
+                        expected.matchAnnotation(cpool, anno);
+                    }
+                }
+
+                return null;
+            }
+        };
+    }
+
+    private static Attribute.Visitor<Void, ExpectedParameterAnnotation> paramMatcher(ConstantPool cpool) {
+        return new Attribute.Visitor<Void, ExpectedParameterAnnotation>() {
+
+            @Override
+                public Void visitBootstrapMethods(BootstrapMethods_attribute attr,
+                                                  ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitDefault(DefaultAttribute attr,
+                                         ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitAnnotationDefault(AnnotationDefault_attribute attr,
+                                                   ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr,
+                                                     ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitCode(Code_attribute attr,
+                                      ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitCompilationID(CompilationID_attribute attr,
+                                               ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitConstantValue(ConstantValue_attribute attr,
+                                               ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitDeprecated(Deprecated_attribute attr,
+                                            ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitEnclosingMethod(EnclosingMethod_attribute attr,
+                                                 ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitExceptions(Exceptions_attribute attr,
+                                            ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitInnerClasses(InnerClasses_attribute attr,
+                                              ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitLineNumberTable(LineNumberTable_attribute attr,
+                                                 ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitLocalVariableTable(LocalVariableTable_attribute attr,
+                                                    ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr,
+                                                        ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitMethodParameters(MethodParameters_attribute attr,
+                                                  ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+            public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr,
+                                                       ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+            public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr,
+                                                         ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr,
+                                                               ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr,
+                                                                 ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSignature(Signature_attribute attr,
+                                           ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr,
+                                                      ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSourceFile(SourceFile_attribute attr,
+                                            ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSourceID(SourceID_attribute attr,
+                                          ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitStackMap(StackMap_attribute attr,
+                                          ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitStackMapTable(StackMapTable_attribute attr,
+                                               ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+                public Void visitSynthetic(Synthetic_attribute attr,
+                                           ExpectedParameterAnnotation expected) {
+                return null;
+            }
+
+            @Override
+            public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr,
+                                                                ExpectedParameterAnnotation expected) {
+                if (expected.matchVisibility(true)) {
+                    if (expected.index < attr.parameter_annotations.length) {
+                        for(Annotation anno :
+                                attr.parameter_annotations[expected.index]) {
+                            expected.matchAnnotation(cpool, anno);
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr,
+                                                                  ExpectedParameterAnnotation expected) {
+                if (expected.matchVisibility(false)) {
+                    if (expected.index < attr.parameter_annotations.length) {
+                        for(Annotation anno :
+                                attr.parameter_annotations[expected.index]) {
+                            expected.matchAnnotation(cpool, anno);
+                        }
+                    }
+                }
+
+                return null;
+            }
+        };
+    }
 }

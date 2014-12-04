@@ -60,7 +60,7 @@ public class T6725036 {
             long jarEntryTime = je.getTime();
 
             ZipFileIndexCache zfic = ZipFileIndexCache.getSharedInstance();
-            ZipFileIndex zfi = zfic.getZipFileIndex(testJar, null, false, null, false);
+            ZipFileIndex zfi = zfic.getZipFileIndex(testJar.toPath(), null, false, null, false);
             long zfiTime = zfi.getLastModified(TEST_ENTRY_NAME);
 
             check(je, jarEntryTime, zfi + ":" + TEST_ENTRY_NAME.getPath(), zfiTime);
@@ -85,7 +85,7 @@ public class T6725036 {
         try (JavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
             File f = new File(name);
             ToolBox tb = new ToolBox();
-            tb.new JarTask(f.getPath())
+            tb.new JarTask(name)
                 .files(fm, StandardLocation.PLATFORM_CLASS_PATH, paths)
                 .run();
             return f;

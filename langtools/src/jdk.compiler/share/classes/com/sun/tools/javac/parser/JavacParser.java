@@ -145,6 +145,8 @@ public class JavacParser implements Parser {
         this.names = fac.names;
         this.source = fac.source;
         this.allowTWR = source.allowTryWithResources();
+        this.allowEffectivelyFinalVariablesInTWR =
+                source.allowEffectivelyFinalVariablesInTryWithResources();
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
@@ -183,6 +185,10 @@ public class JavacParser implements Parser {
     /** Switch: should we recognize try-with-resources?
      */
     boolean allowTWR;
+
+    /** Switch: should we allow (effectively) final variables as resources in try-with-resources?
+     */
+    boolean allowEffectivelyFinalVariablesInTWR;
 
     /** Switch: should we fold strings?
      */
@@ -3003,14 +3009,28 @@ public class JavacParser implements Parser {
         return defs.toList();
     }
 
-    /** Resource = VariableModifiersOpt Type VariableDeclaratorId = Expression
+    /** Resource = VariableModifiersOpt Type VariableDeclaratorId "=" Expression
+     *           | Expression
      */
     protected JCTree resource() {
-        JCModifiers optFinal = optFinal(Flags.FINAL);
-        JCExpression type = parseType();
-        int pos = token.pos;
-        Name ident = ident();
-        return variableDeclaratorRest(pos, optFinal, type, ident, true, null);
+        int startPos = token.pos;
+        if (token.kind == FINAL || token.kind == MONKEYS_AT) {
+            JCModifiers mods = optFinal(Flags.FINAL);
+            JCExpression t = parseType();
+            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null);
+        }
+        JCExpression t = term(EXPR | TYPE);
+        if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.accepts(token.kind)) {
+            JCModifiers mods = toP(F.at(startPos).Modifiers(Flags.FINAL));
+            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null);
+        } else {
+            checkVariableInTryWithResources(startPos);
+            if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {
+                log.error(t.pos(), "try.with.resources.expr.needs.var");
+            }
+
+            return t;
+        }
     }
 
     /** CompilationUnit = [ { "@" Annotation } PACKAGE Qualident ";"] {ImportDeclaration} {TypeDeclaration}
@@ -3931,6 +3951,12 @@ public class JavacParser implements Parser {
         if (!allowTWR) {
             error(token.pos, "try.with.resources.not.supported.in.source", source.name);
             allowTWR = true;
+        }
+    }
+    void checkVariableInTryWithResources(int startPos) {
+        if (!allowEffectivelyFinalVariablesInTWR) {
+            error(startPos, "var.in.try.with.resources.not.supported.in.source", source.name);
+            allowEffectivelyFinalVariablesInTWR = true;
         }
     }
     void checkLambda() {
