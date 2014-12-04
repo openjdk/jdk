@@ -276,6 +276,7 @@ final class SSLSecurity {
  * object.  This also mean that anything going down into the SPI
  * needs to be wrapped, as well as anything coming back up.
  */
+@SuppressWarnings("deprecation")
 final class SSLContextSpiWrapper extends SSLContextSpi {
 
     private javax.net.ssl.SSLContext theSSLContext;
@@ -285,6 +286,7 @@ final class SSLContextSpiWrapper extends SSLContextSpi {
         theSSLContext = javax.net.ssl.SSLContext.getInstance(algName, prov);
     }
 
+    @SuppressWarnings("deprecation")
     protected void engineInit(KeyManager[] kma, TrustManager[] tma,
             SecureRandom sr) throws KeyManagementException {
 
@@ -387,6 +389,7 @@ final class SSLContextSpiWrapper extends SSLContextSpi {
 
 }
 
+@SuppressWarnings("deprecation")
 final class TrustManagerFactorySpiWrapper extends TrustManagerFactorySpi {
 
     private javax.net.ssl.TrustManagerFactory theTrustManagerFactory;
@@ -438,6 +441,7 @@ final class TrustManagerFactorySpiWrapper extends TrustManagerFactorySpi {
 
 }
 
+@SuppressWarnings("deprecation")
 final class KeyManagerFactorySpiWrapper extends KeyManagerFactorySpi {
 
     private javax.net.ssl.KeyManagerFactory theKeyManagerFactory;
@@ -493,6 +497,7 @@ final class KeyManagerFactorySpiWrapper extends KeyManagerFactorySpi {
 
 // =================================
 
+@SuppressWarnings("deprecation")
 final class X509KeyManagerJavaxWrapper implements
         javax.net.ssl.X509KeyManager {
 
@@ -590,6 +595,7 @@ final class X509KeyManagerJavaxWrapper implements
     }
 }
 
+@SuppressWarnings("deprecation")
 final class X509TrustManagerJavaxWrapper implements
         javax.net.ssl.X509TrustManager {
 
@@ -622,6 +628,7 @@ final class X509TrustManagerJavaxWrapper implements
     }
 }
 
+@SuppressWarnings("deprecation")
 final class X509KeyManagerComSunWrapper implements X509KeyManager {
 
     private javax.net.ssl.X509KeyManager theX509KeyManager;
@@ -657,6 +664,7 @@ final class X509KeyManagerComSunWrapper implements X509KeyManager {
     }
 }
 
+@SuppressWarnings("deprecation")
 final class X509TrustManagerComSunWrapper implements X509TrustManager {
 
     private javax.net.ssl.X509TrustManager theX509TrustManager;
