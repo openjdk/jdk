@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import com.sun.codemodel.internal.JForEach;
 import com.sun.codemodel.internal.JType;
 import com.sun.codemodel.internal.JVar;
 import com.sun.tools.internal.xjc.model.CElementInfo;
-import static com.sun.tools.internal.xjc.outline.Aspect.EXPOSED;
+import static com.sun.tools.internal.xjc.model.Aspect.EXPOSED;
 import com.sun.tools.internal.xjc.outline.FieldAccessor;
 import com.sun.tools.internal.xjc.outline.FieldOutline;
 
