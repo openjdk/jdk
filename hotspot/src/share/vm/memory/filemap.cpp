@@ -98,11 +98,11 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
         tty->print_cr("UseSharedSpaces: %s", msg);
       }
     }
+    UseSharedSpaces = false;
+    assert(current_info() != NULL, "singleton must be registered");
+    current_info()->close();
   }
   va_end(ap);
-  UseSharedSpaces = false;
-  assert(current_info() != NULL, "singleton must be registered");
-  current_info()->close();
 }
 
 // Fill in the fileMapInfo structure with data about this VM instance.
