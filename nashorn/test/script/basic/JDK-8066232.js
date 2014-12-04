@@ -34,3 +34,5 @@
     } catch(e if 1) {
     }
 })()
+
+print("SUCCESS");

@@ -36,9 +36,9 @@
          <pathelement location="${dist.dir}"/>
     </path>
     <path id="nashorn.boot.prefix.path">
-      <pathelement location="${dist.dir}"/>
+      <pathelement location="${dist.jar}"/>
     </path>
-    <property name="boot.class.path" value="-Xbootclasspath/a:=&quot;${toString:nashorn.boot.prefix.path}&quot;"/>
+    <property name="boot.class.path" value="-Xbootclasspath/p:&quot;${toString:nashorn.boot.prefix.path}&quot;"/>
     <condition property="svn.executable" value="/usr/local/bin/svn" else="svn">
       <available file="/usr/local/bin/svn"/>
     </condition>
