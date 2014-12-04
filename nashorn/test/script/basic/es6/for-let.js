@@ -39,3 +39,40 @@ try {
 } catch (e) {
     print(e);
 }
+
+let a = [];
+
+for (let i = 0; i < 10; i++) {
+    a.push(function() { print(i); });
+}
+
+a.forEach(function(f) { f(); });
+
+a = [];
+
+for (let i = 0; i < 10; i++) {
+    if (i == 5) {
+        i = "foo";
+    }
+    a.push(function() { print(i); });
+}
+
+a.forEach(function(f) { f(); });
+
+try {
+    print(i);
+} catch (e) {
+    print(e);
+}
+
+a = [];
+
+for (let i = 0; i < 20; i++) {
+    if (i % 2 == 1) {
+        i += 2;
+        continue;
+    }
+    a.push(function() { print(i); });
+}
+
+a.forEach(function(f) { f(); });
