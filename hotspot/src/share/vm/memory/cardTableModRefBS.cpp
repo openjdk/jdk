@@ -171,19 +171,19 @@ CardTableModRefBS::~CardTableModRefBS() {
     _committed = NULL;
   }
   if (_lowest_non_clean) {
-    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean, mtGC);
+    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean);
     _lowest_non_clean = NULL;
   }
   if (_lowest_non_clean_chunk_size) {
-    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size, mtGC);
+    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size);
     _lowest_non_clean_chunk_size = NULL;
   }
   if (_lowest_non_clean_base_chunk_index) {
-    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index, mtGC);
+    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index);
     _lowest_non_clean_base_chunk_index = NULL;
   }
   if (_last_LNC_resizing_collection) {
-    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection, mtGC);
+    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection);
     _last_LNC_resizing_collection = NULL;
   }
 }

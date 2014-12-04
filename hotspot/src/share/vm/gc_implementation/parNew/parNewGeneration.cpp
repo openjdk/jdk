@@ -1609,7 +1609,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
       // This can become a scaling bottleneck when there is work queue overflow coincident
       // with promotion failure.
       oopDesc* f = cur;
-      FREE_C_HEAP_ARRAY(oopDesc, f, mtGC);
+      FREE_C_HEAP_ARRAY(oopDesc, f);
     } else if (par_scan_state->should_be_partially_scanned(obj_to_push, cur)) {
       assert(arrayOop(cur)->length() == 0, "entire array remaining to be scanned");
       obj_to_push = cur;
