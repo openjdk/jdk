@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
 * @test TestDefNewCMS
 * @key gc
-* @bug 8006398
-* @summary Test that the deprecated DefNew+CMS combination print a warning message
+* @bug 8065972
+* @summary Test that the unsupported DefNew+CMS combination does not start
 * @library /testlibrary
 */
 
@@ -37,9 +37,9 @@ public class TestDefNewCMS {
   public static void main(String args[]) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:-UseParNewGC", "-XX:+UseConcMarkSweepGC", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("warning: Using the DefNew young collector with the CMS collector is deprecated and will likely be removed in a future release");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
+    output.shouldContain("It is not possible to combine the DefNew young collector with the CMS collector.");
+    output.shouldContain("Error");
+    output.shouldHaveExitValue(1);
   }
 
 }

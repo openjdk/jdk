@@ -571,7 +571,7 @@ void os::init_system_properties_values() {
   char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
   sprintf(ld_library_path, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
-  FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
+  FREE_C_HEAP_ARRAY(char, ld_library_path);
 
   // Extensions directories.
   sprintf(buf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
@@ -581,7 +581,7 @@ void os::init_system_properties_values() {
   sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
   Arguments::set_endorsed_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, buf);
 
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
@@ -1307,11 +1307,11 @@ bool os::dll_build_name(char* buffer, size_t buflen,
     // release the storage
     for (int i = 0; i < n; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
+      FREE_C_HEAP_ARRAY(char*, pelements);
     }
   } else {
     snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
