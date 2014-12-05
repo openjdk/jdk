@@ -30,13 +30,18 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.MessageDigest;
@@ -49,6 +54,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
@@ -389,8 +395,7 @@ public final class OptimisticTypesPersistence {
             return "dev-" + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date(getLastModifiedClassFile(
                     dir, 0L)));
         } else if(protocol.equals("jrt")) {
-            // FIXME: revisit this for a better option with jrt
-            return "jrt";
+            return getJrtVersionDirName();
         } else {
             throw new AssertionError();
         }
@@ -548,5 +553,45 @@ public final class OptimisticTypesPersistence {
             return UNLIMITED_FILES;
         }
         return Math.max(0, Integer.parseInt(str));
+    }
+
+    // version directory name if nashorn is loaded from jrt:/ URL
+    private static String getJrtVersionDirName() throws Exception {
+        final FileSystem fs = getJrtFileSystem();
+        // consider all .class resources under nashorn module to compute checksum
+        final Path nashorn = fs.getPath("/jdk.scripting.nashorn");
+        if (! Files.isDirectory(nashorn)) {
+            throw new FileNotFoundException("missing /jdk.scripting.nashorn dir in jrt fs");
+        }
+        final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        Files.walk(nashorn).forEach(new Consumer<Path>() {
+            @Override
+            public void accept(Path p) {
+                // take only the .class resources.
+                if (Files.isRegularFile(p) && p.toString().endsWith(".class")) {
+                    try (final InputStream in = Files.newInputStream(p)) {
+                        // get actual (uncompressed) size from file attribute
+                        final int sz = ((Number)Files.getAttribute(p, "size")).intValue();
+                        final byte[] buf = new byte[sz];
+                        in.read(buf);
+                        digest.update(buf);
+                    } catch (final IOException ioe) {
+                        throw new UncheckedIOException(ioe);
+                    }
+                }
+            }
+        });
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest());
+    }
+
+    // get the default jrt FileSystem instance
+    private static FileSystem getJrtFileSystem() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<FileSystem>() {
+                @Override
+                public FileSystem run() {
+                    return FileSystems.getFileSystem(URI.create("jrt:/"));
+                }
+            });
     }
 }
