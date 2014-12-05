@@ -21,8 +21,6 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.InputEvent;
@@ -71,7 +69,6 @@ public class EventWhenTest {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Frame frame = new Frame();
 
         try {
@@ -79,9 +76,9 @@ public class EventWhenTest {
             frame.setBounds(300, 300, 300, 300);
             frame.add(b);
             frame.setVisible(true);
-            toolkit.realSync();
 
             Robot robot = new Robot();
+            robot.waitForIdle();
             robot.mouseMove((int)frame.getLocationOnScreen().getX() + 150,
                     (int)frame.getLocationOnScreen().getY() + 150);
 
@@ -104,7 +101,7 @@ public class EventWhenTest {
             System.out.println("Clicking mouse done: " + eventsCount + " events.");
 
             b.requestFocusInWindow();
-            toolkit.realSync();
+            robot.waitForIdle();
 
             eventsCount = 0;
             System.out.println("Typing a key...");
