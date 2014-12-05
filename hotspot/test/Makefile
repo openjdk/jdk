@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -271,6 +271,9 @@ JTREG_BASIC_OPTIONS += -retain:fail,error
 # Ignore tests are not run and completely silent about it
 JTREG_IGNORE_OPTION = -ignore:quiet
 JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
+# Multiply by 4 the timeout factor
+JTREG_TIMEOUT_OPTION =  -timeoutFactor:4
+JTREG_BASIC_OPTIONS += $(JTREG_TIMEOUT_OPTION)
 # Add any extra options
 JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 # Set other vm and test options
