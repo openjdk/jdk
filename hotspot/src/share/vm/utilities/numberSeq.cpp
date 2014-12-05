@@ -139,7 +139,7 @@ TruncatedSeq::TruncatedSeq(int length, double alpha):
 }
 
 TruncatedSeq::~TruncatedSeq() {
-  FREE_C_HEAP_ARRAY(double, _sequence, mtGC);
+  FREE_C_HEAP_ARRAY(double, _sequence);
 }
 
 void TruncatedSeq::add(double val) {

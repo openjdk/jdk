@@ -51,6 +51,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -76,6 +77,9 @@ WB_ENTRY(jint, WB_GetHeapOopSize(JNIEnv* env, jobject o))
   return heapOopSize;
 WB_END
 
+WB_ENTRY(jint, WB_GetVMPageSize(JNIEnv* env, jobject o))
+  return os::vm_page_size();
+WB_END
 
 class WBIsKlassAliveClosure : public KlassClosure {
     Symbol* _name;
@@ -291,8 +295,16 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  ConcurrentMark* cm = g1->concurrent_mark();
-  return cm->concurrent_marking_in_progress();
+  return g1->concurrent_mark()->cmThread()->during_cycle();
+WB_END
+
+WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
+    g1h->collect(GCCause::_wb_conc_mark);
+    return true;
+  }
+  return false;
 WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
@@ -319,7 +331,7 @@ WB_END
 
 // Free the memory allocated by NMTAllocTest
 WB_ENTRY(void, WB_NMTFree(JNIEnv* env, jobject o, jlong mem))
-  os::free((void*)(uintptr_t)mem, mtTest);
+  os::free((void*)(uintptr_t)mem);
 WB_END
 
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
@@ -745,7 +757,7 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
     env->ReleaseStringUTFChars(value, ccstrValue);
   }
   if (needFree) {
-    FREE_C_HEAP_ARRAY(char, ccstrResult, mtInternal);
+    FREE_C_HEAP_ARRAY(char, ccstrResult);
   }
 WB_END
 
@@ -1154,9 +1166,10 @@ static JNINativeMethod methods[] = {
   {CC"getObjectSize",      CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
   {CC"isObjectInOldGen",   CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
   {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
+  {CC"getVMPageSize",      CC"()I",                   (void*)&WB_GetVMPageSize     },
   {CC"isClassAlive0",      CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC"parseCommandLine",
-      CC"(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
+      CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
   {CC"addToBootstrapClassLoaderSearch", CC"(Ljava/lang/String;)V",
@@ -1174,6 +1187,7 @@ static JNINativeMethod methods[] = {
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
+  {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },

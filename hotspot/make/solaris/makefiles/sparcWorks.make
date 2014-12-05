@@ -496,15 +496,6 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   FASTDEBUG_CFLAGS += -xs
 endif
 
-# Special global options for SS12
-ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
-  # There appears to be multiple issues with the new Dwarf2 debug format, so
-  #   we tell the compiler to use the older 'stabs' debug format all the time.
-  #   Note that this needs to be used in optimized compiles too to be 100%.
-  #   This is a workaround for SS12 (5.9) bug 6694600
-  CFLAGS += -xdebugformat=stabs
-endif
-
 # Enable the following CFLAGS additions if you need to compare the
 # built ELF objects.
 #

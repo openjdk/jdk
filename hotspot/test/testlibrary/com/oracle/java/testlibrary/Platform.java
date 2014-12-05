@@ -24,6 +24,7 @@
 package com.oracle.java.testlibrary;
 
 import java.util.regex.Pattern;
+import com.oracle.java.testlibrary.Utils;
 
 public class Platform {
     private static final String osName      = System.getProperty("os.name");
@@ -32,6 +33,7 @@ public class Platform {
     private static final String javaVersion = System.getProperty("java.version");
     private static final String osArch      = System.getProperty("os.arch");
     private static final String vmName      = System.getProperty("java.vm.name");
+    private static final String userName    = System.getProperty("user.name");
 
     public static boolean isClient() {
         return vmName.endsWith(" Client VM");
@@ -127,4 +129,56 @@ public class Platform {
         return osArch;
     }
 
+    /**
+     * Return a boolean for whether we expect to be able to attach
+     * the SA to our own processes on this system.
+     */
+    public static boolean shouldSAAttach() throws Exception {
+
+        if (isLinux()) {
+            return canPtraceAttachLinux();
+        } else if (isOSX()) {
+            return canAttachOSX();
+        } else {
+            // Other platforms expected to work:
+            return true;
+        }
+    }
+
+    /**
+     * On Linux, first check the SELinux boolean "deny_ptrace" and return false
+     * as we expect to be denied if that is "1".  Then expect permission to attach
+     * if we are root, so return true.  Then return false for an expected denial
+     * if "ptrace_scope" is 1, and true otherwise.
+     */
+    public static boolean canPtraceAttachLinux() throws Exception {
+
+        // SELinux deny_ptrace:
+        String deny_ptrace = Utils.fileAsString("/sys/fs/selinux/booleans/deny_ptrace");
+        if (deny_ptrace != null && deny_ptrace.contains("1")) {
+            // ptrace will be denied:
+            return false;
+        }
+
+        if (userName.equals("root")) {
+            return true;
+        }
+
+        // ptrace_scope:
+        String ptrace_scope = Utils.fileAsString("/proc/sys/kernel/yama/ptrace_scope");
+        if (ptrace_scope != null && ptrace_scope.contains("1")) {
+            // ptrace will be denied:
+            return false;
+        }
+
+        // Otherwise expect to be permitted:
+        return true;
+    }
+
+    /**
+     * On OSX, expect permission to attach only if we are root.
+     */
+    public static boolean canAttachOSX() throws Exception {
+        return userName.equals("root");
+    }
 }
