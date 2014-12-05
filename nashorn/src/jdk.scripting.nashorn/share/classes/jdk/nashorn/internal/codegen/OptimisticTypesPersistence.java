@@ -569,12 +569,8 @@ public final class OptimisticTypesPersistence {
             public void accept(Path p) {
                 // take only the .class resources.
                 if (Files.isRegularFile(p) && p.toString().endsWith(".class")) {
-                    try (final InputStream in = Files.newInputStream(p)) {
-                        // get actual (uncompressed) size from file attribute
-                        final int sz = ((Number)Files.getAttribute(p, "size")).intValue();
-                        final byte[] buf = new byte[sz];
-                        in.read(buf);
-                        digest.update(buf);
+                    try {
+                        digest.update(Files.readAllBytes(p));
                     } catch (final IOException ioe) {
                         throw new UncheckedIOException(ioe);
                     }
