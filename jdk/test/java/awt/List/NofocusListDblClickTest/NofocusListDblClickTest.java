@@ -32,14 +32,12 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.SwingUtilities;
-import sun.awt.SunToolkit;
 
 public class NofocusListDblClickTest {
     static final int EXPECTED_ACTION_COUNT = 2;
     static Robot robot;
     static final AtomicInteger actionPerformed = new AtomicInteger(0);
     static List lst;
-    private static final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -47,16 +45,16 @@ public class NofocusListDblClickTest {
                 createAndShowGUI();
             }
         });
-        toolkit.realSync();
-        Thread.sleep(1000);
-
         robot = new Robot();
         robot.setAutoDelay(50);
+        robot.waitForIdle();
+        Thread.sleep(1000);
+
         // ACTION_PERFORMED event happens only on even clicks
         clickTwiceOn(lst);
         Thread.sleep(500);
         clickTwiceOn(lst);
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000);
 
         synchronized (actionPerformed) {
