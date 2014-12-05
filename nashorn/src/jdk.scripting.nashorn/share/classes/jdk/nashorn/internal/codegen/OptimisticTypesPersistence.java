@@ -388,6 +388,9 @@ public final class OptimisticTypesPersistence {
             final File dir = new File(dirStr);
             return "dev-" + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date(getLastModifiedClassFile(
                     dir, 0L)));
+        } else if(protocol.equals("jrt")) {
+            // FIXME: revisit this for a better option with jrt
+            return "jrt";
         } else {
             throw new AssertionError();
         }
