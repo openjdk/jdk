@@ -216,44 +216,4 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
   }
 };
 
-class ParGCAllocBufferWithBOT: public ParGCAllocBuffer {
-  BlockOffsetArrayContigSpace _bt;
-  BlockOffsetSharedArray*     _bsa;
-  HeapWord*                   _true_end;  // end of the whole ParGCAllocBuffer
-
-  static const size_t ChunkSizeInWords;
-  static const size_t ChunkSizeInBytes;
-  HeapWord* allocate_slow(size_t word_sz);
-
-  void fill_region_with_block(MemRegion mr, bool contig);
-
-public:
-  ParGCAllocBufferWithBOT(size_t word_sz, BlockOffsetSharedArray* bsa);
-
-  HeapWord* allocate(size_t word_sz) {
-    HeapWord* res = ParGCAllocBuffer::allocate(word_sz);
-    if (res != NULL) {
-      _bt.alloc_block(res, word_sz);
-    } else {
-      res = allocate_slow(word_sz);
-    }
-    return res;
-  }
-
-  void undo_allocation(HeapWord* obj, size_t word_sz);
-
-  virtual void set_buf(HeapWord* buf_start) {
-    ParGCAllocBuffer::set_buf(buf_start);
-    _true_end = _hard_end;
-    _bt.set_region(MemRegion(buf_start, word_sz()));
-    _bt.initialize_threshold();
-  }
-
-  virtual void retire(bool end_of_gc, bool retain);
-
-  MemRegion range() {
-    return MemRegion(_top, _true_end);
-  }
-};
-
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP

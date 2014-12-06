@@ -25,6 +25,7 @@
  * @test CorrectnessTest
  * @bug 8038418
  * @library /testlibrary /testlibrary/whitebox
+ * @ignore 8066173
  * @compile execution/TypeConflict.java execution/TypeProfile.java
  *          execution/MethodHandleDelegate.java
  * @build CorrectnessTest

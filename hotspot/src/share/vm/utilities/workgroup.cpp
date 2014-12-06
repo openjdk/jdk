@@ -489,7 +489,7 @@ void SubTasksDone::all_tasks_completed() {
 
 
 SubTasksDone::~SubTasksDone() {
-  if (_tasks != NULL) FREE_C_HEAP_ARRAY(jint, _tasks, mtInternal);
+  if (_tasks != NULL) FREE_C_HEAP_ARRAY(jint, _tasks);
 }
 
 // *** SequentialSubTasksDone
@@ -560,7 +560,7 @@ FreeIdSet::FreeIdSet(int sz, Monitor* mon) :
 
 FreeIdSet::~FreeIdSet() {
   _sets[_index] = NULL;
-  FREE_C_HEAP_ARRAY(int, _ids, mtInternal);
+  FREE_C_HEAP_ARRAY(int, _ids);
 }
 
 void FreeIdSet::set_safepoint(bool b) {
