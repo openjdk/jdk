@@ -113,10 +113,10 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
 
 PerfData::~PerfData() {
   if (_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, _name, mtInternal);
+    FREE_C_HEAP_ARRAY(char, _name);
   }
   if (is_on_c_heap()) {
-    FREE_C_HEAP_ARRAY(PerfDataEntry, _pdep, mtInternal);
+    FREE_C_HEAP_ARRAY(PerfDataEntry, _pdep);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ template <MEMFLAGS F> void CHeapArray<F>::expand(size_t esize, int i, int& size)
   // allocate and initialize new data section
   void* data = NEW_C_HEAP_ARRAY(char*, esize * size, F);
   memcpy(data, _data, esize * length());
-  FREE_C_HEAP_ARRAY(char*, _data, F);
+  FREE_C_HEAP_ARRAY(char*, _data);
   _data = data;
 }
 

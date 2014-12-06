@@ -29,7 +29,7 @@
  * @build Test8010927
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xmx64m -XX:NewSize=20971520 -XX:MaxNewSize=32m -XX:-UseTLAB -XX:-UseParNewGC -XX:-UseAdaptiveSizePolicy Test8010927
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xmx64m -XX:NewSize=20971520 -XX:MaxNewSize=32m -XX:-UseTLAB -XX:-UseAdaptiveSizePolicy Test8010927
  */
 
 import sun.hotspot.WhiteBox;

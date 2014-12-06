@@ -79,11 +79,11 @@ inline char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag,
   return p;
 }
 
-inline void FreeHeap(void* p, MEMFLAGS memflags = mtInternal) {
+inline void FreeHeap(void* p) {
   #ifdef ASSERT
   if (PrintMallocFree) trace_heap_free(p);
   #endif
-  os::free(p, memflags);
+  os::free(p);
 }
 
 
@@ -136,11 +136,11 @@ template <MEMFLAGS F> void* CHeapObj<F>::operator new [](size_t size,
 }
 
 template <MEMFLAGS F> void CHeapObj<F>::operator delete(void* p){
-    FreeHeap(p, F);
+    FreeHeap(p);
 }
 
 template <MEMFLAGS F> void CHeapObj<F>::operator delete [](void* p){
-    FreeHeap(p, F);
+    FreeHeap(p);
 }
 
 template <class E, MEMFLAGS F>
@@ -199,7 +199,7 @@ template<class E, MEMFLAGS F>
 void ArrayAllocator<E, F>::free() {
   if (_addr != NULL) {
     if (_use_malloc) {
-      FreeHeap(_addr, F);
+      FreeHeap(_addr);
     } else {
       os::release_memory(_addr, _size);
     }
