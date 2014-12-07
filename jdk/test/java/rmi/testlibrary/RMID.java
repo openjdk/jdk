@@ -256,19 +256,28 @@ public class RMID extends JavaVM {
         } catch (NumberFormatException ignore) {}
         waitTime = waitTime * slopFactor;
 
-        // We check several times, for a maximum of waitTime, until we have
-        // verified that rmid is running.
-        do {
+        long startTime = System.currentTimeMillis();
+        long deadline = startTime + waitTime;
+
+        while (true) {
             try {
-                Thread.sleep(Math.min(waitTime, POLLTIME_MS));
+                Thread.sleep(POLLTIME_MS);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                mesg("Interrupted while starting activation system, giving up.");
+                mesg("Starting rmid interrupted, giving up at " +
+                    (System.currentTimeMillis() - startTime) + "ms.");
                 return;
             }
-            waitTime -= POLLTIME_MS;
 
-            // Checking if rmid is present
+            try {
+                int status = vm.exitValue();
+                TestLibrary.bomb("Rmid process exited with status " + status + " after " +
+                    (System.currentTimeMillis() - startTime) + "ms.");
+            } catch (IllegalThreadStateException ignore) { }
+
+            // The rmid process is alive; check to see whether
+            // it responds to a remote call.
+
             if (lookupSystem(port) != null) {
                 /*
                  * We need to set the java.rmi.activation.port value as the
@@ -278,15 +287,16 @@ public class RMID extends JavaVM {
                  * incorrect value.
                  */
                 System.setProperty("java.rmi.activation.port", Integer.toString(port));
-                mesg("Started successfully.");
+                mesg("Started successfully after " +
+                    (System.currentTimeMillis() - startTime) + "ms.");
                 return;
-            } else {
-                if (waitTime > 0) {
-                    mesg("rmid not started, will retry for " + waitTime + "ms");
-                }
             }
-        } while (waitTime > 0);
-        TestLibrary.bomb("Failed to start rmid, giving up.", null);
+
+            if (System.currentTimeMillis() > deadline) {
+                TestLibrary.bomb("Failed to start rmid, giving up after " +
+                    (System.currentTimeMillis() - startTime) + "ms.", null);
+            }
+        }
     }
 
     /**
@@ -309,9 +319,11 @@ public class RMID extends JavaVM {
      */
     private boolean shutdown() throws InterruptedException {
         mesg("shutdown()");
+        long startTime = System.currentTimeMillis();
         ActivationSystem system = lookupSystem(port);
         if (system == null) {
-            mesg("lookupSystem() returned null");
+            mesg("lookupSystem() returned null after " +
+                (System.currentTimeMillis() - startTime) + "ms.");
             return false;
         }
 
@@ -325,10 +337,12 @@ public class RMID extends JavaVM {
 
         try {
             waitFor(TIMEOUT_SHUTDOWN_MS);
-            mesg("Shutdown successful.");
+            mesg("Shutdown successful after " +
+                (System.currentTimeMillis() - startTime) + "ms.");
             return true;
         } catch (TimeoutException ex) {
-            mesg("Shutdown timed out:");
+            mesg("Shutdown timed out after " +
+                (System.currentTimeMillis() - startTime) + "ms:");
             ex.printStackTrace();
             return false;
         }
@@ -344,6 +358,8 @@ public class RMID extends JavaVM {
             throw new IllegalStateException("can't wait for RMID that isn't running");
         }
 
+        long startTime = System.currentTimeMillis();
+
         // First, attempt graceful shutdown of the activation system.
         try {
             if (! shutdown()) {
@@ -352,14 +368,17 @@ public class RMID extends JavaVM {
                 vm.destroy();
                 try {
                     waitFor(TIMEOUT_DESTROY_MS);
-                    mesg("Destroy successful.");
+                    mesg("Destroy successful after " +
+                        (System.currentTimeMillis() - startTime) + "ms.");
                 } catch (TimeoutException ex) {
-                    mesg("Destroy timed out, giving up.");
+                    mesg("Destroy timed out, giving up after " +
+                        (System.currentTimeMillis() - startTime) + "ms:");
                     ex.printStackTrace();
                 }
             }
         } catch (InterruptedException ie) {
-            mesg("Shutdown/destroy interrupted, giving up.");
+            mesg("Shutdown/destroy interrupted, giving up at " +
+                (System.currentTimeMillis() - startTime) + "ms.");
             ie.printStackTrace();
             Thread.currentThread().interrupt();
             return;

@@ -13,6 +13,11 @@ public class ResDeclOutsideTry implements AutoCloseable {
     String test1() {
         try (tr1 = new ResDeclOutsideTry(); tr2;) {
         }
+        return null;
+    }
+
+    @Override
+    public void close() throws Exception {
     }
 }
 

@@ -1,5 +1,3 @@
-import java.lang.annotation.ElementType;
-
 /*
  * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.

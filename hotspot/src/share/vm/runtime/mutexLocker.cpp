@@ -72,7 +72,6 @@ Monitor* Threads_lock                 = NULL;
 Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* SLT_lock                     = NULL;
-Monitor* iCMS_lock                    = NULL;
 Monitor* FullGCCount_lock             = NULL;
 Monitor* CMark_lock                   = NULL;
 Mutex*   CMRegionStack_lock           = NULL;
@@ -88,6 +87,7 @@ Mutex*   DerivedPointerTableGC_lock   = NULL;
 Mutex*   Compile_lock                 = NULL;
 Monitor* MethodCompileQueue_lock      = NULL;
 Monitor* CompileThread_lock           = NULL;
+Monitor* Compilation_lock             = NULL;
 Mutex*   CompileTaskAlloc_lock        = NULL;
 Mutex*   CompileStatistics_lock       = NULL;
 Mutex*   MultiArray_lock              = NULL;
@@ -175,9 +175,6 @@ void mutex_init() {
 
   def(CGC_lock                   , Monitor, special,     true ); // coordinate between fore- and background GC
   def(STS_lock                   , Monitor, leaf,        true );
-  if (UseConcMarkSweepGC) {
-    def(iCMS_lock                  , Monitor, special,     true ); // CMS incremental mode start/stop notification
-  }
   if (UseConcMarkSweepGC || UseG1GC) {
     def(FullGCCount_lock           , Monitor, leaf,        true ); // in support of ExplicitGCInvokesConcurrent
   }
@@ -278,7 +275,9 @@ void mutex_init() {
   def(ProfileVM_lock               , Monitor, special,   false); // used for profiling of the VMThread
   def(CompileThread_lock           , Monitor, nonleaf+5,   false );
   def(PeriodicTask_lock            , Monitor, nonleaf+5,   true);
-
+  if (WhiteBoxAPI) {
+    def(Compilation_lock           , Monitor, leaf,        false );
+  }
 #ifdef INCLUDE_TRACE
   def(JfrMsg_lock                  , Monitor, leaf,        true);
   def(JfrBuffer_lock               , Mutex,   leaf,        true);

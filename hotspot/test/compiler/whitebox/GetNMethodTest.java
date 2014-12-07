@@ -22,7 +22,9 @@
  *
  */
 
+import sun.hotspot.code.BlobType;
 import sun.hotspot.code.NMethod;
+import com.oracle.java.testlibrary.Asserts;
 
 /*
  * @test GetNMethodTest
@@ -52,21 +54,46 @@ public class GetNMethodTest extends CompilerWhiteBoxTest {
 
         compile();
         checkCompiled();
+
         NMethod nmethod = NMethod.get(method, testCase.isOsr());
         if (IS_VERBOSE) {
             System.out.println("nmethod = " + nmethod);
         }
-        if (nmethod == null) {
-            throw new RuntimeException("nmethod of compiled method is null");
+        Asserts.assertNotNull(nmethod,
+                "nmethod of compiled method is null");
+        Asserts.assertNotNull(nmethod.insts,
+                "nmethod.insts of compiled method is null");
+        Asserts.assertGT(nmethod.insts.length, 0,
+                "compiled method's instructions is empty");
+        Asserts.assertNotNull(nmethod.code_blob_type, "blob type is null");
+        if (WHITE_BOX.getBooleanVMFlag("SegmentedCodeCache")) {
+            Asserts.assertNE(nmethod.code_blob_type, BlobType.All);
+            switch (nmethod.comp_level) {
+            case 1:
+            case 4:
+                checkBlockType(nmethod, BlobType.MethodNonProfiled);
+                break;
+            case 2:
+            case 3:
+                checkBlockType(nmethod, BlobType.MethodNonProfiled);
+                break;
+            default:
+                throw new Error("unexpected comp level " + nmethod);
+            }
+        } else {
+            Asserts.assertEQ(nmethod.code_blob_type, BlobType.All);
         }
-        if (nmethod.insts.length == 0) {
-            throw new RuntimeException("compiled method's instructions is empty");
-        }
+
         deoptimize();
         checkNotCompiled();
         nmethod = NMethod.get(method, testCase.isOsr());
-        if (nmethod != null) {
-            throw new RuntimeException("nmethod of non-compiled method isn't null");
-        }
+        Asserts.assertNull(nmethod,
+                "nmethod of non-compiled method isn't null");
+    }
+
+    private void checkBlockType(NMethod nmethod, BlobType expectedType) {
+        Asserts.assertEQ(nmethod.code_blob_type, expectedType,
+                String.format("blob_type[%s] for %d level isn't %s",
+                        nmethod.code_blob_type, nmethod.comp_level, expectedType));
     }
 }

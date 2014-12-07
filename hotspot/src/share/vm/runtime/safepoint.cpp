@@ -182,7 +182,7 @@ void SafepointSynchronize::begin() {
   // Make interpreter safepoint aware
   Interpreter::notice_safepoints();
 
-  if (UseCompilerSafepoints && DeferPollingPageLoopCount < 0) {
+  if (DeferPollingPageLoopCount < 0) {
     // Make polling safepoint aware
     guarantee (PageArmed == 0, "invariant") ;
     PageArmed = 1 ;
@@ -288,7 +288,7 @@ void SafepointSynchronize::begin() {
       // 9. On windows consider using the return value from SwitchThreadTo()
       //    to drive subsequent spin/SwitchThreadTo()/Sleep(N) decisions.
 
-      if (UseCompilerSafepoints && int(iterations) == DeferPollingPageLoopCount) {
+      if (int(iterations) == DeferPollingPageLoopCount) {
          guarantee (PageArmed == 0, "invariant") ;
          PageArmed = 1 ;
          os::make_polling_page_unreadable();
@@ -1074,7 +1074,7 @@ void SafepointSynchronize::deferred_initialize_stat() {
   guarantee(_safepoint_stats != NULL,
             "not enough memory for safepoint instrumentation data");
 
-  if (UseCompilerSafepoints && DeferPollingPageLoopCount >= 0) {
+  if (DeferPollingPageLoopCount >= 0) {
     need_to_track_page_armed_status = true;
   }
   init_done = true;
@@ -1241,9 +1241,7 @@ void SafepointSynchronize::print_stat_on_exit() {
 
   // Print out polling page sampling status.
   if (!need_to_track_page_armed_status) {
-    if (UseCompilerSafepoints) {
-      tty->print_cr("Polling page always armed");
-    }
+    tty->print_cr("Polling page always armed");
   } else {
     tty->print_cr("Defer polling page loop count = %d\n",
                  DeferPollingPageLoopCount);

@@ -1,0 +1,2 @@
+TwrForVariable1.java:13:14: compiler.err.var.in.try.with.resources.not.supported.in.source: 1.8
+1 error

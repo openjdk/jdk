@@ -1,3 +1,2 @@
-ResDeclOutsideTry.java:14:17: compiler.err.expected: token.identifier
-ResDeclOutsideTry.java:14:48: compiler.err.expected: token.identifier
-2 errors
+ResDeclOutsideTry.java:14:18: compiler.err.try.with.resources.expr.needs.var
+1 error

@@ -31,6 +31,7 @@
 #include "runtime/os.hpp"
 #include "trace/tracing.hpp"
 #include "trace/traceBackend.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/evacuationInfo.hpp"
 #include "gc_implementation/g1/g1YCTypes.hpp"

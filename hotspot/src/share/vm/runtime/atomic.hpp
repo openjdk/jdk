@@ -28,6 +28,9 @@
 #include "memory/allocation.hpp"
 
 class Atomic : AllStatic {
+ private:
+  static jbyte cmpxchg_general(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value);
+
  public:
   // Atomic operations on jlong types are not available on all 32-bit
   // platforms. If atomic ops on jlongs are defined here they must only
@@ -104,7 +107,7 @@ class Atomic : AllStatic {
   // *dest with exchange_value if the comparison succeeded. Returns prior
   // value of *dest. cmpxchg*() provide:
   // <fence> compare-and-exchange <membar StoreLoad|StoreStore>
-  static jbyte           cmpxchg    (jbyte        exchange_value, volatile jbyte*        dest, jbyte        compare_value);
+  inline static jbyte    cmpxchg    (jbyte        exchange_value, volatile jbyte*        dest, jbyte        compare_value);
   inline static jint     cmpxchg    (jint         exchange_value, volatile jint*         dest, jint         compare_value);
   // See comment above about using jlong atomics on 32-bit platforms
   inline static jlong    cmpxchg    (jlong        exchange_value, volatile jlong*        dest, jlong        compare_value);

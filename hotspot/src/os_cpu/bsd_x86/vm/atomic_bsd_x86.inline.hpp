@@ -88,6 +88,15 @@ inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     des
   return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
 }
 
+#define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
+inline jbyte    Atomic::cmpxchg    (jbyte    exchange_value, volatile jbyte*    dest, jbyte    compare_value) {
+  int mp = os::is_MP();
+  __asm__ volatile (LOCK_IF_MP(%4) "cmpxchgb %1,(%3)"
+                    : "=a" (exchange_value)
+                    : "q" (exchange_value), "a" (compare_value), "r" (dest), "r" (mp)
+                    : "cc", "memory");
+  return exchange_value;
+}
 
 inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value) {
   int mp = os::is_MP();

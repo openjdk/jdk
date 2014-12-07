@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 package com.sun.tools.internal.xjc.model.nav;
 
 import com.sun.codemodel.internal.JType;
-import com.sun.tools.internal.xjc.outline.Aspect;
+import com.sun.tools.internal.xjc.model.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 
 /**
  * A type.
  *
- * See the package documentaion for details.
+ * See the package documentation for details.
  *
  * @author Kohsuke Kawaguchi
  */
