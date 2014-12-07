@@ -95,10 +95,6 @@ public:
   // The caller guarantees that "mr" contains no references.  (Perhaps it's
   // objects have been moved elsewhere.)
   virtual void clear(MemRegion mr) = 0;
-
-  // Pass along the argument to the superclass.
-  ModRefBarrierSet(int max_covered_regions) :
-    BarrierSet(max_covered_regions) {}
 };
 
 #endif // SHARE_VM_MEMORY_MODREFBARRIERSET_HPP

@@ -73,7 +73,7 @@ public abstract class Dependencies {
         return instance;
     }
 
-    Dependencies(Context context) {
+    protected Dependencies(Context context) {
         context.put(dependenciesKey, this);
     }
 
@@ -122,7 +122,7 @@ public abstract class Dependencies {
     /**
      * Push a new completion node on the stack.
      */
-    abstract public void push(ClassSymbol s);
+    abstract public void push(ClassSymbol s, CompletionCause phase);
 
     /**
      * Push a new attribution node on the stack.
@@ -133,6 +133,15 @@ public abstract class Dependencies {
      * Remove current dependency node from the stack.
      */
     abstract public void pop();
+
+    public enum CompletionCause {
+        CLASS_READER,
+        HEADER_PHASE,
+        HIERARCHY_PHASE,
+        IMPORTS_PHASE,
+        MEMBER_ENTER,
+        MEMBERS_PHASE;
+    }
 
     /**
      * This class creates a graph of all dependencies as symbols are completed;
@@ -391,7 +400,7 @@ public abstract class Dependencies {
         Map<String, Node> dependencyNodeMap = new LinkedHashMap<>();
 
         @Override
-        public void push(ClassSymbol s) {
+        public void push(ClassSymbol s, CompletionCause phase) {
             Node n = new CompletionNode(s);
             if (n == push(n)) {
                 s.completer = this;
@@ -454,7 +463,7 @@ public abstract class Dependencies {
 
         @Override
         public void complete(Symbol sym) throws CompletionFailure {
-            push((ClassSymbol) sym);
+            push((ClassSymbol) sym, null);
             pop();
             sym.completer = this;
         }
@@ -542,7 +551,7 @@ public abstract class Dependencies {
         }
 
         @Override
-        public void push(ClassSymbol s) {
+        public void push(ClassSymbol s, CompletionCause phase) {
             //do nothing
         }
 

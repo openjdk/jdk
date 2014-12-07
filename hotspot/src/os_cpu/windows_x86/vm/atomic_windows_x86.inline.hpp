@@ -123,6 +123,11 @@ inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     
   return (*os::atomic_cmpxchg_func)(exchange_value, dest, compare_value);
 }
 
+#define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
+inline jbyte    Atomic::cmpxchg    (jbyte    exchange_value, volatile jbyte*    dest, jbyte    compare_value) {
+    return (*os::atomic_cmpxchg_byte_func)(exchange_value, dest, compare_value);
+}
+
 inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value) {
   return (*os::atomic_cmpxchg_long_func)(exchange_value, dest, compare_value);
 }
@@ -210,6 +215,19 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
 
 inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     dest) {
   return (void*)xchg((jint)exchange_value, (volatile jint*)dest);
+}
+
+#define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
+inline jbyte    Atomic::cmpxchg    (jbyte    exchange_value, volatile jbyte*    dest, jbyte    compare_value) {
+  // alternative for InterlockedCompareExchange
+  int mp = os::is_MP();
+  __asm {
+    mov edx, dest
+    mov cl, exchange_value
+    mov al, compare_value
+    LOCK_IF_MP(mp)
+    cmpxchg byte ptr [edx], cl
+  }
 }
 
 inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value) {

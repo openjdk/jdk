@@ -204,6 +204,7 @@ public final class CRC32C implements Checksum {
     /**
      * Updates the CRC-32C checksum with the specified array of bytes.
      */
+    @SuppressWarnings("deprecation") // Unsafe.{getInt, getLong}
     private static int updateBytes(int crc, byte[] b, int off, int end) {
 
         // Do only byte reads for arrays so short they can't be aligned

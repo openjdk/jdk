@@ -33,6 +33,7 @@
   static intptr_t  (*atomic_xchg_ptr_func)      (intptr_t,  volatile intptr_t*);
 
   static jint      (*atomic_cmpxchg_func)       (jint,      volatile jint*,  jint);
+  static jbyte     (*atomic_cmpxchg_byte_func)  (jbyte,     volatile jbyte*, jbyte);
   static jlong     (*atomic_cmpxchg_long_func)  (jlong,     volatile jlong*, jlong);
 
   static jint      (*atomic_add_func)           (jint,      volatile jint*);
@@ -42,6 +43,7 @@
   static intptr_t  atomic_xchg_ptr_bootstrap    (intptr_t,  volatile intptr_t*);
 
   static jint      atomic_cmpxchg_bootstrap     (jint,      volatile jint*,  jint);
+  static jbyte     atomic_cmpxchg_byte_bootstrap(jbyte,     volatile jbyte*, jbyte);
 #else
 
   static jlong (*atomic_cmpxchg_long_func)  (jlong, volatile jlong*, jlong);

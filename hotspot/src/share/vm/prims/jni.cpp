@@ -32,10 +32,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/gcLocker.inline.hpp"
@@ -81,6 +77,10 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif // INCLUDE_ALL_GCS
 
 static jint CurrentVersion = JNI_VERSION_1_8;
 
@@ -603,6 +603,7 @@ JNI_ENTRY(jint, jni_Throw(JNIEnv *env, jthrowable obj))
 
   THROW_OOP_(JNIHandles::resolve(obj), JNI_OK);
   ShouldNotReachHere();
+  return 0;  // Mute compiler.
 JNI_END
 
 
@@ -623,6 +624,7 @@ JNI_ENTRY(jint, jni_ThrowNew(JNIEnv *env, jclass clazz, const char *message))
   Handle protection_domain (THREAD, k->protection_domain());
   THROW_MSG_LOADER_(name, (char *)message, class_loader, protection_domain, JNI_OK);
   ShouldNotReachHere();
+  return 0;  // Mute compiler.
 JNI_END
 
 

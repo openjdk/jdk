@@ -73,7 +73,7 @@ private:
   void insert(int index, ciMetadata* obj, GrowableArray<ciMetadata*>* objects);
 
   ciObject* create_new_object(oop o);
-  ciMetadata* create_new_object(Metadata* o);
+  ciMetadata* create_new_metadata(Metadata* o);
 
   void ensure_metadata_alive(ciMetadata* m);
 

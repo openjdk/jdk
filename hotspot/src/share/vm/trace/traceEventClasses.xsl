@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -41,17 +41,14 @@
 #include "trace/traceEvent.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-
 #if INCLUDE_TRACE
-
-
 #include "trace/traceStream.hpp"
 #include "utilities/ostream.hpp"
 
   <xsl:apply-templates select="trace/events/struct" mode="trace"/>
   <xsl:apply-templates select="trace/events/event" mode="trace"/>
 
-#else
+#else // !INCLUDE_TRACE
 
 class TraceEvent {
 public:
@@ -59,15 +56,15 @@ public:
   void set_starttime(const Ticks&amp; time) {}
   void set_endtime(const Ticks&amp; time) {}
   bool should_commit() const { return false; }
+  static bool is_enabled() { return false; }
   void commit() const {}
 };
 
   <xsl:apply-templates select="trace/events/struct" mode="empty"/>
   <xsl:apply-templates select="trace/events/event" mode="empty"/>
 
-#endif
-
-#endif
+#endif // INCLUDE_TRACE
+#endif // TRACEFILES_TRACEEVENTCLASSES_HPP
 </xsl:template>
 
 <xsl:template match="struct" mode="trace">

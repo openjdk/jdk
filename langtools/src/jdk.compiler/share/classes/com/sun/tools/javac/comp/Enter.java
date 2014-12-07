@@ -47,40 +47,34 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /** This class enters symbols for all encountered definitions into
- *  the symbol table. The pass consists of two phases, organized as
- *  follows:
+ *  the symbol table. The pass consists of high-level two phases,
+ *  organized as follows:
  *
  *  <p>In the first phase, all class symbols are entered into their
  *  enclosing scope, descending recursively down the tree for classes
  *  which are members of other classes. The class symbols are given a
- *  MemberEnter object as completer.
+ *  TypeEnter object as completer.
  *
  *  <p>In the second phase classes are completed using
- *  MemberEnter.complete().  Completion might occur on demand, but
+ *  TypeEnter.complete(). Completion might occur on demand, but
  *  any classes that are not completed that way will be eventually
- *  completed by processing the `uncompleted' queue.  Completion
- *  entails (1) determination of a class's parameters, supertype and
- *  interfaces, as well as (2) entering all symbols defined in the
+ *  completed by processing the `uncompleted' queue. Completion
+ *  entails determination of a class's parameters, supertype and
+ *  interfaces, as well as entering all symbols defined in the
  *  class into its scope, with the exception of class symbols which
- *  have been entered in phase 1.  (2) depends on (1) having been
- *  completed for a class and all its superclasses and enclosing
- *  classes. That's why, after doing (1), we put classes in a
- *  `halfcompleted' queue. Only when we have performed (1) for a class
- *  and all it's superclasses and enclosing classes, we proceed to
- *  (2).
+ *  have been entered in phase 1.
  *
  *  <p>Whereas the first phase is organized as a sweep through all
- *  compiled syntax trees, the second phase is demand. Members of a
+ *  compiled syntax trees, the second phase is on-demand. Members of a
  *  class are entered when the contents of a class are first
  *  accessed. This is accomplished by installing completer objects in
- *  class symbols for compiled classes which invoke the member-enter
+ *  class symbols for compiled classes which invoke the type-enter
  *  phase for the corresponding class tree.
  *
  *  <p>Classes migrate from one phase to the next via queues:
  *
  *  <pre>{@literal
- *  class enter -> (Enter.uncompleted)         --> member enter (1)
- *              -> (MemberEnter.halfcompleted) --> member enter (2)
+ *  class enter -> (Enter.uncompleted)         --> type enter
  *              -> (Todo)                      --> attribute
  *                                              (only for toplevel classes)
  *  }</pre>
@@ -98,7 +92,7 @@ public class Enter extends JCTree.Visitor {
     Check chk;
     TreeMaker make;
     Annotate annotate;
-    MemberEnter memberEnter;
+    TypeEnter typeEnter;
     Types types;
     Lint lint;
     Names names;
@@ -122,7 +116,7 @@ public class Enter extends JCTree.Visitor {
         make = TreeMaker.instance(context);
         syms = Symtab.instance(context);
         chk = Check.instance(context);
-        memberEnter = MemberEnter.instance(context);
+        typeEnter = TypeEnter.instance(context);
         types = Types.instance(context);
         annotate = Annotate.instance(context);
         lint = Lint.instance(context);
@@ -391,7 +385,7 @@ public class Enter extends JCTree.Visitor {
         typeEnvs.put(c, localEnv);
 
         // Fill out class fields.
-        c.completer = memberEnter;
+        c.completer = typeEnter;
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree);
         c.sourcefile = env.toplevel.sourcefile;
         c.members_field = WriteableScope.create(c);
@@ -469,22 +463,23 @@ public class Enter extends JCTree.Visitor {
         complete(trees, null);
     }
 
-    /** Main method: enter one class from a list of toplevel trees and
-     *  place the rest on uncompleted for later processing.
+    /** Main method: enter classes from the list of toplevel trees, possibly
+     *  skipping TypeEnter for all but 'c' by placing them on the uncompleted
+     *  list.
      *  @param trees      The list of trees to be processed.
-     *  @param c          The class symbol to be processed.
+     *  @param c          The class symbol to be processed or null to process all.
      */
     public void complete(List<JCCompilationUnit> trees, ClassSymbol c) {
         annotate.enterStart();
         ListBuffer<ClassSymbol> prevUncompleted = uncompleted;
-        if (memberEnter.completionEnabled) uncompleted = new ListBuffer<>();
+        if (typeEnter.completionEnabled) uncompleted = new ListBuffer<>();
 
         try {
             // enter all classes, and construct uncompleted list
             classEnter(trees, null);
 
             // complete all uncompleted classes in memberEnter
-            if  (memberEnter.completionEnabled) {
+            if (typeEnter.completionEnabled) {
                 while (uncompleted.nonEmpty()) {
                     ClassSymbol clazz = uncompleted.next();
                     if (c == null || c == clazz || prevUncompleted == null)
@@ -494,16 +489,7 @@ public class Enter extends JCTree.Visitor {
                         prevUncompleted.append(clazz);
                 }
 
-                // if there remain any unimported toplevels (these must have
-                // no classes at all), process their import statements as well.
-                for (JCCompilationUnit tree : trees) {
-                    if (tree.starImportScope.isEmpty()) {
-                        JavaFileObject prev = log.useSource(tree.sourcefile);
-                        Env<AttrContext> topEnv = topLevelEnv(tree);
-                        memberEnter.memberEnter(tree, topEnv);
-                        log.useSource(prev);
-                    }
-                }
+                typeEnter.ensureImportsChecked(trees);
             }
         } finally {
             uncompleted = prevUncompleted;

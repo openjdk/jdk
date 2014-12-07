@@ -89,9 +89,3 @@ void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
     _gc_policy_counters = new GCPolicyCounters("Copy:CMS", 2, 3);
   }
 }
-
-// Returns true if the incremental mode is enabled.
-bool ConcurrentMarkSweepPolicy::has_soft_ended_eden()
-{
-  return CMSIncrementalMode;
-}

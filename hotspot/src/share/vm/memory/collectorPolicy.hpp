@@ -152,10 +152,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
   virtual BarrierSet::Name barrier_set_name() = 0;
 
-  // Create the remembered set (to cover the given reserved region,
-  // allowing breaking up into at most "max_covered_regions").
-  virtual GenRemSet* create_rem_set(MemRegion reserved,
-                                    int max_covered_regions);
+  virtual GenRemSet* create_rem_set(MemRegion reserved);
 
   // This method controls how a collector satisfies a request
   // for a block of memory.  "gc_time_limit_was_exceeded" will
@@ -187,11 +184,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::CollectorPolicyKind;
-  }
-
-  // Returns true if a collector has eden space with soft end.
-  virtual bool has_soft_ended_eden() {
-    return false;
   }
 
   // Do any updates required to global flags that are due to heap initialization
