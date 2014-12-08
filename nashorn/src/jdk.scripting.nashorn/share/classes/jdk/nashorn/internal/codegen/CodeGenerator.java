@@ -571,9 +571,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         // Operands' load type should not be narrower than the narrowest of the individual operand types, nor narrower
         // than the lower explicit bound, but it should also not be wider than
-        final Type narrowestOperandType = Type.narrowest(Type.widest(lhs.getType(), rhs.getType()), explicitOperandBounds.widest);
+        final Type lhsType = undefinedToNumber(lhs.getType());
+        final Type rhsType = undefinedToNumber(rhs.getType());
+        final Type narrowestOperandType = Type.narrowest(Type.widest(lhsType, rhsType), explicitOperandBounds.widest);
         final TypeBounds operandBounds = explicitOperandBounds.notNarrowerThan(narrowestOperandType);
-        if (noToPrimitiveConversion(lhs.getType(), explicitOperandBounds.widest) || rhs.isLocal()) {
+        if (noToPrimitiveConversion(lhsType, explicitOperandBounds.widest) || rhs.isLocal()) {
             // Can reorder. We might still need to separate conversion, but at least we can do it with reordering
             if (forceConversionSeparation) {
                 // Can reorder, but can't move conversion into the operand as the operation depends on operands
@@ -594,10 +596,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // Can't reorder. Load and convert separately.
             final TypeBounds safeConvertBounds = TypeBounds.UNBOUNDED.notNarrowerThan(narrowestOperandType);
             loadExpression(lhs, safeConvertBounds, baseAlreadyOnStack);
-            final Type lhsType = method.peekType();
+            final Type lhsLoadedType = method.peekType();
             loadExpression(rhs, safeConvertBounds, false);
             final Type convertedLhsType = operandBounds.within(method.peekType());
-            if (convertedLhsType != lhsType) {
+            if (convertedLhsType != lhsLoadedType) {
                 // Do it conditionally, so that if conversion is a no-op we don't introduce a SWAP, SWAP.
                 method.swap().convert(convertedLhsType).swap();
             }
@@ -607,6 +609,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         assert Type.generic(method.peekType(1)) == operandBounds.narrowest;
 
         return method;
+    }
+
+    private static final Type undefinedToNumber(final Type type) {
+        return type == Type.UNDEFINED ? Type.NUMBER : type;
     }
 
     private static final class TypeBounds {
@@ -3151,9 +3157,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         } else {
             final Type identType = identNode.getType();
             if(identType == Type.UNDEFINED) {
-                // The symbol must not be slotted; the initializer is either itself undefined (explicit assignment of
-                // undefined to undefined), or the left hand side is a dead variable.
-                assert !identNode.getSymbol().isScope();
+                // The initializer is either itself undefined (explicit assignment of undefined to undefined),
+                // or the left hand side is a dead variable.
                 assert init.getType() == Type.UNDEFINED || identNode.getSymbol().slotCount() == 0;
                 loadAndDiscard(init);
                 return false;
@@ -3576,9 +3581,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     operandBounds = new TypeBounds(binaryNode.getType(), Type.OBJECT);
                 } else {
                     // Non-optimistic, non-FP +. Allow it to overflow.
-                    operandBounds = new TypeBounds(Type.narrowest(binaryNode.getWidestOperandType(), resultBounds.widest),
-                            Type.OBJECT);
-                    forceConversionSeparation = binaryNode.getWidestOperationType().narrowerThan(resultBounds.widest);
+                    final Type widestOperationType = binaryNode.getWidestOperationType();
+                    operandBounds = new TypeBounds(Type.narrowest(binaryNode.getWidestOperandType(), resultBounds.widest), widestOperationType);
+                    forceConversionSeparation = widestOperationType.narrowerThan(resultBounds.widest);
                 }
                 loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), operandBounds, false, forceConversionSeparation);
             }
