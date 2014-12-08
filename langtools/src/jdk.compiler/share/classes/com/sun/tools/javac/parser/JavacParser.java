@@ -157,6 +157,7 @@ public class JavacParser implements Parser {
         this.allowIntersectionTypesInCast = source.allowIntersectionTypesInCast();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
         this.allowAnnotationsAfterTypeParams = source.allowAnnotationsAfterTypeParams();
+        this.allowUnderscoreIdentifier = source.allowUnderscoreIdentifier();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
@@ -229,6 +230,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow annotations after the method type parameters?
      */
     boolean allowAnnotationsAfterTypeParams;
+
+    /** Switch: should we allow '_' as an identifier?
+     */
+    boolean allowUnderscoreIdentifier;
 
     /** Switch: is "this" allowed as an identifier?
      * This is needed to parse receiver types.
@@ -595,7 +600,11 @@ public class JavacParser implements Parser {
                 return names.error;
             }
         } else if (token.kind == UNDERSCORE) {
-            warning(token.pos, "underscore.as.identifier");
+            if (allowUnderscoreIdentifier) {
+                warning(token.pos, "underscore.as.identifier");
+            } else {
+                error(token.pos, "underscore.as.identifier");
+            }
             Name name = token.name();
             nextToken();
             return name;

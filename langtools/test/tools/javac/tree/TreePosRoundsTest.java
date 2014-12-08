@@ -140,9 +140,9 @@ public class TreePosRoundsTest extends AbstractProcessor {
         }
 
         @Override
-        public Void visitVariable(VariableTree tree, Void _) {
+        public Void visitVariable(VariableTree tree, Void p) {
             check(getCurrentPath());
-            return super.visitVariable(tree, _);
+            return super.visitVariable(tree, p);
         }
 
         void check(TreePath tp) {

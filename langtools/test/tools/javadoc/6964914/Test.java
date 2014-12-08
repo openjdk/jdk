@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class Test {
         File testSrc = new File(System.getProperty("test.src"));
         String[] args = {
             "-Xdoclint:none",
+            "-source", "8",
             "-bootclasspath", System.getProperty("sun.boot.class.path"),
             "-classpath", ".",
             "-package",
