@@ -50,6 +50,7 @@ import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.tree.JCTree;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -952,8 +953,10 @@ public class JavacParserTest extends TestCase {
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
                 Arrays.asList("-XDrawDiagnostics"), null, Arrays.asList(new MyFileObject(code)));
 
-        assertEquals("the error code is not correct", Main.Result.ERROR, ct.doCall());
-        assertEquals("the error message is not correct", expectedErrors, out.toString());
+        Result errorCode = ct.doCall();
+        assertEquals("the error code is not correct; actual:" + errorCode, Main.Result.ERROR, errorCode);
+        String actualErrors = normalize(out.toString());
+        assertEquals("the error message is not correct, actual: " + actualErrors, expectedErrors, actualErrors);
     }
 
     void run(String[] args) throws Exception {
