@@ -105,14 +105,18 @@ public class ProfileOptionTest {
         JavaFileObject fo = new StringJavaFileObject("Test.java", "class Test { }");
         for (Target t: Target.values()) {
             switch (t) {
-                case JDK1_1: case JDK1_2: // no equivalent -source
+                case JDK1_1:
+                case JDK1_2:
+                case JDK1_3:
+                case JDK1_4:
+                case JDK1_5: // not supported
                     continue;
             }
 
             for (Profile p: Profile.values()) {
                 List<String> opts = new ArrayList<>();
                 opts.addAll(Arrays.asList("-source", t.name, "-target", t.name));
-                opts.add("-Xlint:-options"); // dont warn about no -bootclasspath
+                opts.add("-Xlint:-options"); // don't warn about no -bootclasspath
                 if (p != Profile.DEFAULT)
                     opts.addAll(Arrays.asList("-profile", p.name));
 

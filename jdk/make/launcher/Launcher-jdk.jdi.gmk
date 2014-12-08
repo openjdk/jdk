@@ -29,8 +29,3 @@ $(eval $(call SetupLauncher,jdb, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.example.debug.tty.TTY"$(COMMA) }' \
     -DAPP_CLASSPATH='{ "/lib/tools.jar"$(COMMA) "/lib/sa-jdi.jar"$(COMMA) "/classes" }'))
 
-jdk.jdi: $(LAUNCHERS)
-
-all: jdk.jdi
-
-.PHONY: all jdk.jdi

@@ -64,7 +64,7 @@ class MemTracker : AllStatic {
     const NativeCallStack& stack, MEMFLAGS flag = mtNone) { }
   static inline void record_virtual_memory_commit(void* addr, size_t size, const NativeCallStack& stack) { }
   static inline Tracker get_virtual_memory_uncommit_tracker() { return Tracker(); }
-  static inline Tracker get_virtual_memory_release_tracker() { }
+  static inline Tracker get_virtual_memory_release_tracker() { return Tracker(); }
   static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) { }
   static inline void record_thread_stack(void* addr, size_t size) { }
   static inline void release_thread_stack(void* addr, size_t size) { }

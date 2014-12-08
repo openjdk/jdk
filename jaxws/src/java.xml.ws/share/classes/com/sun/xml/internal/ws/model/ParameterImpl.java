@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class ParameterImpl implements Parameter {
 
     public XMLBridge getInlinedRepeatedElementBridge() {
         TypeInfo itemType = getItemType();
-        if (itemType != null) {
+        if (itemType != null && itemType.getWrapperType() == null) {
             XMLBridge xb = getOwner().getXMLBridge(itemType);
             if (xb != null) return new RepeatedElementBridge(typeInfo, xb);
         }
@@ -255,6 +255,11 @@ public class ParameterImpl implements Parameter {
 
     void fillTypes(List<TypeInfo> types) {
         TypeInfo itemType = getItemType();
-        types.add((itemType != null) ? itemType : getTypeInfo());
+        if (itemType != null) {
+            types.add(itemType);
+            if (itemType.getWrapperType() != null) types.add(getTypeInfo());
+        } else {
+            types.add(getTypeInfo());
+        }
     }
 }

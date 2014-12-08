@@ -178,15 +178,15 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "====================================================\n"
   if test "x$no_create" != "xyes"; then
     if test "x$IS_RECONFIGURE" != "xyes"; then
-      printf "A new configuration has been successfully created in\n %s\n" "$OUTPUT_ROOT"
+      printf "A new configuration has been successfully created in\n%s\n" "$OUTPUT_ROOT"
     else
-      printf "The existing configuration has been successfully updated in\n %s\n" "$OUTPUT_ROOT"
+      printf "The existing configuration has been successfully updated in\n%s\n" "$OUTPUT_ROOT"
     fi
   else
     if test "x$IS_RECONFIGURE" != "xyes"; then
       printf "A configuration has been successfully checked but not created\n"
     else
-      printf "The existing configuration has been successfully checked in\n %s\n" "$OUTPUT_ROOT"
+      printf "The existing configuration has been successfully checked in\n%s\n" "$OUTPUT_ROOT"
     fi
   fi
   if test "x$CONFIGURE_COMMAND_LINE" != x; then
@@ -256,4 +256,18 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
     printf "You should run without '--no-create | -n' to create the configuration.\n"
     printf "\n"
   fi
+])
+
+AC_DEFUN_ONCE([HELP_REPEAT_WARNINGS],
+[
+if test -e "$OUTPUT_ROOT/config.log"; then
+  $GREP '^configure:.*: WARNING:' "$OUTPUT_ROOT/config.log" > /dev/null 2>&1
+  if test $? -eq 0; then
+    printf "The following warnings were produced. Repeated here for convenience:\n"
+    # We must quote sed expression (using []) to stop m4 from eating the [].
+    $GREP '^configure:.*: WARNING:' "$OUTPUT_ROOT/config.log" | $SED -e [ 's/^configure:[0-9]*: //' ]
+    printf "\n"
+  fi
+fi
+
 ])

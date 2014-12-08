@@ -100,8 +100,5 @@ Sys "$java" ${TESTVMOPTS} "-cp" "$TESTCLASSES" \
 Sys "$java" ${TESTVMOPTS} "-cp" "$TESTCLASSES${CPS}extDir/PrefsSpi.jar" \
     -Djava.util.prefs.userRoot=. \
     PrefsSpi "StubPreferences"
-Sys "$java" ${TESTVMOPTS} "-cp" "$TESTCLASSES" "-Djava.ext.dirs=extDir" \
-    -Djava.util.prefs.userRoot=. \
-    PrefsSpi "StubPreferences"
 
 rm -rf jarDir extDir

@@ -41,10 +41,13 @@ import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
  * @bug 8015300
  * @summary Tests that editable combobox select all text
  * @author Sergey Malenkov
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
+ * @run main Test8015300
  */
 
 public class Test8015300 {
-    private static final SunToolkit STK = (SunToolkit) Toolkit.getDefaultToolkit();
+    private static final ExtendedRobot robot = createRobot();
     private static final String[] ITEMS = {
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
@@ -113,7 +116,15 @@ public class Test8015300 {
                 combo.setSelectedIndex(index);
             }
         });
-        STK.realSync();
-        Thread.sleep(50L);
+        robot.waitForIdle(50);
+    }
+    private static ExtendedRobot createRobot() {
+         try {
+             ExtendedRobot robot = new ExtendedRobot();
+             return robot;
+         }catch(Exception ex) {
+             ex.printStackTrace();
+             throw new Error("Unexpected Failure");
+         }
     }
 }

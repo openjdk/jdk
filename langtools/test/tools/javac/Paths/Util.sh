@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,15 +57,15 @@ Report() {
     test "$#" != 2 && Die "Usage: Report success|failure rc"
 
     if   test "$1" = "success" -a "$2" = 0; then
-	echo "PASS: succeeded as expected"
+        echo "PASS: succeeded as expected"
     elif test "$1" = "failure" -a "$2" != 0; then
-	echo "PASS: failed as expected"
+        echo "PASS: failed as expected"
     elif test "$1" = "success" -a "$2" != 0; then
-	Fail "test failed unexpectedly"
+        Fail "test failed unexpectedly"
     elif test "$1" = "failure" -a "$2" = 0; then
-	Fail "test succeeded unexpectedly"
+        Fail "test succeeded unexpectedly"
     else
-	Die "Usage: Report success|failure rc"
+        Die "Usage: Report success|failure rc"
     fi
 }
 
@@ -92,12 +92,12 @@ Bottom() {
     test "$#" = 1 -a "$1" = "Line" || Die "Usage: Bottom Line"
 
     if test -n "$failed"; then
-	count=`printf "%s" "$failed" | wc -c | tr -d ' '`
-	echo "FAIL: $count tests failed"
-	exit 1
+        count=`printf "%s" "$failed" | wc -c | tr -d ' '`
+        echo "FAIL: $count tests failed"
+        exit 1
     else
-	echo "PASS: all tests gave expected results"
-	exit 0
+        echo "PASS: all tests gave expected results"
+        exit 0
     fi
 }
 
@@ -105,21 +105,21 @@ BadJarFile() {
     for jarfilename in "$@"; do pwd > "$jarfilename"; done
 }
 
-#----------------------------------------------------------------
-# Usage: BCP=`DefaultBootClassPath`
-# Returns default bootclasspath, discarding non-existent entries
-#----------------------------------------------------------------
-DefaultBootClassPath() {
-    echo 'public class B {public static void main(String[] a) {
-    System.out.println(System.getProperty("sun.boot.class.path"));}}' > B.java
-    "$javac" ${TESTTOOLVMOPTS} B.java
-    _BCP_=""
-    for elt in `"$java" ${TESTVMOPTS} B | tr "${PS}" " "`; do
-	test -r "$elt" -a -n "$elt" && _BCP_="${_BCP_:+${_BCP_}${PS}}${elt}"
-    done
-    rm -f B.java B.class
-    printf "%s" "$_BCP_"	# Don't use echo -- unsafe on Windows
-}
+# #----------------------------------------------------------------
+# # Usage: BCP=`DefaultBootClassPath`
+# # Returns default bootclasspath, discarding non-existent entries
+# #----------------------------------------------------------------
+# DefaultBootClassPath() {
+#     echo 'public class B {public static void main(String[] a) {
+#     System.out.println(System.getProperty("sun.boot.class.path"));}}' > B.java
+#     "$javac" ${TESTTOOLVMOPTS} B.java
+#     _BCP_=""
+#     for elt in `"$java" ${TESTVMOPTS} B | tr "${PS}" " "`; do
+#       test -r "$elt" -a -n "$elt" && _BCP_="${_BCP_:+${_BCP_}${PS}}${elt}"
+#     done
+#     rm -f B.java B.class
+#     printf "%s" "$_BCP_"      # Don't use echo -- unsafe on Windows
+# }
 
 #----------------------------------------------------------------
 # Foil message localization

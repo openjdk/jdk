@@ -165,7 +165,7 @@ public class Agent {
 
             // Load the management properties from the config file
             // if config file is not specified readConfiguration implicitly
-            // reads <java.home>/lib/management/management.properties
+            // reads <java.home>/conf/management/management.properties
 
             String fname = System.getProperty(CONFIG_FILE);
             readConfiguration(fname, configProps);
@@ -404,7 +404,7 @@ public class Agent {
                 throw new Error("Can't find java.home ??");
             }
             StringBuilder defaultFileName = new StringBuilder(home);
-            defaultFileName.append(File.separator).append("lib");
+            defaultFileName.append(File.separator).append("conf");
             defaultFileName.append(File.separator).append("management");
             defaultFileName.append(File.separator).append("management.properties");
             // Set file name

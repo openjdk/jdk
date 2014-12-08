@@ -640,6 +640,27 @@ public class ClassWriter extends ClassFile {
     }
 
 
+    private void writeParamAnnotations(List<VarSymbol> params,
+                                       RetentionPolicy retention) {
+        for (VarSymbol s : params) {
+            ListBuffer<Attribute.Compound> buf = new ListBuffer<>();
+            for (Attribute.Compound a : s.getRawAttributes())
+                if (types.getRetention(a) == retention)
+                    buf.append(a);
+            databuf.appendChar(buf.length());
+            for (Attribute.Compound a : buf)
+                writeCompoundAttribute(a);
+        }
+
+    }
+
+    private void writeParamAnnotations(MethodSymbol m,
+                                       RetentionPolicy retention) {
+        databuf.appendByte(m.params.length() + m.extraParams.length());
+        writeParamAnnotations(m.extraParams, retention);
+        writeParamAnnotations(m.params, retention);
+    }
+
     /** Write method parameter annotations;
      *  return number of attributes written.
      */
@@ -662,31 +683,13 @@ public class ClassWriter extends ClassFile {
         int attrCount = 0;
         if (hasVisible) {
             int attrIndex = writeAttr(names.RuntimeVisibleParameterAnnotations);
-            databuf.appendByte(m.params.length());
-            for (VarSymbol s : m.params) {
-                ListBuffer<Attribute.Compound> buf = new ListBuffer<>();
-                for (Attribute.Compound a : s.getRawAttributes())
-                    if (types.getRetention(a) == RetentionPolicy.RUNTIME)
-                        buf.append(a);
-                databuf.appendChar(buf.length());
-                for (Attribute.Compound a : buf)
-                    writeCompoundAttribute(a);
-            }
+            writeParamAnnotations(m, RetentionPolicy.RUNTIME);
             endAttr(attrIndex);
             attrCount++;
         }
         if (hasInvisible) {
             int attrIndex = writeAttr(names.RuntimeInvisibleParameterAnnotations);
-            databuf.appendByte(m.params.length());
-            for (VarSymbol s : m.params) {
-                ListBuffer<Attribute.Compound> buf = new ListBuffer<>();
-                for (Attribute.Compound a : s.getRawAttributes())
-                    if (types.getRetention(a) == RetentionPolicy.CLASS)
-                        buf.append(a);
-                databuf.appendChar(buf.length());
-                for (Attribute.Compound a : buf)
-                    writeCompoundAttribute(a);
-            }
+            writeParamAnnotations(m, RetentionPolicy.CLASS);
             endAttr(attrIndex);
             attrCount++;
         }

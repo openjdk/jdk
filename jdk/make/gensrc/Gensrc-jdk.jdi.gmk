@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,27 +30,34 @@ include GensrcCommon.gmk
 # and a JDWPCommands.h C-header file.
 
 JDWP_SPEC_FILE := $(JDK_TOPDIR)/make/data/jdwp/jdwp.spec
+HEADER_FILE := $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
+JAVA_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java
 
-$(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h: $(JDWP_SPEC_FILE)
+# Both the header and java file are created using the same recipe. By declaring
+# this rule and adding header file to dependencies for java file, both are 
+# rebuilt if either is missing
+$(HEADER_FILE): $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK)
 
-$(JDK_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java: \
-    $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK)
+# Touch the target of this rule at the end to avoid triggering false rebuilds
+$(JAVA_FILE): $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK) $(HEADER_FILE)
 	$(MKDIR) -p $(@D)
-	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
-	$(RM) $@ $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
+	$(MKDIR) -p $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent
+	$(RM) $@ $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 	$(ECHO) $(LOG_INFO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
-	$(TOOL_JDWPGEN) $< -jdi $@ -include $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
+	$(TOOL_JDWPGEN) $< -jdi $@ -include \
+	    $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
+	$(TOUCH) $@
 
-$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html: $(JDWP_SPEC_FILE) \
+$(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html: $(JDWP_SPEC_FILE) \
     $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(ECHO) $(LOG_INFO) Creating $(@F) from jdwp.spec
 	$(TOOL_JDWPGEN) $< -doc $@
 
-GENSRC_JDWP := $(JDK_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java \
-    $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h \
-    $(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html
+GENSRC_JDWP := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java \
+    $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
 GENSRC_JDK_JDI += $(GENSRC_JDWP)
 
 ################################################################################
@@ -61,11 +68,18 @@ define process-provider
 endef
 
 # Filter com.sun.jdi.connect.Connector
-$(JDK_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector: \
-    $(JDK_TOPDIR)/src/jdk.jdi/share/classes/META-INF/services/com.sun.jdi.connect.Connector
+$(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector: \
+    $(JDK_TOPDIR)/src/jdk.jdi/share/classes/META-INF/services/com.sun.jdi.connect.Connector \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
 	$(process-provider)
 
-GENSRC_JDK_JDI += $(JDK_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector
+# Copy the same service file into jdk.hotspot.agent so that they are kept the same.
+$(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector: \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector
+	$(install-file)
+
+GENSRC_JDK_JDI += $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector \
+    $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector
 
 ################################################################################
 

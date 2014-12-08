@@ -55,13 +55,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
         -D "JDK_FNAME=dt_socket.dll" \
         -D "JDK_INTERNAL_NAME=dt_socket" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libdt_socket, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libdt_socket, \
     DEBUG_SYMBOLS := true))
 
-$(BUILD_LIBDT_SOCKET): $(BUILD_LIBJAVA)
+$(BUILD_LIBDT_SOCKET): $(call FindLib, java.base, java)
 
 # Include socket transport with JDWP agent to allow for remote debugging
-JDWP_LIBRARIES += $(BUILD_LIBDT_SOCKET)
+TARGETS += $(BUILD_LIBDT_SOCKET)
 
 ################################################################################
 
@@ -81,7 +81,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) -DJDWP_LOGGING \
         $(LIBJDWP_CPPFLAGS) \
-        -I$(JDK_OUTPUTDIR)/gensrc_jdwp_headers, \
+        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjdwp/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -94,17 +94,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
         -D "JDK_FNAME=jdwp.dll" \
         -D "JDK_INTERNAL_NAME=jdwp" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjdwp, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjdwp, \
     DEBUG_SYMBOLS := true))
 
-$(BUILD_LIBJDWP): $(BUILD_LIBJAVA)
+$(BUILD_LIBJDWP): $(call FindLib, java.base, java)
 
-JDWP_LIBRARIES += $(BUILD_LIBJDWP)
+TARGETS += $(BUILD_LIBJDWP)
 
 ################################################################################
-
-jdk.jdwp.agent: $(JDWP_LIBRARIES)
-
-all: jdk.jdwp.agent
-
-.PHONY: all jdk.jdwp.agent

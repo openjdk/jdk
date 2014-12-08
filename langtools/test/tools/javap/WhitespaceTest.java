@@ -57,8 +57,11 @@ public class WhitespaceTest {
             if (line.endsWith(" "))
                 error("line has trailing whitespace: " + line);
             int comment = line.indexOf(doubleSlash);
-            if (comment > 0 && line.charAt(comment - 1) != ' ')
-                error("no space before comment: " + line);
+            if (comment > 0 && line.charAt(comment - 1) != ' ') {
+                // make allowance for URLs
+                if (!line.matches(".*\\bfile:/{3}.*"))
+                    error("no space before comment: " + line);
+            }
             if (line.matches(" +}"))
                 error("bad indentation: " + line);
         }

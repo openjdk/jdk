@@ -34,6 +34,8 @@ import java.util.concurrent.TimeoutException;
  */
 public class JavaVM {
 
+    public static final long POLLTIME_MS = 100L;
+
     protected Process vm = null;
 
     private String classname = "";
@@ -192,23 +194,21 @@ public class JavaVM {
             throws InterruptedException, TimeoutException {
         if (vm == null)
             throw new IllegalStateException("can't wait for JavaVM that isn't running");
-        long startTime = System.currentTimeMillis();
-        long rem = timeout;
+        long deadline = System.currentTimeMillis() + timeout;
 
-        do {
+        while (true) {
             try {
                 int status = vm.exitValue();
                 outPipe.join();
                 errPipe.join();
                 return status;
-            } catch (IllegalThreadStateException ex) {
-                if (rem > 0) {
-                    Thread.sleep(Math.min(rem, 100));
-                }
-            }
-            rem = timeout - (System.currentTimeMillis() - startTime);
-        } while (rem > 0);
-        throw new TimeoutException();
+            } catch (IllegalThreadStateException ignore) { }
+
+            if (System.currentTimeMillis() > deadline)
+                throw new TimeoutException();
+
+            Thread.sleep(POLLTIME_MS);
+        }
     }
 
     /**

@@ -212,9 +212,6 @@ class Thread: public ThreadShadow {
   bool is_inside_signal_handler() const { return _num_nested_signal > 0; }
 
  private:
-  // Debug tracing
-  static void trace(const char* msg, const Thread* const thread) PRODUCT_RETURN;
-
   // Active_handles points to a block of handles
   JNIHandleBlock* _active_handles;
 

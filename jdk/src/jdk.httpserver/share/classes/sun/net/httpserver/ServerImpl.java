@@ -206,11 +206,13 @@ class ServerImpl implements TimeSource {
         if (timer1Enabled) {
             timer1.cancel();
         }
-        try {
-            dispatcherThread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.log(Level.FINER, "ServerImpl.stop: ", e);
+        if (dispatcherThread != null) {
+            try {
+                dispatcherThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.log(Level.FINER, "ServerImpl.stop: ", e);
+            }
         }
     }
 

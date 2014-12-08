@@ -37,13 +37,13 @@ import static java.lang.System.out;
 
 public class StreamingRetry implements Runnable {
     static final int ACCEPT_TIMEOUT = 20 * 1000; // 20 seconds
-    ServerSocket ss;
+    volatile ServerSocket ss;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         (new StreamingRetry()).instanceMain();
     }
 
-    void instanceMain() throws IOException {
+    void instanceMain() throws Exception {
         out.println("Test with default method");
         test(null);
         out.println("Test with POST method");
@@ -54,12 +54,13 @@ public class StreamingRetry implements Runnable {
         if (failed > 0) throw new RuntimeException("Some tests failed");
     }
 
-    void test(String method) throws IOException {
+    void test(String method) throws Exception {
         ss = new ServerSocket(0);
         ss.setSoTimeout(ACCEPT_TIMEOUT);
         int port = ss.getLocalPort();
 
-        (new Thread(this)).start();
+        Thread otherThread = new Thread(this);
+        otherThread.start();
 
         try {
             URL url = new URL("http://localhost:" + port + "/");
@@ -77,6 +78,7 @@ public class StreamingRetry implements Runnable {
             //expected.printStackTrace();
         } finally {
             ss.close();
+            otherThread.join();
         }
     }
 

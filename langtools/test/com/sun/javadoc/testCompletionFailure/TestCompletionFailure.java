@@ -46,8 +46,6 @@ public class TestCompletionFailure extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.STDERR, false,
-                "TestCompletionFailure: error - "
-                + "com.sun.tools.javac.code.Symbol$CompletionFailure: class file for "
-                + "sun.util.locale.provider.LocaleProviderAdapter not found");
+                "sun.util.locale.provider.LocaleProviderAdapter");
     }
 }

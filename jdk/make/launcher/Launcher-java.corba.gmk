@@ -45,9 +45,3 @@ $(eval $(call SetupLauncher,tnameserv, \
         "-J-Dcom.sun.CORBA.POA.ORBServerId=1"$(COMMA) \
         "com.sun.corba.se.impl.naming.cosnaming.TransientNameServer"$(COMMA) }'))
 
-
-java.corba: $(LAUNCHERS)
-
-all: java.corba
-
-.PHONY: all java.corba

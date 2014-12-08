@@ -89,11 +89,7 @@ cd ${TESTCLASSES}
 if [ -d testlib ] ; then
     rm -rf testlib
 fi
-if [ -d ${TESTJAVA}${FILESEP}lib${FILESEP}ext ] ; then
-    cp -r ${TESTJAVA}${FILESEP}lib${FILESEP}ext testlib
-else
-    cp -r ${TESTJAVA}${FILESEP}jre${FILESEP}lib${FILESEP}ext testlib
-fi
+mkdir testlib
 
 # compile and package the test program
 ${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
@@ -109,7 +105,8 @@ rm Deadlock2*.class
 
 # create serialized object and run the test
 ${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} CreateSerialized
-${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} -Djava.ext.dirs=${TESTCLASSES}${FILESEP}testlib Deadlock2
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} \
+    -Djava.ext.dirs=${TESTCLASSES}${FILESEP}testlib${PATHSEP}${TESTJAVA}${FILESEP}lib${FILESEP}ext Deadlock2
 STATUS=$?
 
 # clean up

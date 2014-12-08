@@ -1,7 +1,3 @@
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 /*
  * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,6 +26,9 @@ import java.io.StringWriter;
  * @bug 8006037
  * @summary extra space in javac -help for -J and @ options
  */
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class Option_J_At_Test {
     public static void main(String... args) throws Exception {
