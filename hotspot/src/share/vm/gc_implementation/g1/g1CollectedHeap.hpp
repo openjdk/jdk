@@ -821,7 +821,7 @@ protected:
   // In the sequential case this param will be ignored.
   void g1_process_roots(OopClosure* scan_non_heap_roots,
                         OopClosure* scan_non_heap_weak_roots,
-                        OopsInHeapRegionClosure* scan_rs,
+                        G1ParPushHeapRSClosure* scan_rs,
                         CLDClosure* scan_strong_clds,
                         CLDClosure* scan_weak_clds,
                         CodeBlobClosure* scan_strong_code,
