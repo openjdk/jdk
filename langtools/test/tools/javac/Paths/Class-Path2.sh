@@ -100,11 +100,11 @@ Success "$java"  ${TESTVMOPTS}     -cp "jars/sub/B.zip${PS}." Main
 # Test 2: Use of extension directories is incorrect
 #
 
-Success "$javac" ${TESTTOOLVMOPTS} -extdirs jars          -cp None Main.java
-Success "$java"  ${TESTVMOPTS}     -Djava.ext.dirs="jars" -cp .    Main
+# Success "$javac" ${TESTTOOLVMOPTS} -extdirs jars          -cp None Main.java
+# Success "$java"  ${TESTVMOPTS}     -Djava.ext.dirs="jars" -cp .    Main
 
-Success "$javac" ${TESTTOOLVMOPTS} -extdirs jars/sub          -cp None Main.java
-Success "$java"  ${TESTVMOPTS}     -Djava.ext.dirs="jars/sub" -cp .    Main
+# Success "$javac" ${TESTTOOLVMOPTS} -extdirs jars/sub          -cp None Main.java
+# Success "$java"  ${TESTVMOPTS}     -Djava.ext.dirs="jars/sub" -cp .    Main
 
 Cleanup
 

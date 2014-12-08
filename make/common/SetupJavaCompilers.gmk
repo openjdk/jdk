@@ -40,18 +40,21 @@ $(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
     JAVAC := $(JAVAC), \
     FLAGS := -XDignore.symbol.file=true -g -Xlint:all$(COMMA)-deprecation -Werror))
 
-# Any java code executed during a JDK build to build other parts of the JDK must be 
-# executed by the bootstrap JDK (probably with -Xbootclasspath/p: ) and for this 
-# purpose must be built with -target PREVIOUS for bootstrapping purposes, which 
+# Any java code executed during a JDK build to build other parts of the JDK must be
+# executed by the bootstrap JDK (probably with -Xbootclasspath/p: ) and for this
+# purpose must be built with -target PREVIOUS for bootstrapping purposes, which
 # requires restricting to language level and api of previous JDK.
 #
 # The generate old bytecode javac setup uses the new compiler to compile for the
 # boot jdk to generate tools that need to be run with the boot jdk.
 # Thus we force the target bytecode to the previous JDK version.
+# Add -Xlint:-options to avoid the warning about not setting -bootclasspath. Since
+# it's running on the boot jdk, the default bootclasspath is correct.
 $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
     JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := $(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR) $(DISABLE_WARNINGS), \
+    FLAGS := $(BOOT_JDK_SOURCETARGET) -XDignore.symbol.file=true \
+        $(DISABLE_WARNINGS) -Xlint:-options, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
@@ -61,8 +64,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
     JVM := $(JAVA), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := -source 9 -target 9 \
-        -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS) \
-        $(GENERATE_JDKBYTECODE_EXTRA_FLAGS), \
+        -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
@@ -72,8 +74,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
     JVM := $(JAVA), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := -source 9 -target 9 \
-        -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS) \
-        $(GENERATE_JDKBYTECODE_EXTRA_FLAGS), \
+        -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 

@@ -326,7 +326,7 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
-  record_top_and_timestamp();
+  record_timestamp();
 
   assert(mr.end() == orig_end(),
          err_msg("Given region end address " PTR_FORMAT " should match exactly "
@@ -416,9 +416,9 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
 
   // If we're within a stop-world GC, then we might look at a card in a
   // GC alloc region that extends onto a GC LAB, which may not be
-  // parseable.  Stop such at the "saved_mark" of the region.
+  // parseable.  Stop such at the "scan_top" of the region.
   if (g1h->is_gc_active()) {
-    mr = mr.intersection(used_region_at_save_marks());
+    mr = mr.intersection(MemRegion(bottom(), scan_top()));
   } else {
     mr = mr.intersection(used_region());
   }
@@ -969,7 +969,7 @@ void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
 
 void G1OffsetTableContigSpace::clear(bool mangle_space) {
   set_top(bottom());
-  set_saved_mark_word(bottom());
+  _scan_top = bottom();
   CompactibleSpace::clear(mangle_space);
   reset_bot();
 }
@@ -1001,36 +1001,40 @@ HeapWord* G1OffsetTableContigSpace::cross_threshold(HeapWord* start,
   return _offsets.threshold();
 }
 
-HeapWord* G1OffsetTableContigSpace::saved_mark_word() const {
+HeapWord* G1OffsetTableContigSpace::scan_top() const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  assert( _gc_time_stamp <= g1h->get_gc_time_stamp(), "invariant" );
-  if (_gc_time_stamp < g1h->get_gc_time_stamp())
-    return top();
-  else
-    return Space::saved_mark_word();
+  HeapWord* local_top = top();
+  OrderAccess::loadload();
+  const unsigned local_time_stamp = _gc_time_stamp;
+  assert(local_time_stamp <= g1h->get_gc_time_stamp(), "invariant");
+  if (local_time_stamp < g1h->get_gc_time_stamp()) {
+    return local_top;
+  } else {
+    return _scan_top;
+  }
 }
 
-void G1OffsetTableContigSpace::record_top_and_timestamp() {
+void G1OffsetTableContigSpace::record_timestamp() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   unsigned curr_gc_time_stamp = g1h->get_gc_time_stamp();
 
   if (_gc_time_stamp < curr_gc_time_stamp) {
-    // The order of these is important, as another thread might be
-    // about to start scanning this region. If it does so after
-    // set_saved_mark and before _gc_time_stamp = ..., then the latter
-    // will be false, and it will pick up top() as the high water mark
-    // of region. If it does so after _gc_time_stamp = ..., then it
-    // will pick up the right saved_mark_word() as the high water mark
-    // of the region. Either way, the behavior will be correct.
-    Space::set_saved_mark_word(top());
-    OrderAccess::storestore();
+    // Setting the time stamp here tells concurrent readers to look at
+    // scan_top to know the maximum allowed address to look at.
+
+    // scan_top should be bottom for all regions except for the
+    // retained old alloc region which should have scan_top == top
+    HeapWord* st = _scan_top;
+    guarantee(st == _bottom || st == _top, "invariant");
+
     _gc_time_stamp = curr_gc_time_stamp;
-    // No need to do another barrier to flush the writes above. If
-    // this is called in parallel with other threads trying to
-    // allocate into the region, the caller should call this while
-    // holding a lock and when the lock is released the writes will be
-    // flushed.
   }
+}
+
+void G1OffsetTableContigSpace::record_retained_region() {
+  // scan_top is the maximum address where it's safe for the next gc to
+  // scan this region.
+  _scan_top = top();
 }
 
 void G1OffsetTableContigSpace::safe_object_iterate(ObjectClosure* blk) {
@@ -1060,6 +1064,8 @@ G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
 void G1OffsetTableContigSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   CompactibleSpace::initialize(mr, clear_space, mangle_space);
   _top = bottom();
+  _scan_top = bottom();
+  set_saved_mark_word(NULL);
   reset_bot();
 }
 

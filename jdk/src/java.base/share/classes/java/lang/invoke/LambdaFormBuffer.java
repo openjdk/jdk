@@ -46,17 +46,14 @@ final class LambdaFormBuffer {
     private static final int F_TRANS = 0x10, F_OWNED = 0x03;
 
     LambdaFormBuffer(LambdaForm lf) {
-        this(lf.arity, lf.names, lf.result);
+        this.arity = lf.arity;
+        setNames(lf.names);
+        int result = lf.result;
+        if (result == LAST_RESULT)  result = length - 1;
+        if (result >= 0 && lf.names[result].type != V_TYPE)
+            resultName = lf.names[result];
         debugName = lf.debugName;
         assert(lf.nameRefsAreLegal());
-    }
-
-    private LambdaFormBuffer(int arity, Name[] names, int result) {
-        this.arity = arity;
-        setNames(names);
-        if (result == LAST_RESULT)  result = length - 1;
-        if (result >= 0 && names[result].type != V_TYPE)
-            resultName = names[result];
     }
 
     private LambdaForm lambdaForm() {

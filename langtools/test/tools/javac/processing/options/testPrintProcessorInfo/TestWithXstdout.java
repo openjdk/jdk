@@ -56,8 +56,6 @@ public class TestWithXstdout {
 
     static void run_javac(String... args) throws IOException, InterruptedException {
         File javaHome = new File(System.getProperty("java.home"));
-        if (javaHome.getName().equals("jre"))
-            javaHome = javaHome.getParentFile();
         File javac = new File(new File(javaHome, "bin"), "javac");
 
         List<String> opts = new ArrayList<>();

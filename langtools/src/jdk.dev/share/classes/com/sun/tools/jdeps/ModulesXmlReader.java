@@ -24,15 +24,9 @@
  */
 package com.sun.tools.jdeps;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.jdeps.PlatformClassPath.LegacyImageHelper;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
@@ -40,73 +34,15 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.XMLEvent;
+import com.sun.tools.jdeps.ClassFileReader.ModuleClassReader;
+import com.sun.tools.jdeps.PlatformClassPath.ImageHelper;
 
-abstract class ModulesXmlReader {
-    abstract ClassFileReader getClassFileReader(String modulename, Set<String> packages)
-        throws IOException;
-
-    static class ImageReader extends ModulesXmlReader {
-        final LegacyImageHelper helper;
-        ImageReader(LegacyImageHelper helper) {
-            this.helper = helper;
-        }
-        ClassFileReader getClassFileReader(String modulename, Set<String> packages)
-            throws IOException
-        {
-            return helper.getClassReader(modulename, packages);
-        }
-    }
-
-    static class ModulePathReader extends ModulesXmlReader {
-        final Path mpath;
-        final ClassFileReader defaultReader;
-        ModulePathReader(Path mp) throws IOException {
-            this.mpath = mp;
-            this.defaultReader = new NonExistModuleReader(mpath);
-        }
-        ClassFileReader getClassFileReader(String modulename, Set<String> packages)
-            throws IOException
-        {
-            Path mdir = mpath.resolve(modulename);
-            if (Files.exists(mdir) && Files.isDirectory(mdir)) {
-                return ClassFileReader.newInstance(mdir);
-            } else {
-                // aggregator module or os-specific module in jdeps-modules.xml
-                // mdir not exist
-                return defaultReader;
-            }
-        }
-        class NonExistModuleReader extends ClassFileReader {
-            private final List<ClassFile> classes = Collections.emptyList();
-            private NonExistModuleReader(Path mpath) {
-                super(mpath);
-            }
-
-            public ClassFile getClassFile(String name) throws IOException {
-                return null;
-            }
-            public Iterable<ClassFile> getClassFiles() throws IOException {
-                return classes;
-            }
-        }
-    }
-
-    public static Set<Module> load(Path mpath, InputStream in)
+final class ModulesXmlReader {
+    public static Set<Module> load(ImageHelper helper,InputStream in)
         throws IOException
     {
         try {
-            ModulePathReader reader = new ModulePathReader(mpath);
-            return reader.load(in);
-        } catch (XMLStreamException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Set<Module> loadFromImage(LegacyImageHelper helper, InputStream in)
-        throws IOException
-    {
-        try {
-            ImageReader reader = new ImageReader(helper);
+            ModulesXmlReader reader = new ModulesXmlReader(helper);
             return reader.load(in);
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
@@ -119,8 +55,12 @@ abstract class ModulesXmlReader {
     private static final String DEPEND    = "depend";
     private static final String EXPORT    = "export";
     private static final String TO        = "to";
-    private static final String INCLUDE   = "include";
     private static final QName  REEXPORTS = new QName("re-exports");
+    private final ImageHelper helper;
+    ModulesXmlReader(ImageHelper helper) {
+        this.helper = helper;
+    }
+
     public Set<Module> load(InputStream in) throws XMLStreamException, IOException {
         Set<Module> modules = new HashSet<>();
         if (in == null) {
@@ -162,9 +102,6 @@ abstract class ModulesXmlReader {
                         }
                         mb.require(getData(reader), reexports);
                         break;
-                    case INCLUDE:
-                        mb.include(getData(reader));
-                        break;
                     case EXPORT:
                         exportedPackage = getNextTag(reader, NAME);
                         break;
@@ -178,8 +115,9 @@ abstract class ModulesXmlReader {
                 String endTag = event.asEndElement().getName().getLocalPart();
                 switch (endTag) {
                     case MODULE:
-                        ClassFileReader cfr = getClassFileReader(modulename, mb.packages);
+                        ModuleClassReader cfr = helper.getModuleClassReader(modulename);
                         mb.classes(cfr);
+                        mb.packages(cfr.packages());
                         modules.add(mb.build());
                         mb = null;
                         break;

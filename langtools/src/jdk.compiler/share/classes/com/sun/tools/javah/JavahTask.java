@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.file.NoSuchFileException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,7 +51,6 @@ import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -62,7 +62,6 @@ import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.Types;
-
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
@@ -72,12 +71,14 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
-import static javax.tools.Diagnostic.Kind.*;
 
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+
+import static javax.tools.Diagnostic.Kind.*;
+
 
 /**
  * Javah generates support files for native methods.
@@ -420,7 +421,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             List<String> l = new ArrayList<>();
             for (String arg: args) l.add(arg);
             return Arrays.asList(CommandLine.parse(l.toArray(new String[l.size()])));
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             throw new BadArgs("at.args.file.not.found", e.getLocalizedMessage());
         } catch (IOException e) {
             throw new BadArgs("at.args.io.exception", e.getLocalizedMessage());

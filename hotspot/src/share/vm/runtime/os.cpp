@@ -1230,11 +1230,21 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   Arguments::set_meta_index_path(meta_index, meta_index_dir);
 
   char* sysclasspath = NULL;
+  struct stat st;
+
+  // modular image if bootmodules.jimage exists
+  char* jimage = format_boot_path("%/lib/modules/bootmodules.jimage", home, home_len, fileSep, pathSep);
+  if (jimage == NULL) return false;
+  bool has_jimage = (os::stat(jimage, &st) == 0);
+  if (has_jimage) {
+    Arguments::set_sysclasspath(jimage);
+    return true;
+  }
+  FREE_C_HEAP_ARRAY(char, jimage);
 
   // images build if rt.jar exists
   char* rt_jar = format_boot_path("%/lib/rt.jar", home, home_len, fileSep, pathSep);
   if (rt_jar == NULL) return false;
-  struct stat st;
   bool has_rt_jar = (os::stat(rt_jar, &st) == 0);
   FREE_C_HEAP_ARRAY(char, rt_jar);
 

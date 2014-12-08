@@ -71,20 +71,18 @@ public final class DOMSignatureProperty extends DOMStructure
     {
         if (target == null) {
             throw new NullPointerException("target cannot be null");
-        } else if (content == null) {
-            throw new NullPointerException("content cannot be null");
-        } else if (content.isEmpty()) {
-            throw new IllegalArgumentException("content cannot be empty");
-        } else {
-            this.content = Collections.unmodifiableList(
-                new ArrayList<XMLStructure>(content));
-            for (int i = 0, size = this.content.size(); i < size; i++) {
-                if (!(this.content.get(i) instanceof XMLStructure)) {
-                    throw new ClassCastException
-                        ("content["+i+"] is not a valid type");
-                }
-            }
         }
+        if (content == null) {
+            throw new NullPointerException("content cannot be null");
+        }
+        List<XMLStructure> tempList =
+            Collections.checkedList(new ArrayList<XMLStructure>(),
+                                    XMLStructure.class);
+        tempList.addAll(content);
+        if (tempList.isEmpty()) {
+            throw new IllegalArgumentException("content cannot be empty");
+        }
+        this.content = Collections.unmodifiableList(tempList);
         this.target = target;
         this.id = id;
     }
@@ -169,7 +167,6 @@ public final class DOMSignatureProperty extends DOMStructure
         boolean idsEqual = (id == null ? osp.getId() == null
                                        : id.equals(osp.getId()));
 
-        @SuppressWarnings("unchecked")
         List<XMLStructure> ospContent = osp.getContent();
         return (equalsContent(ospContent) &&
                 target.equals(osp.getTarget()) && idsEqual);

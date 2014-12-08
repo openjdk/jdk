@@ -398,8 +398,8 @@ public class DPrinter {
             }
             out.println();
         } else if (FILTER_SCOPE_CLASS.equals(scope.getClass().getName())) {
-            printScope("delegate",
-                    (Scope) getField(scope, scope.getClass(), "delegate"), Details.FULL);
+            printScope("origin",
+                    (Scope) getField(scope, scope.getClass(), "origin"), Details.FULL);
         } else if (scope instanceof CompoundScope) {
             printList("delegates", (List<?>) getField(scope, CompoundScope.class, "subScopes"));
         } else {

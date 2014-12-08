@@ -21,15 +21,26 @@
  * questions.
  */
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.AccessMode;
+import java.nio.file.ClosedFileSystemException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.*;
 import java.net.URI;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 /**
- *
  * @test
  * @bug 8038500 8040059
  * @summary Basic test for zip provider
@@ -40,11 +51,8 @@ import java.io.IOException;
 
 public class Basic {
     public static void main(String[] args) throws Exception {
-        Path zipfile = Paths.get(System.getProperty("test.jdk"),
-                                 "jre/lib/ext/zipfs.jar");
         // Test: zip should should be returned in provider list
         boolean found = false;
-
         for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
             if (provider.getScheme().equalsIgnoreCase("jar")) {
                 found = true;
@@ -54,12 +62,16 @@ public class Basic {
         if (!found)
             throw new RuntimeException("'jar' provider not installed");
 
+        // create JAR file for test
+        Path jarFile = Utils.createJarFile("basic.jar",
+                "META-INF/services/java.nio.file.spi.FileSystemProvider");
+
         // Test: FileSystems#newFileSystem(Path)
-        Map<String,?> env = new HashMap<String,Object>();
-        FileSystems.newFileSystem(zipfile, null).close();
+        Map<String,?> env = Collections.emptyMap();
+        FileSystems.newFileSystem(jarFile, null).close();
 
         // Test: FileSystems#newFileSystem(URI)
-        URI uri = new URI("jar", zipfile.toUri().toString(), null);
+        URI uri = new URI("jar", jarFile.toUri().toString(), null);
         FileSystem fs = FileSystems.newFileSystem(uri, env, null);
 
         // Test: exercise toUri method

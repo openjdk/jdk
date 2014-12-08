@@ -25,7 +25,7 @@
  * Portions Copyright (c) 2013 IBM Corporation
  */
 import java.awt.BorderLayout;
-import java.awt.Toolkit;
+import java.awt.Robot;
 
 import java.awt.event.ActionListener;
 import javax.swing.DefaultButtonModel;
@@ -35,7 +35,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.html.HTMLEditorKit;
-import sun.awt.SunToolkit;
 
 
 /*
@@ -111,7 +110,7 @@ public class bug7189299 {
     }
 
     public static void main(String[] args) throws Exception {
-        final SunToolkit toolkit = ((SunToolkit) Toolkit.getDefaultToolkit());
+        final Robot robot = new Robot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -120,7 +119,7 @@ public class bug7189299 {
                 setup();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
 
             @Override
