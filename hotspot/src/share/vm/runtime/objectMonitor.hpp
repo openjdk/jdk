@@ -228,6 +228,20 @@ class ObjectMonitor {
   static int Responsible_offset_in_bytes() { return offset_of(ObjectMonitor, _Responsible); }
   static int Spinner_offset_in_bytes()     { return offset_of(ObjectMonitor, _Spinner); }
 
+  // ObjectMonitor references can be ORed with markOopDesc::monitor_value
+  // as part of the ObjectMonitor tagging mechanism. When we combine an
+  // ObjectMonitor reference with an offset, we need to remove the tag
+  // value in order to generate the proper address.
+  //
+  // We can either adjust the ObjectMonitor reference and then add the
+  // offset or we can adjust the offset that is added to the ObjectMonitor
+  // reference. The latter avoids an AGI (Address Generation Interlock)
+  // stall so the helper macro adjusts the offset value that is returned
+  // to the ObjectMonitor reference manipulation code:
+  //
+  #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
+    ((ObjectMonitor::f ## _offset_in_bytes()) - markOopDesc::monitor_value)
+
   // Eventually we'll make provisions for multiple callbacks, but
   // now one will suffice.
   static int (*SpinCallbackFunction)(intptr_t, int);

@@ -68,6 +68,8 @@ inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); 
 extern "C" {
   jint _Atomic_add(jint add_value, volatile jint* dest IS_MP_DECL());
   jint _Atomic_xchg(jint exchange_value, volatile jint* dest);
+  jbyte _Atomic_cmpxchg_byte(jbyte exchange_value, volatile jbyte* dest,
+                       jbyte compare_value IS_MP_DECL());
   jint _Atomic_cmpxchg(jint exchange_value, volatile jint* dest,
                        jint compare_value IS_MP_DECL());
   jlong _Atomic_cmpxchg_long(jlong exchange_value, volatile jlong* dest,
@@ -80,6 +82,11 @@ inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
 
 inline jint     Atomic::xchg       (jint     exchange_value, volatile jint*     dest) {
   return _Atomic_xchg(exchange_value, dest);
+}
+
+#define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
+inline jbyte    Atomic::cmpxchg    (jbyte    exchange_value, volatile jbyte*    dest, jbyte    compare_value) {
+  return _Atomic_cmpxchg_byte(exchange_value, dest, compare_value IS_MP_ARG());
 }
 
 inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value) {
@@ -213,6 +220,15 @@ extern "C" {
     __asm__ volatile (LOCK_IF_MP(%4) "cmpxchgl %1,(%3)"
                     : "=a" (exchange_value)
                     : "r" (exchange_value), "a" (compare_value), "r" (dest), "r" (mp)
+                    : "cc", "memory");
+    return exchange_value;
+  }
+
+
+  inline jbyte _Atomic_cmpxchg_byte(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value, int mp) {
+    __asm__ volatile (LOCK_IF_MP(%4) "cmpxchgb %1,(%3)"
+                    : "=a" (exchange_value)
+                    : "q" (exchange_value), "a" (compare_value), "r" (dest), "r" (mp)
                     : "cc", "memory");
     return exchange_value;
   }

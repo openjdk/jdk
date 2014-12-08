@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
  * @test TestG1HeapRegionSize
  * @key gc
  * @bug 8021879
+ * @requires vm.gc=="G1" | vm.gc=="null"
  * @summary Verify that the flag G1HeapRegionSize is updated properly
  * @run main/othervm -Xmx64m TestG1HeapRegionSize 1048576
- * @run main/othervm -XX:G1HeapRegionSize=2m -Xmx64m TestG1HeapRegionSize 2097152
- * @run main/othervm -XX:G1HeapRegionSize=3m -Xmx64m TestG1HeapRegionSize 2097152
- * @run main/othervm -XX:G1HeapRegionSize=64m -Xmx256m TestG1HeapRegionSize 33554432
+ * @run main/othervm -XX:G1HeapRegionSize=2m -Xmx64m -XX:+UseG1GC TestG1HeapRegionSize 2097152
+ * @run main/othervm -XX:G1HeapRegionSize=3m -Xmx64m -XX:+UseG1GC TestG1HeapRegionSize 2097152
+ * @run main/othervm -XX:G1HeapRegionSize=64m -Xmx256m -XX:+UseG1GC TestG1HeapRegionSize 33554432
  */
 
 import sun.management.ManagementFactoryHelper;
@@ -41,14 +42,8 @@ public class TestG1HeapRegionSize {
   public static void main(String[] args) {
     HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
 
-    VMOption option = diagnostic.getVMOption("UseG1GC");
-    if (option.getValue().equals("false")) {
-      System.out.println("Skipping this test. It is only a G1 test.");
-      return;
-    }
-
     String expectedValue = getExpectedValue(args);
-    option = diagnostic.getVMOption("G1HeapRegionSize");
+    VMOption option = diagnostic.getVMOption("G1HeapRegionSize");
     if (!expectedValue.equals(option.getValue())) {
       throw new RuntimeException("Wrong value for G1HeapRegionSize. Expected " + expectedValue + " but got " + option.getValue());
     }

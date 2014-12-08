@@ -31,6 +31,7 @@ import java.util.*;
 import java.security.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.CopyOnWriteArrayList;
 import sun.misc.JavaAWTAccess;
 import sun.misc.SharedSecrets;
 
@@ -78,7 +79,7 @@ import sun.misc.SharedSecrets;
  * <p>
  * If neither of these properties is defined then the LogManager uses its
  * default configuration. The default configuration is typically loaded from the
- * properties file "{@code lib/logging.properties}" in the Java installation
+ * properties file "{@code conf/logging.properties}" in the Java installation
  * directory.
  * <p>
  * The properties for loggers and Handlers will have names starting
@@ -99,6 +100,19 @@ import sun.misc.SharedSecrets;
  * name must be for a Handler class which has a default constructor.
  * Note that these Handlers may be created lazily, when they are
  * first used.
+ *
+ * <li>A property "&lt;logger&gt;.handlers.ensureCloseOnReset". This defines a
+ * a boolean value. If "&lt;logger&gt;.handlers" is not defined or is empty,
+ * this property is ignored. Otherwise it defaults to {@code true}. When the
+ * value is {@code true}, the handlers associated with the logger are guaranteed
+ * to be closed on {@linkplain #reset} and shutdown. This can be turned off
+ * by explicitly setting "&lt;logger&gt;.handlers.ensureCloseOnReset=false" in
+ * the configuration. Note that turning this property off causes the risk of
+ * introducing a resource leak, as the logger may get garbage collected before
+ * {@code reset()} is called, thus preventing its handlers from being closed
+ * on {@code reset()}. In that case it is the responsibility of the application
+ * to ensure that the handlers are closed before the logger is garbage
+ * collected.
  *
  * <li>A property "&lt;logger&gt;.useParentHandlers". This defines a boolean
  * value. By default every logger calls its parent in addition to
@@ -169,6 +183,33 @@ public class LogManager {
     // True if JVM death is imminent and the exit hook has been called.
     private boolean deathImminent;
 
+    // This list contains the loggers for which some handlers have been
+    // explicitly configured in the configuration file.
+    // It prevents these loggers from being arbitrarily garbage collected.
+    private static final class CloseOnReset {
+        private final Logger logger;
+        private CloseOnReset(Logger ref) {
+            this.logger = Objects.requireNonNull(ref);
+        }
+        @Override
+        public boolean equals(Object other) {
+            return (other instanceof CloseOnReset) && ((CloseOnReset)other).logger == logger;
+        }
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(logger);
+        }
+        public Logger get() {
+            return logger;
+        }
+        public static CloseOnReset create(Logger logger) {
+            return new CloseOnReset(logger);
+        }
+    }
+    private final CopyOnWriteArrayList<CloseOnReset> closeOnResetLoggers =
+            new CopyOnWriteArrayList<>();
+
+
     private final Map<Object, Runnable> listeners =
             Collections.synchronizedMap(new IdentityHashMap<>());
 
@@ -203,7 +244,6 @@ public class LogManager {
             }
         });
     }
-
 
     // This private class is used as a shutdown hook.
     // It does a "reset" to close all open handlers.
@@ -418,11 +458,11 @@ public class LogManager {
         JavaAWTAccess javaAwtAccess = SharedSecrets.getJavaAWTAccess();
         if (sm != null && javaAwtAccess != null) {
             // for each applet, it has its own LoggerContext isolated from others
-            synchronized (javaAwtAccess) {
-                // find the AppContext of the applet code
-                // will be null if we are in the main app context.
-                final Object ecx = javaAwtAccess.getAppletContext();
-                if (ecx != null) {
+            final Object ecx = javaAwtAccess.getAppletContext();
+            if (ecx != null) {
+                synchronized (javaAwtAccess) {
+                    // find the AppContext of the applet code
+                    // will be null if we are in the main app context.
                     if (contextsMap == null) {
                         contextsMap = new WeakHashMap<>();
                     }
@@ -875,30 +915,39 @@ public class LogManager {
             @Override
             public Object run() {
                 String names[] = parseClassNames(handlersPropertyName);
-                for (String word : names) {
+                final boolean ensureCloseOnReset = names.length > 0
+                    && getBooleanProperty(handlersPropertyName + ".ensureCloseOnReset",true);
+
+                int count = 0;
+                for (String type : names) {
                     try {
-                        Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
+                        Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(type);
                         Handler hdl = (Handler) clz.newInstance();
                         // Check if there is a property defining the
                         // this handler's level.
-                        String levs = getProperty(word + ".level");
+                        String levs = getProperty(type + ".level");
                         if (levs != null) {
                             Level l = Level.findLevel(levs);
                             if (l != null) {
                                 hdl.setLevel(l);
                             } else {
                                 // Probably a bad level. Drop through.
-                                System.err.println("Can't set level for " + word);
+                                System.err.println("Can't set level for " + type);
                             }
                         }
                         // Add this Handler to the logger
                         logger.addHandler(hdl);
+                        if (++count == 1 && ensureCloseOnReset) {
+                            // add this logger to the closeOnResetLoggers list.
+                            closeOnResetLoggers.addIfAbsent(CloseOnReset.create(logger));
+                        }
                     } catch (Exception ex) {
-                        System.err.println("Can't load log handler \"" + word + "\"");
+                        System.err.println("Can't load log handler \"" + type + "\"");
                         System.err.println("" + ex);
                         ex.printStackTrace();
                     }
                 }
+
                 return null;
             }
         });
@@ -1210,7 +1259,7 @@ public class LogManager {
             if (fname == null) {
                 throw new Error("Can't find java.home ??");
             }
-            File f = new File(fname, "lib");
+            File f = new File(fname, "conf");
             f = new File(f, "logging.properties");
             fname = f.getCanonicalPath();
         }
@@ -1233,8 +1282,15 @@ public class LogManager {
 
     public void reset() throws SecurityException {
         checkPermission();
+        List<CloseOnReset> persistent;
         synchronized (this) {
             props = new Properties();
+            // make sure we keep the loggers persistent until reset is done.
+            // Those are the loggers for which we previously created a
+            // handler from the configuration, and we need to prevent them
+            // from being gc'ed until those handlers are closed.
+            persistent = new ArrayList<>(closeOnResetLoggers);
+            closeOnResetLoggers.clear();
             // Since we are doing a reset we no longer want to initialize
             // the global handlers, if they haven't been initialized yet.
             initializedGlobalHandlers = true;
@@ -1249,6 +1305,7 @@ public class LogManager {
                 }
             }
         }
+        persistent.clear();
     }
 
     // Private method to reset an individual target logger.

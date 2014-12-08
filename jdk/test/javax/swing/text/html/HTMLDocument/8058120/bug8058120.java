@@ -28,8 +28,6 @@
  * @run main bug8058120
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.text.Element;
 import javax.swing.text.html.HTML;
@@ -38,12 +36,18 @@ import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 
 public class bug8058120 {
-    private static SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
     private static HTMLDocument document = null;
     private static final String text = "<p id = 'ab'>ab</p>";
     private static final String textToInsert = "c";
 
     public static void main(String[] args) {
+        Robot robot;
+        try {
+             robot = new Robot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -51,7 +55,7 @@ public class bug8058120 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -64,7 +68,7 @@ public class bug8058120 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override

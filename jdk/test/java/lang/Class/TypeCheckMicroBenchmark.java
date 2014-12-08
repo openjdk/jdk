@@ -182,7 +182,7 @@ public class TypeCheckMicroBenchmark {
                 for (int i = 0; i < iterations; i++) {
                     for (Object x : list.toArray()) {
                         try { a[0] = x; }
-                        catch (ArrayStoreException _) {
+                        catch (ArrayStoreException unused) {
                             throw new ClassCastException(); }}}}},
             new Job("write into dynamic array") { void work() {
                 for (int i = 0; i < iterations; i++) {
@@ -190,7 +190,7 @@ public class TypeCheckMicroBenchmark {
                         Object[] a = (Object[])
                             java.lang.reflect.Array.newInstance(klazz, 1);
                         try { a[0] = x; }
-                        catch (ArrayStoreException _) {
+                        catch (ArrayStoreException unused) {
                             throw new ClassCastException(); }}}}}
         };
 

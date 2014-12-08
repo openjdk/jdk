@@ -36,7 +36,6 @@
  */
 
 import java.awt.*;
-import sun.awt.SunToolkit;
 
 public class NoUpdateUponShow
 {
@@ -70,7 +69,13 @@ public class NoUpdateUponShow
         });
         f.setVisible(true);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
 
         if (wasUpdate) {
             fail(" Unexpected update. ");

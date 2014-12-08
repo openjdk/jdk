@@ -219,7 +219,7 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
     if (threadNameField == null) {
       SystemDictionary sysDict = VM.getVM().getSystemDictionary();
       InstanceKlass k = sysDict.getThreadKlass();
-      threadNameField  = (OopField) k.findField("name", "[C");
+      threadNameField  = (OopField) k.findField("name", "Ljava/lang/String;");
       threadGroupField = (OopField) k.findField("group", "Ljava/lang/ThreadGroup;");
       threadEETopField = (LongField) k.findField("eetop", "J");
       threadTIDField = (LongField) k.findField("tid", "J");
@@ -258,7 +258,7 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
 
   public static String threadOopGetName(Oop threadOop) {
     initThreadFields();
-    return charArrayToString((TypeArray) threadNameField.getValue(threadOop));
+    return stringOopToString(threadNameField.getValue(threadOop));
   }
 
   /** May return null if, e.g., thread was not started */

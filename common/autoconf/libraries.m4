@@ -355,7 +355,7 @@ AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
       FOUND_FREETYPE=no
     fi
   fi
-  
+
   if test "x$FOUND_FREETYPE" = xyes; then
     # Include file found, let's continue the sanity check.
     AC_MSG_NOTICE([Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD])

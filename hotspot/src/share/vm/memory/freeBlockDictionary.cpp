@@ -23,14 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
-#endif // INCLUDE_ALL_GCS
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/metachunk.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
+#endif // INCLUDE_ALL_GCS
 
 #ifndef PRODUCT
 template <class Chunk> Mutex* FreeBlockDictionary<Chunk>::par_lock() const {

@@ -30,7 +30,6 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
-
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
@@ -237,13 +236,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
 
     /**
      * Same as {@link ScriptFunction#makeBoundFunction(Object, Object[])}. The only reason we override it is so that we
-     * can expose it to methods in this package.
+     * can expose it.
      * @param self the self to bind to this function. Can be null (in which case, null is bound as this).
      * @param args additional arguments to bind to this function. Can be null or empty to not bind additional arguments.
      * @return a function with the specified self and parameters bound.
      */
     @Override
-    protected ScriptFunction makeBoundFunction(final Object self, final Object[] args) {
+    public ScriptFunction makeBoundFunction(final Object self, final Object[] args) {
         return super.makeBoundFunction(self, args);
     }
 

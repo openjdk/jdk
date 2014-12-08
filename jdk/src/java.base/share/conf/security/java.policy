@@ -1,31 +1,25 @@
 // permissions required by each component
-grant codeBase "file:${java.home}/lib/ext/zipfs.jar" {
+grant codeBase "jrt:/jdk.zipfs" {
         permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
         permission java.lang.RuntimePermission "fileSystemProvider";
         permission java.util.PropertyPermission "*", "read";
 };
 
-grant codeBase "file:${java.home}/lib/ext/cldrdata.jar" {
+grant codeBase "jrt:/jdk.localedata" {
         permission java.lang.RuntimePermission "accessClassInPackage.sun.text.*";
         permission java.lang.RuntimePermission "accessClassInPackage.sun.util.*";
         permission java.util.PropertyPermission "*", "read";
 };
 
-grant codeBase "file:${java.home}/lib/ext/localedata.jar" {
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.text.*";
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.util.*";
-        permission java.util.PropertyPermission "*", "read";
-};
-
-grant codeBase "file:${java.home}/lib/ext/dnsns.jar" {
+grant codeBase "jrt:/jdk.naming.dns" {
         permission java.security.AllPermission;
 };
 
-grant codeBase "file:${java.home}/lib/ext/nashorn.jar" {
+grant codeBase "jrt:/jdk.scripting.nashorn" {
         permission java.security.AllPermission;
 };
 
-grant codeBase "file:${java.home}/lib/ext/ucrypto.jar" {
+grant codeBase "jrt:/jdk.crypto.ucrypto" {
         permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
         permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
         permission java.lang.RuntimePermission "loadLibrary.j2ucrypto";
@@ -34,10 +28,10 @@ grant codeBase "file:${java.home}/lib/ext/ucrypto.jar" {
         permission java.security.SecurityPermission "putProviderProperty.OracleUcrypto";
         permission java.security.SecurityPermission "clearProviderProperties.OracleUcrypto";
         permission java.security.SecurityPermission "removeProviderProperty.OracleUcrypto";
-        permission java.io.FilePermission "${java.home}/lib/security/ucrypto-solaris.cfg", "read";
+        permission java.io.FilePermission "${java.home}/conf/security/ucrypto-solaris.cfg", "read";
 };
 
-grant codeBase "file:${java.home}/lib/ext/sunec.jar" {
+grant codeBase "jrt:/jdk.crypto.ec" {
         permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
         permission java.lang.RuntimePermission "loadLibrary.sunec";
         permission java.util.PropertyPermission "*", "read";
@@ -46,16 +40,7 @@ grant codeBase "file:${java.home}/lib/ext/sunec.jar" {
         permission java.security.SecurityPermission "removeProviderProperty.SunEC";
 };
 
-grant codeBase "file:${java.home}/lib/ext/sunjce_provider.jar" {
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
-        permission java.util.PropertyPermission "*", "read";
-        permission java.security.SecurityPermission "putProviderProperty.SunJCE";
-        permission java.security.SecurityPermission "clearProviderProperties.SunJCE";
-        permission java.security.SecurityPermission "removeProviderProperty.SunJCE";
-};
-
-grant codeBase "file:${java.home}/lib/ext/sunpkcs11.jar" {
+grant codeBase "jrt:/jdk.crypto.pkcs11" {
         permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
         permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
         permission java.lang.RuntimePermission "loadLibrary.j2pkcs11";

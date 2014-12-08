@@ -432,6 +432,7 @@ class VM_PrintCompileQueue: public VM_Operation {
  public:
   VM_PrintCompileQueue(outputStream* st) : _out(st) {}
   VMOp_Type type() const { return VMOp_PrintCompileQueue; }
+  Mode evaluation_mode() const { return _no_safepoint; }
   void doit();
 };
 

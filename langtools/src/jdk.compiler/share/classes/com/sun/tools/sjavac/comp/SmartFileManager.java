@@ -56,6 +56,7 @@ import com.sun.tools.javac.util.ListBuffer;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@com.sun.tools.javac.api.ClientCodeWrapper.Trusted
 public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager> {
 
     // Set of sources that can be seen by javac.

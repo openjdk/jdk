@@ -104,13 +104,6 @@ public class AltSecurityManager implements Runnable {
                                utilityToStart + " to die");
 
             if (time >= TIME_OUT) {
-
-                // dont pollute other tests; increase the likelihood
-                // that rmid will go away if it did not exit already.
-                if (utility.equals(ACTIVATION)) {
-                    RMID.shutdown(port);
-                }
-
                 TestLibrary.bomb(utilityToStart +
                                  " took too long to die...");
             } else {

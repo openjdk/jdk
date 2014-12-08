@@ -45,19 +45,16 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     /** Is this a var statement (as opposed to a "var" in a for loop statement) */
     private final int flags;
 
-    /** Flag that determines if this function node is a statement */
-    public static final int IS_STATEMENT                 = 1 << 0;
-
     /** Flag for ES6 LET declaration */
-    public static final int IS_LET                       = 1 << 1;
+    public static final int IS_LET                       = 1 << 0;
 
     /** Flag for ES6 CONST declaration */
-    public static final int IS_CONST                     = 1 << 2;
+    public static final int IS_CONST                     = 1 << 1;
 
     /** Flag that determines if this is the last function declaration in a function
      *  This is used to micro optimize the placement of return value assignments for
      *  a program node */
-    public static final int IS_LAST_FUNCTION_DECLARATION = 1 << 3;
+    public static final int IS_LAST_FUNCTION_DECLARATION = 1 << 2;
 
     /**
      * Constructor
@@ -69,7 +66,7 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
      * @param init       init node or null if just a declaration
      */
     public VarNode(final int lineNumber, final long token, final int finish, final IdentNode name, final Expression init) {
-        this(lineNumber, token, finish, name, init, IS_STATEMENT);
+        this(lineNumber, token, finish, name, init, 0);
     }
 
     private VarNode(final VarNode varNode, final IdentNode name, final Expression init, final int flags) {
@@ -257,14 +254,6 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
      */
     public VarNode setFlag(final int flag) {
         return setFlags(flags | flag);
-    }
-
-    /**
-     * Returns true if this is a var statement (as opposed to a var initializer in a for loop).
-     * @return true if this is a var statement (as opposed to a var initializer in a for loop).
-     */
-    public boolean isStatement() {
-        return (flags & IS_STATEMENT) != 0;
     }
 
     /**

@@ -248,7 +248,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL],
   METHOD="$2"
   if test -e "$POSSIBLE_MSVCR_DLL"; then
     AC_MSG_NOTICE([Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD])
-    
+
     # Need to check if the found msvcr is correct architecture
     AC_MSG_CHECKING([found msvcr100.dll architecture])
     MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
@@ -291,7 +291,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVCR_DLL],
       AC_MSG_ERROR([Could not find a proper msvcr100.dll as specified by --with-msvcr-dll])
     fi
   fi
-  
+
   if test "x$MSVCR_DLL" = x; then
     # Probe: Using well-known location from Visual Studio 10.0
     if test "x$VCINSTALLDIR" != x; then
@@ -311,9 +311,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVCR_DLL],
     POSSIBLE_MSVCR_DLL="$BOOT_JDK/bin/msvcr100.dll"
     TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [well-known location in Boot JDK])
   fi
-  
+
   if test "x$MSVCR_DLL" = x; then
-    # Probe: Look in the Windows system32 directory 
+    # Probe: Look in the Windows system32 directory
     CYGWIN_SYSTEMROOT="$SYSTEMROOT"
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_SYSTEMROOT)
     POSSIBLE_MSVCR_DLL="$CYGWIN_SYSTEMROOT/system32/msvcr100.dll"
@@ -333,7 +333,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVCR_DLL],
       TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [search of VS100COMNTOOLS])
     fi
   fi
-      
+
   if test "x$MSVCR_DLL" = x; then
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
     # (This was the original behaviour; kept since it might turn up something)
@@ -347,11 +347,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVCR_DLL],
           POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $HEAD --lines 1`
         fi
       fi
-      
+
       TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [search of VCINSTALLDIR])
     fi
   fi
-  
+
   if test "x$MSVCR_DLL" = x; then
     AC_MSG_CHECKING([for msvcr100.dll])
     AC_MSG_RESULT([no])

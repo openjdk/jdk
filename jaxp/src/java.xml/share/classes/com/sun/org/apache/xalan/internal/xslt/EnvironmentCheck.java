@@ -558,9 +558,6 @@ public class EnvironmentCheck
    * Logs java.class.path and other likely paths; then attempts
    * to search those paths for .jar files with Xalan-related classes.
    *
-   * //@todo NOTE: We don't actually search java.ext.dirs for
-   * //  *.jar files therein! This should be updated
-   *
    * @param h Hashtable to put information in
    * @see #jarNames
    * @see #checkPathForJars(String, String[])
@@ -613,20 +610,6 @@ public class EnvironmentCheck
 
         if (null != classpathJars)
           h.put(FOUNDCLASSES + "sun.boot.class.path", classpathJars);
-      }
-
-      //@todo NOTE: We don't actually search java.ext.dirs for
-      //  *.jar files therein! This should be updated
-      othercp = SecuritySupport.getSystemProperty("java.ext.dirs");
-
-      if (null != othercp)
-      {
-        h.put("java.ext.dirs", othercp);
-
-        classpathJars = checkPathForJars(othercp, jarNames);
-
-        if (null != classpathJars)
-          h.put(FOUNDCLASSES + "java.ext.dirs", classpathJars);
       }
 
       //@todo also check other System properties' paths?
