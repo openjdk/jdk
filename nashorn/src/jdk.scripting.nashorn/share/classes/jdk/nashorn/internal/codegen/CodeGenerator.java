@@ -3698,8 +3698,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             final Expression lhs = assignNode.lhs();
             final Expression rhs = assignNode.rhs();
             final Type widestOperationType = assignNode.getWidestOperationType();
-            final Type widest = assignNode.isTokenType(TokenType.ASSIGN_ADD) ? Type.OBJECT : widestOperationType;
-            final TypeBounds bounds = new TypeBounds(assignNode.getType(), widest);
+            final TypeBounds bounds = new TypeBounds(assignNode.getType(), widestOperationType);
             new OptimisticOperation(assignNode, bounds) {
                 @Override
                 void loadStack() {

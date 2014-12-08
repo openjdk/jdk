@@ -28,6 +28,7 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysFalse;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysTrue;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,7 +83,6 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 
 /**
@@ -398,48 +398,53 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterBinaryNode(final BinaryNode binaryNode) {
+        // NOTE: regardless of operator's lexical associativity, lhs is always evaluated first.
         final Expression lhs = binaryNode.lhs();
-        final Expression rhs = binaryNode.rhs();
         final boolean isAssignment = binaryNode.isAssignment();
-
-        final TokenType tokenType = Token.descType(binaryNode.getToken());
-        if(tokenType.isLeftAssociative()) {
-            assert !isAssignment;
-            final boolean isLogical = binaryNode.isLogical();
-            final Label joinLabel = isLogical ? new Label("") : null;
-            lhs.accept(this);
-            if(isLogical) {
-                jumpToLabel((JoinPredecessor)lhs, joinLabel);
-            }
-            rhs.accept(this);
-            if(isLogical) {
-                jumpToLabel((JoinPredecessor)rhs, joinLabel);
-            }
-            joinOnLabel(joinLabel);
-        } else {
-            rhs.accept(this);
-            if(isAssignment) {
-                if(lhs instanceof BaseNode) {
-                    ((BaseNode)lhs).getBase().accept(this);
-                    if(lhs instanceof IndexNode) {
-                        ((IndexNode)lhs).getIndex().accept(this);
-                    } else {
-                        assert lhs instanceof AccessNode;
-                    }
+        LvarType lhsTypeOnLoad = null;
+        if(isAssignment) {
+            if(lhs instanceof BaseNode) {
+                ((BaseNode)lhs).getBase().accept(this);
+                if(lhs instanceof IndexNode) {
+                    ((IndexNode)lhs).getIndex().accept(this);
                 } else {
-                    assert lhs instanceof IdentNode;
-                    if(binaryNode.isSelfModifying()) {
-                        ((IdentNode)lhs).accept(this);
-                    }
+                    assert lhs instanceof AccessNode;
                 }
             } else {
-                lhs.accept(this);
+                assert lhs instanceof IdentNode;
+                if(binaryNode.isSelfModifying()) {
+                    final IdentNode ident = ((IdentNode)lhs);
+                    ident.accept(this);
+                    // Self-assignment can cause a change in the type of the variable. For purposes of evaluating
+                    // the type of the operation, we must use its type as it was when it was loaded. If we didn't
+                    // do this, some awkward expressions would end up being calculated incorrectly, e.g.
+                    // "var x; x += x = 0;". In this case we have undefined+int so the result type is double (NaN).
+                    // However, if we used the type of "x" on LHS after we evaluated RHS, we'd see int+int, so the
+                    // result type would be either optimistic int or pessimistic long, which would be wrong.
+                    lhsTypeOnLoad = getLocalVariableTypeIfBytecode(ident.getSymbol());
+                }
             }
+        } else {
+            lhs.accept(this);
         }
+
+        final boolean isLogical = binaryNode.isLogical();
+        assert !(isAssignment && isLogical); // there are no logical assignment operators in JS
+        final Label joinLabel = isLogical ? new Label("") : null;
+        if(isLogical) {
+            jumpToLabel((JoinPredecessor)lhs, joinLabel);
+        }
+
+        final Expression rhs = binaryNode.rhs();
+        rhs.accept(this);
+        if(isLogical) {
+            jumpToLabel((JoinPredecessor)rhs, joinLabel);
+        }
+        joinOnLabel(joinLabel);
 
         if(isAssignment && lhs instanceof IdentNode) {
             if(binaryNode.isSelfModifying()) {
-                onSelfAssignment((IdentNode)lhs, binaryNode);
+                onSelfAssignment((IdentNode)lhs, binaryNode, lhsTypeOnLoad);
             } else {
                 onAssignment((IdentNode)lhs, rhs);
             }
@@ -919,7 +924,8 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
         if(unaryNode.isSelfModifying()) {
             if(expr instanceof IdentNode) {
-                onSelfAssignment((IdentNode)expr, unaryNode);
+                final IdentNode ident = (IdentNode)expr;
+                onSelfAssignment(ident, unaryNode, getLocalVariableTypeIfBytecode(ident.getSymbol()));
             }
         }
         return false;
@@ -973,12 +979,41 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         return types;
     }
 
+    /**
+     * Returns the current type of the local variable represented by the symbol. This is the most strict of all
+     * {@code getLocalVariableType*} methods, as it will throw an assertion if the type is null. Therefore, it is only
+     * safe to be invoked on symbols known to be bytecode locals, and only after they have been initialized.
+     * Regardless, it is recommended to use this method in majority of cases, as because of its strictness it is the
+     * best suited for catching missing type calculation bugs early.
+     * @param symbol a symbol representing a bytecode local variable.
+     * @return the current type of the local variable represented by the symbol
+     */
     private LvarType getLocalVariableType(final Symbol symbol) {
         final LvarType type = getLocalVariableTypeOrNull(symbol);
         assert type != null;
         return type;
     }
 
+    /**
+     * Gets the type for a local variable if it is a bytecode local, otherwise null. Can be used in circumstances where
+     * the type is irrelevant if the symbol is not a bytecode local. Note that for bytecode locals, it delegates to
+     * {@link #getLocalVariableType(Symbol)}, so it will still assert that the type for such variable is already
+     * defined (that is, not null).
+     * @param symbol the symbol representing the variable.
+     * @return the current variable type, if it is a bytecode local, otherwise null.
+     */
+    private LvarType getLocalVariableTypeIfBytecode(final Symbol symbol) {
+        return symbol.isBytecodeLocal() ? getLocalVariableType(symbol) : null;
+    }
+
+    /**
+     * Gets the type for a variable represented by a symbol, or null if the type is not know. This is the least strict
+     * of all local variable type getters, and as such its use is discouraged except in initialization scenarios (where
+     * a just-defined symbol might still be null).
+     * @param symbol the symbol
+     * @return the current type for the symbol, or null if the type is not known either because the symbol has not been
+     * initialized, or because the symbol does not represent a bytecode local variable.
+     */
     private LvarType getLocalVariableTypeOrNull(final Symbol symbol) {
         return localVariableTypes.get(symbol);
     }
@@ -1358,13 +1393,13 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         jumpToCatchBlock(identNode);
     }
 
-    private void onSelfAssignment(final IdentNode identNode, final Expression assignment) {
+    private void onSelfAssignment(final IdentNode identNode, final Expression assignment, final LvarType typeOnLoad) {
         final Symbol symbol = identNode.getSymbol();
         assert symbol != null : identNode.getName();
         if(!symbol.isBytecodeLocal()) {
             return;
         }
-        final LvarType type = toLvarType(getType(assignment));
+        final LvarType type = toLvarType(getType(assignment, symbol, typeOnLoad.type));
         // Self-assignment never produce either a boolean or undefined
         assert type != null && type != LvarType.UNDEFINED && type != LvarType.BOOLEAN;
         setType(symbol, type);
@@ -1445,13 +1480,24 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         symbolIsUsed(symbol, getLocalVariableType(symbol));
     }
 
+    /**
+     * Gets the type of the expression, dependent on the current types of the local variables.
+     *
+     * @param expr the expression
+     * @return the current type of the expression dependent on the current types of the local variables.
+     */
     private Type getType(final Expression expr) {
         return expr.getType(getSymbolToType());
     }
 
+    /**
+     * Returns a function object from symbols to their types, used by the expressions to evaluate their type.
+     * {@link BinaryNode} specifically uses identity of the function to cache type calculations. This method makes
+     * sure to return the same function object while the local variable types don't change, and create a new function
+     * object if the local variable types have been changed.
+     * @return a function object representing a mapping from symbols to their types.
+     */
     private Function<Symbol, Type> getSymbolToType() {
-        // BinaryNode uses identity of the function to cache type calculations. Therefore, we must use different
-        // function instances for different localVariableTypes instances.
         if(symbolToType.isStale()) {
             symbolToType = new SymbolToType();
         }
@@ -1467,6 +1513,43 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
         boolean isStale() {
             return boundTypes != localVariableTypes;
+        }
+    }
+
+    /**
+     * Gets the type of the expression, dependent on the current types of the local variables and a single overridden
+     * symbol type. Used by type calculation on compound operators to ensure the type of the LHS at the time it was
+     * loaded (which can potentially be different after RHS evaluation, e.g. "var x; x += x = 0;") is preserved for
+     * the calculation.
+     *
+     * @param expr the expression
+     * @param overriddenSymbol the overridden symbol
+     * @param overriddenType the overridden type
+     * @return the current type of the expression dependent on the current types of the local variables and the single
+     * potentially overridden type.
+     */
+    private Type getType(final Expression expr, final Symbol overriddenSymbol, final Type overriddenType) {
+        return expr.getType(getSymbolToType(overriddenSymbol, overriddenType));
+    }
+
+    private Function<Symbol, Type> getSymbolToType(final Symbol overriddenSymbol, final Type overriddenType) {
+        return getLocalVariableType(overriddenSymbol).type == overriddenType ? getSymbolToType() :
+            new SymbolToTypeOverride(overriddenSymbol, overriddenType);
+    }
+
+    private class SymbolToTypeOverride implements Function<Symbol, Type> {
+        private final Function<Symbol, Type> originalSymbolToType = getSymbolToType();
+        private final Symbol overriddenSymbol;
+        private final Type overriddenType;
+
+        SymbolToTypeOverride(final Symbol overriddenSymbol, final Type overriddenType) {
+            this.overriddenSymbol = overriddenSymbol;
+            this.overriddenType = overriddenType;
+        }
+
+        @Override
+        public Type apply(final Symbol symbol) {
+            return symbol == overriddenSymbol ? overriddenType : originalSymbolToType.apply(symbol);
         }
     }
 }
