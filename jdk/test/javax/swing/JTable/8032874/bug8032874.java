@@ -37,15 +37,13 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
-import sun.awt.SunToolkit;
-
 public class bug8032874 {
     private static final int ROW_COUNT = 5;
     private static JTable table;
     private static TestTableModel tableModel;
 
     public static void main(String args[]) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Robot robot = new Robot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -53,7 +51,7 @@ public class bug8032874 {
                 createAndShowUI();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -63,7 +61,7 @@ public class bug8032874 {
                 table.setRowSelectionInterval(1, 2);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override

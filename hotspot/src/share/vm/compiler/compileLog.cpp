@@ -56,7 +56,7 @@ CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
 }
 
 CompileLog::~CompileLog() {
-  delete _out;
+  delete _out; // Close fd in fileStream::~fileStream()
   _out = NULL;
   FREE_C_HEAP_ARRAY(char, _identities);
   FREE_C_HEAP_ARRAY(char, _file);
@@ -278,10 +278,9 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       }
       file->print_raw_cr("</compilation_log>");
       close(partial_fd);
-      unlink(partial_file);
     }
     CompileLog* next_log = log->_next;
-    delete log;
+    delete log; // Removes partial file
     log = next_log;
   }
   _first = NULL;

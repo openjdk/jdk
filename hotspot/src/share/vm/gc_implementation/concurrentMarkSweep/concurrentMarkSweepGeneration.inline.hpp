@@ -29,8 +29,9 @@
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/shared/gcUtil.hpp"
-#include "memory/defNewGeneration.hpp"
+#include "memory/genCollectedHeap.hpp"
 
 inline void CMSBitMap::clear_all() {
   assert_locked();
@@ -257,11 +258,11 @@ inline bool CMSCollector::should_abort_preclean() const {
 }
 
 inline size_t CMSCollector::get_eden_used() const {
-  return _young_gen->as_DefNewGeneration()->eden()->used();
+  return _young_gen->eden()->used();
 }
 
 inline size_t CMSCollector::get_eden_capacity() const {
-  return _young_gen->as_DefNewGeneration()->eden()->capacity();
+  return _young_gen->eden()->capacity();
 }
 
 inline bool CMSStats::valid() const {
@@ -398,8 +399,7 @@ inline void MarkFromRootsClosure::do_yield_check() {
 
 inline void Par_MarkFromRootsClosure::do_yield_check() {
   if (ConcurrentMarkSweepThread::should_yield() &&
-      !_collector->foregroundGCIsActive() &&
-      _yield) {
+      !_collector->foregroundGCIsActive()) {
     do_yield_work();
   }
 }

@@ -41,13 +41,13 @@ public class TestG1HeapRegionSize {
   public static void main(String[] args) {
     HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
 
+    String expectedValue = getExpectedValue(args);
     VMOption option = diagnostic.getVMOption("UseG1GC");
     if (option.getValue().equals("false")) {
       System.out.println("Skipping this test. It is only a G1 test.");
       return;
     }
 
-    String expectedValue = getExpectedValue(args);
     option = diagnostic.getVMOption("G1HeapRegionSize");
     if (!expectedValue.equals(option.getValue())) {
       throw new RuntimeException("Wrong value for G1HeapRegionSize. Expected " + expectedValue + " but got " + option.getValue());

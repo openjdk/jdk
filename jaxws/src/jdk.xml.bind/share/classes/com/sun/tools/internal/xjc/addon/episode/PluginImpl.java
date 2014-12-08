@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,15 @@
 
 package com.sun.tools.internal.xjc.addon.episode;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.sun.tools.internal.xjc.BadCommandLineException;
 import com.sun.tools.internal.xjc.Options;
 import com.sun.tools.internal.xjc.Plugin;
 import com.sun.tools.internal.xjc.outline.ClassOutline;
-import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.outline.EnumOutline;
+import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.reader.Const;
+import com.sun.xml.internal.bind.v2.schemagen.episode.Bindings;
+import com.sun.xml.internal.bind.v2.schemagen.episode.SchemaBindings;
 import com.sun.xml.internal.txw2.TXW;
 import com.sun.xml.internal.txw2.output.StreamSerializer;
 import com.sun.xml.internal.xsom.XSAnnotation;
@@ -65,12 +56,20 @@ import com.sun.xml.internal.xsom.XSSimpleType;
 import com.sun.xml.internal.xsom.XSWildcard;
 import com.sun.xml.internal.xsom.XSXPath;
 import com.sun.xml.internal.xsom.visitor.XSFunction;
-import com.sun.xml.internal.bind.v2.schemagen.episode.Bindings;
-import com.sun.xml.internal.bind.v2.schemagen.episode.SchemaBindings;
-
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Creates the episode file,
@@ -106,7 +105,7 @@ public class PluginImpl extends Plugin {
         try {
             // reorganize qualifying components by their namespaces to
             // generate the list nicely
-            Map<XSSchema, PerSchemaOutlineAdaptors> perSchema = new HashMap<XSSchema,PerSchemaOutlineAdaptors>();
+            Map<XSSchema, PerSchemaOutlineAdaptors> perSchema = new LinkedHashMap<XSSchema, PerSchemaOutlineAdaptors>();
             boolean hasComponentInNoNamespace = false;
 
             // Combine classes and enums into a single list
@@ -172,10 +171,9 @@ public class PluginImpl extends Plugin {
                 group.scd("x-schema::"+(tns.equals("")?"":"tns"));
                 SchemaBindings schemaBindings = group.schemaBindings();
                                 schemaBindings.map(false);
-                                if (ps.packageNames.size() == 1)
-                                {
-                                        final String packageName = ps.packageNames.iterator().next();
-                                        if (packageName != null && packageName.length() > 0) {
+                if (ps.packageNames.size() == 1) {
+                    final String packageName = ps.packageNames.iterator().next();
+                    if (packageName != null && packageName.length() > 0) {
                                                 schemaBindings._package().name(packageName);
                                         }
                                 }
@@ -285,7 +283,6 @@ public class PluginImpl extends Plugin {
             CLASS(new BindingsBuilder() {
                 public void build(OutlineAdaptor adaptor, Bindings bindings) {
                     bindings.klass().ref(adaptor.implName);
-
                 }
             }),
             ENUM(new BindingsBuilder() {
@@ -304,7 +301,7 @@ public class PluginImpl extends Plugin {
                 void build(OutlineAdaptor adaptor, Bindings bindings);
             }
 
-        };
+        }
 
         private final XSComponent schemaComponent;
         private final OutlineType outlineType;
@@ -331,10 +328,9 @@ public class PluginImpl extends Plugin {
 
         private final Set<String> packageNames = new HashSet<String>();
 
-        private void add(OutlineAdaptor outlineAdaptor)
-        {
-                this.outlineAdaptors.add(outlineAdaptor);
-                this.packageNames.add(outlineAdaptor.packageName);
+        private void add(OutlineAdaptor outlineAdaptor) {
+            this.outlineAdaptors.add(outlineAdaptor);
+            this.packageNames.add(outlineAdaptor.packageName);
         }
 
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,10 @@ public class BasicCharObject extends Basic {
         Formatter f = new Formatter(new StringBuilder(), Locale.US);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), Locale.US);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(Locale l, String fs, String exp, Object ... args)
@@ -58,6 +62,10 @@ public class BasicCharObject extends Basic {
         Formatter f = new Formatter(new StringBuilder(), l);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), l);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(String fs, Object ... args) {
@@ -514,6 +522,85 @@ public class BasicCharObject extends Basic {
         tryCatch("%F", UnknownFormatConversionException.class);
 
         tryCatch("%#g", FormatFlagsConversionMismatchException.class);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

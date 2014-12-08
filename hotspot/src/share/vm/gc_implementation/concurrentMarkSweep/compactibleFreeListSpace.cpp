@@ -90,7 +90,8 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
                     CMSRescanMultiple),
   _marking_task_size(CardTableModRefBS::card_size_in_words * BitsPerWord *
                     CMSConcMarkMultiple),
-  _collector(NULL)
+  _collector(NULL),
+  _preconsumptionDirtyCardClosure(NULL)
 {
   assert(sizeof(FreeChunk) / BytesPerWord <= MinChunkSize,
          "FreeChunk is larger than expected");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,10 @@ public class BasicBigInteger extends Basic {
         Formatter f = new Formatter(new StringBuilder(), Locale.US);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), Locale.US);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(Locale l, String fs, String exp, Object ... args)
@@ -58,6 +62,10 @@ public class BasicBigInteger extends Basic {
         Formatter f = new Formatter(new StringBuilder(), l);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), l);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(String fs, Object ... args) {
@@ -754,6 +762,24 @@ public class BasicBigInteger extends Basic {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         //---------------------------------------------------------------------
         // BigInteger - errors
         //---------------------------------------------------------------------
@@ -781,6 +807,14 @@ public class BasicBigInteger extends Basic {
         test("%+d", "-1234567", new BigInteger("-1234567", 10));
         test("%-10d", "1234567   ", new BigInteger("1234567", 10));
         test("%-10d", "-1234567  ", new BigInteger("-1234567", 10));
+        // , variations:
+        test("%0,10d", "01,234,567", new BigInteger("1234567", 10));
+        test("%0,10d", "-1,234,567", new BigInteger("-1234567", 10));
+        test("%(,10d", "(1,234,567)", new BigInteger("-1234567", 10));
+        test("%+,d", "+1,234,567", new BigInteger("1234567", 10));
+        test("%+,d", "-1,234,567", new BigInteger("-1234567", 10));
+        test("%-,10d", "1,234,567 ", new BigInteger("1234567", 10));
+        test("%-,10d", "-1,234,567", new BigInteger("-1234567", 10));
 
         //---------------------------------------------------------------------
         // %o - BigInteger
@@ -827,6 +861,59 @@ public class BasicBigInteger extends Basic {
         test("%#10X", "-0X1234567", new BigInteger("-1234567", 16));
         test("%X", "1234567A", new BigInteger("1234567a", 16));
         test("%X", "-1234567A", new BigInteger("-1234567a", 16));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

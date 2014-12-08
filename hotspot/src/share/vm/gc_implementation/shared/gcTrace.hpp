@@ -33,12 +33,11 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/referenceType.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1YCTypes.hpp"
 #endif
-#include "utilities/macros.hpp"
-#include "utilities/ticks.hpp"
-
 
 class EvacuationInfo;
 class GCHeapSummary;

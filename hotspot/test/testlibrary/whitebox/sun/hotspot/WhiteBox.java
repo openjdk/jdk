@@ -154,8 +154,17 @@ public class WhiteBox {
   public native Object[] getNMethod(Executable method, boolean isOsr);
   public native long    allocateCodeBlob(int size, int type);
   public native void    freeCodeBlob(long addr);
-  public native void    forceNMethodSweep();
+  public        void    forceNMethodSweep() {
+    try {
+        forceNMethodSweep0().join();
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+  }
+  public native Thread  forceNMethodSweep0();
   public native Object[] getCodeHeapEntries(int type);
+  public native int     getCompilationActivityMode();
+  public native Object[] getCodeBlob(long addr);
 
   // Intered strings
   public native boolean isInStringTable(String str);
@@ -167,11 +176,15 @@ public class WhiteBox {
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
 
-  // force Young GC
+  // Force Young GC
   public native void youngGC();
 
-  // force Full GC
+  // Force Full GC
   public native void fullGC();
+
+  // Method tries to start concurrent mark cycle.
+  // It returns false if CM Thread is always in concurrent cycle.
+  public native boolean g1StartConcMarkCycle();
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);

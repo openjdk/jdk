@@ -45,7 +45,7 @@ class AllocationContextStats: public StackObj {
 public:
   inline void clear() { }
   inline void update(bool full_gc) { }
-  inline void update_at_remark() { }
+  inline void update_after_mark() { }
   inline bool available() { return false; }
 };
 

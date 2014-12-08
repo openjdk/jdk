@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,14 @@
 /*
  * @test TestSystemGC
  * @key gc
+ * @requires vm.gc=="null"
  * @summary Runs System.gc() with different flags.
  * @run main/othervm TestSystemGC
  * @run main/othervm -XX:+UseSerialGC TestSystemGC
- * @run main/othervm -XX:+UseParNewGC TestSystemGC
  * @run main/othervm -XX:+UseParallelGC TestSystemGC
  * @run main/othervm -XX:+UseParallelGC -XX:-UseParallelOldGC TestSystemGC
  * @run main/othervm -XX:+UseConcMarkSweepGC TestSystemGC
  * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC TestSystemGC
  * @run main/othervm -XX:+UseG1GC TestSystemGC
  * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
  * @run main/othervm -XX:+UseLargePages TestSystemGC

@@ -26,46 +26,41 @@
 
 #include <new>
 
+#include "classfile/classLoaderData.hpp"
+#include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-
-#include "classfile/stringTable.hpp"
-#include "classfile/classLoaderData.hpp"
-
-#include "prims/whitebox.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
-
-#include "runtime/thread.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
 #include "runtime/sweeper.hpp"
-
+#include "runtime/javaCalls.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/array.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/exceptions.hpp"
-
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
-
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
 
-#include "compiler/compileBroker.hpp"
-#include "jvmtifiles/jvmtiEnv.hpp"
-#include "runtime/compilationPolicy.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
@@ -300,8 +295,16 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  ConcurrentMark* cm = g1->concurrent_mark();
-  return cm->concurrent_marking_in_progress();
+  return g1->concurrent_mark()->cmThread()->during_cycle();
+WB_END
+
+WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
+    g1h->collect(GCCause::_wb_conc_mark);
+    return true;
+  }
+  return false;
 WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
@@ -769,8 +772,8 @@ WB_ENTRY(void, WB_UnlockCompilation(JNIEnv* env, jobject o))
   mo.notify_all();
 WB_END
 
-void WhiteBox::force_sweep() {
-  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+void WhiteBox::sweeper_thread_entry(JavaThread* thread, TRAPS) {
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     NMethodSweeper::_should_sweep = true;
@@ -778,8 +781,37 @@ void WhiteBox::force_sweep() {
   NMethodSweeper::possibly_sweep();
 }
 
-WB_ENTRY(void, WB_ForceNMethodSweep(JNIEnv* env, jobject o))
-  WhiteBox::force_sweep();
+JavaThread* WhiteBox::create_sweeper_thread(TRAPS) {
+  // create sweeper thread w/ custom entry -- one iteration instead of loop
+  CodeCacheSweeperThread* sweeper_thread = new CodeCacheSweeperThread();
+  sweeper_thread->set_entry_point(&WhiteBox::sweeper_thread_entry);
+
+  // create j.l.Thread object and associate it w/ sweeper thread
+  {
+    // inherit deamon property from current thread
+    bool is_daemon = java_lang_Thread::is_daemon(JavaThread::current()->threadObj());
+
+    HandleMark hm(THREAD);
+    Handle thread_group(THREAD, Universe::system_thread_group());
+    const char* name = "WB Sweeper thread";
+    sweeper_thread->allocate_threadObj(thread_group, name, is_daemon, THREAD);
+  }
+
+  {
+    MutexLocker mu(Threads_lock, THREAD);
+    Threads::add(sweeper_thread);
+  }
+  return sweeper_thread;
+}
+
+WB_ENTRY(jobject, WB_ForceNMethodSweep(JNIEnv* env, jobject o))
+  JavaThread* sweeper_thread = WhiteBox::create_sweeper_thread(Thread::current());
+  if (sweeper_thread == NULL) {
+    return NULL;
+  }
+  jobject result = JNIHandles::make_local(env, sweeper_thread->threadObj());
+  Thread::start(sweeper_thread);
+  return result;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
@@ -829,12 +861,12 @@ WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
 WB_END
 
 int WhiteBox::get_blob_type(const CodeBlob* code) {
-  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   return CodeCache::get_code_heap(code)->code_blob_type();
 }
 
 CodeHeap* WhiteBox::get_code_heap(int blob_type) {
-  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   return CodeCache::get_code_heap(blob_type);
 }
 
@@ -910,7 +942,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
 WB_END
 
 CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
-  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   BufferBlob* blob;
   int full_size = CodeBlob::align_code_offset(sizeof(BufferBlob));
   if (full_size < size) {
@@ -919,10 +951,10 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
+    ::new (blob) BufferBlob("WB::DummyBlob", full_size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
-  ::new (blob) BufferBlob("WB::DummyBlob", full_size);
   return blob;
 }
 
@@ -969,6 +1001,16 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
     ++i;
   }
   return result;
+WB_END
+
+WB_ENTRY(jint, WB_GetCompilationActivityMode(JNIEnv* env, jobject o))
+  return CompileBroker::get_compilation_activity_mode();
+WB_END
+
+WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
+    ThreadToNativeFromVM ttn(thread);
+    CodeBlobStub stub((CodeBlob*) addr);
+    return codeBlob2objectArray(thread, env, &stub);
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
@@ -1145,6 +1187,7 @@ static JNINativeMethod methods[] = {
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
+  {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
@@ -1222,10 +1265,13 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
-  {CC"forceNMethodSweep",  CC"()V",                   (void*)&WB_ForceNMethodSweep  },
+  {CC"forceNMethodSweep0", CC"()Ljava/lang/Thread;",  (void*)&WB_ForceNMethodSweep  },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
+  {CC"getCompilationActivityMode",
+                           CC"()I",                   (void*)&WB_GetCompilationActivityMode},
+  {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
 };

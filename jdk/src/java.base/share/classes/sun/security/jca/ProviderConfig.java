@@ -51,7 +51,7 @@ final class ProviderConfig {
 
     // config file argument of the SunPKCS11-Solaris provider
     private static final String P11_SOL_ARG  =
-        "${java.home}/lib/security/sunpkcs11-solaris.cfg";
+        "${java.home}/conf/security/sunpkcs11-solaris.cfg";
 
     // maximum number of times to try loading a provider before giving up
     private final static int MAX_LOAD_TRIES = 30;

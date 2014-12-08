@@ -251,12 +251,6 @@ public:
   // Return the address indicating the start of the region corresponding to
   // "index" in "_offset_array".
   HeapWord* address_for_index(size_t index) const;
-
-  // Return the address "p" incremented by the size of
-  // a region.  This method does not align the address
-  // returned to the start of a region.  It is a simple
-  // primitive.
-  HeapWord* inc_by_region_size(HeapWord* p) const { return p + N_words; }
 };
 
 //////////////////////////////////////////////////////////////////////////
