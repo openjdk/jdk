@@ -245,7 +245,7 @@ public class NegativeCyclicDependencyTest {
         if (ct.call()) {
             throw new RuntimeException("Expected compilation failure.");
         }
-        return writer.toString();
+        return writer.toString().replace(ToolBox.lineSeparator, "\n");
     }
 
     public void echo() {
