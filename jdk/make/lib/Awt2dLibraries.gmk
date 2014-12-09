@@ -367,7 +367,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
             $(X_LIBS) $(LIBAWT_XAWT_LDFLAGS) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             $(call SET_SHARED_LIBRARY_ORIGIN,/..) \
-            -L $(INSTALL_LIBRARIES_HERE), \
+            -L$(INSTALL_LIBRARIES_HERE), \
         LDFLAGS_SUFFIX := $(LIBAWT_XAWT_LDFLAGS_SUFFIX), \
         VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
         RC_FLAGS := $(RC_FLAGS) \
@@ -421,7 +421,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/liblcms/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_unix := -L $(INSTALL_LIBRARIES_HERE), \
+    LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_solaris := /usr/lib$(OPENJDK_TARGET_CPU_ISADIR)/libm.so.2, \
     LDFLAGS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
     LDFLAGS_SUFFIX_solaris := -lawt -ljava -ljvm -lc $(LCMS_LIBS), \
@@ -581,7 +581,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
     LDFLAGS := $(subst -Xlinker -z -Xlinker defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_unix := -L $(INSTALL_LIBRARIES_HERE), \
+    LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_SUFFIX := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LDFLAGS_SUFFIX_linux := -lawt $(LIBM) $(LIBCXX) -ljava -ljvm -lc, \
     LDFLAGS_SUFFIX_solaris := $(filter-out -R%, $(X_LIBS)) \
@@ -698,7 +698,7 @@ else # OPENJDK_TARGET_OS not windows
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjawt/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_unix := -L $(INSTALL_LIBRARIES_HERE), \
+      LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LDFLAGS_solaris := $(X_LIBS), \
       LDFLAGS_SUFFIX_linux := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX), \
       LDFLAGS_SUFFIX_aix := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX),\
@@ -775,7 +775,7 @@ ifeq ($(BUILD_HEADLESS), true)
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libawt_headless/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LDFLAGS_unix := -L $(INSTALL_LIBRARIES_HERE), \
+        LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
         LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
         LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
         LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN)., \
@@ -954,7 +954,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           $(LIBAWT_LWAWT_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
-          -L $(INSTALL_LIBRARIES_HERE), \
+          -L$(INSTALL_LIBRARIES_HERE), \
       LDFLAGS_SUFFIX_macosx := -lawt -lmlib_image -losxapp -ljvm $(LIBM) \
           -framework Accelerate \
           -framework ApplicationServices \
@@ -1002,7 +1002,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -Xlinker -rpath -Xlinker @loader_path \
-          -L $(INSTALL_LIBRARIES_HERE), \
+          -L$(INSTALL_LIBRARIES_HERE), \
       LDFLAGS_SUFFIX_macosx := -lawt -losxapp -lawt_lwawt \
           -framework Cocoa \
           -framework Carbon \
