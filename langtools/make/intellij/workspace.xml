@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project version="4">  
+<project version="4">
   <component name="ChangeListManager">
     <ignored path=".idea/" />
   </component>
@@ -44,7 +44,7 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <configuration default="false" name="javap" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javap.Main" />
@@ -63,7 +63,7 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <configuration default="false" name="javah" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javah.Main" />
@@ -82,7 +82,7 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <configuration default="false" name="sjavac" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.sjavac.Main" />
@@ -101,7 +101,7 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <!-- bootstrap javac -->
     <configuration default="false" name="javac (bootstrap)" type="Application" factoryName="Application">
@@ -121,7 +121,7 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-bootstrap-javac" />
-      </method> 
+      </method>
     </configuration>
     <!-- jtreg debug -->
     <configuration default="false" name="jtreg (debug)" type="Remote" factoryName="Remote" singleton="true">
