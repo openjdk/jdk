@@ -958,6 +958,8 @@ public final class Unsafe {
      * other threads. This method is generally only useful if the
      * underlying field is a Java volatile (or if an array cell, one
      * that is otherwise only accessed using volatile accesses).
+     *
+     * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
      */
     public native void    putOrderedObject(Object o, long offset, Object x);
 
@@ -1111,22 +1113,40 @@ public final class Unsafe {
 
 
     /**
-     * Ensures lack of reordering of loads before the fence
-     * with loads or stores after the fence.
+     * Ensures that loads before the fence will not be reordered with loads and
+     * stores after the fence; a "LoadLoad plus LoadStore barrier".
+     *
+     * Corresponds to C11 atomic_thread_fence(memory_order_acquire)
+     * (an "acquire fence").
+     *
+     * A pure LoadLoad fence is not provided, since the addition of LoadStore
+     * is almost always desired, and most current hardware instructions that
+     * provide a LoadLoad barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
     public native void loadFence();
 
     /**
-     * Ensures lack of reordering of stores before the fence
-     * with loads or stores after the fence.
+     * Ensures that loads and stores before the fence will not be reordered with
+     * stores after the fence; a "StoreStore plus LoadStore barrier".
+     *
+     * Corresponds to C11 atomic_thread_fence(memory_order_release)
+     * (a "release fence").
+     *
+     * A pure StoreStore fence is not provided, since the addition of LoadStore
+     * is almost always desired, and most current hardware instructions that
+     * provide a StoreStore barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
     public native void storeFence();
 
     /**
-     * Ensures lack of reordering of loads or stores before the fence
-     * with loads or stores after the fence.
+     * Ensures that loads and stores before the fence will not be reordered
+     * with loads and stores after the fence.  Implies the effects of both
+     * loadFence() and storeFence(), and in addition, the effect of a StoreLoad
+     * barrier.
+     *
+     * Corresponds to C11 atomic_thread_fence(memory_order_seq_cst).
      * @since 1.8
      */
     public native void fullFence();
