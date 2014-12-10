@@ -121,11 +121,13 @@ public class NegativeCyclicDependencyTest {
                 e.printStackTrace();
             }
         }
-        if (passed < testCases.size()) {
-            throw new RuntimeException(String.format("Test failed: " +
-                    "passed: %d, failed: %d, total: %d.",
-                    passed, testCases.size() - passed, testCases.size()));
+        String message = String.format(
+                "Total test cases run: %d, passed: %d, failed: %d.",
+                testCases.size(), passed, testCases.size() - passed);
+        if (passed != testCases.size()) {
+            throw new RuntimeException(message);
         }
+        echo(message);
     }
 
     private void reportFailure(TestCase testCase) {
