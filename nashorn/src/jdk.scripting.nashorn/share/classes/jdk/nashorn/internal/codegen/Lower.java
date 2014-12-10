@@ -275,7 +275,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
     @Override
     public Node leaveSwitchNode(final SwitchNode switchNode) {
-        if(!switchNode.isInteger()) {
+        if(!switchNode.isUniqueInteger()) {
             // Wrap it in a block so its internally created tag is restricted in scope
             addStatementEnclosedInBlock(switchNode);
         } else {
