@@ -2817,7 +2817,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         Label defaultLabel = defaultCase != null ? defaultCase.getEntry() : breakLabel;
         final boolean hasSkipConversion = LocalVariableConversion.hasLiveConversion(switchNode);
 
-        if (switchNode.isInteger()) {
+        if (switchNode.isUniqueInteger()) {
             // Tree for sorting values.
             final TreeMap<Integer, Label> tree = new TreeMap<>();
 

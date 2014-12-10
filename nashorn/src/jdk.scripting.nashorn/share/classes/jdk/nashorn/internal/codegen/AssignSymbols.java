@@ -917,7 +917,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
     @Override
     public Node leaveSwitchNode(final SwitchNode switchNode) {
         // We only need a symbol for the tag if it's not an integer switch node
-        if(!switchNode.isInteger()) {
+        if(!switchNode.isUniqueInteger()) {
             switchNode.setTag(newObjectInternal(SWITCH_TAG_PREFIX));
         }
         return switchNode;

@@ -709,7 +709,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
         // Control flow is different for all-integer cases where we dispatch by switch table, and for all other cases
         // where we do sequential comparison. Note that CaseNode objects act as join points.
-        final boolean isInteger = switchNode.isInteger();
+        final boolean isInteger = switchNode.isUniqueInteger();
         final Label breakLabel = switchNode.getBreakLabel();
         final boolean hasDefault = switchNode.getDefaultCase() != null;
 
