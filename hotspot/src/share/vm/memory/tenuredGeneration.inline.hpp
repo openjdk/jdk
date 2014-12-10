@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,41 +25,32 @@
 #ifndef SHARE_VM_MEMORY_TENUREDGENERATION_INLINE_HPP
 #define SHARE_VM_MEMORY_TENUREDGENERATION_INLINE_HPP
 
-#include "memory/genCollectedHeap.hpp"
 #include "memory/space.hpp"
 #include "memory/tenuredGeneration.hpp"
-
-bool TenuredGeneration::is_in(const void* p) const {
-  return the_space()->is_in(p);
-}
-
-CompactibleSpace*
-TenuredGeneration::first_compaction_space() const {
-  return the_space();
-}
 
 HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  return the_space()->allocate(word_size);
+  return _the_space->allocate(word_size);
 }
 
 HeapWord* TenuredGeneration::par_allocate(size_t word_size,
                                                      bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  return the_space()->par_allocate(word_size);
+  return _the_space->par_allocate(word_size);
 }
 
 size_t TenuredGeneration::block_size(const HeapWord* addr) const {
-  if (addr < the_space()->top()) return oop(addr)->size();
-  else {
-    assert(addr == the_space()->top(), "non-block head arg to block_size");
-    return the_space()->end() - the_space()->top();
+  if (addr < _the_space->top()) {
+    return oop(addr)->size();
+  } else {
+    assert(addr == _the_space->top(), "non-block head arg to block_size");
+    return _the_space->end() - _the_space->top();
   }
 }
 
 bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
-  return addr < the_space()->top();
+  return addr < _the_space  ->top();
 }
 
 #endif // SHARE_VM_MEMORY_TENUREDGENERATION_INLINE_HPP

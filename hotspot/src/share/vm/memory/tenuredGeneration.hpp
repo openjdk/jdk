@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,25 +42,18 @@ class TenuredGeneration: public CardGeneration {
   friend class VM_PopulateDumpSharedSpace;
 
  protected:
-  ContiguousSpace*  _the_space;       // actual space holding objects
+  ContiguousSpace*  _the_space;       // Actual space holding objects
 
   GenerationCounters*   _gen_counters;
   CSpaceCounters*       _space_counters;
 
-  // Grow generation with specified size (returns false if unable to grow)
-  virtual bool grow_by(size_t bytes);
-  // Grow generation to reserved size.
-  virtual bool grow_to_reserved();
-  // Shrink generation with specified size (returns false if unable to shrink)
-  void shrink_by(size_t bytes);
-
   // Allocation failure
   virtual bool expand(size_t bytes, size_t expand_bytes);
-  void shrink(size_t bytes);
 
   // Accessing spaces
-  ContiguousSpace* the_space() const { return _the_space; }
+  ContiguousSpace* space() const { return _the_space; }
 
+  void assert_correct_size_change_locking();
  public:
   TenuredGeneration(ReservedSpace rs, size_t initial_byte_size,
                                int level, GenRemSet* remset);
@@ -79,25 +72,11 @@ class TenuredGeneration: public CardGeneration {
     return !ScavengeBeforeFullGC;
   }
 
-  inline bool is_in(const void* p) const;
-
-  // Space enquiries
-  size_t capacity() const;
-  size_t used() const;
-  size_t free() const;
-
-  MemRegion used_region() const;
-
   size_t unsafe_max_alloc_nogc() const;
   size_t contiguous_available() const;
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
-  void space_iterate(SpaceClosure* blk, bool usedOnly = false);
-
-  void younger_refs_iterate(OopsInGenClosure* blk);
-
-  inline CompactibleSpace* first_compaction_space() const;
 
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
