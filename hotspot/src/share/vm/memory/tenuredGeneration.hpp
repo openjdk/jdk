@@ -28,7 +28,7 @@
 #include "gc_implementation/shared/cSpaceCounters.hpp"
 #include "gc_implementation/shared/gcStats.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
-#include "memory/generation.hpp"
+#include "memory/cardGeneration.hpp"
 #include "utilities/macros.hpp"
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
