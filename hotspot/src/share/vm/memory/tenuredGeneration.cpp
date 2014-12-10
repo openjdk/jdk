@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,34 +235,6 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   return CardGeneration::expand(bytes, expand_bytes);
 }
 
-
-void TenuredGeneration::shrink(size_t bytes) {
-  assert_locked_or_safepoint(ExpandHeap_lock);
-  size_t size = ReservedSpace::page_align_size_down(bytes);
-  if (size > 0) {
-    shrink_by(size);
-  }
-}
-
-
-size_t TenuredGeneration::capacity() const {
-  return _the_space->capacity();
-}
-
-
-size_t TenuredGeneration::used() const {
-  return _the_space->used();
-}
-
-
-size_t TenuredGeneration::free() const {
-  return _the_space->free();
-}
-
-MemRegion TenuredGeneration::used_region() const {
-  return the_space()->used_region();
-}
-
 size_t TenuredGeneration::unsafe_max_alloc_nogc() const {
   return _the_space->free();
 }
@@ -271,74 +243,8 @@ size_t TenuredGeneration::contiguous_available() const {
   return _the_space->free() + _virtual_space.uncommitted_size();
 }
 
-bool TenuredGeneration::grow_by(size_t bytes) {
+void TenuredGeneration::assert_correct_size_change_locking() {
   assert_locked_or_safepoint(ExpandHeap_lock);
-  bool result = _virtual_space.expand_by(bytes);
-  if (result) {
-    size_t new_word_size =
-       heap_word_size(_virtual_space.committed_size());
-    MemRegion mr(_the_space->bottom(), new_word_size);
-    // Expand card table
-    Universe::heap()->barrier_set()->resize_covered_region(mr);
-    // Expand shared block offset array
-    _bts->resize(new_word_size);
-
-    // Fix for bug #4668531
-    if (ZapUnusedHeapArea) {
-      MemRegion mangle_region(_the_space->end(),
-      (HeapWord*)_virtual_space.high());
-      SpaceMangler::mangle_region(mangle_region);
-    }
-
-    // Expand space -- also expands space's BOT
-    // (which uses (part of) shared array above)
-    _the_space->set_end((HeapWord*)_virtual_space.high());
-
-    // update the space and generation capacity counters
-    update_counters();
-
-    if (Verbose && PrintGC) {
-      size_t new_mem_size = _virtual_space.committed_size();
-      size_t old_mem_size = new_mem_size - bytes;
-      gclog_or_tty->print_cr("Expanding %s from " SIZE_FORMAT "K by "
-                      SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                      name(), old_mem_size/K, bytes/K, new_mem_size/K);
-    }
-  }
-  return result;
-}
-
-
-bool TenuredGeneration::grow_to_reserved() {
-  assert_locked_or_safepoint(ExpandHeap_lock);
-  bool success = true;
-  const size_t remaining_bytes = _virtual_space.uncommitted_size();
-  if (remaining_bytes > 0) {
-    success = grow_by(remaining_bytes);
-    DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
-  }
-  return success;
-}
-
-void TenuredGeneration::shrink_by(size_t bytes) {
-  assert_locked_or_safepoint(ExpandHeap_lock);
-  // Shrink committed space
-  _virtual_space.shrink_by(bytes);
-  // Shrink space; this also shrinks the space's BOT
-  _the_space->set_end((HeapWord*) _virtual_space.high());
-  size_t new_word_size = heap_word_size(_the_space->capacity());
-  // Shrink the shared block offset array
-  _bts->resize(new_word_size);
-  MemRegion mr(_the_space->bottom(), new_word_size);
-  // Shrink the card table
-  Universe::heap()->barrier_set()->resize_covered_region(mr);
-
-  if (Verbose && PrintGC) {
-    size_t new_mem_size = _virtual_space.committed_size();
-    size_t old_mem_size = new_mem_size + bytes;
-    gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                  name(), old_mem_size/K, new_mem_size/K);
-  }
 }
 
 // Currently nothing to do.
@@ -348,26 +254,13 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
   _the_space->object_iterate(blk);
 }
 
-void TenuredGeneration::space_iterate(SpaceClosure* blk,
-                                                 bool usedOnly) {
-  blk->do_space(_the_space);
-}
-
-void TenuredGeneration::younger_refs_iterate(OopsInGenClosure* blk) {
-  blk->set_generation(this);
-  younger_refs_in_space_iterate(_the_space, blk);
-  blk->reset_generation();
-}
-
 void TenuredGeneration::save_marks() {
   _the_space->set_saved_mark();
 }
 
-
 void TenuredGeneration::reset_saved_marks() {
   _the_space->reset_saved_mark();
 }
-
 
 bool TenuredGeneration::no_allocs_since_save_marks() {
   return _the_space->saved_mark_at_top();
@@ -387,26 +280,25 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN)
 
 #undef TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN
 
-
 void TenuredGeneration::gc_epilogue(bool full) {
   // update the generation and space performance counters
   update_counters();
   if (ZapUnusedHeapArea) {
-    the_space()->check_mangled_unused_area_complete();
+    _the_space->check_mangled_unused_area_complete();
   }
 }
 
 void TenuredGeneration::record_spaces_top() {
   assert(ZapUnusedHeapArea, "Not mangling unused space");
-  the_space()->set_top_for_allocations();
+  _the_space->set_top_for_allocations();
 }
 
 void TenuredGeneration::verify() {
-  the_space()->verify();
+  _the_space->verify();
 }
 
 void TenuredGeneration::print_on(outputStream* st)  const {
   Generation::print_on(st);
   st->print("   the");
-  the_space()->print_on(st);
+  _the_space->print_on(st);
 }

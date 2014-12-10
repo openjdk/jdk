@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
+
 #include "memory/blockOffsetTable.inline.hpp"
+#include "memory/cardGeneration.inline.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/genOopClosures.inline.hpp"
@@ -49,8 +51,9 @@ CardGeneration::CardGeneration(ReservedSpace rs, size_t initial_byte_size,
                                     heap_word_size(initial_byte_size));
   MemRegion committed_mr(start, heap_word_size(initial_byte_size));
   _rs->resize_covered_region(committed_mr);
-  if (_bts == NULL)
+  if (_bts == NULL) {
     vm_exit_during_initialization("Could not allocate a BlockOffsetArray");
+  }
 
   // Verify that the start and end of this generation is the start of a card.
   // If this wasn't true, a single card could span more than on generation,
@@ -65,6 +68,43 @@ CardGeneration::CardGeneration(ReservedSpace rs, size_t initial_byte_size,
   _min_heap_delta_bytes = MinHeapDeltaBytes;
   _capacity_at_prologue = initial_byte_size;
   _used_at_prologue = 0;
+}
+
+bool CardGeneration::grow_by(size_t bytes) {
+  assert_correct_size_change_locking();
+  bool result = _virtual_space.expand_by(bytes);
+  if (result) {
+    size_t new_word_size =
+       heap_word_size(_virtual_space.committed_size());
+    MemRegion mr(space()->bottom(), new_word_size);
+    // Expand card table
+    Universe::heap()->barrier_set()->resize_covered_region(mr);
+    // Expand shared block offset array
+    _bts->resize(new_word_size);
+
+    // Fix for bug #4668531
+    if (ZapUnusedHeapArea) {
+      MemRegion mangle_region(space()->end(),
+      (HeapWord*)_virtual_space.high());
+      SpaceMangler::mangle_region(mangle_region);
+    }
+
+    // Expand space -- also expands space's BOT
+    // (which uses (part of) shared array above)
+    space()->set_end((HeapWord*)_virtual_space.high());
+
+    // update the space and generation capacity counters
+    update_counters();
+
+    if (Verbose && PrintGC) {
+      size_t new_mem_size = _virtual_space.committed_size();
+      size_t old_mem_size = new_mem_size - bytes;
+      gclog_or_tty->print_cr("Expanding %s from " SIZE_FORMAT "K by "
+                      SIZE_FORMAT "K to " SIZE_FORMAT "K",
+                      name(), old_mem_size/K, bytes/K, new_mem_size/K);
+    }
+  }
+  return result;
 }
 
 bool CardGeneration::expand(size_t bytes, size_t expand_bytes) {
@@ -100,6 +140,44 @@ bool CardGeneration::expand(size_t bytes, size_t expand_bytes) {
   }
 
   return success;
+}
+
+bool CardGeneration::grow_to_reserved() {
+  assert_correct_size_change_locking();
+  bool success = true;
+  const size_t remaining_bytes = _virtual_space.uncommitted_size();
+  if (remaining_bytes > 0) {
+    success = grow_by(remaining_bytes);
+    DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
+  }
+  return success;
+}
+
+void CardGeneration::shrink(size_t bytes) {
+  assert_correct_size_change_locking();
+
+  size_t size = ReservedSpace::page_align_size_down(bytes);
+  if (size == 0) {
+    return;
+  }
+
+  // Shrink committed space
+  _virtual_space.shrink_by(size);
+  // Shrink space; this also shrinks the space's BOT
+  space()->set_end((HeapWord*) _virtual_space.high());
+  size_t new_word_size = heap_word_size(space()->capacity());
+  // Shrink the shared block offset array
+  _bts->resize(new_word_size);
+  MemRegion mr(space()->bottom(), new_word_size);
+  // Shrink the card table
+  Universe::heap()->barrier_set()->resize_covered_region(mr);
+
+  if (Verbose && PrintGC) {
+    size_t new_mem_size = _virtual_space.committed_size();
+    size_t old_mem_size = new_mem_size + size;
+    gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+                  name(), old_mem_size/K, new_mem_size/K);
+  }
 }
 
 // No young generation references, clear this generation's cards.
@@ -269,3 +347,14 @@ void CardGeneration::compute_new_size() {
 
 // Currently nothing to do.
 void CardGeneration::prepare_for_verify() {}
+
+void CardGeneration::space_iterate(SpaceClosure* blk,
+                                                 bool usedOnly) {
+  blk->do_space(space());
+}
+
+void CardGeneration::younger_refs_iterate(OopsInGenClosure* blk) {
+  blk->set_generation(this);
+  younger_refs_in_space_iterate(space(), blk);
+  blk->reset_generation();
+}

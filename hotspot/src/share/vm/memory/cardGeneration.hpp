@@ -31,6 +31,7 @@
 #include "memory/generation.hpp"
 
 class BlockOffsetSharedArray;
+class CompactibleSpace;
 
 class CardGeneration: public Generation {
   friend class VMStructs;
@@ -40,7 +41,7 @@ class CardGeneration: public Generation {
   // This is local to this generation.
   BlockOffsetSharedArray* _bts;
 
-  // current shrinking effect: this damps shrinking when the heap gets empty.
+  // Current shrinking effect: this damps shrinking when the heap gets empty.
   size_t _shrink_factor;
 
   size_t _min_heap_delta_bytes;   // Minimum amount to expand.
@@ -54,6 +55,10 @@ class CardGeneration: public Generation {
   CardGeneration(ReservedSpace rs, size_t initial_byte_size, int level,
                  GenRemSet* remset);
 
+  virtual void assert_correct_size_change_locking() = 0;
+
+  virtual CompactibleSpace* space() const = 0;
+
  public:
 
   // Attempt to expand the generation by "bytes".  Expand by at a
@@ -62,7 +67,7 @@ class CardGeneration: public Generation {
   virtual bool expand(size_t bytes, size_t expand_bytes);
 
   // Shrink generation with specified size
-  virtual void shrink(size_t bytes) = 0;
+  virtual void shrink(size_t bytes);
 
   virtual void compute_new_size();
 
@@ -73,9 +78,22 @@ class CardGeneration: public Generation {
   virtual void prepare_for_verify();
 
   // Grow generation with specified size (returns false if unable to grow)
-  virtual bool grow_by(size_t bytes) = 0;
+  bool grow_by(size_t bytes);
   // Grow generation to reserved size.
-  virtual bool grow_to_reserved() = 0;
+  bool grow_to_reserved();
+
+  size_t capacity() const;
+  size_t used() const;
+  size_t free() const;
+  MemRegion used_region() const;
+
+  void space_iterate(SpaceClosure* blk, bool usedOnly = false);
+
+  void younger_refs_iterate(OopsInGenClosure* blk);
+
+  bool is_in(const void* p) const;
+
+  CompactibleSpace* first_compaction_space() const;
 };
 
 #endif // SHARE_VM_MEMORY_CARDGENERATION_HPP
