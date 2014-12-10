@@ -4144,8 +4144,29 @@ int os::available(int fd, jlong *bytes) {
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
                         bool allow_exec) {
-  Unimplemented();
-  return NULL;
+  int prot;
+  int flags = MAP_PRIVATE;
+
+  if (read_only) {
+    prot = PROT_READ;
+  } else {
+    prot = PROT_READ | PROT_WRITE;
+  }
+
+  if (allow_exec) {
+    prot |= PROT_EXEC;
+  }
+
+  if (addr != NULL) {
+    flags |= MAP_FIXED;
+  }
+
+  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
+                                     fd, file_offset);
+  if (mapped_address == MAP_FAILED) {
+    return NULL;
+  }
+  return mapped_address;
 }
 
 
