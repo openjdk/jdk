@@ -93,6 +93,13 @@ import jdk.nashorn.internal.parser.TokenType;
  * variable to its widest used type after the join point. That would eliminate some widenings of undefined variables to
  * object, most notably those used only in loops. We need a full liveness analysis for that. Currently, we can establish
  * per-type liveness, which eliminates most of unwanted dead widenings.
+ * NOTE: the way this class is implemented, it actually processes the AST in two passes. The first pass is top-down and
+ * implemented in {@code enterXxx} methods. This pass does not mutate the AST (except for one occurrence, noted below),
+ * as being able to find relevant labels for control flow joins is sensitive to their reference identity, and mutated
+ * label-carrying nodes will create copies of their labels. A second bottom-up pass applying the changes is implemented
+ * in the separate visitor sitting in {@link #leaveFunctionNode(FunctionNode)}. This visitor will also instantiate new
+ * instances of the calculator to be run on nested functions (when not lazy compiling).
+ *
  */
 final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
