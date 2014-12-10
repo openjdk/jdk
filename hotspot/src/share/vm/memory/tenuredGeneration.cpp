@@ -389,8 +389,6 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN)
 
 
 void TenuredGeneration::gc_epilogue(bool full) {
-  _last_gc = WaterMark(the_space(), the_space()->top());
-
   // update the generation and space performance counters
   update_counters();
   if (ZapUnusedHeapArea) {

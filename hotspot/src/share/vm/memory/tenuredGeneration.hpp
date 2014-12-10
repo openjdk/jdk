@@ -43,8 +43,6 @@ class TenuredGeneration: public CardGeneration {
 
  protected:
   ContiguousSpace*  _the_space;       // actual space holding objects
-  WaterMark  _last_gc;                // watermark between objects allocated before
-                                      // and after last GC.
 
   GenerationCounters*   _gen_counters;
   CSpaceCounters*       _space_counters;
@@ -103,10 +101,6 @@ class TenuredGeneration: public CardGeneration {
 
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
-
-  // Accessing marks
-  inline WaterMark top_mark();
-  inline WaterMark bottom_mark();
 
 #define TenuredGen_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)     \
   void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl);

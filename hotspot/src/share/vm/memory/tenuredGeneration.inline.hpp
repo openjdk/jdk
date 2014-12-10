@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_GENERATION_INLINE_HPP
-#define SHARE_VM_MEMORY_GENERATION_INLINE_HPP
+#ifndef SHARE_VM_MEMORY_TENUREDGENERATION_INLINE_HPP
+#define SHARE_VM_MEMORY_TENUREDGENERATION_INLINE_HPP
 
 #include "memory/genCollectedHeap.hpp"
 #include "memory/space.hpp"
@@ -31,11 +31,6 @@
 
 bool TenuredGeneration::is_in(const void* p) const {
   return the_space()->is_in(p);
-}
-
-
-WaterMark TenuredGeneration::top_mark() {
-  return the_space()->top_mark();
 }
 
 CompactibleSpace*
@@ -55,10 +50,6 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
   return the_space()->par_allocate(word_size);
 }
 
-WaterMark TenuredGeneration::bottom_mark() {
-  return the_space()->bottom_mark();
-}
-
 size_t TenuredGeneration::block_size(const HeapWord* addr) const {
   if (addr < the_space()->top()) return oop(addr)->size();
   else {
@@ -71,4 +62,4 @@ bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
   return addr < the_space()->top();
 }
 
-#endif // SHARE_VM_MEMORY_GENERATION_INLINE_HPP
+#endif // SHARE_VM_MEMORY_TENUREDGENERATION_INLINE_HPP
