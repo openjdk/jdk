@@ -131,7 +131,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
     public Node leaveTernaryNode(final TernaryNode ternaryNode) {
         final Node test = ternaryNode.getTest();
         if (test instanceof LiteralNode.PrimitiveLiteralNode) {
-            return ((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue() ? ternaryNode.getTrueExpression() : ternaryNode.getFalseExpression();
+            return (((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue() ? ternaryNode.getTrueExpression() : ternaryNode.getFalseExpression()).getExpression();
         }
         return ternaryNode;
     }

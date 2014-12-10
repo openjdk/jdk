@@ -2021,6 +2021,19 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Expression test = ifNode.getTest();
         final Block pass = ifNode.getPass();
         final Block fail = ifNode.getFail();
+
+        if (Expression.isAlwaysTrue(test)) {
+            loadAndDiscard(test);
+            pass.accept(this);
+            return false;
+        } else if (Expression.isAlwaysFalse(test)) {
+            loadAndDiscard(test);
+            if (fail != null) {
+                fail.accept(this);
+            }
+            return false;
+        }
+
         final boolean hasFailConversion = LocalVariableConversion.hasLiveConversion(ifNode);
 
         final Label failLabel  = new Label("if_fail");
@@ -2040,7 +2053,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             method.beforeJoinPoint(ifNode);
         }
 
-        if(afterLabel != null) {
+        if(afterLabel != null && afterLabel.isReachable()) {
             method.label(afterLabel);
         }
 
