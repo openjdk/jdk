@@ -80,7 +80,7 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
         }
 
         synchronized (ObserverCache.INSTANCE) {
-            ImageObserver o = (ImageObserver) ObserverCache.INSTANCE.get(image);
+            ImageObserver o = (ImageObserver) ObserverCache.INSTANCE.get(observer);
 
             if (o == null) {
 
@@ -109,7 +109,7 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
                                     image, flags, x, y, width, height);
                         };
 
-                ObserverCache.INSTANCE.put(image, o);
+                ObserverCache.INSTANCE.put(observer, o);
             }
             return o;
         }
