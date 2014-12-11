@@ -2001,12 +2001,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         if (find == null) {
             switch (operator) {
+            case "getElem": // getElem only gets here if element name is constant, so treat it like a property access
             case "getProp":
                 return noSuchProperty(desc, request);
             case "getMethod":
                 return noSuchMethod(desc, request);
-            case "getElem":
-                return createEmptyGetter(desc, explicitInstanceOfCheck, name);
             default:
                 throw new AssertionError(operator); // never invoked with any other operation
             }
