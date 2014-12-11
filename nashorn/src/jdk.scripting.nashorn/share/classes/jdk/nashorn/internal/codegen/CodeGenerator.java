@@ -465,10 +465,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // If this is either __FILE__, __DIR__, or __LINE__ then load the property initially as Object as we'd convert
             // it anyway for replaceLocationPropertyPlaceholder.
             if(identNode.isCompileTimePropertyName()) {
-                method.dynamicGet(Type.OBJECT, identNode.getSymbol().getName(), flags, identNode.isFunction());
+                method.dynamicGet(Type.OBJECT, identNode.getSymbol().getName(), flags, identNode.isFunction(), false);
                 replaceCompileTimeProperty();
             } else {
-                dynamicGet(identNode.getSymbol().getName(), flags, identNode.isFunction());
+                dynamicGet(identNode.getSymbol().getName(), flags, identNode.isFunction(), false);
             }
         }
     }
@@ -486,7 +486,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private MethodEmitter storeFastScopeVar(final Symbol symbol, final int flags) {
         loadFastScopeProto(symbol, true);
-        method.dynamicSet(symbol.getName(), flags | CALLSITE_FAST_SCOPE);
+        method.dynamicSet(symbol.getName(), flags | CALLSITE_FAST_SCOPE, false);
         return method;
     }
 
@@ -745,7 +745,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     @Override
                     void consumeStack() {
                         final int flags = getCallSiteFlags();
-                        dynamicGet(accessNode.getProperty(), flags, accessNode.isFunction());
+                        dynamicGet(accessNode.getProperty(), flags, accessNode.isFunction(), accessNode.isIndex());
                     }
                 }.emit(baseAlreadyOnStack ? 1 : 0);
                 return false;
@@ -1449,7 +1449,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         // NOTE: not using a nested OptimisticOperation on this dynamicGet, as we expect to get back
                         // a callable object. Nobody in their right mind would optimistically type this call site.
                         assert !node.isOptimistic();
-                        method.dynamicGet(node.getType(), node.getProperty(), flags, true);
+                        method.dynamicGet(node.getType(), node.getProperty(), flags, true, node.isIndex());
                         method.swap();
                         argCount = loadArgs(args);
                     }
@@ -3165,7 +3165,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if (isFastScope(identSymbol)) {
                 storeFastScopeVar(identSymbol, flags);
             } else {
-                method.dynamicSet(identNode.getName(), flags);
+                method.dynamicSet(identNode.getName(), flags, false);
             }
         } else {
             final Type identType = identNode.getType();
@@ -4269,7 +4269,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         if (isFastScope(symbol)) {
                             storeFastScopeVar(symbol, flags);
                         } else {
-                            method.dynamicSet(node.getName(), flags);
+                            method.dynamicSet(node.getName(), flags, false);
                         }
                     } else {
                         final Type storeType = assignNode.getType();
@@ -4286,7 +4286,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                 @Override
                 public boolean enterAccessNode(final AccessNode node) {
-                    method.dynamicSet(node.getProperty(), getCallSiteFlags());
+                    method.dynamicSet(node.getProperty(), getCallSiteFlags(), node.isIndex());
                     return false;
                 }
 
@@ -4624,11 +4624,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          * @param isMethod whether we're preferrably retrieving a function
          * @return the current method emitter
          */
-        MethodEmitter dynamicGet(final String name, final int flags, final boolean isMethod) {
+        MethodEmitter dynamicGet(final String name, final int flags, final boolean isMethod, final boolean isIndex) {
             if(isOptimistic) {
-                return method.dynamicGet(getOptimisticCoercedType(), name, getOptimisticFlags(flags), isMethod);
+                return method.dynamicGet(getOptimisticCoercedType(), name, getOptimisticFlags(flags), isMethod, isIndex);
             }
-            return method.dynamicGet(resultBounds.within(expression.getType()), name, nonOptimisticFlags(flags), isMethod);
+            return method.dynamicGet(resultBounds.within(expression.getType()), name, nonOptimisticFlags(flags), isMethod, isIndex);
         }
 
         MethodEmitter dynamicGetIndex(final int flags, final boolean isMethod) {

@@ -28,6 +28,8 @@ package jdk.nashorn.internal.ir;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.parser.Token;
+import jdk.nashorn.internal.parser.TokenType;
 
 /**
  * IR representation of a property access (period operator.)
@@ -99,6 +101,14 @@ public final class AccessNode extends BaseNode {
      */
     public String getProperty() {
         return property;
+    }
+
+    /**
+     * Return true if this node represents an index operation normally represented as {@link IndexNode}.
+     * @return true if an index access.
+     */
+    public boolean isIndex() {
+        return Token.descType(getToken()) == TokenType.LBRACKET;
     }
 
     private AccessNode setBase(final Expression base) {
