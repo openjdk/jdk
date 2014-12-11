@@ -112,10 +112,10 @@ void* MemRegion::operator new [](size_t size) throw() {
     AllocFailStrategy::RETURN_NULL);
 }
 void  MemRegion::operator delete(void* p) {
-  FreeHeap(p, mtGC);
+  FreeHeap(p);
 }
 
 void  MemRegion::operator delete [](void* p) {
-  FreeHeap(p, mtGC);
+  FreeHeap(p);
 }
 

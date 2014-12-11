@@ -43,13 +43,17 @@ var nashornJar = new File(System.getProperty("nashorn.jar"));
 if (! nashornJar.isAbsolute()) {
     nashornJar = new File(".", nashornJar);
 }
-var nashornJarDir = nashornJar.parentFile.absolutePath;
 
 // we want to use nashorn.jar passed and not the one that comes with JRE
 var jjsCmd = javahome + "/../bin/jjs";
-jjsCmd += " -J-Djava.ext.dirs=" + nashornJarDir;
 jjsCmd = jjsCmd.toString().replaceAll(/\//g, File.separater);
+if (! new File(jjsCmd).isFile()) {
+    jjsCmd = javahome + "/bin/jjs";
+    jjsCmd = jjsCmd.toString().replaceAll(/\//g, File.separater);
+}
+jjsCmd += " -J-Xbootclasspath/p:" + nashornJar;
 
+$ENV.PWD=System.getProperty("user.dir") // to avoid RE on Cygwin
 $EXEC(jjsCmd, "var x = Object.create(null);\nx;\nprint('PASSED');\nexit(0)");
 
 // $ERR has all interactions including prompts! Just check for error substring.

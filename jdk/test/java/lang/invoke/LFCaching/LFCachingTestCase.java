@@ -63,12 +63,17 @@ public abstract class LFCachingTestCase extends LambdaFormTestCase {
             }
 
             if (lambdaForm0 != lambdaForm1) {
-                System.err.println("Lambda form 0 toString is:");
-                System.err.println(lambdaForm0);
-                System.err.println("Lambda form 1 toString is:");
-                System.err.println(lambdaForm1);
-                throw new AssertionError("Error: Lambda forms of the two method handles"
-                        + " are not the same. LF cahing does not work");
+                // Since LambdaForm caches are based on SoftReferences, GC can cause element eviction.
+                if (noGCHappened()) {
+                    System.err.println("Lambda form 0 toString is:");
+                    System.err.println(lambdaForm0);
+                    System.err.println("Lambda form 1 toString is:");
+                    System.err.println(lambdaForm1);
+                    throw new AssertionError("Error: Lambda forms of the two method handles"
+                            + " are not the same. LF cahing does not work");
+                } else {
+                    System.err.println("LambdaForms differ, but there was a GC in between. Ignore the failure.");
+                }
             }
         } catch (IllegalAccessException | IllegalArgumentException |
                 SecurityException | InvocationTargetException ex) {

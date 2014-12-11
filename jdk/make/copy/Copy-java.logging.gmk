@@ -29,15 +29,9 @@ include CopyCommon.gmk
 
 LOGGING_LIB_SRC := $(JDK_TOPDIR)/src/java.logging/share/conf
 
-$(LIB_DST_DIR)/logging.properties: $(LOGGING_LIB_SRC)/logging.properties
+$(CONF_DST_DIR)/logging.properties: $(LOGGING_LIB_SRC)/logging.properties
 	$(call install-file)
 
-LOGGING_CONF_FILES := $(LIB_DST_DIR)/logging.properties
+TARGETS := $(CONF_DST_DIR)/logging.properties
 
 ################################################################################
-
-java.logging: $(LOGGING_CONF_FILES)
-
-all: java.logging
-
-.PHONY: all java.logging

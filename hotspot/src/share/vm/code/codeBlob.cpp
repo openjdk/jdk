@@ -43,7 +43,7 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-unsigned int align_code_offset(int offset) {
+unsigned int CodeBlob::align_code_offset(int offset) {
   // align the size to CodeEntryAlignment
   return
     ((offset + (int)CodeHeap::header_size() + (CodeEntryAlignment-1)) & ~(CodeEntryAlignment-1))
@@ -168,7 +168,7 @@ void CodeBlob::trace_new_stub(CodeBlob* stub, const char* name1, const char* nam
 
 void CodeBlob::flush() {
   if (_oop_maps) {
-    FREE_C_HEAP_ARRAY(unsigned char, _oop_maps, mtCode);
+    FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
     _oop_maps = NULL;
   }
   _strings.free();

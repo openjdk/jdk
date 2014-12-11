@@ -53,10 +53,10 @@ import sun.misc.HexDumpEncoder;
  *
  * It might be necessary for the application to be granted a
  * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access a KerberosTicket
- * instance from a Subject. This permission is not needed when the
+ * PrivateCredentialPermission} if it needs to access a {@code KerberosTicket}
+ * instance from a {@code Subject}. This permission is not needed when the
  * application depends on the default JGSS Kerberos mechanism to access the
- * KerberosTicket. In that case, however, the application will need an
+ * {@code KerberosTicket}. In that case, however, the application will need an
  * appropriate
  * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.
  * <p>
@@ -193,7 +193,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
     private transient boolean destroyed = false;
 
     /**
-     * Constructs a KerberosTicket using credentials information that a
+     * Constructs a {@code KerberosTicket} using credentials information that a
      * client either receives from a KDC or reads from a cache.
      *
      * @param asn1Encoding the ASN.1 encoding of the ticket as defined by
@@ -565,8 +565,8 @@ public class KerberosTicket implements Destroyable, Refreshable,
 
         try {
             krb5Creds = new sun.security.krb5.Credentials(asn1Encoding,
-                                                    client.toString(),
-                                                    server.toString(),
+                                                    client.getName(),
+                                                    server.getName(),
                                                     sessionKey.getEncoded(),
                                                     sessionKey.getKeyType(),
                                                     flags,
@@ -644,6 +644,11 @@ public class KerberosTicket implements Destroyable, Refreshable,
         return destroyed;
     }
 
+    /**
+     * Returns an informative textual representation of this {@code KerberosTicket}.
+     *
+     * @return an informative textual representation of this {@code KerberosTicket}.
+     */
     public String toString() {
         if (destroyed) {
             return "Destroyed KerberosTicket";
@@ -677,9 +682,9 @@ public class KerberosTicket implements Destroyable, Refreshable,
     }
 
     /**
-     * Returns a hashcode for this KerberosTicket.
+     * Returns a hash code for this {@code KerberosTicket}.
      *
-     * @return a hashCode() for the {@code KerberosTicket}
+     * @return a hash code for this {@code KerberosTicket}.
      * @since 1.6
      */
     public int hashCode() {
@@ -714,15 +719,15 @@ public class KerberosTicket implements Destroyable, Refreshable,
     }
 
     /**
-     * Compares the specified Object with this KerberosTicket for equality.
+     * Compares the specified object with this {@code KerberosTicket} for equality.
      * Returns true if the given object is also a
      * {@code KerberosTicket} and the two
      * {@code KerberosTicket} instances are equivalent.
+     * A destroyed {@code KerberosTicket} object is only equal to itself.
      *
-     * @param other the Object to compare to
-     * @return true if the specified object is equal to this KerberosTicket,
-     * false otherwise. NOTE: Returns false if either of the KerberosTicket
-     * objects has been destroyed.
+     * @param other the object to compare to
+     * @return true if the specified object is equal to this {@code KerberosTicket},
+     * false otherwise.
      * @since 1.6
      */
     public boolean equals(Object other) {

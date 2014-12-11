@@ -27,16 +27,17 @@ import java.awt.DisplayMode;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
-
-import sun.awt.SunToolkit;
 
 /**
  * @test
  * @bug 8019587
  * @author Sergey Bylokhov
+ * @library ../../../lib/testlibrary/
+ * @build ExtendedRobot
+ * @run main IncorrectDisplayModeExitFullscreen
  */
 public class IncorrectDisplayModeExitFullscreen {
+    static ExtendedRobot robot;
 
     public static void main(final String[] args) {
 
@@ -64,6 +65,13 @@ public class IncorrectDisplayModeExitFullscreen {
             return;
         }
 
+        try {
+            robot = new ExtendedRobot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
+
         final Frame frame = new Frame();
         frame.setBackground(Color.GREEN);
         frame.setUndecorated(true);
@@ -85,10 +93,6 @@ public class IncorrectDisplayModeExitFullscreen {
         }
     }
     private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-        try {
-            Thread.sleep(1500);
-        } catch (InterruptedException ignored) {
-        }
+        robot.waitForIdle(1500);
     }
 }

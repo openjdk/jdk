@@ -53,6 +53,7 @@ import sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection;
  * com.sun.net.ssl.HttpURLConnection is used in the com.sun version.
  *
  */
+@SuppressWarnings("deprecation") // HttpsURLConnection is deprecated
 public class DelegateHttpsURLConnection extends AbstractDelegateHttpsURLConnection {
 
     // we need a reference to the HttpsURLConnection to get
@@ -62,6 +63,7 @@ public class DelegateHttpsURLConnection extends AbstractDelegateHttpsURLConnecti
     // this is for ResponseCache.put(URI, URLConnection)
     // second parameter needs to be cast to javax.net.ssl.HttpsURLConnection
     // instead of AbstractDelegateHttpsURLConnection
+
     public com.sun.net.ssl.HttpsURLConnection httpsURLConnection;
 
     DelegateHttpsURLConnection(URL url,
@@ -98,9 +100,10 @@ public class DelegateHttpsURLConnection extends AbstractDelegateHttpsURLConnecti
 }
 
 class VerifierWrapper implements javax.net.ssl.HostnameVerifier {
-
+    @SuppressWarnings("deprecation")
     private com.sun.net.ssl.HostnameVerifier verifier;
 
+    @SuppressWarnings("deprecation")
     VerifierWrapper(com.sun.net.ssl.HostnameVerifier verifier) {
         this.verifier = verifier;
     }

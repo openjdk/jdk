@@ -1122,6 +1122,7 @@ abstract class Handshaker {
         int prfHashLength = prf.getPRFHashLength();
         int prfBlockSize = prf.getPRFBlockSize();
 
+        @SuppressWarnings("deprecation")
         TlsMasterSecretParameterSpec spec = new TlsMasterSecretParameterSpec(
                 preMasterSecret, protocolVersion.major, protocolVersion.minor,
                 clnt_random.random_bytes, svr_random.random_bytes,
@@ -1156,6 +1157,7 @@ abstract class Handshaker {
      * a premaster secret and started a new session) as well as on the
      * "fast handshake" (where we just resumed a pre-existing session).
      */
+    @SuppressWarnings("deprecation")
     void calculateConnectionKeys(SecretKey masterKey) {
         /*
          * For both the read and write sides of the protocol, we use the

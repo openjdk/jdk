@@ -473,7 +473,7 @@ void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
       break;
     }
     entryName = dll_lookup(handle, agent_function_name);
-    FREE_C_HEAP_ARRAY(char, agent_function_name, mtThread);
+    FREE_C_HEAP_ARRAY(char, agent_function_name);
     if (entryName != NULL) {
       break;
     }
@@ -689,7 +689,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 }
 
 
-void  os::free(void *memblock, MEMFLAGS memflags) {
+void  os::free(void *memblock) {
   NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
   if (memblock == NULL) return;
@@ -1211,7 +1211,7 @@ static char* expand_entries_to_path(char* directory, char fileSep, char pathSep)
     path_len = new_len;
   }
 
-  FREE_C_HEAP_ARRAY(char, dbuf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, dbuf);
   os::closedir(dir);
 
   return path;
@@ -1230,13 +1230,23 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   Arguments::set_meta_index_path(meta_index, meta_index_dir);
 
   char* sysclasspath = NULL;
+  struct stat st;
+
+  // modular image if bootmodules.jimage exists
+  char* jimage = format_boot_path("%/lib/modules/bootmodules.jimage", home, home_len, fileSep, pathSep);
+  if (jimage == NULL) return false;
+  bool has_jimage = (os::stat(jimage, &st) == 0);
+  if (has_jimage) {
+    Arguments::set_sysclasspath(jimage);
+    return true;
+  }
+  FREE_C_HEAP_ARRAY(char, jimage);
 
   // images build if rt.jar exists
   char* rt_jar = format_boot_path("%/lib/rt.jar", home, home_len, fileSep, pathSep);
   if (rt_jar == NULL) return false;
-  struct stat st;
   bool has_rt_jar = (os::stat(rt_jar, &st) == 0);
-  FREE_C_HEAP_ARRAY(char, rt_jar, mtInternal);
+  FREE_C_HEAP_ARRAY(char, rt_jar);
 
   if (has_rt_jar) {
     // Any modification to the JAR-file list, for the boot classpath must be
@@ -1320,7 +1330,7 @@ char** os::split_path(const char* path, int* n) {
     opath[i] = s;
     p += len + 1;
   }
-  FREE_C_HEAP_ARRAY(char, inpath, mtInternal);
+  FREE_C_HEAP_ARRAY(char, inpath);
   *n = count;
   return opath;
 }

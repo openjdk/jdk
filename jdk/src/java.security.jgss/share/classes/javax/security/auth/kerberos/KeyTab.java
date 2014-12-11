@@ -58,10 +58,10 @@ import sun.security.krb5.RealmException;
  * <p>
  * It might be necessary for the application to be granted a
  * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access the KeyTab
- * instance from a Subject. This permission is not needed when the
+ * PrivateCredentialPermission} if it needs to access the {@code KeyTab}
+ * instance from a {@code Subject}. This permission is not needed when the
  * application depends on the default JGSS Kerberos mechanism to access the
- * KeyTab. In that case, however, the application will need an appropriate
+ * {@code KeyTab}. In that case, however, the application will need an appropriate
  * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.
  * <p>
  * The keytab file format is described at
@@ -249,7 +249,7 @@ public final class KeyTab {
      * could potentially be expired.
      * <p>
      * If there is any error (say, I/O error or format error)
-     * during the reading process of the KeyTab file, a saved result should be
+     * during the reading process of the keytab file, a saved result should be
      * returned. If there is no saved result (say, this is the first time this
      * method is called, or, all previous read attempts failed), an empty array
      * should be returned. This can make sure the result is not drastically
@@ -316,6 +316,11 @@ public final class KeyTab {
         return !takeSnapshot().isMissing();
     }
 
+    /**
+     * Returns an informative textual representation of this {@code KeyTab}.
+     *
+     * @return an informative textual representation of this {@code KeyTab}.
+     */
     public String toString() {
         String s = (file == null) ? "Default keytab" : file.toString();
         if (!bound) return s;
@@ -324,22 +329,22 @@ public final class KeyTab {
     }
 
     /**
-     * Returns a hashcode for this KeyTab.
+     * Returns a hash code for this {@code KeyTab}.
      *
-     * @return a hashCode() for the {@code KeyTab}
+     * @return a hash code for this {@code KeyTab}.
      */
     public int hashCode() {
         return Objects.hash(file, princ, bound);
     }
 
     /**
-     * Compares the specified Object with this KeyTab for equality.
+     * Compares the specified object with this {@code KeyTab} for equality.
      * Returns true if the given object is also a
      * {@code KeyTab} and the two
      * {@code KeyTab} instances are equivalent.
      *
-     * @param other the Object to compare to
-     * @return true if the specified object is equal to this KeyTab
+     * @param other the object to compare to
+     * @return true if the specified object is equal to this {@code KeyTab}
      */
     public boolean equals(Object other) {
         if (other == this)
@@ -359,9 +364,9 @@ public final class KeyTab {
      * Returns the service principal this {@code KeyTab} object
      * is bound to. Returns {@code null} if it's not bound.
      * <p>
-     * Please note the deprecated constructors create a KeyTab object bound for
-     * some unknown principal. In this case, this method also returns null.
-     * User can call {@link #isBound()} to verify this case.
+     * Please note the deprecated constructors create a {@code KeyTab} object
+     * bound for some unknown principal. In this case, this method also returns
+     * null. User can call {@link #isBound()} to verify this case.
      * @return the service principal
      * @since 1.8
      */

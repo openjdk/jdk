@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,34 +31,53 @@ include MakeBase.gmk
 ################################################################################
 
 # Put the libraries here. Different locations for different target OS types.
-ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
-  INSTALL_LIBRARIES_HERE := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+ifneq ($(OPENJDK_TARGET_OS), windows)
   HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+  BASE_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)
+  SA_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent$(OPENJDK_TARGET_CPU_LIBDIR)
 else
-  INSTALL_LIBRARIES_HERE := $(JDK_OUTPUTDIR)/bin
   HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/jre/bin
+  BASE_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
+  SA_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent
 endif
 
 ################################################################################
-
-define CopyDir
-  $1_SRC_FILES := $(shell $(FIND) $2 -type f -a \( -name DUMMY $(addprefix -o$(SPACE)-name$(SPACE),$4) \))
-  $1_DST_FILES := $$(patsubst $2/%,$3/%,$$($1_SRC_FILES))
-  HOTSPOT_IMPORT_TARGET_FILES += $$($1_DST_FILES)
-  $3/%: $2/%
-	$(ECHO) $(LOG_INFO) Copying $$(@F)
-	$$(install-file)
-endef
-
-################################################################################
-
 #
 # Import hotspot
 #
-HOTSPOT_IMPORT_FILES := $(addprefix $(LIBRARY_PREFIX), jvm.* saproc.* jsig.* sawindbg.* jvm_db.* jvm_dtrace.*) \
-    Xusage.txt sa-jdi.jar
-$(eval $(call CopyDir,HOTSPOT0, $(HOTSPOT_LIB_DIR), $(INSTALL_LIBRARIES_HERE), $(HOTSPOT_IMPORT_FILES)))
-$(eval $(call CopyDir,HOTSPOT1, $(HOTSPOT_DIST)/lib, $(JDK_OUTPUTDIR)/lib, $(HOTSPOT_IMPORT_FILES)))
+HOTSPOT_BASE_IMPORT_FILES := \
+    $(addprefix $(LIBRARY_PREFIX), jvm.* jsig.* jvm_db.* jvm_dtrace.*) \
+    Xusage.txt \
+    #
+
+HOTSPOT_SA_IMPORT_FILES := \
+    $(addprefix $(LIBRARY_PREFIX), saproc.* sawindbg.*) \
+    #
+
+$(eval $(call SetupCopyFiles,COPY_HOTSPOT_BASE, \
+    SRC := $(HOTSPOT_LIB_DIR), \
+    DEST := $(BASE_INSTALL_LIBRARIES_HERE), \
+    FILES := $(shell $(FIND) $(HOTSPOT_LIB_DIR) -type f  \
+        -a \( -name DUMMY $(addprefix -o$(SPACE)-name$(SPACE), $(HOTSPOT_BASE_IMPORT_FILES)) \) )))
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call SetupCopyFiles,COPY_HOTSPOT_BASE_JVMLIB, \
+      SRC := $(HOTSPOT_DIST)/lib, \
+      DEST := $(BASE_INSTALL_LIBRARIES_HERE), \
+      FILES := $(wildcard $(HOTSPOT_DIST)/lib/*.lib)))
+endif
+
+BASE_TARGETS := $(COPY_HOTSPOT_BASE) $(COPY_HOTSPOT_BASE_JVMLIB)
+
+$(eval $(call SetupCopyFiles,COPY_HOTSPOT_SA, \
+    SRC := $(HOTSPOT_LIB_DIR), \
+    DEST := $(SA_INSTALL_LIBRARIES_HERE), \
+    FILES := $(shell $(FIND) $(HOTSPOT_LIB_DIR) -type f  \
+        -a \( -name DUMMY $(addprefix -o$(SPACE)-name$(SPACE), $(HOTSPOT_SA_IMPORT_FILES)) \) )))
+
+SA_TARGETS := $(COPY_HOTSPOT_SA)
+
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig$(SHARED_LIBRARY_SUFFIX).dSYM) \
@@ -70,39 +89,39 @@ endif
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(JVM_VARIANT_SERVER), true)
-    HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+    BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
     ifneq (, $(JSIG_DEBUGINFO))
-      HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
     endif
   endif
   ifeq ($(JVM_VARIANT_CLIENT), true)
-    HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+    BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
     ifneq (, $(JSIG_DEBUGINFO))
-      HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
     endif
   endif
   ifneq ($(OPENJDK_TARGET_OS), macosx)
     ifeq ($(JVM_VARIANT_MINIMAL1), true)
-      HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
       ifneq (,$(JSIG_DEBUGINFO))
-        HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+        BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
       endif
     endif
   endif
 endif
 
-$(INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX): $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
+$(BASE_INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX): $(BASE_INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  $(INSTALL_LIBRARIES_HERE)/server/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
+  $(BASE_INSTALL_LIBRARIES_HERE)/server/%.dSYM : $(BASE_INSTALL_LIBRARIES_HERE)/%.dSYM
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-  $(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(BASE_INSTALL_LIBRARIES_HERE)/server/%.diz : $(BASE_INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
@@ -111,12 +130,12 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 	$(RM) $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
 	$(MV) $@.tmp $@
 else
-  $(INSTALL_LIBRARIES_HERE)/server/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+  $(BASE_INSTALL_LIBRARIES_HERE)/server/%.debuginfo: $(BASE_INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-  $(INSTALL_LIBRARIES_HERE)/server/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(BASE_INSTALL_LIBRARIES_HERE)/server/%.diz: $(BASE_INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@).debuginfo
@@ -126,18 +145,18 @@ else
 	$(MV) $@.tmp $@
 endif
 
-$(INSTALL_LIBRARIES_HERE)/client/%$(SHARED_LIBRARY_SUFFIX): $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
+$(BASE_INSTALL_LIBRARIES_HERE)/client/%$(SHARED_LIBRARY_SUFFIX): $(BASE_INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  $(INSTALL_LIBRARIES_HERE)/client/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
+  $(BASE_INSTALL_LIBRARIES_HERE)/client/%.dSYM : $(BASE_INSTALL_LIBRARIES_HERE)/%.dSYM
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-  $(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(BASE_INSTALL_LIBRARIES_HERE)/client/%.diz : $(BASE_INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
@@ -146,12 +165,12 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 	$(RM) $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
 	$(MV) $@.tmp $@
 else
-  $(INSTALL_LIBRARIES_HERE)/client/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+  $(BASE_INSTALL_LIBRARIES_HERE)/client/%.debuginfo: $(BASE_INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-  $(INSTALL_LIBRARIES_HERE)/client/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(BASE_INSTALL_LIBRARIES_HERE)/client/%.diz: $(BASE_INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@).debuginfo
@@ -161,18 +180,18 @@ else
 	$(MV) $@.tmp $@
 endif
 
-$(INSTALL_LIBRARIES_HERE)/minimal/%$(SHARED_LIBRARY_SUFFIX): $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
+$(BASE_INSTALL_LIBRARIES_HERE)/minimal/%$(SHARED_LIBRARY_SUFFIX): $(BASE_INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-  $(INSTALL_LIBRARIES_HERE)/minimal/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+  $(BASE_INSTALL_LIBRARIES_HERE)/minimal/%.debuginfo: $(BASE_INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-  $(INSTALL_LIBRARIES_HERE)/minimal/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(BASE_INSTALL_LIBRARIES_HERE)/minimal/%.diz: $(BASE_INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@).debuginfo
@@ -182,10 +201,74 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
 	$(MV) $@.tmp $@
 endif
 
-##########################################################################################
+################################################################################
 
-hotspot: $(HOTSPOT_IMPORT_TARGET_FILES)
+$(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/_the.sa.jar.unpacked: $(HOTSPOT_DIST)/lib/sa-jdi.jar \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
+	$(ECHO) $(LOG_INFO) Unzipping $(<F)
+	$(RM) -r $(@D)
+	$(MKDIR) -p $(@D)
+	$(CD) $(@D) && $(UNZIP) $< -x META-INF/MANIFEST.MF $(LOG_DEBUG)
+        # We must move the service provider file out of the way so that
+        # Gensrc-jdk.jdi.gmk can combine them.
+	$(MKDIR) -p $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
+	$(MV) $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector \
+	    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
+	$(TOUCH) $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
+	$(TOUCH) $@
 
-all: hotspot
+# Declaring this dependency guarantees that _the.sa.services will be rebuilt
+# even if zip is already unpacked.
+$(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services: $(HOTSPOT_DIST)/lib/sa-jdi.jar
 
-.PHONY: hotspot all
+# Some platforms don't have the serviceability agent
+ifeq (, $(filter $(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), aix-ppc64))
+  ifneq ($(JVM_VARIANT_ZERO), true)
+    SA_TARGETS += $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/_the.sa.jar.unpacked \
+        $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
+  endif
+endif
+
+################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call SetupCopyFiles,BASE_COPY_LIBS_BIN, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+      DEST := $(JDK_OUTPUTDIR)/bin, \
+      FILES := $(filter-out %.lib, $(BASE_TARGETS))))
+
+  $(eval $(call SetupCopyFiles,BASE_COPY_LIBS_LIB, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+      DEST := $(JDK_OUTPUTDIR)/lib, \
+      FILES := $(filter %.lib, $(BASE_TARGETS))))
+
+  $(eval $(call SetupCopyFiles,SA_COPY_LIBS, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent, \
+      DEST := $(JDK_OUTPUTDIR)/lib, \
+      FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent/%, \
+          $(SA_TARGETS))))
+
+  $(eval $(call SetupCopyFiles,SA_COPY_LIBS, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent, \
+      DEST := $(JDK_OUTPUTDIR)/bin, \
+      FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent/%, \
+          $(SA_TARGETS))))
+else
+  $(eval $(call SetupCopyFiles,BASE_COPY_LIBS, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+      DEST := $(JDK_OUTPUTDIR)/lib, \
+      FILES := $(BASE_TARGETS)))
+
+  $(eval $(call SetupCopyFiles,SA_COPY_LIBS, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent, \
+      DEST := $(JDK_OUTPUTDIR)/lib, \
+      FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent/%, $(SA_TARGETS))))
+endif
+
+################################################################################
+
+all: $(BASE_TARGETS) $(SA_TARGETS) \
+    $(BASE_COPY_LIBS_BIN) $(BASE_COPY_LIBS_LIB) \
+    $(BASE_COPY_LIBS) $(SA_COPY_LIBS)
+
+.PHONY: default all

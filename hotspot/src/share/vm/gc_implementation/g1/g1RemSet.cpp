@@ -94,14 +94,7 @@ G1RemSet::~G1RemSet() {
   for (uint i = 0; i < n_workers(); i++) {
     assert(_cset_rs_update_cl[i] == NULL, "it should be");
   }
-  FREE_C_HEAP_ARRAY(OopsInHeapRegionClosure*, _cset_rs_update_cl, mtGC);
-}
-
-void CountNonCleanMemRegionClosure::do_MemRegion(MemRegion mr) {
-  if (_g1->is_in_g1_reserved(mr.start())) {
-    _n += (int) ((mr.byte_size() / CardTableModRefBS::card_size));
-    if (_start_first == NULL) _start_first = mr.start();
-  }
+  FREE_C_HEAP_ARRAY(OopsInHeapRegionClosure*, _cset_rs_update_cl);
 }
 
 class ScanRSClosure : public HeapRegionClosure {
@@ -147,11 +140,9 @@ public:
 
     // Set the "from" region in the closure.
     _oc->set_region(r);
-    HeapWord* card_start = _bot_shared->address_for_index(index);
-    HeapWord* card_end = card_start + G1BlockOffsetSharedArray::N_words;
-    Space *sp = SharedHeap::heap()->space_containing(card_start);
-    MemRegion sm_region = sp->used_region_at_save_marks();
-    MemRegion mr = sm_region.intersection(MemRegion(card_start,card_end));
+    MemRegion card_region(_bot_shared->address_for_index(index), G1BlockOffsetSharedArray::N_words);
+    MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
+    MemRegion mr = pre_gc_allocated.intersection(card_region);
     if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
       // We make the card as "claimed" lazily (so races are possible
       // but they're benign), which reduces the number of duplicate
@@ -303,15 +294,6 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i) {
 
   _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
 
-  // Now there should be no dirty cards.
-  if (G1RSLogCheckCardTable) {
-    CountNonCleanMemRegionClosure cl(_g1);
-    _ct_bs->mod_card_iterate(&cl);
-    // XXX This isn't true any more: keeping cards of young regions
-    // marked dirty broke it.  Need some reasonable fix.
-    guarantee(cl.n() == 0, "Card table should be clean.");
-  }
-
   _g1p->phase_times()->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
 }
 
@@ -369,7 +351,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   for (uint i = 0; i < n_workers(); ++i) {
     _total_cards_scanned += _cards_scanned[i];
   }
-  FREE_C_HEAP_ARRAY(size_t, _cards_scanned, mtGC);
+  FREE_C_HEAP_ARRAY(size_t, _cards_scanned);
   _cards_scanned = NULL;
   // Cleanup after copy
   _g1->set_refine_cte_cl_concurrency(true);

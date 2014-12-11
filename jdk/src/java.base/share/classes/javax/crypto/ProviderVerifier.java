@@ -157,6 +157,14 @@ final class ProviderVerifier {
     }
 
     /**
+     * Returns true if the given provider is JDK trusted crypto provider
+     * if the implementation supports fast-path verification.
+     */
+    static boolean isTrustedCryptoProvider(Provider provider) {
+        return false;
+    }
+
+    /**
      * Returns the permissions which are bundled with the JAR file,
      * aka the "cryptoperms" file.
      *

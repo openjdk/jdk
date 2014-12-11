@@ -36,6 +36,7 @@
 X:=
 SPACE:=$(X) $(X)
 COMMA:=,
+DOLLAR:=$$
 HASH:=\#
 LEFT_PAREN:=(
 RIGHT_PAREN:=)
@@ -82,7 +83,7 @@ CONF_NAME:=@CONF_NAME@
 
 # The built jdk will run in this target system.
 OPENJDK_TARGET_OS:=@OPENJDK_TARGET_OS@
-OPENJDK_TARGET_OS_API:=@OPENJDK_TARGET_OS_API@
+OPENJDK_TARGET_OS_TYPE:=@OPENJDK_TARGET_OS_TYPE@
 OPENJDK_TARGET_OS_ENV:=@OPENJDK_TARGET_OS_ENV@
 
 OPENJDK_TARGET_CPU:=@OPENJDK_TARGET_CPU@
@@ -99,13 +100,12 @@ OPENJDK_TARGET_CPU_LEGACY:=@OPENJDK_TARGET_CPU_LEGACY@
 OPENJDK_TARGET_CPU_LEGACY_LIB:=@OPENJDK_TARGET_CPU_LEGACY_LIB@
 OPENJDK_TARGET_CPU_OSARCH:=@OPENJDK_TARGET_CPU_OSARCH@
 OPENJDK_TARGET_CPU_JLI_CFLAGS:=@OPENJDK_TARGET_CPU_JLI_CFLAGS@
-OPENJDK_TARGET_OS_API_DIR:=@OPENJDK_TARGET_OS_API_DIR@
 OPENJDK_TARGET_OS_EXPORT_DIR:=@OPENJDK_TARGET_OS_EXPORT_DIR@
 
 # We are building on this build system.
 # When not cross-compiling, it is the same as the target.
 OPENJDK_BUILD_OS:=@OPENJDK_BUILD_OS@
-OPENJDK_BUILD_OS_API:=@OPENJDK_BUILD_OS_API@
+OPENJDK_BUILD_OS_TYPE:=@OPENJDK_BUILD_OS_TYPE@
 OPENJDK_BUILD_OS_ENV:=@OPENJDK_BUILD_OS_ENV@
 
 OPENJDK_BUILD_CPU:=@OPENJDK_BUILD_CPU@
@@ -236,31 +236,23 @@ BUILD_VARIANT_RELEASE:=@BUILD_VARIANT_RELEASE@
 
 BUILD_OUTPUT:=@BUILD_OUTPUT@
 # Colon left out to be able to override IMAGES_OUTPUTDIR for bootcycle-images
-LANGTOOLS_OUTPUTDIR=$(BUILD_OUTPUT)/langtools
-CORBA_OUTPUTDIR=$(BUILD_OUTPUT)/corba
-JAXP_OUTPUTDIR=$(BUILD_OUTPUT)/jaxp
-JAXWS_OUTPUTDIR=$(BUILD_OUTPUT)/jaxws
+SUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/support
+BUILDTOOLS_OUTPUTDIR=$(BUILD_OUTPUT)/buildtools
+MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/makesupport
+
 HOTSPOT_OUTPUTDIR=$(BUILD_OUTPUT)/hotspot
 JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
-NASHORN_OUTPUTDIR=$(BUILD_OUTPUT)/nashorn
 IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
 TESTMAKE_OUTPUTDIR=$(BUILD_OUTPUT)/testmake
 MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/make-support
 
-LANGTOOLS_DIST=$(LANGTOOLS_OUTPUTDIR)/dist
-CORBA_DIST=$(CORBA_OUTPUTDIR)/dist
-JAXP_DIST=$(JAXP_OUTPUTDIR)/dist
-JAXWS_DIST=$(JAXWS_OUTPUTDIR)/dist
 HOTSPOT_DIST=@HOTSPOT_DIST@
-NASHORN_DIST=$(NASHORN_OUTPUTDIR)/dist
 
 BUILD_HOTSPOT=@BUILD_HOTSPOT@
 
-# The boot jdk to use. These are overridden in bootcycle-spec.gmk. Make sure to keep
-# them in sync.
+# The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
+# it in sync.
 BOOT_JDK:=@BOOT_JDK@
-BOOT_RTJAR:=@BOOT_RTJAR@
-BOOT_TOOLSJAR=$(BOOT_JDK)/lib/tools.jar
 
 # When compiling Java source to be run by the boot jdk
 # use these extra flags, eg -source 6 -target 6
@@ -351,7 +343,7 @@ OBJC:=@CCACHE@ @OBJC@
 CPP:=@FIXPATH@ @CPP@
 #CPPFLAGS:=@CPPFLAGS@
 
-# The linker can be gcc or ld on posix systems, or link.exe on windows systems.
+# The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD:=@FIXPATH@ @LD@
 
 # Xcode SDK path
@@ -392,7 +384,7 @@ BUILD_LD:=@FIXPATH@ @BUILD_LD@
 
 AS:=@FIXPATH@ @AS@
 
-# AR is used to create a static library (is ar in posix, lib.exe in windows)
+# AR is used to create a static library (is ar in unix, lib.exe in windows)
 AR:=@FIXPATH@ @AR@
 ARFLAGS:=@ARFLAGS@
 
@@ -456,7 +448,7 @@ JAVA_FLAGS_SMALL:=@JAVA_FLAGS_SMALL@
 JAVA_TOOL_FLAGS_SMALL:=@JAVA_TOOL_FLAGS_SMALL@
 SJAVAC_SERVER_JAVA_FLAGS:=@SJAVAC_SERVER_JAVA_FLAGS@
 
-# The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk 
+# The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk
 # for bootcycle-images build. Make sure to keep them in sync. Do not use the *_CMD
 # versions of the variables directly.
 JAVA_CMD:=@JAVA@
@@ -484,13 +476,14 @@ SJAVAC_SERVER_JAVA=@FIXPATH@ $(SJAVAC_SERVER_JAVA_CMD) $(SJAVAC_SERVER_JAVA_FLAG
 JAVAC_FLAGS?=@JAVAC_FLAGS@
 
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
-INTERIM_LANGTOOLS_JAR := $(LANGTOOLS_OUTPUTDIR)/dist/interim_langtools.jar
-INTERIM_LANGTOOLS_ARGS := "-Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR)" -cp $(INTERIM_LANGTOOLS_JAR)
+# Use = assignment to be able to override in bootcycle-spec.gmk
+INTERIM_LANGTOOLS_JAR = $(BUILDTOOLS_OUTPUTDIR)/interim_langtools.jar
+INTERIM_LANGTOOLS_ARGS = "-Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR)" -cp $(INTERIM_LANGTOOLS_JAR)
 NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) com.sun.tools.javac.Main
 NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) com.sun.tools.javadoc.Main
 
 # The interim corba jar is needed for running rmic
-INTERIM_CORBA_JAR := $(CORBA_OUTPUTDIR)/dist/interim_corba.jar
+INTERIM_CORBA_JAR = $(BUILDTOOLS_OUTPUTDIR)/interim_corba.jar
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
@@ -569,10 +562,10 @@ FIXPATH:=@FIXPATH@
 # Where the build output is stored for your convenience.
 BUILD_LOG:=@BUILD_LOG@
 BUILD_LOG_PREVIOUS:=@BUILD_LOG_PREVIOUS@
-# Disable the build log wrapper on sjavac+winapi until
+# Disable the build log wrapper on sjavac+windows until
 # we have solved how to prevent the log wrapper to wait
 # for the background sjavac server process.
-ifeq (@ENABLE_SJAVAC@X@OPENJDK_BUILD_OS_API@,yesXwinapi)
+ifeq (@ENABLE_SJAVAC@X@OPENJDK_BUILD_OS@,yesXwindows)
   BUILD_LOG_WRAPPER:=
 else
   BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
@@ -695,25 +688,21 @@ OS_VERSION_MINOR:=@OS_VERSION_MINOR@
 OS_VERSION_MICRO:=@OS_VERSION_MICRO@
 
 # Images directory definitions
-JDK_IMAGE_SUBDIR:=j2sdk-image
-JRE_IMAGE_SUBDIR:=j2re-image
-JDK_OVERLAY_IMAGE_SUBDIR:=j2sdk-overlay-image
-JRE_OVERLAY_IMAGE_SUBDIR:=j2re-overlay-image
+JDK_IMAGE_SUBDIR:=jdk
+JRE_IMAGE_SUBDIR:=jre
 # Colon left out to be able to override output dir for bootcycle-images
 JDK_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_IMAGE_SUBDIR)
 JRE_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
-JDK_OVERLAY_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_OVERLAY_IMAGE_SUBDIR)
-JRE_OVERLAY_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_OVERLAY_IMAGE_SUBDIR)
 
 # Macosx bundles directory definitions
-JDK_BUNDLE_SUBDIR=j2sdk-bundle/jdk$(JDK_VERSION).jdk/Contents
-JRE_BUNDLE_SUBDIR=j2re-bundle/jre$(JDK_VERSION).jre/Contents
+JDK_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents
+JRE_BUNDLE_SUBDIR=jre-bundle/jre$(JDK_VERSION).jre/Contents
 JDK_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_BUNDLE_SUBDIR)
 JRE_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_BUNDLE_SUBDIR)
 
 # This macro is called to allow inclusion of closed source counterparts.
 # Unless overridden in closed sources, it expands to nothing.
-# Usage: This function is called in an open makefile, with the following 
+# Usage: This function is called in an open makefile, with the following
 # arguments:
 # $1 the name of the repo, or empty if the top-level repo.
 # $2 the name of the makefile

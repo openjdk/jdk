@@ -83,6 +83,7 @@ public final class RSASignature extends SignatureSpi {
     /**
      * Set the MD5 and SHA hashes to the provided objects.
      */
+    @SuppressWarnings("deprecation")
     static void setHashes(Signature sig, MessageDigest md5, MessageDigest sha) {
         sig.setParameter("hashes", new MessageDigest[] {md5, sha});
     }
@@ -183,6 +184,7 @@ public final class RSASignature extends SignatureSpi {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void engineSetParameter(String param, Object value)
             throws InvalidParameterException {
         if (param.equals("hashes") == false) {
@@ -199,6 +201,7 @@ public final class RSASignature extends SignatureSpi {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected Object engineGetParameter(String param)
             throws InvalidParameterException {
         throw new InvalidParameterException("Parameters not supported");

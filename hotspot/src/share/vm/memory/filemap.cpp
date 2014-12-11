@@ -217,9 +217,14 @@ void FileMapInfo::allocate_classpath_entry_table() {
           EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
           SharedClassUtil::update_shared_classpath(cpe, ent, st.st_mtime, st.st_size, THREAD);
         } else {
-          ent->_filesize  = -1;
-          if (!os::dir_is_empty(name)) {
-            ClassLoader::exit_with_path_failure("Cannot have non-empty directory in archived classpaths", name);
+          struct stat st;
+          if ((os::stat(name, &st) == 0) && ((st.st_mode & S_IFDIR) == S_IFDIR)) {
+            if (!os::dir_is_empty(name)) {
+              ClassLoader::exit_with_path_failure("Cannot have non-empty directory in archived classpaths", name);
+            }
+            ent->_filesize = -1;
+          } else {
+            ent->_filesize = -2;
           }
         }
         ent->_name = strptr;
@@ -271,7 +276,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
         fail_continue("directory is not empty: %s", name);
         ok = false;
       }
-    } else {
+    } else if (ent->is_jar()) {
       if (ent->_timestamp != st.st_mtime ||
           ent->_filesize != st.st_size) {
         ok = false;
@@ -326,7 +331,7 @@ bool FileMapInfo::init_from_file(int fd) {
   n = os::read(fd, _paths_misc_info, (unsigned int)info_size);
   if (n != info_size) {
     fail_continue("Unable to read the shared path info header.");
-    FREE_C_HEAP_ARRAY(char, _paths_misc_info, mtClass);
+    FREE_C_HEAP_ARRAY(char, _paths_misc_info);
     _paths_misc_info = NULL;
     return false;
   }
@@ -709,7 +714,7 @@ bool FileMapInfo::validate_header() {
   }
 
   if (_paths_misc_info != NULL) {
-    FREE_C_HEAP_ARRAY(char, _paths_misc_info, mtClass);
+    FREE_C_HEAP_ARRAY(char, _paths_misc_info);
     _paths_misc_info = NULL;
   }
   return status;

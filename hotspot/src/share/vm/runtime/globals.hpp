@@ -777,9 +777,6 @@ class CommandLineFlags {
   develop(bool, TraceHandleAllocation, false,                               \
           "Print out warnings when suspiciously many handles are allocated")\
                                                                             \
-  product(bool, UseCompilerSafepoints, true,                                \
-          "Stop at safepoints in compiled code")                            \
-                                                                            \
   product(bool, FailOverToOldVerifier, true,                                \
           "Fail over to old verifier when split verifier fails")            \
                                                                             \
@@ -1233,6 +1230,9 @@ class CommandLineFlags {
   product(bool, CheckJNICalls, false,                                       \
           "Verify all arguments to JNI calls")                              \
                                                                             \
+  product(bool, CheckEndorsedAndExtDirs, false,                             \
+          "Verify the endorsed and extension directories are not used")     \
+                                                                            \
   product(bool, UseFastJNIAccessors, true,                                  \
           "Use optimized versions of Get<Primitive>Field")                  \
                                                                             \
@@ -1334,9 +1334,6 @@ class CommandLineFlags {
                                                                             \
   develop(bool, TraceJNIHandleAllocation, false,                            \
           "Trace allocation/deallocation of JNI handle blocks")             \
-                                                                            \
-  develop(bool, TraceThreadEvents, false,                                   \
-          "Trace all thread events")                                        \
                                                                             \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
@@ -1523,14 +1520,8 @@ class CommandLineFlags {
   develop(bool, UseAsyncConcMarkSweepGC, true,                              \
           "Use Asynchronous Concurrent Mark-Sweep GC in the old generation")\
                                                                             \
-  develop(bool, RotateCMSCollectionTypes, false,                            \
-          "Rotate the CMS collections among concurrent and STW")            \
-                                                                            \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
-                                                                            \
-  product(bool, UseCMSCollectionPassing, true,                              \
-          "Use passing of collection from background to foreground")        \
                                                                             \
   product(bool, UseParNewGC, false,                                         \
           "Use parallel threads in the new generation")                     \
@@ -1638,29 +1629,9 @@ class CommandLineFlags {
           "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \
                                                                             \
-  product(bool, CMSIncrementalMode, false,                                  \
-          "Whether CMS GC should operate in \"incremental\" mode")          \
-                                                                            \
-  product(uintx, CMSIncrementalDutyCycle, 10,                               \
-          "Percentage (0-100) of CMS incremental mode duty cycle. If "      \
-          "CMSIncrementalPacing is enabled, then this is just the initial " \
-          "value.")                                                         \
-                                                                            \
-  product(bool, CMSIncrementalPacing, true,                                 \
-          "Whether the CMS incremental mode duty cycle should be "          \
-          "automatically adjusted")                                         \
-                                                                            \
-  product(uintx, CMSIncrementalDutyCycleMin, 0,                             \
-          "Minimum percentage (0-100) of the CMS incremental duty cycle "   \
-          "used when CMSIncrementalPacing is enabled")                      \
-                                                                            \
   product(uintx, CMSIncrementalSafetyFactor, 10,                            \
           "Percentage (0-100) used to add conservatism when computing the " \
           "duty cycle")                                                     \
-                                                                            \
-  product(uintx, CMSIncrementalOffset, 0,                                   \
-          "Percentage (0-100) by which the CMS incremental mode duty cycle "\
-          "is shifted to the right within the period between young GCs")    \
                                                                             \
   product(uintx, CMSExpAvgFactor, 50,                                       \
           "Percentage (0-100) used to weight the current sample when "      \
@@ -1720,31 +1691,12 @@ class CommandLineFlags {
           "Skip block flux-rate sampling for an epoch unless inter-sweep "  \
           "duration exceeds this threshold in milliseconds")                \
                                                                             \
-  develop(bool, CMSTraceIncrementalMode, false,                             \
-          "Trace CMS incremental mode")                                     \
-                                                                            \
-  develop(bool, CMSTraceIncrementalPacing, false,                           \
-          "Trace CMS incremental mode pacing computation")                  \
-                                                                            \
-  develop(bool, CMSTraceThreadState, false,                                 \
-          "Trace the CMS thread state (enable the trace_state() method)")   \
-                                                                            \
   product(bool, CMSClassUnloadingEnabled, true,                             \
           "Whether class unloading enabled when using CMS GC")              \
                                                                             \
   product(uintx, CMSClassUnloadingMaxInterval, 0,                           \
           "When CMS class unloading is enabled, the maximum CMS cycle "     \
           "count for which classes may not be unloaded")                    \
-                                                                            \
-  product(bool, CMSCompactWhenClearAllSoftRefs, true,                       \
-          "Compact when asked to collect CMS gen with "                     \
-          "clear_all_soft_refs()")                                          \
-                                                                            \
-  product(bool, UseCMSCompactAtFullCollection, true,                        \
-          "Use Mark-Sweep-Compact algorithm at full collections")           \
-                                                                            \
-  product(uintx, CMSFullGCsBeforeCompaction, 0,                             \
-          "Number of CMS full collection done before compaction if > 0")    \
                                                                             \
   develop(intx, CMSDictionaryChoice, 0,                                     \
           "Use BinaryTreeDictionary as default in the CMS generation")      \
