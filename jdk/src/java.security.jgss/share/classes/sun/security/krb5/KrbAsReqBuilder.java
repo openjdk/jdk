@@ -224,6 +224,16 @@ public final class KrbAsReqBuilder {
         this.options = options;
     }
 
+    public void setTill(KerberosTime till) {
+        checkState(State.INIT, "Cannot specify till");
+        this.till = till;
+    }
+
+    public void setRTime(KerberosTime rtime) {
+        checkState(State.INIT, "Cannot specify rtime");
+        this.rtime = rtime;
+    }
+
     /**
      * Sets or clears target. If cleared, KrbAsReq might choose krbtgt
      * for cname realm
