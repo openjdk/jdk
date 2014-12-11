@@ -1091,6 +1091,15 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         return getFlag(USES_SELF_SYMBOL);
     }
 
+    /**
+     * Returns true if this is a named function expression (that is, it isn't a declared function, it isn't an
+     * anonymous function expression, and it isn't a program).
+     * @return true if this is a named function expression
+     */
+    public boolean isNamedFunctionExpression() {
+        return !getFlag(IS_PROGRAM | IS_ANONYMOUS | IS_DECLARED);
+    }
+
     @Override
     public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return FUNCTION_TYPE;

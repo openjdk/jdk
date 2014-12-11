@@ -24,6 +24,7 @@
 /**
  * @test TestHumongousShrinkHeap
  * @bug 8036025 8056043
+ * @requires vm.gc=="G1" | vm.gc=="null"
  * @summary Verify that heap shrinks after GC in the presence of fragmentation
  * due to humongous objects
  * @library /testlibrary

@@ -30,13 +30,6 @@ $(eval $(call SetupLauncher,javac, \
     -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.javac.Main"$(COMMA) }'))
 
-ifeq ($(ENABLE_SJAVAC), yes)
-  $(eval $(call SetupLauncher,sjavac, \
-      -DEXPAND_CLASSPATH_WILDCARDS \
-      -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
-      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.sjavac.Main"$(COMMA) }'))
-endif
-
 $(eval $(call SetupLauncher,javah, \
     -DEXPAND_CLASSPATH_WILDCARDS \
     -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
@@ -51,8 +44,12 @@ $(eval $(call SetupLauncher,serialver, \
     -DEXPAND_CLASSPATH_WILDCARDS \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.serialver.SerialVer"$(COMMA) }'))
 
-jdk.compiler: $(LAUNCHERS)
-
-all: jdk.compiler
-
-.PHONY: all jdk.compiler
+ifeq ($(ENABLE_SJAVAC), yes)
+  # Build sjavac directly to the exploded image so that it does not get included
+  # into any real images
+  $(eval $(call SetupLauncher,sjavac, \
+      -DEXPAND_CLASSPATH_WILDCARDS \
+      -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
+      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.sjavac.Main"$(COMMA) }',,,,,,, \
+      $(JDK_OUTPUTDIR)/bin))
+endif

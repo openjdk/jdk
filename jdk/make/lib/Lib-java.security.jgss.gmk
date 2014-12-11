@@ -29,7 +29,7 @@ include LibCommon.gmk
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   LIBJ2GSS_SRC := $(JDK_TOPDIR)/src/java.security.jgss/share/native/libj2gss \
-      $(JDK_TOPDIR)/src/java.security.jgss/$(OPENJDK_TARGET_OS_API_DIR)/native/libj2gss \
+      $(JDK_TOPDIR)/src/java.security.jgss/$(OPENJDK_TARGET_OS_TYPE)/native/libj2gss \
       #
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS, \
@@ -40,16 +40,16 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
           $(LIBJAVA_HEADER_FLAGS) \
-          -I$(JDK_OUTPUTDIR)/gensrc_headers/java.security.jgss, \
+          -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2gss/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := $(LIBDL), \
       LDFLAGS_SUFFIX_solaris := -lc, \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libj2gss, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2gss, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  SECURITY_KERBEROS_LIBRARIES += $(BUILD_LIBJ2GSS)
+  TARGETS += $(BUILD_LIBJ2GSS)
 endif
 
 ################################################################################
@@ -58,7 +58,7 @@ ifneq ($(BUILD_CRYPTO), no)
   BUILD_LIBKRB5_NAME :=
   ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_LIBKRB5_NAME := w2k_lsa_auth
-    BUILD_LIBKRB5_SRC := $(JDK_TOPDIR)/src/java.security.jgss/$(OPENJDK_TARGET_OS_API_DIR)/native/libw2k_lsa_auth
+    BUILD_LIBKRB5_SRC := $(JDK_TOPDIR)/src/java.security.jgss/$(OPENJDK_TARGET_OS_TYPE)/native/libw2k_lsa_auth
     BUILD_LIBKRB5_LIBS := advapi32.lib Secur32.lib netapi32.lib kernel32.lib user32.lib \
         gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib \
         ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib
@@ -81,7 +81,7 @@ ifneq ($(BUILD_CRYPTO), no)
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) \
             $(addprefix -I, $(BUILD_LIBKRB5_SRC)) \
-            -I$(JDK_OUTPUTDIR)/gensrc_headers/java.security.jgss, \
+            -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LDFLAGS_SUFFIX := $(BUILD_LIBKRB5_LIBS), \
@@ -90,17 +90,11 @@ ifneq ($(BUILD_CRYPTO), no)
             -D "JDK_FNAME=$(BUILD_LIBKRB5_NAME).dll" \
             -D "JDK_INTERNAL_NAME=$(BUILD_LIBKRB5_NAME)" \
             -D "JDK_FTYPE=0x2L", \
-        OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libkrb5, \
+        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libkrb5, \
         DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-    SECURITY_KERBEROS_LIBRARIES += $(BUILD_LIBKRB5)
+    TARGETS += $(BUILD_LIBKRB5)
   endif
 endif
 
 ################################################################################
-
-java.security.jgss: $(SECURITY_KERBEROS_LIBRARIES)
-
-all: java.security.jgss
-
-.PHONY: all java.security.jgss

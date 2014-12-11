@@ -61,33 +61,25 @@ public class TransformerFactoryTest {
         String xmlFile = XML_DIR + "TransformerFactoryTest.xml";
         String xmlURI = "file:///" + XML_DIR;
 
-        try {
+        try (FileInputStream fis = new FileInputStream(xmlFile);
+                FileOutputStream fos = new FileOutputStream(outputFile);) {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
             DocumentBuilder db = dbf.newDocumentBuilder();
-            Document doc = db.parse(new FileInputStream(xmlFile), xmlURI);
+            Document doc = db.parse(fis, xmlURI);
             DOMSource domSource = new DOMSource(doc);
             domSource.setSystemId(xmlURI);
-            StreamResult streamResult =new StreamResult(
-                new FileOutputStream(outputFile));
+            StreamResult streamResult = new StreamResult(fos);
             TransformerFactory tFactory = TransformerFactory.newInstance();
 
-            Source s = tFactory.getAssociatedStylesheet(domSource,"screen",
-                                           "Modern",null);
+            Source s = tFactory.getAssociatedStylesheet(domSource, "screen",
+                                           "Modern", null);
             Transformer t = tFactory.newTransformer();
-            t.transform(s,streamResult);
+            t.transform(s, streamResult);
             assertTrue(compareWithGold(goldFile, outputFile));
-        }catch (IOException | ParserConfigurationException
+        } catch (IOException | ParserConfigurationException
                 | TransformerException | SAXException ex) {
             failUnexpected(ex);
-        } finally {
-            try {
-                Path outputPath = Paths.get(outputFile);
-                if(Files.exists(outputPath))
-                    Files.delete(outputPath);
-            } catch (IOException ex) {
-                failCleanup(ex, outputFile);
-            }
         }
     }
 }

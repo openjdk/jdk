@@ -506,7 +506,7 @@ static bool assign_distribution(processorid_t* id_array,
     }
   }
   if (available_id != NULL) {
-    FREE_C_HEAP_ARRAY(bool, available_id, mtInternal);
+    FREE_C_HEAP_ARRAY(bool, available_id);
   }
   return true;
 }
@@ -538,7 +538,7 @@ bool os::distribute_processes(uint length, uint* distribution) {
     }
   }
   if (id_array != NULL) {
-    FREE_C_HEAP_ARRAY(processorid_t, id_array, mtInternal);
+    FREE_C_HEAP_ARRAY(processorid_t, id_array);
   }
   return result;
 }
@@ -609,17 +609,15 @@ void os::init_system_properties_values() {
 // Base path of extensions installed on the system.
 #define SYS_EXT_DIR     "/usr/jdk/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
-#define ENDORSED_DIR    "/lib/endorsed"
 
   char cpu_arch[12];
   // Buffer that fits several sprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
-    MAX4((size_t)MAXPATHLEN,  // For dll_dir & friends.
+    MAX3((size_t)MAXPATHLEN,  // For dll_dir & friends.
          sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch), // invariant ld_library_path
-         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR), // extensions dir
-         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR)); // extensions dir
   char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
   // sysclasspath, java_home, dll_dir
@@ -675,7 +673,7 @@ void os::init_system_properties_values() {
 
     // Determine search path count and required buffer size.
     if (dlinfo(RTLD_SELF, RTLD_DI_SERINFOSIZE, (void *)info) == -1) {
-      FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+      FREE_C_HEAP_ARRAY(char, buf);
       vm_exit_during_initialization("dlinfo SERINFOSIZE request", dlerror());
     }
 
@@ -686,8 +684,8 @@ void os::init_system_properties_values() {
 
     // Obtain search path information.
     if (dlinfo(RTLD_SELF, RTLD_DI_SERINFO, (void *)info) == -1) {
-      FREE_C_HEAP_ARRAY(char, buf, mtInternal);
-      FREE_C_HEAP_ARRAY(char, info, mtInternal);
+      FREE_C_HEAP_ARRAY(char, buf);
+      FREE_C_HEAP_ARRAY(char, info);
       vm_exit_during_initialization("dlinfo SERINFO request", dlerror());
     }
 
@@ -757,23 +755,18 @@ void os::init_system_properties_values() {
     // Callee copies into its own buffer.
     Arguments::set_library_path(library_path);
 
-    FREE_C_HEAP_ARRAY(char, library_path, mtInternal);
-    FREE_C_HEAP_ARRAY(char, info, mtInternal);
+    FREE_C_HEAP_ARRAY(char, library_path);
+    FREE_C_HEAP_ARRAY(char, info);
   }
 
   // Extensions directories.
   sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  // Endorsed standards default directory.
-  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-  Arguments::set_endorsed_dirs(buf);
-
-  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, buf);
 
 #undef SYS_EXT_DIR
 #undef EXTENSIONS_DIR
-#undef ENDORSED_DIR
 }
 
 void os::breakpoint() {
@@ -1599,11 +1592,11 @@ bool os::dll_build_name(char* buffer, size_t buflen,
     // release the storage
     for (int i = 0; i < n; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
+      FREE_C_HEAP_ARRAY(char*, pelements);
     }
   } else {
     snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
@@ -3167,6 +3160,15 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
   return res;
 }
 
+size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
+  size_t res;
+  JavaThread* thread = (JavaThread*)Thread::current();
+  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
+  ThreadBlockInVM tbiv(thread);
+  RESTARTABLE(::pread(fd, buf, (size_t) nBytes, offset), res);
+  return res;
+}
+
 size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
   size_t res;
   assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
@@ -4681,7 +4683,7 @@ jint os::init_2(void) {
       size_t lgrp_limit = os::numa_get_groups_num();
       int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtInternal);
       size_t lgrp_num = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
-      FREE_C_HEAP_ARRAY(int, lgrp_ids, mtInternal);
+      FREE_C_HEAP_ARRAY(int, lgrp_ids);
       if (lgrp_num < 2) {
         // There's only one locality group, disable NUMA.
         UseNUMA = false;

@@ -38,103 +38,123 @@ include SetupJavaCompilers.gmk
 ifeq (, $(BUILD_TOOLS_JDK))
   $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
       SETUP := GENERATE_OLDBYTECODE, \
+      ADD_JAVAC_FLAGS := "-Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes", \
       SRC := $(JDK_TOPDIR)/make/src/classes, \
-      BIN := $(JDK_OUTPUTDIR)/btclasses))
+      BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
+      COPY := boot.modules ext.modules))
 endif
 
-$(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/%.template: \
+$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources/%.template: \
     $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/%.template
 	$(call install-file)
 
-BUILD_TOOLS_JDK += $(foreach i, $(wildcard $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template), $(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/$(notdir $i))
+BUILD_TOOLS_JDK += $(foreach i, $(wildcard $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template), $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources/$(notdir $i))
 
 # Resource used by CheckDeps tool
-$(JDK_OUTPUTDIR)/btclasses/build/tools/deps/refs.allowed: \
+$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/deps/refs.allowed: \
     $(JDK_TOPDIR)/make/data/checkdeps/refs.allowed
 	$(call install-file)
 
-BUILD_TOOLS_JDK += $(JDK_OUTPUTDIR)/btclasses/build/tools/deps/refs.allowed
+BUILD_TOOLS_JDK += $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/deps/refs.allowed
 
 # Add a checksum ("jsum") to the end of a text file. Prevents trivial tampering with class lists.
-TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.addjsum.AddJsum
 
 # The buildmetaindex tool creates a meta-index to make core class loaders lazier.
-TOOL_BUILDMETAINDEX = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_BUILDMETAINDEX = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.buildmetaindex.BuildMetaIndex
 
-TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.compilefontconfig.CompileFontConfig
 
-TOOL_COMPILEPROPERTIES = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_COMPILEPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.compileproperties.CompileProperties
 
-TOOL_JARREORDER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_JARREORDER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.jarreorder.JarReorder
 
-TOOL_GENERATECHARACTER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_GENERATECHARACTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecharacter.GenerateCharacter
 
-TOOL_CHARACTERNAME = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_CHARACTERNAME = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecharacter.CharacterName
 
 TOOL_DTDBUILDER = $(JAVA_SMALL) -Ddtd_home=$(JDK_TOPDIR)/make/data/dtdbuilder \
     -Djava.awt.headless=true \
-    -cp $(JDK_OUTPUTDIR)/btclasses build.tools.dtdbuilder.DTDBuilder
+    -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.dtdbuilder.DTDBuilder
 
 TOOL_GENERATEBREAKITERATORDATA = $(JAVA_SMALL) \
-    -cp $(JDK_OUTPUTDIR)/btclasses \
+    -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatebreakiteratordata.GenerateBreakIteratorData
 
-TOOL_GENERATECURRENCYDATA = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_GENERATECURRENCYDATA = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecurrencydata.GenerateCurrencyData
 
-TOOL_HASHER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_HASHER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.hasher.Hasher
 
-TOOL_TZDB = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_TZDB = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.tzdb.TzdbZoneRulesCompiler
 
-TOOL_BLACKLISTED_CERTS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_BLACKLISTED_CERTS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.blacklistedcertsconverter.BlacklistedCertsConverter
 
-TOOL_MAKEJAVASECURITY = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_MAKEJAVASECURITY = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.makejavasecurity.MakeJavaSecurity
 
 
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml
 # and nbproject/project.properties in the same dir. Needs to be looked at.
-TOOL_JDWPGEN = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.jdwpgen.Main
+TOOL_JDWPGEN = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.jdwpgen.Main
 
 # TODO: Lots of files in jdk/make/tools/CharsetMapping dir
-TOOL_CHARSETMAPPING = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_CHARSETMAPPING = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.charsetmapping.Main $(LOG_INFO)
 
-TOOL_SPP = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.spp.Spp
+TOOL_SPP = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.spp.Spp
 
 # Nimbus is used somewhere in the swing build.
-TOOL_GENERATENIMBUS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_GENERATENIMBUS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatenimbus.Generator
 
-TOOL_WRAPPERGENERATOR = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_WRAPPERGENERATOR = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.x11wrappergen.WrapperGenerator
 
-TOOL_AWT_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_AWT_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.icondata.awt.ToBin
 
-TOOL_OSX_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_OSX_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.icondata.osxapp.ToBin
 
-TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.cldrconverter.CLDRConverter
 
 TOOL_CHECKDEPS = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
-    -cp "$(JDK_OUTPUTDIR)/btclasses$(PATH_SEP)$(JDK_OUTPUTDIR)" \
+    -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes$(PATH_SEP)$(JDK_OUTPUTDIR)" \
     build.tools.deps.CheckDeps
 
 TOOL_GENMODULESXML = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
-    -cp "$(JDK_OUTPUTDIR)/btclasses$(PATH_SEP)$(JDK_OUTPUTDIR)" \
+    -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes$(PATH_SEP)$(JDK_OUTPUTDIR)" \
     build.tools.module.GenJdepsModulesXml
+
+TOOL_IMAGEBUILDER = $(JAVA_SMALL) -Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes \
+    -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes$(PATH_SEP)$(JDK_OUTPUTDIR)" \
+    build.tools.module.ImageBuilder
+
+##########################################################################################
+
+JIMAGE_PKGS := \
+    jdk/internal/jimage \
+    jdk/internal/jrtfs \
+    #
+
+$(eval $(call SetupJavaCompilation,BUILD_INTERIM_JIMAGE, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(JDK_TOPDIR)/src/java.base/share/classes, \
+    INCLUDES := $(JIMAGE_PKGS), \
+    EXCLUDES := jdk/internal/jimage/concurrent, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes))
 
 ##########################################################################################
 
@@ -147,8 +167,8 @@ $(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK, \
     CC := $(BUILD_CC), \
     LDEXE := $(BUILD_LD), \
     LDFLAGS := -lelf, \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/add_gnu_debuglink, \
-    OUTPUT_DIR := $(JDK_OUTPUTDIR)/btbin, \
+    OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/add_gnu_debuglink, \
+    OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
     PROGRAM := add_gnu_debuglink))
 
 $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS, \
@@ -157,10 +177,12 @@ $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS, \
     CC := $(BUILD_CC), \
     LDEXE := $(BUILD_LD), \
     LDFLAGS := -lelf, \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags, \
-    OUTPUT_DIR := $(JDK_OUTPUTDIR)/btbin, \
+    OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags, \
+    OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
     PROGRAM := fix_empty_sec_hdr_flags))
 endif
+
+$(BUILD_TOOLS_JDK): $(BUILD_INTERIM_JIMAGE)
 
 java-tools: $(BUILD_TOOLS_JDK)
 

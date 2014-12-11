@@ -143,6 +143,7 @@ public class Manifest implements Cloneable {
      * @exception IOException if an I/O error has occurred
      * @see #getMainAttributes
      */
+    @SuppressWarnings("deprecation")
     public void write(OutputStream out) throws IOException {
         DataOutputStream dos = new DataOutputStream(out);
         // Write out the main attributes for the manifest

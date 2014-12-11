@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.jar.*;
   * @summary check for memory leaks, test general packer/unpacker functionality\
   *          using native and java unpackers
   * @compile -XDignore.symbol.file Utils.java Pack200Test.java
-  * @run main/othervm/timeout=1200 -Xmx512m Pack200Test
+  * @run main/othervm/timeout=1200 -Xmx1280m -Xshare:off Pack200Test
   * @author ksrini
   */
 
@@ -126,8 +126,7 @@ public class Pack200Test {
     public static void main(String[] args) throws IOException {
         // select the jars carefully, adding more jars will increase the
         // testing time, especially for jprt.
-        jarList.add(Utils.locateJar("tools.jar"));
-        jarList.add(Utils.locateJar("rt.jar"));
+        jarList.add(Utils.createRtJar());
         jarList.add(Utils.locateJar("golden.jar"));
         System.out.println(jarList);
         doPackUnpack();

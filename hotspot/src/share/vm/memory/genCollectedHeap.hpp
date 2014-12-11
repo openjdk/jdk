@@ -121,9 +121,7 @@ public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
-  char* allocate(size_t alignment,
-                 size_t* _total_reserved, int* _n_covered_regions,
-                 ReservedSpace* heap_rs);
+  char* allocate(size_t alignment, size_t* _total_reserved, ReservedSpace* heap_rs);
 
   // Does operations required after initialization has been done.
   void post_initialize();
@@ -264,12 +262,12 @@ public:
 
   // We don't need barriers for stores to objects in the
   // young gen and, a fortiori, for initializing stores to
-  // objects therein. This applies to {DefNew,ParNew}+{Tenured,CMS}
+  // objects therein. This applies to DefNew+Tenured and ParNew+CMS
   // only and may need to be re-examined in case other
   // kinds of collectors are implemented in the future.
   virtual bool can_elide_initializing_store_barrier(oop new_obj) {
     // We wanted to assert that:-
-    // assert(UseParNewGC || UseSerialGC || UseConcMarkSweepGC,
+    // assert(UseSerialGC || UseConcMarkSweepGC,
     //       "Check can_elide_initializing_store_barrier() for this collector");
     // but unfortunately the flag UseSerialGC need not necessarily always
     // be set when DefNew+Tenured are being used.

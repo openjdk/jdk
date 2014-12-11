@@ -28,8 +28,6 @@
  * @run main bug8048110
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.text.Element;
 import javax.swing.text.html.HTMLDocument;
@@ -37,7 +35,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 
 public class bug8048110 {
-    private static SunToolkit toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
+    private static Robot robot;
     private static Object lock = new Object();
     private static boolean isRealSyncPerformed = false;
     private static final String htmlText = "<table width=\"100%\" cellpadding=\"10\" cellspacing=\"5\" align=\"center\">" +
@@ -45,6 +43,7 @@ public class bug8048110 {
             "<tr><td align=\"left\" bgcolor=\"#bec3c6\">PC</td><td align=\"left\" bgcolor=\"#46a055\">Ok</td></tr></table>";
 
     public static void main(String[] args) throws Exception {
+        robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
@@ -55,7 +54,7 @@ public class bug8048110 {
         Thread thread = new Thread() {
             @Override
             public void run() {
-                toolkit.realSync();
+                robot.waitForIdle();
                 synchronized (lock) {
                     isRealSyncPerformed = true;
                     lock.notifyAll();

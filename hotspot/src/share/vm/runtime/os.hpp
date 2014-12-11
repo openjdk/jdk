@@ -500,6 +500,7 @@ class os: AllStatic {
   //File i/o operations
 
   static size_t read(int fd, void *buf, unsigned int nBytes);
+  static size_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
   static size_t restartable_read(int fd, void *buf, unsigned int nBytes);
   static size_t write(int fd, const void *buf, unsigned int nBytes);
 
@@ -663,7 +664,7 @@ class os: AllStatic {
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
 
-  static void  free    (void *memblock, MEMFLAGS flags = mtNone);
+  static void  free    (void *memblock);
   static bool  check_heap(bool force = false);      // verify C heap integrity
   static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
   // Like strdup, but exit VM when strdup() returns NULL

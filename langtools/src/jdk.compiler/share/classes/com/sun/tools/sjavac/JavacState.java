@@ -26,16 +26,17 @@
 package com.sun.tools.sjavac;
 
 import java.io.*;
+import java.net.URI;
+import java.nio.file.NoSuchFileException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Set;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.text.SimpleDateFormat;
-import java.net.URI;
-import java.util.*;
+import java.util.Set;
 
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.server.Sjavac;
@@ -364,7 +365,7 @@ public class JavacState {
                     }
                 }
             }
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             // Silently create a new javac_state file.
             noFileFound = true;
         } catch (IOException e) {
@@ -841,7 +842,7 @@ public class JavacState {
                 }
                 listedSources.add(l);
             }
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             throw new ProblemException("Could not open "+makefileSourceList.getPath()+" since it does not exist!");
         } catch (IOException e) {
             throw new ProblemException("Could not read "+makefileSourceList.getPath());

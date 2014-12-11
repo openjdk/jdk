@@ -80,6 +80,16 @@ public class Lint
         return l;
     }
 
+    /**
+     * Returns a new Lint that has the given LintCategory suppressed.
+     */
+    public Lint suppress(LintCategory lc) {
+        Lint l = new Lint(this);
+        l.values.remove(lc);
+        l.suppressedValues.add(lc);
+        return l;
+    }
+
     private final AugmentVisitor augmentor;
 
     private final EnumSet<LintCategory> values;

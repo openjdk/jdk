@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class CheckImplClassLoader {
 
             myRMI = null;
             System.err.println("rmid shut down");
-            ActivationLibrary.rmidCleanup(rmid);
+            rmid.cleanup();
             TestLibrary.unexport(group);
         }
     }

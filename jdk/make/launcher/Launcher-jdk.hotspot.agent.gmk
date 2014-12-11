@@ -30,8 +30,3 @@ $(eval $(call SetupLauncher,jsadebugd, \
     -DAPP_CLASSPATH='{ "/lib/tools.jar"$(COMMA) "/lib/sa-jdi.jar"$(COMMA) "/classes" }' \
     ,,,,,,,,,Info-privileged.plist))
 
-jdk.hotspot.agent: $(LAUNCHERS)
-
-all: jdk.hotspot.agent
-
-.PHONY: all jdk.hotspot.agent

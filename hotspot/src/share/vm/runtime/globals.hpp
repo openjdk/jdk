@@ -789,9 +789,6 @@ class CommandLineFlags {
   develop(bool, TraceHandleAllocation, false,                               \
           "Print out warnings when suspiciously many handles are allocated")\
                                                                             \
-  product(bool, UseCompilerSafepoints, true,                                \
-          "Stop at safepoints in compiled code")                            \
-                                                                            \
   product(bool, FailOverToOldVerifier, true,                                \
           "Fail over to old verifier when split verifier fails")            \
                                                                             \
@@ -1245,6 +1242,9 @@ class CommandLineFlags {
   product(bool, CheckJNICalls, false,                                       \
           "Verify all arguments to JNI calls")                              \
                                                                             \
+  product(bool, CheckEndorsedAndExtDirs, false,                             \
+          "Verify the endorsed and extension directories are not used")     \
+                                                                            \
   product(bool, UseFastJNIAccessors, true,                                  \
           "Use optimized versions of Get<Primitive>Field")                  \
                                                                             \
@@ -1346,9 +1346,6 @@ class CommandLineFlags {
                                                                             \
   develop(bool, TraceJNIHandleAllocation, false,                            \
           "Trace allocation/deallocation of JNI handle blocks")             \
-                                                                            \
-  develop(bool, TraceThreadEvents, false,                                   \
-          "Trace all thread events")                                        \
                                                                             \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
@@ -1535,14 +1532,8 @@ class CommandLineFlags {
   develop(bool, UseAsyncConcMarkSweepGC, true,                              \
           "Use Asynchronous Concurrent Mark-Sweep GC in the old generation")\
                                                                             \
-  develop(bool, RotateCMSCollectionTypes, false,                            \
-          "Rotate the CMS collections among concurrent and STW")            \
-                                                                            \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
-                                                                            \
-  product(bool, UseCMSCollectionPassing, true,                              \
-          "Use passing of collection from background to foreground")        \
                                                                             \
   product(bool, UseParNewGC, false,                                         \
           "Use parallel threads in the new generation")                     \
@@ -1718,16 +1709,6 @@ class CommandLineFlags {
   product(uintx, CMSClassUnloadingMaxInterval, 0,                           \
           "When CMS class unloading is enabled, the maximum CMS cycle "     \
           "count for which classes may not be unloaded")                    \
-                                                                            \
-  product(bool, CMSCompactWhenClearAllSoftRefs, true,                       \
-          "Compact when asked to collect CMS gen with "                     \
-          "clear_all_soft_refs()")                                          \
-                                                                            \
-  product(bool, UseCMSCompactAtFullCollection, true,                        \
-          "Use Mark-Sweep-Compact algorithm at full collections")           \
-                                                                            \
-  product(uintx, CMSFullGCsBeforeCompaction, 0,                             \
-          "Number of CMS full collection done before compaction if > 0")    \
                                                                             \
   develop(intx, CMSDictionaryChoice, 0,                                     \
           "Use BinaryTreeDictionary as default in the CMS generation")      \

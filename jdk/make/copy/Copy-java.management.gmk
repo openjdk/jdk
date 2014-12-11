@@ -27,30 +27,24 @@ include CopyCommon.gmk
 
 ################################################################################
 
-MGMT_LIBDIR := $(LIB_DST_DIR)/management
-MGMT_LIB_SRC := $(JDK_TOPDIR)/src/java.management/share/conf
-MGMT_SRC_FILES := $(wildcard $(MGMT_LIB_SRC)/*)
-MGMT_TARGET_FILES := $(subst $(MGMT_LIB_SRC),$(MGMT_LIBDIR),$(MGMT_SRC_FILES))
+MGMT_CONF_DIR := $(CONF_DST_DIR)/management
+MGMT_CONF_SRC := $(JDK_TOPDIR)/src/java.management/share/conf
+MGMT_SRC_FILES := $(wildcard $(MGMT_CONF_SRC)/*)
+MGMT_TARGET_FILES := $(subst $(MGMT_CONF_SRC),$(MGMT_CONF_DIR),$(MGMT_SRC_FILES))
 
-$(MGMT_LIBDIR)/management.properties: $(MGMT_LIB_SRC)/management.properties
+$(MGMT_CONF_DIR)/management.properties: $(MGMT_CONF_SRC)/management.properties
 	$(call install-file)
 	$(CHMOD) 644 $@
 
 # this file has different permissions...don't know why...
-$(MGMT_LIBDIR)/jmxremote.access: $(MGMT_LIB_SRC)/jmxremote.access
+$(MGMT_CONF_DIR)/jmxremote.access: $(MGMT_CONF_SRC)/jmxremote.access
 	$(call install-file)
 	$(CHMOD) 644 $@
 
-$(MGMT_LIBDIR)/%: $(MGMT_LIB_SRC)/%
+$(MGMT_CONF_DIR)/%: $(MGMT_CONF_SRC)/%
 	$(call install-file)
 	$(CHMOD) 444 $@
 
-MANAGEMENT_CONF_FILES := $(MGMT_TARGET_FILES)
+TARGETS := $(MGMT_TARGET_FILES)
 
 ################################################################################
-
-java.management: $(MANAGEMENT_CONF_FILES)
-
-all: java.management
-
-.PHONY: all java.management

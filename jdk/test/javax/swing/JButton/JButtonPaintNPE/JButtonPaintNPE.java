@@ -31,12 +31,13 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import sun.awt.SunToolkit;
-
 /**
  * @test
  * @bug 8009919
  * @author Sergey Bylokhov
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
+ * @run main JButtonPaintNPE
  */
 public final class JButtonPaintNPE {
 
@@ -69,9 +70,11 @@ public final class JButtonPaintNPE {
 
     private static void sleep() {
         try {
-            ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-            Thread.sleep(1000);
-        } catch (final InterruptedException ignored) {
-        }
+             ExtendedRobot robot = new ExtendedRobot();
+             robot.waitForIdle(1000);
+         }catch(Exception ex) {
+             ex.printStackTrace();
+             throw new Error("Unexpected Failure");
+         }
     }
 }

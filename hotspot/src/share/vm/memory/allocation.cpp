@@ -50,8 +50,7 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size, bool read_only,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has it's own operator new
-  return Metaspace::allocate(loader_data, word_size, read_only,
-                             type, CHECK_NULL);
+  return Metaspace::allocate(loader_data, word_size, read_only, type, THREAD);
 }
 
 bool MetaspaceObj::is_shared() const {
@@ -297,7 +296,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
     // to avoid deadlock with NMT
         while(cur != NULL) {
           next = cur->next();
-      os::free(cur, mtChunk);
+      os::free(cur);
           cur = next;
         }
       }
@@ -385,7 +384,7 @@ void Chunk::operator delete(void* p) {
    case Chunk::medium_size: ChunkPool::medium_pool()->free(c); break;
    case Chunk::init_size:   ChunkPool::small_pool()->free(c); break;
    case Chunk::tiny_size:   ChunkPool::tiny_pool()->free(c); break;
-   default:                 os::free(c, mtChunk);
+   default:                 os::free(c);
   }
 }
 
