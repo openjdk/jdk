@@ -33,6 +33,8 @@
  */
 
 #ifdef _WINDOWS
+// Disable CRT security warning against _snprintf
+#pragma warning (disable : 4996)
 
 #define snprintf  _snprintf
 #define vsnprintf _vsnprintf
@@ -90,12 +92,8 @@ static int getLastErrorString(char *buf, size_t len)
     if (errno != 0)
     {
       /* C runtime error that has no corresponding DOS error code */
-      const char *s = strerror(errno);
-      size_t n = strlen(s);
-      if (n >= len) n = len - 1;
-      strncpy(buf, s, n);
-      buf[n] = '\0';
-      return (int)n;
+      strerror_s(buf, len, errno);
+      return strlen(buf);
     }
     return 0;
 }
@@ -111,16 +109,30 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
                                                                            jstring jrepath_s,
                                                                            jstring libname_s) {
   uintptr_t func = 0;
-  const char* error_message = NULL;
-  jboolean isCopy;
-
-  const char * jrepath = (*env)->GetStringUTFChars(env, jrepath_s, &isCopy); // like $JAVA_HOME/jre/lib/sparc/
-  const char * libname = (*env)->GetStringUTFChars(env, libname_s, &isCopy);
+  const char *error_message = NULL;
+  const char *jrepath = NULL;
+  const char *libname = NULL;
   char buffer[128];
+
+#ifdef _WINDOWS
+  HINSTANCE hsdis_handle = (HINSTANCE) NULL;
+#else
+  void* hsdis_handle = NULL;
+#endif
+
+  jrepath = (*env)->GetStringUTFChars(env, jrepath_s, NULL); // like $JAVA_HOME/jre/lib/sparc/
+  if (jrepath == NULL || (*env)->ExceptionOccurred(env)) {
+    return 0;
+  }
+
+  libname = (*env)->GetStringUTFChars(env, libname_s, NULL);
+  if (libname == NULL || (*env)->ExceptionOccurred(env)) {
+    (*env)->ReleaseStringUTFChars(env, jrepath_s, jrepath);
+    return 0;
+  }
 
   /* Load the hsdis library */
 #ifdef _WINDOWS
-  HINSTANCE hsdis_handle;
   hsdis_handle = LoadLibrary(libname);
   if (hsdis_handle == NULL) {
     snprintf(buffer, sizeof(buffer), "%s%s", jrepath, libname);
@@ -134,7 +146,6 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
     error_message = buffer;
   }
 #else
-  void* hsdis_handle;
   hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
   if (hsdis_handle == NULL) {
     snprintf(buffer, sizeof(buffer), "%s%s", jrepath, libname);
@@ -156,6 +167,11 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
      * platform dependent error message.
      */
     jclass eclass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
+    if ((*env)->ExceptionOccurred(env)) {
+      /* Can't throw exception, probably OOM, so silently return 0 */
+      return (jlong) 0;
+    }
+
     (*env)->ThrowNew(env, eclass, error_message);
   }
   return (jlong)func;
@@ -184,16 +200,22 @@ typedef struct {
 
 /* event callback binding to Disassembler.handleEvent */
 static void* event_to_env(void* env_pv, const char* event, void* arg) {
+  jlong result = 0;
   decode_env* denv = (decode_env*)env_pv;
   JNIEnv* env = denv->env;
   jstring event_string = (*env)->NewStringUTF(env, event);
-  jlong result = (*env)->CallLongMethod(env, denv->dis, denv->handle_event, denv->visitor,
-                                        event_string, (jlong) (uintptr_t)arg);
-  if ((*env)->ExceptionOccurred(env) != NULL) {
+  if ((*env)->ExceptionOccurred(env)) {
+    return NULL;
+  }
+
+  result = (*env)->CallLongMethod(env, denv->dis, denv->handle_event, denv->visitor,
+                                  event_string, (jlong) (uintptr_t)arg);
+  if ((*env)->ExceptionOccurred(env)) {
     /* ignore exceptions for now */
     (*env)->ExceptionClear(env);
-    result = 0;
+    return NULL;
   }
+
   return (void*)(uintptr_t)result;
 }
 
@@ -219,10 +241,13 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   }
   if (raw != NULL) {
     jstring output = (*env)->NewStringUTF(env, raw);
-    (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
-    if ((*env)->ExceptionOccurred(env) != NULL) {
+    if (!(*env)->ExceptionOccurred(env)) {
+      /* make sure that UTF allocation doesn't cause OOM */
+      (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
+    }
+    if ((*env)->ExceptionOccurred(env)) {
       /* ignore exceptions for now */
-      (*env)->ExceptionClear(env);
+        (*env)->ExceptionClear(env);
     }
     return (int) flen;
   }
@@ -231,11 +256,16 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   va_end(ap);
 
   output = (*env)->NewStringUTF(env, denv->buffer);
-  (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
-  if ((*env)->ExceptionOccurred(env) != NULL) {
+  if (!(*env)->ExceptionOccurred(env)) {
+    /* make sure that UTF allocation doesn't cause OOM */
+    (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
+  }
+
+  if ((*env)->ExceptionOccurred(env)) {
     /* ignore exceptions for now */
     (*env)->ExceptionClear(env);
   }
+
   return cnt;
 }
 
@@ -251,13 +281,24 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
                                                                     jbyteArray code,
                                                                     jstring options_s,
                                                                     jlong decode_instructions_virtual) {
-  jboolean isCopy;
-  jbyte* start = (*env)->GetByteArrayElements(env, code, &isCopy);
-  jbyte* end = start + (*env)->GetArrayLength(env, code);
-  const char * options = (*env)->GetStringUTFChars(env, options_s, &isCopy);
-  jclass disclass = (*env)->GetObjectClass(env, dis);
-
+  jbyte *start = NULL;
+  jbyte *end = NULL;
+  jclass disclass = NULL;
+  const char *options = NULL;
   decode_env denv;
+
+  start = (*env)->GetByteArrayElements(env, code, NULL);
+  if ((*env)->ExceptionOccurred(env)) {
+    return;
+  }
+  end = start + (*env)->GetArrayLength(env, code);
+  options = (*env)->GetStringUTFChars(env, options_s, NULL);
+  if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
+    return;
+  }
+  disclass = (*env)->GetObjectClass(env, dis);
+
   denv.env = env;
   denv.dis = dis;
   denv.visitor = visitor;
@@ -266,6 +307,8 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   denv.handle_event = (*env)->GetMethodID(env, disclass, "handleEvent",
                                           "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;J)J");
   if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
+    (*env)->ReleaseStringUTFChars(env, options_s, options);
     return;
   }
 
@@ -273,11 +316,13 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   denv.raw_print = (*env)->GetMethodID(env, disclass, "rawPrint",
                                        "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;)V");
   if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
+    (*env)->ReleaseStringUTFChars(env, options_s, options);
     return;
   }
 
   /* decode the buffer */
-  (*(decode_func)(uintptr_t)decode_instructions_virtual)(startPc,
+  (*(decode_func)(uintptr_t)decode_instructions_virtual)((uintptr_t) startPc,
                                                          startPc + end - start,
                                                          (unsigned char*)start,
                                                          end - start,
