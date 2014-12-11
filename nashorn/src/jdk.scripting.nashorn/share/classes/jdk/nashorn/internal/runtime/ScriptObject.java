@@ -2333,8 +2333,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         final ScriptFunction func = (ScriptFunction)value;
-        final Object         thiz = scopeCall && func.isStrict() ? ScriptRuntime.UNDEFINED : this;
+        final Object         thiz = scopeCall && func.isStrict() ? UNDEFINED : this;
         // TODO: It'd be awesome if we could bind "name" without binding "this".
+        // Since we're binding this we must use an identity guard here.
         return new GuardedInvocation(
                 MH.dropArguments(
                         MH.constant(
@@ -2342,9 +2343,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                                 func.makeBoundFunction(thiz, new Object[] { name })),
                         0,
                         Object.class),
-                NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck),
-                (SwitchPoint)null,
-                explicitInstanceOfCheck ? null : ClassCastException.class);
+                NashornGuards.combineGuards(
+                        NashornGuards.getIdentityGuard(this),
+                        NashornGuards.getMapGuard(getMap(), true)));
     }
 
     /**
