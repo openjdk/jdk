@@ -214,8 +214,8 @@ void QuickSort::test_quick_sort() {
     sort(test_array, length, test_even_odd_comparator, true);
     assert(compare_arrays(test_array, expected_array, length), "Sorting already sorted array changed order of elements - not idempotent");
 
-    FREE_C_HEAP_ARRAY(int, test_array, mtInternal);
-    FREE_C_HEAP_ARRAY(int, expected_array, mtInternal);
+    FREE_C_HEAP_ARRAY(int, test_array);
+    FREE_C_HEAP_ARRAY(int, expected_array);
   }
 }
 

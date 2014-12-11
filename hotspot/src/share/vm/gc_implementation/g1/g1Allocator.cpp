@@ -59,7 +59,7 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
       !(retained_region->top() == retained_region->end()) &&
       !retained_region->is_empty() &&
       !retained_region->is_humongous()) {
-    retained_region->record_top_and_timestamp();
+    retained_region->record_timestamp();
     // The retained region was added to the old region set when it was
     // retired. We have to remove it now, since we don't allow regions
     // we allocate to in the region sets. We'll re-add it later, when
@@ -94,6 +94,9 @@ void G1DefaultAllocator::release_gc_alloc_regions(uint no_of_gc_workers, Evacuat
   // want either way so no reason to check explicitly for either
   // condition.
   _retained_old_gc_alloc_region = old_gc_alloc_region(context)->release();
+  if (_retained_old_gc_alloc_region != NULL) {
+    _retained_old_gc_alloc_region->record_retained_region();
+  }
 
   if (ResizePLAB) {
     _g1h->_survivor_plab_stats.adjust_desired_plab_sz(no_of_gc_workers);

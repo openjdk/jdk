@@ -111,13 +111,13 @@ CodeRootSetTable::~CodeRootSetTable() {
       // read next before freeing.
       e = e->next();
       unlink_entry(to_remove);
-      FREE_C_HEAP_ARRAY(char, to_remove, mtGC);
+      FREE_C_HEAP_ARRAY(char, to_remove);
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
   free_buckets();
   for (BasicHashtableEntry<mtGC>* e = new_entry_free_list(); e != NULL; e = new_entry_free_list()) {
-    FREE_C_HEAP_ARRAY(char, e, mtGC);
+    FREE_C_HEAP_ARRAY(char, e);
   }
 }
 
