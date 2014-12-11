@@ -407,7 +407,9 @@ hotspot_compiler_closed = \
   -closed/compiler/loopopts/8021898
 
 hotspot_gc = \
-  sanity/ExecuteInternalVMTests.java
+  sanity/ExecuteInternalVMTests.java \
+  gc/ \
+  -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
 
 hotspot_runtime = \
   runtime/ \
