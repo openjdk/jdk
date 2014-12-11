@@ -177,6 +177,9 @@ class InterpreterRuntime: AllStatic {
 #ifdef TARGET_ARCH_ppc
 # include "interpreterRT_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "interpreterRT_aarch64.hpp"
+#endif
 
 
   // Interpreter's frequency counter overflow

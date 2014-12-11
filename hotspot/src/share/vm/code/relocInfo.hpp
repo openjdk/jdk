@@ -430,7 +430,9 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
 #ifdef TARGET_ARCH_ppc
 # include "relocInfo_ppc.hpp"
 #endif
-
+#ifdef TARGET_ARCH_aarch64
+# include "relocInfo_aarch64.hpp"
+#endif
 
  protected:
   // Derived constant, based on format_width which is PD:

@@ -58,6 +58,9 @@ class InterpreterGenerator: public CC_INTERP_ONLY(CppInterpreterGenerator)
 #ifdef TARGET_ARCH_ppc
 # include "interpreterGenerator_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "interpreterGenerator_aarch64.hpp"
+#endif
 
 
 };
