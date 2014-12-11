@@ -22,58 +22,27 @@
  */
 
 /**
- * JDK-8051889: Implement block scoping in symbol assignment and scope computation
+ * JDK-8066932: __noSuchMethod__ binds to this-object without proper guard
  *
  * @test
  * @run
- * @option --language=es6
  */
 
-"use strict";
-
-for (let i = 0; i < 10; i++) {
-    print(i);
+function C(id) {
+    this.id = id;
 }
 
-try {
-    print(i);
-} catch (e) {
-    print(e);
+C.prototype.__noSuchMethod__ = function(name, args) {
+    return this.id;
+};
+
+function test(id) {
+    var c = new C(id);
+    return c.nonExistingMethod();
 }
 
-let a = [];
-
-for (let i = 0; i < 10; i++) {
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
-a = [];
-
-for (let i = 0; i < 10; i++) {
-    if (i == 5) {
-        i = "foo";
+for (var i = 0; i < 30; i++) {
+    if (test(i) !== i) {
+        throw new Error("Wrong result from noSuchMethod in iteration " + i);
     }
-    a.push(function() { print(i); });
 }
-
-a.forEach(function(f) { f(); });
-
-try {
-    print(i);
-} catch (e) {
-    print(e);
-}
-
-a = [];
-
-for (let i = 0; i < 20; i++) {
-    if (i % 2 == 1) {
-        i += 2;
-        continue;
-    }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });

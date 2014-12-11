@@ -22,58 +22,37 @@
  */
 
 /**
- * JDK-8051889: Implement block scoping in symbol assignment and scope computation
+ * JDK-8066669: dust.js performance regression caused by primitive field conversion
  *
  * @test
  * @run
- * @option --language=es6
  */
 
-"use strict";
+// Make sure index access on Java objects is working as expected.
+var map = new java.util.HashMap();
 
-for (let i = 0; i < 10; i++) {
-    print(i);
+map["foo"] = "bar";
+map[1] = 2;
+map[false] = true;
+map[null] = 0;
+
+print(map);
+
+var keys =  map.keySet().iterator();
+
+while(keys.hasNext()) {
+    var key = keys.next();
+    print(typeof key, key);
 }
 
-try {
-    print(i);
-} catch (e) {
-    print(e);
-}
+print(typeof map["foo"], map["foo"]);
+print(typeof map[1], map[1]);
+print(typeof map[false], map[false]);
+print(typeof map[null], map[null]);
 
-let a = [];
+print(map.foo);
+print(map.false);
+print(map.null);
 
-for (let i = 0; i < 10; i++) {
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
-a = [];
-
-for (let i = 0; i < 10; i++) {
-    if (i == 5) {
-        i = "foo";
-    }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
-try {
-    print(i);
-} catch (e) {
-    print(e);
-}
-
-a = [];
-
-for (let i = 0; i < 20; i++) {
-    if (i % 2 == 1) {
-        i += 2;
-        continue;
-    }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
+map.foo = "baz";
+print(map);

@@ -34,6 +34,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.regex.Pattern;
+import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -52,6 +54,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
+import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JumpStatement;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
@@ -92,6 +95,10 @@ import jdk.nashorn.internal.runtime.logging.Logger;
 final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Loggable {
 
     private final DebugLogger log;
+
+    // Conservative pattern to test if element names consist of characters valid for identifiers.
+    // This matches any non-zero length alphanumeric string including _ and $ and not starting with a digit.
+    private static Pattern SAFE_PROPERTY_NAME = Pattern.compile("[a-zA-Z_$][\\w$]*");
 
     /**
      * Constructor.
@@ -140,7 +147,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
             }
         });
 
-        this.log       = initLogger(compiler.getContext());
+        this.log = initLogger(compiler.getContext());
     }
 
     @Override
@@ -178,6 +185,28 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     @Override
     public boolean enterEmptyNode(final EmptyNode emptyNode) {
         return false;
+    }
+
+    @Override
+    public Node leaveIndexNode(final IndexNode indexNode) {
+        final String name = getConstantPropertyName(indexNode.getIndex());
+        if (name != null) {
+            // If index node is a constant property name convert index node to access node.
+            assert Token.descType(indexNode.getToken()) == TokenType.LBRACKET;
+            return new AccessNode(indexNode.getToken(), indexNode.getFinish(), indexNode.getBase(), name);
+        }
+        return super.leaveIndexNode(indexNode);
+    }
+
+    // If expression is a primitive literal that is not an array index and does return its string value. Else return null.
+    private static String getConstantPropertyName(final Expression expression) {
+        if (expression instanceof LiteralNode.PrimitiveLiteralNode) {
+            final Object value = ((LiteralNode) expression).getValue();
+            if (value instanceof String && SAFE_PROPERTY_NAME.matcher((String) value).matches()) {
+                return (String) value;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -275,7 +304,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
     @Override
     public Node leaveSwitchNode(final SwitchNode switchNode) {
-        if(!switchNode.isInteger()) {
+        if(!switchNode.isUniqueInteger()) {
             // Wrap it in a block so its internally created tag is restricted in scope
             addStatementEnclosedInBlock(switchNode);
         } else {

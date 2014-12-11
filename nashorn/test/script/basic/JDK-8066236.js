@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,58 +22,25 @@
  */
 
 /**
- * JDK-8051889: Implement block scoping in symbol assignment and scope computation
+ * JDK-8066236: RuntimeNode forces copy creation on visitation
  *
  * @test
  * @run
- * @option --language=es6
  */
 
-"use strict";
-
-for (let i = 0; i < 10; i++) {
-    print(i);
-}
-
+// Note: we're using Function("code") instead of (function(){ code }) so that
+// we don't trigger parser API validation in JDK-8008448 tests. The test code
+// encapsulated in functions below can't be correctly handled by the parser API
+// currently, as it contains parser-generated REFERENCE_ERROR runtime nodes.
 try {
-    print(i);
+    Function("L: {this = x;break L}")();
 } catch (e) {
-    print(e);
+   print("threw ReferenceError: " + (e instanceof ReferenceError));
 }
-
-let a = [];
-
-for (let i = 0; i < 10; i++) {
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
-a = [];
-
-for (let i = 0; i < 10; i++) {
-    if (i == 5) {
-        i = "foo";
-    }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
 try {
-    print(i);
+    Function("L:with(this--)break L;")();
 } catch (e) {
-    print(e);
+   print("threw ReferenceError: " + (e instanceof ReferenceError));
 }
-
-a = [];
-
-for (let i = 0; i < 20; i++) {
-    if (i % 2 == 1) {
-        i += 2;
-        continue;
-    }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
+Function("L:with(Object in Object)break L;")();
+print("SUCCESS");
