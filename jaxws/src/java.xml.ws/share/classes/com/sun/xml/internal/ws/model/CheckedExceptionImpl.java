@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.xml.internal.ws.model;
+
+import java.lang.reflect.Method;
 
 import com.sun.xml.internal.bind.api.Bridge;
 import com.sun.xml.internal.ws.api.model.CheckedException;
@@ -52,6 +54,7 @@ public final class CheckedExceptionImpl implements CheckedException {
     private final JavaMethodImpl javaMethod;
     private String messageName;
     private String faultAction = "";
+    private Method faultInfoGetter;
 
     /**
      * @param jm {@link JavaMethodImpl} that throws this exception
@@ -127,5 +130,11 @@ public final class CheckedExceptionImpl implements CheckedException {
         return WsaActionUtil.getDefaultFaultAction(javaMethod,this);
     }
 
+    public Method getFaultInfoGetter() {
+        return faultInfoGetter;
+    }
 
+    public void setFaultInfoGetter(Method faultInfoGetter) {
+        this.faultInfoGetter = faultInfoGetter;
+    }
 }

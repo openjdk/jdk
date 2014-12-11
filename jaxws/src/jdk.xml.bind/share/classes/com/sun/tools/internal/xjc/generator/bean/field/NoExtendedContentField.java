@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import com.sun.tools.internal.xjc.generator.bean.MethodWriter;
 import com.sun.tools.internal.xjc.model.CElement;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
 import com.sun.tools.internal.xjc.model.CReferencePropertyInfo;
-import com.sun.tools.internal.xjc.outline.Aspect;
+import com.sun.tools.internal.xjc.model.Aspect;
 import com.sun.xml.internal.bind.api.impl.NameConverter;
 import java.io.Serializable;
 import java.util.Set;

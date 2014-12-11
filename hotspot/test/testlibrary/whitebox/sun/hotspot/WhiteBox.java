@@ -74,6 +74,7 @@ public class WhiteBox {
   // Memory
   public native long getObjectAddress(Object o);
   public native int  getHeapOopSize();
+  public native int  getVMPageSize();
   public native boolean isObjectInOldGen(Object o);
   public native long getObjectSize(Object o);
 
@@ -84,12 +85,16 @@ public class WhiteBox {
   }
   private native boolean isClassAlive0(String name);
 
+  // JVMTI
+  public native void addToBootstrapClassLoaderSearch(String segment);
+  public native void addToSystemClassLoaderSearch(String segment);
+
   // G1
   public native boolean g1InConcurrentMark();
   public native boolean g1IsHumongous(Object o);
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
-  public native Object[]    parseCommandLine(String commandline, DiagnosticCommand[] args);
+  public native Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args);
 
   // NMT
   public native long NMTMalloc(long size);
@@ -149,8 +154,17 @@ public class WhiteBox {
   public native Object[] getNMethod(Executable method, boolean isOsr);
   public native long    allocateCodeBlob(int size, int type);
   public native void    freeCodeBlob(long addr);
-  public native void    forceNMethodSweep();
+  public        void    forceNMethodSweep() {
+    try {
+        forceNMethodSweep0().join();
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+  }
+  public native Thread  forceNMethodSweep0();
   public native Object[] getCodeHeapEntries(int type);
+  public native int     getCompilationActivityMode();
+  public native Object[] getCodeBlob(long addr);
 
   // Intered strings
   public native boolean isInStringTable(String str);
@@ -162,11 +176,15 @@ public class WhiteBox {
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
 
-  // force Young GC
+  // Force Young GC
   public native void youngGC();
 
-  // force Full GC
+  // Force Full GC
   public native void fullGC();
+
+  // Method tries to start concurrent mark cycle.
+  // It returns false if CM Thread is always in concurrent cycle.
+  public native boolean g1StartConcMarkCycle();
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);

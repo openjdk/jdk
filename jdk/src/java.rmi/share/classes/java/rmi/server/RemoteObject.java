@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * remote object could not be found.
      * @since 1.2
      */
+    @SuppressWarnings("deprecation")
     public static Remote toStub(Remote obj) throws NoSuchObjectException {
         if (obj instanceof RemoteStub ||
             (obj != null &&

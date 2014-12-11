@@ -21,8 +21,6 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.Button;
 import java.awt.Canvas;
 import java.awt.Checkbox;
@@ -48,6 +46,8 @@ import java.awt.image.BufferedImage;
   @bug 6596915
   @summary Test Component.paintAll() method
   @author sergey.bylokhov@oracle.com: area=awt.component
+  @library ../../../../lib/testlibrary/
+  @build ExtendedRobot
   @run main PaintAll
 */
 public class PaintAll {
@@ -66,6 +66,7 @@ public class PaintAll {
     private static volatile boolean scrollPanePainted;
     private static volatile boolean textAreaPainted;
     private static volatile boolean textFieldPainted;
+    private static ExtendedRobot robot = null;
 
     private static final Button buttonStub = new Button() {
         @Override
@@ -283,11 +284,15 @@ public class PaintAll {
     }
 
     private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-        try {
-            Thread.sleep(500L);
-        } catch (InterruptedException ignored) {
+        if(robot == null) {
+            try {
+                robot = new ExtendedRobot();
+            }catch(Exception ex) {
+                ex.printStackTrace();
+                throw new RuntimeException("Unexpected failure");
+            }
         }
+        robot.waitForIdle(500);
     }
 
     private static void fail(final String message) {

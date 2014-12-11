@@ -26,26 +26,25 @@
   @bug 8041490
   @summary tests that the WarningWindow's surface is invalidated on dispose
   @author Petr Pchelko
-  @run main/othervm WarningWindowDisposeCrashTest
+  @run main/othervm/policy=policy  -Djava.security.manager WarningWindowDisposeCrashTest
 */
 
 
-import sun.applet.AppletSecurity;
-import sun.awt.SunToolkit;
 
 import java.awt.*;
 
 public class WarningWindowDisposeCrashTest {
     public static void main(String[] args) throws Exception {
-        System.setSecurityManager(new AppletSecurity() {
-            @Override
-            public void checkPackageAccess (String s){
-            }
-        });
-
         Frame f = new Frame();
         f.setVisible(true);
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        Robot robot;
+        try{
+            robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Cannot create Robot");
+        }
         Thread.sleep(1000);
         f.dispose();
         // If the bug is present VM could crash after this call

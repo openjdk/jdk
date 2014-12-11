@@ -34,8 +34,3 @@ ifndef BUILD_HEADLESS_ONLY
       $(XLIBS)))
 endif
 
-java.desktop: $(LAUNCHERS)
-
-all: java.desktop
-
-.PHONY: all java.desktop

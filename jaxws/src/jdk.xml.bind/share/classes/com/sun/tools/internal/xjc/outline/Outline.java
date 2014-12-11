@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import com.sun.codemodel.internal.JCodeModel;
 import com.sun.codemodel.internal.JPackage;
 import com.sun.codemodel.internal.JType;
 import com.sun.tools.internal.xjc.ErrorReceiver;
+import com.sun.tools.internal.xjc.model.Aspect;
 import com.sun.tools.internal.xjc.model.CClassInfo;
 import com.sun.tools.internal.xjc.model.CClassInfoParent;
 import com.sun.tools.internal.xjc.model.CElementInfo;
@@ -46,13 +47,12 @@ import com.sun.tools.internal.xjc.util.CodeModelClassFactory;
  * Root of the outline. Captures which code is generated for which model component.
  *
  * <p>
- * This object also provides access to varioues utilities, such as
+ * This object also provides access to various utilities, such as
  * error reporting etc, for the convenience of code that builds the outline.
  *
  * @author Kohsuke Kawaguchi
  */
-public interface Outline
-{
+public interface Outline {
     /**
      * This outline is for this model.
      */

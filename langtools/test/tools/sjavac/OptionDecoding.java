@@ -35,6 +35,7 @@
 import static util.OptionTestUtil.assertEquals;
 import static util.OptionTestUtil.checkFilesFound;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -218,20 +219,20 @@ public class OptionDecoding {
 
     // Test input paths
     static void testSearchPaths() {
-
         List<String> i, x, iF, xF;
         i = x = iF = xF = new ArrayList<>();
 
         SourceLocation dir1 = new SourceLocation(Paths.get("dir1"), i, x, iF, xF);
         SourceLocation dir2 = new SourceLocation(Paths.get("dir2"), i, x, iF, xF);
+        String dir1_PS_dir2 = "dir1" + File.pathSeparator + "dir2";
 
-        Options options = Options.parseArgs("-sourcepath", "dir1:dir2");
+        Options options = Options.parseArgs("-sourcepath", dir1_PS_dir2);
         assertEquals(options.getSourceSearchPaths(), Arrays.asList(dir1, dir2));
 
-        options = Options.parseArgs("-modulepath", "dir1:dir2");
+        options = Options.parseArgs("-modulepath", dir1_PS_dir2);
         assertEquals(options.getModuleSearchPaths(), Arrays.asList(dir1, dir2));
 
-        options = Options.parseArgs("-classpath", "dir1:dir2");
+        options = Options.parseArgs("-classpath", dir1_PS_dir2);
         assertEquals(options.getClassSearchPath(), Arrays.asList(dir1, dir2));
     }
 

@@ -980,8 +980,9 @@ class PolicyEntry {
                                 grantEntry.principals.listIterator();
             while (list.hasNext()) {
                 PolicyParser.PrincipalEntry pppe = list.next();
-                sb.append(" Principal " + pppe.getDisplayClass() + " " +
-                    pppe.getDisplayName(true));
+                sb.append(" Principal ").append(pppe.getDisplayClass())
+                        .append(' ')
+                        .append(pppe.getDisplayName(true));
                 if (list.hasNext()) sb.append(", ");
             }
             result = sb.toString();

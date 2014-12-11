@@ -462,7 +462,7 @@ get_LNC_array_for_space(Space* sp,
         if (_lowest_non_clean[i] != NULL) {
           assert(n_chunks != _lowest_non_clean_chunk_size[i],
                  "logical consequence");
-          FREE_C_HEAP_ARRAY(CardPtr, _lowest_non_clean[i], mtGC);
+          FREE_C_HEAP_ARRAY(CardPtr, _lowest_non_clean[i]);
           _lowest_non_clean[i] = NULL;
         }
         // Now allocate a new one if necessary.

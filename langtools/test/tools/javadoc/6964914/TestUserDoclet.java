@@ -47,8 +47,6 @@ public class TestUserDoclet extends Doclet {
     /** Main test method. */
     void run() throws Exception {
         File javaHome = new File(System.getProperty("java.home"));
-        if (javaHome.getName().equals("jre"))
-            javaHome = javaHome.getParentFile();
         File javadoc = new File(new File(javaHome, "bin"), "javadoc");
         File testSrc = new File(System.getProperty("test.src"));
         File testClasses = new File(System.getProperty("test.classes"));

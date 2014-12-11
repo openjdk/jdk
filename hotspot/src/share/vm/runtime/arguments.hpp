@@ -254,8 +254,6 @@ class Arguments : AllStatic {
   static SystemProperty* _system_properties;
 
   // Quick accessor to System properties in the list:
-  static SystemProperty *_java_ext_dirs;
-  static SystemProperty *_java_endorsed_dirs;
   static SystemProperty *_sun_boot_library_path;
   static SystemProperty *_java_library_path;
   static SystemProperty *_java_home;
@@ -265,6 +263,10 @@ class Arguments : AllStatic {
   // Meta-index for knowing what packages are in the boot class path
   static char* _meta_index_path;
   static char* _meta_index_dir;
+
+  // temporary: to emit warning if the default ext dirs are not empty.
+  // remove this variable when the warning is no longer needed.
+  static char* _ext_dirs;
 
   // java.vendor.url.bug, bug reporting URL for fatal errors.
   static const char* _java_vendor_url_bug;
@@ -346,7 +348,6 @@ class Arguments : AllStatic {
   static void select_gc();
   static void set_ergonomics_flags();
   static void set_shared_spaces_flags();
-  static void set_gc_specific_flags();
   // limits the given memory size by the maximum amount of memory this process is
   // currently allowed to allocate or reserve.
   static julong limit_by_allocatable_memory(julong size);
@@ -458,6 +459,7 @@ class Arguments : AllStatic {
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
 
+  static void set_gc_specific_flags();
   static inline bool gc_selected(); // whether a gc has been selected
   static void select_gc_ergonomically();
 
@@ -472,7 +474,6 @@ class Arguments : AllStatic {
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency_user();        // Check user-selected gc
   static inline bool check_gc_consistency_ergo(); // Check ergonomic-selected gc
-  static void check_deprecated_gcs();
   static void check_deprecated_gc_flags();
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
@@ -586,8 +587,7 @@ class Arguments : AllStatic {
   static void set_dll_dir(char *value) { _sun_boot_library_path->set_value(value); }
   static void set_java_home(char *value) { _java_home->set_value(value); }
   static void set_library_path(char *value) { _java_library_path->set_value(value); }
-  static void set_ext_dirs(char *value) { _java_ext_dirs->set_value(value); }
-  static void set_endorsed_dirs(char *value) { _java_endorsed_dirs->set_value(value); }
+  static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
   static void set_sysclasspath(char *value) { _sun_boot_class_path->set_value(value); }
   static void append_sysclasspath(const char *value) { _sun_boot_class_path->append_value(value); }
   static void set_meta_index_path(char* meta_index_path, char* meta_index_dir) {
@@ -597,13 +597,13 @@ class Arguments : AllStatic {
 
   static char* get_java_home() { return _java_home->value(); }
   static char* get_dll_dir() { return _sun_boot_library_path->value(); }
-  static char* get_endorsed_dir() { return _java_endorsed_dirs->value(); }
   static char* get_sysclasspath() { return _sun_boot_class_path->value(); }
   static char* get_meta_index_path() { return _meta_index_path; }
   static char* get_meta_index_dir()  { return _meta_index_dir;  }
-  static char* get_ext_dirs() { return _java_ext_dirs->value(); }
+  static char* get_ext_dirs()        { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
+
 
   // Operation modi
   static Mode mode()                { return _mode; }
@@ -615,8 +615,7 @@ class Arguments : AllStatic {
 };
 
 bool Arguments::gc_selected() {
-  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC ||
-    UseParNewGC || UseSerialGC;
+  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC || UseSerialGC;
 }
 
 bool Arguments::check_gc_consistency_ergo() {

@@ -28,8 +28,3 @@ include LauncherCommon.gmk
 $(eval $(call SetupLauncher,jstatd, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jstatd.Jstatd"$(COMMA) }'))
 
-jdk.jvmstat: $(LAUNCHERS)
-
-all: jdk.jvmstat
-
-.PHONY: all jdk.jvmstat

@@ -23,8 +23,7 @@
 # questions.
 #
 
-include $(SPEC)
-include $(JDK_TOPDIR)/make/lib/LibCommon.gmk
+include LibCommon.gmk
 
 ################################################################################
 
@@ -49,14 +48,8 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 
   $(BUILD_LIBJ2UCRYPTO): $(BUILD_LIBJAVA)
 
-  SECURITY_UCRYPTO_LIBRARIES += $(BUILD_LIBJ2UCRYPTO)
+  TARGETS += $(BUILD_LIBJ2UCRYPTO)
 
 endif
 
 ################################################################################
-
-jdk.crypto.ucrypto: $(SECURITY_UCRYPTO_LIBRARIES)
-
-all: jdk.crypto.ucrypto
-
-.PHONY: all jdk.crypto.ucrypto

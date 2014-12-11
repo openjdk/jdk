@@ -92,28 +92,28 @@ public class Jps {
                     vm = monitoredHost.getMonitoredVm(id, 0);
 
                     errorString = " -- main class information unavailable";
-                    output.append(" " + MonitoredVmUtil.mainClass(vm,
+                    output.append(' ').append(MonitoredVmUtil.mainClass(vm,
                             arguments.showLongPaths()));
 
                     if (arguments.showMainArgs()) {
                         errorString = " -- main args information unavailable";
                         String mainArgs = MonitoredVmUtil.mainArgs(vm);
                         if (mainArgs != null && mainArgs.length() > 0) {
-                            output.append(" " + mainArgs);
+                            output.append(' ').append(mainArgs);
                         }
                     }
                     if (arguments.showVmArgs()) {
                         errorString = " -- jvm args information unavailable";
                         String jvmArgs = MonitoredVmUtil.jvmArgs(vm);
                         if (jvmArgs != null && jvmArgs.length() > 0) {
-                          output.append(" " + jvmArgs);
+                          output.append(' ').append(jvmArgs);
                         }
                     }
                     if (arguments.showVmFlags()) {
                         errorString = " -- jvm flags information unavailable";
                         String jvmFlags = MonitoredVmUtil.jvmFlags(vm);
                         if (jvmFlags != null && jvmFlags.length() > 0) {
-                            output.append(" " + jvmFlags);
+                            output.append(' ').append(jvmFlags);
                         }
                     }
 

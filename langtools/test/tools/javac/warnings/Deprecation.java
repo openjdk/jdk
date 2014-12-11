@@ -1,10 +1,12 @@
 /**
  * @test  /nodynamiccopyright/
- * @bug 4986256
- * @compile/ref=Deprecation.noLint.out                             -XDrawDiagnostics Deprecation.java
- * @compile/ref=Deprecation.lintDeprecation.out -Xlint:deprecation -XDrawDiagnostics Deprecation.java
- * @compile/ref=Deprecation.lintAll.out         -Xlint:all,-path   -XDrawDiagnostics Deprecation.java
+ * @bug 4986256 6598104 8032211
+ * @compile/ref=Deprecation.noLint.out                                                 -XDrawDiagnostics Deprecation.java
+ * @compile/ref=Deprecation.lintDeprecation.out  -Xlint:deprecation                    -XDrawDiagnostics Deprecation.java
+ * @compile/ref=Deprecation.lintDeprecation8.out -Xlint:deprecation,-options -source 8 -XDrawDiagnostics Deprecation.java
  */
+
+import java.io.StringBufferInputStream;
 
 @Deprecated
 class Deprecation

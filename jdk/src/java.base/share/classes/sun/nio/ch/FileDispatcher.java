@@ -25,7 +25,9 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.nio.channels.SelectableChannel;
 
 abstract class FileDispatcher extends NativeDispatcher {
 
@@ -53,4 +55,8 @@ abstract class FileDispatcher extends NativeDispatcher {
      */
     abstract FileDescriptor duplicateForMapping(FileDescriptor fd)
         throws IOException;
+
+    abstract boolean canTransferToDirectly(SelectableChannel sc);
+
+    abstract boolean transferToDirectlyNeedsPositionLock();
 }

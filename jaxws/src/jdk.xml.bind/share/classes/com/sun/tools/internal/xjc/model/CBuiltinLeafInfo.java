@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ import com.sun.xml.internal.bind.v2.model.core.LeafInfo;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.tools.internal.xjc.model.nav.NavigatorImpl;
-import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.runtime.ZeroOneBooleanAdapter;
 import com.sun.tools.internal.xjc.util.NamespaceContextAdapter;

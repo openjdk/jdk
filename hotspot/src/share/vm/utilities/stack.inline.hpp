@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ E* Stack<E, F>::alloc(size_t bytes)
 template <class E, MEMFLAGS F>
 void Stack<E, F>::free(E* addr, size_t bytes)
 {
-  FREE_C_HEAP_ARRAY(char, (char*) addr, F);
+  FREE_C_HEAP_ARRAY(char, (char*) addr);
 }
 
 template <class E, MEMFLAGS F>

@@ -716,15 +716,14 @@ public class RequiredModelMBean
         }
 
         retStr.append("\nMBeanInfo for ModelMBean is:");
-        retStr.append("\nCLASSNAME: \t"+ info.getClassName());
-        retStr.append("\nDESCRIPTION: \t"+ info.getDescription());
+        retStr.append("\nCLASSNAME: \t").append(info.getClassName());
+        retStr.append("\nDESCRIPTION: \t").append(info.getDescription());
 
 
         try {
-            retStr.append("\nMBEAN DESCRIPTOR: \t"+
-                          info.getMBeanDescriptor());
+            retStr.append("\nMBEAN DESCRIPTOR: \t").append(info.getMBeanDescriptor());
         } catch (Exception e) {
-            retStr.append("\nMBEAN DESCRIPTOR: \t" + " is invalid");
+            retStr.append("\nMBEAN DESCRIPTOR: \t  is invalid");
         }
 
         retStr.append("\nATTRIBUTES");
@@ -734,13 +733,12 @@ public class RequiredModelMBean
             for (int i=0; i<attrInfo.length; i++) {
                 final ModelMBeanAttributeInfo attInfo =
                     (ModelMBeanAttributeInfo)attrInfo[i];
-                retStr.append(" ** NAME: \t"+ attInfo.getName());
-                retStr.append("    DESCR: \t"+ attInfo.getDescription());
-                retStr.append("    TYPE: \t"+ attInfo.getType() +
-                              "    READ: \t"+ attInfo.isReadable() +
-                              "    WRITE: \t"+ attInfo.isWritable());
-                retStr.append("    DESCRIPTOR: " +
-                              attInfo.getDescriptor().toString());
+                retStr.append(" ** NAME: \t").append(attInfo.getName());
+                retStr.append("    DESCR: \t").append(attInfo.getDescription());
+                retStr.append("    TYPE: \t").append(attInfo.getType())
+                        .append("    READ: \t").append(attInfo.isReadable())
+                        .append("    WRITE: \t").append(attInfo.isWritable());
+                retStr.append("    DESCRIPTOR: ").append(attInfo.getDescriptor());
             }
         } else {
             retStr.append(" ** No attributes **");
@@ -752,14 +750,13 @@ public class RequiredModelMBean
             for (int i=0; i<constrInfo.length; i++) {
                 final ModelMBeanConstructorInfo ctorInfo =
                     (ModelMBeanConstructorInfo)constrInfo[i];
-                retStr.append(" ** NAME: \t"+ ctorInfo.getName());
-                retStr.append("    DESCR: \t"+
-                              ctorInfo.getDescription());
-                retStr.append("    PARAM: \t"+
-                              ctorInfo.getSignature().length +
-                              " parameter(s)");
-                retStr.append("    DESCRIPTOR: " +
-                              ctorInfo.getDescriptor().toString());
+                retStr.append(" ** NAME: \t").append(ctorInfo.getName());
+                retStr.append("    DESCR: \t").append(ctorInfo.getDescription());
+                retStr.append("    PARAM: \t")
+                        .append(ctorInfo.getSignature().length)
+                        .append(" parameter(s)");
+                retStr.append("    DESCRIPTOR: ").append(
+                        ctorInfo.getDescriptor());
             }
         } else {
             retStr.append(" ** No Constructors **");
@@ -771,13 +768,12 @@ public class RequiredModelMBean
             for (int i=0; i<opsInfo.length; i++) {
                 final ModelMBeanOperationInfo operInfo =
                     (ModelMBeanOperationInfo)opsInfo[i];
-                retStr.append(" ** NAME: \t"+ operInfo.getName());
-                retStr.append("    DESCR: \t"+ operInfo.getDescription());
-                retStr.append("    PARAM: \t"+
-                              operInfo.getSignature().length +
-                              " parameter(s)");
-                retStr.append("    DESCRIPTOR: " +
-                              operInfo.getDescriptor().toString());
+                retStr.append(" ** NAME: \t").append(operInfo.getName());
+                retStr.append("    DESCR: \t").append(operInfo.getDescription());
+                retStr.append("    PARAM: \t")
+                        .append(operInfo.getSignature().length)
+                        .append(" parameter(s)");
+                retStr.append("    DESCRIPTOR: ").append(operInfo.getDescriptor());
             }
         } else {
             retStr.append(" ** No operations ** ");
@@ -790,10 +786,9 @@ public class RequiredModelMBean
             for (int i=0; i<notifInfo.length; i++) {
                 final ModelMBeanNotificationInfo nInfo =
                     (ModelMBeanNotificationInfo)notifInfo[i];
-                retStr.append(" ** NAME: \t"+ nInfo.getName());
-                retStr.append("    DESCR: \t"+ nInfo.getDescription());
-                retStr.append("    DESCRIPTOR: " +
-                              nInfo.getDescriptor().toString());
+                retStr.append(" ** NAME: \t").append(nInfo.getName());
+                retStr.append("    DESCR: \t").append(nInfo.getDescription());
+                retStr.append("    DESCRIPTOR: ").append(nInfo.getDescriptor());
             }
         } else {
             retStr.append(" ** No notifications **");

@@ -34,8 +34,10 @@ import java.io.FilenameFilter;
  * This class is used in extension installation support (ExtensionDependency).
  * <p>
  *
+ * @deprecated this class will be removed in a future release.
  * @author  Michael Colburn
  */
+@Deprecated
 public class JarFilter implements FilenameFilter {
 
     public boolean accept(File dir, String name) {
