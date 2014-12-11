@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,36 @@
  * questions.
  */
 
-public class JavacWarning {
-    String _ = null; // this will cause a warning with -source 8 (this is an error as of -source 9)
+/*
+ * @test
+ * @summary Check usages of underscore as identifier generate warnings
+ * @compile/fail/ref=UnderscoreAsIdent8.out -source 8 -Xlint:-options -XDrawDiagnostics -Werror UnderscoreAsIdent.java
+ * @compile/fail/ref=UnderscoreAsIdent9.out -XDrawDiagnostics -Werror UnderscoreAsIdent.java
+ */
+package _._;
+
+import _._;
+
+class _ {
+    String _ = null;
+    void _(String _) { }
+    void testLocal() {
+        String _ = null;
+    }
+    void testFor() {
+        for (int _ = 0; _ < 10; _++);
+    }
+    void testTry() {
+        try { } catch (Throwable _) { }
+    }
+    void testLabel() {
+        _:
+        for (;;) {
+            break _;
+        }
+        _:
+        for (;;) {
+            continue _;
+        }
+    }
 }
