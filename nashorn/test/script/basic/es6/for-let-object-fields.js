@@ -22,10 +22,12 @@
  */
 
 /**
- * JDK-8051889: Implement block scoping in symbol assignment and scope computation
+ * JDK-8067219: NPE in ScriptObject.clone() when running with object fields
  *
  * @test
  * @run
+ * @fork
+ * @option -Dnashorn.fields.objects=true
  * @option --language=es6
  */
 
