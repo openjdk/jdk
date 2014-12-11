@@ -346,12 +346,12 @@ public class JavaValueArray extends JavaLazyReadObject
 
     public String valueString(boolean bigLimit) {
         // Char arrays deserve special treatment
-        StringBuffer result;
+        StringBuilder result;
         byte[] value = getValue();
         int max = value.length;
         byte elementSignature = getElementType();
         if (elementSignature == 'C')  {
-            result = new StringBuffer();
+            result = new StringBuilder();
             for (int i = 0; i < value.length; ) {
                 char val = charAt(i, value);
                 result.append(val);
@@ -362,7 +362,7 @@ public class JavaValueArray extends JavaLazyReadObject
             if (bigLimit) {
                 limit = 1000;
             }
-            result = new StringBuffer("{");
+            result = new StringBuilder("{");
             int num = 0;
             for (int i = 0; i < value.length; ) {
                 if (num > 0) {
@@ -386,37 +386,37 @@ public class JavaValueArray extends JavaLazyReadObject
                     }
                     case 'B': {
                         int val = 0xFF & byteAt(i, value);
-                        result.append("0x" + Integer.toString(val, 16));
+                        result.append("0x").append(Integer.toString(val, 16));
                         i++;
                         break;
                     }
                     case 'S': {
                         short val = shortAt(i, value);
                         i += 2;
-                        result.append("" + val);
+                        result.append(val);
                         break;
                     }
                     case 'I': {
                         int val = intAt(i, value);
                         i += 4;
-                        result.append("" + val);
+                        result.append(val);
                         break;
                     }
                     case 'J': {         // long
                         long val = longAt(i, value);
-                        result.append("" + val);
+                        result.append(val);
                         i += 8;
                         break;
                     }
                     case 'F': {
                         float val = floatAt(i, value);
-                        result.append("" + val);
+                        result.append(val);
                         i += 4;
                         break;
                     }
                     case 'D': {         // double
                         double val = doubleAt(i, value);
-                        result.append("" + val);
+                        result.append(val);
                         i += 8;
                         break;
                     }
@@ -425,7 +425,7 @@ public class JavaValueArray extends JavaLazyReadObject
                     }
                 }
             }
-            result.append("}");
+            result.append('}');
         }
         return result.toString();
     }
