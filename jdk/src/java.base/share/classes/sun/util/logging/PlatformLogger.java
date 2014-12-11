@@ -71,10 +71,10 @@ import sun.misc.SharedSecrets;
  *   java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
  *
  * Limitation:
- * <JAVA_HOME>/lib/logging.properties is the system-wide logging
+ * <JAVA_HOME>/conf/logging.properties is the system-wide logging
  * configuration defined in the specification and read in the
  * default case to configure any java.util.logging.Logger instances.
- * Platform loggers will not detect if <JAVA_HOME>/lib/logging.properties
+ * Platform loggers will not detect if <JAVA_HOME>/conf/logging.properties
  * is modified. In other words, unless the java.util.logging API
  * is used at runtime or the logging system properties is set,
  * the platform loggers will use the default setting described above.

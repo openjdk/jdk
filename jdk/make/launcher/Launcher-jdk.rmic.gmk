@@ -29,8 +29,3 @@ $(eval $(call SetupLauncher,rmic, \
     -DEXPAND_CLASSPATH_WILDCARDS \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.rmi.rmic.Main"$(COMMA) }'))
 
-jdk.rmic: $(LAUNCHERS)
-
-all: jdk.rmic
-
-.PHONY: all jdk.rmic

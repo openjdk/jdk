@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ import java.util.logging.Logger;
  * @author Bhakti Mehta
  */
 public class SchemaGenerator {
+
+    private static final Logger LOGGER = Logger.getLogger(SchemaGenerator.class.getName());
+
     /**
      * Runs the schema generator.
      */
@@ -72,7 +75,7 @@ public class SchemaGenerator {
             }
             return run(args, cl);
         } catch(Exception e) {
-            System.err.println(e.getMessage());
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
             return -1;
         }
     }
@@ -206,9 +209,9 @@ public class SchemaGenerator {
                 return f.getPath();
             }
         } catch (URISyntaxException ex) {
-            Logger.getLogger(SchemaGenerator.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
         } catch (MalformedURLException ex) {
-            Logger.getLogger(SchemaGenerator.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
         }
         return null;
     }
@@ -225,8 +228,9 @@ public class SchemaGenerator {
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
             JavacOptions options = JavacOptions.parse(compiler, fileManager, args);
             List<String> unrecognizedOptions = options.getUnrecognizedOptions();
-            if (!unrecognizedOptions.isEmpty())
-                Logger.getLogger(SchemaGenerator.class.getName()).log(Level.WARNING, "Unrecognized options found: {0}", unrecognizedOptions);
+            if (!unrecognizedOptions.isEmpty()) {
+                LOGGER.log(Level.WARNING, "Unrecognized options found: {0}", unrecognizedOptions);
+            }
             Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(options.getFiles());
             JavaCompiler.CompilationTask task = compiler.getTask(
                     null,

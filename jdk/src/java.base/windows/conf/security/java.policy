@@ -1,5 +1,5 @@
-grant codeBase "file:${java.home}/lib/ext/sunmscapi.jar" {
-        Permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+grant codeBase "jrt:/jdk.crypto.mscapi" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
         permission java.lang.RuntimePermission "loadLibrary.sunmscapi";
         permission java.util.PropertyPermission "*", "read";
         permission java.security.SecurityPermission "putProviderProperty.SunMSCAPI";

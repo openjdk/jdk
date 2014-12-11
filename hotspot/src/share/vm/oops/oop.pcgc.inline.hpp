@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
 #define SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
 
-#include "utilities/macros.hpp"
 #include "runtime/atomic.inline.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"

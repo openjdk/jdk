@@ -62,6 +62,7 @@ address StubRoutines::_atomic_store_entry                       = NULL;
 address StubRoutines::_atomic_store_ptr_entry                   = NULL;
 address StubRoutines::_atomic_cmpxchg_entry                     = NULL;
 address StubRoutines::_atomic_cmpxchg_ptr_entry                 = NULL;
+address StubRoutines::_atomic_cmpxchg_byte_entry                = NULL;
 address StubRoutines::_atomic_cmpxchg_long_entry                = NULL;
 address StubRoutines::_atomic_add_entry                         = NULL;
 address StubRoutines::_atomic_add_ptr_entry                     = NULL;

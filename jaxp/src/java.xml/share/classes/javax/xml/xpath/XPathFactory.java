@@ -117,7 +117,7 @@ public abstract class XPathFactory {
     *     and returns it if it is successfully created.
     *   </li>
     *   <li>
-    *     ${java.home}/lib/jaxp.properties is read and the value associated with the key being the system property above is looked for.
+    *     ${java.home}/conf/jaxp.properties is read and the value associated with the key being the system property above is looked for.
     *     If present, the value is processed just like above.
     *   </li>
     *   <li>

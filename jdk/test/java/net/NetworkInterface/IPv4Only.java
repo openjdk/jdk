@@ -23,7 +23,7 @@
 
 /* @test
  * @bug   6964714
- * @run main/othervm IPv4Only
+ * @run main/othervm -Djava.net.preferIPv4Stack=true IPv4Only
  * @summary Test the networkinterface listing with java.net.preferIPv4Stack=true.
  */
 
@@ -34,8 +34,6 @@ import java.util.*;
 
 public class IPv4Only {
     public static void main(String[] args) throws Exception {
-        System.setProperty("java.net.preferIPv4Stack","true");
-
         Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
         while (nifs.hasMoreElements()) {
             NetworkInterface nif = nifs.nextElement();

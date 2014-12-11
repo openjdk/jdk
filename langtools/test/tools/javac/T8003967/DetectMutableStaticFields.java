@@ -103,6 +103,9 @@ public class DetectMutableStaticFields {
                 put("com/sun/tools/javac/file/ZipFileIndexCache",
                     Arrays.asList("sharedInstance"));
         classFieldsToIgnoreMap.
+                put("com/sun/tools/javac/file/JRTIndex",
+                    Arrays.asList("sharedInstance"));
+        classFieldsToIgnoreMap.
                 put("com/sun/tools/javac/main/JavaCompiler",
                     Arrays.asList("versionRB"));
         classFieldsToIgnoreMap.

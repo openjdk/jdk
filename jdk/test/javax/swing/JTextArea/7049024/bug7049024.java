@@ -31,8 +31,6 @@
  * @author Sean Chou
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
@@ -53,7 +51,7 @@ public class bug7049024 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
@@ -70,7 +68,7 @@ public class bug7049024 {
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clipboard = textField.getToolkit().getSystemSelection();
         if (null == clipboard) {
@@ -83,7 +81,7 @@ public class bug7049024 {
                 textField.requestFocusInWindow();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -93,7 +91,7 @@ public class bug7049024 {
                 caret.moveDot(4);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         String oldSelection = (String) clipboard.getData(DataFlavor.stringFlavor);
         System.out.println("oldSelection is " + oldSelection);
@@ -104,7 +102,7 @@ public class bug7049024 {
                 button.requestFocusInWindow();
             }
         });
-        toolkit.realSync(); // So JTextField loses the focus.
+        robot.waitForIdle(); // So JTextField loses the focus.
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -113,7 +111,7 @@ public class bug7049024 {
                 caret.moveDot(6);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         String newSelection = (String) clipboard.getData(DataFlavor.stringFlavor);
         System.out.println("newSelection is " + newSelection);

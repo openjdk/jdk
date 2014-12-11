@@ -242,9 +242,15 @@ public class Flow {
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
             new AssignAnalyzer() {
+                WriteableScope enclosedSymbols = WriteableScope.create(env.enclClass.sym);
+                @Override
+                public void visitVarDef(JCVariableDecl tree) {
+                    enclosedSymbols.enter(tree.sym);
+                    super.visitVarDef(tree);
+                }
                 @Override
                 protected boolean trackable(VarSymbol sym) {
-                    return !env.info.scope.includes(sym) &&
+                    return enclosedSymbols.includes(sym) &&
                            sym.owner.kind == MTH;
                 }
             }.analyzeTree(env, that);
@@ -2556,6 +2562,8 @@ public class Flow {
      * This pass implements the last step of the dataflow analysis, namely
      * the effectively-final analysis check. This checks that every local variable
      * reference from a lambda body/local inner class is either final or effectively final.
+     * Additional this also checks that every variable that is used as an operand to
+     * try-with-resources is final or effectively final.
      * As effectively final variables are marked as such during DA/DU, this pass must run after
      * AssignAnalyzer.
      */
@@ -2682,6 +2690,18 @@ public class Flow {
                 default:
                     scan(tree.arg);
             }
+        }
+
+        public void visitTry(JCTry tree) {
+            for (JCTree resource : tree.resources) {
+                if (!resource.hasTag(VARDEF)) {
+                    Symbol var = TreeInfo.symbol(resource);
+                    if (var != null && (var.flags() & (FINAL | EFFECTIVELY_FINAL)) == 0) {
+                        log.error(resource.pos(), "try.with.resources.expr.effectively.final.var", var);
+                    }
+                }
+            }
+            super.visitTry(tree);
         }
 
     /**************************************************************************

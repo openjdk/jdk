@@ -81,8 +81,6 @@ public class ResultSet {
         "java.class.path",
         "java.library.path",
         "java.io.tmpdir",
-        "java.ext.dirs",
-        "java.endorsed.dirs",
         "java.util.prefs.PreferencesFactory",
         "sun.java2d.fontpath",
         "sun.boot.library.path",

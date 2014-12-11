@@ -284,7 +284,7 @@ public:
     return bsn == BarrierSet::CardTableModRef || ModRefBarrierSet::is_a(bsn);
   }
 
-  CardTableModRefBS(MemRegion whole_heap, int max_covered_regions);
+  CardTableModRefBS(MemRegion whole_heap);
   ~CardTableModRefBS();
 
   virtual void initialize();
@@ -466,11 +466,6 @@ public:
   void verify_region(MemRegion mr, jbyte val, bool val_equals) PRODUCT_RETURN;
   void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
-
-  static size_t par_chunk_heapword_alignment() {
-    return ParGCCardsPerStrideChunk * card_size_in_words;
-  }
-
 };
 
 class CardTableRS;
@@ -482,9 +477,8 @@ protected:
   bool card_will_be_scanned(jbyte cv);
   bool card_may_have_been_dirty(jbyte cv);
 public:
-  CardTableModRefBSForCTRS(MemRegion whole_heap,
-                           int max_covered_regions) :
-    CardTableModRefBS(whole_heap, max_covered_regions) {}
+  CardTableModRefBSForCTRS(MemRegion whole_heap) :
+    CardTableModRefBS(whole_heap) {}
 
   void set_CTRS(CardTableRS* rs) { _rs = rs; }
 };

@@ -52,8 +52,6 @@ public class T6877206 {
     Set<String> foundJars = new TreeSet<String>();
 
     void run() throws Exception {
-        File rt_jar = findRtJar();
-
         // names for entries to be created in directories and jar files
         String[] entries = { "p/A.class", "p/resources/A-1.jpg" };
 
@@ -66,19 +64,14 @@ public class T6877206 {
         for (boolean useOptimizedZip: new boolean[] { false, true }) {
             test(createFileManager(useOptimizedZip), createJar("jar", entries), "p", entries.length);
             test(createFileManager(useOptimizedZip), createJar("jar jar", entries), "p", entries.length);
-
-            for (boolean useSymbolFile: new boolean[] { false, true }) {
-                test(createFileManager(useOptimizedZip, useSymbolFile), rt_jar, "java.lang.ref", -1);
-            }
         }
 
-        // Verify that we hit all the impl classes we intended
+        // Verify that we hit the files we intended
         checkCoverage("classes", foundClasses,
-                "RegularFileObject", "SymbolFileObject", "ZipFileIndexFileObject", "ZipFileObject");
+                "RegularFileObject", "ZipFileIndexFileObject", "ZipFileObject");
 
-        // Verify that we hit the jar files we intended, specifically ct.sym as well as rt.jar
-        checkCoverage("jar files", foundJars,
-                "ct.sym", "jar", "jar jar", "rt.jar");
+        // Verify that we hit the jar files we intended
+        checkCoverage("jar files", foundJars, "jar", "jar jar");
     }
 
     // use a new file manager for each test
@@ -199,16 +192,6 @@ public class T6877206 {
             out.close();
         }
         return jar;
-    }
-
-    File findRtJar() throws Exception {
-        File java_home = new File(System.getProperty("java.home"));
-        if (java_home.getName().equals("jre"))
-            java_home = java_home.getParentFile();
-        File rt_jar = new File(new File(new File(java_home, "jre"), "lib"), "rt.jar");
-        if (!rt_jar.exists())
-            throw new Exception("can't find rt.jar");
-        return rt_jar;
     }
 
     byte[] read(InputStream in) throws IOException {

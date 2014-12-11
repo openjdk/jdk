@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Common library for various test helper functions.
@@ -68,6 +69,12 @@ public final class Utils {
         String toFactor = System.getProperty("test.timeout.factor", "1.0");
        TIMEOUT_FACTOR = Double.parseDouble(toFactor);
     }
+
+    /**
+    * Returns the value of JTREG default test timeout in milliseconds
+    * converted to {@code long}.
+    */
+    public static final long DEFAULT_TEST_TIMEOUT = TimeUnit.SECONDS.toMillis(120);
 
     private Utils() {
         // Private constructor to prevent class instantiation
@@ -128,8 +135,7 @@ public final class Utils {
      */
     private static final Pattern useGcPattern = Pattern.compile(
             "(?:\\-XX\\:[\\+\\-]Use.+GC)"
-            + "|(?:\\-Xconcgc)"
-            + "|(?:\\-Xincgc)");
+            + "|(?:\\-Xconcgc)");
     public static List<String> removeGcOpts(List<String> opts) {
         List<String> optsWithoutGC = new ArrayList<String>();
         for (String opt : opts) {

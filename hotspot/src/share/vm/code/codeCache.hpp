@@ -77,6 +77,7 @@ class DepChange;
 class CodeCache : AllStatic {
   friend class VMStructs;
   friend class NMethodIterator;
+  friend class WhiteBox;
  private:
   // CodeHeaps of the cache
   static GrowableArray<CodeHeap*>* _heaps;
@@ -98,7 +99,7 @@ class CodeCache : AllStatic {
   static void initialize_heaps();                             // Initializes the CodeHeaps
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type);
-  static CodeHeap* get_code_heap(CodeBlob* cb);               // Returns the CodeHeap for the given CodeBlob
+  static CodeHeap* get_code_heap(const CodeBlob* cb);         // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(int code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(int code_blob_type);

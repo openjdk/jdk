@@ -64,8 +64,8 @@ public class DefNewGeneration extends Generation {
   }
 
   // Accessing spaces
-  public EdenSpace eden() {
-    return (EdenSpace) VMObjectFactory.newObject(EdenSpace.class, edenSpaceField.getValue(addr));
+  public ContiguousSpace eden() {
+    return (ContiguousSpace) VMObjectFactory.newObject(ContiguousSpace.class, edenSpaceField.getValue(addr));
   }
 
   public ContiguousSpace from() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,6 +353,7 @@ public class RegistryContext implements Context, Referenceable {
     /**
      * Wrap a RemoteException inside a NamingException.
      */
+    @SuppressWarnings("deprecation")
     public static NamingException wrapRemoteException(RemoteException re) {
 
         NamingException ne;
@@ -413,6 +414,7 @@ public class RegistryContext implements Context, Referenceable {
      * Attempts to install a security manager if none is currently in
      * place.
      */
+    @SuppressWarnings("deprecation")
     private static void installSecurityMgr() {
 
         try {

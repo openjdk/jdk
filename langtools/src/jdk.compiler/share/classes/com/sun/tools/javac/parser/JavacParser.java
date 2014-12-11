@@ -145,6 +145,8 @@ public class JavacParser implements Parser {
         this.names = fac.names;
         this.source = fac.source;
         this.allowTWR = source.allowTryWithResources();
+        this.allowEffectivelyFinalVariablesInTWR =
+                source.allowEffectivelyFinalVariablesInTryWithResources();
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
@@ -155,6 +157,7 @@ public class JavacParser implements Parser {
         this.allowIntersectionTypesInCast = source.allowIntersectionTypesInCast();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
         this.allowAnnotationsAfterTypeParams = source.allowAnnotationsAfterTypeParams();
+        this.allowUnderscoreIdentifier = source.allowUnderscoreIdentifier();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
@@ -183,6 +186,10 @@ public class JavacParser implements Parser {
     /** Switch: should we recognize try-with-resources?
      */
     boolean allowTWR;
+
+    /** Switch: should we allow (effectively) final variables as resources in try-with-resources?
+     */
+    boolean allowEffectivelyFinalVariablesInTWR;
 
     /** Switch: should we fold strings?
      */
@@ -223,6 +230,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow annotations after the method type parameters?
      */
     boolean allowAnnotationsAfterTypeParams;
+
+    /** Switch: should we allow '_' as an identifier?
+     */
+    boolean allowUnderscoreIdentifier;
 
     /** Switch: is "this" allowed as an identifier?
      * This is needed to parse receiver types.
@@ -589,7 +600,11 @@ public class JavacParser implements Parser {
                 return names.error;
             }
         } else if (token.kind == UNDERSCORE) {
-            warning(token.pos, "underscore.as.identifier");
+            if (allowUnderscoreIdentifier) {
+                warning(token.pos, "underscore.as.identifier");
+            } else {
+                error(token.pos, "underscore.as.identifier");
+            }
             Name name = token.name();
             nextToken();
             return name;
@@ -3003,14 +3018,28 @@ public class JavacParser implements Parser {
         return defs.toList();
     }
 
-    /** Resource = VariableModifiersOpt Type VariableDeclaratorId = Expression
+    /** Resource = VariableModifiersOpt Type VariableDeclaratorId "=" Expression
+     *           | Expression
      */
     protected JCTree resource() {
-        JCModifiers optFinal = optFinal(Flags.FINAL);
-        JCExpression type = parseType();
-        int pos = token.pos;
-        Name ident = ident();
-        return variableDeclaratorRest(pos, optFinal, type, ident, true, null);
+        int startPos = token.pos;
+        if (token.kind == FINAL || token.kind == MONKEYS_AT) {
+            JCModifiers mods = optFinal(Flags.FINAL);
+            JCExpression t = parseType();
+            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null);
+        }
+        JCExpression t = term(EXPR | TYPE);
+        if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.accepts(token.kind)) {
+            JCModifiers mods = toP(F.at(startPos).Modifiers(Flags.FINAL));
+            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null);
+        } else {
+            checkVariableInTryWithResources(startPos);
+            if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {
+                log.error(t.pos(), "try.with.resources.expr.needs.var");
+            }
+
+            return t;
+        }
     }
 
     /** CompilationUnit = [ { "@" Annotation } PACKAGE Qualident ";"] {ImportDeclaration} {TypeDeclaration}
@@ -3047,7 +3076,7 @@ public class JavacParser implements Parser {
         boolean checkForImports = true;
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
-            if (token.pos > 0 && token.pos <= endPosTable.errorEndPos) {
+            if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(checkForImports, false, false, false);
                 if (token.kind == EOF)
@@ -3933,6 +3962,12 @@ public class JavacParser implements Parser {
             allowTWR = true;
         }
     }
+    void checkVariableInTryWithResources(int startPos) {
+        if (!allowEffectivelyFinalVariablesInTWR) {
+            error(startPos, "var.in.try.with.resources.not.supported.in.source", source.name);
+            allowEffectivelyFinalVariablesInTWR = true;
+        }
+    }
     void checkLambda() {
         if (!allowLambda) {
             log.error(token.pos, "lambda.not.supported.in.source", source.name);
@@ -4057,7 +4092,7 @@ public class JavacParser implements Parser {
         /**
          * Store the last error position.
          */
-        protected int errorEndPos;
+        protected int errorEndPos = Position.NOPOS;
 
         public AbstractEndPosTable(JavacParser parser) {
             this.parser = parser;

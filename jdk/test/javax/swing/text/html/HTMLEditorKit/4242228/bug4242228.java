@@ -27,8 +27,6 @@
    @author Peter Zhelezniakov
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -85,7 +83,8 @@ public class bug4242228 {
             }
         });
 
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override

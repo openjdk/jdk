@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime.linker;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
+import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -50,6 +51,8 @@ import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.RuntimeCallSite;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
+import jdk.nashorn.internal.objects.ScriptFunctionImpl;
+import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.OptimisticReturnFilters;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -94,7 +97,7 @@ public final class Bootstrap {
             new NashornLinker(),
             new NashornPrimitiveLinker(),
             new NashornStaticClassLinker(),
-            new BoundDynamicMethodLinker(),
+            new BoundCallableLinker(),
             new JavaSuperAdapterLinker(),
             new JSObjectLinker(nashornBeansLinker),
             new BrowserJSObjectLinker(nashornBeansLinker),
@@ -136,10 +139,38 @@ public final class Bootstrap {
         }
 
         return obj instanceof ScriptFunction ||
-            ((obj instanceof JSObject) && ((JSObject)obj).isFunction()) ||
-            isDynamicMethod(obj) ||
+            isJSObjectFunction(obj) ||
+            BeansLinker.isDynamicMethod(obj) ||
+            obj instanceof BoundCallable ||
             isFunctionalInterfaceObject(obj) ||
             obj instanceof StaticClass;
+    }
+
+    /**
+     * Returns true if the given object is a strict callable
+     * @param callable the callable object to be checked for strictness
+     * @return true if the obj is a strict callable, false if it is a non-strict callable.
+     * @throws ECMAException with {@code TypeError} if the object is not a callable.
+     */
+    public static boolean isStrictCallable(final Object callable) {
+        if (callable instanceof ScriptFunction) {
+            return ((ScriptFunction)callable).isStrict();
+        } else if (isJSObjectFunction(callable)) {
+            return ((JSObject)callable).isStrictFunction();
+        } else if (callable instanceof BoundCallable) {
+            return isStrictCallable(((BoundCallable)callable).getCallable());
+        } else if (BeansLinker.isDynamicMethod(callable) || callable instanceof StaticClass) {
+            return false;
+        }
+        throw notFunction(callable);
+    }
+
+    private static ECMAException notFunction(final Object obj) {
+        return typeError("not.a.function", ScriptRuntime.safeToString(obj));
+    }
+
+    private static boolean isJSObjectFunction(final Object obj) {
+        return obj instanceof JSObject && ((JSObject)obj).isFunction();
     }
 
     /**
@@ -148,7 +179,7 @@ public final class Bootstrap {
      * @return true if the obj is a dynamic method
      */
     public static boolean isDynamicMethod(final Object obj) {
-        return obj instanceof BoundDynamicMethod || BeansLinker.isDynamicMethod(obj);
+        return BeansLinker.isDynamicMethod(obj instanceof BoundCallable ? ((BoundCallable)obj).getCallable() : obj);
     }
 
     /**
@@ -370,14 +401,22 @@ public final class Bootstrap {
     }
 
     /**
-     * Binds a bean dynamic method (returned by invoking {@code dyn:getMethod} on an object linked with
-     * {@code BeansLinker} to a receiver.
-     * @param dynamicMethod the dynamic method to bind
+     * Binds any object Nashorn can use as a [[Callable]] to a receiver and optionally arguments.
+     * @param callable the callable to bind
      * @param boundThis the bound "this" value.
-     * @return a bound dynamic method.
+     * @param boundArgs the bound arguments. Can be either null or empty array to signify no arguments are bound.
+     * @return a bound callable.
+     * @throws ECMAException with {@code TypeError} if the object is not a callable.
      */
-    public static Object bindDynamicMethod(final Object dynamicMethod, final Object boundThis) {
-        return new BoundDynamicMethod(dynamicMethod, boundThis);
+    public static Object bindCallable(final Object callable, final Object boundThis, final Object[] boundArgs) {
+        if (callable instanceof ScriptFunctionImpl) {
+            return ((ScriptFunctionImpl)callable).makeBoundFunction(boundThis, boundArgs);
+        } else if (callable instanceof BoundCallable) {
+            return ((BoundCallable)callable).bind(boundArgs);
+        } else if (isCallable(callable)) {
+            return new BoundCallable(callable, boundThis, boundArgs);
+        }
+        throw notFunction(callable);
     }
 
     /**

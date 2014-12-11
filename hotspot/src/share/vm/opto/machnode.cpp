@@ -561,7 +561,9 @@ const Type *MachProjNode::bottom_type() const {
 const TypePtr *MachProjNode::adr_type() const {
   if (bottom_type() == Type::MEMORY) {
     // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
-    const TypePtr* adr_type = in(0)->adr_type();
+    Node* ctrl = in(0);
+    if (ctrl == NULL)  return NULL; // node is dead
+    const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
     if (!is_error_reported() && !Node::in_dump())
       assert(adr_type != NULL, "source must have adr_type");

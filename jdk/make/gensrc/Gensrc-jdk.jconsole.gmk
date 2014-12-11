@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ include GensrcCommon.gmk
 ##########################################################################################
 # Version file for jconsole
 
-$(JDK_OUTPUTDIR)/gensrc/jdk.jconsole/sun/tools/jconsole/Version.java: \
+$(SUPPORT_OUTPUTDIR)/gensrc/jdk.jconsole/sun/tools/jconsole/Version.java: \
     $(JDK_TOPDIR)/src/jdk.jconsole/share/classes/sun/tools/jconsole/Version.java.template
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
@@ -36,7 +36,7 @@ $(JDK_OUTPUTDIR)/gensrc/jdk.jconsole/sun/tools/jconsole/Version.java: \
 	$(SED) -e 's/@@jconsole_version@@/$(FULL_VERSION)/g' $< > $@.tmp
 	$(MV) $@.tmp $@
 
-GENSRC_JDK_JCONSOLE += $(JDK_OUTPUTDIR)/gensrc/jdk.jconsole/sun/tools/jconsole/Version.java
+GENSRC_JDK_JCONSOLE += $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jconsole/sun/tools/jconsole/Version.java
 
 jdk.jconsole: $(GENSRC_JDK_JCONSOLE)
 

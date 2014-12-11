@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,10 @@ import java.util.Iterator;
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
+ * @param <T> the type of nodes maintained by this set
  * @since 1.6
  */
-public interface NodeSetData extends Data {
+public interface NodeSetData<T> extends Data, Iterable<T> {
 
     /**
      * Returns a read-only iterator over the nodes contained in this
@@ -52,6 +53,5 @@ public interface NodeSetData extends Data {
      * @return an <code>Iterator</code> over the nodes in this
      *    <code>NodeSetData</code> in document order
      */
-    @SuppressWarnings("rawtypes")
-    Iterator iterator();
+    Iterator<T> iterator();
 }
