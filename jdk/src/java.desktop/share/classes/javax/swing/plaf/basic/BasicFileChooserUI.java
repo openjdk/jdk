@@ -1330,8 +1330,8 @@ public class BasicFileChooserUI extends FileChooserUI {
 
             for (Object obj : values) {
                 String val = ((obj == null) ? "" : obj.toString());
-                plainBuf.append(val + "\n");
-                htmlBuf.append("  <li>" + val + "\n");
+                plainBuf.append(val).append('\n');
+                htmlBuf.append("  <li>").append(val).append('\n');
             }
 
             // remove the last newline
