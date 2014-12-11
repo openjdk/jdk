@@ -3710,7 +3710,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final ScriptObject clone = (ScriptObject) super.clone();
         if (objectSpill != null) {
             clone.objectSpill = objectSpill.clone();
-            clone.primitiveSpill = primitiveSpill.clone();
+            if (primitiveSpill != null) {
+                clone.primitiveSpill = primitiveSpill.clone();
+            }
         }
         clone.arrayData = arrayData.copy();
         return clone;
