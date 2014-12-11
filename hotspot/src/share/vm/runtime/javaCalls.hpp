@@ -46,6 +46,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "jniTypes_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "jniTypes_aarch64.hpp"
+#endif
 
 // A JavaCallWrapper is constructed before each JavaCall and destructed after the call.
 // Its purpose is to allocate/deallocate a new handle block and to save/restore the last

@@ -588,6 +588,9 @@ void print();
 #ifdef TARGET_ARCH_ppc
 # include "bytecodeInterpreter_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "bytecodeInterpreter_aarch64.hpp"
+#endif
 
 
 }; // BytecodeInterpreter

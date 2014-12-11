@@ -46,5 +46,8 @@
 #ifdef TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/ad_ppc_64.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_aarch64
+# include "adfiles/ad_aarch64.hpp"
+#endif
 
 #endif // SHARE_VM_OPTO_AD_HPP

@@ -48,6 +48,9 @@ enum {
 #ifdef TARGET_ARCH_ppc
 # include "c1_Defs_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "c1_Defs_aarch64.hpp"
+#endif
 
 
 // native word offsets from memory address
