@@ -2948,8 +2948,8 @@ public class BasicListUI extends ListUI
                 for (int i = 0; i < values.length; i++) {
                     Object obj = values[i];
                     String val = ((obj == null) ? "" : obj.toString());
-                    plainStr.append(val + "\n");
-                    htmlStr.append("  <li>" + val + "\n");
+                    plainStr.append(val).append('\n');
+                    htmlStr.append("  <li>").append(val).append('\n');
                 }
 
                 // remove the last newline

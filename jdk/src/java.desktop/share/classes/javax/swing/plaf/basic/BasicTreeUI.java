@@ -3618,8 +3618,8 @@ public class BasicTreeUI extends TreeUI
                     boolean leaf = model.isLeaf(node);
                     String label = getDisplayString(path, true, leaf);
 
-                    plainStr.append(label + "\n");
-                    htmlStr.append("  <li>" + label + "\n");
+                    plainStr.append(label).append('\n');
+                    htmlStr.append("  <li>").append(label).append('\n');
                 }
 
                 // remove the last newline
