@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,58 +22,15 @@
  */
 
 /**
- * JDK-8051889: Implement block scoping in symbol assignment and scope computation
+ * JDK-8066225: NPE in MethodEmitter with duplicate integer switch cases
  *
  * @test
  * @run
- * @option --language=es6
  */
 
-"use strict";
-
-for (let i = 0; i < 10; i++) {
-    print(i);
-}
-
-try {
-    print(i);
-} catch (e) {
-    print(e);
-}
-
-let a = [];
-
-for (let i = 0; i < 10; i++) {
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
-a = [];
-
-for (let i = 0; i < 10; i++) {
-    if (i == 5) {
-        i = "foo";
+(function (x){
+    switch(x) { 
+       case 44: for (var x in {}) {x}; print("1"); 
+       case 44: print("2");
     }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
-
-try {
-    print(i);
-} catch (e) {
-    print(e);
-}
-
-a = [];
-
-for (let i = 0; i < 20; i++) {
-    if (i % 2 == 1) {
-        i += 2;
-        continue;
-    }
-    a.push(function() { print(i); });
-}
-
-a.forEach(function(f) { f(); });
+})(44);
