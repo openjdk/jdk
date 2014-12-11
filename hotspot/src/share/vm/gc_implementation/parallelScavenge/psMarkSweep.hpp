@@ -41,31 +41,24 @@ class PSMarkSweep : public MarkSweep {
 
   // Closure accessors
   static OopClosure* mark_and_push_closure()   { return &MarkSweep::mark_and_push_closure; }
-  static VoidClosure* follow_stack_closure()   { return (VoidClosure*)&MarkSweep::follow_stack_closure; }
+  static VoidClosure* follow_stack_closure()   { return &MarkSweep::follow_stack_closure; }
   static CLDClosure* follow_cld_closure()      { return &MarkSweep::follow_cld_closure; }
-  static OopClosure* adjust_pointer_closure()  { return (OopClosure*)&MarkSweep::adjust_pointer_closure; }
+  static OopClosure* adjust_pointer_closure()  { return &MarkSweep::adjust_pointer_closure; }
   static CLDClosure* adjust_cld_closure()      { return &MarkSweep::adjust_cld_closure; }
-  static BoolObjectClosure* is_alive_closure() { return (BoolObjectClosure*)&MarkSweep::is_alive; }
+  static BoolObjectClosure* is_alive_closure() { return &MarkSweep::is_alive; }
 
- debug_only(public:)  // Used for PSParallelCompact debugging
   // Mark live objects
   static void mark_sweep_phase1(bool clear_all_softrefs);
   // Calculate new addresses
   static void mark_sweep_phase2();
- debug_only(private:) // End used for PSParallelCompact debugging
   // Update pointers
   static void mark_sweep_phase3();
   // Move objects to new positions
   static void mark_sweep_phase4();
 
- debug_only(public:)  // Used for PSParallelCompact debugging
   // Temporary data structures for traversal and storing/restoring marks
   static void allocate_stacks();
   static void deallocate_stacks();
-  static void set_ref_processor(ReferenceProcessor* rp) {  // delete this method
-    _ref_processor = rp;
-  }
- debug_only(private:) // End used for PSParallelCompact debugging
 
   // If objects are left in eden after a collection, try to move the boundary
   // and absorb them into the old gen.  Returns true if eden was emptied.
