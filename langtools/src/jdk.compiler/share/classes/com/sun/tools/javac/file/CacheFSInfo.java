@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,31 +61,31 @@ public class CacheFSInfo extends FSInfo {
     }
 
     @Override
-    public File getCanonicalFile(File file) {
+    public Path getCanonicalFile(Path file) {
         Entry e = getEntry(file);
         return e.canonicalFile;
     }
 
     @Override
-    public boolean exists(File file) {
+    public boolean exists(Path file) {
         Entry e = getEntry(file);
         return e.exists;
     }
 
     @Override
-    public boolean isDirectory(File file) {
+    public boolean isDirectory(Path file) {
         Entry e = getEntry(file);
         return e.isDirectory;
     }
 
     @Override
-    public boolean isFile(File file) {
+    public boolean isFile(Path file) {
         Entry e = getEntry(file);
         return e.isFile;
     }
 
     @Override
-    public List<File> getJarClassPath(File file) throws IOException {
+    public List<Path> getJarClassPath(Path file) throws IOException {
         // don't bother to lock the cache, because it is thread-safe, and
         // because the worst that can happen would be to create two identical
         // jar class paths together and have one overwrite the other.
@@ -95,7 +95,7 @@ public class CacheFSInfo extends FSInfo {
         return e.jarClassPath;
     }
 
-    private Entry getEntry(File file) {
+    private Entry getEntry(Path file) {
         // don't bother to lock the cache, because it is thread-safe, and
         // because the worst that can happen would be to create two identical
         // entries together and have one overwrite the other.
@@ -112,13 +112,13 @@ public class CacheFSInfo extends FSInfo {
     }
 
     // could also be a Map<File,SoftReference<Entry>> ?
-    private Map<File,Entry> cache = new ConcurrentHashMap<>();
+    private final Map<Path,Entry> cache = new ConcurrentHashMap<>();
 
     private static class Entry {
-        File canonicalFile;
+        Path canonicalFile;
         boolean exists;
         boolean isFile;
         boolean isDirectory;
-        List<File> jarClassPath;
+        List<Path> jarClassPath;
     }
 }

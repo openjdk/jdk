@@ -615,11 +615,11 @@ public final class ConnectorBootstrap {
     /**
      * Compute the full path name for a default file.
      * @param basename basename (with extension) of the default file.
-     * @return ${JRE}/lib/management/${basename}
+     * @return ${JRE}/conf/management/${basename}
      **/
     private static String getDefaultFileName(String basename) {
         final String fileSeparator = File.separator;
-        return System.getProperty("java.home") + fileSeparator + "lib" +
+        return System.getProperty("java.home") + fileSeparator + "conf" +
                 fileSeparator + "management" + fileSeparator +
                 basename;
     }
@@ -767,7 +767,7 @@ public final class ConnectorBootstrap {
                     JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
             connServer.start();
         } catch (IOException e) {
-            if (connServer == null) {
+            if (connServer == null || connServer.getAddress() == null) {
                 throw new AgentConfigurationError(CONNECTOR_SERVER_IO_ERROR,
                         e, url.toString());
             } else {

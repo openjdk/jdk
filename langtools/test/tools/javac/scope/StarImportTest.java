@@ -135,6 +135,7 @@ public class StarImportTest {
             JavacFileManager.preRegister(context); // required by ClassReader which is required by Symtab
             names = Names.instance(context);       // Name.Table impls tied to an instance of Names
             symtab = Symtab.instance(context);
+            types = Types.instance(context);
             int setupCount = rgen.nextInt(MAX_SETUP_COUNT);
             for (int i = 0; i < setupCount; i++) {
                 switch (random(SetupKind.values())) {
@@ -204,7 +205,7 @@ public class StarImportTest {
         }
 
         /**
-         * Create a star-import scope and a model therof, from the packages and
+         * Create a star-import scope and a model thereof, from the packages and
          * classes created by setupPackages and setupClasses.
          * @throws Exception for fatal errors, such as from reflection
          */
@@ -218,7 +219,7 @@ public class StarImportTest {
             for (Symbol imp: imports) {
                 Scope members = imp.members();
 //                    log("importAll", members);
-                starImportScope.importAll(members, members, new ImportFilter() {
+                starImportScope.importAll(types, members, new ImportFilter() {
                     @Override
                     public boolean accepts(Scope origin, Symbol t) {
                         return t.kind == TYP;
@@ -292,6 +293,7 @@ public class StarImportTest {
         Context context;
         Symtab symtab;
         Names names;
+        Types types;
         int nextNameSerial;
         List<PackageSymbol> packages = new ArrayList<PackageSymbol>();
         int nextPackageSerial;

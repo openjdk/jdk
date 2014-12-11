@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ LIBJSOUND_SRC_DIRS := \
     $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libjsound \
     #
 LIBJSOUND_CFLAGS := \
-    -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
+    -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
     $(LIBJAVA_HEADER_FLAGS) \
     $(foreach dir, $(LIBJSOUND_SRC_DIRS), -I$(dir)) \
     #
@@ -176,12 +176,12 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
         -D "JDK_FNAME=jsound.dll" \
         -D "JDK_INTERNAL_NAME=jsound" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjsound, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsound, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJSOUND): $(BUILD_LIBJAVA)
 
-DESKTOP_LIBRARIES += $(BUILD_LIBJSOUND)
+TARGETS += $(BUILD_LIBJSOUND)
 
 ##########################################################################################
 
@@ -212,12 +212,12 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := $(ALSA_LIBS) -ljava -ljvm, \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjsoundalsa, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsoundalsa, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
   $(BUILD_LIBJSOUNDALSA): $(BUILD_LIBJAVA)
 
-  DESKTOP_LIBRARIES += $(BUILD_LIBJSOUNDALSA)
+  TARGETS += $(BUILD_LIBJSOUNDALSA)
 
 endif
 
@@ -244,11 +244,11 @@ ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
           -D "JDK_FNAME=jsoundds.dll" \
           -D "JDK_INTERNAL_NAME=jsoundds" \
           -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjsoundds, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsoundds, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
   $(BUILD_LIBJSOUNDDS): $(BUILD_LIBJAVA)
 
-  DESKTOP_LIBRARIES += $(BUILD_LIBJSOUNDDS)
+  TARGETS += $(BUILD_LIBJSOUNDDS)
 
 endif

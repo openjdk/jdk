@@ -314,7 +314,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     // to all protocols
     if (sprops->exceptionList) {
         PUTPROP(props, "http.nonProxyHosts", sprops->exceptionList);
-        // HTTPS: implementation in jsse.jar uses http.nonProxyHosts
         PUTPROP(props, "ftp.nonProxyHosts", sprops->exceptionList);
         PUTPROP(props, "socksNonProxyHosts", sprops->exceptionList);
     }

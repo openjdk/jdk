@@ -1248,7 +1248,7 @@ public:
   // The same as above but assume that the caller holds the Heap_lock.
   void collect_locked(GCCause::Cause cause);
 
-  virtual void copy_allocation_context_stats(const jint* contexts,
+  virtual bool copy_allocation_context_stats(const jint* contexts,
                                              jlong* totals,
                                              jbyte* accuracy,
                                              jint len);
@@ -1380,10 +1380,13 @@ public:
   // in the range [0..max(ParallelGCThreads-1, 1)]. Applies "blk->doHeapRegion"
   // to each of the regions, by attempting to claim the region using the
   // HeapRegionClaimer and, if successful, applying the closure to the claimed
-  // region.
+  // region. The concurrent argument should be set to true if iteration is
+  // performed concurrently, during which no assumptions are made for consistent
+  // attributes of the heap regions (as they might be modified while iterating).
   void heap_region_par_iterate(HeapRegionClosure* cl,
                                uint worker_id,
-                               HeapRegionClaimer* hrclaimer) const;
+                               HeapRegionClaimer* hrclaimer,
+                               bool concurrent = false) const;
 
   // Clear the cached cset start regions and (more importantly)
   // the time stamps. Called when we reset the GC time stamp.

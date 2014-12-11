@@ -282,7 +282,8 @@ public class CheckResourceKeys {
             // file names
             "ct.sym",
             "rt.jar",
-            "tools.jar",
+            "jfxrt.jar",
+            "bootmodules.jimage",
             // -XD option names
             "process.packages",
             "ignore.symbol.file",

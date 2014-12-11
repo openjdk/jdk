@@ -1581,8 +1581,8 @@ public final class Files {
      * loader. If the system class loader cannot be found then the extension class
      * loader is used; If the extension class loader cannot be found then the
      * bootstrap class loader is used. File type detectors are typically installed
-     * by placing them in a JAR file on the application class path or in the
-     * extension directory, the JAR file contains a provider-configuration file
+     * by placing them in a JAR file on the application class path,
+     * the JAR file contains a provider-configuration file
      * named {@code java.nio.file.spi.FileTypeDetector} in the resource directory
      * {@code META-INF/services}, and the file lists one or more fully-qualified
      * names of concrete subclass of {@code FileTypeDetector } that have a zero
@@ -1778,7 +1778,7 @@ public final class Files {
      * @param   options
      *          options indicating how symbolic links are handled
      *
-     * @return  the {@code path} parameter
+     * @return  the given path
      *
      * @throws  UnsupportedOperationException
      *          if the attribute view is not available
@@ -2019,7 +2019,7 @@ public final class Files {
      * @param   perms
      *          The new set of permissions
      *
-     * @return  The path
+     * @return  The given path
      *
      * @throws  UnsupportedOperationException
      *          if the associated file system does not support the {@code
@@ -2102,7 +2102,7 @@ public final class Files {
      * @param   owner
      *          The new file owner
      *
-     * @return  The path
+     * @return  The given path
      *
      * @throws  UnsupportedOperationException
      *          if the associated file system does not support the {@code
@@ -2289,14 +2289,14 @@ public final class Files {
      * @param   time
      *          the new last modified time
      *
-     * @return  the path
+     * @return  the given path
      *
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
-     *          In the case of the default provider, the security manager's {@link
-     *          SecurityManager#checkWrite(String) checkWrite} method is invoked
-     *          to check write access to file
+     *          In the case of the default provider, and a security manager is
+     *          installed, its {@link SecurityManager#checkWrite(String)
+     *          checkWrite} method denies write access to the file.
      *
      * @see BasicFileAttributeView#setTimes
      */
@@ -2304,7 +2304,7 @@ public final class Files {
         throws IOException
     {
         getFileAttributeView(path, BasicFileAttributeView.class)
-            .setTimes(time, null, null);
+            .setTimes(Objects.requireNonNull(time), null, null);
         return path;
     }
 

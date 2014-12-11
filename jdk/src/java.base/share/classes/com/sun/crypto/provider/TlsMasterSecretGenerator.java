@@ -46,6 +46,7 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
     private final static String MSG = "TlsMasterSecretGenerator must be "
         + "initialized using a TlsMasterSecretParameterSpec";
 
+    @SuppressWarnings("deprecation")
     private TlsMasterSecretParameterSpec spec;
 
     private int protocolVersion;
@@ -57,6 +58,7 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
         if (params instanceof TlsMasterSecretParameterSpec == false) {
@@ -139,7 +141,8 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         }
     }
 
-    private static final class TlsMasterSecretKey implements TlsMasterSecret {
+   @SuppressWarnings("deprecation")
+   private static final class TlsMasterSecretKey implements TlsMasterSecret {
         private static final long serialVersionUID = 1019571680375368880L;
 
         private byte[] key;

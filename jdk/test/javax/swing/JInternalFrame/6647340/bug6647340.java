@@ -26,9 +26,10 @@
  * @summary Checks that iconified internal frame follows
  *          the main frame borders properly.
  * @author Mikhail Lapshin
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
+ * @run main bug6647340
  */
-
-import sun.awt.SunToolkit;
 
 import javax.swing.*;
 import java.awt.*;
@@ -38,6 +39,7 @@ public class bug6647340 {
     private JFrame frame;
     private Point location;
     private JInternalFrame jif;
+    private static ExtendedRobot robot = createRobot();
 
     public static void main(String[] args) throws Exception {
         final bug6647340 test = new bug6647340();
@@ -74,13 +76,13 @@ public class bug6647340 {
     }
 
     private void test() throws Exception {
-        realSync();
+        sync();
         test1();
-        realSync();
+        sync();
         check1();
-        realSync();
+        sync();
         test2();
-        realSync();
+        sync();
         check2();
     }
 
@@ -101,14 +103,14 @@ public class bug6647340 {
                 setIcon(false);
             }
         });
-        realSync();
+        sync();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 Dimension size = frame.getSize();
                 frame.setSize(size.width - 100, size.height - 100);
             }
         });
-        realSync();
+        sync();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 setIcon(true);
@@ -132,8 +134,17 @@ public class bug6647340 {
         }
     }
 
-    private static void realSync() {
-        ((SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
+    private static void sync() {
+        robot.waitForIdle();
+    }
+    private static ExtendedRobot createRobot() {
+        try {
+             ExtendedRobot robot = new ExtendedRobot();
+             return robot;
+         }catch(Exception ex) {
+             ex.printStackTrace();
+             throw new Error("Unexpected Failure");
+         }
     }
 
     private void setIcon(boolean b) {

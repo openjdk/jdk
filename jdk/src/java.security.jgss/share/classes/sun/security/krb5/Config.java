@@ -30,19 +30,19 @@
  */
 package sun.security.krb5;
 
-import java.io.File;
-import java.io.FilePermission;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.security.PrivilegedAction;
 import java.util.*;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import sun.net.dns.ResolverConfiguration;
 import sun.security.krb5.internal.crypto.EType;
@@ -312,6 +312,72 @@ public class Config {
         } catch (ClassCastException cce) {
             throw new IllegalArgumentException(cce);
         }
+    }
+
+    /**
+     * Translates a duration value into seconds.
+     *
+     * The format can be one of "h:m[:s]", "NdNhNmNs", and "N". See
+     * http://web.mit.edu/kerberos/krb5-devel/doc/basic/date_format.html#duration
+     * for definitions.
+     *
+     * @param s the string duration
+     * @return time in seconds
+     * @throw KrbException if format is illegal
+     */
+    public static int duration(String s) throws KrbException {
+
+        if (s.isEmpty()) {
+            throw new KrbException("Duration cannot be empty");
+        }
+
+        // N
+        if (s.matches("\\d+")) {
+            return Integer.parseInt(s);
+        }
+
+        // h:m[:s]
+        Matcher m = Pattern.compile("(\\d+):(\\d+)(:(\\d+))?").matcher(s);
+        if (m.matches()) {
+            int hr = Integer.parseInt(m.group(1));
+            int min = Integer.parseInt(m.group(2));
+            if (min >= 60) {
+                throw new KrbException("Illegal duration format " + s);
+            }
+            int result = hr * 3600 + min * 60;
+            if (m.group(4) != null) {
+                int sec = Integer.parseInt(m.group(4));
+                if (sec >= 60) {
+                    throw new KrbException("Illegal duration format " + s);
+                }
+                result += sec;
+            }
+            return result;
+        }
+
+        // NdNhNmNs
+        // 120m allowed. Maybe 1h120m is not good, but still allowed
+        m = Pattern.compile(
+                    "((\\d+)d)?\\s*((\\d+)h)?\\s*((\\d+)m)?\\s*((\\d+)s)?",
+                Pattern.CASE_INSENSITIVE).matcher(s);
+        if (m.matches()) {
+            int result = 0;
+            if (m.group(2) != null) {
+                result += 86400 * Integer.parseInt(m.group(2));
+            }
+            if (m.group(4) != null) {
+                result += 3600 * Integer.parseInt(m.group(4));
+            }
+            if (m.group(6) != null) {
+                result += 60 * Integer.parseInt(m.group(6));
+            }
+            if (m.group(8) != null) {
+                result += Integer.parseInt(m.group(8));
+            }
+            return result;
+        }
+
+        throw new KrbException("Illegal duration format " + s);
     }
 
     /**
@@ -737,7 +803,7 @@ public class Config {
      *
      * If the system property "java.security.krb5.conf" is defined, we'll
      * use its value, no matter if the file exists or not. Otherwise, we
-     * will look at $JAVA_HOME/lib/security directory with "krb5.conf" name,
+     * will look at $JAVA_HOME/conf/security directory with "krb5.conf" name,
      * and return it if the file exists.
      *
      * The method returns null if it cannot find a Java config file.
@@ -746,7 +812,7 @@ public class Config {
         String name = getProperty("java.security.krb5.conf");
         if (name == null) {
             name = getProperty("java.home") + File.separator +
-                                "lib" + File.separator + "security" +
+                                "conf" + File.separator + "security" +
                                 File.separator + "krb5.conf";
             if (!fileExists(name)) {
                 name = null;

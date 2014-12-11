@@ -58,8 +58,3 @@ $(eval $(call SetupLauncher,jstat, \
 $(eval $(call SetupLauncher,jcmd, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jcmd.JCmd"$(COMMA) }'))
 
-jdk.jcmd: $(LAUNCHERS)
-
-all: jdk.jcmd
-
-.PHONY: all jdk.jcmd

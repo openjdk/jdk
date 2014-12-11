@@ -152,9 +152,8 @@ bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
   return result;
 }
 
-GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap,
-                                           int max_covered_regions) {
-  return new CardTableRS(whole_heap, max_covered_regions);
+GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap) {
+  return new CardTableRS(whole_heap);
 }
 
 void CollectorPolicy::cleared_all_soft_refs() {
@@ -909,31 +908,14 @@ void MarkSweepPolicy::initialize_alignments() {
 }
 
 void MarkSweepPolicy::initialize_generations() {
-  _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC, CURRENT_PC,
-    AllocFailStrategy::RETURN_NULL);
-  if (_generations == NULL) {
-    vm_exit_during_initialization("Unable to allocate gen spec");
-  }
-
-  if (UseParNewGC) {
-    _generations[0] = new GenerationSpec(Generation::ParNew, _initial_young_size, _max_young_size);
-  } else {
-    _generations[0] = new GenerationSpec(Generation::DefNew, _initial_young_size, _max_young_size);
-  }
+  _generations = NEW_C_HEAP_ARRAY(GenerationSpecPtr, number_of_generations(), mtGC);
+  _generations[0] = new GenerationSpec(Generation::DefNew, _initial_young_size, _max_young_size);
   _generations[1] = new GenerationSpec(Generation::MarkSweepCompact, _initial_old_size, _max_old_size);
-
-  if (_generations[0] == NULL || _generations[1] == NULL) {
-    vm_exit_during_initialization("Unable to allocate gen spec");
-  }
 }
 
 void MarkSweepPolicy::initialize_gc_policy_counters() {
   // Initialize the policy counters - 2 collectors, 3 generations.
-  if (UseParNewGC) {
-    _gc_policy_counters = new GCPolicyCounters("ParNew:MSC", 2, 3);
-  } else {
-    _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 3);
-  }
+  _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 3);
 }
 
 /////////////// Unit tests ///////////////

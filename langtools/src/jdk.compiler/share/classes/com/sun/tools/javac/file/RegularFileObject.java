@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,8 +36,12 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
-import javax.tools.JavaFileObject;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.Normalizer;
+
+import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -59,33 +60,33 @@ class RegularFileObject extends BaseFileObject {
      */
     private boolean hasParents = false;
     private String name;
-    final File file;
-    private Reference<File> absFileRef;
+    final Path file;
+    private Reference<Path> absFileRef;
     final static boolean isMacOS = System.getProperty("os.name", "").contains("OS X");
 
-    public RegularFileObject(JavacFileManager fileManager, File f) {
-        this(fileManager, f.getName(), f);
+    public RegularFileObject(JavacFileManager fileManager, Path f) {
+        this(fileManager, f.getFileName().toString(), f);
     }
 
-    public RegularFileObject(JavacFileManager fileManager, String name, File f) {
+    public RegularFileObject(JavacFileManager fileManager, String name, Path f) {
         super(fileManager);
-        if (f.isDirectory()) {
+        if (Files.isDirectory(f)) {
             throw new IllegalArgumentException("directories not supported");
         }
         this.name = name;
         this.file = f;
-        if (f.lastModified() > System.currentTimeMillis())
+        if (getLastModified() > System.currentTimeMillis())
             fileManager.log.warning("file.from.future", f);
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public URI toUri() {
-        return file.toURI().normalize();
+        return file.toUri().normalize();
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public String getName() {
-        return file.getPath();
+        return file.toString();
     }
 
     @Override
@@ -100,21 +101,21 @@ class RegularFileObject extends BaseFileObject {
 
     @Override @DefinedBy(Api.COMPILER)
     public InputStream openInputStream() throws IOException {
-        return new FileInputStream(file);
+        return Files.newInputStream(file);
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public OutputStream openOutputStream() throws IOException {
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
-        return new FileOutputStream(file);
+        return Files.newOutputStream(file);
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
         CharBuffer cb = fileManager.getCachedContent(this);
         if (cb == null) {
-            try (InputStream in = new FileInputStream(file)) {
+            try (InputStream in = Files.newInputStream(file)) {
                 ByteBuffer bb = fileManager.makeByteBuffer(in);
                 JavaFileObject prev = fileManager.log.useSource(this);
                 try {
@@ -135,17 +136,26 @@ class RegularFileObject extends BaseFileObject {
     public Writer openWriter() throws IOException {
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
-        return new OutputStreamWriter(new FileOutputStream(file), fileManager.getEncodingName());
+        return new OutputStreamWriter(Files.newOutputStream(file), fileManager.getEncodingName());
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public long getLastModified() {
-        return file.lastModified();
+        try {
+            return Files.getLastModifiedTime(file).toMillis();
+        } catch (IOException e) {
+            return 0;
+        }
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public boolean delete() {
-        return file.delete();
+        try {
+            Files.delete(file);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     @Override
@@ -154,20 +164,21 @@ class RegularFileObject extends BaseFileObject {
     }
 
     @Override
-    protected String inferBinaryName(Iterable<? extends File> path) {
-        String fPath = file.getPath();
+    protected String inferBinaryName(Iterable<? extends Path> path) {
+        String fPath = file.toString();
         //System.err.println("RegularFileObject " + file + " " +r.getPath());
-        for (File dir: path) {
+        for (Path dir: path) {
             //System.err.println("dir: " + dir);
-            String dPath = dir.getPath();
+            String sep = dir.getFileSystem().getSeparator();
+            String dPath = dir.toString();
             if (dPath.length() == 0)
                 dPath = System.getProperty("user.dir");
-            if (!dPath.endsWith(File.separator))
-                dPath += File.separator;
+            if (!dPath.endsWith(sep))
+                dPath += sep;
             if (fPath.regionMatches(true, 0, dPath, 0, dPath.length())
-                && new File(fPath.substring(0, dPath.length())).equals(new File(dPath))) {
+                && Paths.get(fPath.substring(0, dPath.length())).equals(Paths.get(dPath))) {
                 String relativeName = fPath.substring(dPath.length());
-                return removeExtension(relativeName).replace(File.separatorChar, '.');
+                return removeExtension(relativeName).replace(sep, ".");
             }
         }
         return null;
@@ -199,7 +210,7 @@ class RegularFileObject extends BaseFileObject {
             if (name.equalsIgnoreCase(n)) {
             try {
                 // allow for Windows
-                return file.getCanonicalFile().getName().equals(n);
+                return file.toRealPath().getFileName().toString().equals(n);
             } catch (IOException e) {
             }
         }
@@ -208,12 +219,12 @@ class RegularFileObject extends BaseFileObject {
 
     private void ensureParentDirectoriesExist() throws IOException {
         if (!hasParents) {
-            File parent = file.getParentFile();
-            if (parent != null && !parent.exists()) {
-                if (!parent.mkdirs()) {
-                    if (!parent.exists() || !parent.isDirectory()) {
-                        throw new IOException("could not create parent directories");
-                    }
+            Path parent = file.getParent();
+            if (parent != null && !Files.isDirectory(parent)) {
+                try {
+                    Files.createDirectories(parent);
+                } catch (IOException e) {
+                    throw new IOException("could not create parent directories", e);
                 }
             }
             hasParents = true;
@@ -242,10 +253,10 @@ class RegularFileObject extends BaseFileObject {
         return getAbsoluteFile().hashCode();
     }
 
-    private File getAbsoluteFile() {
-        File absFile = (absFileRef == null ? null : absFileRef.get());
+    private Path getAbsoluteFile() {
+        Path absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
-            absFile = file.getAbsoluteFile();
+            absFile = file.toAbsolutePath();
             absFileRef = new SoftReference<>(absFile);
         }
         return absFile;

@@ -30,8 +30,7 @@
 
 import javax.swing.*;
 import java.awt.Graphics;
-import java.awt.Toolkit;
-import sun.awt.SunToolkit;
+import java.awt.Robot;
 
 public class bug8016551 {
     private static volatile RuntimeException exception = null;
@@ -64,8 +63,8 @@ public class bug8016551 {
             }
         });
 
-        SunToolkit tk = (SunToolkit)Toolkit.getDefaultToolkit();
-        tk.realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
 
         if (exception != null) {
             throw exception;

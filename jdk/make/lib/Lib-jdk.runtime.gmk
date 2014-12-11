@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,17 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CXXFLAGS_JDKLIB) \
         -DNO_ZLIB -DUNPACK_JNI -DFULL \
-        -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base \
+        -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
         -I$(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_windows := -map:$(JDK_OUTPUTDIR)/objs/unpack.map -debug \
+    LDFLAGS_windows := -map:$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpack.map -debug \
         jvm.lib $(WIN_JAVA_LIB), \
     LDFLAGS_SUFFIX_unix := -ljvm $(LIBCXX) -ljava -lc, \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libunpack, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libunpack, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=unpack.dll" \
@@ -54,9 +54,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
         -D "JDK_FTYPE=0x2L", \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-$(BUILD_LIBUNPACK): $(BUILD_LIBJAVA)
+$(BUILD_LIBUNPACK): $(call FindLib, java.base, java)
 
-UNPACK_LIBRARIES += $(BUILD_LIBUNPACK)
+TARGETS += $(BUILD_LIBUNPACK)
 
 ################################################################################
 
@@ -72,7 +72,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSDT, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         $(addprefix -I, $(LIBJSDT_SRC)) \
         $(LIBJAVA_HEADER_FLAGS) \
-        -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.runtime, \
+        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.runtime, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsdt/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -85,17 +85,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSDT, \
         -D "JDK_FNAME=jsdt.dll" \
         -D "JDK_INTERNAL_NAME=jsdt" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjsdt, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsdt, \
     DEBUG_SYMBOLS := true))
 
-$(BUILD_LIBJSDT): $(BUILD_LIBJAVA)
+$(BUILD_LIBJSDT): $(call FindLib, java.base, java)
 
-JSDT_LIBRARIES += $(BUILD_LIBJSDT)
+TARGETS += $(BUILD_LIBJSDT)
 
 ################################################################################
-
-jdk.runtime: $(JSDT_LIBRARIES) $(UNPACK_LIBRARIES)
-
-all: jdk.runtime
-
-.PHONY: all jdk.runtime

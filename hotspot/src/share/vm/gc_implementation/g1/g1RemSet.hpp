@@ -151,19 +151,6 @@ public:
   }
 };
 
-class CountNonCleanMemRegionClosure: public MemRegionClosure {
-  G1CollectedHeap* _g1;
-  int _n;
-  HeapWord* _start_first;
-public:
-  CountNonCleanMemRegionClosure(G1CollectedHeap* g1) :
-    _g1(g1), _n(0), _start_first(NULL)
-  {}
-  void do_MemRegion(MemRegion mr);
-  int n() { return _n; };
-  HeapWord* start_first() { return _start_first; }
-};
-
 class UpdateRSOopClosure: public ExtendedOopClosure {
   HeapRegion* _from;
   G1RemSet* _rs;

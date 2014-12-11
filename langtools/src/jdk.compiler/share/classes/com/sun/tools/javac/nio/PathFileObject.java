@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,19 +62,19 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-abstract class PathFileObject implements JavaFileObject {
-    private JavacPathFileManager fileManager;
-    private Path path;
+public abstract class PathFileObject implements JavaFileObject {
+    private final BaseFileManager fileManager;
+    private final Path path;
 
     /**
      * Create a PathFileObject within a directory, such that the binary name
      * can be inferred from the relationship to the parent directory.
      */
-    static PathFileObject createDirectoryPathFileObject(JavacPathFileManager fileManager,
+    static PathFileObject createDirectoryPathFileObject(BaseFileManager fileManager,
             final Path path, final Path dir) {
         return new PathFileObject(fileManager, path) {
             @Override
-            String inferBinaryName(Iterable<? extends Path> paths) {
+            public String inferBinaryName(Iterable<? extends Path> paths) {
                 return toBinaryName(dir.relativize(path));
             }
         };
@@ -84,12 +84,27 @@ abstract class PathFileObject implements JavaFileObject {
      * Create a PathFileObject in a file system such as a jar file, such that
      * the binary name can be inferred from its position within the filesystem.
      */
-    static PathFileObject createJarPathFileObject(JavacPathFileManager fileManager,
+    public static PathFileObject createJarPathFileObject(BaseFileManager fileManager,
             final Path path) {
         return new PathFileObject(fileManager, path) {
             @Override
-            String inferBinaryName(Iterable<? extends Path> paths) {
+            public String inferBinaryName(Iterable<? extends Path> paths) {
                 return toBinaryName(path);
+            }
+        };
+    }
+
+    /**
+     * Create a PathFileObject in a modular file system, such as jrt:, such that
+     * the binary name can be inferred from its position within the filesystem.
+     */
+    public static PathFileObject createJRTPathFileObject(BaseFileManager fileManager,
+            final Path path) {
+        return new PathFileObject(fileManager, path) {
+            @Override
+            public String inferBinaryName(Iterable<? extends Path> paths) {
+                // use subpath to ignore the leading component containing the module name
+                return toBinaryName(path.subpath(1, path.getNameCount()));
             }
         };
     }
@@ -98,11 +113,11 @@ abstract class PathFileObject implements JavaFileObject {
      * Create a PathFileObject whose binary name can be inferred from the
      * relative path to a sibling.
      */
-    static PathFileObject createSiblingPathFileObject(JavacPathFileManager fileManager,
+    static PathFileObject createSiblingPathFileObject(BaseFileManager fileManager,
             final Path path, final String relativePath) {
         return new PathFileObject(fileManager, path) {
             @Override
-            String inferBinaryName(Iterable<? extends Path> paths) {
+            public String inferBinaryName(Iterable<? extends Path> paths) {
                 return toBinaryName(relativePath, "/");
             }
         };
@@ -112,11 +127,11 @@ abstract class PathFileObject implements JavaFileObject {
      * Create a PathFileObject whose binary name might be inferred from its
      * position on a search path.
      */
-    static PathFileObject createSimplePathFileObject(JavacPathFileManager fileManager,
+    static PathFileObject createSimplePathFileObject(BaseFileManager fileManager,
             final Path path) {
         return new PathFileObject(fileManager, path) {
             @Override
-            String inferBinaryName(Iterable<? extends Path> paths) {
+            public String inferBinaryName(Iterable<? extends Path> paths) {
                 Path absPath = path.toAbsolutePath();
                 for (Path p: paths) {
                     Path ap = p.toAbsolutePath();
@@ -135,20 +150,20 @@ abstract class PathFileObject implements JavaFileObject {
         };
     }
 
-    protected PathFileObject(JavacPathFileManager fileManager, Path path) {
+    protected PathFileObject(BaseFileManager fileManager, Path path) {
         fileManager.getClass(); // null check
         path.getClass();        // null check
         this.fileManager = fileManager;
         this.path = path;
     }
 
-    abstract String inferBinaryName(Iterable<? extends Path> paths);
+    public abstract String inferBinaryName(Iterable<? extends Path> paths);
 
     /**
      * Return the Path for this object.
      * @return the Path for this object.
      */
-    Path getPath() {
+    public Path getPath() {
         return path;
     }
 

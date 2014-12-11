@@ -45,6 +45,7 @@ public class TestShrinkAuxiliaryData {
         "-XX:MaxHeapFreeRatio=11",
         "-XX:+UseG1GC",
         "-XX:G1HeapRegionSize=1m",
+        "-XX:-ExplicitGCInvokesConcurrent",
         "-XX:+PrintGCDetails"
     };
 
@@ -69,9 +70,7 @@ public class TestShrinkAuxiliaryData {
         printTestInfo(maxCacheSize);
 
         vmOpts.add("-XX:G1ConcRSLogCacheSize=" + RSetCacheSize);
-
-        vmOpts.addAll(Arrays.asList(Utils.getFilteredTestJavaOpts(
-                ShrinkAuxiliaryDataTest.prohibitedVmOptions)));
+        vmOpts.addAll(Arrays.asList(Utils.getTestJavaOpts()));
 
         // for 32 bits ObjectAlignmentInBytes is not a option
         if (Platform.is32bit()) {
@@ -272,15 +271,5 @@ public class TestShrinkAuxiliaryData {
         private static final int NUM_OBJECTS_PER_REGION = 10;
         private static final int NUM_LINKS = 20; // how many links create for each object
 
-        private static final String[] prohibitedVmOptions = {
-            // remove this when @requires option will be on duty
-            "-XX:\\+UseParallelGC",
-            "-XX:\\+UseSerialGC",
-            "-XX:\\+UseConcMarkSweepGC",
-            "-XX:\\+UseParallelOldGC",
-            "-XX:\\+UseParNewGC",
-            "-Xconcgc",
-            "-Xincgc"
-        };
     }
 }

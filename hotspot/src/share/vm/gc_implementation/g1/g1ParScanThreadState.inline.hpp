@@ -41,10 +41,11 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
   G1CollectedHeap::in_cset_state_t in_cset_state = _g1h->in_cset_state(obj);
   if (in_cset_state == G1CollectedHeap::InCSet) {
     oop forwardee;
-    if (obj->is_forwarded()) {
-      forwardee = obj->forwardee();
+    markOop m = obj->mark();
+    if (m->is_marked()) {
+      forwardee = (oop) m->decode_pointer();
     } else {
-      forwardee = copy_to_survivor_space(obj);
+      forwardee = copy_to_survivor_space(obj, m);
     }
     oopDesc::encode_store_heap_oop(p, forwardee);
   } else if (in_cset_state == G1CollectedHeap::IsHumongous) {

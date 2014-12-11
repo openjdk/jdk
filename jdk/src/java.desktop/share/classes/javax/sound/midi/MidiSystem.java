@@ -65,7 +65,7 @@ import com.sun.media.sound.ReferenceCountingDevice;
  * Properties can be used to specify default MIDI devices. Both system
  * properties and a properties file are considered. The "sound.properties"
  * properties file is read from an implementation-specific location (typically
- * it is the {@code lib} directory in the Java installation directory). If a
+ * it is the {@code conf} directory in the Java installation directory). If a
  * property exists both as a system property and in the properties file, the
  * system property takes precedence. If none is specified, a suitable default is
  * chosen among the available devices. The syntax of the properties file is

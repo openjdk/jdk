@@ -50,7 +50,7 @@ public class RawOutputFormatter implements OutputFormatter {
             StringBuilder headerBuilder = new StringBuilder();
             for (Iterator<Monitor> i = logged.iterator(); i.hasNext(); /* empty */ ) {
                 Monitor m = i.next();
-                headerBuilder.append(m.getName() + " ");
+                headerBuilder.append(m.getName()).append(' ');
             }
             header = headerBuilder.toString();
         }
