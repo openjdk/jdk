@@ -46,6 +46,7 @@ public class TestAnchorNames extends JavadocTester {
     void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
+                "-source", "8", //so that '_' can be used as an identifier
                 "-use",
                 "pkg1");
         checkExit(Exit.OK);
