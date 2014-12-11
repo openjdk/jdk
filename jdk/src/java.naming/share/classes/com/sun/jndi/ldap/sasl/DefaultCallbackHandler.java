@@ -90,7 +90,7 @@ final class DefaultCallbackHandler implements CallbackHandler {
                         if (selected == -1) {
                             StringBuilder allChoices = new StringBuilder();
                             for (int j = 0; j <  choices.length; j++) {
-                                allChoices.append(choices[j] + ",");
+                                allChoices.append(choices[j]).append(',');
                             }
                             throw new IOException("Cannot match " +
                                 "'java.naming.security.sasl.realm' property value, '" +

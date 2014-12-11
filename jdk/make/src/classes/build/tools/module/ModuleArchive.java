@@ -194,7 +194,7 @@ public class ModuleArchive implements Archive {
                         case CMDS:
                             Path path = destFile("bin", filename);
                             writeEntry(in, path);
-                            path.toFile().setExecutable(true);
+                            path.toFile().setExecutable(true, false);
                             break;
                         case CONFIGS:
                             writeEntry(in, destFile("conf", filename));

@@ -256,7 +256,7 @@ final public class CNNameParser implements NameParser {
     private static String stringifyComponent(NameComponent comp) {
         StringBuilder one = new StringBuilder(escape(comp.id));
         if (comp.kind != null && !comp.kind.equals("")) {
-            one.append(kindSeparator + escape(comp.kind));
+            one.append(kindSeparator).append(escape(comp.kind));
         }
         if (one.length() == 0) {
             return ""+kindSeparator;  // if neither id nor kind specified

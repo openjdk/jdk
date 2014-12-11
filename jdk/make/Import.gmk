@@ -221,8 +221,13 @@ $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/_the.sa.jar.unpacked: $(HOTSPOT_DIST)
 # even if zip is already unpacked.
 $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services: $(HOTSPOT_DIST)/lib/sa-jdi.jar
 
-SA_TARGETS += $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/_the.sa.jar.unpacked \
-    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
+# Some platforms don't have the serviceability agent
+ifeq (, $(filter $(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), aix-ppc64))
+  ifneq ($(JVM_VARIANT_ZERO), true)
+    SA_TARGETS += $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/_the.sa.jar.unpacked \
+        $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
+  endif
+endif
 
 ################################################################################
 
