@@ -29,10 +29,10 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/top.hpp"
-#include "trace/tracing.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1_globals.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -840,7 +840,7 @@ void CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, F
   faddr->set_ccstr(new_value);
   if (!faddr->is_default() && old_value != NULL) {
     // Prior value is heap allocated so free it.
-    FREE_C_HEAP_ARRAY(char, old_value, mtInternal);
+    FREE_C_HEAP_ARRAY(char, old_value);
   }
   faddr->set_origin(origin);
 }
@@ -874,7 +874,7 @@ void CommandLineFlags::printSetFlags(outputStream* out) {
     }
   }
   out->cr();
-  FREE_C_HEAP_ARRAY(Flag*, array, mtInternal);
+  FREE_C_HEAP_ARRAY(Flag*, array);
 }
 
 #ifndef PRODUCT
@@ -908,5 +908,5 @@ void CommandLineFlags::printFlags(outputStream* out, bool withComments) {
       array[i]->print_on(out, withComments);
     }
   }
-  FREE_C_HEAP_ARRAY(Flag*, array, mtInternal);
+  FREE_C_HEAP_ARRAY(Flag*, array);
 }

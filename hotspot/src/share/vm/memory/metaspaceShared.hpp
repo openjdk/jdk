@@ -92,7 +92,7 @@ class MetaspaceShared : AllStatic {
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
   static int preload_and_dump(const char * class_list_path,
                               GrowableArray<Klass*>* class_promote_order,
-                              TRAPS) NOT_CDS_RETURN;
+                              TRAPS) NOT_CDS_RETURN_(0);
 
   static ReservedSpace* shared_rs() {
     CDS_ONLY(return _shared_rs);

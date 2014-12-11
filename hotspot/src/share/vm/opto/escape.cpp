@@ -1115,6 +1115,9 @@ bool ConnectionGraph::complete_connection_graph(
           // Each 4 iterations calculate how much time it will take
           // to complete graph construction.
           time.stop();
+          // Poll for requests from shutdown mechanism to quiesce compiler
+          // because Connection graph construction may take long time.
+          CompileBroker::maybe_block();
           double stop_time = time.seconds();
           double time_per_iter = (stop_time - start_time) / (double)SAMPLE_SIZE;
           double time_until_end = time_per_iter * (double)(java_objects_length - next);
@@ -2417,7 +2420,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
       }
     }
   }
-  if ((int) (C->live_nodes() + 2*NodeLimitFudgeFactor) > MaxNodeLimit) {
+  if (C->live_nodes() + 2*NodeLimitFudgeFactor > C->max_node_limit()) {
     if (C->do_escape_analysis() == true && !C->failing()) {
       // Retry compilation without escape analysis.
       // If this is the first failure, the sentinel string will "stick"

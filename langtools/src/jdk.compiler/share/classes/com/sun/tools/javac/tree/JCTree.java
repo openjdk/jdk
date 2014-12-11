@@ -612,6 +612,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public boolean staticImport;
         /** The imported class(es). */
         public JCTree qualid;
+        public com.sun.tools.javac.code.Scope importScope;
         protected JCImport(JCTree qualid, boolean importStatic) {
             this.qualid = qualid;
             this.staticImport = importStatic;

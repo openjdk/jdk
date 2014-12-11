@@ -23,6 +23,6 @@
 
 // key: compiler.err.import.requires.canonical
 
-import p.ExtendsBase.NestedInBase;
+import java.util.HashMap.Entry;
 
 class ImportRequiredCanonical { }

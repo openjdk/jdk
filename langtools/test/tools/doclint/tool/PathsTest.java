@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,13 @@
  * @test
  * @bug 8006263
  * @summary Supplementary test cases needed for doclint
+ * @library /tools/lib
+ * @build ToolBox
+ * @run main PathsTest
  */
 
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.doclint.DocLint;
 import com.sun.tools.doclint.DocLint.BadArgs;
 import java.io.File;
@@ -35,6 +40,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.regex.Pattern;
+import javax.tools.StandardLocation;
+import javax.tools.JavaFileManager;
 
 public class PathsTest {
     public static void main(String... args) throws Exception {
@@ -56,9 +63,11 @@ public class PathsTest {
 
         test("src/Test.java", "-sourcepath", "src1" + PS + "src2");
         test("src/Test.java", "-classpath", "classes1" + PS + "classes2");
+
+        File testJar = createJar();
         String sysBootClassPath = System.getProperty("sun.boot.class.path");
         test("src/Test.java", "-bootclasspath",
-                sysBootClassPath + PS + "classes1" + PS + "classes2");
+                testJar + PS + "classes1" + PS + "classes2");
 
         if (errors > 0)
             throw new Exception(errors + " errors found");
@@ -85,6 +94,17 @@ public class PathsTest {
         } catch (BadArgs e) {
             System.err.println(e);
         }
+    }
+
+    File createJar() throws IOException {
+        File f = new File("test.jar");
+        try (JavaFileManager fm = new JavacFileManager(new Context(), false, null)) {
+            ToolBox tb = new ToolBox();
+            tb.new JarTask(f.getPath())
+                .files(fm, StandardLocation.PLATFORM_CLASS_PATH, "java.lang.*")
+                .run();
+        }
+        return f;
     }
 
     void compile(String... args) {

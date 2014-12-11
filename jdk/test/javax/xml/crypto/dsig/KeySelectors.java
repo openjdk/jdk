@@ -101,9 +101,7 @@ class KeySelectors {
                 throw new KeySelectorException("Null KeyInfo object!");
             }
             // search for X509Data in keyinfo
-            Iterator iter = keyInfo.getContent().iterator();
-            while (iter.hasNext()) {
-                XMLStructure kiType = (XMLStructure) iter.next();
+            for (XMLStructure kiType : keyInfo.getContent()) {
                 if (kiType instanceof X509Data) {
                     X509Data xd = (X509Data) kiType;
                     Object[] entries = xd.getContent().toArray();
@@ -114,10 +112,8 @@ class KeySelectors {
                             crl = (X509CRL) entries[i];
                         }
                     }
-                    Iterator xi = xd.getContent().iterator();
                     boolean hasCRL = false;
-                    while (xi.hasNext()) {
-                        Object o = xi.next();
+                    for (Object o : xd.getContent()) {
                         // skip non-X509Certificate entries
                         if (o instanceof X509Certificate) {
                             if ((purpose != KeySelector.Purpose.VERIFY) &&
@@ -152,10 +148,8 @@ class KeySelectors {
                 throw new KeySelectorException("Null KeyInfo object!");
             }
             SignatureMethod sm = (SignatureMethod) method;
-            List list = keyInfo.getContent();
 
-            for (int i = 0; i < list.size(); i++) {
-                XMLStructure xmlStructure = (XMLStructure) list.get(i);
+            for (XMLStructure xmlStructure : keyInfo.getContent()) {
                 if (xmlStructure instanceof KeyValue) {
                     PublicKey pk = null;
                     try {
@@ -282,9 +276,7 @@ class KeySelectors {
             if (keyInfo == null) {
                 throw new KeySelectorException("Null KeyInfo object!");
             }
-            Iterator iter = keyInfo.getContent().iterator();
-            while (iter.hasNext()) {
-                XMLStructure xmlStructure = (XMLStructure) iter.next();
+            for (XMLStructure xmlStructure : keyInfo.getContent()) {
                 try {
                     if (xmlStructure instanceof KeyName) {
                         String name = ((KeyName)xmlStructure).getName();
@@ -330,14 +322,12 @@ class KeySelectors {
                         }
                     } else if (xmlStructure instanceof X509Data) {
                         List content = ((X509Data)xmlStructure).getContent();
-                        int size = content.size();
                         Vector<X509Certificate> result = null;
                         // Lookup the public key using the information
                         // specified in X509Data element, i.e. searching
                         // over the collection of certificate files under
                         // "certs" subdirectory and return those match.
-                        for (int k = 0; k<size; k++) {
-                            Object obj = content.get(k);
+                        for (Object obj : content) {
                             if (obj instanceof String) {
                                 result = match(MATCH_SUBJECT, obj, certs);
                             } else if (obj instanceof byte[]) {

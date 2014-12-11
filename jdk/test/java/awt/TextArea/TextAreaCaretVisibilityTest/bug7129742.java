@@ -34,7 +34,7 @@
 
 import java.awt.FlowLayout;
 import java.awt.TextArea;
-import java.awt.Toolkit;
+import java.awt.Robot;
 import java.lang.reflect.Field;
 
 import javax.swing.JFrame;
@@ -42,7 +42,6 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.text.DefaultCaret;
 
-import sun.awt.SunToolkit;
 
 public class bug7129742 {
 
@@ -51,7 +50,7 @@ public class bug7129742 {
     public static boolean fastreturn = false;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Robot robot = new Robot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -88,7 +87,7 @@ public class bug7129742 {
                 }
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,45 +33,37 @@
 # They are used at JDK build phase in order to create $(BIFILES) which
 # are used on runtime instead.
 #
-TEXT_SRCDIR = $(JDK_TOPDIR)/src/java.base/share/classes \
+TEXT_SRCDIR := $(JDK_TOPDIR)/src/java.base/share/classes \
     $(JDK_TOPDIR)/src/jdk.localedata/share/classes
-TEXT_PKG = sun/text/resources
-TEXT_SOURCES = $(TEXT_PKG)/BreakIteratorRules.java \
+TEXT_PKG := sun/text/resources
+TEXT_SOURCES := $(TEXT_PKG)/BreakIteratorRules.java \
     $(TEXT_PKG)/BreakIteratorInfo.java \
     $(TEXT_PKG)/th/BreakIteratorRules_th.java \
     $(TEXT_PKG)/th/BreakIteratorInfo_th.java
 
 # Generate BreakIteratorData
-BREAK_ITERATOR_DIR = $(JDK_OUTPUTDIR)/break_iterator
-BREAK_ITERATOR_CLASSES = $(BREAK_ITERATOR_DIR)/classes
+BREAK_ITERATOR_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/break_iterator_classes
 
-# JAVAC_SOURCE_PATH_OVERRIDE is set to isolate the compile to just those
-# two files in that directory and not get anything implicit from
-# surrounding directories which aren't jdk N-1 compatible.
-# Because we are targeting jdk N-1, but the surrounding source code is jdk N.
-# These two files should be moved out to a build tool! We have to disable
-# sjavac here as well.
+# These two files should be moved out to a build tool!
 $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(TEXT_SRCDIR), \
-    DISABLE_SJAVAC := true, \
-    JAVAC_SOURCE_PATH_OVERRIDE := $(patsubst %, %/$(TEXT_PKG), $(TEXT_SRCDIR)), \
     INCLUDES := $(TEXT_PKG), \
     INCLUDE_FILES := $(TEXT_SOURCES), \
     BIN := $(BREAK_ITERATOR_CLASSES)))
 
 # Generate data resource files.
 # input
-UNICODEDATA = $(JDK_TOPDIR)/make/data/unicodedata/UnicodeData.txt
+UNICODEDATA := $(JDK_TOPDIR)/make/data/unicodedata/UnicodeData.txt
 
 # output
-BASE_DATA_PKG_DIR = $(JDK_OUTPUTDIR)/modules/java.base/sun/text/resources
-SL_DATA_PKG_DIR = $(JDK_OUTPUTDIR)/modules/jdk.localedata/sun/text/resources
-BIFILES = $(BASE_DATA_PKG_DIR)/CharacterBreakIteratorData \
+BASE_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/java.base/sun/text/resources
+SL_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/jdk.localedata/sun/text/resources
+BIFILES := $(BASE_DATA_PKG_DIR)/CharacterBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/WordBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/LineBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/SentenceBreakIteratorData
-BIFILES_TH = $(SA_DATA_PKG_DIR)/th/WordBreakIteratorData_th \
+BIFILES_TH := $(SA_DATA_PKG_DIR)/th/WordBreakIteratorData_th \
     $(SA_DATA_PKG_DIR)/th/LineBreakIteratorData_th
 
 $(BIFILES): $(BASE_DATA_PKG_DIR)/_the.bifiles
@@ -97,5 +89,4 @@ $(SL_DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKI
 	    -language th
 	$(TOUCH) $@
 
-
-BREAK_ITERATOR += $(BIFILES) $(BIFILES_TH)
+TARGETS += $(BIFILES) $(BIFILES_TH)

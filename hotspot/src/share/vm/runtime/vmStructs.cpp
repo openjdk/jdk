@@ -173,7 +173,7 @@
 #endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_TRACE
- #include "runtime/vmStructs_trace.hpp"
+#include "runtime/vmStructs_trace.hpp"
 #endif
 
 #ifdef COMPILER2
@@ -473,7 +473,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
                                                                                                                                      \
   unchecked_nonstatic_field(ageTable,          sizes,                                         sizeof(ageTable::sizes))               \
                                                                                                                                      \
-  nonstatic_field(BarrierSet,                  _max_covered_regions,                          int)                                   \
   nonstatic_field(BarrierSet,                  _kind,                                         BarrierSet::Name)                      \
   nonstatic_field(BlockOffsetTable,            _bottom,                                       HeapWord*)                             \
   nonstatic_field(BlockOffsetTable,            _end,                                          HeapWord*)                             \
@@ -527,11 +526,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(DefNewGeneration,            _next_gen,                                     Generation*)                           \
   nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
   nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
-  nonstatic_field(DefNewGeneration,            _eden_space,                                   EdenSpace*)                            \
+  nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _to_space,                                     ContiguousSpace*)                      \
-                                                                                                                                     \
-  nonstatic_field(EdenSpace,                   _gen,                                          DefNewGeneration*)                     \
                                                                                                                                      \
   nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
   nonstatic_field(Generation,                  _virtual_space,                                VirtualSpace)                          \
@@ -557,9 +554,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
                                                                                                                                      \
   nonstatic_field(OffsetTableContigSpace,      _offsets,                                      BlockOffsetArray)                      \
                                                                                                                                      \
-  nonstatic_field(OneContigSpaceCardGeneration, _min_heap_delta_bytes,                        size_t)                                \
-  nonstatic_field(OneContigSpaceCardGeneration, _the_space,                                   ContiguousSpace*)                      \
-  nonstatic_field(OneContigSpaceCardGeneration, _last_gc,                                     WaterMark)                             \
+  nonstatic_field(TenuredGeneration,           _min_heap_delta_bytes,                         size_t)                                \
+  nonstatic_field(TenuredGeneration,           _the_space,                                    ContiguousSpace*)                      \
+  nonstatic_field(TenuredGeneration,           _last_gc,                                      WaterMark)                             \
                                                                                                                                      \
                                                                                                                                      \
                                                                                                                                      \
@@ -1484,13 +1481,11 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(Generation)                                       \
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
-           declare_type(OneContigSpaceCardGeneration, CardGeneration)     \
-           declare_type(TenuredGeneration,            OneContigSpaceCardGeneration) \
+           declare_type(TenuredGeneration,            CardGeneration)     \
   declare_toplevel_type(Space)                                            \
   declare_toplevel_type(BitMap)                                           \
            declare_type(CompactibleSpace,             Space)              \
            declare_type(ContiguousSpace,              CompactibleSpace)   \
-           declare_type(EdenSpace,                    ContiguousSpace)    \
            declare_type(OffsetTableContigSpace,       ContiguousSpace)    \
            declare_type(TenuredSpace,                 OffsetTableContigSpace) \
   declare_toplevel_type(BarrierSet)                                       \
@@ -1532,15 +1527,14 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
   declare_toplevel_type(DefNewGeneration*)                                \
-  declare_toplevel_type(EdenSpace*)                                       \
   declare_toplevel_type(GenCollectedHeap*)                                \
   declare_toplevel_type(Generation*)                                      \
   declare_toplevel_type(GenerationSpec**)                                 \
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(MemRegion*)                                       \
   declare_toplevel_type(OffsetTableContigSpace*)                          \
-  declare_toplevel_type(OneContigSpaceCardGeneration*)                    \
   declare_toplevel_type(Space*)                                           \
+  declare_toplevel_type(TenuredGeneration*)                               \
   declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
                                                                           \
   /************************/                                              \
@@ -3273,10 +3267,10 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     s[len-1] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      FREE_C_HEAP_ARRAY(char, s, mtInternal);
+      FREE_C_HEAP_ARRAY(char, s);
       return 1;
     }
-    FREE_C_HEAP_ARRAY(char, s, mtInternal);
+    FREE_C_HEAP_ARRAY(char, s);
   }
   const char* start = NULL;
   if (strstr(typeName, "GrowableArray<") == typeName) {
@@ -3292,10 +3286,10 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     s[len-1] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      FREE_C_HEAP_ARRAY(char, s, mtInternal);
+      FREE_C_HEAP_ARRAY(char, s);
       return 1;
     }
-    FREE_C_HEAP_ARRAY(char, s, mtInternal);
+    FREE_C_HEAP_ARRAY(char, s);
   }
   if (strstr(typeName, "const ") == typeName) {
     const char * s = typeName + strlen("const ");

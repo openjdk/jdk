@@ -26,6 +26,9 @@
  * @summary Checks that JInternalFrame's system menu
  *          can be localized during run-time
  * @author Mikhail Lapshin
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
+ * @run main bug6725409
  */
 
 import javax.swing.*;
@@ -36,6 +39,7 @@ public class bug6725409 {
     private JInternalFrame iFrame;
     private TestTitlePane testTitlePane;
     private boolean passed;
+    private static ExtendedRobot robot = createRobot();
 
     public static void main(String[] args) throws Exception {
         try {
@@ -53,19 +57,19 @@ public class bug6725409 {
                     bug6725409.setupUIStep1();
                 }
             });
-            realSync();
+            sync();
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     bug6725409.setupUIStep2();
                 }
             });
-            realSync();
+            sync();
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     bug6725409.test();
                 }
             });
-            realSync();
+            sync();
             bug6725409.checkResult();
         } finally {
             if (bug6725409.frame != null) {
@@ -137,8 +141,17 @@ public class bug6725409 {
         }
     }
 
-    private static void realSync() {
-        ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
+    private static void sync() {
+        robot.waitForIdle();
+    }
+    private static ExtendedRobot createRobot() {
+        try {
+             ExtendedRobot robot = new ExtendedRobot();
+             return robot;
+         }catch(Exception ex) {
+             ex.printStackTrace();
+             throw new Error("Unexpected Failure");
+         }
     }
 
     // Extend WindowsInternalFrameTitlePane to get access to systemPopupMenu

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public final class DOMForest {
      * <p>
      * Set of system ids as strings.
      */
-    private final Set<String> rootDocuments = new HashSet<String>();
+    private final Set<String> rootDocuments = new LinkedHashSet<String>();
 
     /** Stores location information for all the trees in this forest. */
     public final LocatorTable locatorTable = new LocatorTable();

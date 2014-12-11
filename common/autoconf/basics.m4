@@ -268,7 +268,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
   fi
 ])
 
-# Setup a tool for the given variable. If correctly specified by the user, 
+# Setup a tool for the given variable. If correctly specified by the user,
 # use that value, otherwise search for the tool using the supplied code snippet.
 # $1: variable to set
 # $2: code snippet to call to look for the tool
@@ -546,7 +546,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       XCODEBUILD=
       AC_SUBST(XCODEBUILD)
     fi
-  
+
     AC_MSG_CHECKING([for sdk name])
     AC_ARG_WITH([sdk-name], [AS_HELP_STRING([--with-sdk-name],
         [use the platform SDK of the given name. @<:@macosx@:>@])],

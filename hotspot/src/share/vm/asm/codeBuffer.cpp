@@ -1025,7 +1025,7 @@ class CodeString: public CHeapObj<mtCode> {
 
   ~CodeString() {
     assert(_next == NULL, "wrong interface for freeing list");
-    os::free((void*)_string, mtCode);
+    os::free((void*)_string);
   }
 
   bool is_comment() const { return _offset >= 0; }

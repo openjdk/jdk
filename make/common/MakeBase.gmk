@@ -380,6 +380,17 @@ define LogSetupMacroEntry
   $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
 endef
 
+# Support macro for all SetupFoo macros.
+define EvalDebugWrapper
+  $(if $(DEBUG_$1),
+    $(info -------- <<< Begin expansion of $1)
+    $(info $2)
+    $(info -------- >>> End expansion of $1)
+  )
+
+  $2
+endef
+
 # Make directory without forking mkdir if not needed
 define MakeDir
   ifneq ($$(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),$$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9))
@@ -394,7 +405,7 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   # If the source and target parent directories are the same, recursive copy doesn't work
   # so we fall back on regular copy, which isn't preserving symlinks.
   define install-file
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p '$(@D)'
 	$(RM) '$@'
 	if [ "$(@D)" != "$(<D)" ]; then \
 	  $(CP) -f -r -P '$<' '$(@D)'; \
@@ -416,7 +427,7 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   # output dir. When these are copied again to images, xattr would fail. By only clearing
   # attributes when they are present, failing on this is avoided.
   define install-file
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p '$(@D)'
 	$(CP) -fRP '$<' '$@'
 	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
   endef
@@ -424,7 +435,7 @@ else
   # Running mkdir and cp in the same shell speeds up copy intensive tasks in Cygwin
   # significantly.
   define install-file
-	$(MKDIR) -p $(@D) && $(CP) -fP '$<' '$@'
+	$(MKDIR) -p '$(@D)' && $(CP) -fP '$<' '$@'
   endef
 endif
 

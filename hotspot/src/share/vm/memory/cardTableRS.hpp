@@ -83,7 +83,8 @@ class CardTableRS: public GenRemSet {
 
   jbyte _cur_youngergen_card_val;
 
-  int _regions_to_iterate;
+  // Number of generations, plus one for lingering PermGen issues in CardTableRS.
+  static const int _regions_to_iterate = 3;
 
   jbyte cur_youngergen_card_val() {
     return _cur_youngergen_card_val;
@@ -101,7 +102,7 @@ class CardTableRS: public GenRemSet {
   jbyte find_unused_youngergenP_card_value();
 
 public:
-  CardTableRS(MemRegion whole_heap, int max_covered_regions);
+  CardTableRS(MemRegion whole_heap);
   ~CardTableRS();
 
   // *** GenRemSet functions.
@@ -137,7 +138,6 @@ public:
   }
 
   void verify();
-  void verify_aligned_region_empty(MemRegion mr);
 
   void clear(MemRegion mr) { _ct_bs->clear(mr); }
   void clear_into_younger(Generation* old_gen);

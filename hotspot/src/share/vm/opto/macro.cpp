@@ -1197,8 +1197,7 @@ void PhaseMacroExpand::expand_allocate_common(
   }
 
   if (C->env()->dtrace_alloc_probes() ||
-      !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc() ||
-                   (UseConcMarkSweepGC && CMSIncrementalMode))) {
+      !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc())) {
     // Force slow-path allocation
     always_slow = true;
     initial_slow_test = NULL;
@@ -2202,7 +2201,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
     Node* klass_node = AllocateNode::Ideal_klass(obj, &_igvn);
     if (klass_node == NULL) {
       Node* k_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
-      klass_node = transform_later( LoadKlassNode::make(_igvn, mem, k_adr, _igvn.type(k_adr)->is_ptr()) );
+      klass_node = transform_later(LoadKlassNode::make(_igvn, NULL, mem, k_adr, _igvn.type(k_adr)->is_ptr()));
 #ifdef _LP64
       if (UseCompressedClassPointers && klass_node->is_DecodeNKlass()) {
         assert(klass_node->in(1)->Opcode() == Op_LoadNKlass, "sanity");

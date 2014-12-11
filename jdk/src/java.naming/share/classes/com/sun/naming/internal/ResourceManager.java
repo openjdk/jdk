@@ -60,9 +60,9 @@ public final class ResourceManager {
     private static final String APP_RESOURCE_FILE_NAME = "jndi.properties";
 
     /*
-     * Name of properties file in <java.home>/lib.
+     * Name of properties file in <java.home>/conf.
      */
-    private static final String JRELIB_PROPERTY_FILE_NAME = "jndi.properties";
+    private static final String JRE_CONF_PROPERTY_FILE_NAME = "jndi.properties";
 
     /*
      * Internal environment property, that when set to "true", disables
@@ -474,7 +474,7 @@ public final class ResourceManager {
     /*
      * Returns the Hashtable (never null) that results from merging
      * all application resource files available to this thread's
-     * context class loader.  The properties file in <java.home>/lib
+     * context class loader.  The properties file in <java.home>/conf
      * is also merged in.  The results are cached.
      *
      * SECURITY NOTES:
@@ -523,9 +523,9 @@ public final class ResourceManager {
                     }
                 }
 
-                // Merge in properties from file in <java.home>/lib.
+                // Merge in properties from file in <java.home>/conf.
                 InputStream istream =
-                    helper.getJavaHomeLibStream(JRELIB_PROPERTY_FILE_NAME);
+                    helper.getJavaHomeConfStream(JRE_CONF_PROPERTY_FILE_NAME);
                 if (istream != null) {
                     try {
                         Properties props = new Properties();
