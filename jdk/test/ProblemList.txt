@@ -135,10 +135,6 @@ java/lang/instrument/RetransformBigClass.sh                     generic-all
 
 # jdk_management
 
-# 8044591
-com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
-com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
-
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
 

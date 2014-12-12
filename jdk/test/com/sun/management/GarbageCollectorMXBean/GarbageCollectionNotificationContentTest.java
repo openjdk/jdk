@@ -26,6 +26,7 @@
  * @bug     7036199
  * @summary Check that GarbageCollectionNotification contents are reasonable
  * @author  Frederic Parain
+ * @requires vm.opt.ExplicitGCInvokesConcurrent == null | vm.opt.ExplicitGCInvokesConcurrent == false
  * @run     main/othervm GarbageCollectionNotificationContentTest
  */
 
