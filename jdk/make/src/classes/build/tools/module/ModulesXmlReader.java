@@ -60,7 +60,6 @@ public class ModulesXmlReader {
     private static final String DEPEND    = "depend";
     private static final String EXPORT    = "export";
     private static final String TO        = "to";
-    private static final String INCLUDE   = "include";
     private static final QName  REEXPORTS = new QName("re-exports");
     private static Set<Module> load(InputStream in)
         throws XMLStreamException, IOException
@@ -102,8 +101,6 @@ public class ModulesXmlReader {
                         }
                         mb.require(getData(stream), reexports);
                         break;
-                    case INCLUDE:
-                        throw new RuntimeException("unexpected " + event);
                     case EXPORT:
                         pkg = getNextTag(stream, NAME);
                         break;

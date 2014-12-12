@@ -87,4 +87,12 @@ inline void Atomic::dec(volatile size_t* dest) {
   dec_ptr((volatile intptr_t*) dest);
 }
 
+#ifndef VM_HAS_SPECIALIZED_CMPXCHG_BYTE
+// See comment in atomic.cpp how to override.
+inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte *dest, jbyte comparand)
+{
+  return cmpxchg_general(exchange_value, dest, comparand);
+}
+#endif // VM_HAS_SPECIALIZED_CMPXCHG_BYTE
+
 #endif // SHARE_VM_RUNTIME_ATOMIC_INLINE_HPP

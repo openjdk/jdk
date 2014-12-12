@@ -50,8 +50,7 @@ public:
   // pre-marking object graph.
   static void enqueue(oop pre_val);
 
-  G1SATBCardTableModRefBS(MemRegion whole_heap,
-                          int max_covered_regions);
+  G1SATBCardTableModRefBS(MemRegion whole_heap);
 
   bool is_a(BarrierSet::Name bsn) {
     return bsn == BarrierSet::G1SATBCT || CardTableModRefBS::is_a(bsn);
@@ -152,8 +151,7 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
-  G1SATBCardTableLoggingModRefBS(MemRegion whole_heap,
-                                 int max_covered_regions);
+  G1SATBCardTableLoggingModRefBS(MemRegion whole_heap);
 
   virtual void initialize() { }
   virtual void initialize(G1RegionToSpaceMapper* mapper);

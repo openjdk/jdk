@@ -55,6 +55,7 @@ public class HashCollisionTest {
         names = Names.instance(context);       // Name.Table impls tied to an instance of Names
         symtab = Symtab.instance(context);
         trees = JavacTrees.instance(context);
+        types = Types.instance(context);
 
         // determine hashMask for an empty scope
         Scope emptyScope = WriteableScope.create(symtab.unnamedPackage); // any owner will do
@@ -121,12 +122,12 @@ public class HashCollisionTest {
                 return sym.kind == TYP;
             }
         };
-        starImportScope.importAll(fromScope, fromScope, typeFilter, false);
+        starImportScope.importAll(types, fromScope, typeFilter, false);
 
         dump("imported p", starImportScope);
 
         // 7. Insert the class from 3.
-        starImportScope.importAll(cc.members_field, cc.members_field, typeFilter, false);
+        starImportScope.importAll(types, cc.members_field, typeFilter, false);
         dump("imported ce", starImportScope);
 
         /*
@@ -196,4 +197,5 @@ public class HashCollisionTest {
     Names names;
     Symtab symtab;
     Trees trees;
+    Types types;
 }

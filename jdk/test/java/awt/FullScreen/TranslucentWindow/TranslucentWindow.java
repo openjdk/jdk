@@ -34,10 +34,17 @@ import java.awt.geom.*;
 
 import static java.awt.GraphicsDevice.WindowTranslucency.*;
 
-import sun.awt.SunToolkit;
 
 public class TranslucentWindow {
     public static void main(String args[]) {
+        Robot robot;
+        try {
+            robot = new Robot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
+
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
 
@@ -47,10 +54,10 @@ public class TranslucentWindow {
 
         // First, check it can be made fullscreen window without any effects applied
         gd.setFullScreenWindow(f);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         gd.setFullScreenWindow(null);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         // Second, check if it applying any effects doesn't prevent the window
         // from going into the fullscreen mode
@@ -64,7 +71,7 @@ public class TranslucentWindow {
             f.setBackground(new Color(0, 0, 0, 128));
         }
         gd.setFullScreenWindow(f);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         // Third, make sure all the effects are unset when entering the fullscreen mode
         if (f.getShape() != null) {

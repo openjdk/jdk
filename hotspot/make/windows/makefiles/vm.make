@@ -89,19 +89,24 @@ AGCT_EXPORT=/export:AsyncGetCallTrace
 
 # If you modify exports below please do the corresponding changes in
 # src/share/tools/ProjectCreator/WinGammaPlatformVC7.java
-LD_FLAGS=$(LD_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
-  /export:JNI_GetDefaultJavaVMInitArgs       \
-  /export:JNI_CreateJavaVM                   \
-  /export:JVM_FindClassFromBootLoader        \
-  /export:JNI_GetCreatedJavaVMs              \
-  /export:jio_snprintf                       \
-  /export:jio_printf                         \
-  /export:jio_fprintf                        \
-  /export:jio_vfprintf                       \
-  /export:jio_vsnprintf                      \
-  $(AGCT_EXPORT)                             \
-  /export:JVM_GetVersionInfo                 \
-  /export:JVM_InitAgentProperties
+!if "$(BUILDARCH)" == "amd64"
+EXPORT_LIST=
+!else
+EXPORT_LIST=/export:JNI_GetDefaultJavaVMInitArgs \
+            /export:JNI_CreateJavaVM             \
+            /export:JVM_FindClassFromBootLoader  \
+            /export:JNI_GetCreatedJavaVMs        \
+            /export:jio_snprintf                 \
+            /export:jio_printf                   \
+            /export:jio_fprintf                  \
+            /export:jio_vfprintf                 \
+            /export:jio_vsnprintf                \
+            $(AGCT_EXPORT)                       \
+            /export:JVM_GetVersionInfo           \
+            /export:JVM_InitAgentProperties
+!endif
+
+LD_FLAGS=$(LD_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 $(EXPORT_LIST)
 
 CXX_INCLUDE_DIRS=/I "..\generated"
 

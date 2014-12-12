@@ -895,6 +895,10 @@ public class JDefinedClass
         return TypedAnnotationWriter.create(clazz,this);
     }
 
+    public boolean removeAnnotation(JAnnotationUse annotation) {
+        return this.annotations.remove(annotation);
+    }
+
     /**
      * {@link JAnnotatable#annotations()}
      */

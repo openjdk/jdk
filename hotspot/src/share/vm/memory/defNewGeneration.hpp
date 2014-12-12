@@ -29,10 +29,8 @@
 #include "gc_implementation/shared/cSpaceCounters.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
-#include "memory/generation.inline.hpp"
 #include "utilities/stack.hpp"
 
-class EdenSpace;
 class ContiguousSpace;
 class ScanClosure;
 class STWGCTimer;
@@ -132,7 +130,7 @@ protected:
   void adjust_desired_tenuring_threshold();
 
   // Spaces
-  EdenSpace*       _eden_space;
+  ContiguousSpace* _eden_space;
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
 
@@ -214,9 +212,9 @@ protected:
   virtual Generation::Name kind() { return Generation::DefNew; }
 
   // Accessing spaces
-  EdenSpace*       eden() const           { return _eden_space; }
-  ContiguousSpace* from() const           { return _from_space;  }
-  ContiguousSpace* to()   const           { return _to_space;    }
+  ContiguousSpace* eden() const           { return _eden_space; }
+  ContiguousSpace* from() const           { return _from_space; }
+  ContiguousSpace* to()   const           { return _to_space;   }
 
   virtual CompactibleSpace* first_compaction_space() const;
 
@@ -282,8 +280,6 @@ protected:
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  // Prologue & Epilogue
-  virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
@@ -342,9 +338,6 @@ protected:
   // Printing
   virtual const char* name() const;
   virtual const char* short_name() const { return "DefNew"; }
-
-  bool must_be_youngest() const { return true; }
-  bool must_be_oldest() const { return false; }
 
   // PrintHeapAtGC support.
   void print_on(outputStream* st) const;

@@ -1478,7 +1478,7 @@ class CertificateRequest extends HandshakeMessage
                 boolean opened = false;
                 for (SignatureAndHashAlgorithm signAlg : algorithms) {
                     if (opened) {
-                        sb.append(", " + signAlg.getAlgorithmName());
+                        sb.append(", ").append(signAlg.getAlgorithmName());
                     } else {
                         sb.append(signAlg.getAlgorithmName());
                         opened = true;
@@ -1963,6 +1963,7 @@ static final class Finished extends HandshakeMessage {
                  * algorithm.  If we ever run across a different
                  * length, this call will need to be updated.
                  */
+                @SuppressWarnings("deprecation")
                 TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
                     masterKey, tlsLabel, seed, 12,
                     prfHashAlg, prfHashLength, prfBlockSize);

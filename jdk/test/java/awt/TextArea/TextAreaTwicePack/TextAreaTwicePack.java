@@ -24,9 +24,8 @@
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.TextArea;
-import java.awt.Toolkit;
+import java.awt.Robot;
 
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -55,10 +54,12 @@ public final class TextAreaTwicePack {
     }
 
     private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
         try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
             Thread.sleep(500L);
-        } catch (InterruptedException ignored) {
+        } catch (Exception ignored) {
+            ignored.printStackTrace();
         }
     }
 }

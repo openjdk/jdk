@@ -84,6 +84,7 @@ ACCEPTED_BIN_DIFF="
 ./bin/jconsole
 ./bin/jdb
 ./bin/jhat
+./bin/jimage
 ./bin/jinfo
 ./bin/jjs
 ./bin/jmap
@@ -173,6 +174,7 @@ ACCEPTED_BIN_DIFF="
 ./bin/jconsole
 ./bin/jdb
 ./bin/jhat
+./bin/jimage
 ./bin/jinfo
 ./bin/jjs
 ./bin/jmap
@@ -318,7 +320,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jconsole
 ./bin/jdb
 ./bin/jhat
+./bin/jimage
 ./bin/jinfo
+./bin/jjs
 ./bin/jmap
 ./bin/jps
 ./bin/jrunscript
@@ -457,7 +461,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/amd64/jconsole
 ./bin/amd64/jdb
 ./bin/amd64/jhat
+./bin/amd64/jimage
 ./bin/amd64/jinfo
+./bin/amd64/jjs
 ./bin/amd64/jmap
 ./bin/amd64/jps
 ./bin/amd64/jrunscript
@@ -615,7 +621,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jconsole
 ./bin/jdb
 ./bin/jhat
+./bin/jimage
 ./bin/jinfo
+./bin/jjs
 ./bin/jmap
 ./bin/jps
 ./bin/jrunscript
@@ -759,7 +767,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/sparcv9/jconsole
 ./bin/sparcv9/jdb
 ./bin/sparcv9/jhat
+./bin/sparcv9/jimage
 ./bin/sparcv9/jinfo
+./bin/sparcv9/jjs
 ./bin/sparcv9/jmap
 ./bin/sparcv9/jps
 ./bin/sparcv9/jrunscript
@@ -840,7 +850,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jconsole.exe
 ./bin/jdb.exe
 ./bin/jhat.exe
+./bin/jimage.exe
 ./bin/jinfo.exe
+./bin/jjs.exe
 ./bin/jmap.exe
 ./bin/jps.exe
 ./bin/jrunscript.exe
@@ -929,7 +941,9 @@ ACCEPTED_BIN_DIFF="
 ./bin/jconsole
 ./bin/jdb
 ./bin/jhat
+./bin/jimage
 ./bin/jinfo
+./bin/jjs
 ./bin/jmap
 ./bin/jps
 ./bin/jrunscript

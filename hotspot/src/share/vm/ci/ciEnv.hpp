@@ -450,7 +450,8 @@ public:
   // Check for changes to the system dictionary during compilation
   bool system_dictionary_modification_counter_changed();
 
-  void record_failure(const char* reason);
+  void record_failure(const char* reason);      // Record failure and report later
+  void report_failure(const char* reason);      // Report failure immediately
   void record_method_not_compilable(const char* reason, bool all_tiers = true);
   void record_out_of_memory_failure();
 

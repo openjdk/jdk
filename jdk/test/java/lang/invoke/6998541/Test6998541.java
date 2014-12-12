@@ -214,13 +214,13 @@ public class Test6998541 {
     }
     private static void boolean2prim_invalid(boolean x) throws Throwable {
         if (DO_CASTS)  return;
-        try { byte    y = (byte)    mh_bz.invokeExact(x); fail(); } catch (ClassCastException _) {}  // boolean -> byte
-        try { char    y = (char)    mh_cz.invokeExact(x); fail(); } catch (ClassCastException _) {}  // boolean -> char
-        try { short   y = (short)   mh_sz.invokeExact(x); fail(); } catch (ClassCastException _) {}  // boolean -> short
-        try { int     y = (int)     mh_iz.invokeExact(x); fail(); } catch (ClassCastException _) {}  // boolean -> int
-        try { long    y = (long)    mh_jz.invokeExact(x); fail(); } catch (ClassCastException _) {}  // boolean -> long
-        try { float   y = (float)   mh_fz.invokeExact(x); fail(); } catch (ClassCastException _) {}  // boolean -> float
-        try { double  y = (double)  mh_dz.invokeExact(x); fail(); } catch (ClassCastException _) {}  // boolean -> double
+        try { byte    y = (byte)    mh_bz.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // boolean -> byte
+        try { char    y = (char)    mh_cz.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // boolean -> char
+        try { short   y = (short)   mh_sz.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // boolean -> short
+        try { int     y = (int)     mh_iz.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // boolean -> int
+        try { long    y = (long)    mh_jz.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // boolean -> long
+        try { float   y = (float)   mh_fz.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // boolean -> float
+        try { double  y = (double)  mh_dz.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // boolean -> double
     }
 
     private static MethodHandle mh_b(Class ret) { return mh(ret, byte.class); }
@@ -248,8 +248,8 @@ public class Test6998541 {
     }
     private static void byte2prim_invalid(byte x) throws Throwable {
         if (DO_CASTS)  return;
-        try { char    y = (char)    mh_cb.invokeExact(x); fail(); } catch (ClassCastException _) {}  // byte -> char
-        try { boolean y = (boolean) mh_zb.invokeExact(x); fail(); } catch (ClassCastException _) {}  // byte -> boolean
+        try { char    y = (char)    mh_cb.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // byte -> char
+        try { boolean y = (boolean) mh_zb.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // byte -> boolean
     }
 
     private static MethodHandle mh_c(Class ret) { return mh(ret, char.class); }
@@ -277,9 +277,9 @@ public class Test6998541 {
     }
     private static void char2prim_invalid(char x) throws Throwable {
         if (DO_CASTS)  return;
-        try { boolean y = (boolean) mh_zc.invokeExact(x); fail(); } catch (ClassCastException _) {}  // char -> boolean
-        try { byte    y = (byte)    mh_bc.invokeExact(x); fail(); } catch (ClassCastException _) {}  // char -> byte
-        try { short   y = (short)   mh_sc.invokeExact(x); fail(); } catch (ClassCastException _) {}  // char -> short
+        try { boolean y = (boolean) mh_zc.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // char -> boolean
+        try { byte    y = (byte)    mh_bc.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // char -> byte
+        try { short   y = (short)   mh_sc.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // char -> short
     }
 
     private static MethodHandle mh_s(Class ret) { return mh(ret, short.class); }
@@ -307,9 +307,9 @@ public class Test6998541 {
     }
     private static void short2prim_invalid(short x) throws Throwable {
         if (DO_CASTS)  return;
-        try { boolean y = (boolean) mh_zs.invokeExact(x); fail(); } catch (ClassCastException _) {}  // short -> boolean
-        try { byte    y = (byte)    mh_bs.invokeExact(x); fail(); } catch (ClassCastException _) {}  // short -> byte
-        try { char    y = (char)    mh_cs.invokeExact(x); fail(); } catch (ClassCastException _) {}  // short -> char
+        try { boolean y = (boolean) mh_zs.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // short -> boolean
+        try { byte    y = (byte)    mh_bs.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // short -> byte
+        try { char    y = (char)    mh_cs.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // short -> char
     }
 
     private static MethodHandle mh_i(Class ret) { return mh(ret, int.class); }
@@ -337,10 +337,10 @@ public class Test6998541 {
     }
     private static void int2prim_invalid(int x) throws Throwable {
         if (DO_CASTS)  return;
-        try { boolean y = (boolean) mh_zi.invokeExact(x); fail(); } catch (ClassCastException _) {}  // int -> boolean
-        try { byte    y = (byte)    mh_bi.invokeExact(x); fail(); } catch (ClassCastException _) {}  // int -> byte
-        try { char    y = (char)    mh_ci.invokeExact(x); fail(); } catch (ClassCastException _) {}  // int -> char
-        try { short   y = (short)   mh_si.invokeExact(x); fail(); } catch (ClassCastException _) {}  // int -> short
+        try { boolean y = (boolean) mh_zi.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // int -> boolean
+        try { byte    y = (byte)    mh_bi.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // int -> byte
+        try { char    y = (char)    mh_ci.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // int -> char
+        try { short   y = (short)   mh_si.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // int -> short
     }
 
     private static MethodHandle mh_j(Class ret) { return mh(ret, long.class); }
@@ -368,11 +368,11 @@ public class Test6998541 {
     }
     private static void long2prim_invalid(long x) throws Throwable {
         if (DO_CASTS)  return;
-        try { boolean y = (boolean) mh_zj.invokeExact(x); fail(); } catch (ClassCastException _) {}  // long -> boolean
-        try { byte    y = (byte)    mh_bj.invokeExact(x); fail(); } catch (ClassCastException _) {}  // long -> byte
-        try { char    y = (char)    mh_cj.invokeExact(x); fail(); } catch (ClassCastException _) {}  // long -> char
-        try { short   y = (short)   mh_sj.invokeExact(x); fail(); } catch (ClassCastException _) {}  // long -> short
-        try { int     y = (int)     mh_ij.invokeExact(x); fail(); } catch (ClassCastException _) {}  // long -> int
+        try { boolean y = (boolean) mh_zj.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // long -> boolean
+        try { byte    y = (byte)    mh_bj.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // long -> byte
+        try { char    y = (char)    mh_cj.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // long -> char
+        try { short   y = (short)   mh_sj.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // long -> short
+        try { int     y = (int)     mh_ij.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // long -> int
     }
 
     private static MethodHandle mh_f(Class ret) { return mh(ret, float.class); }
@@ -400,12 +400,12 @@ public class Test6998541 {
     }
     private static void float2prim_invalid(float x) throws Throwable {
         if (DO_CASTS)  return;
-        try { boolean y = (boolean) mh_zf.invokeExact(x); fail(); } catch (ClassCastException _) {}  // float -> boolean
-        try { byte    y = (byte)    mh_bf.invokeExact(x); fail(); } catch (ClassCastException _) {}  // float -> byte
-        try { char    y = (char)    mh_cf.invokeExact(x); fail(); } catch (ClassCastException _) {}  // float -> char
-        try { short   y = (short)   mh_sf.invokeExact(x); fail(); } catch (ClassCastException _) {}  // float -> short
-        try { int     y = (int)     mh_if.invokeExact(x); fail(); } catch (ClassCastException _) {}  // float -> int
-        try { long    y = (long)    mh_jf.invokeExact(x); fail(); } catch (ClassCastException _) {}  // float -> long
+        try { boolean y = (boolean) mh_zf.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // float -> boolean
+        try { byte    y = (byte)    mh_bf.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // float -> byte
+        try { char    y = (char)    mh_cf.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // float -> char
+        try { short   y = (short)   mh_sf.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // float -> short
+        try { int     y = (int)     mh_if.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // float -> int
+        try { long    y = (long)    mh_jf.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // float -> long
     }
 
     private static MethodHandle mh_d(Class ret) { return mh(ret, double.class); }
@@ -433,13 +433,13 @@ public class Test6998541 {
     }
     private static void double2prim_invalid(double x) throws Throwable {
         if (DO_CASTS)  return;
-        try { boolean y = (boolean) mh_zd.invokeExact(x); fail(); } catch (ClassCastException _) {}  // double -> boolean
-        try { byte    y = (byte)    mh_bd.invokeExact(x); fail(); } catch (ClassCastException _) {}  // double -> byte
-        try { char    y = (char)    mh_cd.invokeExact(x); fail(); } catch (ClassCastException _) {}  // double -> char
-        try { short   y = (short)   mh_sd.invokeExact(x); fail(); } catch (ClassCastException _) {}  // double -> short
-        try { int     y = (int)     mh_id.invokeExact(x); fail(); } catch (ClassCastException _) {}  // double -> int
-        try { long    y = (long)    mh_jd.invokeExact(x); fail(); } catch (ClassCastException _) {}  // double -> long
-        try { float   y = (float)   mh_fd.invokeExact(x); fail(); } catch (ClassCastException _) {}  // double -> float
+        try { boolean y = (boolean) mh_zd.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> boolean
+        try { byte    y = (byte)    mh_bd.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> byte
+        try { char    y = (char)    mh_cd.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> char
+        try { short   y = (short)   mh_sd.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> short
+        try { int     y = (int)     mh_id.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> int
+        try { long    y = (long)    mh_jd.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> long
+        try { float   y = (float)   mh_fd.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> float
     }
 
     private final static MethodHandle mh_zv = mh(boolean.class);

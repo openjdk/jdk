@@ -37,7 +37,6 @@
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genMarkSweep.hpp"
 #include "memory/genOopClosures.inline.hpp"
-#include "memory/generation.inline.hpp"
 #include "memory/modRefBarrierSet.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/space.hpp"

@@ -228,13 +228,13 @@ public class RmiBootstrapTest {
     /**
      * Compute the full path name for a default file.
      * @param basename basename (with extension) of the default file.
-     * @return ${JRE}/lib/management/${basename}
+     * @return ${JRE}/conf/management/${basename}
      **/
     private static String getDefaultFileName(String basename) {
         final String fileSeparator = File.separator;
         final StringBuffer defaultFileName =
             new StringBuffer(System.getProperty("java.home")).
-            append(fileSeparator).append("lib").append(fileSeparator).
+            append(fileSeparator).append("conf").append(fileSeparator).
             append("management").append(fileSeparator).
             append(basename);
         return defaultFileName.toString();
@@ -243,7 +243,7 @@ public class RmiBootstrapTest {
     /**
      * Compute the full path name for a default file.
      * @param basename basename (with extension) of the default file.
-     * @return ${JRE}/lib/management/${basename}
+     * @return ${JRE}/conf/management/${basename}
      **/
     private static String getDefaultStoreName(String basename) {
         final String fileSeparator = File.separator;

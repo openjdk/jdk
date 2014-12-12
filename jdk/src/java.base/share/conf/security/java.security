@@ -66,8 +66,8 @@
 # List of providers and their preference orders (see above):
 #
 #ifdef solaris
-security.provider.tbd=com.oracle.security.ucrypto.UcryptoProvider ${java.home}/lib/security/ucrypto-solaris.cfg
-security.provider.tbd=sun.security.pkcs11.SunPKCS11 ${java.home}/lib/security/sunpkcs11-solaris.cfg
+security.provider.tbd=com.oracle.security.ucrypto.UcryptoProvider ${java.home}/conf/security/ucrypto-solaris.cfg
+security.provider.tbd=sun.security.pkcs11.SunPKCS11 ${java.home}/conf/security/sunpkcs11-solaris.cfg
 #endif
 security.provider.tbd=sun.security.provider.Sun
 security.provider.tbd=sun.security.rsa.SunRsaSign
@@ -162,7 +162,7 @@ policy.provider=sun.security.provider.PolicyFile
 
 # The default is to have a single system-wide policy file,
 # and a policy file in the user's home directory.
-policy.url.1=file:${java.home}/lib/security/java.policy
+policy.url.1=file:${java.home}/conf/security/java.policy
 policy.url.2=file:${user.home}/.java.policy
 
 # whether or not we expand properties in the policy file
@@ -219,12 +219,14 @@ package.access=sun.,\
                com.sun.org.apache.xml.internal.serializer.utils.,\
                com.sun.org.apache.xml.internal.utils.,\
                com.sun.org.glassfish.,\
+               com.sun.tools.script.,\
                com.oracle.xmlns.internal.,\
                com.oracle.webservices.internal.,\
                org.jcp.xml.dsig.internal.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.,\
+               jdk.tools.jimage.,\
                com.sun.activation.registries.,\
 #ifdef macosx
                apple.,\
@@ -268,12 +270,14 @@ package.definition=sun.,\
                    com.sun.org.apache.xml.internal.serializer.utils.,\
                    com.sun.org.apache.xml.internal.utils.,\
                    com.sun.org.glassfish.,\
+                   com.sun.tools.script.,\
                    com.oracle.xmlns.internal.,\
                    com.oracle.webservices.internal.,\
                    org.jcp.xml.dsig.internal.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.,\
+                   jdk.tools.jimage.,\
                    com.sun.activation.registries.,\
 #ifdef macosx
                    apple.,\

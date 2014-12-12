@@ -1,13 +1,13 @@
-import java.io.*;
-import java.util.*;
-
-import sun.misc.*;
-
 /*
  * @test /nodynamiccopyright/
  * @bug 6873845
  * @summary refine access to symbol file
  */
+
+import java.io.*;
+import java.util.*;
+
+import sun.misc.*;
 
 public class T6873845 {
     public static void main(String... args) throws Exception {

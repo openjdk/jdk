@@ -46,6 +46,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
@@ -263,6 +264,12 @@ public final class TestFinder {
                 case "@subtest":
                     isTest = false;
                     isNotTest = true;
+                    break;
+                case "@bigendian":
+                    shouldRun = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+                    break;
+                case "@littleendian":
+                    shouldRun = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
                     break;
                 case "@runif": {
                     final String prop = scanner.next();

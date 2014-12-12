@@ -53,12 +53,12 @@ class FactoryFinder {
     private static boolean debug = false;
 
     /**
-     * Cache for properties in java.home/lib/jaxp.properties
+     * Cache for properties in java.home/conf/jaxp.properties
      */
     private final static Properties cacheProps = new Properties();
 
     /**
-     * Flag indicating if properties from java.home/lib/jaxp.properties
+     * Flag indicating if properties from java.home/conf/jaxp.properties
      * have been cached.
      */
     static volatile boolean firstTime = true;
@@ -268,13 +268,13 @@ class FactoryFinder {
             if (debug) se.printStackTrace();
         }
 
-        // try to read from $java.home/lib/jaxp.properties
+        // try to read from $java.home/conf/jaxp.properties
         try {
             if (firstTime) {
                 synchronized (cacheProps) {
                     if (firstTime) {
                         String configFile = ss.getSystemProperty("java.home") + File.separator +
-                            "lib" + File.separator + "jaxp.properties";
+                            "conf" + File.separator + "jaxp.properties";
                         File f = new File(configFile);
                         firstTime = false;
                         if (ss.doesFileExist(f)) {
@@ -287,7 +287,7 @@ class FactoryFinder {
             final String factoryClassName = cacheProps.getProperty(factoryId);
 
             if (factoryClassName != null) {
-                dPrint("found in $java.home/jaxp.properties, value=" + factoryClassName);
+                dPrint("found in ${java.home}/conf/jaxp.properties, value=" + factoryClassName);
                 return newInstance(type, factoryClassName, null, true, true);
             }
         }

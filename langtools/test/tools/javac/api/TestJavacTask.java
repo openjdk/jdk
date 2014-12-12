@@ -61,7 +61,10 @@ public class TestJavacTask {
         try {
             getTask(testFile);
         } catch (IllegalArgumentException iae) {
-            if (!iae.getMessage().contains("\"" + testFile.getName() + "\"")) {
+            // The following check is somewhat fragile, since the content of the ILA is not
+            // formally specified. If we want to fix this, we should catch/rewrap ILA coming
+            // from use of java.nio.file.Path inside javac's impl of JavaFileManager.
+            if (!iae.getMessage().contains(testFile.getName())) {
                 System.err.println("Got message: " + iae.getMessage());
                 throw new RuntimeException("Error: expected string not found");
             }

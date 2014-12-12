@@ -635,7 +635,7 @@ objArrayHandle Reflection::get_parameter_types(methodHandle method, int paramete
 }
 
 objArrayHandle Reflection::get_exception_types(methodHandle method, TRAPS) {
-  return method->resolved_checked_exceptions(CHECK_(objArrayHandle()));
+  return method->resolved_checked_exceptions(THREAD);
 }
 
 
@@ -806,17 +806,16 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
 
 oop Reflection::new_parameter(Handle method, int index, Symbol* sym,
                               int flags, TRAPS) {
-  Handle name;
-
-  // A null symbol here translates to the empty string
-  if(NULL != sym) {
-    name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
-  } else {
-    name = java_lang_String::create_from_str("", CHECK_NULL);
-  }
 
   Handle rh = java_lang_reflect_Parameter::create(CHECK_NULL);
-  java_lang_reflect_Parameter::set_name(rh(), name());
+
+  if(NULL != sym) {
+    Handle name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
+    java_lang_reflect_Parameter::set_name(rh(), name());
+  } else {
+    java_lang_reflect_Parameter::set_name(rh(), NULL);
+  }
+
   java_lang_reflect_Parameter::set_modifiers(rh(), flags);
   java_lang_reflect_Parameter::set_executable(rh(), method());
   java_lang_reflect_Parameter::set_index(rh(), index);
@@ -1004,7 +1003,7 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
   } else {
     if (rtype == T_BOOLEAN || rtype == T_BYTE || rtype == T_CHAR || rtype == T_SHORT)
       narrow((jvalue*) result.get_value_addr(), rtype, CHECK_NULL);
-    return box((jvalue*) result.get_value_addr(), rtype, CHECK_NULL);
+    return box((jvalue*) result.get_value_addr(), rtype, THREAD);
   }
 }
 

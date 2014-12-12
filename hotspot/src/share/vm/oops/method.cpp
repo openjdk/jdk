@@ -588,6 +588,15 @@ bool Method::is_accessor() const {
   return true;
 }
 
+bool Method::is_constant_getter() const {
+  int last_index = code_size() - 1;
+  // Check if the first 1-3 bytecodes are a constant push
+  // and the last bytecode is a return.
+  return (2 <= code_size() && code_size() <= 4 &&
+          Bytecodes::is_const(java_code_at(0)) &&
+          Bytecodes::length_for(java_code_at(0)) == last_index &&
+          Bytecodes::is_return(java_code_at(last_index)));
+}
 
 bool Method::is_initializer() const {
   return name() == vmSymbols::object_initializer_name() || is_static_initializer();
@@ -927,7 +936,7 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
   // so making them eagerly shouldn't be too expensive.
   AdapterHandlerEntry* adapter = AdapterHandlerLibrary::get_adapter(mh);
   if (adapter == NULL ) {
-    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "out of space in CodeCache for adapters");
+    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
   }
 
   mh->set_adapter_entry(adapter);
@@ -1748,7 +1757,7 @@ class JNIMethodBlockNode : public CHeapObj<mtClass> {
 
   JNIMethodBlockNode(int num_methods = min_block_size);
 
-  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods, mtInternal); }
+  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods); }
 
   void ensure_methods(int num_addl_methods) {
     if (_top < _number_of_methods) {

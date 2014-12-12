@@ -1554,7 +1554,7 @@ JNI_ENTRY_CHECKED(const char *,
       }
       // Avoiding call to UNCHECKED()->ReleaseStringUTFChars() since that will fire unexpected dtrace probes
       // Note that the dtrace arguments for the allocated memory will not match up with this solution.
-      FreeHeap((char*)result, mtInternal);
+      FreeHeap((char*)result);
     }
     functionExit(thr);
     return new_result;
