@@ -969,7 +969,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 #endif
     // If -Xshare:on is specified, print out the error message and exit VM,
     // otherwise, set UseSharedSpaces to false and continue.
-    if (RequireSharedSpaces) {
+    if (RequireSharedSpaces || PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.", "Failed map_region for using -Xshare:on.");
     } else {
       FLAG_SET_DEFAULT(UseSharedSpaces, false);
