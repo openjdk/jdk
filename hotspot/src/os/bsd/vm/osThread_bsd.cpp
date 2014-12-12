@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ void OSThread::pd_initialize() {
 
   sigemptyset(&_caller_sigmask);
 
-  _startThread_lock = new Monitor(Mutex::event, "startThread_lock", true);
+  _startThread_lock = new Monitor(Mutex::event, "startThread_lock", true,
+                                  Monitor::_safepoint_check_never);
   assert(_startThread_lock !=NULL, "check");
 }
 
