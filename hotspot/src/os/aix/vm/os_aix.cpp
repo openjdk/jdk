@@ -531,15 +531,13 @@ void os::init_system_properties_values() {
 
 #define DEFAULT_LIBPATH "/usr/lib:/lib"
 #define EXTENSIONS_DIR  "/lib/ext"
-#define ENDORSED_DIR    "/lib/endorsed"
 
   // Buffer that fits several sprintfs.
   // Note that the space for the trailing null is provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
-    MAX3((size_t)MAXPATHLEN,  // For dll_dir & friends.
-         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR), // extensions dir
-         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+    MAX2((size_t)MAXPATHLEN,  // For dll_dir & friends.
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR)); // extensions dir
   char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
   // sysclasspath, java_home, dll_dir
@@ -590,15 +588,10 @@ void os::init_system_properties_values() {
   sprintf(buf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  // Endorsed standards default directory.
-  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-  Arguments::set_endorsed_dirs(buf);
-
   FREE_C_HEAP_ARRAY(char, buf);
 
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
-#undef ENDORSED_DIR
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2803,6 +2796,10 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
   return ::read(fd, buf, nBytes);
 }
 
+size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
+  return ::pread(fd, buf, nBytes, offset);
+}
+
 void os::naked_short_sleep(jlong ms) {
   struct timespec req;
 
@@ -4151,8 +4148,29 @@ int os::available(int fd, jlong *bytes) {
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
                         bool allow_exec) {
-  Unimplemented();
-  return NULL;
+  int prot;
+  int flags = MAP_PRIVATE;
+
+  if (read_only) {
+    prot = PROT_READ;
+  } else {
+    prot = PROT_READ | PROT_WRITE;
+  }
+
+  if (allow_exec) {
+    prot |= PROT_EXEC;
+  }
+
+  if (addr != NULL) {
+    flags |= MAP_FIXED;
+  }
+
+  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
+                                     fd, file_offset);
+  if (mapped_address == MAP_FAILED) {
+    return NULL;
+  }
+  return mapped_address;
 }
 
 // Remap a block of memory.

@@ -141,7 +141,7 @@ public abstract class SchemaFactory {
      *     and returns it if it is successfully created.
      *   </li>
      *   <li>
-     *     <code>$java.home/lib/jaxp.properties</code> is read and
+     *     <code>$java.home/conf/jaxp.properties</code> is read and
      *     the value associated with the key being the system property above
      *     is looked for. If present, the value is processed just like above.
      *   </li>

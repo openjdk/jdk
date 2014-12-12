@@ -25,9 +25,8 @@
  * @bug 4492274
  * @summary  Tests if JEditorPane.getPage() correctly returns anchor reference.
  * @author Denis Sharypov
+ * @run main bug4492274
  */
-
-import sun.awt.SunToolkit;
 
 import javax.swing.*;
 import javax.swing.text.html.HTMLEditorKit;
@@ -42,8 +41,8 @@ public class bug4492274 {
     private static JEditorPane jep;
 
     public static void main(String args[]) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
@@ -51,7 +50,7 @@ public class bug4492274 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -65,7 +64,7 @@ public class bug4492274 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (getPageAnchor() == null) {
             throw new RuntimeException("JEditorPane.getPage() returns null anchor reference");

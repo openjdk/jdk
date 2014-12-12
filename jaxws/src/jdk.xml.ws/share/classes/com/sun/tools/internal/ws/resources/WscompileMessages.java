@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,20 +283,6 @@ public final class WscompileMessages {
         return localizer.localize(localizableWSGEN_USAGE_EXTENSIONS());
     }
 
-    public static Localizable localizablePLEASE() {
-        return messageFactory.getMessage("Please");
-    }
-
-    /**
-     * specify "-extension" and "-wsdl:protocol XSoap1.2" switches. For example:
-     *
-     *
-     *
-     */
-    public static String PLEASE() {
-        return localizer.localize(localizablePLEASE());
-    }
-
     public static Localizable localizableWSCOMPILE_EXISTING_OPTION(Object arg0) {
         return messageFactory.getMessage("wscompile.existingOption", arg0);
     }
@@ -383,6 +369,19 @@ public final class WscompileMessages {
      */
     public static String WSIMPORT_HELP(Object arg0) {
         return localizer.localize(localizableWSIMPORT_HELP(arg0));
+    }
+
+    public static Localizable localizableWSCOMPILE_CANT_GET_COMPILER(Object arg0, Object arg1, Object arg2) {
+        return messageFactory.getMessage("wscompile.cant.get.compiler", arg0, arg1, arg2);
+    }
+
+    /**
+     * No Java compiler found. Perhaps environment/JDK problem?
+     *  Used JVM: {0}, {1}/{2}
+     *
+     */
+    public static String WSCOMPILE_CANT_GET_COMPILER(Object arg0, Object arg1, Object arg2) {
+        return localizer.localize(localizableWSCOMPILE_CANT_GET_COMPILER(arg0, arg1, arg2));
     }
 
     public static Localizable localizableWSCOMPILE_ERROR(Object arg0) {
@@ -557,18 +556,6 @@ public final class WscompileMessages {
         return localizer.localize(localizableWSIMPORT_GENERATING_CODE());
     }
 
-    public static Localizable localizableWSGEN() {
-        return messageFactory.getMessage("wsgen");
-    }
-
-    /**
-     * -wsdl:protocol XSoap1.2 -extenson {1}
-     *
-     */
-    public static String WSGEN() {
-        return localizer.localize(localizableWSGEN());
-    }
-
     public static Localizable localizableWSIMPORT_NOT_A_FILE_NOR_URL(Object arg0) {
         return messageFactory.getMessage("wsimport.NotAFileNorURL", arg0);
     }
@@ -658,7 +645,7 @@ public final class WscompileMessages {
     }
 
     /**
-     * "Could not create file: "{0}"
+     * Could not create file: "{0}"
      *
      */
     public static String WSGEN_COULD_NOT_CREATE_FILE(Object arg0) {
@@ -848,7 +835,7 @@ public final class WscompileMessages {
     }
 
     /**
-     * Failed to read the WSDL document: {0}, because 1) could not find the document; /2) the document could not be read; 3) the root element of the document is not <wsdl:definitions>.
+     * Failed to read the WSDL document: {0}, because 1) could not find the document; 2) the document could not be read; 3) the root element of the document is not <wsdl:definitions>.
      *
      */
     public static String WSIMPORT_NO_WSDL(Object arg0) {
@@ -860,7 +847,7 @@ public final class WscompileMessages {
     }
 
     /**
-     * "line {0} of {1}
+     * line {0} of {1}
      *
      */
     public static String WSIMPORT_AUTH_INFO_LINENO(Object arg0, Object arg1) {
@@ -922,8 +909,7 @@ public final class WscompileMessages {
     }
 
     /**
-     * wsgen can not generate WSDL for SOAP 1.2 binding: {0} on class: {1}.
-     *
+     * wsgen can not generate WSDL for SOAP 1.2 binding: {0} on class: {1}.Please specify "-extension" and "-wsdl:protocol XSoap1.2" switches. For example:wsgen -wsdl:protocol XSoap1.2 -extenson {1}
      *
      */
     public static String WSGEN_CANNOT_GEN_WSDL_FOR_SOAP_12_BINDING(Object arg0, Object arg1) {

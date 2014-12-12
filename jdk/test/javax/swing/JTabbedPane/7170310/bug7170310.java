@@ -34,13 +34,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import sun.awt.SunToolkit;
 
 /**
  * @test
  * @bug 7170310
  * @author Alexey Ivanov
  * @summary Selected tab should be scrolled into view.
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
  * @run main bug7170310
  */
 public class bug7170310 {
@@ -58,12 +59,11 @@ public class bug7170310 {
             UIManager.setLookAndFeel(new MetalLookAndFeel());
             SwingUtilities.invokeAndWait(bug7170310::createAndShowUI);
 
-            SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-            toolkit.realSync();
+            sync();
 
             for (int i = 0; i < TABS_NUMBER; i++) {
                 SwingUtilities.invokeAndWait(bug7170310::addTab);
-                toolkit.realSync();
+                sync();
             }
 
             SwingUtilities.invokeAndWait(bug7170310::check);
@@ -120,5 +120,14 @@ public class bug7170310 {
         } catch (Exception e) {
             exception = e;
         }
+    }
+    private static void sync() {
+        try {
+             ExtendedRobot robot = new ExtendedRobot();
+             robot.waitForIdle(300);
+         }catch(Exception ex) {
+             ex.printStackTrace();
+             throw new Error("Unexpected Failure");
+         }
     }
 }

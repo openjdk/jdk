@@ -115,8 +115,6 @@ exit_hook_t      Arguments::_exit_hook          = NULL;
 vfprintf_hook_t  Arguments::_vfprintf_hook      = NULL;
 
 
-SystemProperty *Arguments::_java_ext_dirs = NULL;
-SystemProperty *Arguments::_java_endorsed_dirs = NULL;
 SystemProperty *Arguments::_sun_boot_library_path = NULL;
 SystemProperty *Arguments::_java_library_path = NULL;
 SystemProperty *Arguments::_java_home = NULL;
@@ -125,9 +123,10 @@ SystemProperty *Arguments::_sun_boot_class_path = NULL;
 
 char* Arguments::_meta_index_path = NULL;
 char* Arguments::_meta_index_dir = NULL;
+char* Arguments::_ext_dirs = NULL;
 
-// Check if head of 'option' matches 'name', and sets 'tail' remaining part of option string
-
+// Check if head of 'option' matches 'name', and sets 'tail' to the remaining
+// part of the option string.
 static bool match_option(const JavaVMOption *option, const char* name,
                          const char** tail) {
   int len = (int)strlen(name);
@@ -137,6 +136,32 @@ static bool match_option(const JavaVMOption *option, const char* name,
   } else {
     return false;
   }
+}
+
+// Check if 'option' matches 'name'. No "tail" is allowed.
+static bool match_option(const JavaVMOption *option, const char* name) {
+  const char* tail = NULL;
+  bool result = match_option(option, name, &tail);
+  if (tail != NULL && *tail == '\0') {
+    return result;
+  } else {
+    return false;
+  }
+}
+
+// Return true if any of the strings in null-terminated array 'names' matches.
+// If tail_allowed is true, then the tail must begin with a colon; otherwise,
+// the option must match exactly.
+static bool match_option(const JavaVMOption* option, const char** names, const char** tail,
+  bool tail_allowed) {
+  for (/* empty */; *names != NULL; ++names) {
+    if (match_option(option, *names, tail)) {
+      if (**tail == '\0' || tail_allowed && **tail == ':') {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 static void logOption(const char* opt) {
@@ -184,8 +209,6 @@ void Arguments::init_system_properties() {
   // Following are JVMTI agent writable properties.
   // Properties values are set to NULL and they are
   // os specific they are initialized in os::init_system_properties_values().
-  _java_ext_dirs = new SystemProperty("java.ext.dirs", NULL,  true);
-  _java_endorsed_dirs = new SystemProperty("java.endorsed.dirs", NULL,  true);
   _sun_boot_library_path = new SystemProperty("sun.boot.library.path", NULL,  true);
   _java_library_path = new SystemProperty("java.library.path", NULL,  true);
   _java_home =  new SystemProperty("java.home", NULL,  true);
@@ -194,8 +217,6 @@ void Arguments::init_system_properties() {
   _java_class_path = new SystemProperty("java.class.path", "",  true);
 
   // Add to System Property list.
-  PropertyList_add(&_system_properties, _java_ext_dirs);
-  PropertyList_add(&_system_properties, _java_endorsed_dirs);
   PropertyList_add(&_system_properties, _sun_boot_library_path);
   PropertyList_add(&_system_properties, _java_library_path);
   PropertyList_add(&_system_properties, _java_home);
@@ -348,12 +369,8 @@ bool Arguments::is_newly_obsolete(const char *s, JDK_Version* version) {
 // components, in order:
 //
 //     prefix           // from -Xbootclasspath/p:...
-//     endorsed         // the expansion of -Djava.endorsed.dirs=...
 //     base             // from os::get_system_properties() or -Xbootclasspath=
 //     suffix           // from -Xbootclasspath/a:...
-//
-// java.endorsed.dirs is a list of directories; any jar or zip files in the
-// directories are added to the sysclasspath just before the base.
 //
 // This could be AllStatic, but it isn't needed after argument processing is
 // complete.
@@ -368,16 +385,9 @@ public:
   inline void add_suffix(const char* suffix);
   inline void reset_path(const char* base);
 
-  // Expand the jar/zip files in each directory listed by the java.endorsed.dirs
-  // property.  Must be called after all command-line arguments have been
-  // processed (in particular, -Djava.endorsed.dirs=...) and before calling
-  // combined_path().
-  void expand_endorsed();
-
   inline const char* get_base()     const { return _items[_scp_base]; }
   inline const char* get_prefix()   const { return _items[_scp_prefix]; }
   inline const char* get_suffix()   const { return _items[_scp_suffix]; }
-  inline const char* get_endorsed() const { return _items[_scp_endorsed]; }
 
   // Combine all the components into a single c-heap-allocated string; caller
   // must free the string if/when no longer needed.
@@ -394,20 +404,17 @@ private:
   // base are allocated in the C heap and freed by this class.
   enum {
     _scp_prefix,        // from -Xbootclasspath/p:...
-    _scp_endorsed,      // the expansion of -Djava.endorsed.dirs=...
     _scp_base,          // the default sysclasspath
     _scp_suffix,        // from -Xbootclasspath/a:...
     _scp_nitems         // the number of items, must be last.
   };
 
   const char* _items[_scp_nitems];
-  DEBUG_ONLY(bool _expansion_done;)
 };
 
 SysClassPath::SysClassPath(const char* base) {
   memset(_items, 0, sizeof(_items));
   _items[_scp_base] = base;
-  DEBUG_ONLY(_expansion_done = false;)
 }
 
 SysClassPath::~SysClassPath() {
@@ -415,7 +422,6 @@ SysClassPath::~SysClassPath() {
   for (int i = 0; i < _scp_nitems; ++i) {
     if (i != _scp_base) reset_item_at(i);
   }
-  DEBUG_ONLY(_expansion_done = false;)
 }
 
 inline void SysClassPath::set_base(const char* base) {
@@ -451,41 +457,11 @@ inline void SysClassPath::reset_path(const char* base) {
 
 //------------------------------------------------------------------------------
 
-void SysClassPath::expand_endorsed() {
-  assert(_items[_scp_endorsed] == NULL, "can only be called once.");
-
-  const char* path = Arguments::get_property("java.endorsed.dirs");
-  if (path == NULL) {
-    path = Arguments::get_endorsed_dir();
-    assert(path != NULL, "no default for java.endorsed.dirs");
-  }
-
-  char* expanded_path = NULL;
-  const char separator = *os::path_separator();
-  const char* const end = path + strlen(path);
-  while (path < end) {
-    const char* tmp_end = strchr(path, separator);
-    if (tmp_end == NULL) {
-      expanded_path = add_jars_to_path(expanded_path, path);
-      path = end;
-    } else {
-      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1, mtInternal);
-      memcpy(dirpath, path, tmp_end - path);
-      dirpath[tmp_end - path] = '\0';
-      expanded_path = add_jars_to_path(expanded_path, dirpath);
-      FREE_C_HEAP_ARRAY(char, dirpath);
-      path = tmp_end + 1;
-    }
-  }
-  _items[_scp_endorsed] = expanded_path;
-  DEBUG_ONLY(_expansion_done = true;)
-}
 
 // Combine the bootclasspath elements, some of which may be null, into a single
 // c-heap-allocated string.
 char* SysClassPath::combined_path() {
   assert(_items[_scp_base] != NULL, "empty default sysclasspath");
-  assert(_expansion_done, "must call expand_endorsed() first.");
 
   size_t lengths[_scp_nitems];
   size_t total_len = 0;
@@ -2576,21 +2552,6 @@ static const char* system_assertion_options[] = {
   "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", 0
 };
 
-// Return true if any of the strings in null-terminated array 'names' matches.
-// If tail_allowed is true, then the tail must begin with a colon; otherwise,
-// the option must match exactly.
-static bool match_option(const JavaVMOption* option, const char** names, const char** tail,
-  bool tail_allowed) {
-  for (/* empty */; *names != NULL; ++names) {
-    if (match_option(option, *names, tail)) {
-      if (**tail == '\0' || tail_allowed && **tail == ':') {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 bool Arguments::parse_uintx(const char* value,
                             uintx* uintx_arg,
                             uintx min_size) {
@@ -2832,16 +2793,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
 #endif // !INCLUDE_JVMTI
     // -Xnoclassgc
-    } else if (match_option(option, "-Xnoclassgc", &tail)) {
+    } else if (match_option(option, "-Xnoclassgc")) {
       FLAG_SET_CMDLINE(bool, ClassUnloading, false);
     // -Xconcgc
-    } else if (match_option(option, "-Xconcgc", &tail)) {
+    } else if (match_option(option, "-Xconcgc")) {
       FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, true);
     // -Xnoconcgc
-    } else if (match_option(option, "-Xnoconcgc", &tail)) {
+    } else if (match_option(option, "-Xnoconcgc")) {
       FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, false);
     // -Xbatch
-    } else if (match_option(option, "-Xbatch", &tail)) {
+    } else if (match_option(option, "-Xbatch")) {
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
     // -Xmn for compatibility with other JVM vendors
     } else if (match_option(option, "-Xmn", &tail)) {
@@ -2986,28 +2947,28 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         }
         FLAG_SET_CMDLINE(uintx, IncreaseFirstTierCompileThresholdAt, (uintx)uint_IncreaseFirstTierCompileThresholdAt);
     // -green
-    } else if (match_option(option, "-green", &tail)) {
+    } else if (match_option(option, "-green")) {
       jio_fprintf(defaultStream::error_stream(),
                   "Green threads support not available\n");
           return JNI_EINVAL;
     // -native
-    } else if (match_option(option, "-native", &tail)) {
+    } else if (match_option(option, "-native")) {
           // HotSpot always uses native threads, ignore silently for compatibility
     // -Xsqnopause
-    } else if (match_option(option, "-Xsqnopause", &tail)) {
+    } else if (match_option(option, "-Xsqnopause")) {
           // EVM option, ignore silently for compatibility
     // -Xrs
-    } else if (match_option(option, "-Xrs", &tail)) {
+    } else if (match_option(option, "-Xrs")) {
           // Classic/EVM option, new functionality
       FLAG_SET_CMDLINE(bool, ReduceSignalUsage, true);
-    } else if (match_option(option, "-Xusealtsigs", &tail)) {
+    } else if (match_option(option, "-Xusealtsigs")) {
           // change default internal VM signals used - lower case for back compat
       FLAG_SET_CMDLINE(bool, UseAltSigs, true);
     // -Xoptimize
-    } else if (match_option(option, "-Xoptimize", &tail)) {
+    } else if (match_option(option, "-Xoptimize")) {
           // EVM option, ignore silently for compatibility
     // -Xprof
-    } else if (match_option(option, "-Xprof", &tail)) {
+    } else if (match_option(option, "-Xprof")) {
 #if INCLUDE_FPROF
       _has_profile = true;
 #else // INCLUDE_FPROF
@@ -3016,7 +2977,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       return JNI_ERR;
 #endif // INCLUDE_FPROF
     // -Xconcurrentio
-    } else if (match_option(option, "-Xconcurrentio", &tail)) {
+    } else if (match_option(option, "-Xconcurrentio")) {
       FLAG_SET_CMDLINE(bool, UseLWPSynchronization, true);
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
       FLAG_SET_CMDLINE(intx, DeferThrSuspendLoopCount, 1);
@@ -3024,18 +2985,32 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(uintx, NewSizeThreadIncrease, 16 * K);  // 20Kb per thread added to new generation
 
       // -Xinternalversion
-    } else if (match_option(option, "-Xinternalversion", &tail)) {
+    } else if (match_option(option, "-Xinternalversion")) {
       jio_fprintf(defaultStream::output_stream(), "%s\n",
                   VM_Version::internal_vm_info_string());
       vm_exit(0);
 #ifndef PRODUCT
     // -Xprintflags
-    } else if (match_option(option, "-Xprintflags", &tail)) {
+    } else if (match_option(option, "-Xprintflags")) {
       CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
 #endif
     // -D
     } else if (match_option(option, "-D", &tail)) {
+      if (match_option(option, "-Djava.endorsed.dirs=", &tail)) {
+        // abort if -Djava.endorsed.dirs is set
+        jio_fprintf(defaultStream::output_stream(),
+          "-Djava.endorsed.dirs is not supported. Endorsed standards and standalone APIs\n"
+          "in modular form will be supported via the concept of upgradeable modules.\n");
+        return JNI_EINVAL;
+      }
+      if (match_option(option, "-Djava.ext.dirs=", &tail)) {
+        // abort if -Djava.ext.dirs is set
+        jio_fprintf(defaultStream::output_stream(),
+          "-Djava.ext.dirs is not supported.  Use -classpath instead.\n");
+        return JNI_EINVAL;
+      }
+
       if (!add_property(tail)) {
         return JNI_ENOMEM;
       }
@@ -3050,29 +3025,29 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #endif
       }
     // -Xint
-    } else if (match_option(option, "-Xint", &tail)) {
+    } else if (match_option(option, "-Xint")) {
           set_mode_flags(_int);
     // -Xmixed
-    } else if (match_option(option, "-Xmixed", &tail)) {
+    } else if (match_option(option, "-Xmixed")) {
           set_mode_flags(_mixed);
     // -Xcomp
-    } else if (match_option(option, "-Xcomp", &tail)) {
+    } else if (match_option(option, "-Xcomp")) {
       // for testing the compiler; turn off all flags that inhibit compilation
           set_mode_flags(_comp);
     // -Xshare:dump
-    } else if (match_option(option, "-Xshare:dump", &tail)) {
+    } else if (match_option(option, "-Xshare:dump")) {
       FLAG_SET_CMDLINE(bool, DumpSharedSpaces, true);
       set_mode_flags(_int);     // Prevent compilation, which creates objects
     // -Xshare:on
-    } else if (match_option(option, "-Xshare:on", &tail)) {
+    } else if (match_option(option, "-Xshare:on")) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
       FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true);
     // -Xshare:auto
-    } else if (match_option(option, "-Xshare:auto", &tail)) {
+    } else if (match_option(option, "-Xshare:auto")) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
       FLAG_SET_CMDLINE(bool, RequireSharedSpaces, false);
     // -Xshare:off
-    } else if (match_option(option, "-Xshare:off", &tail)) {
+    } else if (match_option(option, "-Xshare:off")) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, false);
       FLAG_SET_CMDLINE(bool, RequireSharedSpaces, false);
     // -Xverify
@@ -3090,13 +3065,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_EINVAL;
       }
     // -Xdebug
-    } else if (match_option(option, "-Xdebug", &tail)) {
+    } else if (match_option(option, "-Xdebug")) {
       // note this flag has been used, then ignore
       set_xdebug_mode(true);
     // -Xnoagent
-    } else if (match_option(option, "-Xnoagent", &tail)) {
+    } else if (match_option(option, "-Xnoagent")) {
       // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
-    } else if (match_option(option, "-Xboundthreads", &tail)) {
+    } else if (match_option(option, "-Xboundthreads")) {
       // Bind user level threads to kernel threads (Solaris only)
       FLAG_SET_CMDLINE(bool, UseBoundThreads, true);
     } else if (match_option(option, "-Xloggc:", &tail)) {
@@ -3126,14 +3101,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                                      "check")) {
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "vfprintf", &tail)) {
+    } else if (match_option(option, "vfprintf")) {
       _vfprintf_hook = CAST_TO_FN_PTR(vfprintf_hook_t, option->extraInfo);
-    } else if (match_option(option, "exit", &tail)) {
+    } else if (match_option(option, "exit")) {
       _exit_hook = CAST_TO_FN_PTR(exit_hook_t, option->extraInfo);
-    } else if (match_option(option, "abort", &tail)) {
+    } else if (match_option(option, "abort")) {
       _abort_hook = CAST_TO_FN_PTR(abort_hook_t, option->extraInfo);
     // -XX:+AggressiveHeap
-    } else if (match_option(option, "-XX:+AggressiveHeap", &tail)) {
+    } else if (match_option(option, "-XX:+AggressiveHeap")) {
 
       // This option inspects the machine and attempts to set various
       // parameters to be optimal for long-running, memory allocation
@@ -3224,11 +3199,11 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
     // Need to keep consistency of MaxTenuringThreshold and AlwaysTenure/NeverTenure;
     // and the last option wins.
-    } else if (match_option(option, "-XX:+NeverTenure", &tail)) {
+    } else if (match_option(option, "-XX:+NeverTenure")) {
       FLAG_SET_CMDLINE(bool, NeverTenure, true);
       FLAG_SET_CMDLINE(bool, AlwaysTenure, false);
       FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, markOopDesc::max_age + 1);
-    } else if (match_option(option, "-XX:+AlwaysTenure", &tail)) {
+    } else if (match_option(option, "-XX:+AlwaysTenure")) {
       FLAG_SET_CMDLINE(bool, NeverTenure, false);
       FLAG_SET_CMDLINE(bool, AlwaysTenure, true);
       FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
@@ -3247,17 +3222,17 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         FLAG_SET_CMDLINE(bool, NeverTenure, false);
         FLAG_SET_CMDLINE(bool, AlwaysTenure, false);
       }
-    } else if (match_option(option, "-XX:+CMSPermGenSweepingEnabled", &tail) ||
-               match_option(option, "-XX:-CMSPermGenSweepingEnabled", &tail)) {
+    } else if (match_option(option, "-XX:+CMSPermGenSweepingEnabled") ||
+               match_option(option, "-XX:-CMSPermGenSweepingEnabled")) {
       jio_fprintf(defaultStream::error_stream(),
         "Please use CMSClassUnloadingEnabled in place of "
         "CMSPermGenSweepingEnabled in the future\n");
-    } else if (match_option(option, "-XX:+UseGCTimeLimit", &tail)) {
+    } else if (match_option(option, "-XX:+UseGCTimeLimit")) {
       FLAG_SET_CMDLINE(bool, UseGCOverheadLimit, true);
       jio_fprintf(defaultStream::error_stream(),
         "Please use -XX:+UseGCOverheadLimit in place of "
         "-XX:+UseGCTimeLimit in the future\n");
-    } else if (match_option(option, "-XX:-UseGCTimeLimit", &tail)) {
+    } else if (match_option(option, "-XX:-UseGCTimeLimit")) {
       FLAG_SET_CMDLINE(bool, UseGCOverheadLimit, false);
       jio_fprintf(defaultStream::error_stream(),
         "Please use -XX:-UseGCOverheadLimit in place of "
@@ -3267,13 +3242,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // are not to be documented.
     } else if (match_option(option, "-XX:MaxTLERatio=", &tail)) {
       // No longer used.
-    } else if (match_option(option, "-XX:+ResizeTLE", &tail)) {
+    } else if (match_option(option, "-XX:+ResizeTLE")) {
       FLAG_SET_CMDLINE(bool, ResizeTLAB, true);
-    } else if (match_option(option, "-XX:-ResizeTLE", &tail)) {
+    } else if (match_option(option, "-XX:-ResizeTLE")) {
       FLAG_SET_CMDLINE(bool, ResizeTLAB, false);
-    } else if (match_option(option, "-XX:+PrintTLE", &tail)) {
+    } else if (match_option(option, "-XX:+PrintTLE")) {
       FLAG_SET_CMDLINE(bool, PrintTLAB, true);
-    } else if (match_option(option, "-XX:-PrintTLE", &tail)) {
+    } else if (match_option(option, "-XX:-PrintTLE")) {
       FLAG_SET_CMDLINE(bool, PrintTLAB, false);
     } else if (match_option(option, "-XX:TLEFragmentationRatio=", &tail)) {
       // No longer used.
@@ -3289,17 +3264,17 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(uintx, TLABSize, long_tlab_size);
     } else if (match_option(option, "-XX:TLEThreadRatio=", &tail)) {
       // No longer used.
-    } else if (match_option(option, "-XX:+UseTLE", &tail)) {
+    } else if (match_option(option, "-XX:+UseTLE")) {
       FLAG_SET_CMDLINE(bool, UseTLAB, true);
-    } else if (match_option(option, "-XX:-UseTLE", &tail)) {
+    } else if (match_option(option, "-XX:-UseTLE")) {
       FLAG_SET_CMDLINE(bool, UseTLAB, false);
-    } else if (match_option(option, "-XX:+DisplayVMOutputToStderr", &tail)) {
+    } else if (match_option(option, "-XX:+DisplayVMOutputToStderr")) {
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStdout, false);
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStderr, true);
-    } else if (match_option(option, "-XX:+DisplayVMOutputToStdout", &tail)) {
+    } else if (match_option(option, "-XX:+DisplayVMOutputToStdout")) {
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStderr, false);
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStdout, true);
-    } else if (match_option(option, "-XX:+ExtendedDTraceProbes", &tail)) {
+    } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
 #if defined(DTRACE_ENABLED)
       FLAG_SET_CMDLINE(bool, ExtendedDTraceProbes, true);
       FLAG_SET_CMDLINE(bool, DTraceMethodProbes, true);
@@ -3311,7 +3286,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       return JNI_EINVAL;
 #endif // defined(DTRACE_ENABLED)
 #ifdef ASSERT
-    } else if (match_option(option, "-XX:+FullGCALot", &tail)) {
+    } else if (match_option(option, "-XX:+FullGCALot")) {
       FLAG_SET_CMDLINE(bool, FullGCALot, true);
       // disable scavenge before parallel mark-compact
       FLAG_SET_CMDLINE(bool, ScavengeBeforeFullGC, false);
@@ -3397,7 +3372,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
       FLAG_SET_CMDLINE(uintx, MaxDirectMemorySize, max_direct_memory_size);
 #if !INCLUDE_MANAGEMENT
-    } else if (match_option(option, "-XX:+ManagementServer", &tail)) {
+    } else if (match_option(option, "-XX:+ManagementServer")) {
         jio_fprintf(defaultStream::error_stream(),
           "ManagementServer is not supported in this VM.\n");
         return JNI_ERR;
@@ -3481,11 +3456,89 @@ void Arguments::fix_appclasspath() {
   }
 }
 
-jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_required) {
-  // This must be done after all -D arguments have been processed.
-  scp_p->expand_endorsed();
+static bool has_jar_files(const char* directory) {
+  DIR* dir = os::opendir(directory);
+  if (dir == NULL) return false;
 
-  if (scp_assembly_required || scp_p->get_endorsed() != NULL) {
+  struct dirent *entry;
+  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtInternal);
+  bool hasJarFile = false;
+  while (!hasJarFile && (entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
+    const char* name = entry->d_name;
+    const char* ext = name + strlen(name) - 4;
+    hasJarFile = ext > name && (os::file_name_strcmp(ext, ".jar") == 0);
+  }
+  FREE_C_HEAP_ARRAY(char, dbuf);
+  os::closedir(dir);
+  return hasJarFile ;
+}
+
+static int check_non_empty_dirs(const char* path) {
+  const char separator = *os::path_separator();
+  const char* const end = path + strlen(path);
+  int nonEmptyDirs = 0;
+  while (path < end) {
+    const char* tmp_end = strchr(path, separator);
+    if (tmp_end == NULL) {
+      if (has_jar_files(path)) {
+        nonEmptyDirs++;
+        jio_fprintf(defaultStream::output_stream(),
+          "Non-empty directory: %s\n", path);
+      }
+      path = end;
+    } else {
+      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1, mtInternal);
+      memcpy(dirpath, path, tmp_end - path);
+      dirpath[tmp_end - path] = '\0';
+      if (has_jar_files(dirpath)) {
+        nonEmptyDirs++;
+        jio_fprintf(defaultStream::output_stream(),
+          "Non-empty directory: %s\n", dirpath);
+      }
+      FREE_C_HEAP_ARRAY(char, dirpath);
+      path = tmp_end + 1;
+    }
+  }
+  return nonEmptyDirs;
+}
+
+jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_required) {
+  // check if the default lib/endorsed directory exists; if so, error
+  char path[JVM_MAXPATHLEN];
+  const char* fileSep = os::file_separator();
+  sprintf(path, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
+
+  if (CheckEndorsedAndExtDirs) {
+    int nonEmptyDirs = 0;
+    // check endorsed directory
+    nonEmptyDirs += check_non_empty_dirs(path);
+    // check the extension directories
+    nonEmptyDirs += check_non_empty_dirs(Arguments::get_ext_dirs());
+    if (nonEmptyDirs > 0) {
+      return JNI_ERR;
+    }
+  }
+
+  DIR* dir = os::opendir(path);
+  if (dir != NULL) {
+    jio_fprintf(defaultStream::output_stream(),
+      "<JAVA_HOME>/lib/endorsed is not supported. Endorsed standards and standalone APIs\n"
+      "in modular form will be supported via the concept of upgradeable modules.\n");
+    os::closedir(dir);
+    return JNI_ERR;
+  }
+
+  sprintf(path, "%s%slib%sext", Arguments::get_java_home(), fileSep, fileSep);
+  dir = os::opendir(path);
+  if (dir != NULL) {
+    jio_fprintf(defaultStream::output_stream(),
+      "<JAVA_HOME>/lib/ext exists, extensions mechanism no longer supported; "
+      "Use -classpath instead.\n.");
+    os::closedir(dir);
+    return JNI_ERR;
+  }
+
+  if (scp_assembly_required) {
     // Assemble the bootclasspath elements into the final path.
     Arguments::set_sysclasspath(scp_p->combined_path());
   }
@@ -3754,23 +3807,23 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       settings_file_specified = true;
       continue;
     }
-    if (match_option(option, "-XX:+PrintVMOptions", &tail)) {
+    if (match_option(option, "-XX:+PrintVMOptions")) {
       PrintVMOptions = true;
       continue;
     }
-    if (match_option(option, "-XX:-PrintVMOptions", &tail)) {
+    if (match_option(option, "-XX:-PrintVMOptions")) {
       PrintVMOptions = false;
       continue;
     }
-    if (match_option(option, "-XX:+IgnoreUnrecognizedVMOptions", &tail)) {
+    if (match_option(option, "-XX:+IgnoreUnrecognizedVMOptions")) {
       IgnoreUnrecognizedVMOptions = true;
       continue;
     }
-    if (match_option(option, "-XX:-IgnoreUnrecognizedVMOptions", &tail)) {
+    if (match_option(option, "-XX:-IgnoreUnrecognizedVMOptions")) {
       IgnoreUnrecognizedVMOptions = false;
       continue;
     }
-    if (match_option(option, "-XX:+PrintFlagsInitial", &tail)) {
+    if (match_option(option, "-XX:+PrintFlagsInitial")) {
       CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
@@ -3796,7 +3849,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
 
 #ifndef PRODUCT
-    if (match_option(option, "-XX:+PrintFlagsWithComments", &tail)) {
+    if (match_option(option, "-XX:+PrintFlagsWithComments")) {
       CommandLineFlags::printFlags(tty, true);
       vm_exit(0);
     }

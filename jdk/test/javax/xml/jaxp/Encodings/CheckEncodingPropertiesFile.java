@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8008738
+ * @bug 8008738 8065138
  * @summary checks that the mapping implemented by
  *      com.sun.org.apache.xml.internal.serializer.Encodings
  *      correctly identifies valid Charset names and
@@ -63,6 +63,15 @@ public class CheckEncodingPropertiesFile {
         try (InputStreamReader is = new InputStreamReader(ClassLoader.getSystemResourceAsStream(ENCODINGS_FILE))) {
             props.load(is);
         }
+
+       if (!props.containsKey("UTF8")) {
+           // If the test fails here - it may indicate that you stumbled on an
+           // issue similar to that fixed by JDK-8065138.
+           // Check that the content of the Encodings.properties included in
+           // the tested build image matches the content of the file in the source
+           // jaxp tree of the jdk forest.
+           throw new RuntimeException("UTF8 key missing in " + ClassLoader.getSystemResource(ENCODINGS_FILE));
+       }
 
         //printAllCharsets();
 

@@ -151,18 +151,17 @@ public class ClassPath implements Serializable {
   }
 
   /** Checks for class path components in the following properties:
-   * "java.class.path", "sun.boot.class.path", "java.ext.dirs"
+   * "java.class.path", "sun.boot.class.path"
    *
    * @return class path as used by default by BCEL
    */
   public static final String getClassPath() {
 
-    String class_path, boot_path, ext_path;
+    String class_path, boot_path;
 
     try {
       class_path = SecuritySupport.getSystemProperty("java.class.path");
       boot_path  = SecuritySupport.getSystemProperty("sun.boot.class.path");
-      ext_path   = SecuritySupport.getSystemProperty("java.ext.dirs");
     }
     catch (SecurityException e) {
         return "";
@@ -172,23 +171,6 @@ public class ClassPath implements Serializable {
 
     getPathComponents(class_path, list);
     getPathComponents(boot_path, list);
-
-    ArrayList dirs = new ArrayList();
-    getPathComponents(ext_path, dirs);
-
-    for(Iterator e = dirs.iterator(); e.hasNext(); ) {
-      File ext_dir = new File((String)e.next());
-      String[] extensions = SecuritySupport.getFileList(ext_dir, new FilenameFilter() {
-        public boolean accept(File dir, String name) {
-          name = name.toLowerCase();
-          return name.endsWith(".zip") || name.endsWith(".jar");
-        }
-      });
-
-      if(extensions != null)
-        for(int i=0; i < extensions.length; i++)
-          list.add(ext_path + File.separatorChar + extensions[i]);
-    }
 
     StringBuffer buf = new StringBuffer();
 

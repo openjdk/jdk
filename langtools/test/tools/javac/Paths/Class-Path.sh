@@ -97,13 +97,13 @@ Success "$java" ${TESTVMOPTS}  -cp "jars/A.jar${PS}." Main
 Success "$javac" ${TESTTOOLVMOPTS} -cp "jars/B.zip"       Main.java
 Success "$java" ${TESTVMOPTS}  -cp "jars/B.zip${PS}." Main
 
-Success "$javac" ${TESTTOOLVMOPTS} -extdirs "jars"        -cp None Main.java
-Success "$javac" ${TESTTOOLVMOPTS} -Djava.ext.dirs="jars" -cp None Main.java
-Success "$java" ${TESTVMOPTS}  -Djava.ext.dirs="jars" -cp .    Main
+# Success "$javac" ${TESTTOOLVMOPTS} -extdirs "jars"        -cp None Main.java
+# Success "$javac" ${TESTTOOLVMOPTS} -Djava.ext.dirs="jars" -cp None Main.java
+# Success "$java" ${TESTVMOPTS}  -Djava.ext.dirs="jars" -cp .    Main
 
-Success "$javac" ${TESTTOOLVMOPTS} -endorseddirs "jars"        -cp None Main.java
-Success "$javac" ${TESTTOOLVMOPTS} -Djava.endorsed.dirs="jars" -cp None Main.java
-Success "$java" ${TESTVMOPTS}  -Djava.endorsed.dirs="jars" -cp .    Main
+# Success "$javac" ${TESTTOOLVMOPTS} -endorseddirs "jars"        -cp None Main.java
+# Success "$javac" ${TESTTOOLVMOPTS} -Djava.endorsed.dirs="jars" -cp None Main.java
+# Success "$java" ${TESTVMOPTS}  -Djava.endorsed.dirs="jars" -cp .    Main
 
 Failure "$java" ${TESTVMOPTS}  -Xbootclasspath/p:"jars/A.jar" -cp .    Main
 Failure "$java" ${TESTVMOPTS}  -Xbootclasspath/a:"jars/B.zip" -cp .    Main

@@ -33,15 +33,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
-import sun.awt.SunToolkit;
 
 public class bug4865918 {
 
     private static TestScrollBar sbar;
 
     public static void main(String[] argv) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
 
             public void run() {
@@ -49,7 +48,7 @@ public class bug4865918 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -59,7 +58,7 @@ public class bug4865918 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         int value = getValue();
 

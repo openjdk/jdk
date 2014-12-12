@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Parameters for the <a href="http://www.w3.org/TR/xmldsig-core/#sec-XPath">
@@ -51,8 +50,8 @@ import java.util.Map.Entry;
  */
 public final class XPathFilterParameterSpec implements TransformParameterSpec {
 
-    private String xPath;
-    private Map<String,String> nsMap;
+    private final String xPath;
+    private final Map<String,String> nsMap;
 
     /**
      * Creates an <code>XPathFilterParameterSpec</code> with the specified
@@ -83,26 +82,16 @@ public final class XPathFilterParameterSpec implements TransformParameterSpec {
      * @throws ClassCastException if any of the map's keys or entries are not
      *    of type <code>String</code>
      */
-    @SuppressWarnings("rawtypes")
-    public XPathFilterParameterSpec(String xPath, Map namespaceMap) {
+    public XPathFilterParameterSpec(String xPath, Map<String,String> namespaceMap) {
         if (xPath == null || namespaceMap == null) {
             throw new NullPointerException();
         }
         this.xPath = xPath;
-        Map<?,?> copy = new HashMap<>((Map<?,?>)namespaceMap);
-        Iterator<? extends Map.Entry<?,?>> entries = copy.entrySet().iterator();
-        while (entries.hasNext()) {
-            Map.Entry<?,?> me = entries.next();
-            if (!(me.getKey() instanceof String) ||
-                !(me.getValue() instanceof String)) {
-                throw new ClassCastException("not a String");
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<String,String> temp = (Map<String,String>)copy;
-
-        nsMap = Collections.unmodifiableMap(temp);
+        Map<String,String> tempMap = Collections.checkedMap(new HashMap<>(),
+                                                            String.class,
+                                                            String.class);
+        tempMap.putAll(namespaceMap);
+        this.nsMap = Collections.unmodifiableMap(tempMap);
     }
 
     /**
@@ -125,8 +114,7 @@ public final class XPathFilterParameterSpec implements TransformParameterSpec {
      * @return a <code>Map</code> of namespace prefixes to namespace URIs (may
      *    be empty, but never <code>null</code>)
      */
-    @SuppressWarnings("rawtypes")
-    public Map getNamespaceMap() {
+    public Map<String,String> getNamespaceMap() {
         return nsMap;
     }
 }

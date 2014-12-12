@@ -25,13 +25,18 @@
 
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Kinds.Kind;
 import java.util.*;
 
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
+import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.Scope.LookupKind.RECURSIVE;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /** A scope represents an area of visibility in a Java program. The
  *  Scope class is a container for symbols which provides
@@ -672,28 +677,67 @@ public abstract class Scope {
 
     }
 
-    public static class NamedImportScope extends CompoundScope {
+    public static class ImportScope extends CompoundScope {
+
+        public ImportScope(Symbol owner) {
+            super(owner);
+        }
+
+        /**Finalize the content of the ImportScope to speed-up future lookups.
+         * No further changes to class hierarchy or class content will be reflected.
+         */
+        public void finalizeScope() {
+            for (List<Scope> scopes = this.subScopes; scopes.nonEmpty(); scopes = scopes.tail) {
+                Scope impScope = scopes.head;
+
+                if (impScope instanceof FilterImportScope && impScope.owner.kind == Kind.TYP) {
+                    WriteableScope finalized = WriteableScope.create(impScope.owner);
+
+                    for (Symbol sym : impScope.getSymbols()) {
+                        finalized.enter(sym);
+                    }
+
+                    finalized.addScopeListener(new ScopeListener() {
+                        @Override
+                        public void symbolAdded(Symbol sym, Scope s) {
+                            Assert.error("The scope is sealed.");
+                        }
+                        @Override
+                        public void symbolRemoved(Symbol sym, Scope s) {
+                            Assert.error("The scope is sealed.");
+                        }
+                    });
+
+                    scopes.head = finalized;
+                }
+            }
+        }
+
+    }
+
+    public static class NamedImportScope extends ImportScope {
 
         public NamedImportScope(Symbol owner, Scope currentFileScope) {
             super(owner);
             prependSubScope(currentFileScope);
         }
 
-        public void importByName(Scope delegate, Scope origin, Name name, ImportFilter filter) {
-            appendScope(new FilterImportScope(delegate, origin, name, filter, true));
+        public Scope importByName(Types types, Scope origin, Name name, ImportFilter filter) {
+            return appendScope(new FilterImportScope(types, origin, name, filter, true));
         }
 
-        public void importType(Scope delegate, Scope origin, Symbol sym) {
-            appendScope(new SingleEntryScope(delegate.owner, sym, origin));
+        public Scope importType(Scope delegate, Scope origin, Symbol sym) {
+            return appendScope(new SingleEntryScope(delegate.owner, sym, origin));
         }
 
-        private void appendScope(Scope newScope) {
+        private Scope appendScope(Scope newScope) {
             List<Scope> existingScopes = this.subScopes.reverse();
             subScopes = List.of(existingScopes.head);
             subScopes = subScopes.prepend(newScope);
             for (Scope s : existingScopes.tail) {
                 subScopes = subScopes.prepend(s);
             }
+            return newScope;
         }
 
         private static class SingleEntryScope extends Scope {
@@ -735,24 +779,23 @@ public abstract class Scope {
         }
     }
 
-    public static class StarImportScope extends CompoundScope {
+    public static class StarImportScope extends ImportScope {
 
         public StarImportScope(Symbol owner) {
             super(owner);
         }
 
-        public void importAll(Scope delegate,
-                              Scope origin,
+        public void importAll(Types types, Scope origin,
                               ImportFilter filter,
                               boolean staticImport) {
             for (Scope existing : subScopes) {
                 Assert.check(existing instanceof FilterImportScope);
                 FilterImportScope fis = (FilterImportScope) existing;
-                if (fis.delegate == delegate && fis.origin == origin &&
-                    fis.filter == filter && fis.staticImport == staticImport)
+                if (fis.origin == origin && fis.filter == filter &&
+                    fis.staticImport == staticImport)
                     return ; //avoid entering the same scope twice
             }
-            prependSubScope(new FilterImportScope(delegate, origin, null, filter, staticImport));
+            prependSubScope(new FilterImportScope(types, origin, null, filter, staticImport));
         }
 
     }
@@ -763,19 +806,19 @@ public abstract class Scope {
 
     private static class FilterImportScope extends Scope {
 
-        private final Scope delegate;
+        private final Types types;
         private final Scope origin;
         private final Name  filterName;
         private final ImportFilter filter;
         private final boolean staticImport;
 
-        public FilterImportScope(Scope delegate,
+        public FilterImportScope(Types types,
                                  Scope origin,
                                  Name  filterName,
                                  ImportFilter filter,
                                  boolean staticImport) {
-            super(delegate.owner);
-            this.delegate = delegate;
+            super(origin.owner);
+            this.types = types;
             this.origin = origin;
             this.filterName = filterName;
             this.filter = filter;
@@ -783,19 +826,31 @@ public abstract class Scope {
         }
 
         @Override
-        public Iterable<Symbol> getSymbols(Filter<Symbol> sf, LookupKind lookupKind) {
+        public Iterable<Symbol> getSymbols(final Filter<Symbol> sf, final LookupKind lookupKind) {
             if (filterName != null)
                 return getSymbolsByName(filterName, sf, lookupKind);
-            return new FilteredIterable(delegate.getSymbols(sf, lookupKind));
+            SymbolImporter si = new SymbolImporter(staticImport) {
+                @Override
+                Iterable<Symbol> doLookup(TypeSymbol tsym) {
+                    return tsym.members().getSymbols(sf, lookupKind);
+                }
+            };
+            return si.importFrom((TypeSymbol) origin.owner) :: iterator;
         }
 
         @Override
-        public Iterable<Symbol> getSymbolsByName(Name name,
-                                                 Filter<Symbol> sf,
-                                                 LookupKind lookupKind) {
+        public Iterable<Symbol> getSymbolsByName(final Name name,
+                                                 final Filter<Symbol> sf,
+                                                 final LookupKind lookupKind) {
             if (filterName != null && filterName != name)
                 return Collections.emptyList();
-            return new FilteredIterable(delegate.getSymbolsByName(name, sf, lookupKind));
+            SymbolImporter si = new SymbolImporter(staticImport) {
+                @Override
+                Iterable<Symbol> doLookup(TypeSymbol tsym) {
+                    return tsym.members().getSymbolsByName(name, sf, lookupKind);
+                }
+            };
+            return si.importFrom((TypeSymbol) origin.owner) :: iterator;
         }
 
         @Override
@@ -808,57 +863,31 @@ public abstract class Scope {
             return staticImport;
         }
 
-        private class FilteredIterator implements Iterator<Symbol> {
-            private final Iterator<Symbol> delegate;
-            private Symbol next;
-
-            public FilteredIterator(Iterator<Symbol> delegate) {
-                this.delegate = delegate;
-                update();
+        abstract class SymbolImporter {
+            Set<Symbol> processed = new HashSet<>();
+            List<Iterable<Symbol>> delegates = List.nil();
+            final boolean inspectSuperTypes;
+            public SymbolImporter(boolean inspectSuperTypes) {
+                this.inspectSuperTypes = inspectSuperTypes;
             }
+            Stream<Symbol> importFrom(TypeSymbol tsym) {
+                if (tsym == null || !processed.add(tsym))
+                    return Stream.empty();
 
-            void update() {
-                while (delegate.hasNext()) {
-                    if (filter.accepts(origin, next = delegate.next()))
-                        return;
+                Stream<Symbol> result = Stream.empty();
+
+                if (inspectSuperTypes) {
+                    // also import inherited names
+                    result = importFrom(types.supertype(tsym.type).tsym);
+                    for (Type t : types.interfaces(tsym.type))
+                        result = Stream.concat(importFrom(t.tsym), result);
                 }
 
-                next = null;
+                return Stream.concat(StreamSupport.stream(doLookup(tsym).spliterator(), false)
+                                                  .filter(s -> filter.accepts(origin, s)),
+                                     result);
             }
-
-            @Override
-            public boolean hasNext() {
-                return next != null;
-            }
-
-            @Override
-            public Symbol next() {
-                Symbol result = next;
-
-                update();
-
-                return result;
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException("Not supported.");
-            }
-
-        }
-
-        private class FilteredIterable implements Iterable<Symbol> {
-
-            private final Iterable<Symbol> unfiltered;
-
-            public FilteredIterable(Iterable<Symbol> unfiltered) {
-                this.unfiltered = unfiltered;
-            }
-
-            @Override
-            public Iterator<Symbol> iterator() {
-                return new FilteredIterator(unfiltered.iterator());
-            }
+            abstract Iterable<Symbol> doLookup(TypeSymbol tsym);
         }
 
     }

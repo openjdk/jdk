@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,6 @@
 #define MAXNAMELEN              PATH_MAX
 #endif
 
-/*
- * Common function prototypes and sundries.
- */
-char *LocateJRE(manifest_info *info);
-void ExecJRE(char *jre, char **argv);
 int UnsetEnv(char *name);
 char *FindExecName(char *program);
 const char *SetExecname(char **argv);

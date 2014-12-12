@@ -34,11 +34,9 @@ import java.awt.event.*;
 import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.InvocationTargetException;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class ModalBlockedStealsFocusTest extends Applet {
-    SunToolkit toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
     Frame frame = new Frame("Blocked Frame");
     Dialog dialog = new Dialog(frame, "Modal Dialog", Dialog.ModalityType.TOOLKIT_MODAL);
     AtomicBoolean lostFocus = new AtomicBoolean(false);
@@ -85,7 +83,13 @@ public class ModalBlockedStealsFocusTest extends Applet {
             }).start();
 
         Util.waitTillShown(dialog);
-        toolkit.realSync();
+        try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
 
         // Test 1. Show a modal blocked frame, check that it doesn't steal focus.
 

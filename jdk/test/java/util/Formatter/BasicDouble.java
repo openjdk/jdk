@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.util.*;
 
+import sun.misc.DoubleConsts;
+
+
 import static java.util.Calendar.*;
 
 
@@ -48,6 +51,10 @@ public class BasicDouble extends Basic {
         Formatter f = new Formatter(new StringBuilder(), Locale.US);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), Locale.US);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(Locale l, String fs, String exp, Object ... args)
@@ -55,6 +62,10 @@ public class BasicDouble extends Basic {
         Formatter f = new Formatter(new StringBuilder(), l);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), l);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(String fs, Object ... args) {
@@ -859,6 +870,32 @@ public class BasicDouble extends Basic {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         //---------------------------------------------------------------------
         // %s - double
         //---------------------------------------------------------------------
@@ -1036,6 +1073,14 @@ public class BasicDouble extends Basic {
         test("%3.0f", "1000000",   1000000.00);
         test("%3.0f", "10000000",  10000000.00);
         test("%3.0f", "100000000", 100000000.00);
+        test("%10.0f", "   1000000",   1000000.00);
+        test("%,10.0f", " 1,000,000",   1000000.00);
+        test("%,10.1f", "1,000,000.0",   1000000.00);
+        test("%,3.0f", "1,000,000",   1000000.00);
+        test("%,3.0f", "10,000,000",  10000000.00);
+        test("%,3.0f", "100,000,000", 100000000.00);
+        test("%,3.0f", "10,000,000",  10000000.00);
+        test("%,3.0f", "100,000,000", 100000000.00);
 
 
 
@@ -1310,12 +1355,12 @@ public class BasicDouble extends Basic {
         test("%.1a", "-0x1.0p0", -1.0);
         test("%.11a", "0x1.80000000000p1", 3.0);
         test("%.1a", "0x1.8p1", 3.0);
-        test("%.11a", "0x1.00000000000p-1022", Double.MIN_NORMAL);
-        test("%.1a", "0x1.0p-1022", Double.MIN_NORMAL);
+        test("%.11a", "0x1.00000000000p-1022", DoubleConsts.MIN_NORMAL);
+        test("%.1a", "0x1.0p-1022", DoubleConsts.MIN_NORMAL);
         test("%.11a", "0x1.00000000000p-1022",
-             Math.nextDown(Double.MIN_NORMAL));
+             Math.nextDown(DoubleConsts.MIN_NORMAL));
         test("%.1a", "0x1.0p-1022",
-             Math.nextDown(Double.MIN_NORMAL));
+             Math.nextDown(DoubleConsts.MIN_NORMAL));
         test("%.11a", "0x1.ffffffffffep-1023", 0x0.fffffffffffp-1022);
         test("%.1a", "0x1.0p-1022", 0x0.fffffffffffp-1022);
         test("%.30a", "0x0.000000000000100000000000000000p-1022", Double.MIN_VALUE);

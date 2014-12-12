@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project version="4">  
+<project version="4">
   <component name="ChangeListManager">
     <ignored path=".idea/" />
   </component>
@@ -10,7 +10,7 @@
     <!-- standard tools -->
     <configuration default="false" name="javac" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javac.Main" />
-      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/java.compiler/classes:build/jdk.compiler/classes:build/java.base/classes:build/jdk.javadoc/classes:build/jdk.dev/classes" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build@FILE_SEP@java.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@java.base@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.javadoc@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.dev@FILE_SEP@classes" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -29,7 +29,7 @@
     </configuration>
     <configuration default="false" name="javadoc" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javadoc.Main" />
-      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/java.compiler/classes:build/jdk.compiler/classes:build/java.base/classes:build/jdk.javadoc/classes:build/jdk.dev/classes" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build@FILE_SEP@java.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@java.base@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.javadoc@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.dev@FILE_SEP@classes" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -44,11 +44,11 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <configuration default="false" name="javap" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javap.Main" />
-      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/java.compiler/classes:build/jdk.compiler/classes:build/java.base/classes:build/jdk.javadoc/classes:build/jdk.dev/classes" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build@FILE_SEP@java.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@java.base@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.javadoc@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.dev@FILE_SEP@classes" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -63,11 +63,11 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <configuration default="false" name="javah" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javah.Main" />
-      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/java.compiler/classes:build/jdk.compiler/classes:build/java.base/classes:build/jdk.javadoc/classes:build/jdk.dev/classes" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build@FILE_SEP@java.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@java.base@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.javadoc@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.dev@FILE_SEP@classes" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -82,11 +82,11 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <configuration default="false" name="sjavac" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.sjavac.Main" />
-      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/java.compiler/classes:build/jdk.compiler/classes:build/java.base/classes:build/jdk.javadoc/classes:build/jdk.dev/classes" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build@FILE_SEP@java.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@java.base@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.javadoc@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@jdk.dev@FILE_SEP@classes" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -101,12 +101,12 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
-      </method> 
+      </method>
     </configuration>
     <!-- bootstrap javac -->
     <configuration default="false" name="javac (bootstrap)" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javac.Main" />
-            <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/bootstrap/java.compiler/classes:build/bootstrap/jdk.compiler/classes:build/bootstrap/java.base/classes:build/bootstrap/jdk.javadoc/classes:build/bootstrap/jdk.dev/classes" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build@FILE_SEP@bootstrap@FILE_SEP@java.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@bootstrap@FILE_SEP@jdk.compiler@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@bootstrap@FILE_SEP@java.base@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@bootstrap@FILE_SEP@jdk.javadoc@FILE_SEP@classes@PATH_SEP@build@FILE_SEP@bootstrap@FILE_SEP@jdk.dev@FILE_SEP@classes" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -121,7 +121,7 @@
       <method>
         <option name="Make" enabled="false" />
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-bootstrap-javac" />
-      </method> 
+      </method>
     </configuration>
     <!-- jtreg debug -->
     <configuration default="false" name="jtreg (debug)" type="Remote" factoryName="Remote" singleton="true">
