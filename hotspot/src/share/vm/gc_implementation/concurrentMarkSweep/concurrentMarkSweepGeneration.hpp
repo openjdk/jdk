@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,8 @@ class CMSMarkStack: public CHeapObj<mtGC>  {
 
  public:
   CMSMarkStack():
-    _par_lock(Mutex::event, "CMSMarkStack._par_lock", true),
+    _par_lock(Mutex::event, "CMSMarkStack._par_lock", true,
+              Monitor::_safepoint_check_never),
     _hit_limit(0),
     _failed_double(0) {}
 

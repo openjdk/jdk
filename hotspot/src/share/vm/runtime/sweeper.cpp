@@ -158,7 +158,7 @@ Tickspan NMethodSweeper::_total_time_this_sweep;               // Total time thi
 Tickspan NMethodSweeper::_peak_sweep_time;                     // Peak time for a full sweep
 Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time sweeping one fraction
 
-Monitor* NMethodSweeper::_stat_lock = new Monitor(Mutex::special, "Sweeper::Statistics", true);
+Monitor* NMethodSweeper::_stat_lock = new Monitor(Mutex::special, "Sweeper::Statistics", true, Monitor::_safepoint_check_sometimes);
 
 class MarkActivationClosure: public CodeBlobClosure {
 public:
