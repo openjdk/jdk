@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /testlibrary/whitebox /compiler/whitebox ..
+ * @library /testlibrary /../../test/lib /compiler/whitebox ..
  * @build BlsrTestL
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

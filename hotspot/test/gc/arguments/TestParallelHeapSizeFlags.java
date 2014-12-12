@@ -27,7 +27,7 @@
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the
  * parallel collectors.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestParallelHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

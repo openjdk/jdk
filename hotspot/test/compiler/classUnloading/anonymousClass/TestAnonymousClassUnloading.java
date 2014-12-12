@@ -33,7 +33,7 @@ import java.net.URLConnection;
  * @test TestAnonymousClassUnloading
  * @bug 8054402
  * @summary "Tests unloading of anonymous classes."
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @compile TestAnonymousClassUnloading.java
  * @run main ClassFileInstaller TestAnonymousClassUnloading
  *                              sun.hotspot.WhiteBox

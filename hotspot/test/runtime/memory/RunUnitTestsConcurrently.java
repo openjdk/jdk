@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Test launches unit tests inside vm concurrently
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build RunUnitTestsConcurrently
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
