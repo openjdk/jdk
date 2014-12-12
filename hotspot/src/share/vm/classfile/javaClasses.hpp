@@ -345,8 +345,8 @@ class java_lang_Thread : AllStatic {
   // Set JavaThread for instance
   static void set_thread(oop java_thread, JavaThread* thread);
   // Name
-  static typeArrayOop name(oop java_thread);
-  static void set_name(oop java_thread, typeArrayOop name);
+  static oop name(oop java_thread);
+  static void set_name(oop java_thread, oop name);
   // Priority
   static ThreadPriority priority(oop java_thread);
   static void set_priority(oop java_thread, ThreadPriority priority);
@@ -1100,7 +1100,8 @@ class java_lang_invoke_MemberName: AllStatic {
   static Metadata*      vmtarget(oop mname);
   static void       set_vmtarget(oop mname, Metadata* target);
 #if INCLUDE_JVMTI
-  static void       adjust_vmtarget(oop mname, Metadata* target);
+  static void       adjust_vmtarget(oop mname, Method* old_method, Method* new_method,
+                                    bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
   static intptr_t       vmindex(oop mname);
@@ -1113,6 +1114,8 @@ class java_lang_invoke_MemberName: AllStatic {
   static bool is_instance(oop obj) {
     return obj != NULL && is_subclass(obj->klass());
   }
+
+  static bool is_method(oop obj);
 
   // Relevant integer codes (keep these in synch. with MethodHandleNatives.Constants):
   enum {

@@ -65,9 +65,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-
 #if INCLUDE_TRACE
- #include "trace/tracing.hpp"
+#include "trace/tracing.hpp"
 #endif
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
@@ -978,4 +977,4 @@ void ClassLoaderDataGraph::class_unload_event(Klass* const k) {
   event.commit();
 }
 
-#endif /* INCLUDE_TRACE */
+#endif // INCLUDE_TRACE

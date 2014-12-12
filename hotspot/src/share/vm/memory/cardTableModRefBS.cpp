@@ -171,19 +171,19 @@ CardTableModRefBS::~CardTableModRefBS() {
     _committed = NULL;
   }
   if (_lowest_non_clean) {
-    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean, mtGC);
+    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean);
     _lowest_non_clean = NULL;
   }
   if (_lowest_non_clean_chunk_size) {
-    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size, mtGC);
+    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size);
     _lowest_non_clean_chunk_size = NULL;
   }
   if (_lowest_non_clean_base_chunk_index) {
-    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index, mtGC);
+    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index);
     _lowest_non_clean_base_chunk_index = NULL;
   }
   if (_last_LNC_resizing_collection) {
-    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection, mtGC);
+    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection);
     _last_LNC_resizing_collection = NULL;
   }
 }
@@ -275,29 +275,26 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     // the new_end_aligned does not intrude onto the committed
     // space of another region.
     int ri = 0;
-    for (ri = 0; ri < _cur_covered_regions; ri++) {
-      if (ri != ind) {
-        if (_committed[ri].contains(new_end_aligned)) {
-          // The prior check included in the assert
-          // (new_end_aligned >= _committed[ri].start())
-          // is redundant with the "contains" test.
-          // Any region containing the new end
-          // should start at or beyond the region found (ind)
-          // for the new end (committed regions are not expected to
-          // be proper subsets of other committed regions).
-          assert(_committed[ri].start() >= _committed[ind].start(),
-                 "New end of committed region is inconsistent");
-          new_end_aligned = _committed[ri].start();
-          // new_end_aligned can be equal to the start of its
-          // committed region (i.e., of "ind") if a second
-          // region following "ind" also start at the same location
-          // as "ind".
-          assert(new_end_aligned >= _committed[ind].start(),
-            "New end of committed region is before start");
-          debug_only(collided = true;)
-          // Should only collide with 1 region
-          break;
-        }
+    for (ri = ind + 1; ri < _cur_covered_regions; ri++) {
+      if (new_end_aligned > _committed[ri].start()) {
+        assert(new_end_aligned <= _committed[ri].end(),
+               "An earlier committed region can't cover a later committed region");
+        // Any region containing the new end
+        // should start at or beyond the region found (ind)
+        // for the new end (committed regions are not expected to
+        // be proper subsets of other committed regions).
+        assert(_committed[ri].start() >= _committed[ind].start(),
+               "New end of committed region is inconsistent");
+        new_end_aligned = _committed[ri].start();
+        // new_end_aligned can be equal to the start of its
+        // committed region (i.e., of "ind") if a second
+        // region following "ind" also start at the same location
+        // as "ind".
+        assert(new_end_aligned >= _committed[ind].start(),
+          "New end of committed region is before start");
+        debug_only(collided = true;)
+        // Should only collide with 1 region
+        break;
       }
     }
 #ifdef ASSERT
@@ -462,19 +459,6 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     // equal to active_workers.  When a different mechanism for shutting
     // off parallelism is used, then active_workers can be used in
     // place of n_par_threads.
-    //  This is an example of a path where n_par_threads is
-    // set to 0 to turn off parallelism.
-    //  [7] CardTableModRefBS::non_clean_card_iterate()
-    //  [8] CardTableRS::younger_refs_in_space_iterate()
-    //  [9] Generation::younger_refs_in_space_iterate()
-    //  [10] OneContigSpaceCardGeneration::younger_refs_iterate()
-    //  [11] CompactingPermGenGen::younger_refs_iterate()
-    //  [12] CardTableRS::younger_refs_iterate()
-    //  [13] SharedHeap::process_strong_roots()
-    //  [14] G1CollectedHeap::verify()
-    //  [15] Universe::verify()
-    //  [16] G1CollectedHeap::do_collection_pause_at_safepoint()
-    //
     int n_threads =  SharedHeap::heap()->n_par_threads();
     bool is_par = n_threads > 0;
     if (is_par) {

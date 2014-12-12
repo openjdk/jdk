@@ -247,7 +247,7 @@ public final class XMLConstants {
          * </p>
          *
          * <p>
-         * <b>${JAVA_HOME}/lib/jaxp.properties:</b> This configuration file is in standard
+         * <b>${JAVA_HOME}/conf/jaxp.properties:</b> This configuration file is in standard
          * {@link java.util.Properties} format. If the file exists and the system property is specified,
          * its value will be used to override the default of the property.
          * </p>
@@ -314,7 +314,7 @@ public final class XMLConstants {
          * </p>
          *
          * <p>
-         * <b>${JAVA_HOME}/lib/jaxp.properties:</b> This configuration file is in standard
+         * <b>${JAVA_HOME}/conf/jaxp.properties:</b> This configuration file is in standard
          * java.util.Properties format. If the file exists and the system property is specified,
          * its value will be used to override the default of the property.
          *
@@ -380,7 +380,7 @@ public final class XMLConstants {
          * </p>
          *
          * <p>
-         * <b>${JAVA_HOME}/lib/jaxp.properties: </b> This configuration file is in standard
+         * <b>${JAVA_HOME}/conf/jaxp.properties: </b> This configuration file is in standard
          * java.util.Properties format. If the file exists and the system property is specified,
          * its value will be used to override the default of the property.
          *

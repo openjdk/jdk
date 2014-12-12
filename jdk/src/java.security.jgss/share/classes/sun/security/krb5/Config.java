@@ -737,7 +737,7 @@ public class Config {
      *
      * If the system property "java.security.krb5.conf" is defined, we'll
      * use its value, no matter if the file exists or not. Otherwise, we
-     * will look at $JAVA_HOME/lib/security directory with "krb5.conf" name,
+     * will look at $JAVA_HOME/conf/security directory with "krb5.conf" name,
      * and return it if the file exists.
      *
      * The method returns null if it cannot find a Java config file.
@@ -746,7 +746,7 @@ public class Config {
         String name = getProperty("java.security.krb5.conf");
         if (name == null) {
             name = getProperty("java.home") + File.separator +
-                                "lib" + File.separator + "security" +
+                                "conf" + File.separator + "security" +
                                 File.separator + "krb5.conf";
             if (!fileExists(name)) {
                 name = null;

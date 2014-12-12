@@ -21,12 +21,10 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.Frame;
 import java.awt.HeadlessException;
 import java.awt.List;
-import java.awt.Toolkit;
+import java.awt.Robot;
 
 /**
  * @test
@@ -57,9 +55,11 @@ public final class R2303044ListSelection {
 
     private static void sleep() {
         try {
-            ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+            Robot robot = new Robot();
+            robot.waitForIdle();
             Thread.sleep(1000);
-        } catch (final InterruptedException ignored) {
+        } catch (final Exception ignored) {
+            ignored.printStackTrace();
         }
     }
 }

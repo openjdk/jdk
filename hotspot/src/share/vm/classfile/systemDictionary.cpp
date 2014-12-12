@@ -66,7 +66,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #endif
 #if INCLUDE_TRACE
- #include "trace/tracing.hpp"
+#include "trace/tracing.hpp"
 #endif
 
 Dictionary*            SystemDictionary::_dictionary          = NULL;
@@ -2659,7 +2659,7 @@ void SystemDictionary::post_class_load_event(const Ticks& start_time,
                                       class_loader->klass() : (Klass*)NULL);
     event.commit();
   }
-#endif /* INCLUDE_TRACE */
+#endif // INCLUDE_TRACE
 }
 
 #ifndef PRODUCT

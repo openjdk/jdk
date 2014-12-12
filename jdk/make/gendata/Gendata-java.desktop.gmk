@@ -26,15 +26,5 @@
 include GendataCommon.gmk
 
 include GendataFontConfig.gmk
-GENDATA += $(GENDATA_FONT_CONFIG)
 
 include GendataHtml32dtd.gmk
-GENDATA += $(GENDATA_HTML32DTD)
-
-$(GENDATA): $(BUILD_TOOLS_JDK)
-
-java.desktop: $(GENDATA)
-
-all: $(GENDATA)
-
-.PHONY: all java.desktop

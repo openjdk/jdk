@@ -23,10 +23,6 @@
 # questions.
 #
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 # We need the tools.

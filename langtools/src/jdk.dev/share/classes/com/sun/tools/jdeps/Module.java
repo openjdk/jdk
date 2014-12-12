@@ -173,8 +173,8 @@ final class Module extends Archive {
             return this;
         }
 
-        public Builder include(String p) {
-            packages.add(p);
+        public Builder packages(Set<String> pkgs) {
+            packages.addAll(pkgs);
             return this;
         }
 
@@ -184,10 +184,11 @@ final class Module extends Archive {
             exports.put(p, new HashSet<>(ms));
             return this;
         }
-        public Builder classes(ClassFileReader reader) {
+        public Builder classes(ClassFileReader.ModuleClassReader reader) {
             this.reader = reader;
             return this;
         }
+
         public Module build() {
             Module m = new Module(reader, name, requires, exports, packages);
             return m;

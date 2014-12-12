@@ -52,6 +52,7 @@ uint MemNode::size_of() const { return sizeof(*this); }
 
 const TypePtr *MemNode::adr_type() const {
   Node* adr = in(Address);
+  if (adr == NULL)  return NULL; // node is dead
   const TypePtr* cross_check = NULL;
   DEBUG_ONLY(cross_check = _adr_type);
   return calculate_adr_type(adr->bottom_type(), cross_check);
@@ -2741,6 +2742,7 @@ LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *ad
 // Do we Match on this edge index or not?  Do not match memory
 const TypePtr* ClearArrayNode::adr_type() const {
   Node *adr = in(3);
+  if (adr == NULL)  return NULL; // node is dead
   return MemNode::calculate_adr_type(adr->bottom_type());
 }
 

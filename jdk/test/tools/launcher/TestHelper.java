@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Arrays;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
@@ -333,15 +334,10 @@ public class TestHelper {
     }
 
    static void createJar(String... args) {
-        sun.tools.jar.Main jarTool =
-                new sun.tools.jar.Main(System.out, System.err, "JarCreator");
-        if (!jarTool.run(args)) {
-            String message = "jar creation failed with command:";
-            for (String x : args) {
-                message = message.concat(" " + x);
-            }
-            throw new RuntimeException(message);
-        }
+        List<String> cmdList = new ArrayList<>();
+        cmdList.add(jarCmd);
+        cmdList.addAll(Arrays.asList(args));
+        doExec(cmdList.toArray(new String[cmdList.size()]));
    }
 
    static void copyStream(InputStream in, OutputStream out) throws IOException {

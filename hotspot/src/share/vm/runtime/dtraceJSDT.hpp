@@ -66,7 +66,7 @@ class RegisteredProbes : public CHeapObj<mtInternal> {
       _nmethods[i]->make_not_entrant();
       _nmethods[i]->method()->clear_code();
     }
-    FREE_C_HEAP_ARRAY(nmethod*, _nmethods, mtInternal);
+    FREE_C_HEAP_ARRAY(nmethod*, _nmethods);
     _nmethods = NULL;
     _count = 0;
   }

@@ -38,9 +38,6 @@ public class Version {
     private static final String java_runtime_name =
         "@@java_runtime_name@@";
 
-    private static final String java_profile_name =
-        "@@java_profile_name@@";
-
     private static final String java_runtime_version =
         "@@java_runtime_version@@";
 
@@ -104,11 +101,6 @@ public class Version {
         /* Second line: runtime version (ie, libraries). */
 
         ps.print(java_runtime_name + " (build " + java_runtime_version);
-
-        if (java_profile_name.length() > 0) {
-            // profile name
-            ps.print(", profile " + java_profile_name);
-        }
 
         if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
             // embedded builds report headless state

@@ -35,7 +35,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
     LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
-        -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.attach \
+        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.attach \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_windows := /Gy, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libattach/mapfile-$(OPENJDK_TARGET_OS), \
@@ -50,17 +50,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
     LDFLAGS_windows := /ORDER:@$(JDK_TOPDIR)/make/mapfiles/libattach/reorder-windows-$(OPENJDK_TARGET_CPU), \
     LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX), \
     LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB) advapi32.lib psapi.lib, \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libattach, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libattach, \
     DEBUG_SYMBOLS := true))
 
-$(BUILD_LIBATTACH): $(BUILD_LIBJAVA)
+$(BUILD_LIBATTACH): $(call FindLib, java.base, java)
 
-ATTACH_LIBRARIES += $(BUILD_LIBATTACH)
+TARGETS += $(BUILD_LIBATTACH)
 
 ################################################################################
-
-jdk.attach: $(ATTACH_LIBRARIES)
-
-all: jdk.attach
-
-.PHONY: all jdk.attach

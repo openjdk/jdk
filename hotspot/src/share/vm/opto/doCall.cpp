@@ -418,6 +418,11 @@ void Parse::do_call() {
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   assert(declared_signature != NULL, "cannot be null");
 
+  // Bump max node limit for JSR292 users
+  if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
+    C->set_max_node_limit(3*MaxNodeLimit);
+  }
+
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
   if (!will_link || can_not_compile_call_site(orig_callee, klass)) {

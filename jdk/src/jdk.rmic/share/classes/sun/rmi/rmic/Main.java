@@ -68,7 +68,6 @@ import java.util.Properties;
 public class Main implements sun.rmi.rmic.Constants {
     String sourcePathArg;
     String sysClassPathArg;
-    String extDirsArg;
     String classPathString;
     File destDir;
     int flags;
@@ -187,7 +186,6 @@ public class Main implements sun.rmi.rmic.Constants {
     public boolean parseArgs(String argv[]) {
         sourcePathArg = null;
         sysClassPathArg = null;
-        extDirsArg = null;
 
         classPathString = null;
         destDir = null;
@@ -297,21 +295,6 @@ public class Main implements sun.rmi.rmic.Constants {
                         argv[i] = null;
                     } else {
                         error("rmic.option.requires.argument", "-bootclasspath");
-                        usage();
-                        return false;
-                    }
-                } else if (argv[i].equals("-extdirs")) {
-                    if ((i + 1) < argv.length) {
-                        if (extDirsArg != null) {
-                            error("rmic.option.already.seen", "-extdirs");
-                            usage();
-                            return false;
-                        }
-                        argv[i] = null;
-                        extDirsArg = argv[++i];
-                        argv[i] = null;
-                    } else {
-                        error("rmic.option.requires.argument", "-extdirs");
                         usage();
                         return false;
                     }
@@ -499,8 +482,7 @@ public class Main implements sun.rmi.rmic.Constants {
 
         ClassPath classPath =
             BatchEnvironment.createClassPath(classPathString,
-                                             sysClassPathArg,
-                                             extDirsArg);
+                                             sysClassPathArg);
         BatchEnvironment result = null;
         try {
             Class<?>[] ctorArgTypes = {OutputStream.class,ClassPath.class,Main.class};
@@ -659,7 +641,6 @@ public class Main implements sun.rmi.rmic.Constants {
 
         sourcePathArg = null;
         sysClassPathArg = null;
-        extDirsArg = null;
         classPathString = null;
         destDir = null;
         classes = null;

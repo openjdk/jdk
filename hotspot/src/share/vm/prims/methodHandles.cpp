@@ -29,7 +29,6 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
@@ -276,9 +275,12 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   // This is done eagerly, since it is readily available without
   // constructing any new objects.
   // TO DO: maybe intern mname_oop
-  m->method_holder()->add_member_name(m->method_idnum(), mname);
-
-  return mname();
+  if (m->method_holder()->add_member_name(mname)) {
+    return mname();
+  } else {
+    // Redefinition caused this to fail.  Return NULL (and an exception?)
+    return NULL;
+  }
 }
 
 oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool is_setter) {
@@ -951,63 +953,27 @@ MemberNameTable::~MemberNameTable() {
   }
 }
 
-void MemberNameTable::add_member_name(int index, jweak mem_name_wref) {
+void MemberNameTable::add_member_name(jweak mem_name_wref) {
   assert_locked_or_safepoint(MemberNameTable_lock);
-  this->at_put_grow(index, mem_name_wref);
-}
-
-// Return a member name oop or NULL.
-oop MemberNameTable::get_member_name(int index) {
-  assert_locked_or_safepoint(MemberNameTable_lock);
-
-  jweak ref = this->at(index);
-  oop mem_name = JNIHandles::resolve(ref);
-  return mem_name;
+  this->push(mem_name_wref);
 }
 
 #if INCLUDE_JVMTI
-oop MemberNameTable::find_member_name_by_method(Method* old_method) {
-  assert_locked_or_safepoint(MemberNameTable_lock);
-  oop found = NULL;
-  int len = this->length();
-
-  for (int idx = 0; idx < len; idx++) {
-    oop mem_name = JNIHandles::resolve(this->at(idx));
-    if (mem_name == NULL) {
-      continue;
-    }
-    Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name);
-    if (method == old_method) {
-      found = mem_name;
-      break;
-    }
-  }
-  return found;
-}
-
-// It is called at safepoint only
+// It is called at safepoint only for RedefineClasses
 void MemberNameTable::adjust_method_entries(Method** old_methods, Method** new_methods,
                                             int methods_length, bool *trace_name_printed) {
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
-  // search the MemberNameTable for uses of either obsolete or EMCP methods
+  // For each redefined method
   for (int j = 0; j < methods_length; j++) {
     Method* old_method = old_methods[j];
     Method* new_method = new_methods[j];
-    oop mem_name = find_member_name_by_method(old_method);
-    if (mem_name != NULL) {
-      java_lang_invoke_MemberName::adjust_vmtarget(mem_name, new_method);
 
-      if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
-        if (!(*trace_name_printed)) {
-          // RC_TRACE_MESG macro has an embedded ResourceMark
-          RC_TRACE_MESG(("adjust: name=%s",
-                         old_method->method_holder()->external_name()));
-          *trace_name_printed = true;
-        }
-        // RC_TRACE macro has an embedded ResourceMark
-        RC_TRACE(0x00400000, ("MemberName method update: %s(%s)",
-                              new_method->name()->as_C_string(),
-                              new_method->signature()->as_C_string()));
+    // search the MemberNameTable for uses of either obsolete or EMCP methods
+    for (int idx = 0; idx < length(); idx++) {
+      oop mem_name = JNIHandles::resolve(this->at(idx));
+      if (mem_name != NULL) {
+        java_lang_invoke_MemberName::adjust_vmtarget(mem_name, old_method, new_method,
+                                                     trace_name_printed);
       }
     }
   }

@@ -27,7 +27,12 @@ package com.sun.tools.jdeps;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +41,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * ClassFileReader reads ClassFile(s) of a given path that can be
@@ -159,18 +166,23 @@ public class ClassFileReader {
     }
 
     private static class DirectoryReader extends ClassFileReader {
+        protected final String fsSep;
         DirectoryReader(Path path) throws IOException {
+            this(FileSystems.getDefault(), path);
+        }
+        DirectoryReader(FileSystem fs, Path path) throws IOException {
             super(path);
+            this.fsSep = fs.getSeparator();
         }
 
         public ClassFile getClassFile(String name) throws IOException {
             if (name.indexOf('.') > 0) {
                 int i = name.lastIndexOf('.');
-                String pathname = name.replace('.', File.separatorChar) + ".class";
+                String pathname = name.replace(".", fsSep) + ".class";
                 Path p = path.resolve(pathname);
                 if (!Files.exists(p)) {
                     p = path.resolve(pathname.substring(0, i) + "$" +
-                                     pathname.substring(i+1, pathname.length()));
+                            pathname.substring(i+1, pathname.length()));
                 }
                 if (Files.exists(p)) {
                     return readClassFile(p);
@@ -193,25 +205,28 @@ public class ClassFileReader {
             };
         }
 
-        private List<Path> walkTree(Path dir) throws IOException {
-            final List<Path> files = new ArrayList<>();
-            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    if (file.getFileName().toString().endsWith(".class")) {
-                        files.add(file);
+        private List<Path> entries;
+        protected synchronized List<Path> walkTree() throws IOException {
+            if (entries == null) {
+                entries = new ArrayList<>();
+                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            throws IOException {
+                        if (file.getFileName().toString().endsWith(".class")) {
+                            entries.add(file);
+                        }
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-            return files;
+                });
+            }
+            return entries;
         }
 
         class DirectoryIterator implements Iterator<ClassFile> {
             private List<Path> entries;
             private int index = 0;
             DirectoryIterator() throws IOException {
-                entries = walkTree(path);
+                entries = walkTree();
                 index = 0;
             }
 
@@ -353,6 +368,31 @@ public class ClassFileReader {
 
         public void remove() {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
+
+    /**
+     * ClassFileReader for modules.
+     */
+    static class ModuleClassReader extends DirectoryReader {
+        final String modulename;
+        ModuleClassReader(FileSystem fs, String mn, Path root) throws IOException {
+            super(fs, root);
+            this.modulename = mn;
+        }
+
+        public Set<String> packages() throws IOException {
+            return walkTree().stream()
+                             .map(this::toPackageName)
+                             .sorted()
+                             .collect(Collectors.toSet());
+        }
+
+        String toPackageName(Path p) {
+            if (p.getParent() == null) {
+                return "";
+            }
+            return path.relativize(p.getParent()).toString().replace(fsSep, ".");
         }
     }
 }

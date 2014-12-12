@@ -171,9 +171,9 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
 void Thread::operator delete(void* p) {
   if (UseBiasedLocking) {
     void* real_malloc_addr = ((Thread*) p)->_real_malloc_address;
-    FreeHeap(real_malloc_addr, mtThread);
+    FreeHeap(real_malloc_addr);
   } else {
-    FreeHeap(p, mtThread);
+    FreeHeap(p);
   }
 }
 
@@ -374,42 +374,7 @@ void check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
-
-#ifndef PRODUCT
-// Tracing method for basic thread operations
-void Thread::trace(const char* msg, const Thread* const thread) {
-  if (!TraceThreadEvents) return;
-  ResourceMark rm;
-  ThreadCritical tc;
-  const char *name = "non-Java thread";
-  int prio = -1;
-  if (thread->is_Java_thread()
-      && !thread->is_Compiler_thread()) {
-    // The Threads_lock must be held to get information about
-    // this thread but may not be in some situations when
-    // tracing  thread events.
-    bool release_Threads_lock = false;
-    if (!Threads_lock->owned_by_self()) {
-      Threads_lock->lock();
-      release_Threads_lock = true;
-    }
-    JavaThread* jt = (JavaThread *)thread;
-    name = (char *)jt->get_thread_name();
-    oop thread_oop = jt->threadObj();
-    if (thread_oop != NULL) {
-      prio = java_lang_Thread::priority(thread_oop);
-    }
-    if (release_Threads_lock) {
-      Threads_lock->unlock();
-    }
-  }
-  tty->print_cr("Thread::%s " INTPTR_FORMAT " [%lx] %s (prio: %d)", msg, thread, thread->osthread()->thread_id(), name, prio);
-}
-#endif
-
-
 ThreadPriority Thread::get_priority(const Thread* const thread) {
-  trace("get priority", thread);
   ThreadPriority priority;
   // Can return an error!
   (void)os::get_priority(thread, priority);
@@ -418,7 +383,6 @@ ThreadPriority Thread::get_priority(const Thread* const thread) {
 }
 
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {
-  trace("set priority", thread);
   debug_only(check_for_dangling_thread_pointer(thread);)
   // Can return an error!
   (void)os::set_priority(thread, priority);
@@ -426,7 +390,6 @@ void Thread::set_priority(Thread* thread, ThreadPriority priority) {
 
 
 void Thread::start(Thread* thread) {
-  trace("start", thread);
   // Start is different from resume in that its safety is guaranteed by context or
   // being called from a Java method synchronized on the Thread object.
   if (!DisableStartThread) {
@@ -769,13 +732,11 @@ bool JavaThread::profile_last_Java_frame(frame* _fr) {
 }
 
 void Thread::interrupt(Thread* thread) {
-  trace("interrupt", thread);
   debug_only(check_for_dangling_thread_pointer(thread);)
   os::interrupt(thread);
 }
 
 bool Thread::is_interrupted(Thread* thread, bool clear_interrupted) {
-  trace("is_interrupted", thread);
   debug_only(check_for_dangling_thread_pointer(thread);)
   // Note:  If clear_interrupted==false, this simply fetches and
   // returns the value of the field osthread()->interrupted().
@@ -1115,7 +1076,7 @@ static void reset_vm_info_property(TRAPS) {
 }
 
 
-void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
+void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
                                     bool daemon, TRAPS) {
   assert(thread_group.not_null(), "thread group should be specified");
   assert(threadObj() == NULL, "should only create Java thread object once");
@@ -1162,8 +1123,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
     return;
   }
 
-  KlassHandle group(this, SystemDictionary::ThreadGroup_klass());
-  Handle threadObj(this, this->threadObj());
+  KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
+  Handle threadObj(THREAD, this->threadObj());
 
   JavaCalls::call_special(&result,
                           thread_group,
@@ -1172,8 +1133,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
                           vmSymbols::thread_void_signature(),
                           threadObj,          // Arg 1
                           THREAD);
-
-
 }
 
 // NamedThread --  non-JavaThread subclasses with multiple
@@ -1185,7 +1144,7 @@ NamedThread::NamedThread() : Thread() {
 
 NamedThread::~NamedThread() {
   if (_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, _name, mtThread);
+    FREE_C_HEAP_ARRAY(char, _name);
     _name = NULL;
   }
 }
@@ -1563,9 +1522,6 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
                        _dirty_card_queue(&_dirty_card_queue_set)
 #endif // INCLUDE_ALL_GCS
 {
-  if (TraceThreadEvents) {
-    tty->print_cr("creating thread %p", this);
-  }
   initialize();
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
@@ -1588,9 +1544,6 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
 }
 
 JavaThread::~JavaThread() {
-  if (TraceThreadEvents) {
-    tty->print_cr("terminate thread %p", this);
-  }
 
   // JSR166 -- return the parker to the free list
   Parker::Release(_parker);
@@ -2872,14 +2825,12 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   const char* name_str;
   oop thread_obj = threadObj();
   if (thread_obj != NULL) {
-    typeArrayOop name = java_lang_Thread::name(thread_obj);
+    oop name = java_lang_Thread::name(thread_obj);
     if (name != NULL) {
       if (buf == NULL) {
-        name_str = UNICODE::as_utf8((jchar*) name->base(T_CHAR),
-                                    name->length());
+        name_str = java_lang_String::as_utf8_string(name);
       } else {
-        name_str = UNICODE::as_utf8((jchar*) name->base(T_CHAR),
-                                    name->length(), buf, buflen);
+        name_str = java_lang_String::as_utf8_string(name, buf, buflen);
       }
     } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
       name_str = "<no-name - thread is attaching>";
@@ -3045,7 +2996,7 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 
 void JavaThread::popframe_free_preserved_args() {
   assert(_popframe_preserved_args != NULL, "should not free PopFrame preserved arguments twice");
-  FREE_C_HEAP_ARRAY(char, (char*) _popframe_preserved_args, mtThread);
+  FREE_C_HEAP_ARRAY(char, (char*) _popframe_preserved_args);
   _popframe_preserved_args = NULL;
   _popframe_preserved_args_size = 0;
 }
@@ -3655,7 +3606,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
         jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
         // If we can't find the agent, exit.
         vm_exit_during_initialization(buf, NULL);
-        FREE_C_HEAP_ARRAY(char, buf, mtThread);
+        FREE_C_HEAP_ARRAY(char, buf);
       }
     } else {
       // Try to load the agent from the standard dll directory
@@ -3675,7 +3626,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
           jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
           // If we can't find the agent, exit.
           vm_exit_during_initialization(buf, NULL);
-          FREE_C_HEAP_ARRAY(char, buf, mtThread);
+          FREE_C_HEAP_ARRAY(char, buf);
         }
       }
     }

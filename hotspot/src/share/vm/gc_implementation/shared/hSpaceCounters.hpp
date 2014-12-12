@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class HSpaceCounters: public CHeapObj<mtGC> {
                  size_t initial_capacity, GenerationCounters* gc);
 
   ~HSpaceCounters() {
-    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtGC);
+    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
   }
 
   inline void update_capacity(size_t v) {

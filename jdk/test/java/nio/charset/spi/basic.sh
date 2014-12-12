@@ -57,23 +57,23 @@ case `uname` in
 esac
 
 JARD=$DIR/x.jar
-EXTD=$DIR/x.ext
+APPD=$DIR/x.ext
 TESTD=$DIR/x.test
 
 CSS='US-ASCII 8859_1 iso-ir-6 UTF-16 windows-1252 !BAR cp1252'
 
 
-if [ \! -d $EXTD ]; then
+if [ \! -d $APPD ]; then
     # Initialize
     echo Initializing...
-    rm -rf $JARD $EXTD $TESTD
+    rm -rf $JARD $APPD $TESTD
     mkdir -p $JARD/META-INF/services x.ext
     echo FooProvider \
       >$JARD/META-INF/services/java.nio.charset.spi.CharsetProvider
     cp $TESTCLASSES/FooProvider.class $TESTCLASSES/FooCharset.class $JARD
     mkdir $TESTD
     cp $TESTCLASSES/Test.class $TESTD
-    (cd $JARD; $JAR ${TESTTOOLVMOPTS} -cf $EXTD/test.jar *)
+    (cd $JARD; $JAR ${TESTTOOLVMOPTS} -cf $APPD/test.jar *)
 fi
 
 if [ $# -gt 0 ]; then
@@ -96,15 +96,13 @@ TMP=${TMP:-$TEMP}; TMP=${TMP:-/tmp}
 cd $TMP
 
 failures=0
-for where in ext app; do
+for where in app; do
   for security in none minimal-policy cp-policy; do
     echo '';
     echo "LC_ALL=$LC_ALL where=$where security=$security"
     av=''
-    if [ $where = ext ]; then
-      av="$av -cp $TESTD -Djava.ext.dirs=$EXTD";
-    else
-      av="$av -cp $TESTD$CPS$EXTD/test.jar";
+    if [ $where = app ]; then
+      av="$av -cp $TESTD$CPS$APPD/test.jar";
     fi
     case $security in
       none)          css="$CSS FOO";;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,24 @@
    @author Pavel Porvatov
 */
 
-import sun.awt.SunToolkit;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Event;
+import java.awt.Point;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class bug7088744 {
-    private static volatile JLabel label;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
-    private static volatile Point point;
+public class bug7088744 {
+
+    private static volatile JLabel label;
+    private static volatile JFrame frame;
+
+    private static volatile Point point = new Point();
 
     private static final int MOUSE_CLICKED = 1;
     private static final int MOUSE_PRESSED = 2;
@@ -117,7 +123,7 @@ public class bug7088744 {
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                JFrame frame = new JFrame();
+                frame = new JFrame();
 
                 label = new JLabel("A label");
 
@@ -137,26 +143,24 @@ public class bug7088744 {
                 frame.add(label);
                 frame.setSize(200, 100);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-
-        toolkit.realSync();
-
-        // On Linux platforms realSync doesn't guaranties setSize completion
-        Thread.sleep(1000);
+        Robot robot = new Robot();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                point = label.getLocationOnScreen();
+                Point pt = label.getLocationOnScreen();
+                point.x = pt.x + label.getWidth() / 2;
+                point.y = pt.y + label.getHeight() / 2;
             }
         });
 
-        Robot robot = new Robot();
-
         robot.setAutoDelay(100);
+        robot.setAutoWaitForIdle(true);
         robot.mouseMove(point.x, point.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mousePress(InputEvent.BUTTON2_MASK);
@@ -165,10 +169,9 @@ public class bug7088744 {
         robot.mouseRelease(InputEvent.BUTTON2_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_MASK);
 
-        toolkit.realSync();
-
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
+                frame.dispose();
                 if (eventCount != BUTTON_EVENTS_SEQUENCE.length) {
                     throw new RuntimeException("Not all events received");
                 }

@@ -127,7 +127,6 @@
 # include "memory/genOopClosures.hpp"
 # include "memory/genRemSet.hpp"
 # include "memory/generation.hpp"
-# include "memory/generation.inline.hpp"
 # include "memory/heap.hpp"
 # include "memory/iterator.hpp"
 # include "memory/memRegion.hpp"

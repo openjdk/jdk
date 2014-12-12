@@ -623,7 +623,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing young gen rescan
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  _young_gen = gch->prev_gen(_cmsGen);
+  assert(gch->prev_gen(_cmsGen)->kind() == Generation::ParNew, "CMS can only be used with ParNew");
+  _young_gen = (ParNewGeneration*)gch->prev_gen(_cmsGen);
   if (gch->supports_inline_contig_alloc()) {
     _top_addr = gch->top_addr();
     _end_addr = gch->end_addr();
@@ -650,15 +651,15 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         || _cursor == NULL) {
       warning("Failed to allocate survivor plab/chunk array");
       if (_survivor_plab_array  != NULL) {
-        FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array, mtGC);
+        FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
         _survivor_plab_array = NULL;
       }
       if (_survivor_chunk_array != NULL) {
-        FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array, mtGC);
+        FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
         _survivor_chunk_array = NULL;
       }
       if (_cursor != NULL) {
-        FREE_C_HEAP_ARRAY(size_t, _cursor, mtGC);
+        FREE_C_HEAP_ARRAY(size_t, _cursor);
         _cursor = NULL;
       }
     } else {
@@ -668,10 +669,10 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         if (vec == NULL) {
           warning("Failed to allocate survivor plab array");
           for (int j = i; j > 0; j--) {
-            FREE_C_HEAP_ARRAY(HeapWord*, _survivor_plab_array[j-1].array(), mtGC);
+            FREE_C_HEAP_ARRAY(HeapWord*, _survivor_plab_array[j-1].array());
           }
-          FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array, mtGC);
-          FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array, mtGC);
+          FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
+          FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
           _survivor_plab_array = NULL;
           _survivor_chunk_array = NULL;
           _survivor_chunk_capacity = 0;
@@ -792,11 +793,6 @@ void ConcurrentMarkSweepGeneration::promotion_failure_occurred() {
   }
 }
 
-CompactibleSpace*
-ConcurrentMarkSweepGeneration::first_compaction_space() const {
-  return _cmsSpace;
-}
-
 void ConcurrentMarkSweepGeneration::reset_after_compaction() {
   // Clear the promotion information.  These pointers can be adjusted
   // along with all the other pointers into the heap but
@@ -805,10 +801,6 @@ void ConcurrentMarkSweepGeneration::reset_after_compaction() {
   for (uint i = 0; i < ParallelGCThreads; i++) {
     _par_gc_thread_states[i]->promo.reset();
   }
-}
-
-void ConcurrentMarkSweepGeneration::space_iterate(SpaceClosure* blk, bool usedOnly) {
-  blk->do_space(_cmsSpace);
 }
 
 void ConcurrentMarkSweepGeneration::compute_new_size() {
@@ -881,7 +873,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
         expand_bytes);
     }
     // safe if expansion fails
-    expand(expand_bytes, 0, CMSExpansionCause::_satisfy_free_ratio);
+    expand_for_gc_cause(expand_bytes, 0, CMSExpansionCause::_satisfy_free_ratio);
     if (PrintGCDetails && Verbose) {
       gclog_or_tty->print_cr("  Expanded free fraction %f",
         ((double) free()) / capacity());
@@ -1047,8 +1039,7 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
   if (res == NULL) {
     // expand and retry
     size_t s = _cmsSpace->expansionSpaceRequired(obj_size);  // HeapWords
-    expand(s*HeapWordSize, MinHeapDeltaBytes,
-      CMSExpansionCause::_satisfy_promotion);
+    expand_for_gc_cause(s*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_satisfy_promotion);
     // Since there's currently no next generation, we don't try to promote
     // into a more senior generation.
     assert(next_gen() == NULL, "assumption, based upon which no attempt "
@@ -1199,14 +1190,6 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
   )
 
   return obj;
-}
-
-void
-ConcurrentMarkSweepGeneration::
-par_promote_alloc_undo(int thread_num,
-                       HeapWord* obj, size_t word_sz) {
-  // CMS does not support promotion undo.
-  ShouldNotReachHere();
 }
 
 void
@@ -1641,13 +1624,12 @@ void CMSCollector::acquire_control_and_collect(bool full,
   do_compaction_work(clear_all_soft_refs);
 
   // Has the GC time limit been exceeded?
-  DefNewGeneration* young_gen = _young_gen->as_DefNewGeneration();
-  size_t max_eden_size = young_gen->max_capacity() -
-                         young_gen->to()->capacity() -
-                         young_gen->from()->capacity();
+  size_t max_eden_size = _young_gen->max_capacity() -
+                         _young_gen->to()->capacity() -
+                         _young_gen->from()->capacity();
   GCCause::Cause gc_cause = gch->gc_cause();
   size_policy()->check_gc_overhead_limit(_young_gen->used(),
-                                         young_gen->eden()->used(),
+                                         _young_gen->eden()->used(),
                                          _cmsGen->max_capacity(),
                                          max_eden_size,
                                          full,
@@ -1768,10 +1750,9 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 }
 
 void CMSCollector::print_eden_and_survivor_chunk_arrays() {
-  DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
-  ContiguousSpace* eden_space = dng->eden();
-  ContiguousSpace* from_space = dng->from();
-  ContiguousSpace* to_space   = dng->to();
+  ContiguousSpace* eden_space = _young_gen->eden();
+  ContiguousSpace* from_space = _young_gen->from();
+  ContiguousSpace* to_space   = _young_gen->to();
   // Eden
   if (_eden_chunk_array != NULL) {
     gclog_or_tty->print_cr("eden " PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "(" SIZE_FORMAT ")",
@@ -2634,13 +2615,6 @@ oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {   \
 ALL_SINCE_SAVE_MARKS_CLOSURES(CMS_SINCE_SAVE_MARKS_DEFN)
 
 void
-ConcurrentMarkSweepGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
-  cl->set_generation(this);
-  younger_refs_in_space_iterate(_cmsSpace, cl);
-  cl->reset_generation();
-}
-
-void
 ConcurrentMarkSweepGeneration::oop_iterate(ExtendedOopClosure* cl) {
   if (freelistLock()->owned_by_self()) {
     Generation::oop_iterate(cl);
@@ -2812,23 +2786,17 @@ ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
   CMSSynchronousYieldRequest yr;
   assert(!tlab, "Can't deal with TLAB allocation");
   MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
-  expand(word_size*HeapWordSize, MinHeapDeltaBytes,
-    CMSExpansionCause::_satisfy_allocation);
+  expand_for_gc_cause(word_size*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_satisfy_allocation);
   if (GCExpandToAllocateDelayMillis > 0) {
     os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
   }
   return have_lock_and_allocate(word_size, tlab);
 }
 
-// YSR: All of this generation expansion/shrinking stuff is an exact copy of
-// OneContigSpaceCardGeneration, which makes me wonder if we should move this
-// to CardGeneration and share it...
-bool ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes) {
-  return CardGeneration::expand(bytes, expand_bytes);
-}
-
-void ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes,
-  CMSExpansionCause::Cause cause)
+void ConcurrentMarkSweepGeneration::expand_for_gc_cause(
+    size_t bytes,
+    size_t expand_bytes,
+    CMSExpansionCause::Cause cause)
 {
 
   bool success = expand(bytes, expand_bytes);
@@ -2857,8 +2825,7 @@ HeapWord* ConcurrentMarkSweepGeneration::expand_and_par_lab_allocate(CMSParGCThr
       return NULL;
     }
     // Otherwise, we try expansion.
-    expand(word_sz*HeapWordSize, MinHeapDeltaBytes,
-      CMSExpansionCause::_allocate_par_lab);
+    expand_for_gc_cause(word_sz*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_allocate_par_lab);
     // Now go around the loop and try alloc again;
     // A competing par_promote might beat us to the expansion space,
     // so we may go around the loop again if promotion fails again.
@@ -2885,8 +2852,7 @@ bool ConcurrentMarkSweepGeneration::expand_and_ensure_spooling_space(
       return false;
     }
     // Otherwise, we try expansion.
-    expand(refill_size_bytes, MinHeapDeltaBytes,
-      CMSExpansionCause::_allocate_par_spooling_space);
+    expand_for_gc_cause(refill_size_bytes, MinHeapDeltaBytes, CMSExpansionCause::_allocate_par_spooling_space);
     // Now go around the loop and try alloc again;
     // A competing allocation might beat us to the expansion space,
     // so we may go around the loop again if allocation fails again.
@@ -2896,77 +2862,16 @@ bool ConcurrentMarkSweepGeneration::expand_and_ensure_spooling_space(
   }
 }
 
-
-void ConcurrentMarkSweepGeneration::shrink_by(size_t bytes) {
-  assert_locked_or_safepoint(ExpandHeap_lock);
-  // Shrink committed space
-  _virtual_space.shrink_by(bytes);
-  // Shrink space; this also shrinks the space's BOT
-  _cmsSpace->set_end((HeapWord*) _virtual_space.high());
-  size_t new_word_size = heap_word_size(_cmsSpace->capacity());
-  // Shrink the shared block offset array
-  _bts->resize(new_word_size);
-  MemRegion mr(_cmsSpace->bottom(), new_word_size);
-  // Shrink the card table
-  Universe::heap()->barrier_set()->resize_covered_region(mr);
-
-  if (Verbose && PrintGC) {
-    size_t new_mem_size = _virtual_space.committed_size();
-    size_t old_mem_size = new_mem_size + bytes;
-    gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                  name(), old_mem_size/K, new_mem_size/K);
-  }
-}
-
 void ConcurrentMarkSweepGeneration::shrink(size_t bytes) {
-  assert_locked_or_safepoint(Heap_lock);
-  size_t size = ReservedSpace::page_align_size_down(bytes);
   // Only shrink if a compaction was done so that all the free space
   // in the generation is in a contiguous block at the end.
-  if (size > 0 && did_compact()) {
-    shrink_by(size);
+  if (did_compact()) {
+    CardGeneration::shrink(bytes);
   }
 }
 
-bool ConcurrentMarkSweepGeneration::grow_by(size_t bytes) {
+void ConcurrentMarkSweepGeneration::assert_correct_size_change_locking() {
   assert_locked_or_safepoint(Heap_lock);
-  bool result = _virtual_space.expand_by(bytes);
-  if (result) {
-    size_t new_word_size =
-      heap_word_size(_virtual_space.committed_size());
-    MemRegion mr(_cmsSpace->bottom(), new_word_size);
-    _bts->resize(new_word_size);  // resize the block offset shared array
-    Universe::heap()->barrier_set()->resize_covered_region(mr);
-    // Hmmmm... why doesn't CFLS::set_end verify locking?
-    // This is quite ugly; FIX ME XXX
-    _cmsSpace->assert_locked(freelistLock());
-    _cmsSpace->set_end((HeapWord*)_virtual_space.high());
-
-    // update the space and generation capacity counters
-    if (UsePerfData) {
-      _space_counters->update_capacity();
-      _gen_counters->update_all();
-    }
-
-    if (Verbose && PrintGC) {
-      size_t new_mem_size = _virtual_space.committed_size();
-      size_t old_mem_size = new_mem_size - bytes;
-      gclog_or_tty->print_cr("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                    name(), old_mem_size/K, bytes/K, new_mem_size/K);
-    }
-  }
-  return result;
-}
-
-bool ConcurrentMarkSweepGeneration::grow_to_reserved() {
-  assert_locked_or_safepoint(Heap_lock);
-  bool success = true;
-  const size_t remaining_bytes = _virtual_space.uncommitted_size();
-  if (remaining_bytes > 0) {
-    success = grow_by(remaining_bytes);
-    DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
-  }
-  return success;
 }
 
 void ConcurrentMarkSweepGeneration::shrink_free_list_by(size_t bytes) {
@@ -4094,10 +3999,6 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
   }
 
   if (clean_survivor) {  // preclean the active survivor space(s)
-    assert(_young_gen->kind() == Generation::DefNew ||
-           _young_gen->kind() == Generation::ParNew,
-         "incorrect type for cast");
-    DefNewGeneration* dng = (DefNewGeneration*)_young_gen;
     PushAndMarkClosure pam_cl(this, _span, ref_processor(),
                              &_markBitMap, &_modUnionTable,
                              &_markStack, true /* precleaning phase */);
@@ -4110,8 +4011,8 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
     SurvivorSpacePrecleanClosure
       sss_cl(this, _span, &_markBitMap, &_markStack,
              &pam_cl, before_count, CMSYield);
-    dng->from()->object_iterate_careful(&sss_cl);
-    dng->to()->object_iterate_careful(&sss_cl);
+    _young_gen->from()->object_iterate_careful(&sss_cl);
+    _young_gen->to()->object_iterate_careful(&sss_cl);
   }
   MarkRefsIntoAndScanClosure
     mrias_cl(_span, ref_processor(), &_markBitMap, &_modUnionTable,
@@ -4696,10 +4597,10 @@ class RemarkKlassClosure : public KlassClosure {
 };
 
 void CMSParMarkTask::work_on_young_gen_roots(uint worker_id, OopsInGenClosure* cl) {
-  DefNewGeneration* dng = _collector->_young_gen->as_DefNewGeneration();
-  ContiguousSpace* eden_space = dng->eden();
-  ContiguousSpace* from_space = dng->from();
-  ContiguousSpace* to_space   = dng->to();
+  ParNewGeneration* young_gen = _collector->_young_gen;
+  ContiguousSpace* eden_space = young_gen->eden();
+  ContiguousSpace* from_space = young_gen->from();
+  ContiguousSpace* to_space   = young_gen->to();
 
   HeapWord** eca = _collector->_eden_chunk_array;
   size_t     ect = _collector->_eden_chunk_index;
@@ -5168,11 +5069,10 @@ void
 CMSCollector::
 initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
   assert(n_threads > 0, "Unexpected n_threads argument");
-  DefNewGeneration* dng = (DefNewGeneration*)_young_gen;
 
   // Eden space
-  if (!dng->eden()->is_empty()) {
-    SequentialSubTasksDone* pst = dng->eden()->par_seq_tasks();
+  if (!_young_gen->eden()->is_empty()) {
+    SequentialSubTasksDone* pst = _young_gen->eden()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
     // Each valid entry in [0, _eden_chunk_index) represents a task.
     size_t n_tasks = _eden_chunk_index + 1;
@@ -5185,14 +5085,14 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
 
   // Merge the survivor plab arrays into _survivor_chunk_array
   if (_survivor_plab_array != NULL) {
-    merge_survivor_plab_arrays(dng->from(), n_threads);
+    merge_survivor_plab_arrays(_young_gen->from(), n_threads);
   } else {
     assert(_survivor_chunk_index == 0, "Error");
   }
 
   // To space
   {
-    SequentialSubTasksDone* pst = dng->to()->par_seq_tasks();
+    SequentialSubTasksDone* pst = _young_gen->to()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
     // Sets the condition for completion of the subtask (how many threads
     // need to finish in order to be done).
@@ -5203,7 +5103,7 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
 
   // From space
   {
-    SequentialSubTasksDone* pst = dng->from()->par_seq_tasks();
+    SequentialSubTasksDone* pst = _young_gen->from()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
     size_t n_tasks = _survivor_chunk_index + 1;
     assert(n_tasks == 1 || _survivor_chunk_array != NULL, "Error");
@@ -5945,7 +5845,6 @@ void CMSCollector::reset(bool concurrent) {
 }
 
 void CMSCollector::do_CMS_operation(CMS_op_type op, GCCause::Cause gc_cause) {
-  gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
   TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
   GCTraceTime t(GCCauseString("GC", gc_cause), PrintGC, !PrintGCDetails, NULL, _gc_tracer_cm->gc_id());
   TraceCollectorStats tcs(counters());
