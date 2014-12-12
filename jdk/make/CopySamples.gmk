@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-SAMPLE_TARGET_DIR := $(JDK_OUTPUTDIR)/sample
+SAMPLE_TARGET_DIR := $(SUPPORT_OUTPUTDIR)/sample
 SAMPLE_SOURCE_DIR := $(JDK_TOPDIR)/src/sample/share
 SAMPLE_CLOSED_SOURCE_DIR := $(JDK_TOPDIR)/src/closed/sample/share
 SAMPLE_SOLARIS_SOURCE_DIR := $(JDK_TOPDIR)/src/sample/solaris

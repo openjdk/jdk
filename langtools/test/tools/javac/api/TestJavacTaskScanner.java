@@ -89,7 +89,7 @@ public class TestJavacTaskScanner extends ToolTester {
         System.out.println("#parseTypeElements: " + numParseTypeElements);
         System.out.println("#allMembers: " + numAllMembers);
 
-        check(numTokens, "#Tokens", 1222);
+        check(numTokens, "#Tokens", 1054);
         check(numParseTypeElements, "#parseTypeElements", 158);
         check(numAllMembers, "#allMembers", 52);
     }
@@ -138,30 +138,10 @@ public class TestJavacTaskScanner extends ToolTester {
     public StandardJavaFileManager getLocalFileManager(JavaCompiler tool,
                                                         DiagnosticListener<JavaFileObject> dl,
                                                         Charset encoding) {
-        File javac_classes;
-        try {
-            final String javacMainClass = "com/sun/tools/javac/Main.class";
-            URL url = getClass().getClassLoader().getResource(javacMainClass);
-            if (url == null)
-                throw new Error("can't locate javac classes");
-            URI uri = url.toURI();
-            String scheme = uri.getScheme();
-            String ssp = uri.getSchemeSpecificPart();
-            if (scheme.equals("jar")) {
-                javac_classes = new File(new URI(ssp.substring(0, ssp.indexOf("!/"))));
-            } else if (scheme.equals("file")) {
-                javac_classes = new File(ssp.substring(0, ssp.indexOf(javacMainClass)));
-            } else
-                throw new Error("unknown URL: " + url);
-        } catch (URISyntaxException e) {
-            throw new Error(e);
-        }
-        System.err.println("javac_classes: " + javac_classes);
-
         StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, encoding);
         try {
             fm.setLocation(SOURCE_PATH,  Arrays.asList(test_src));
-            fm.setLocation(CLASS_PATH,   join(test_class_path, Arrays.asList(javac_classes)));
+            fm.setLocation(CLASS_PATH,   test_class_path);
             fm.setLocation(CLASS_OUTPUT, Arrays.asList(test_classes));
         } catch (IOException e) {
             throw new AssertionError(e);

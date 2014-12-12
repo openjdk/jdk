@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include <sys/time.h>
 
 #include "manifest_info.h"
-#include "version_comp.h"
 
 /* Support Cocoa event loop on the main thread */
 #include <Cocoa/Cocoa.h>
@@ -102,10 +101,6 @@ struct NSAppArgs {
  *
  *  Main
  *  (incoming argv)
- *  |
- * \|/
- * SelectVersion
- * (selects the JRE version, note: not data model)
  *  |
  * \|/
  * CreateExecutionEnvironment

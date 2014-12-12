@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.MethodType;
+import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.LambdaToMethod.LambdaAnalyzerPreprocessor.*;
 import com.sun.tools.javac.comp.Lower.BasicFreeVarCollector;
@@ -60,6 +61,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import javax.lang.model.type.TypeKind;
 
 /**
  * This pass desugars lambda expressions into static methods
@@ -759,49 +761,10 @@ public class LambdaToMethod extends TreeTranslator {
             int prevPos = make.pos;
             try {
                 make.at(tree);
-                Type samDesc = localContext.bridgedRefSig();
-                List<Type> samPTypes = samDesc.getParameterTypes();
-
-                // an extra argument is prepended in the case where the member
-                // reference is an unbound instance method reference (in which
-                // case the receiver expression in passed.
-                VarSymbol rcvr;
-                switch (tree.kind) {
-                    case BOUND:
-                        rcvr = addParameter("rec$", tree.getQualifierExpression().type, false);
-                        receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
-                        break;
-                    case UNBOUND:
-                        rcvr = addParameter("rec$", samPTypes.head, false);
-                        samPTypes = samPTypes.tail;
-                        break;
-                    default:
-                        rcvr = null;
-                        break;
-                }
-
-                // generate the parameter list for the coverted member reference.
-                // the signature will match the signature of the target sam descriptor
-
-                List<Type> refPTypes = tree.sym.type.getParameterTypes();
-                int refSize = refPTypes.size();
-                int samSize = samPTypes.size();
-                // Last parameter to copy from referenced method
-                int last = localContext.needsVarArgsConversion() ? refSize - 1 : refSize;
-
-                List<Type> l = refPTypes;
-                // Use parameter types of the referenced method, excluding final var args
-                for (int i = 0; l.nonEmpty() && i < last; ++i) {
-                    addParameter("x$" + i, l.head, true);
-                    l = l.tail;
-                }
-                // Flatten out the var args
-                for (int i = last; i < samSize; ++i) {
-                    addParameter("xva$" + i, tree.varargsElement, true);
-                }
 
                 //body generation - this can be either a method call or a
                 //new instance creation expression, depending on the member reference kind
+                VarSymbol rcvr = addParametersReturnReceiver();
                 JCExpression expr = (tree.getMode() == ReferenceMode.INVOKE)
                         ? expressionInvoke(rcvr)
                         : expressionNew();
@@ -814,6 +777,78 @@ public class LambdaToMethod extends TreeTranslator {
             } finally {
                 make.at(prevPos);
             }
+        }
+
+        /**
+         * Generate the parameter list for the converted member reference.
+         *
+         * @return The receiver variable symbol, if any
+         */
+        VarSymbol addParametersReturnReceiver() {
+            Type samDesc = localContext.bridgedRefSig();
+            List<Type> samPTypes = samDesc.getParameterTypes();
+            List<Type> descPTypes = tree.getDescriptorType(types).getParameterTypes();
+
+            // Determine the receiver, if any
+            VarSymbol rcvr;
+            switch (tree.kind) {
+                case BOUND:
+                    // The receiver is explicit in the method reference
+                    rcvr = addParameter("rec$", tree.getQualifierExpression().type, false);
+                    receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
+                    break;
+                case UNBOUND:
+                    // The receiver is the first parameter, extract it and
+                    // adjust the SAM and unerased type lists accordingly
+                    rcvr = addParameter("rec$", samDesc.getParameterTypes().head, false);
+                    samPTypes = samPTypes.tail;
+                    descPTypes = descPTypes.tail;
+                    break;
+                default:
+                    rcvr = null;
+                    break;
+            }
+            List<Type> implPTypes = tree.sym.type.getParameterTypes();
+            int implSize = implPTypes.size();
+            int samSize = samPTypes.size();
+            // Last parameter to copy from referenced method, exclude final var args
+            int last = localContext.needsVarArgsConversion() ? implSize - 1 : implSize;
+
+            // Failsafe -- assure match-up
+            boolean checkForIntersection = tree.varargsElement != null || implSize == descPTypes.size();
+
+            // Use parameter types of the implementation method unless the unerased
+            // SAM parameter type is an intersection type, in that case use the
+            // erased SAM parameter type so that the supertype relationship
+            // the implementation method parameters is not obscured.
+            // Note: in this loop, the lists implPTypes, samPTypes, and descPTypes
+            // are used as pointers to the current parameter type information
+            // and are thus not usable afterwards.
+            for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
+                // By default use the implementation method parmeter type
+                Type parmType = implPTypes.head;
+                // If the unerased parameter type is a type variable whose
+                // bound is an intersection (eg. <T extends A & B>) then
+                // use the SAM parameter type
+                if (checkForIntersection && descPTypes.head.getKind() == TypeKind.TYPEVAR) {
+                    TypeVar tv = (TypeVar) descPTypes.head;
+                    if (tv.bound.getKind() == TypeKind.INTERSECTION) {
+                        parmType = samPTypes.head;
+                    }
+                }
+                addParameter("x$" + i, parmType, true);
+
+                // Advance to the next parameter
+                implPTypes = implPTypes.tail;
+                samPTypes = samPTypes.tail;
+                descPTypes = descPTypes.tail;
+            }
+            // Flatten out the var args
+            for (int i = last; i < samSize; ++i) {
+                addParameter("xva$" + i, tree.varargsElement, true);
+            }
+
+            return rcvr;
         }
 
         JCExpression getReceiverExpression() {
@@ -2064,11 +2099,35 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             /**
+             * Erasure destroys the implementation parameter subtype
+             * relationship for intersection types
+             */
+            boolean interfaceParameterIsIntersectionType() {
+                List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
+                if (tree.kind == ReferenceKind.UNBOUND) {
+                    tl = tl.tail;
+                }
+                for (; tl.nonEmpty(); tl = tl.tail) {
+                    Type pt = tl.head;
+                    if (pt.getKind() == TypeKind.TYPEVAR) {
+                        TypeVar tv = (TypeVar) pt;
+                        if (tv.bound.getKind() == TypeKind.INTERSECTION) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            /**
              * Does this reference need to be converted to a lambda
              * (i.e. var args need to be expanded or "super" is used)
              */
             final boolean needsConversionToLambda() {
-                return isSuper || needsVarArgsConversion() || isArrayOp() ||
+                return interfaceParameterIsIntersectionType() ||
+                        isSuper ||
+                        needsVarArgsConversion() ||
+                        isArrayOp() ||
                         isPrivateInOtherClass() ||
                         !receiverAccessible() ||
                         (tree.getMode() == ReferenceMode.NEW &&

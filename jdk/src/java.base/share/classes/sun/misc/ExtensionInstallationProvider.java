@@ -30,8 +30,10 @@ package sun.misc;
  * provided to the extension installation dependency mechanism to
  * install new extensions on the user's disk
  *
+ * @deprecated this class will be removed in a future release.
  * @author  Jerome Dochez
  */
+@Deprecated
 public interface ExtensionInstallationProvider {
 
     /*

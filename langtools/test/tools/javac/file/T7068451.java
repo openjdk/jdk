@@ -33,6 +33,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -143,7 +144,7 @@ public class T7068451 {
             try {
                 int len = filer.getResource(StandardLocation.SOURCE_OUTPUT, "p", "C.java").getCharContent(false).length();
                 messager.printMessage(Kind.NOTE, "C.java: found previous content of length " + len);
-            } catch (FileNotFoundException x) {
+            } catch (FileNotFoundException | NoSuchFileException x) {
                 messager.printMessage(Kind.NOTE, "C.java: not previously there");
             } catch (IOException x) {
                 messager.printMessage(Kind.ERROR, "while reading: " + x);

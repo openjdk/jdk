@@ -168,6 +168,7 @@ public class Kinds {
         public static final KindSelector MTH = new KindSelector(0x10);
         public static final KindSelector ERR = new KindSelector(0x3f);
         public static final KindSelector POLY = new KindSelector(0x20);
+        public static final KindSelector ASG = new KindSelector(0x44);
 
         //common derived selectors
         public static final KindSelector TYP_PCK = of(TYP, PCK);

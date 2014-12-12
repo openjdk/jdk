@@ -82,7 +82,7 @@ public class BogusEnumSet {
           System.out.println("Set size: " + es.size()); // 64
           System.out.println("Set: " + es); // Throws IndexOutOfBoundsException
           throw new AssertionError("Expected exception InvalidObjectException not thrown");
-        } catch (java.io.InvalidObjectException _) { /* OK */ }
+        } catch (java.io.InvalidObjectException expected) { /* OK */ }
     }
 
     private static Object deserialize(byte[] sf) throws Throwable {

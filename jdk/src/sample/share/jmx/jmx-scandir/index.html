@@ -36,9 +36,9 @@
     <title>JMX(TM) "scandir" Example</title>
   </head>
   <body>
-  
+
   <h1><center>Java<font size="-1"><sup>TM</sup></font> Management Extensions (JMX<font size="-1"><sup>TM</sup></font>) <i>scandir</i> Example</center></h1>
-  
+
   <h2><a name="h2-Introduction">Introduction</a></h2>
   <ul>
   <p>The JMX <i>scandir</i> example is an application that
@@ -59,7 +59,7 @@
      solutions used when implementing a monitoring and
      management interface for an application with JMX
      Technology.</p>
-  <p>This example is an advanced JMX example, which presents 
+  <p>This example is an advanced JMX example, which presents
      advanced JMX concepts. It is assumed that the reader is already
      familiar with the JMX API. Newcomers to JMX Technology are
      invited to have a look at the <a
@@ -69,31 +69,31 @@
   <p></p>
       <hr>
   <blockquote>
-    <u>Note:</u> This example was developed using <a 
+    <u>Note:</u> This example was developed using <a
      href="http://www.netbeans.org">NetBeans 5.0 IDE</a>. The instructions
      given in this document to build, run, and test the example assume that
      you have at your disposal:
      <ul><li>either <a href="http://www.netbeans.org">NetBeans 5.0 IDE</a>,</li>
-         <li>or <a href="http://ant.apache.org/">Apache Ant 1.6.5</a> and 
+         <li>or <a href="http://ant.apache.org/">Apache Ant 1.6.5</a> and
              <a href="http://sourceforge.net/projects/junit/">JUnit 3.8.1 or
              3.8.2</a><br>
              (JUnit is only needed to run the example's unit tests).
          </li>
      </ul>
-     <p><a name="setup">In order to build the example</a>, 
+     <p><a name="setup">In order to build the example</a>,
      <u>you may need to copy the jmx-scandir</u>
-     directory to somewhere where you have write permissions. 
+     directory to somewhere where you have write permissions.
      <br>In that case, you will need to update the <i>nbjdk.home</i> variable
-     in the copied <i><a href="build.properties">build.properties</a></i> 
-     file located at the root of the copied project directory. 
+     in the copied <i><a href="build.properties">build.properties</a></i>
+     file located at the root of the copied project directory.
      Please make sure that this variable points to the JDK 6 home directory.
      </p>
-     <p>If you wish to run the testsuite from within the <a 
+     <p>If you wish to run the testsuite from within the <a
      href="http://www.netbeans.org">NetBeans IDE</a> you will also have
-     to set the <i>libs.junit.classpath</i> variable in 
-     <a href="build.properties">build.properties</a>. 
+     to set the <i>libs.junit.classpath</i> variable in
+     <a href="build.properties">build.properties</a>.
      The <i>libs.junit.classpath</i>  variable should point to your
-     <a href="http://sourceforge.net/projects/junit/">junit.jar</a>, 
+     <a href="http://sourceforge.net/projects/junit/">junit.jar</a>,
      version 3.8.1 or 3.8.2.
      </p>
   </blockquote>
@@ -116,22 +116,22 @@
   <h2><a name="h2-Generating">Generating the Java Documentation</a></h2>
 
     <ul>
-        <p>Before reading further, you will need to generate the 
+        <p>Before reading further, you will need to generate the
         Java Documentation for the example's sources.</p>
-        <p>In the example root directory (where the <code>build.xml</code> 
+        <p>In the example root directory (where the <code>build.xml</code>
            file is located) run the following command:
            <pre>ant javadoc</pre>
         </p>
-        <p>Alternatively you can open the jmx-scandir project with the 
+        <p>Alternatively you can open the jmx-scandir project with the
            NetBeans IDE and generate the Javadoc from its <code>Build</code>
            menu.
         </p>
-        <p>If building the documentation fails, please make sure to read the 
-           <a href="#setup">note</a> at the beginning of this document.</p> 
+        <p>If building the documentation fails, please make sure to read the
+           <a href="#setup">note</a> at the beginning of this document.</p>
     </ul>
-  
+
   <h2><a name="h2-Overview">Overview of the <i>scandir</i> Example</a></h2>
-  
+
   <ul>
     <p>The JMX <i>scandir</i> example is built around the
     following MBeans:</p>
@@ -184,9 +184,9 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
            load/save the configuration to/from an XML file. It
            will also let you modify that configuration - by e.g.
            creating new directory scanners in there.
-           The corresponding MBeans will be created later, only 
+           The corresponding MBeans will be created later, only
            when you later
-           ask the <code><a 
+           ask the <code><a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a> </code> to apply the
@@ -220,14 +220,14 @@ title="A ResultRecord contains information about a file matching the criteria of
         The <code>ResultLogManagerMXBean</code> can be configured to log
         such records to a flat file, or into a log held in memory, or
         both. Both logs (file and memory) can be configured with a
-        maximum capacity. 
+        maximum capacity.
         <br>When the maximum capacity of the memory
         log is reached, its first entry (i.e. its oldest entry) is
         removed to make place for the latest one.
         <br>When the maximum
         capacity of the file log is reached, the file is
         renamed by appending a tilde '~' to its name and a
-        new result log is created. 
+        new result log is created.
         <br>The <code>ResultLogManagerMXBean</code>
         will let you interactively clear these result logs, change their
         capacity, and decide where (memory or file) to log.
@@ -246,7 +246,7 @@ title="A ResultRecord contains information about a file matching the criteria of
         a single mail to each owner of matching files, containing
         the list of files they should consider deleting).<br>
         The <code>ResultLogManagerMXBean</code> is a singleton
-        MBean created by the <code><a 
+        MBean created by the <code><a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a> </code>
@@ -258,10 +258,10 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
         </li>
     </ul>
     <p>An application <code>main()</code> method is
-       provided in the <a 
+       provided in the <a
        href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirAgent.html"
-       >ScanDirAgent</a> class. The <code>main()</code> simply registers 
-       a <code><a 
+       >ScanDirAgent</a> class. The <code>main()</code> simply registers
+       a <code><a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a> </code> in the platform MBeanServer, and
@@ -281,15 +281,15 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
             <li>If the property <code>scandir.config.file</code> is
                 defined, the default application file will be the
                 file pointed to by this property. If that file
-                doesn't exist, it will be created when 
+                doesn't exist, it will be created when
                 <code>ScanDirConfigMXBean.save()</code> is
                 invoked.
             </li>
             <li>Otherwise the application config file is
                 assumed to be a file called <code>jmx-scandir.xml</code>,
                 located in the user's directory (as defined by
-                the System property <code>user.home</code>). 
-                If that file doesn't exists, it will be created when 
+                the System property <code>user.home</code>).
+                If that file doesn't exists, it will be created when
                 <code>ScanDirConfigMXBean.save()</code> is
                 invoked.
             </li>
@@ -299,8 +299,8 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
            <pre>-Djava.util.logging.config.file=logging.properties</pre>
            <pre>-Dscandir.config.file=src/etc/testconfig.xml</pre>
            With <code>ScanDirAgent</code> defined as the project's
-           main class. Hence when you invoke from the NetBeans IDE 
-           <i>Run Project</i> on the <i>jmx-scandir</i> project, 
+           main class. Hence when you invoke from the NetBeans IDE
+           <i>Run Project</i> on the <i>jmx-scandir</i> project,
            or <i>Run file</i> on the <code>ScanDirAgent</code>, the
            application starts with the test configuration provided in
            <a href="src/etc/testconfig.xml"
@@ -320,7 +320,7 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
       ><code>src</code></a> subdirectory.</p>
   </ul>
   <h2><a name="h2-Patterns">Patterns, Best Practices, and Common Pitfalls</a></h2>
-  <ul>  
+  <ul>
   <p>This section discusses some common patterns and
      design choices that this example demonstrates, and some pitfalls that
      it avoids.
@@ -392,14 +392,14 @@ href="http://weblogs.java.net/blog/emcmanus/archive/2006/06/intermxbean_ref.html
 title="Inter-MXBean references"
      >Inter-MXBean References</a>.
      </p>
-     <blockquote><u>Hint:</u> In order to simplify the task of coding a 
+     <blockquote><u>Hint:</u> In order to simplify the task of coding a
         JMX programmatic client, we recommend that getters, setters, and
-        operations defined in MBean and MXBean interfaces throw 
+        operations defined in MBean and MXBean interfaces throw
         <code>IOException</code>. Proxy objects will then be able
         to rethrow directly any <code>IOException</code> received from
         their underlying MBean Server connection, without wrapping
         them into <code>UndeclaredThrowableExceptions</code>.<br>
-        Since the life cycle of the proxy object is not directly tied to 
+        Since the life cycle of the proxy object is not directly tied to
         the life cycle of the MBean it proxies, you may also want to
         have all methods in the MBean or MXBean interface throw
         <code>InstanceNotFoundException</code> or more generally
@@ -510,7 +510,7 @@ title="ScanManager.java"
              the application MBeans are modeling objects
              which are conceptually contained within
              each other in a tree-like structure.
-             <br>For instance, most MBean names defined by 
+             <br>For instance, most MBean names defined by
              <a href="http://jcp.org/en/jsr/detail?id=77"
               >J2EE Management (JSR 77)</a> follow
               this scheme.
@@ -519,7 +519,7 @@ title="ScanManager.java"
              return <code>ObjectName</code> or
              <code>ObjectName[]</code> values</b>. The ObjectNames
              point to the MBeans which are related to that
-             object. For instance , <a 
+             object. For instance , <a
              href="http://glassfish.dev.java.net/"
              title="Open Source Java EE 5 Application Server"
              >GlassFish</a>
@@ -604,7 +604,7 @@ title="Inter-MXBean references"
       <p>
          Sometimes also, an MBean may need to perform some
          checks before being registered, or will need
-         to carry out some actions right after it has been 
+         to carry out some actions right after it has been
          successfully registered in the MBeanServer.
       </p>
       <p>
@@ -617,13 +617,13 @@ title="Inter-MXBean references"
       for it is to implement the <code>MBeanRegistration</code>
       interface.
       </p>
-      <p>The <code>MBeanRegistration</code> interface is a callback 
-      interface which defines pre and post registration and 
+      <p>The <code>MBeanRegistration</code> interface is a callback
+      interface which defines pre and post registration and
       unregistration callbacks.
       </p>
       <p>
        When an MBean implementing this interface is created
-      (with <code>createMBean</code>) or registered 
+      (with <code>createMBean</code>) or registered
       (with <code>registerMBean</code>) in an MBeanServer,
       the MBeanServer will call the <code>preRegister</code>
       and <code>postRegister</code> method implemented by
@@ -631,17 +631,17 @@ title="Inter-MXBean references"
       has an <code>MBeanServer</code> and <code>ObjectName</code>
       parameter, which are passed by the MBeanServer to the
       MBean. The MBean can store the reference it is being passed
-      in a private instance variable for later use. 
+      in a private instance variable for later use.
       </p>
       <p>
       Most of the MXBeans we have defined in this example
       implement the <code>MBeanRegistration</code> interface. The table
       below show how our MBeans use this interface to control
-      their own names, make sanity checks, perform 
+      their own names, make sanity checks, perform
       initialization steps or cleanup actions.
       </p>
       <p><br><center>
-      <table border="1" cellpadding="4" cellspacing="2" 
+      <table border="1" cellpadding="4" cellspacing="2"
              bgcolor="#eeeeee" width="95%">
           <thead>
               <tr bgcolor="#cecece">
@@ -654,16 +654,16 @@ title="Inter-MXBean references"
               <tr>
                   <td bgcolor="#dedede">get a reference to the MBeanServer</td>
                   <td><code>preRegister</code></td>
-                  <td bgcolor="#fafafa">The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+                  <td bgcolor="#fafafa">The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a>  needs a reference
                   to the MBeanServer in order to create and
-                  register other MBeans, such as the 
+                  register other MBeans, such as the
                   <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html"
 title="The ResultLogManagerMXBean is in charge of managing result logs"
-        >ResultLogManagerMXBean</a>, and the 
+        >ResultLogManagerMXBean</a>, and the
                   <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html"
 title="A DirectoryScannerMXBean looks for file matching a given set of criteria, starting at a given root."
@@ -675,13 +675,13 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
                       not met.
                   </td>
                   <td><code>preRegister</code></td>
-                  <td bgcolor="#fafafa">The <a 
+                  <td bgcolor="#fafafa">The <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a>  will throw
                   an IllegalArgumentException in <code>preRegister</code>
                   if the ObjectName it is being passed is
-                  illegal. Throwing an exception in 
+                  illegal. Throwing an exception in
                   <code>preRegister</code> makes the registration fail.
                   </td>
               </tr>
@@ -692,9 +692,9 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirConfigMXBean.html"
 title="The ScanDirConfigMXBean is in charge of the configuration"
            >ScanDirConfigMXBean</a> propagates the
-                  value of the <code>name=</code> property of 
+                  value of the <code>name=</code> property of
                   the ObjectName it is given into its
-                  ScanManagerConfig bean.  
+                  ScanManagerConfig bean.
                   </td>
               </tr>
               <tr>
@@ -704,19 +704,19 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
                   <td><code>preRegister</code></td>
                   <td bgcolor="#fafafa">The name that is returned by <code>preRegister</code>
                   is the ObjectName with which the MBean will be
-                  eventually registered. 
+                  eventually registered.
                   The <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirConfigMXBean.html"
 title="The ScanDirConfigMXBean is in charge of the configuration"
            >ScanDirConfigMXBean</a> is able to suggest
                   a value for its own ObjectName if none was
-                  provided. Similarly, the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+                  provided. Similarly, the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
-             >ScanManagerMXBean</a> 
+             >ScanManagerMXBean</a>
                   always returns its singleton ObjectName
-                  defined by <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html#SCAN_MANAGER_NAME" 
+                  defined by <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html#SCAN_MANAGER_NAME"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean.SCAN_MANAGER_NAME</a>.
                   </td>
@@ -736,7 +736,7 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
                   known that the registration was successful.
                   </td>
                   <td><code>postRegister</code></td>
-                  <td bgcolor="#fafafa">The <code>postRegister</code> method 
+                  <td bgcolor="#fafafa">The <code>postRegister</code> method
                   can be used to implement
                   initialization steps that need to be done once it
                   is known that the registration was successful, or to
@@ -745,11 +745,11 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
                   The <code>postRegister</code> method has a Boolean parameter
                   which tells the MBean whether it was or wasn't
                   successfully registered in the MBeanServer.
-                  The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+                  The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a>  uses <code>postRegister</code> to create
-                  and register other MBeans, such as the 
+                  and register other MBeans, such as the
                   <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html"
 title="The ResultLogManagerMXBean is in charge of managing result logs"
@@ -766,19 +766,19 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
               <tr>
                   <td bgcolor="#dedede">check whether the MBean can be deregistered</td>
                   <td><code>preDeregister</code></td>
-                  <td bgcolor="#fafafa">The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+                  <td bgcolor="#fafafa">The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a>  uses this method to verify
-                   that its state allows it to be deregistered. 
+                   that its state allows it to be deregistered.
                    In particular, it will refuse to be deregistered
                    if it is in the RUNNING or SCHEDULED state.
                    If <code>preDeregister</code> throws an exception, the unregisterMBean
                    call will fail and the MBean will remain registered in
-                   the MBeanServer. 
+                   the MBeanServer.
                    Take particular care when implementing business logic
-                   in this method: if the logic you implement has an 
-                   unfortunate bug which makes it always throw an 
+                   in this method: if the logic you implement has an
+                   unfortunate bug which makes it always throw an
                    exception, you will never be able to unregister
                    that MBean.
                   </td>
@@ -788,19 +788,19 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
                       it fails
                   </td>
                   <td><code>preDeregister</code></td>
-                  <td bgcolor="#fafafa">The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+                  <td bgcolor="#fafafa">The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a>  uses this method to unregister
                   all the other MBeans it has created and registered in the
                   MBeanServer. This includes the <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html"
 title="The ResultLogManagerMXBean is in charge of managing result logs"
-        >ResultLogManagerMXBean</a>, the 
+        >ResultLogManagerMXBean</a>, the
                   <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirConfigMXBean.html"
 title="The ScanDirConfigMXBean is in charge of the configuration"
-           >ScanDirConfigMXBeans</a> it has created, and the 
+           >ScanDirConfigMXBeans</a> it has created, and the
                   <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html"
 title="A DirectoryScannerMXBean looks for file matching a given set of criteria, starting at a given root."
@@ -816,8 +816,8 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
                   <td><code>postDeregister</code></td>
                   <td bgcolor="#fafafa"><code>postDeregister</code> is only called if the MBean was succesfully
                   unregistered.
-                  The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+                  The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a>  uses this method to cancel
                   its internal java.util.Timer.
@@ -834,25 +834,25 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
         instance registered in a given MBeanServer. <br>
         A singleton MBean usually has a well-known name,
         which can be defined as a constant. In that case,
-        clients no longer need to call <code>new ObjectName(...)</code> 
+        clients no longer need to call <code>new ObjectName(...)</code>
         and catch the declared <code>MalformedObjectNameException</code>.
       </p>
       <p>There are already quite a few examples of singleton
-         MBeans in the java.lang.management API. The 
+         MBeans in the java.lang.management API. The
          ThreadingMXBean, ClassLoadingMXBean, RuntimeMXBean, etc.
          are all singleton MBeans.
       </p>
       <p>In this example, we have two singleton MBeans:
-         The <code><a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+         The <code><a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
-             >ScanManagerMXBean</a></code> and the 
+             >ScanManagerMXBean</a></code> and the
          <code><a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html"
 title="The ResultLogManagerMXBean is in charge of managing result logs"
         >ResultLogManagerMXBean</a></code>. But in fact,
-         the only real singleton MBean is the 
-        <code>ScanManagerMXBean</code>. The 
+         the only real singleton MBean is the
+        <code>ScanManagerMXBean</code>. The
         <code>ResultLogManagerMXBean</code> just happens to
         be a singleton MBean because it has a 1-1 relationship
         with the <code>ScanManagerMXBean</code>.
@@ -861,15 +861,15 @@ title="The ResultLogManagerMXBean is in charge of managing result logs"
          singleton MBean pattern in this way:
       </p>
       <ul>
-          <li>The <code>ScanManagerMXBean</code> name has a single 
+          <li>The <code>ScanManagerMXBean</code> name has a single
               key property: <code>type=ScanManagerMXBean</code>.</li>
           <li>Its name is defined by an ObjectName constant called
               <code>SCAN_MANAGER_NAME</code> in the <code>ScanManager</code> class</li>
-          <li>The <code>ScanManagerMXBean</code> enforces its status of 
+          <li>The <code>ScanManagerMXBean</code> enforces its status of
               singleton MBean. It will refuse to be registered
               with a name other than
               the <code>SCAN_MANAGER_NAME</code>. You can therefore depend on
-              the fact that the <code>ScanManagerMXBean</code> will always 
+              the fact that the <code>ScanManagerMXBean</code> will always
               be registered with its singleton <code>SCAN_MANAGER_NAME</code>
               (see <code>preRegister</code>)
           </li>
@@ -879,18 +879,18 @@ title="The ResultLogManagerMXBean is in charge of managing result logs"
               its singleton <code>SCAN_MANAGER_NAME</code>
               (see <code>preRegister</code>).
           </li>
-          <li>The <code>ScanManager</code> class has a no-arg static 
+          <li>The <code>ScanManager</code> class has a no-arg static
               <code>register</code> method that will register
               the singleton instance in the Platform MBeanServer.
               This static <code>register</code> method returns
               a proxy to the registered singleton.
           </li>
-          <li>The <code>ScanManager</code> class has also a static 
+          <li>The <code>ScanManager</code> class has also a static
               <code>register</code> method that will create
               a singleton instance in a (possibly remote)
-              MBeanServerConnection - using 
+              MBeanServerConnection - using
               <code>createMBean</code>.
-              This static <code>register</code> method 
+              This static <code>register</code> method
               also returns a proxy to the registered singleton.
           </li>
           <li>Only the MBeanServer has a reference to the
@@ -906,7 +906,7 @@ title="The ResultLogManagerMXBean is in charge of managing result logs"
         >ResultLogManagerMXBean</a></code>
       has a much more relaxed implementation of the pattern:
       <br>It simply provides its own singleton name if it is
-      registered with a null ObjectName, but will not enforce 
+      registered with a null ObjectName, but will not enforce
       the use of that name.
       </p>
       <p>Note that all singleton MBean names in this example
@@ -923,16 +923,16 @@ title="The ResultLogManagerMXBean is in charge of managing result logs"
       <p>In this example, we have decided to follow a simple
       pattern:</p>
       <ul>
-          <li>The application is initialized simply 
-              by registering the singleton 
-              <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+          <li>The application is initialized simply
+              by registering the singleton
+              <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
-             >ScanManagerMXBean</a> in 
+             >ScanManagerMXBean</a> in
               the MBeanServer.
           </li>
           <li>The <code>ScanManagerMXBean</code> will then
-              in turn register any other MBean that the 
+              in turn register any other MBean that the
               application might need:
               <ul>
                   <li>It creates and registers the singleton
@@ -948,14 +948,14 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
            >ScanDirConfigMXBean</a></code>
                       which loads the initial configuration
                   </li>
-                  <li>It creates as many 
+                  <li>It creates as many
                      <code><a
 href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html"
 title="A DirectoryScannerMXBean looks for file matching a given set of criteria, starting at a given root."
         >DirectoryScannerMXBeans</a></code> as
                      needed when the configuration is applied
                   </li>
-                  <li>It lets you create alternate 
+                  <li>It lets you create alternate
                       <code>ScanDirConfigMXBean</code>, to
                       which you can later switch in order
                       to apply a new alternate configuration.
@@ -963,7 +963,7 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
               </ul>
           </li>
           <li>When a new configuration is applied (or if the
-              current configuration is reapplied), the 
+              current configuration is reapplied), the
               <code>ScanManagerMXBean</code> will unregister
               any <code>DirectoryScannerMXBeans</code> it has
               previously registered, and will re-create
@@ -984,11 +984,11 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
          method).
       </p>
       <p>You will note that the <code>ScanManagerMXBean</code>
-         will only allow itself to be deregistered if it can be 
+         will only allow itself to be deregistered if it can be
          closed - that is if there's no other action in
-         progress. 
+         progress.
          This is to make sure that the deregistration of
-         dependent MBeans will work smoothly. 
+         dependent MBeans will work smoothly.
          <br>
          The deregistration of related MBeans will happen
          in the <code>ScanManager.preDeregister</code>
@@ -1007,13 +1007,13 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
       </p>
       <p>Handling the LifeCycle of all the application's
          MBeans in a single MBean is usually a good design
-         pattern, especially if the application is a 
+         pattern, especially if the application is a
          module which is intended to share a JVM - or
          an MBeanServer - with other modules.
       </p>
       <p>This is specially useful if the application needs to
-         be loaded and unloaded on demand: in that 
-         case, simply registering or unregistering the top level 
+         be loaded and unloaded on demand: in that
+         case, simply registering or unregistering the top level
          MBean (in our example the <code>ScanManagerMXBean</code>) does
          the trick.
       </p>
@@ -1021,29 +1021,29 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
   <h3>Emitting Notifications</h3>
   <ul>
        <p>In order to emit notifications, an MBean must be
-       an instance of <code>NotificationEmitter</code>. 
-       The <code>NotificationEmitter</code> interface defines methods 
+       an instance of <code>NotificationEmitter</code>.
+       The <code>NotificationEmitter</code> interface defines methods
        that the MBeanServer will call on the MBean in order
        to register <code>NotificationListeners</code> with the MBean.
        </p>
        <p>It is worth noting that the MBean may not be
           invoked each time a JMX client wants to register
           a listener. For instance, the RMIConnectorServer
-          registers <i>only once</i> a single listener with each MBean 
+          registers <i>only once</i> a single listener with each MBean
           which is a <code>NotificationEmitter</code>.
           In that specific case, the listener may even be registered
           with the MBean before any client has actually subscribed
           for notifications from that particular MBean.
        </p>
-       <p>An MBean can therefore make no assumption about 
+       <p>An MBean can therefore make no assumption about
           which client or how many clients have registered for
           notifications.
        </p>
        <p>It is also worth noting that the logic of the
        methods defined in <code>NotificationEmitter</code> would not
        be trivial to implement from scratch. Fortunately
-       the JMX API defines a helper class, called 
-       <code>NotificationBroadcasterSupport</code>, which 
+       the JMX API defines a helper class, called
+       <code>NotificationBroadcasterSupport</code>, which
        provides an implementation for these methods.
        </p>
        <p>There are actually three ways for an MBean to
@@ -1061,7 +1061,7 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
     then override its <code>getNotificationInfo</code> method
     which returns the <code>MBeanNotificationInfo[]</code> array
     that should be included in your MBean's <code>MBeanInfo</code>
-    and that's it. 
+    and that's it.
     <br>You just need to call the <code>sendNotification</code> method
     inherited from <code>NotificationBroadcasterSupport</code> whenever
     your MBean needs to send a notification.
@@ -1072,67 +1072,67 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
            >ScanDirConfigMXBean</a> and <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html"
 title="The ResultLogManagerMXBean is in charge of managing result logs"
-        >ResultLogManagerMXBean</a> extend 
+        >ResultLogManagerMXBean</a> extend
       <code>NotificationBroadcasterSupport</code> in order
       to send notifications.
     </p>
   </ul>
-  <h4>The Delegation Pattern: delegating to a 
+  <h4>The Delegation Pattern: delegating to a
       NotificationBroadcasterSupport delegate</h4>
   <ul>
       <p>There may be cases however where delegating to a
-      wrapped <code>NotificationBroadcasterSupport</code> 
-      object may be preferred to extending 
+      wrapped <code>NotificationBroadcasterSupport</code>
+      object may be preferred to extending
       <code>NotificationBroadcasterSupport</code>.
       </p>
       <p>For instance, if your MBeans already derive from
       some base class, extending <code>NotificationBroadcasterSupport</code>
       might not be an option.
       </p>
-      <p>Similarly, if you do not want to have the inherited 
+      <p>Similarly, if you do not want to have the inherited
       <code>public void sendNotification(Notification notification)</code>
       method appear in the Javadoc of the concrete class of your
       MBean, you may want to consider using the delegation
-      pattern instead of extending 
+      pattern instead of extending
       <code>NotificationBroadcasterSupport</code>
       </p>
-      <p>In our example both the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+      <p>In our example both the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a> and the <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html"
 title="A DirectoryScannerMXBean looks for file matching a given set of criteria, starting at a given root."
-        >DirectoryScannerMXBean</a> use the delegation 
-       pattern rather than extending 
+        >DirectoryScannerMXBean</a> use the delegation
+       pattern rather than extending
        <code>NotificationBroadcasterSupport</code>.
        In the end, choosing between one or the other method
-       is more a question of taste, although the delegation 
+       is more a question of taste, although the delegation
        pattern could be considered more flexible since it
        doesn't require extending any given superclass.
       </p>
       <p>It may be also worth noting that some tools like
-      the JMX Module of <a 
+      the JMX Module of <a
 href="http://www.netbeans.org"
-      >NetBeans IDE</a>, will be able to 
+      >NetBeans IDE</a>, will be able to
       generate for you all the code that delegates to a
       wrapped <code>NotificationBroadcasterSupport</code>.
       </p>
   </ul>
-      
+
   <h4>Implementing NotificationEmitter from scratch</h4>
   <ul>
     <p>This is the last possibility for an MBean that
-    needs to send notifications: simply implement 
+    needs to send notifications: simply implement
     <code>NotificationEmitter</code> from scratch. This is highly
-    discouraged since that logic is not trivial, and 
-    already provided by 
+    discouraged since that logic is not trivial, and
+    already provided by
     <code>NotificationBroadcasterSupport</code> anyway.
     </p>
   </ul>
-    
+
   <h4>Beware of Synchronization Locks</h4>
   <ul>
-       
+
        <p>One thing you must keep in mind when sending
        notifications is not to send them from within
        a synchronized block, or while holding a lock on
@@ -1140,10 +1140,10 @@ href="http://www.netbeans.org"
        <p>Indeed, what happens when you send a notification
           may vary greatly depending on whether the client
           which has registered for notifications has done
-          so through a <code>JMXConnector</code> (like the 
+          so through a <code>JMXConnector</code> (like the
           <code>JMXRMIConnector</code>)
           or through a direct reference to the MBeanServer
-          (by calling 
+          (by calling
           <code>MBeanServer.addNotificationListener</code>).
        </p>
        <p>In this latter case, the listener will be invoked
@@ -1152,7 +1152,7 @@ href="http://www.netbeans.org"
        code of that listener now re-enters your MBean through a
        call that flows through a JMXConnector, a deadlock
        could occur. It is therefore very important to release
-       any lock you may have before calling 
+       any lock you may have before calling
        <code>sendNotification</code>.</p>
        <p>An easy way to do that is demonstrated in the
           <code>ScanManager</code> class. The ScanManager
@@ -1160,20 +1160,20 @@ href="http://www.netbeans.org"
           When a notification needs to be sent (e.g. because the
           ScanManager state is being switched), the notification
           is simply prepared and put into the pending notification
-          queue. 
-          The notification queue is then processed later on, 
+          queue.
+          The notification queue is then processed later on,
           at the end of the method, when the processing is finally
           completed and all the locks have been released.
           <br>At this point the notification queue might already
           have been emptied by another thread - in which case
           the pending notifications will have already been
-          removed from the queue. Which thread actually gets 
-          to send the notifications is of no importance. The 
+          removed from the queue. Which thread actually gets
+          to send the notifications is of no importance. The
           important point is that all the locks detained by
           your MBean code in that thread were released before
           the notification was sent.
        </p>
-       <p>In our example the <code>ScanManager</code> class 
+       <p>In our example the <code>ScanManager</code> class
           ensures this by:
           <ul>
               <li>Only calling <code>sendNotification</code>
@@ -1183,14 +1183,14 @@ href="http://www.netbeans.org"
               <li>Only calling <code>sendQueuedNotifications</code>
                   when all locks have been released.
               </li>
-              <li>Never calling a method that calls 
+              <li>Never calling a method that calls
                   <code>sendQueuedNotifications</code> from within
                   a synchronized block.</li>
           </ul>
        </p>
   </ul>
-       
-       
+
+
 
   <h4>Don't subclass Notification</h4>
   <ul>
@@ -1202,23 +1202,23 @@ href="http://www.netbeans.org"
        </p>
        <p>Indeed, if you code your own subclass, a generic
        client, like jconsole, will not be able to receive
-       that notification unless it has that custom 
+       that notification unless it has that custom
        subclass in its classpath.
        </p>
        <p>
        If you want your application to be interoperable, it is
        therefore preferable not to subclass any of the standard
-       Notification classes. You can define your own 
+       Notification classes. You can define your own
        Notification type string, and if you need to send
-       additional data, you can put a CompositeData, or a 
-       HashMap of serializable standard types in the 
+       additional data, you can put a CompositeData, or a
+       HashMap of serializable standard types in the
        Notification's user data fields.
        </p>
-       <p>In this example, we are using directly the 
+       <p>In this example, we are using directly the
        standard notification classes:
        <ul>
-           <li>The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+           <li>The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a> and the <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html"
@@ -1236,7 +1236,7 @@ title="A DirectoryScannerMXBean looks for file matching a given set of criteria,
              it finds a matching file.
              <br>In that case, we simply use the base
              <code>Notification</code>
-             class with a new 
+             class with a new
              <b><code>com.sun.jmx.examples.scandir.filematch</code></b>
              type.
            </li>
@@ -1246,17 +1246,17 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
              >ScanDirConfigMXBean</a> and <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html"
 title="The ResultLogManagerMXBean is in charge of managing result logs"
-             >ResultLogManagerMXBean</a> also both use the base 
+             >ResultLogManagerMXBean</a> also both use the base
              <code>Notification</code> class.
            </li>
        </ul>
-       <p>Careful readers will have noted that the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+       <p>Careful readers will have noted that the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
              >ScanManagerMXBean</a> and the <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html"
 title="A DirectoryScannerMXBean looks for file matching a given set of criteria, starting at a given root."
-             >DirectoryScannerMXBean</a> both use the 
+             >DirectoryScannerMXBean</a> both use the
              <code>AttributeChangeNotification</code> class
              to notify about their state change, whereas the
              <a
@@ -1270,40 +1270,40 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
           both denote a state change:
           <ul>
               <p>In the case of <code>ScanManagerMXBean</code>
-              and <code>DirectoryScannerMXBean</code>, the 
+              and <code>DirectoryScannerMXBean</code>, the
               notification which is emitted is more about a
               state transition, from one state to another.
               For instance, going from <code>RUNNING</code>
-              to <code>STOPPED</code>, or from 
+              to <code>STOPPED</code>, or from
               <code>SCHEDULED</code> to <code>STOPPED</code>.
-              <br>In that case, the 
+              <br>In that case, the
               <code>AttributeChangeNotification</code> was
               more appropriate because it made it possible
-              to send the previous and the new value of the 
+              to send the previous and the new value of the
               state attribute, thus reflecting the whole
               state transition.
               </p>
               <p>In the case of the <code>ScanDirConfigMXBean</code>
               however, what is of interest is the state in
               which the MBean has arrived. Using the base
-              <code>Notification</code> class with three different 
-              notification type strings -  
+              <code>Notification</code> class with three different
+              notification type strings -
               <b><code>com.sun.jmx.examples.scandir.config.loaded</code></b>,
               <b><code>com.sun.jmx.examples.scandir.config.modified</code></b>,
               and
-              <b><code>com.sun.jmx.examples.scandir.config.saved</code></b> - 
+              <b><code>com.sun.jmx.examples.scandir.config.saved</code></b> -
               was therefore closer to what we wanted to model.
               </p>
           </ul>
        </p>
   </ul>
-       
+
   <h3>Configuration MBeans</h3>
     <ul>
     <p>A common practice when designing a management application is
-    to have an MBean, or a set of MBeans, dedicated to configuration. 
+    to have an MBean, or a set of MBeans, dedicated to configuration.
     Separating configuration from control and monitoring allows
-    more appropriate logic, and often simplifies the design and 
+    more appropriate logic, and often simplifies the design and
     implementation of the management interface.
     </p>
     <p>
@@ -1312,16 +1312,16 @@ href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirConfigMXBean.html"
 title="The ScanDirConfigMXBean is in charge of the configuration"
      >ScanDirConfigMXBean</a> is dedicated to the application configuration.
     </p>
-    <p>The <code>ScanDirConfigMXBean</code> will let you interactively 
+    <p>The <code>ScanDirConfigMXBean</code> will let you interactively
         modify, save, or load the application configuration. The modifications
         will not be taken into account until it is applied, by invoking
-        <code>applyConfiguration</code> on the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+        <code>applyConfiguration</code> on the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
-        >ScanManagerMXBean</a>. 
+        >ScanManagerMXBean</a>.
     It is also possible to create many configurations, by creating as
     many <code>ScanDirConfigMXBean</code>s, and then to choose and apply
-    one of these configurations by calling 
+    one of these configurations by calling
     <code>ScanManagerMXBean.setConfigurationMBean</code> and then
     <code>ScanManagerMXBean.applyConfiguration</code>.
     </p>
@@ -1331,26 +1331,26 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
     </p>
     <p>In order to save and store the application configuration data, the
     <code>ScanDirConfigMXBean</code> uses a set of XML serializable Java beans
-    defined in the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/config/package-summary.html" 
+    defined in the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/config/package-summary.html"
 title="The com.sun.jmx.examples.scandir.config package defines XML serializable beans"
         >com.sun.jmx.examples.scandir.config</a> package. These beans are very
    simple Java beans which have been lightly annotated for XML binding.
     </p>
     <p>It is worth noting that these same beans can also be handled by the
-    MXBean framework (our beans don't contain recursive data structures) and can 
+    MXBean framework (our beans don't contain recursive data structures) and can
     therefore be used directly as attributes and parameters of MXBeans, without
     needing to be Java-serializable (the MXBean framework transform them in
     CompositeData objects - which <b>are</b> serializable).
     </p>
-    <p>The same <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/config/ScanManagerConfig.html" 
+    <p>The same <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/config/ScanManagerConfig.html"
 title="The com.sun.jmx.examples.scandir.config package defines XML serializable beans"
         >ScanManagerConfig</a> bean that we use to read from and write to the
         XML configuration file is thus also used as attribute of the <a
 href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirConfigMXBean.html"
 title="The ScanDirConfigMXBean is in charge of the configuration"
-     >ScanDirConfigMXBean</a>. It is transformed into a <code>CompositeData</code> 
+     >ScanDirConfigMXBean</a>. It is transformed into a <code>CompositeData</code>
        by the MXBean framework, and can be easily introspected with
        <a href="#JConsole">jconsole</a>.
     </p>
@@ -1358,7 +1358,7 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
   <h3>MBeans Must Be Thread-Safe</h3>
     <ul>
     <p>A question often asked by newcomers to JMX technology
-    is whether the MBeanServer is thread-safe. Well, the MBeanServer <b>is</b> 
+    is whether the MBeanServer is thread-safe. Well, the MBeanServer <b>is</b>
     thread safe, but it doesn't put any locks on the MBeans it contains. The
     MBeans can be concurrently accessed by multiple threads, and must therefore
     take care of their own thread safety.
@@ -1382,19 +1382,19 @@ title="The ScanDirConfigMXBean is in charge of the configuration"
         MBean will have any side effect. Maybe that MBean will make
         further calls to other MBeans which will in turn try to call
         your MBean, or maybe it will emit a
-        notification, and we'll be back to the considerations just 
+        notification, and we'll be back to the considerations just
         above.</li>
     </ul>
     </p>
     <p>Another means of implementing thread-safe code is to use semaphores.
-    The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+    The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
         >ScanManagerMXBean</a> uses a semaphore called
         <code>sequencer</code> to ensure
     that critical code sections are not executed concurrently. In this
     MBean, we use <code>Semaphore.tryAcquire</code> to lock the sequencer
-    semaphore before entering the critical section. If the 
+    semaphore before entering the critical section. If the
     <code>Semaphore.tryAcquire</code> returns true then we enter the critical
     section. If it returns false, we throw an IllegalStateException, stating
     that we couldn't acquire the lock. The code looks like this:
@@ -1416,21 +1416,21 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
         the calling code will get the <code>IllegalStateException</code>
         instead of being blocked on the deadlocked lock.
     </p>
-    <p>It is worth noting that each of these techniques has its own 
+    <p>It is worth noting that each of these techniques has its own
     advantages and disadvantages - which can make one of them more or less
     appropriate depending on the inner logic of the MBean you're implementing.
     </p>
-    <p>Careful readers will also have noted that we used 
-       <code>IllegalStateException</code> directly, instead of defining 
+    <p>Careful readers will also have noted that we used
+       <code>IllegalStateException</code> directly, instead of defining
        our own subclass of RuntimeException, which could have had a more
        precise semantics. If you define a new exception for your JMX application,
        you must keep in mind that your client will need to have the class
-       of your exception in its classpath to get that exception. 
+       of your exception in its classpath to get that exception.
        Otherwise your client will get a completely different exception, indicating a
        deserialization issue.
     </p>
     </ul>
-    
+
   <h3>Waiting for Notifications</h3>
     <ul>
     <p>Implementing code that needs to wait for notifications is sometimes
@@ -1450,9 +1450,9 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
        is not always trivial. However, there's a very easy way to do that: use
        a blocking queue of notifications.
        <pre>
-       final BlockingQueue&lt;Notification&gt; notifQueue = 
+       final BlockingQueue&lt;Notification&gt; notifQueue =
                 new LinkedBlockingQueue&lt;Notification&gt;();
-                
+
        final NotificationListener listener = new NotificationListener() {
             public void handleNotification(Notification notification,
                                            Object handback) {
@@ -1482,13 +1482,13 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
        ....
        </pre>
     </p>
-    <p>You will note that this is a technique we've been using in the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirAgent.html" 
+    <p>You will note that this is a technique we've been using in the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirAgent.html"
 title="The ScanDirAgent class defines a main method for the scandir application"
         >ScanDirAgent</a> class and in the example unit tests.
     </p>
     </ul>
-    
+
   <h3>Holding hard references to other MBeans: proxy or direct reference?</h3>
   <ul>
     <p>We have seen that MXBeans will let you return proxy references to other
@@ -1500,7 +1500,7 @@ title="The ScanDirAgent class defines a main method for the scandir application"
     only held by the MBeanServer. It is a better design
     to hold a reference to a proxy, rather than to hold
     a hard reference to an MBean. However there are two cases
-    when holding a hard reference might be preferred: 
+    when holding a hard reference might be preferred:
      <ol>
         <li>When MBean A needs to call a method of method B which
            is not part of its MBean interface</li>
@@ -1513,51 +1513,51 @@ title="The ScanDirAgent class defines a main method for the scandir application"
     and the application can ensure that the life cycle
     of each MBean is consistent with regard to the other.
     </p>
-    <p>In our example, the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+    <p>In our example, the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
-        >ScanManagerMXBean</a> holds only proxy references to the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirConfigMXBean.html" 
-        >ScanDirConfigMXBean</a> and the  <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html" 
+        >ScanManagerMXBean</a> holds only proxy references to the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirConfigMXBean.html"
+        >ScanDirConfigMXBean</a> and the  <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/DirectoryScannerMXBean.html"
         >DirectoryScannerMXBeans</a>. <br>
-    However it holds a direct reference to the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManager.html" 
-        >ResultLogManager</a>. This makes it possible to pass a direct 
-        reference to the <code>DirectoryScannerMXBeans</code>, 
+    However it holds a direct reference to the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManager.html"
+        >ResultLogManager</a>. This makes it possible to pass a direct
+        reference to the <code>DirectoryScannerMXBeans</code>,
         which can then log their results
         more efficiently, and would also make it possible to remove
-        the <code>log</code> method from the <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html" 
-        >ResultLogManagerMXBean</a> interface - leaving it in the 
+        the <code>log</code> method from the <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ResultLogManagerMXBean.html"
+        >ResultLogManagerMXBean</a> interface - leaving it in the
         <code>ResultLogManager</code> class (possibly as a package method)
         should we wish to do so.
     </p>
-    
+
     </ul>
 
   <h3>Agent Class</h3>
     <ul>
-   <p>The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirAgent.html" 
+   <p>The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirAgent.html"
 title="The ScanDirAgent class defines a main method for the scandir application"
      >ScanDirAgent</a> is the Agent class for the <i>scandir</i> application.
-    This class contains the <code>main</code> method to start a standalone  
+    This class contains the <code>main</code> method to start a standalone
     <i>scandir</i> application.
     </p>
-    <p>The <code>main</code> method simply registers a <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+    <p>The <code>main</code> method simply registers a <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
        >ScanManagerMXBean</a> in the platform MBeanServer, and then waits
     for someone to call <code>ScanManagerMXBean.close</code>.
     </p>
     <p>
-    When the <code>ScanManagerMXBean</code> state is switched to 
-    <code>ScanManagerMXBean.ScanState.CLOSED</code>, the 
+    When the <code>ScanManagerMXBean</code> state is switched to
+    <code>ScanManagerMXBean.ScanState.CLOSED</code>, the
     <code>ScanManagerMXBean</code> is unregistered, and the application
     terminates (i.e. the main thread completes).
     </p>
-    <p>Standalone JMX applications usually have an Agent class that contain 
+    <p>Standalone JMX applications usually have an Agent class that contain
        their <code>main</code> method, which performs all the MBean
        registration steps.
        However, it is usually not a bad idea if that class can
@@ -1566,19 +1566,19 @@ title="The ScanManagerMXBean is the main MBean of the scandir application"
        no longer be standalone and would no longer control the implementation
        of <code>main</code>. In our example the Agent
        class could be easily turned into an MBean, exposing its three
-    <code>init</code>, <code>waitForClose</code> and <code>cleanup</code> 
-    method. However we didn't go as far as turning it into an MBean since 
+    <code>init</code>, <code>waitForClose</code> and <code>cleanup</code>
+    method. However we didn't go as far as turning it into an MBean since
     the application can be already easily started by registering an instance
-    of <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html" 
+    of <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanManagerMXBean.html"
 title="The ScanManagerMXBean is the main MBean of the scandir application"
        >ScanManagerMXBean</a>.
     </p>
     </ul>
   <h3>Secure Client Class</h3>
     <ul>
-   <p>The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirClient.html" 
+   <p>The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirClient.html"
 title="The ScanDirClient class is a very short example of secure programmatic client"
      >ScanDirClient</a> is an example class that shows how a
     programmatic client can connect to a secured <i>scandir</i> application.
@@ -1596,18 +1596,18 @@ title="The ScanDirClient class is a very short example of secure programmatic cl
        the example.
     </p>
     </ul>
-    
+
   <h2><a name="h2-Testing">Testing the <i>scandir</i> Example</a></h2>
     <ul>
         <p>Make sure that you have access to junit.jar (either 3.8.1 or 3.8.2).
-           Make sure also that you have junit.jar in your 
+           Make sure also that you have junit.jar in your
            <code>CLASSPATH</code>.<br>
-           Then in the example root directory (where the <code>build.xml</code> 
+           Then in the example root directory (where the <code>build.xml</code>
            file is located) run the following command:
            <pre>ant test -Dlibs.junit.classpath=<i><u>path to junit jar (either 3.8.1 or 3.8.2)</u></i></pre>
         </p>
-        <p>Alternatively you can open the jmx-scandir project with the 
-           NetBeans IDE and test the jmx-scandir project from the 
+        <p>Alternatively you can open the jmx-scandir project with the
+           NetBeans IDE and test the jmx-scandir project from the
            <code>Run</code> menu.
         </p>
 
@@ -1615,18 +1615,18 @@ title="The ScanDirClient class is a very short example of secure programmatic cl
 
   <h2><a name="h2-Running">Running the <i>scandir</i> Example</a></h2>
     <ul>
-        <p>In the example root directory (where the <code>build.xml</code> 
+        <p>In the example root directory (where the <code>build.xml</code>
            file is located) run the following commands:
         <pre>ant jar
 ant run-single -Drun.class=com.sun.jmx.examples.scandir.ScanDirAgent -Djavac.includes=src</pre>
            or simply <pre>ant run</pre>
         </p>
-        
+
         <p>This will run the example using the configuration
            file provided in the src/etc directory.
         </p>
-        <p>Alternatively you can open the jmx-scandir project with the 
-           NetBeans IDE. You can run the example by 
+        <p>Alternatively you can open the jmx-scandir project with the
+           NetBeans IDE. You can run the example by
            selecting the <code>ScanDirAgent</code> file
            and run it with <code>Run File</code> in the
            <code>Run</code> menu or simply
@@ -1639,10 +1639,10 @@ ant run-single -Drun.class=com.sun.jmx.examples.scandir.ScanDirAgent -Djavac.inc
            it with <a href="#JConsole">jconsole</a>.
         </p>
         <blockquote>
-            <u>Note:</u> You can also run the <i>scandir</i> 
-            application directly from the <code>java</code> 
+            <u>Note:</u> You can also run the <i>scandir</i>
+            application directly from the <code>java</code>
             command line. Make sure to build the project jar
-            first. 
+            first.
             <br>On Unix systems:
             <pre>ant jar
 java -Djava.util.logging.config.file=logging.properties \
@@ -1655,11 +1655,11 @@ java &nbsp;-Djava.util.logging.config.file=logging.properties
      &nbsp;-jar&nbsp;dist\jmx-scandir.jar</code></p>
         </blockquote>
     </ul>
-    
+
     <h2><a name="h2-Playing">Playing with JConsole</a></h2>
     <ul>
     <p>Run the example as explained in the previous section, so
-    that it uses the provided <code>src/etc/testconfig.xml</code> 
+    that it uses the provided <code>src/etc/testconfig.xml</code>
     configuration file. Then start
     jconsole. In the connection window choose the process that runs
     <code>com.sun.jmx.examples.scandir.ScanDirAgent</code> or
@@ -1685,7 +1685,7 @@ java &nbsp;-Djava.util.logging.config.file=logging.properties
     </td></tr></table>
     </center>
     </p>
-    <p>Open the MBeans tab, and look for the 
+    <p>Open the MBeans tab, and look for the
        <code>ScanDirConfigMXBean</code>.
        Click on its <code>Attributes</code> node and double click on its
        <code>Configuration</code> attribute, to look at
@@ -1694,79 +1694,79 @@ java &nbsp;-Djava.util.logging.config.file=logging.properties
     </p>
     <p><center><a href="docfiles/scandir-config.jpg"
     title="jconsole MBean tab: ScanDirConfigMXBean"
-    ><img 
+    ><img
     src="docfiles/scandir-config.jpg"
     alt="jconsole MBean tab: ScanDirConfigMXBean"
     /></a></center>
     </p>
     <p>Now go to the <code>ScanManagerMXBean</code>, click on
        its <code>Notifications</code> node, and subscribe
-       for notifications. Then click on the 
+       for notifications. Then click on the
        <code>Operations</code> node and invoke the
        <code>start()</code> operation:
     </p>
     <p><center><a href="docfiles/scandir-start.jpg"
     title="jconsole MBean tab: ScanDirConfigMXBean"
-    ><img 
+    ><img
     src="docfiles/scandir-start.jpg"
     alt="jconsole MBean tab: ScanDirConfigMXBean"
     /></a></center>
     </p>
-    <p>You can see that the notifications counter was 
-       incremented by three: you have just scheduled, 
+    <p>You can see that the notifications counter was
+       incremented by three: you have just scheduled,
        run, and completed a batch of directory scans.
     </p>
     <p>Now go to the <code>ResultLogManagerMXBean</code>,
-       click on its <code>Attributes</code> node, and 
+       click on its <code>Attributes</code> node, and
        expand its <code>MemoryLog</code> attribute:
     </p>
     <p><center><a href="docfiles/scandir-result.jpg"
     title="jconsole MBean tab: ScanDirConfigMXBean"
-    ><img 
+    ><img
     src="docfiles/scandir-result.jpg"
     alt="jconsole MBean tab: ScanDirConfigMXBean"
     /></a></center>
     </p>
     <p>You can see that the directory scan results have
        been logged.</p>
-    <p>To make the application terminate go back to the 
+    <p>To make the application terminate go back to the
        <code>ScanManagerMXBean</code> and invoke
        <code>close()</code>. The <code>ScanDirAgent</code>
-       will receive the notification, step out of 
+       will receive the notification, step out of
        the application main thread, and the application
        will terminate.
     </p>
     <p>This is of course a very limited scenario. Feel free
     to improvise with all the features of the example, creating
-    a new configuration - 
+    a new configuration -
     <code>ScanManagerMXBean.createOtherConfigurationMBean</code> -
     adding multiple directory scanners to that configuration -
     <code>ScanDirConfigMXBean.addDirectoryScanner</code> -
     then switching the <code>ScanManagerMXBean</code> current
     configuration by changing the value of the <i>ConfigurationMBean</i>
     attribute - <code>ScanManagerMXBean.setConfigurationMBean</code>
-    - then applying the new configuration - 
-    <code>ScanManagerMXBean.applyConfiguration(true)</code> - 
-    then scheduling repeated directory scans every 10 seconds - 
-    <code>ScanManagerMXBean.schedule(0,10000)</code> - 
+    - then applying the new configuration -
+    <code>ScanManagerMXBean.applyConfiguration(true)</code> -
+    then scheduling repeated directory scans every 10 seconds -
+    <code>ScanManagerMXBean.schedule(0,10000)</code> -
     subscribing for notifications, etc...
     </p>
     </ul>
-    
+
   <a name="secure"></a>
   <h2><a name="h2-Turning">Turning the example into a Secure JMX Application</a></h2>
     <ul>
     <p>In this section, we will see how to configure and
     start the <i>scandir</i> example so that the JVM agent
-    is bootstrapped with a secure JMXConnectorServer. Indeed, until 
-    now we have only used the insecure local connection, 
+    is bootstrapped with a secure JMXConnectorServer. Indeed, until
+    now we have only used the insecure local connection,
     which can only be used as long as both the client and
     the server run on the same machine. This section will
-    explain how to start the <code>ScanDirAgent</code> so 
+    explain how to start the <code>ScanDirAgent</code> so
     that a real secure RMIConnectorServer is started at bootstrap.
     </p>
     <p>To achieve this we will: <a href="#management.properties"
-        >provide our own management.properties</a>, <a 
+        >provide our own management.properties</a>, <a
         href="#password-access">create our own password and access files</a>,
         <a href="#keystore-truststore">provide a keystore and truststore</a>,
         <a href="#start-secure-agent">start the ScanDirAgent with the
@@ -1774,21 +1774,21 @@ java &nbsp;-Djava.util.logging.config.file=logging.properties
     </ul>
     <h3>Configuring the JVM Agent for Secure Remote Connection</h3>
     <ul>
-        <p>The easiest way to <a name="management.properties">configure the 
-            JVM Agent</a> for Secure Remote 
+        <p>The easiest way to <a name="management.properties">configure the
+            JVM Agent</a> for Secure Remote
            Connection is to use your own <a
            href="http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html#properties"
            title="This page describes the properties you can put in your management.properties file"
            >management.properties</a> file.
-           In this example, we have copied the default 
-           <code>$JRE/lib/management/management.properties</code>
+           In this example, we have copied the default
+           <code>$JRE/conf/management/management.properties</code>
            file to the example's <code>src/etc</code> directory and
            modified it in <a href="src/etc/management.properties"
            title="our modified management.properties"
            >this way</a>:
            <ul>
-               <li>We have set the RMI port to <u>4545</u> - this is just a 
-                   random port number we have picked up. Feel free to use your 
+               <li>We have set the RMI port to <u>4545</u> - this is just a
+                   random port number we have picked up. Feel free to use your
                    own value suited to your environment.
                <pre># For setting the JMX RMI agent port use the following line
 com.sun.management.jmxremote.port=<b>4545</b></pre>
@@ -1801,26 +1801,26 @@ com.sun.management.jmxremote.ssl.<b>need.client.auth</b>=<b>true</b></pre>
                <pre># For using an SSL/TLS <b>protected</b> RMI Registry use the following line
 com.sun.management.jmxremote.<b>registry.ssl</b>=<b>true</b></pre>
                </li>
-               <li>We have provided <a 
+               <li>We have provided <a
                 href="src/etc/password.properties">our own password file</a>
                <pre># For a non-default password file location use the following line
 com.sun.management.jmxremote.password.file=<i>src/etc/password.properties</i></pre>
                </li>
-               <li>We have provided <a 
+               <li>We have provided <a
                 href="src/etc/access.properties">our own access file</a>
                <pre># For a non-default password file location use the following line
 com.sun.management.jmxremote.access.file=<i>src/etc/access.properties</i></pre>
                </li>
            </ul>
            <p>You will note that we haven't provided any value
-              for the other security properties, like 
+              for the other security properties, like
               <code>com.sun.management.jmxremote.authenticate=true</code>,
               because these properties already default to a value
-              which enables security by default. 
+              which enables security by default.
               Note however that protecting the RMI Registry with SSL
               improves the application security, but only as long as
               mutual authentication is also switched on. Otherwise, just
-              anybody would be able to connect to the registry and 
+              anybody would be able to connect to the registry and
               get the RMIServer stub.
            </p>
            <p>We do recommend that you <u>use the most secure configuration
@@ -1829,21 +1829,21 @@ com.sun.management.jmxremote.access.file=<i>src/etc/access.properties</i></pre>
               mutual authentication</u>, as we show in this example.
            </p>
            <p>We will use the <code>com.sun.management.config.file</code>
-           system property to pass our <a 
+           system property to pass our <a
            href="src/etc/management.properties">management.properties</a>
            file to the <code>ScanDirAgent</code>.
            </p>
     </ul>
-    
+
     <h3>Creating a password and access file</h3>
     <ul>
         <p>As explained above, we have created our own
-        <a href="src/etc/password.properties">password file</a> 
-        and <a href="src/etc/access.properties">access file</a> 
+        <a href="src/etc/password.properties">password file</a>
+        and <a href="src/etc/access.properties">access file</a>
         for <a name="password-access">access control and authorization</a>.
         </p>
-        <p>In the password file, we have defined two logins: 
-           <i>guest</i> and <i>admin</i>. The password for 
+        <p>In the password file, we have defined two logins:
+           <i>guest</i> and <i>admin</i>. The password for
            <i>guest</i> is <i>guestpasswd</i> and the password
            for <i>admin</i> is <i>adminpasswd</i>.
         </p>
@@ -1852,7 +1852,7 @@ com.sun.management.jmxremote.access.file=<i>src/etc/access.properties</i></pre>
         access, while the <i>guest</i> login only has <i>read-only</i>.
         </p>
         <p>Before starting the <code>ScanDirAgent</code>, you will
-           need to restrict access permission to the password file, 
+           need to restrict access permission to the password file,
            in such a way that nobody but you can read it. Otherwise, the
            JVM Agent will refuse to start the JMXConnectorServer, as it will
            fear that security can be compromised if other parties can
@@ -1863,7 +1863,7 @@ com.sun.management.jmxremote.access.file=<i>src/etc/access.properties</i></pre>
            >here</a>.
         </p>
         <p>As we have seen above, the location
-           of our access and password files is configured in our own <a 
+           of our access and password files is configured in our own <a
            href="src/etc/management.properties">management.properties</a>
            file.
         </p>
@@ -1874,17 +1874,17 @@ com.sun.management.jmxremote.access.file=<i>src/etc/access.properties</i></pre>
            client and server will need a <a name="keystore-truststore"
            >keystore and a truststore</a>
            to store their own certificates, and the certificates of
-           the parties they trust. Usually, client and server will 
-           have their own keystore and truststore. 
+           the parties they trust. Usually, client and server will
+           have their own keystore and truststore.
         </p>
         <p>For the sake of simplicity - and to get you started
         without the tedious necessity of creating your own keystore
-        and truststore, we are providing a dummy keystore and 
+        and truststore, we are providing a dummy keystore and
         truststore, containing a certificate self-signed by duke.
         The password for our keystore is <i>password</i>, and the
         password for our truststore is <i>trustword</i>.
         We suggest that you first get the example running with the
-        keystore and truststore we are providing before attempting 
+        keystore and truststore we are providing before attempting
         to use your own keystore and truststore.
         </p>
         <p>A secure application will obviously need to use its own
@@ -1895,9 +1895,9 @@ com.sun.management.jmxremote.access.file=<i>src/etc/access.properties</i></pre>
         in <a
 href="http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html#SSL_enabled"
 title="Monitoring and Management Using JMX"
-        >here</a>.          
-        As shown <a href="#start-secure-agent">later</a>, 
-        we will need to use <a 
+        >here</a>.
+        As shown <a href="#start-secure-agent">later</a>,
+        we will need to use <a
         href="http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html#SSL_enabled"
         >system properties</a> to pass our truststore
         and keystore to the <code>ScanDirAgent</code>.
@@ -1923,7 +1923,7 @@ java \
         </p>
          <p>On Windows Systems:
 <p><code>ant jar<br>
-java 
+java
     &nbsp;-Djava.util.logging.config.file=logging.properties
     &nbsp;-Djavax.net.ssl.keyStore=keystore
     &nbsp;-Djavax.net.ssl.keyStorePassword=password
@@ -1934,10 +1934,10 @@ java
     &nbsp;-jar&nbsp;dist\jmx-scandir.jar</code></p>
          </p>
     <p>If you start jconsole now, you will see that you
-       are still able to connect to the agent using the 
+       are still able to connect to the agent using the
        local connection. However, if you try to connect
-       through the remote connector, using 
-       <a href="docfiles/remote-connection.jpg">localhost:4545</a>, 
+       through the remote connector, using
+       <a href="docfiles/remote-connection.jpg">localhost:4545</a>,
        the connection will <a href="docfiles/remote-connection-failed.jpg"
        >fail</a>, even if you provide a correct login/password
        pair. Indeed, since the JMXConnectorServer is now protected with SSL,
@@ -1946,18 +1946,18 @@ java
        server too as the SSL configuration of the server requires mutual
        authentication.
     </p>
-    <p>The next section will discuss how to connect to the 
+    <p>The next section will discuss how to connect to the
     secure agent.
     </p>
    </ul>
-   
+
   <h2><a name="h2-Connecting">Connecting to the Secure JMX Application</a></h2>
     <ul>
     <p>We will now see how to connect to the secure agent,
        using jconsole, and using a programmatic client.
     </p>
     </ul>
-    
+
     <h3>Using jconsole to connect to the secure agent</h3>
     <ul>
     <p>The only special thing you need to do in order to
@@ -1968,8 +1968,8 @@ java
         In our example, we use the same keystore/truststore
         pair on the client and server side - but this is
         not what a real application would do.
-        Indeed a real application would have different 
-        certificates for the client and the server, and 
+        Indeed a real application would have different
+        certificates for the client and the server, and
         thus use different keystores (and probably truststores).
         More information on SSL authentication can be obtained from the <a
         href="http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.html#HowSSLWorks"
@@ -1977,20 +1977,20 @@ java
         >Java<sup>TM</sup> Secure Socket Extension (JSSE) Reference Guide</a>.
     </p>
     <p>To start jconsole with our provided keystore and
-    truststore, go to the scandir example root directory and 
+    truststore, go to the scandir example root directory and
     type in the following command:
-    <p><code>jconsole 
-    &nbsp;-J-Djava.util.logging.config.file=logging.properties 
-    &nbsp;-J-Djavax.net.ssl.keyStore=keystore 
-    &nbsp;-J-Djavax.net.ssl.keyStorePassword=password 
-    &nbsp;-J-Djavax.net.ssl.trustStore=truststore 
+    <p><code>jconsole
+    &nbsp;-J-Djava.util.logging.config.file=logging.properties
+    &nbsp;-J-Djavax.net.ssl.keyStore=keystore
+    &nbsp;-J-Djavax.net.ssl.keyStorePassword=password
+    &nbsp;-J-Djavax.net.ssl.trustStore=truststore
     &nbsp;-J-Djavax.net.ssl.trustStorePassword=trustword</code></p>
     </p>
     <p>The <code>-J-Djava.util.logging.config.file=logging.properties</code>
        flag is not mandatory, but passing a <code>logging.properties</code>
        may help you debug connection problems if anything goes wrong.
     </p>
-    <p>In jconsole connection window, choose to connect to a 
+    <p>In jconsole connection window, choose to connect to a
        remote process, using the address <i>localhost:4545</i>
        and the guest login:
     </p>
@@ -2006,9 +2006,9 @@ java
     <p><u>Note:</u> if jconsole fails to connect and show
     you <a href="docfiles/remote-connection-failed.jpg">this screen</a>
     you have probably misspelled some of the properties on jconsole
-    command line, or you didn't start jconsole from the 
+    command line, or you didn't start jconsole from the
     scandir example root directory where our <code>truststore</code>
-    and <code>keystore</code> files are located. This article - <a 
+    and <code>keystore</code> files are located. This article - <a
     href="http://blogs.sun.com/roller/page/jmxetc?entry=troubleshooting_connection_problems_in_jconsole"
     title="Troubleshooting connection problems in JConsole"
     >Troubleshooting connection problems in JConsole</a> - may help
@@ -2016,28 +2016,28 @@ java
     </p>
     <hr>
     </ul>
-    
+
     <h3>Writing a programmatic client to connect to the secure agent</h3>
     <ul>
         <p>
-        In this section we will show the steps involved in writing 
+        In this section we will show the steps involved in writing
         a programmatic client that will connect to our secure agent.
         </p>
-   <p>The <a 
-href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirClient.html" 
+   <p>The <a
+href="dist/javadoc/com/sun/jmx/examples/scandir/ScanDirClient.html"
 title="The ScanDirClient class is a very short example of secure programmatic client"
      >ScanDirClient</a> is an example class that shows how a
     programmatic client can connect to a secured <i>scandir</i> application.
     This class contains a <code>main</code> method which creates and
     configures a <code>JMXConnector</code> client to connect with
-    the secured <i>scandir</i> agent. 
+    the secured <i>scandir</i> agent.
     </p>
     <p>The secure client differs only from a non secure client in
     so far as it needs to use SSL RMI Factories and credentials to
     connect to the secure agent. The steps required mainly involve:
        <ul>
            <li>Creating an empty environment map:
-           <pre>            
+           <pre>
             // Create an environment map to hold connection properties
             // like credentials etc... We will later pass this map
             // to the JMX Connector.
@@ -2048,7 +2048,7 @@ title="The ScanDirClient class is a very short example of secure programmatic cl
            </li>
            <li>Putting the client's credentials in that map:
            <i>(here the client will log in as <b>guest</b>)</i>
-           <pre>            
+           <pre>
             // Provide the credentials required by the server
             // to successfully perform user authentication
             //
@@ -2058,7 +2058,7 @@ title="The ScanDirClient class is a very short example of secure programmatic cl
            </li>
            <li>Providing an <code>SslRMIClientSocketFactory</code> to interact
            with the secure RMI Registry:
-           <pre>            
+           <pre>
             // Provide the SSL/TLS-based RMI Client Socket Factory required
             // by the JNDI/RMI Registry Service Provider to communicate with
             // the SSL/TLS-protected RMI Registry
@@ -2078,20 +2078,20 @@ title="The ScanDirClient class is a very short example of secure programmatic cl
             System.out.println("\nCreate the RMI connector client and " +
                     "connect it to the RMI connector server");
             final JMXServiceURL url = new JMXServiceURL(
-                    "service:jmx:rmi:///jndi/rmi://"+args[0]+":"+args[1]+ 
+                    "service:jmx:rmi:///jndi/rmi://"+args[0]+":"+args[1]+
                     "/jmxrmi");
             final JMXConnector jmxc = JMXConnectorFactory.connect(url, env);
            </pre>
            </li>
        </ul>
        <p>For this to work, we also need to start the <code>ScanDirClient</code>
-       with the appropriate system properties that will point to our 
-       <code>keystore</code> and <code>truststore</code>. To start the secure 
+       with the appropriate system properties that will point to our
+       <code>keystore</code> and <code>truststore</code>. To start the secure
        client, go to the <i>scandir</i> example root directory and type
        the following command:
        <p><code>ant jar<br>
-java 
-    &nbsp;-Djava.util.logging.config.file=logging.properties 
+java
+    &nbsp;-Djava.util.logging.config.file=logging.properties
     &nbsp;-Djavax.net.ssl.keyStore=keystore
     &nbsp;-Djavax.net.ssl.keyStorePassword=password
     &nbsp;-Djavax.net.ssl.trustStore=truststore
@@ -2140,7 +2140,7 @@ Configuration:
 
 Invoke 'close' on ScanManagerMXBean
 
-Got expected security exception: java.lang.SecurityException: Access denied! 
+Got expected security exception: java.lang.SecurityException: Access denied!
 Invalid access level for requested MBeanServer operation.
 
 Close the connection to the server
@@ -2148,31 +2148,31 @@ Close the connection to the server
 Bye! Bye!
 </pre>
 </td></tr></table></center>
-    <p>If the <code>ScanDirClient</code> fails to connect with 
-       the secure agent, then this article - <a 
+    <p>If the <code>ScanDirClient</code> fails to connect with
+       the secure agent, then this article - <a
     href="http://blogs.sun.com/roller/page/jmxetc?entry=troubleshooting_connection_problems_in_jconsole"
     title="Troubleshooting connection problems in JConsole"
     >Troubleshooting connection problems in JConsole</a> - may help
     you figure out what is going wrong. Indeed the connection steps
     performed by the <code>ScanDirClient</code> are very similar to
     those performed by <code>jconsole</code>, and the problems you
-    could encounter are identical. Just remember that 
+    could encounter are identical. Just remember that
    <code>jconsole</code> needs the extra <code>-J</code> flag to pass
    system properties to the VM, which is not needed with regular
    <code>java</code> launcher invocations.
     </p>
     </ul>
-    
+
     <h2><a name="h2-Conclusion">Conclusion</a></h2>
     <ul>
     <p>
-        In this document, we have presented an advanced 
-        JMX example, and shown how to run a secure 
-        JMX agent in a production environment. 
-        We have also shown how to connect to such a 
-        secure agent with both jconsole and a programmatic 
-        client. We have also discuss various JMX 
-        design-patterns and best practices. 
+        In this document, we have presented an advanced
+        JMX example, and shown how to run a secure
+        JMX agent in a production environment.
+        We have also shown how to connect to such a
+        secure agent with both jconsole and a programmatic
+        client. We have also discuss various JMX
+        design-patterns and best practices.
         Readers who would wish to learn more about JMX, and
         Monitoring and Management of the JVM, are invited
         to follow the links given in reference below.
@@ -2184,26 +2184,26 @@ Bye! Bye!
         >JMX Best Practices</a>: This document describes best practices that
       have been identified for modeling using the JMX API. </li>
      <li><a href="http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html"
-      >Monitoring and Management Using JMX</a>: How to enable, configure, and 
-      connect to the JVM JMX agent.</li> 
-     <li><a name="JConsole"><a 
+      >Monitoring and Management Using JMX</a>: How to enable, configure, and
+      connect to the JVM JMX agent.</li>
+     <li><a name="JConsole"><a
 href="http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html"
 >Using JConsole</a>: JConsole is a JMX-Compliant monitoring tool which allows
      you to interact graphically with your own MBeans.
      </li>
      <li><a href="http://java.sun.com/javase/6/docs/technotes/guides/management/"
-     >Monitoring and Management for the Java Platform</a>: The Java Platform 
-      Standard Edition (Java SE) 6 provides comprehensive monitoring and 
+     >Monitoring and Management for the Java Platform</a>: The Java Platform
+      Standard Edition (Java SE) 6 provides comprehensive monitoring and
       management support for the Java platform. </li>
      <li><a href="http://java.sun.com/products/JavaManagement/community/jmx_blogs.html"
-         >List of JMX-related Blogs</a>: This page provides links to the 
-          different web logs written by members of the Sun team working on the 
+         >List of JMX-related Blogs</a>: This page provides links to the
+          different web logs written by members of the Sun team working on the
           JMX API.</li>
      <li><a
         href="http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.html#HowSSLWorks"
         title="The JSSE Reference Guide"
         >Java<sup>TM</sup> Secure Socket Extension (JSSE) Reference Guide</a>:
-        comprehensive documentation about the Java<sup>TM</sup> Secure Socket 
+        comprehensive documentation about the Java<sup>TM</sup> Secure Socket
         Extension (JSSE)
      </li>
      <li><a href="http://java.sun.com/javase/6/docs/"

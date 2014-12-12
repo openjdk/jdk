@@ -30,6 +30,7 @@
  * @run main LinksTest
  */
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -48,17 +49,24 @@ public class LinksTest {
         ToolBox tb = new ToolBox();
         tb.writeFile("tmp/B.java", BSrc);
 
+        // Try to set up a symbolic link for the test.
         try {
             Files.createSymbolicLink(Paths.get("a"), Paths.get("tmp"));
-
-            tb.new JavacTask()
-                    .sourcepath(".")
-                    .outdir(".")
-                    .sources(TSrc)
-                    .run();
-        } catch (UnsupportedOperationException e) {
-            System.err.println("Symbolic links not supported on this system. The test can't finish");
+            System.err.println("Created symbolic link");
+        } catch (UnsupportedOperationException | IOException e) {
+            System.err.println("Problem creating symbolic link: " + e);
+            System.err.println("Test cannot continue; test passed by default");
+            return;
         }
+
+        // If symbolic link was successfully created,
+        // try a compilation that will use it.
+        tb.new JavacTask()
+                .sourcepath(".")
+                .outdir(".")
+                .sources(TSrc)
+                .run()
+                .writeAll();
     }
 
 }

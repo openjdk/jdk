@@ -21,7 +21,6 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
 import java.awt.Toolkit;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -134,11 +133,8 @@ final class SwingTest implements Runnable {
             else {
                 SwingUtilities.invokeLater(this); // invoke on the event dispatch thread
             }
-            Toolkit tk = Toolkit.getDefaultToolkit();
-            if (tk instanceof SunToolkit) {
-                SunToolkit stk = (SunToolkit) tk;
-                stk.realSync(); // wait until done
-            }
+            java.awt.Robot robot = new java.awt.Robot();
+            robot.waitForIdle();
         }
         while (this.frame != null);
         if (this.error != null) {

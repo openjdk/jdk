@@ -24,31 +24,31 @@
 #
 
 ########################################################################
-# This file handles detection of the Boot JDK. The Boot JDK detection 
-# process has been developed as a response to solve a complex real-world 
-# problem. Initially, it was simple, but it has grown as platform after 
+# This file handles detection of the Boot JDK. The Boot JDK detection
+# process has been developed as a response to solve a complex real-world
+# problem. Initially, it was simple, but it has grown as platform after
 # platform, idiosyncracy after idiosyncracy has been supported.
 #
 # The basic idea is this:
 # 1) You need an acceptable *) JDK to use as a Boot JDK
-# 2) There are several ways to locate a JDK, that are mostly platform 
+# 2) There are several ways to locate a JDK, that are mostly platform
 #    dependent **)
 # 3) You can have multiple JDKs installed
-# 4) If possible, configure should try to dig out an acceptable JDK 
+# 4) If possible, configure should try to dig out an acceptable JDK
 #    automatically, without having to resort to command-line options
 #
-# *)  acceptable means e.g. JDK7 for building JDK8, a complete JDK (with 
-#     javac) and not a JRE, etc. 
+# *)  acceptable means e.g. JDK7 for building JDK8, a complete JDK (with
+#     javac) and not a JRE, etc.
 #
-# **) On Windows we typically use a well-known path. 
+# **) On Windows we typically use a well-known path.
 #     On MacOSX we typically use the tool java_home.
-#     On Linux we typically find javac in the $PATH, and then follow a 
-#     chain of symlinks that often ends up in a real JDK. 
+#     On Linux we typically find javac in the $PATH, and then follow a
+#     chain of symlinks that often ends up in a real JDK.
 #
-# This leads to the code where we check in different ways to locate a 
-# JDK, and if one is found, check if it is acceptable. If not, we print 
-# our reasons for rejecting it (useful when debugging non-working 
-# configure situations) and continue checking the next one. 
+# This leads to the code where we check in different ways to locate a
+# JDK, and if one is found, check if it is acceptable. If not, we print
+# our reasons for rejecting it (useful when debugging non-working
+# configure situations) and continue checking the next one.
 ########################################################################
 
 # Execute the check given as argument, and verify the result
@@ -73,31 +73,25 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           AC_MSG_NOTICE([(This might be an JRE instead of an JDK)])
           BOOT_JDK_FOUND=no
         else
-          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
-          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
-            AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring])
+          # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+          # Extra M4 quote needed to protect [] in grep expression.
+          [FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`]
+          if test "x$FOUND_CORRECT_VERSION" = x; then
+            AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
+            AC_MSG_NOTICE([(Your Boot JDK must be version 8 or 9)])
             BOOT_JDK_FOUND=no
           else
-            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
-
-            # Extra M4 quote needed to protect [] in grep expression.
-            [FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`]
-            if test "x$FOUND_CORRECT_VERSION" = x; then
-              AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
-              AC_MSG_NOTICE([(Your Boot JDK must be version 8 or 9)])
-              BOOT_JDK_FOUND=no
-            else
-              # We're done! :-)
-              BOOT_JDK_FOUND=yes
-              BASIC_FIXUP_PATH(BOOT_JDK)
-              AC_MSG_CHECKING([for Boot JDK])
-              AC_MSG_RESULT([$BOOT_JDK])
-              AC_MSG_CHECKING([Boot JDK version])
-              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
-              AC_MSG_RESULT([$BOOT_JDK_VERSION])
-            fi # end check jdk version
-          fi # end check rt.jar
+            # We're done! :-)
+            BOOT_JDK_FOUND=yes
+            BASIC_FIXUP_PATH(BOOT_JDK)
+            AC_MSG_CHECKING([for Boot JDK])
+            AC_MSG_RESULT([$BOOT_JDK])
+            AC_MSG_CHECKING([Boot JDK version])
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+            AC_MSG_RESULT([$BOOT_JDK_VERSION])
+          fi # end check jdk version
         fi # end check javac
       fi # end check java
     fi # end check boot jdk found
@@ -244,7 +238,7 @@ AC_DEFUN([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS],
 AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
 [
   # Use user overridden value if available, otherwise locate tool in the Boot JDK.
-  BASIC_SETUP_TOOL($1, 
+  BASIC_SETUP_TOOL($1,
     [
       AC_MSG_CHECKING([for $2 in Boot JDK])
       $1=$BOOT_JDK/bin/$2
@@ -305,20 +299,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
     AC_MSG_ERROR([Cannot continue])
   fi
 
-  # Setup proper paths for what we found
-  BOOT_RTJAR="$BOOT_JDK/jre/lib/rt.jar"
-  if test ! -f "$BOOT_RTJAR"; then
-    # On MacOSX it is called classes.jar
-    BOOT_RTJAR="$BOOT_JDK/../Classes/classes.jar"
-    if test -f "$BOOT_RTJAR"; then
-      # Remove the ..
-      BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
-    fi
-  fi
-  BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
-  BOOT_JDK="$BOOT_JDK"
-  AC_SUBST(BOOT_RTJAR)
-  AC_SUBST(BOOT_TOOLSJAR)
   AC_SUBST(BOOT_JDK)
 
   # Setup tools from the Boot JDK.

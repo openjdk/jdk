@@ -458,8 +458,8 @@ public class ArrayType<T> extends OpenType<T> {
             elementType = at.getElementOpenType();
             isPrimitiveArray = at.isPrimitiveArray();
         }
-        StringBuilder result =
-            new StringBuilder(dimension + "-dimension array of ");
+        StringBuilder result = new StringBuilder();
+        result.append(dimension).append("-dimension array of ");
         final String elementClassName = elementType.getClassName();
         if (isPrimitiveArray) {
             // Convert from wrapper type to primitive type

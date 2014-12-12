@@ -98,11 +98,11 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
         tty->print_cr("UseSharedSpaces: %s", msg);
       }
     }
+    UseSharedSpaces = false;
+    assert(current_info() != NULL, "singleton must be registered");
+    current_info()->close();
   }
   va_end(ap);
-  UseSharedSpaces = false;
-  assert(current_info() != NULL, "singleton must be registered");
-  current_info()->close();
 }
 
 // Fill in the fileMapInfo structure with data about this VM instance.
@@ -217,9 +217,14 @@ void FileMapInfo::allocate_classpath_entry_table() {
           EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
           SharedClassUtil::update_shared_classpath(cpe, ent, st.st_mtime, st.st_size, THREAD);
         } else {
-          ent->_filesize  = -1;
-          if (!os::dir_is_empty(name)) {
-            ClassLoader::exit_with_path_failure("Cannot have non-empty directory in archived classpaths", name);
+          struct stat st;
+          if ((os::stat(name, &st) == 0) && ((st.st_mode & S_IFDIR) == S_IFDIR)) {
+            if (!os::dir_is_empty(name)) {
+              ClassLoader::exit_with_path_failure("Cannot have non-empty directory in archived classpaths", name);
+            }
+            ent->_filesize = -1;
+          } else {
+            ent->_filesize = -2;
           }
         }
         ent->_name = strptr;
@@ -271,7 +276,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
         fail_continue("directory is not empty: %s", name);
         ok = false;
       }
-    } else {
+    } else if (ent->is_jar()) {
       if (ent->_timestamp != st.st_mtime ||
           ent->_filesize != st.st_size) {
         ok = false;

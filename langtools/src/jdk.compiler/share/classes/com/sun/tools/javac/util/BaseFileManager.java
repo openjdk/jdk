@@ -41,6 +41,7 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -413,6 +414,10 @@ public abstract class BaseFileManager implements JavaFileManager {
         }
     }
     // </editor-fold>
+
+    public static Kind getKind(Path path) {
+        return getKind(path.getFileName().toString());
+    }
 
     public static Kind getKind(String name) {
         if (name.endsWith(Kind.CLASS.extension))

@@ -27,8 +27,13 @@ package com.sun.tools.javac.file;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +45,9 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import javax.tools.JavaFileManager;
@@ -94,6 +101,12 @@ public class Locations {
      */
     private boolean warn;
 
+    // Used by Locations(for now) to indicate that the PLATFORM_CLASS_PATH
+    // should use the jrt: file system.
+    // When Locations has been converted to use java.nio.file.Path,
+    // Locations can use Paths.get(URI.create("jrt:"))
+    static final Path JRT_MARKER_FILE = Paths.get("JRT_MARKER_FILE");
+
     public Locations() {
         initHandlers();
     }
@@ -105,7 +118,7 @@ public class Locations {
         this.fsInfo = fsInfo;
     }
 
-    public Collection<File> bootClassPath() {
+    public Collection<Path> bootClassPath() {
         return getLocation(PLATFORM_CLASS_PATH);
     }
 
@@ -115,56 +128,46 @@ public class Locations {
         return h.isDefault();
     }
 
-    boolean isDefaultBootClassPathRtJar(File file) {
-        BootClassPathLocationHandler h
-                = (BootClassPathLocationHandler) getHandler(PLATFORM_CLASS_PATH);
-        return h.isDefaultRtJar(file);
-    }
-
-    public Collection<File> userClassPath() {
+    public Collection<Path> userClassPath() {
         return getLocation(CLASS_PATH);
     }
 
-    public Collection<File> sourcePath() {
-        Collection<File> p = getLocation(SOURCE_PATH);
+    public Collection<Path> sourcePath() {
+        Collection<Path> p = getLocation(SOURCE_PATH);
         // TODO: this should be handled by the LocationHandler
         return p == null || p.isEmpty() ? null : p;
     }
 
     /**
-     * Split a path into its elements. Empty path elements will be ignored.
+     * Split a search path into its elements. Empty path elements will be ignored.
      *
-     * @param path The path to be split
+     * @param searchPath The search path to be split
      * @return The elements of the path
      */
-    private static Iterable<File> getPathEntries(String path) {
-        return getPathEntries(path, null);
+    private static Iterable<Path> getPathEntries(String searchPath) {
+        return getPathEntries(searchPath, null);
     }
 
     /**
-     * Split a path into its elements. If emptyPathDefault is not null, all empty elements in the
+     * Split a search path into its elements. If emptyPathDefault is not null, all empty elements in the
      * path, including empty elements at either end of the path, will be replaced with the value of
      * emptyPathDefault.
      *
-     * @param path The path to be split
+     * @param searchPath The search path to be split
      * @param emptyPathDefault The value to substitute for empty path elements, or null, to ignore
      * empty path elements
      * @return The elements of the path
      */
-    private static Iterable<File> getPathEntries(String path, File emptyPathDefault) {
-        ListBuffer<File> entries = new ListBuffer<>();
-        int start = 0;
-        while (start <= path.length()) {
-            int sep = path.indexOf(File.pathSeparatorChar, start);
-            if (sep == -1) {
-                sep = path.length();
+    private static Iterable<Path> getPathEntries(String searchPath, Path emptyPathDefault) {
+        ListBuffer<Path> entries = new ListBuffer<>();
+        for (String s: searchPath.split(Pattern.quote(File.pathSeparator), -1)) {
+            if (s.isEmpty()) {
+                if (emptyPathDefault != null) {
+                    entries.add(emptyPathDefault);
+                }
+            } else {
+                entries.add(Paths.get(s));
             }
-            if (start < sep) {
-                entries.add(new File(path.substring(start, sep)));
-            } else if (emptyPathDefault != null) {
-                entries.add(emptyPathDefault);
-            }
-            start = sep + 1;
         }
         return entries;
     }
@@ -173,12 +176,12 @@ public class Locations {
      * Utility class to help evaluate a path option. Duplicate entries are ignored, jar class paths
      * can be expanded.
      */
-    private class SearchPath extends LinkedHashSet<File> {
+    private class SearchPath extends LinkedHashSet<Path> {
 
         private static final long serialVersionUID = 0;
 
         private boolean expandJarClassPaths = false;
-        private final Set<File> canonicalValues = new HashSet<>();
+        private final Set<Path> canonicalValues = new HashSet<>();
 
         public SearchPath expandJarClassPaths(boolean x) {
             expandJarClassPaths = x;
@@ -188,9 +191,9 @@ public class Locations {
         /**
          * What to use when path element is the empty string
          */
-        private File emptyPathDefault = null;
+        private Path emptyPathDefault = null;
 
-        public SearchPath emptyPathDefault(File x) {
+        public SearchPath emptyPathDefault(Path x) {
             emptyPathDefault = x;
             return this;
         }
@@ -200,7 +203,7 @@ public class Locations {
             expandJarClassPaths = true;
             try {
                 if (dirs != null) {
-                    for (File dir : getPathEntries(dirs)) {
+                    for (Path dir : getPathEntries(dirs)) {
                         addDirectory(dir, warn);
                     }
                 }
@@ -214,8 +217,8 @@ public class Locations {
             return addDirectories(dirs, warn);
         }
 
-        private void addDirectory(File dir, boolean warn) {
-            if (!dir.isDirectory()) {
+        private void addDirectory(Path dir, boolean warn) {
+            if (!Files.isDirectory(dir)) {
                 if (warn) {
                     log.warning(Lint.LintCategory.PATH,
                             "dir.path.element.not.found", dir);
@@ -223,15 +226,10 @@ public class Locations {
                 return;
             }
 
-            File[] files = dir.listFiles();
-            if (files == null) {
-                return;
-            }
-
-            for (File direntry : files) {
-                if (isArchive(direntry)) {
-                    addFile(direntry, warn);
-                }
+            try (Stream<Path> s = Files.list(dir)) {
+                s.filter(dirEntry -> isArchive(dirEntry))
+                        .forEach(dirEntry -> addFile(dirEntry, warn));
+            } catch (IOException ignore) {
             }
         }
 
@@ -246,20 +244,20 @@ public class Locations {
             return addFiles(files, warn);
         }
 
-        public SearchPath addFiles(Iterable<? extends File> files, boolean warn) {
+        public SearchPath addFiles(Iterable<? extends Path> files, boolean warn) {
             if (files != null) {
-                for (File file : files) {
+                for (Path file : files) {
                     addFile(file, warn);
                 }
             }
             return this;
         }
 
-        public SearchPath addFiles(Iterable<? extends File> files) {
+        public SearchPath addFiles(Iterable<? extends Path> files) {
             return addFiles(files, warn);
         }
 
-        public void addFile(File file, boolean warn) {
+        public void addFile(Path file, boolean warn) {
             if (contains(file)) {
                 // discard duplicates
                 return;
@@ -275,7 +273,7 @@ public class Locations {
                 return;
             }
 
-            File canonFile = fsInfo.getCanonicalFile(file);
+            Path canonFile = fsInfo.getCanonicalFile(file);
             if (canonicalValues.contains(canonFile)) {
                 /* Discard duplicates and avoid infinite recursion */
                 return;
@@ -283,11 +281,11 @@ public class Locations {
 
             if (fsInfo.isFile(file)) {
                 /* File is an ordinary file. */
-                if (!isArchive(file)) {
+                if (!isArchive(file) && !file.getFileName().toString().endsWith(".jimage")) {
                     /* Not a recognized extension; open it to see if
                      it looks like a valid zip file. */
                     try {
-                        ZipFile z = new ZipFile(file);
+                        ZipFile z = new ZipFile(file.toFile());
                         z.close();
                         if (warn) {
                             log.warning(Lint.LintCategory.PATH,
@@ -309,7 +307,7 @@ public class Locations {
             super.add(file);
             canonicalValues.add(canonFile);
 
-            if (expandJarClassPaths && fsInfo.isFile(file)) {
+            if (expandJarClassPaths && fsInfo.isFile(file) && !file.getFileName().toString().endsWith(".jimage")) {
                 addJarClassPath(file, warn);
             }
         }
@@ -318,9 +316,9 @@ public class Locations {
         // Manifest entry.  In some future release, we may want to
         // update this code to recognize URLs rather than simple
         // filenames, but if we do, we should redo all path-related code.
-        private void addJarClassPath(File jarFile, boolean warn) {
+        private void addJarClassPath(Path jarFile, boolean warn) {
             try {
-                for (File f : fsInfo.getJarClassPath(jarFile)) {
+                for (Path f : fsInfo.getJarClassPath(jarFile)) {
                     addFile(f, warn);
                 }
             } catch (IOException e) {
@@ -365,12 +363,12 @@ public class Locations {
         /**
          * @see StandardJavaFileManager#getLocation
          */
-        abstract Collection<File> getLocation();
+        abstract Collection<Path> getLocation();
 
         /**
          * @see StandardJavaFileManager#setLocation
          */
-        abstract void setLocation(Iterable<? extends File> files) throws IOException;
+        abstract void setLocation(Iterable<? extends Path> files) throws IOException;
     }
 
     /**
@@ -380,7 +378,7 @@ public class Locations {
      */
     private class OutputLocationHandler extends LocationHandler {
 
-        private File outputDir;
+        private Path outputDir;
 
         OutputLocationHandler(Location location, Option... options) {
             super(location, options);
@@ -396,31 +394,31 @@ public class Locations {
             // need to decide how best to report issue for benefit of
             // direct API call on JavaFileManager.handleOption(specifies IAE)
             // vs. command line decoding.
-            outputDir = (value == null) ? null : new File(value);
+            outputDir = (value == null) ? null : Paths.get(value);
             return true;
         }
 
         @Override
-        Collection<File> getLocation() {
+        Collection<Path> getLocation() {
             return (outputDir == null) ? null : Collections.singleton(outputDir);
         }
 
         @Override
-        void setLocation(Iterable<? extends File> files) throws IOException {
+        void setLocation(Iterable<? extends Path> files) throws IOException {
             if (files == null) {
                 outputDir = null;
             } else {
-                Iterator<? extends File> pathIter = files.iterator();
+                Iterator<? extends Path> pathIter = files.iterator();
                 if (!pathIter.hasNext()) {
                     throw new IllegalArgumentException("empty path for directory");
                 }
-                File dir = pathIter.next();
+                Path dir = pathIter.next();
                 if (pathIter.hasNext()) {
                     throw new IllegalArgumentException("path too long for directory");
                 }
-                if (!dir.exists()) {
+                if (!Files.exists(dir)) {
                     throw new FileNotFoundException(dir + ": does not exist");
-                } else if (!dir.isDirectory()) {
+                } else if (!Files.isDirectory(dir)) {
                     throw new IOException(dir + ": not a directory");
                 }
                 outputDir = dir;
@@ -435,7 +433,7 @@ public class Locations {
      */
     private class SimpleLocationHandler extends LocationHandler {
 
-        protected Collection<File> searchPath;
+        protected Collection<Path> searchPath;
 
         SimpleLocationHandler(Location location, Option... options) {
             super(location, options);
@@ -452,12 +450,12 @@ public class Locations {
         }
 
         @Override
-        Collection<File> getLocation() {
+        Collection<Path> getLocation() {
             return searchPath;
         }
 
         @Override
-        void setLocation(Iterable<? extends File> files) {
+        void setLocation(Iterable<? extends Path> files) {
             SearchPath p;
             if (files == null) {
                 p = computePath(null);
@@ -488,7 +486,7 @@ public class Locations {
         }
 
         @Override
-        Collection<File> getLocation() {
+        Collection<Path> getLocation() {
             lazy();
             return searchPath;
         }
@@ -520,7 +518,7 @@ public class Locations {
         protected SearchPath createPath() {
             return new SearchPath()
                     .expandJarClassPaths(true) // Only search user jars for Class-Paths
-                    .emptyPathDefault(new File("."));  // Empty path elt ==> current directory
+                    .emptyPathDefault(Paths.get("."));  // Empty path elt ==> current directory
         }
 
         private void lazy() {
@@ -539,19 +537,13 @@ public class Locations {
      */
     private class BootClassPathLocationHandler extends LocationHandler {
 
-        private Collection<File> searchPath;
+        private Collection<Path> searchPath;
         final Map<Option, String> optionValues = new EnumMap<>(Option.class);
 
         /**
-         * rt.jar as found on the default bootclasspath. If the user specified a bootclasspath, null
-         * is used.
+         * Is the bootclasspath the default?
          */
-        private File defaultBootClassPathRtJar = null;
-
-        /**
-         * Is bootclasspath the default?
-         */
-        private boolean isDefaultBootClassPath;
+        private boolean isDefault;
 
         BootClassPathLocationHandler() {
             super(StandardLocation.PLATFORM_CLASS_PATH,
@@ -564,12 +556,7 @@ public class Locations {
 
         boolean isDefault() {
             lazy();
-            return isDefaultBootClassPath;
-        }
-
-        boolean isDefaultRtJar(File file) {
-            lazy();
-            return file.equals(defaultBootClassPathRtJar);
+            return isDefault;
         }
 
         @Override
@@ -604,26 +591,26 @@ public class Locations {
         }
 
         @Override
-        Collection<File> getLocation() {
+        Collection<Path> getLocation() {
             lazy();
             return searchPath;
         }
 
         @Override
-        void setLocation(Iterable<? extends File> files) {
+        void setLocation(Iterable<? extends Path> files) {
             if (files == null) {
                 searchPath = null;  // reset to "uninitialized"
             } else {
-                defaultBootClassPathRtJar = null;
-                isDefaultBootClassPath = false;
+                isDefault = false;
                 SearchPath p = new SearchPath().addFiles(files, false);
                 searchPath = Collections.unmodifiableCollection(p);
                 optionValues.clear();
             }
         }
 
-        SearchPath computePath() {
-            defaultBootClassPathRtJar = null;
+        SearchPath computePath() throws IOException {
+            String java_home = System.getProperty("java.home");
+
             SearchPath path = new SearchPath();
 
             String bootclasspathOpt = optionValues.get(BOOTCLASSPATH);
@@ -643,13 +630,13 @@ public class Locations {
                 path.addFiles(bootclasspathOpt);
             } else {
                 // Standard system classes for this compiler's release.
-                String files = System.getProperty("sun.boot.class.path");
-                path.addFiles(files, false);
-                File rt_jar = new File("rt.jar");
-                for (File file : getPathEntries(files)) {
-                    if (new File(file.getName()).equals(rt_jar)) {
-                        defaultBootClassPathRtJar = file;
-                    }
+                Collection<Path> systemClasses = systemClasses(java_home);
+                if (systemClasses != null) {
+                    path.addFiles(systemClasses, false);
+                } else {
+                    // fallback to the value of sun.boot.class.path
+                    String files = System.getProperty("sun.boot.class.path");
+                    path.addFiles(files, false);
                 }
             }
 
@@ -661,20 +648,67 @@ public class Locations {
             if (extdirsOpt != null) {
                 path.addDirectories(extdirsOpt);
             } else {
+                // Add lib/jfxrt.jar to the search path
+               Path jfxrt = Paths.get(java_home, "lib", "jfxrt.jar");
+                if (Files.exists(jfxrt)) {
+                    path.addFile(jfxrt, false);
+                }
                 path.addDirectories(System.getProperty("java.ext.dirs"), false);
             }
 
-            isDefaultBootClassPath
-                    = (xbootclasspathPrependOpt == null)
+            isDefault =
+                       (xbootclasspathPrependOpt == null)
                     && (bootclasspathOpt == null)
                     && (xbootclasspathAppendOpt == null);
 
             return path;
         }
 
+        /**
+         * Return a collection of files containing system classes.
+         * Returns {@code null} if not running on a modular image.
+         *
+         * @throws UncheckedIOException if an I/O errors occurs
+         */
+        private Collection<Path> systemClasses(String java_home) throws IOException {
+            // Return .jimage files if available
+            Path libModules = Paths.get(java_home, "lib", "modules");
+            if (Files.exists(libModules)) {
+                try (Stream<Path> files = Files.list(libModules)) {
+                    boolean haveJImageFiles =
+                            files.anyMatch(f -> f.getFileName().toString().endsWith(".jimage"));
+                    if (haveJImageFiles) {
+                        return Collections.singleton(JRT_MARKER_FILE);
+                    }
+                }
+            }
+
+            // Temporary: if no .jimage files, return individual modules
+            if (Files.exists(libModules.resolve("java.base"))) {
+                return Files.list(libModules)
+                            .map(d -> d.resolve("classes"))
+                            .collect(Collectors.toList());
+            }
+
+            // Exploded module image
+            Path modules = Paths.get(java_home, "modules");
+            if (Files.isDirectory(modules.resolve("java.base"))) {
+                return Files.list(modules)
+                            .collect(Collectors.toList());
+            }
+
+            // not a modular image that we know about
+            return null;
+        }
+
         private void lazy() {
             if (searchPath == null) {
+                try {
                 searchPath = Collections.unmodifiableCollection(computePath());
+                } catch (IOException e) {
+                    // TODO: need better handling here, e.g. javac Abort?
+                    throw new UncheckedIOException(e);
+                }
             }
         }
     }
@@ -709,12 +743,12 @@ public class Locations {
         return (h == null ? false : h.handleOption(option, value));
     }
 
-    Collection<File> getLocation(Location location) {
+    Collection<Path> getLocation(Location location) {
         LocationHandler h = getHandler(location);
         return (h == null ? null : h.getLocation());
     }
 
-    File getOutputLocation(Location location) {
+    Path getOutputLocation(Location location) {
         if (!location.isOutputLocation()) {
             throw new IllegalArgumentException();
         }
@@ -722,7 +756,7 @@ public class Locations {
         return ((OutputLocationHandler) h).outputDir;
     }
 
-    void setLocation(Location location, Iterable<? extends File> files) throws IOException {
+    void setLocation(Location location, Iterable<? extends Path> files) throws IOException {
         LocationHandler h = getHandler(location);
         if (h == null) {
             if (location.isOutputLocation()) {
@@ -743,8 +777,8 @@ public class Locations {
     /**
      * Is this the name of an archive file?
      */
-    private boolean isArchive(File file) {
-        String n = StringUtils.toLowerCase(file.getName());
+    private boolean isArchive(Path file) {
+        String n = StringUtils.toLowerCase(file.getFileName().toString());
         return fsInfo.isFile(file)
                 && (n.endsWith(".jar") || n.endsWith(".zip"));
     }
@@ -753,50 +787,41 @@ public class Locations {
      * Utility method for converting a search path string to an array of directory and JAR file
      * URLs.
      *
-     * Note that this method is called by apt and the DocletInvoker.
+     * Note that this method is called by the DocletInvoker.
      *
      * @param path the search path string
      * @return the resulting array of directory and JAR file URLs
      */
     public static URL[] pathToURLs(String path) {
-        StringTokenizer st = new StringTokenizer(path, File.pathSeparator);
-        URL[] urls = new URL[st.countTokens()];
-        int count = 0;
-        while (st.hasMoreTokens()) {
-            URL url = fileToURL(new File(st.nextToken()));
-            if (url != null) {
-                urls[count++] = url;
+        java.util.List<URL> urls = new ArrayList<>();
+        for (String s: path.split(Pattern.quote(File.pathSeparator))) {
+            if (!s.isEmpty()) {
+                URL url = fileToURL(Paths.get(s));
+                if (url != null) {
+                    urls.add(url);
+                }
             }
         }
-        urls = Arrays.copyOf(urls, count);
-        return urls;
+        return urls.toArray(new URL[urls.size()]);
     }
 
     /**
      * Returns the directory or JAR file URL corresponding to the specified local file name.
      *
-     * @param file the File object
+     * @param file the Path object
      * @return the resulting directory or JAR file URL, or null if unknown
      */
-    private static URL fileToURL(File file) {
-        String name;
+    private static URL fileToURL(Path file) {
+        Path p;
         try {
-            name = file.getCanonicalPath();
+            p = file.toRealPath();
         } catch (IOException e) {
-            name = file.getAbsolutePath();
-        }
-        name = name.replace(File.separatorChar, '/');
-        if (!name.startsWith("/")) {
-            name = "/" + name;
-        }
-        // If the file does not exist, then assume that it's a directory
-        if (!file.isFile()) {
-            name = name + "/";
+            p = file.toAbsolutePath();
         }
         try {
-            return new URL("file", "", name);
+            return p.normalize().toUri().toURL();
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(file.toString());
+            return null;
         }
     }
 }

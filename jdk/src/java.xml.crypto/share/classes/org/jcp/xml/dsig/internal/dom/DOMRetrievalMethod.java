@@ -90,18 +90,13 @@ public final class DOMRetrievalMethod extends DOMStructure
         if (uri == null) {
             throw new NullPointerException("uri cannot be null");
         }
-        if (transforms == null || transforms.isEmpty()) {
-            this.transforms = Collections.emptyList();
-        } else {
-            this.transforms = Collections.unmodifiableList(
-                new ArrayList<Transform>(transforms));
-            for (int i = 0, size = this.transforms.size(); i < size; i++) {
-                if (!(this.transforms.get(i) instanceof Transform)) {
-                    throw new ClassCastException
-                        ("transforms["+i+"] is not a valid type");
-                }
-            }
+        List<Transform> tempList =
+            Collections.checkedList(new ArrayList<Transform>(),
+                                    Transform.class);
+        if (transforms != null) {
+            tempList.addAll(transforms);
         }
+        this.transforms = Collections.unmodifiableList(tempList);
         this.uri = uri;
         if (!uri.equals("")) {
             try {
@@ -244,7 +239,7 @@ public final class DOMRetrievalMethod extends DOMStructure
 
         // guard against RetrievalMethod loops
         if ((data instanceof NodeSetData) && Utils.secureValidation(context)) {
-            NodeSetData nsd = (NodeSetData)data;
+            NodeSetData<?> nsd = (NodeSetData<?>)data;
             Iterator<?> i = nsd.iterator();
             if (i.hasNext()) {
                 Node root = (Node)i.next();
