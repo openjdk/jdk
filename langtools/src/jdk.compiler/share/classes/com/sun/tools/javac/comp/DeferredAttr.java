@@ -37,6 +37,7 @@ import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.function.Function;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -364,28 +366,16 @@ public class DeferredAttr extends JCTree.Visitor {
      * disabled during speculative type-checking.
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
-        final JCTree newTree = new TreeCopier<>(make).copy(tree);
-        Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
-        Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
-                new Log.DeferredDiagnosticHandler(log, new Filter<JCDiagnostic>() {
-            public boolean accepts(final JCDiagnostic d) {
-                class PosScanner extends TreeScanner {
-                    boolean found = false;
+        return attribSpeculative(tree, env, resultInfo, new TreeCopier<>(make),
+                (newTree)->new DeferredAttrDiagHandler(log, newTree));
+    }
 
-                    @Override
-                    public void scan(JCTree tree) {
-                        if (tree != null &&
-                                tree.pos() == d.getDiagnosticPosition()) {
-                            found = true;
-                        }
-                        super.scan(tree);
-                    }
-                }
-                PosScanner posScanner = new PosScanner();
-                posScanner.scan(newTree);
-                return posScanner.found;
-            }
-        });
+    <Z> JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, TreeCopier<Z> deferredCopier,
+                                 Function<JCTree, DeferredDiagnosticHandler> diagHandlerCreator) {
+        final JCTree newTree = deferredCopier.copy(tree);
+        Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
+        speculativeEnv.info.isSpeculative = true;
+        Log.DeferredDiagnosticHandler deferredDiagnosticHandler = diagHandlerCreator.apply(newTree);
         try {
             attr.attribTree(newTree, speculativeEnv, resultInfo);
             unenterScanner.scan(newTree);
@@ -410,6 +400,37 @@ public class DeferredAttr extends JCTree.Visitor {
                 chk.compiled.remove(csym.flatname);
                 syms.classes.remove(csym.flatname);
                 super.visitClassDef(tree);
+            }
+        }
+
+        static class DeferredAttrDiagHandler extends Log.DeferredDiagnosticHandler {
+
+            static class PosScanner extends TreeScanner {
+                DiagnosticPosition pos;
+                boolean found = false;
+
+                PosScanner(DiagnosticPosition pos) {
+                    this.pos = pos;
+                }
+
+                @Override
+                public void scan(JCTree tree) {
+                    if (tree != null &&
+                            tree.pos() == pos) {
+                        found = true;
+                    }
+                    super.scan(tree);
+                }
+            }
+
+            DeferredAttrDiagHandler(Log log, JCTree newTree) {
+                super(log, new Filter<JCDiagnostic>() {
+                    public boolean accepts(JCDiagnostic d) {
+                        PosScanner posScanner = new PosScanner(d.getDiagnosticPosition());
+                        posScanner.scan(newTree);
+                        return posScanner.found;
+                    }
+                });
             }
         }
 
@@ -1221,7 +1242,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
         @Override
         public void visitNewClass(JCNewClass tree) {
-            result = (TreeInfo.isDiamond(tree) || attr.findDiamonds) ?
+            result = TreeInfo.isDiamond(tree) ?
                     ArgumentExpressionKind.POLY : ArgumentExpressionKind.NO_POLY;
         }
 
