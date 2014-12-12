@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.function.BooleanSupplier;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -393,6 +394,52 @@ public final class Utils {
             }
         }
         return RANDOM_GENERATOR;
+    }
+
+    /**
+     * Wait for condition to be true
+     *
+     * @param condition, a condition to wait for
+     */
+    public static final void waitForCondition(BooleanSupplier condition) {
+        waitForCondition(condition, -1L, 100L);
+    }
+
+    /**
+     * Wait until timeout for condition to be true
+     *
+     * @param condition, a condition to wait for
+     * @param timeout a time in milliseconds to wait for condition to be true
+     * specifying -1 will wait forever
+     * @return condition value, to determine if wait was successfull
+     */
+    public static final boolean waitForCondition(BooleanSupplier condition,
+            long timeout) {
+        return waitForCondition(condition, timeout, 100L);
+    }
+
+    /**
+     * Wait until timeout for condition to be true for specified time
+     *
+     * @param condition, a condition to wait for
+     * @param timeout a time in milliseconds to wait for condition to be true,
+     * specifying -1 will wait forever
+     * @param sleepTime a time to sleep value in milliseconds
+     * @return condition value, to determine if wait was successfull
+     */
+    public static final boolean waitForCondition(BooleanSupplier condition,
+            long timeout, long sleepTime) {
+        long startTime = System.currentTimeMillis();
+        while (!(condition.getAsBoolean() || (timeout != -1L
+                && ((System.currentTimeMillis() - startTime) > timeout)))) {
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new Error(e);
+            }
+        }
+        return condition.getAsBoolean();
     }
 
     /**
