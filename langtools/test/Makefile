@@ -105,21 +105,19 @@ endif
 
 # Default JDK for JTREG and JCK
 #
-# JT_JAVA is the version of java used to run jtreg/JCK. Since it is now
-# standard to execute tests in sameVM mode, it should normally be set the
-# same as TESTJAVA (although not necessarily so.)
+# JT_JAVA is the version of java used to run jtreg/JCK. 
 #
 ifdef JPRT_JAVA_HOME
   JT_JAVA = $(JPRT_JAVA_HOME)
 else
-  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.7.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
+  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.9.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # Default JDK to test
 ifdef JPRT_IMPORT_PRODUCT_HOME
   TESTJAVA = $(JPRT_IMPORT_PRODUCT_HOME)
 else
-  TESTJAVA = $(SLASH_JAVA)/re/jdk/1.7.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
+  TESTJAVA = $(SLASH_JAVA)/re/jdk/1.9.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # PRODUCT_HOME is a JPRT variable pointing to a directory containing the output from
@@ -152,7 +150,7 @@ endif
 ifdef CONCURRENCY
   JTREG_OPTIONS += -agentvm -concurrency:$(CONCURRENCY)
 else
-  JTREG_OPTIONS += -samevm
+  JTREG_OPTIONS += -agentvm
 endif
 
 ifdef JCK_CONCURRENCY
