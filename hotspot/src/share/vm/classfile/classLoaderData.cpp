@@ -81,7 +81,8 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   _metaspace(NULL), _unloading(false), _klasses(NULL),
   _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
   _next(NULL), _dependencies(dependencies),
-  _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true)) {
+  _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
+                            Monitor::_safepoint_check_never)) {
     // empty
 }
 
