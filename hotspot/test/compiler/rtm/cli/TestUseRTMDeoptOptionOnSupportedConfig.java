@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMDeopt option processing on CPUs with rtm support
  *          when rtm locking is supported by VM.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMDeoptOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

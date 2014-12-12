@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify processing of UseRTMLocking and UseBiasedLocking
  *          options combination on CPU and VM with rtm support.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMLockingOptionWithBiasedLocking
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
