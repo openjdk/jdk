@@ -25,7 +25,7 @@
  * @test
  * @key nmt jcmd
  * @summary Sanity check the output of NMT
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build SummarySanityCheck
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

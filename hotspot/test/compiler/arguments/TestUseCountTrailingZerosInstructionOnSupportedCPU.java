@@ -26,7 +26,7 @@
  * @bug 8031321
  * @summary Verify processing of UseCountTrailingZerosInstruction option
  *          on CPU with TZCNT (BMI1 feature) support.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestUseCountTrailingZerosInstructionOnSupportedCPU
  *        BMISupportedCPUTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

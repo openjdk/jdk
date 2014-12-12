@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMForStackLocks option processing on CPU with
  *          rtm support when VM supports rtm locking.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMForStackLocksOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

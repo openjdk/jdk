@@ -25,7 +25,7 @@
  * @test
  * @summary Test reserve/commit/uncommit/release of virtual memory and that we track it correctly
  * @key nmt jcmd
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build VirtualAllocCommitUncommitRecommit
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocCommitUncommitRecommit

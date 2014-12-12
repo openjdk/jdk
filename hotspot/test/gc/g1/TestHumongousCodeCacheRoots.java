@@ -26,7 +26,7 @@
  * @key regression
  * @key gc
  * @bug 8027756
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestHumongousCodeCacheRoots
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
