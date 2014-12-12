@@ -22,7 +22,7 @@
  */
 
 import java.awt.ComponentOrientation;
-import java.awt.Toolkit;
+import java.awt.Robot;
 import java.util.Calendar;
 import java.util.Date;
 import javax.swing.JFrame;
@@ -32,7 +32,6 @@ import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -43,19 +42,19 @@ import sun.awt.SunToolkit;
  */
 public class bug8008657 {
 
-    private static SunToolkit toolkit;
+    private static Robot robot;
     private static JSpinner spinner;
 
     public static void main(String[] args) throws Exception {
 
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        robot = new Robot();
 
         SwingUtilities.invokeAndWait(() -> {
             createDateSpinner();
             createAndShowUI();
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         testSpinner(false);
 
         SwingUtilities.invokeAndWait(() -> {
@@ -63,7 +62,7 @@ public class bug8008657 {
             createAndShowUI();
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         testSpinner(true);
     }
 
@@ -73,7 +72,7 @@ public class bug8008657 {
         SwingUtilities.invokeAndWait(() -> {
             spinner.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> {
 
@@ -91,7 +90,7 @@ public class bug8008657 {
             spinner.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> {
             JTextField textField = getTextField();

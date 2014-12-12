@@ -29,20 +29,19 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2013-08-11):
+# From Paul Eggert (2014-10-31):
 #
-# A good source for time zone historical data outside the U.S. is
+# Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
+# Unfortunately this book contains many errors and cites no sources.
 #
 # Gwillim Law writes that a good source
 # for recent time zone data is the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
-# of the IATA's data after 1990.
-#
-# Except where otherwise noted, Shanks & Pottenger is the source for
-# entries through 1990, and IATA SSIM is the source for entries afterwards.
+# of the IATA's data after 1990.  Except where otherwise noted,
+# IATA SSIM is the source for entries after 1990.
 #
 # Another source occasionally used is Edward W. Whitman, World Time Differences,
 # Whitman Publishing Co, 2 Niagara Av, Ealing, London (undated), which
@@ -1686,44 +1685,70 @@ Zone	Asia/Bishkek	4:58:24 -	LMT	1924 May  2
 # Korea (North and South)
 
 # From Annie I. Bang (2006-07-10):
-# http://www.koreaherald.co.kr/SITE/data/html_dir/2006/07/10/200607100012.asp
-# The Ministry of Commerce, Industry and Energy has already
-# commissioned a research project [to reintroduce DST] and has said
-# the system may begin as early as 2008....  Korea ran a daylight
-# saving program from 1949-61 but stopped it during the 1950-53 Korean War.
+# http://www.koreaherald.com/view.php?ud=200607100012
+# Korea ran a daylight saving program from 1949-61 but stopped it
+# during the 1950-53 Korean War.  The system was temporarily enforced
+# between 1987 and 1988 ...
 
-# From Shanks & Pottenger:
+# From Sanghyuk Jung (2014-10-29):
+# http://mm.icann.org/pipermail/tz/2014-October/021830.html
+# According to the Korean Wikipedia
+# http://ko.wikipedia.org/wiki/한국_표준시
+# [oldid=12896437 2014-09-04 08:03 UTC]
+# DST in Republic of Korea was as follows....  And I checked old
+# newspapers in Korean, all articles correspond with data in Wikipedia.
+# For example, the article in 1948 (Korean Language) proved that DST
+# started at June 1 in that year.  For another example, the article in
+# 1988 said that DST started at 2:00 AM in that year.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	ROK	1960	only	-	May	15	0:00	1:00	D
-Rule	ROK	1960	only	-	Sep	13	0:00	0	S
-Rule	ROK	1987	1988	-	May	Sun>=8	0:00	1:00	D
-Rule	ROK	1987	1988	-	Oct	Sun>=8	0:00	0	S
+Rule	ROK	1948	only	-	Jun	 1	0:00	1:00	D
+Rule	ROK	1948	only	-	Sep	13	0:00	0	S
+Rule	ROK	1949	only	-	Apr	 3	0:00	1:00	D
+Rule	ROK	1949	1951	-	Sep	Sun>=8	0:00	0	S
+Rule	ROK	1950	only	-	Apr	 1	0:00	1:00	D
+Rule	ROK	1951	only	-	May	 6	0:00	1:00	D
+Rule	ROK	1955	only	-	May	 5	0:00	1:00	D
+Rule	ROK	1955	only	-	Sep	 9	0:00	0	S
+Rule	ROK	1956	only	-	May	20	0:00	1:00	D
+Rule	ROK	1956	only	-	Sep	30	0:00	0	S
+Rule	ROK	1957	1960	-	May	Sun>=1	0:00	1:00	D
+Rule	ROK	1957	1960	-	Sep	Sun>=18	0:00	0	S
+Rule	ROK	1987	1988	-	May	Sun>=8	2:00	1:00	D
+Rule	ROK	1987	1988	-	Oct	Sun>=8	3:00	0	S
 
-# From Paul Eggert (2014-07-01):
-# The following entries are from Shanks & Pottenger, except that I
-# guessed that time zone abbreviations through 1945 followed the same
+# From Paul Eggert (2014-10-30):
+# The Korean Wikipedia entry gives the following sources for UT offsets:
+#
+# 1908: Official Journal Article No. 3994 (Edict No. 5)
+# 1912: Governor-General of Korea Official Gazette Issue No. 367
+#       (Announcement No. 338)
+# 1954: Presidential Decree No. 876 (1954-03-17)
+# 1961: Law No. 676 (1961-08-07)
+# 1987: Law No. 3919 (1986-12-31)
+#
+# The Wikipedia entry also has confusing information about a change
+# to UT+9 in April 1910, but then what would be the point of the later change
+# to UT+9 on 1912-01-01?  Omit the 1910 change for now.
+#
+# I guessed that time zone abbreviations through 1945 followed the same
 # rules as discussed under Taiwan, with nominal switches from JST to KST
 # when the respective cities were taken over by the Allies after WWII.
+#
+# For Pyongyang we have no information; guess no changes since World War II.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Seoul	8:27:52	-	LMT	1890
-			8:30	-	KST	1904 Dec
-			9:00	-	JCST	1928
-			8:30	-	KST	1932
+Zone	Asia/Seoul	8:27:52	-	LMT	1908 Apr  1
+			8:30	-	KST	1912 Jan  1
 			9:00	-	JCST	1937 Oct  1
 			9:00	-	JST	1945 Sep  8
 			9:00	-	KST	1954 Mar 21
-			8:00	ROK	K%sT	1961 Aug 10
-			8:30	-	KST	1968 Oct
+			8:30	ROK	K%sT	1961 Aug 10
 			9:00	ROK	K%sT
-Zone	Asia/Pyongyang	8:23:00 -	LMT	1890
-			8:30	-	KST	1904 Dec
-			9:00	-	JCST	1928
-			8:30	-	KST	1932
+Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
+			8:30	-	KST	1912 Jan  1
 			9:00	-	JCST	1937 Oct  1
 			9:00	-	JST	1945 Aug 24
-			9:00	-	KST	1954 Mar 21
-			8:00	-	KST	1961 Aug 10
 			9:00	-	KST
 
 ###############################################################################

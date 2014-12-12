@@ -34,6 +34,7 @@
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.Arrays;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import javax.tools.*;
@@ -59,10 +60,10 @@ public class T6440528 extends ToolTester {
         System.err.println("Got:      " + got);
     }
 
-    private File getUnderlyingFile(Object o) throws Exception {
-        Field file = o.getClass().getDeclaredField("file");
+    private File getUnderlyingFile(FileObject o) throws Exception {
+        Field file = o.getClass().getDeclaredField("file"); // assumes RegularFileObject
         file.setAccessible(true);
-        return (File)file.get(o);
+        return ((Path)file.get(o)).toFile();
     }
 
     public static void main(String... args) throws Exception {

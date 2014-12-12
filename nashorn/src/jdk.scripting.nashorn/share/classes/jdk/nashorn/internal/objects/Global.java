@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -54,6 +56,8 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.GlobalConstants;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
@@ -69,6 +73,7 @@ import jdk.nashorn.internal.runtime.Specialization;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
 import jdk.nashorn.internal.scripts.JO;
 
@@ -410,13 +415,14 @@ public final class Global extends ScriptObject implements Scope {
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
     private RegExpResult lastRegExpResult;
 
-    private static final MethodHandle EVAL              = findOwnMH_S("eval",                Object.class, Object.class, Object.class);
-    private static final MethodHandle NO_SUCH_PROPERTY  = findOwnMH_S(NO_SUCH_PROPERTY_NAME, Object.class, Object.class, Object.class);
-    private static final MethodHandle PRINT             = findOwnMH_S("print",               Object.class, Object.class, Object[].class);
-    private static final MethodHandle PRINTLN           = findOwnMH_S("println",             Object.class, Object.class, Object[].class);
-    private static final MethodHandle LOAD              = findOwnMH_S("load",                Object.class, Object.class, Object.class);
-    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH_S("loadWithNewGlobal",   Object.class, Object.class, Object[].class);
-    private static final MethodHandle EXIT              = findOwnMH_S("exit",                Object.class, Object.class, Object.class);
+    private static final MethodHandle EVAL                 = findOwnMH_S("eval",                Object.class, Object.class, Object.class);
+    private static final MethodHandle NO_SUCH_PROPERTY     = findOwnMH_S(NO_SUCH_PROPERTY_NAME, Object.class, Object.class, Object.class);
+    private static final MethodHandle PRINT                = findOwnMH_S("print",               Object.class, Object.class, Object[].class);
+    private static final MethodHandle PRINTLN              = findOwnMH_S("println",             Object.class, Object.class, Object[].class);
+    private static final MethodHandle LOAD                 = findOwnMH_S("load",                Object.class, Object.class, Object.class);
+    private static final MethodHandle LOAD_WITH_NEW_GLOBAL = findOwnMH_S("loadWithNewGlobal",   Object.class, Object.class, Object[].class);
+    private static final MethodHandle EXIT                 = findOwnMH_S("exit",                Object.class, Object.class, Object.class);
+    private static final MethodHandle LEXICAL_SCOPE_FILTER = findOwnMH_S("lexicalScopeFilter", Object.class, Object.class);
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
@@ -428,6 +434,12 @@ public final class Global extends ScriptObject implements Scope {
     private ScriptContext scontext;
     // current ScriptEngine associated - can be null.
     private ScriptEngine engine;
+
+    // ES6 global lexical scope.
+    private final LexicalScope lexicalScope;
+
+    // Switchpoint for non-constant global callsites in the presence of ES6 lexical scope.
+    private SwitchPoint lexicalScopeSwitchPoint;
 
     /**
      * Set the current script context
@@ -466,6 +478,7 @@ public final class Global extends ScriptObject implements Scope {
         super(checkAndGetMap(context));
         this.context = context;
         this.setIsScope();
+        this.lexicalScope = context.getEnv()._es6 ? new LexicalScope(this) : null;
     }
 
     /**
@@ -1693,6 +1706,133 @@ public final class Global extends ScriptObject implements Scope {
         splitState = state;
     }
 
+    /**
+     * Return the ES6 global scope for lexically declared bindings.
+     * @return the ES6 lexical global scope.
+     */
+    public final ScriptObject getLexicalScope() {
+        assert context.getEnv()._es6;
+        return lexicalScope;
+    }
+
+    @Override
+    public void addBoundProperties(final ScriptObject source, final jdk.nashorn.internal.runtime.Property[] properties) {
+        PropertyMap ownMap = getMap();
+        LexicalScope lexicalScope = null;
+        PropertyMap lexicalMap = null;
+        boolean hasLexicalDefinitions = false;
+
+        if (context.getEnv()._es6) {
+            lexicalScope = (LexicalScope) getLexicalScope();
+            lexicalMap = lexicalScope.getMap();
+
+            for (final jdk.nashorn.internal.runtime.Property property : properties) {
+                if (property.isLexicalBinding()) {
+                    hasLexicalDefinitions = true;
+                }
+                // ES6 15.1.8 steps 6. and 7.
+                final jdk.nashorn.internal.runtime.Property globalProperty = ownMap.findProperty(property.getKey());
+                if (globalProperty != null && !globalProperty.isConfigurable() && property.isLexicalBinding()) {
+                    throw ECMAErrors.syntaxError("redeclare.variable", property.getKey());
+                }
+                final jdk.nashorn.internal.runtime.Property lexicalProperty = lexicalMap.findProperty(property.getKey());
+                if (lexicalProperty != null && !property.isConfigurable()) {
+                    throw ECMAErrors.syntaxError("redeclare.variable", property.getKey());
+                }
+            }
+        }
+
+        for (final jdk.nashorn.internal.runtime.Property property : properties) {
+            if (property.isLexicalBinding()) {
+                assert lexicalScope != null;
+                lexicalMap = lexicalScope.addBoundProperty(lexicalMap, source, property);
+
+                if (ownMap.findProperty(property.getKey()) != null) {
+                    // If property exists in the global object invalidate any global constant call sites.
+                    invalidateGlobalConstant(property.getKey());
+                }
+            } else {
+                ownMap = addBoundProperty(ownMap, source, property);
+            }
+        }
+
+        setMap(ownMap);
+
+        if (hasLexicalDefinitions) {
+            lexicalScope.setMap(lexicalMap);
+            invalidateLexicalSwitchPoint();
+        }
+    }
+
+    @Override
+    public GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final boolean isScope = NashornCallSiteDescriptor.isScope(desc);
+
+        if (lexicalScope != null && isScope && !NashornCallSiteDescriptor.isApplyToCall(desc)) {
+            if (lexicalScope.hasOwnProperty(name)) {
+                return lexicalScope.findGetMethod(desc, request, operator);
+            }
+        }
+
+        final GuardedInvocation invocation =  super.findGetMethod(desc, request, operator);
+
+        // We want to avoid adding our generic lexical scope switchpoint to global constant invocations,
+        // because those are invalidated per-key in the addBoundProperties method above.
+        // We therefor check if the invocation does already have a switchpoint and the property is non-inherited,
+        // assuming this only applies to global constants. If other non-inherited properties will
+        // start using switchpoints some time in the future we'll have to revisit this.
+        if (isScope && context.getEnv()._es6 && (invocation.getSwitchPoints() == null || !hasOwnProperty(name))) {
+            return invocation.addSwitchPoint(getLexicalScopeSwitchPoint());
+        }
+
+        return invocation;
+    }
+
+    @Override
+    public GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
+        final boolean isScope = NashornCallSiteDescriptor.isScope(desc);
+
+        if (lexicalScope != null && isScope) {
+            final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+            if (lexicalScope.hasOwnProperty(name)) {
+                return lexicalScope.findSetMethod(desc, request);
+            }
+        }
+
+        final GuardedInvocation invocation = super.findSetMethod(desc, request);
+
+        if (isScope && context.getEnv()._es6) {
+            return invocation.addSwitchPoint(getLexicalScopeSwitchPoint());
+        }
+
+        return invocation;
+    }
+
+    private synchronized SwitchPoint getLexicalScopeSwitchPoint() {
+        SwitchPoint switchPoint = lexicalScopeSwitchPoint;
+        if (switchPoint == null || switchPoint.hasBeenInvalidated()) {
+            switchPoint = lexicalScopeSwitchPoint = new SwitchPoint();
+        }
+        return switchPoint;
+    }
+
+    private synchronized void invalidateLexicalSwitchPoint() {
+        if (lexicalScopeSwitchPoint != null) {
+            context.getLogger(GlobalConstants.class).info("Invalidating non-constant globals on lexical scope update");
+            SwitchPoint.invalidateAll(new SwitchPoint[]{ lexicalScopeSwitchPoint });
+        }
+    }
+
+
+    @SuppressWarnings("unused")
+    private static Object lexicalScopeFilter(final Object self) {
+        if (self instanceof Global) {
+            return ((Global) self).getLexicalScope();
+        }
+        return self;
+    }
+
     private <T extends ScriptObject> T initConstructorAndSwitchPoint(final String name, final Class<T> clazz) {
         final T func = initConstructor(name, clazz);
         tagBuiltinProperties(name, func);
@@ -1737,7 +1877,7 @@ public final class Global extends ScriptObject implements Scope {
         this.unescape           = ScriptFunctionImpl.makeFunction("unescape",   GlobalFunctions.UNESCAPE);
         this.print              = ScriptFunctionImpl.makeFunction("print",      env._print_no_newline ? PRINT : PRINTLN);
         this.load               = ScriptFunctionImpl.makeFunction("load",       LOAD);
-        this.loadWithNewGlobal  = ScriptFunctionImpl.makeFunction("loadWithNewGlobal", LOADWITHNEWGLOBAL);
+        this.loadWithNewGlobal  = ScriptFunctionImpl.makeFunction("loadWithNewGlobal", LOAD_WITH_NEW_GLOBAL);
         this.exit               = ScriptFunctionImpl.makeFunction("exit",       EXIT);
         this.quit               = ScriptFunctionImpl.makeFunction("quit",       EXIT);
 
@@ -2203,4 +2343,36 @@ public final class Global extends ScriptObject implements Scope {
     protected boolean isGlobal() {
         return true;
     }
+
+    /**
+     * A class representing the ES6 global lexical scope.
+     */
+    private static class LexicalScope extends ScriptObject {
+
+        LexicalScope(final ScriptObject proto) {
+            super(proto, PropertyMap.newMap());
+        }
+
+        @Override
+        protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
+            return filterInvocation(super.findGetMethod(desc, request, operator));
+        }
+
+        @Override
+        protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
+            return filterInvocation(super.findSetMethod(desc, request));
+        }
+
+        @Override
+        protected PropertyMap addBoundProperty(final PropertyMap propMap, final ScriptObject source, final jdk.nashorn.internal.runtime.Property property) {
+            // We override this method just to make it callable by Global
+            return super.addBoundProperty(propMap, source, property);
+        }
+
+        private static GuardedInvocation filterInvocation(final GuardedInvocation invocation) {
+            final MethodType type = invocation.getInvocation().type();
+            return invocation.asType(type.changeParameterType(0, Object.class)).filterArguments(0, LEXICAL_SCOPE_FILTER);
+        }
+    }
+
 }

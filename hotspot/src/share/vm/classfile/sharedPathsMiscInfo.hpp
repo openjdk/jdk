@@ -89,7 +89,7 @@ public:
   }
   ~SharedPathsMiscInfo() {
     if (_allocated) {
-      FREE_C_HEAP_ARRAY(char, _buf_start, mtClass);
+      FREE_C_HEAP_ARRAY(char, _buf_start);
     }
   }
   int get_used_bytes() {

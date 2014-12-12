@@ -25,17 +25,14 @@
 
 package javax.tools;
 
-import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+
 import static java.util.logging.Level.*;
 
 /**
@@ -89,7 +86,7 @@ public class ToolProvider {
         return null;
     }
 
-    private static final String defaultJavaCompilerName
+    private static final String systemJavaCompilerName
         = "com.sun.tools.javac.api.JavacTool";
 
     /**
@@ -99,10 +96,10 @@ public class ToolProvider {
      * {@code null} if no compiler is provided
      */
     public static JavaCompiler getSystemJavaCompiler() {
-        return instance().getSystemTool(JavaCompiler.class, defaultJavaCompilerName);
+        return instance().getSystemTool(JavaCompiler.class, systemJavaCompilerName);
     }
 
-    private static final String defaultDocumentationToolName
+    private static final String systemDocumentationToolName
         = "com.sun.tools.javadoc.api.JavadocTool";
 
     /**
@@ -112,7 +109,7 @@ public class ToolProvider {
      * {@code null} if no documentation tool is provided
      */
     public static DocumentationTool getSystemDocumentationTool() {
-        return instance().getSystemTool(DocumentationTool.class, defaultDocumentationToolName);
+        return instance().getSystemTool(DocumentationTool.class, systemDocumentationToolName);
     }
 
     /**
@@ -125,13 +122,7 @@ public class ToolProvider {
      * or {@code null} if no tools are provided
      */
     public static ClassLoader getSystemToolClassLoader() {
-        try {
-            Class<? extends JavaCompiler> c =
-                    instance().getSystemToolClass(JavaCompiler.class, defaultJavaCompilerName);
-            return c.getClassLoader();
-        } catch (Throwable e) {
-            return trace(WARNING, e);
-        }
+        return ClassLoader.getSystemClassLoader();
     }
 
 
@@ -145,12 +136,7 @@ public class ToolProvider {
 
     // Cache for tool classes.
     // Use weak references to avoid keeping classes around unnecessarily
-    private Map<String, Reference<Class<?>>> toolClasses = new HashMap<>();
-
-    // Cache for tool classloader.
-    // Use a weak reference to avoid keeping it around unnecessarily
-    private Reference<ClassLoader> refToolClassLoader = null;
-
+    private final Map<String, Reference<Class<?>>> toolClasses = new HashMap<>();
 
     private ToolProvider() { }
 
@@ -158,9 +144,8 @@ public class ToolProvider {
         Class<? extends T> c = getSystemToolClass(clazz, name);
         try {
             return c.asSubclass(clazz).newInstance();
-        } catch (Throwable e) {
-            trace(WARNING, e);
-            return null;
+        } catch (InstantiationException | IllegalAccessException | RuntimeException | Error e) {
+            return trace(WARNING, e);
         }
     }
 
@@ -169,48 +154,12 @@ public class ToolProvider {
         Class<?> c = (refClass == null ? null : refClass.get());
         if (c == null) {
             try {
-                c = findSystemToolClass(name);
-            } catch (Throwable e) {
+                c = Class.forName(name, false, ClassLoader.getSystemClassLoader());
+            } catch (ClassNotFoundException | RuntimeException | Error e) {
                 return trace(WARNING, e);
             }
-            toolClasses.put(name, new WeakReference<Class<?>>(c));
+            toolClasses.put(name, new WeakReference<>(c));
         }
         return c.asSubclass(clazz);
-    }
-
-    private static final String[] defaultToolsLocation = { "lib", "tools.jar" };
-
-    private Class<?> findSystemToolClass(String toolClassName)
-        throws MalformedURLException, ClassNotFoundException
-    {
-        // try loading class directly, in case tool is on the bootclasspath
-        try {
-            return Class.forName(toolClassName, false, null);
-        } catch (ClassNotFoundException e) {
-            trace(FINE, e);
-
-            // if tool not on bootclasspath, look in default tools location (tools.jar)
-            ClassLoader cl = (refToolClassLoader == null ? null : refToolClassLoader.get());
-            if (cl == null) {
-                File file = new File(System.getProperty("java.home"));
-                if (file.getName().equalsIgnoreCase("jre"))
-                    file = file.getParentFile();
-                for (String name : defaultToolsLocation)
-                    file = new File(file, name);
-
-                // if tools not found, no point in trying a URLClassLoader
-                // so rethrow the original exception.
-                if (!file.exists())
-                    throw e;
-
-                URL[] urls = { file.toURI().toURL() };
-                trace(FINE, urls[0].toString());
-
-                cl = URLClassLoader.newInstance(urls);
-                refToolClassLoader = new WeakReference<>(cl);
-            }
-
-            return Class.forName(toolClassName, false, cl);
-        }
     }
 }

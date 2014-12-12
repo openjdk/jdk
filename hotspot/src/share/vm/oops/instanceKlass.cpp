@@ -1365,7 +1365,7 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
       cl->do_field(&fd);
     }
   }
-  FREE_C_HEAP_ARRAY(int, fields_sorted, mtClass);
+  FREE_C_HEAP_ARRAY(int, fields_sorted);
 }
 
 
@@ -2473,7 +2473,7 @@ void InstanceKlass::release_C_heap_structures() {
 
   // deallocate the cached class file
   if (_cached_class_file != NULL) {
-    os::free(_cached_class_file, mtClass);
+    os::free(_cached_class_file);
     _cached_class_file = NULL;
   }
 
@@ -2482,7 +2482,7 @@ void InstanceKlass::release_C_heap_structures() {
   // unreference array name derived from this class name (arrays of an unloaded
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
-  if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension, mtClass);
+  if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension);
 
   assert(_total_instanceKlass_count >= 1, "Sanity check");
   Atomic::dec(&_total_instanceKlass_count);
@@ -2931,28 +2931,27 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
   return NULL;
 }
 
-void InstanceKlass::add_member_name(int index, Handle mem_name) {
+bool InstanceKlass::add_member_name(Handle mem_name) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
-  assert(0 <= index && index < idnum_allocated_count(), "index is out of bounds");
   DEBUG_ONLY(No_Safepoint_Verifier nsv);
+
+  // Check if method has been redefined while taking out MemberNameTable_lock, if so
+  // return false.  We cannot cache obsolete methods. They will crash when the function
+  // is called!
+  Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name());
+  if (method->is_obsolete()) {
+    return false;
+  } else if (method->is_old()) {
+    // Replace method with redefined version
+    java_lang_invoke_MemberName::set_vmtarget(mem_name(), method_with_idnum(method->method_idnum()));
+  }
 
   if (_member_names == NULL) {
     _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable(idnum_allocated_count());
   }
-  _member_names->add_member_name(index, mem_name_wref);
-}
-
-oop InstanceKlass::get_member_name(int index) {
-  MutexLocker ml(MemberNameTable_lock);
-  assert(0 <= index && index < idnum_allocated_count(), "index is out of bounds");
-  DEBUG_ONLY(No_Safepoint_Verifier nsv);
-
-  if (_member_names == NULL) {
-    return NULL;
-  }
-  oop mem_name =_member_names->get_member_name(index);
-  return mem_name;
+  _member_names->add_member_name(mem_name_wref);
+  return true;
 }
 
 // -----------------------------------------------------------------------------------------------------

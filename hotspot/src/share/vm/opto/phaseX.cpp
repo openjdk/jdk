@@ -1392,15 +1392,27 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       }
     }
 
-    if( use->is_Cmp() ) {       // Enable CMP/BOOL optimization
+    uint use_op = use->Opcode();
+    if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
       add_users_to_worklist(use); // Put Bool on worklist
-      // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
-      // phi merging either 0 or 1 onto the worklist
       if (use->outcnt() > 0) {
         Node* bol = use->raw_out(0);
         if (bol->outcnt() > 0) {
           Node* iff = bol->raw_out(0);
-          if (iff->outcnt() == 2) {
+          if (use_op == Op_CmpI &&
+              iff->is_CountedLoopEnd()) {
+            CountedLoopEndNode* cle = iff->as_CountedLoopEnd();
+            if (cle->limit() == n && cle->phi() != NULL) {
+              // If an opaque node feeds into the limit condition of a
+              // CountedLoop, we need to process the Phi node for the
+              // induction variable when the opaque node is removed:
+              // the range of values taken by the Phi is now known and
+              // so its type is also known.
+              _worklist.push(cle->phi());
+            }
+          } else if (iff->outcnt() == 2) {
+            // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
+            // phi merging either 0 or 1 onto the worklist
             Node* ifproj0 = iff->raw_out(0);
             Node* ifproj1 = iff->raw_out(1);
             if (ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
@@ -1412,9 +1424,26 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           }
         }
       }
+      if (use_op == Op_CmpI) {
+        Node* in1 = use->in(1);
+        for (uint i = 0; i < in1->outcnt(); i++) {
+          if (in1->raw_out(i)->Opcode() == Op_CastII) {
+            Node* castii = in1->raw_out(i);
+            if (castii->in(0) != NULL && castii->in(0)->in(0) != NULL && castii->in(0)->in(0)->is_If()) {
+              Node* ifnode = castii->in(0)->in(0);
+              if (ifnode->in(1) != NULL && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == use) {
+                // Reprocess a CastII node that may depend on an
+                // opaque node value when the opaque node is
+                // removed. In case it carries a dependency we can do
+                // a better job of computing its type.
+                _worklist.push(castii);
+              }
+            }
+          }
+        }
+      }
     }
 
-    uint use_op = use->Opcode();
     // If changed Cast input, check Phi users for simple cycles
     if( use->is_ConstraintCast() || use->is_CheckCastPP() ) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {

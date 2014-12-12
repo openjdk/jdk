@@ -28,23 +28,28 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Build the profile information from ct.sym if exists.
+ * Build the profile information.
  */
 enum Profile {
     COMPACT1("compact1", 1, "java.compact1"),
     COMPACT2("compact2", 2, "java.compact2"),
-    COMPACT3("compact3", 3, "java.compact3"),
-    FULL_JRE("Full JRE", 4, "java.se");
+    COMPACT3("compact3", 3, "java.compact3", "java.smartcardio", "jdk.sctp",
+                            "jdk.httpserver", "jdk.security.auth",
+                            "jdk.naming.dns", "jdk.naming.rmi"),
+    FULL_JRE("Full JRE", 4, "java.se", "jdk.deploy.osx", "jdk.charsets",
+                            "jdk.crypto.ec", "jdk.crypto.pkcs11",
+                            "jdk.crypto.mscapi", "jdk.crypto.ucrypto", "jdk.jvmstat",
+                            "jdk.localedata", "jdk.scripting.nashorn", "jdk.zipfs");
 
     final String name;
     final int profile;
-    final String moduleName;
+    final String[] mnames;
     final Set<Module> modules = new HashSet<>();
 
-    Profile(String name, int profile, String moduleName) {
+    Profile(String name, int profile, String... mnames) {
         this.name = name;
         this.profile = profile;
-        this.moduleName = moduleName;
+        this.mnames = mnames;
     }
 
     public String profileName() {
@@ -53,7 +58,7 @@ enum Profile {
 
     @Override
     public String toString() {
-        return moduleName;
+        return mnames[0];
     }
 
     public static int getProfileCount() {
@@ -86,27 +91,37 @@ enum Profile {
         return null;
     }
 
-    final static Set<Module> JDK = new HashSet<>();
-    static void initProfiles() {
+    private final static Set<Module> JDK = new HashSet<>();
+    static void initProfiles(List<Archive> modules) {
+        // add all modules into  JDK
+        modules.forEach(m -> JDK.add((Module)m));
+
         for (Profile p : Profile.values()) {
-            Module m = PlatformClassPath.findModule(p.moduleName);
-            if (m == null)
-                throw new Error(p.moduleName + " doesn't exist");
-            p.modules.add(m);
-            JDK.add(m);
-            for (String n : m.requires().keySet()) {
-                Module d = PlatformClassPath.findModule(n);
-                if (d == null)
-                    throw new Error(n + " doesn't exist");
-                p.modules.add(d);
-                JDK.add(d);
+            for (String mn : p.mnames) {
+                // this includes platform-dependent module that may not exist
+                Module m = PlatformClassPath.findModule(mn);
+                if (m != null) {
+                    p.addModule(m);
+                }
             }
+        }
+    }
+
+    private void addModule(Module m) {
+        modules.add(m);
+        for (String n : m.requires().keySet()) {
+            Module d = PlatformClassPath.findModule(n);
+            if (d == null) {
+                throw new InternalError("module " + n + " required by " +
+                        m.name() + " doesn't exist");
+            }
+            modules.add(d);
         }
     }
     // for debugging
     public static void main(String[] args) throws IOException {
         // find platform modules
-        PlatformClassPath.getArchives(null);
+        PlatformClassPath.getModules(null);
         if (Profile.getProfileCount() == 0) {
             System.err.println("No profile is present in this JDK");
         }
