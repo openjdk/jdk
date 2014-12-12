@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,9 @@ public class Arguments {
     public Arguments(String[] args) throws IllegalArgumentException {
         int argc = 0;
 
-        if (args.length < 1) {
-            throw new IllegalArgumentException("invalid argument count");
+        if (args.length == 0) {
+            help = true;
+            return;
         }
 
         if ((args[0].compareTo("-?") == 0)
