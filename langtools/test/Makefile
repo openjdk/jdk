@@ -21,7 +21,6 @@ OSNAME = $(shell uname -s)
 ifeq ($(OSNAME), SunOS)
   SLASH_JAVA = /java
   PLATFORM = solaris
-  JT_PLATFORM = solaris
   ARCH = $(shell uname -p)
   ifeq ($(ARCH), i386)
     ARCH=i586
@@ -30,7 +29,6 @@ endif
 ifeq ($(OSNAME), Linux)
   SLASH_JAVA = /java
   PLATFORM = linux
-  JT_PLATFORM = linux
   ARCH = $(shell uname -m)
   ifeq ($(ARCH), i386)
     ARCH=i586
@@ -38,7 +36,6 @@ ifeq ($(OSNAME), Linux)
 endif
 ifeq ($(OSNAME), Darwin)
   PLATFORM = bsd
-  JT_PLATFORM = linux
   ARCH = $(shell uname -m)
   ifeq ($(ARCH), i386)
     ARCH=i586
@@ -55,7 +52,6 @@ endif
 
 ifeq ($(PLATFORM), windows)
   SLASH_JAVA = J:
-  JT_PLATFORM = win32
   ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),ia64)
     ARCH=ia64
   else
@@ -93,8 +89,8 @@ ifdef JPRT_JTREG_HOME
 else
   JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.1/promoted/latest/binaries/jtreg
 endif
-JTREG = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtreg
-JTDIFF = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtdiff
+JTREG = $(JTREG_HOME)/bin/jtreg
+JTDIFF = $(JTREG_HOME)/bin/jtdiff
 
 # Default JCK to run
 ifdef JPRT_JCK_HOME
