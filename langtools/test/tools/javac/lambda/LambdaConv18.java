@@ -3,7 +3,7 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  simple test for lambda candidate check
- * @compile/fail/ref=LambdaConv18.out -XDrawDiagnostics -XDidentifyLambdaCandidate=true LambdaConv18.java
+ * @compile/fail/ref=LambdaConv18.out -XDrawDiagnostics -XDfind=lambda LambdaConv18.java
  */
 
 class LambdaConv18 {

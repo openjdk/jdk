@@ -4,8 +4,8 @@
  *
  * @summary  add a warning to detect diamond sites
  * @author mcimadamore
- * @compile/ref=T6939780_7.out -Xlint:-options -source 7 T6939780.java -XDrawDiagnostics -XDfindDiamond
- * @compile/ref=T6939780_8.out T6939780.java -XDrawDiagnostics -XDfindDiamond
+ * @compile/ref=T6939780_7.out -Xlint:-options -source 7 T6939780.java -XDrawDiagnostics -XDfind=diamond
+ * @compile/ref=T6939780_8.out T6939780.java -XDrawDiagnostics -XDfind=diamond
  *
  */
 

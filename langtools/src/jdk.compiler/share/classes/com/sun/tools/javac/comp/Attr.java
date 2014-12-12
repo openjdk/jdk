@@ -83,6 +83,7 @@ public class Attr extends JCTree.Visitor {
     final Symtab syms;
     final Resolve rs;
     final Infer infer;
+    final Analyzer analyzer;
     final DeferredAttr deferredAttr;
     final Check chk;
     final Flow flow;
@@ -121,6 +122,7 @@ public class Attr extends JCTree.Visitor {
         make = TreeMaker.instance(context);
         enter = Enter.instance(context);
         infer = Infer.instance(context);
+        analyzer = Analyzer.instance(context);
         deferredAttr = DeferredAttr.instance(context);
         cfolder = ConstFold.instance(context);
         target = Target.instance(context);
@@ -143,11 +145,8 @@ public class Attr extends JCTree.Visitor {
         allowStaticInterfaceMethods = source.allowStaticInterfaceMethods();
         sourceName = source.name;
         relax = (options.isSet("-retrofit") ||
-                 options.isSet("-relax"));
-        findDiamonds = options.get("findDiamond") != null &&
-                 source.allowDiamond();
+                options.isSet("-relax"));
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
-        identifyLambdaCandidate = options.getBoolean("identifyLambdaCandidate", false);
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
@@ -182,27 +181,11 @@ public class Attr extends JCTree.Visitor {
      */
     boolean allowStaticInterfaceMethods;
 
-    /** Switch: generates a warning if diamond can be safely applied
-     *  to a given new expression
-     */
-    boolean findDiamonds;
-
-    /**
-     * Internally enables/disables diamond finder feature
-     */
-    static final boolean allowDiamondFinder = true;
-
     /**
      * Switch: warn about use of variable before declaration?
      * RFE: 6425594
      */
     boolean useBeforeDeclarationWarning;
-
-    /**
-     * Switch: generate warnings whenever an anonymous inner class that is convertible
-     * to a lambda expression is found
-     */
-    boolean identifyLambdaCandidate;
 
     /**
      * Switch: allow strings in switch?
@@ -610,7 +593,13 @@ public class Attr extends JCTree.Visitor {
     /** Derived visitor method: attribute a statement or definition tree.
      */
     public Type attribStat(JCTree tree, Env<AttrContext> env) {
-        return attribTree(tree, env, statInfo);
+        Env<AttrContext> analyzeEnv =
+                env.dup(tree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
+        try {
+            return attribTree(tree, env, statInfo);
+        } finally {
+            analyzer.analyzeIfNeeded(tree, analyzeEnv);
+        }
     }
 
     /** Attribute a list of expressions, returning a list of types.
@@ -792,8 +781,8 @@ public class Attr extends JCTree.Visitor {
 
     Type attribIdentAsEnumType(Env<AttrContext> env, JCIdent id) {
         Assert.check((env.enclClass.sym.flags() & ENUM) != 0);
-        id.type = env.info.scope.owner.type;
-        id.sym = env.info.scope.owner;
+        id.type = env.info.scope.owner.enclClass().type;
+        id.sym = env.info.scope.owner.enclClass();
         return id.type;
     }
 
@@ -2052,12 +2041,6 @@ public class Attr extends JCTree.Visitor {
                     if (rsEnv.info.lastResolveVarargs())
                         Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
                 }
-                if (cdef == null &&
-                        !clazztype.isErroneous() &&
-                        clazztype.getTypeArguments().nonEmpty() &&
-                        findDiamonds) {
-                    findDiamond(localEnv, tree, clazztype);
-                }
             }
 
             if (cdef != null) {
@@ -2105,8 +2088,6 @@ public class Attr extends JCTree.Visitor {
 
                 attribStat(cdef, localEnv);
 
-                checkLambdaCandidate(tree, cdef.sym, clazztype);
-
                 // If an outer instance is given,
                 // prefix it to the constructor arguments
                 // and delete it from the new expression
@@ -2135,58 +2116,6 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
         chk.validate(tree.typeargs, localEnv);
     }
-    //where
-        void findDiamond(Env<AttrContext> env, JCNewClass tree, Type clazztype) {
-            JCTypeApply ta = (JCTypeApply)tree.clazz;
-            List<JCExpression> prevTypeargs = ta.arguments;
-            try {
-                //create a 'fake' diamond AST node by removing type-argument trees
-                ta.arguments = List.nil();
-                ResultInfo findDiamondResult = new ResultInfo(KindSelector.VAL,
-                        resultInfo.checkContext.inferenceContext().free(resultInfo.pt) ? Type.noType : pt());
-                Type inferred = deferredAttr.attribSpeculative(tree, env, findDiamondResult).type;
-                Type polyPt = allowPoly ?
-                        syms.objectType :
-                        clazztype;
-                if (!inferred.isErroneous() &&
-                    (allowPoly && pt() == Infer.anyPoly ?
-                        types.isSameType(inferred, clazztype) :
-                        types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings))) {
-                    String key = types.isSameType(clazztype, inferred) ?
-                        "diamond.redundant.args" :
-                        "diamond.redundant.args.1";
-                    log.warning(tree.clazz.pos(), key, clazztype, inferred);
-                }
-            } finally {
-                ta.arguments = prevTypeargs;
-            }
-        }
-
-            private void checkLambdaCandidate(JCNewClass tree, ClassSymbol csym, Type clazztype) {
-                if (allowLambda &&
-                        identifyLambdaCandidate &&
-                        clazztype.hasTag(CLASS) &&
-                        !pt().hasTag(NONE) &&
-                        types.isFunctionalInterface(clazztype.tsym)) {
-                    Symbol descriptor = types.findDescriptorSymbol(clazztype.tsym);
-                    int count = 0;
-                    boolean found = false;
-                    for (Symbol sym : csym.members().getSymbols()) {
-                        if ((sym.flags() & SYNTHETIC) != 0 ||
-                                sym.isConstructor()) continue;
-                        count++;
-                        if (sym.kind != MTH ||
-                                !sym.name.equals(descriptor.name)) continue;
-                        Type mtype = types.memberType(clazztype, sym);
-                        if (types.overrideEquivalent(mtype, types.memberType(clazztype, descriptor))) {
-                            found = true;
-                        }
-                    }
-                    if (found && count == 1) {
-                        log.note(tree.def, "potential.lambda.found");
-                    }
-                }
-            }
 
     /** Make an attributed null check tree.
      */
