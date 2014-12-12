@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_AIX_OJDKPPC_VM_THREAD_AIX_PPC_HPP
-#define OS_CPU_AIX_OJDKPPC_VM_THREAD_AIX_PPC_HPP
+#ifndef OS_CPU_AIX_PPC_VM_THREAD_AIX_PPC_HPP
+#define OS_CPU_AIX_PPC_VM_THREAD_AIX_PPC_HPP
 
  private:
   void pd_initialize() {
@@ -76,4 +76,4 @@
 
   intptr_t* last_interpreter_fp() { return _last_interpreter_fp; }
 
-#endif // OS_CPU_AIX_OJDKPPC_VM_THREAD_AIX_PPC_HPP
+#endif // OS_CPU_AIX_PPC_VM_THREAD_AIX_PPC_HPP

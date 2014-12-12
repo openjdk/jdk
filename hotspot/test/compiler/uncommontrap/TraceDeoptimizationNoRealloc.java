@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8067144
+ * @summary -XX:+TraceDeoptimization tries to print realloc'ed objects even when there are none
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceDeoptimization TraceDeoptimizationNoRealloc
  *
  */
 
-#ifndef OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
-#define OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
+public class TraceDeoptimizationNoRealloc {
 
-  static void setup_fpu() {}
+    static void m(boolean some_condition) {
+        if (some_condition) {
+            return;
+        }
+    }
 
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
 
-#endif // OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
+    static public void main(String[] args) {
+        for (int i = 0; i < 20000; i++) {
+            m(false);
+        }
+        m(true);
+    }
+}

@@ -213,14 +213,14 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
           realloc_failures = realloc_objects(thread, &deoptee, objects, THREAD);
         JRT_END
         reassign_fields(&deoptee, &map, objects, realloc_failures);
-      }
 #ifndef PRODUCT
-      if (TraceDeoptimization) {
-        ttyLocker ttyl;
-        tty->print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, thread);
-        print_objects(objects, realloc_failures);
-      }
+        if (TraceDeoptimization) {
+          ttyLocker ttyl;
+          tty->print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, thread);
+          print_objects(objects, realloc_failures);
+        }
 #endif
+      }
       if (save_oop_result) {
         // Restore result.
         deoptee.set_saved_oop_result(&map, return_value());

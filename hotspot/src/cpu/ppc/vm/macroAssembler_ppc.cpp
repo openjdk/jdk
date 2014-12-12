@@ -807,6 +807,7 @@ void MacroAssembler::restore_nonvolatile_gprs(Register src, int offset) {
 
 // For verify_oops.
 void MacroAssembler::save_volatile_gprs(Register dst, int offset) {
+  std(R2,  offset, dst);   offset += 8;
   std(R3,  offset, dst);   offset += 8;
   std(R4,  offset, dst);   offset += 8;
   std(R5,  offset, dst);   offset += 8;
@@ -821,6 +822,7 @@ void MacroAssembler::save_volatile_gprs(Register dst, int offset) {
 
 // For verify_oops.
 void MacroAssembler::restore_volatile_gprs(Register src, int offset) {
+  ld(R2,  offset, src);   offset += 8;
   ld(R3,  offset, src);   offset += 8;
   ld(R4,  offset, src);   offset += 8;
   ld(R5,  offset, src);   offset += 8;
@@ -1184,6 +1186,16 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
   mr_if_needed(R4_ARG2, arg_1);
   assert(arg_2 != R4_ARG2, "smashed argument");
   mr_if_needed(R5_ARG3, arg_2);
+  call_VM(oop_result, entry_point, check_exceptions);
+}
+
+void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, Register arg_3,
+                             bool check_exceptions) {
+  // R3_ARG1 is reserved for the thread
+  mr_if_needed(R4_ARG2, arg_1);
+  assert(arg_2 != R4_ARG2, "smashed argument");
+  mr_if_needed(R5_ARG3, arg_2);
+  mr_if_needed(R6_ARG4, arg_3);
   call_VM(oop_result, entry_point, check_exceptions);
 }
 
@@ -3059,35 +3071,27 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   if (!VerifyOops) {
     return;
   }
-  // Will be preserved.
-  Register tmp = R11;
-  assert(oop != tmp, "precondition");
-  unsigned int nbytes_save = 10*8; // 10 volatile gprs
+
   address/* FunctionDescriptor** */fd = StubRoutines::verify_oop_subroutine_entry_address();
-  // save tmp
-  mr(R0, tmp);
-  // kill tmp
-  save_LR_CR(tmp);
+  const Register tmp = R11; // Will be preserved.
+  const int nbytes_save = 11*8; // Volatile gprs except R0.
+  save_volatile_gprs(R1_SP, -nbytes_save); // except R0
+
+  if (oop == tmp) mr(R4_ARG2, oop);
+  save_LR_CR(tmp); // save in old frame
   push_frame_reg_args(nbytes_save, tmp);
-  // restore tmp
-  mr(tmp, R0);
-  save_volatile_gprs(R1_SP, 112); // except R0
   // load FunctionDescriptor** / entry_address *
-  load_const(tmp, fd);
+  load_const_optimized(tmp, fd, R0);
   // load FunctionDescriptor* / entry_address
   ld(tmp, 0, tmp);
-  mr(R4_ARG2, oop);
-  load_const(R3_ARG1, (address)msg);
-  // call destination for its side effect
+  if (oop != tmp) mr_if_needed(R4_ARG2, oop);
+  load_const_optimized(R3_ARG1, (address)msg, R0);
+  // Call destination for its side effect.
   call_c(tmp);
-  restore_volatile_gprs(R1_SP, 112); // except R0
+
   pop_frame();
-  // save tmp
-  mr(R0, tmp);
-  // kill tmp
   restore_LR_CR(tmp);
-  // restore tmp
-  mr(tmp, R0);
+  restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
 }
 
 const char* stop_types[] = {
