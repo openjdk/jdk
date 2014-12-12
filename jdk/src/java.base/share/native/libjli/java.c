@@ -169,6 +169,13 @@ static jlong maxHeapSize        = 0;  /* max heap size */
 static jlong initialHeapSize    = 0;  /* inital heap size */
 
 /*
+ * A minimum -Xss stack size suitable for all platforms.
+ */
+#ifndef STACK_SIZE_MINIMUM
+#define STACK_SIZE_MINIMUM (32 * KB)
+#endif
+
+/*
  * Entry point.
  */
 int
@@ -766,6 +773,14 @@ AddOption(char *str, void *info)
         jlong tmp;
         if (parse_size(str + 4, &tmp)) {
             threadStackSize = tmp;
+            /*
+             * Make sure the thread stack size is big enough that we won't get a stack
+             * overflow before the JVM startup code can check to make sure the stack
+             * is big enough.
+             */
+            if (threadStackSize < STACK_SIZE_MINIMUM) {
+                threadStackSize = STACK_SIZE_MINIMUM;
+            }
         }
     }
 
