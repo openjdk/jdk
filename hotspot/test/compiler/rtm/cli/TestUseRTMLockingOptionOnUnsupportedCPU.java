@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMLocking option processing on CPU without
  *          rtm support.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMLockingOptionOnUnsupportedCPU
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
