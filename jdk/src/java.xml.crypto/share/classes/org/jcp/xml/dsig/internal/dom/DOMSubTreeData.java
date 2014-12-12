@@ -44,7 +44,7 @@ import org.w3c.dom.Node;
  * directly on the subdocument and there is no need to convert it
  * first to an XPath node-set.
  */
-public class DOMSubTreeData implements NodeSetData {
+public class DOMSubTreeData implements NodeSetData<Node> {
 
     private boolean excludeComments;
     private Node root;

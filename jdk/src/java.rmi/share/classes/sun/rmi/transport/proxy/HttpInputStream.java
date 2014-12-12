@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class HttpInputStream extends FilterInputStream {
      * Create new filter on a given input stream.
      * @param in the InputStream to filter from
      */
+    @SuppressWarnings("deprecation")
     public HttpInputStream(InputStream in) throws IOException
     {
         super(in);

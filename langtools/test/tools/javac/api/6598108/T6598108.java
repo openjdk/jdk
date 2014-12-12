@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,9 @@ import javax.tools.ToolProvider;
 
 public class T6598108 {
     public static void main(String[] args) throws Exception {
-        final String bootPath = System.getProperty("sun.boot.class.path"); //NOI18N
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         assert tool != null;
-        final JavacTask ct = (JavacTask)tool.getTask(null, null, null, Arrays.asList("-bootclasspath",  bootPath), null, Arrays.asList(new MyFileObject()));
+        final JavacTask ct = (JavacTask)tool.getTask(null, null, null, null, null, Arrays.asList(new MyFileObject()));
 
         CompilationUnitTree cut = ct.parse().iterator().next();
         TreePath tp = new TreePath(new TreePath(cut), cut.getTypeDecls().get(0));

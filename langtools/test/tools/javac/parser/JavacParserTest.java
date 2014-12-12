@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235
+ * @bug 7073631 7159445 7156633 8028235 8065753
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  */
@@ -49,8 +49,11 @@ import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.tree.JCTree;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -939,6 +942,21 @@ public class JavacParserTest extends TestCase {
         assertEquals("actual parameter type: " + primitiveTypeKind,
                      primitiveTypeKind,
                      TypeKind.VOID);
+    }
+
+    @Test //JDK-8065753
+    void testWrongFirstToken() throws IOException {
+        String code = "<";
+        String expectedErrors = "Test.java:1:1: compiler.err.expected3: class, interface, enum\n" +
+                                "1 error\n";
+        StringWriter out = new StringWriter();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
+                Arrays.asList("-XDrawDiagnostics"), null, Arrays.asList(new MyFileObject(code)));
+
+        Result errorCode = ct.doCall();
+        assertEquals("the error code is not correct; actual:" + errorCode, Main.Result.ERROR, errorCode);
+        String actualErrors = normalize(out.toString());
+        assertEquals("the error message is not correct, actual: " + actualErrors, expectedErrors, actualErrors);
     }
 
     void run(String[] args) throws Exception {

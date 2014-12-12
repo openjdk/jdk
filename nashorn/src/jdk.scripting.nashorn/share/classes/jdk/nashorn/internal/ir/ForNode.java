@@ -45,14 +45,14 @@ public final class ForNode extends LoopNode {
     /** Iterator symbol. */
     private Symbol iterator;
 
-    /** Is this a normal for loop? */
-    public static final int IS_FOR      = 1 << 0;
-
     /** Is this a normal for in loop? */
-    public static final int IS_FOR_IN   = 1 << 1;
+    public static final int IS_FOR_IN           = 1 << 0;
 
     /** Is this a normal for each in loop? */
-    public static final int IS_FOR_EACH = 1 << 2;
+    public static final int IS_FOR_EACH         = 1 << 1;
+
+    /** Does this loop need a per-iteration scope because its init contain a LET declaration? */
+    public static final int PER_ITERATION_SCOPE = 1 << 2;
 
     private final int flags;
 
@@ -263,5 +263,10 @@ public final class ForNode extends LoopNode {
     @Override
     JoinPredecessor setLocalVariableConversionChanged(final LexicalContext lc, final LocalVariableConversion conversion) {
         return Node.replaceInLexicalContext(lc, this, new ForNode(this, init, test, body, modify, flags, controlFlowEscapes, conversion));
+    }
+
+    @Override
+    public boolean hasPerIterationScope() {
+        return (flags & PER_ITERATION_SCOPE) != 0;
     }
 }

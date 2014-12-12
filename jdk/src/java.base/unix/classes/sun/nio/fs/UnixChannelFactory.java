@@ -270,6 +270,22 @@ class UnixChannelFactory {
             throw x;
         }
 
+        // fail if the file is a directory
+        if (flags.read) {
+            UnixException exc = null;
+            try {
+                if (UnixFileAttributes.get(fd).isDirectory()) {
+                    exc = new UnixException(EISDIR);
+                }
+            } catch (UnixException x) {
+                exc = x;
+            }
+            if (exc != null) {
+                close(fd);
+                throw exc;
+            }
+        }
+
         // unlink file immediately if delete on close. The spec is clear that
         // an implementation cannot guarantee to unlink the correct file when
         // replaced by an attacker after it is opened.

@@ -76,14 +76,6 @@ public class T6942366 {
             args.add(".");
         }
 
-        // use a very simple bootclasspath to avoid stuff jtreg might have put on path
-        File javaHome = new File(System.getProperty("java.home"));
-        File rt_jar = new File(javaHome, "lib/rt.jar");
-        if (!rt_jar.exists())
-            throw new Exception("rt.jar not found");
-        args.add("-bootclasspath");
-        args.add(rt_jar.getPath());
-
         args.add(new File(testSrc, "Test.java").getPath());
         System.out.println("javadoc: " + args);
 

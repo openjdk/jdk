@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: ApacheTransform.java 1333869 2012-05-04 10:42:44Z coheigea $
@@ -175,7 +175,6 @@ public abstract class ApacheTransform extends TransformService {
                 in = new XMLSignatureInput(subTree.getRoot());
                 in.setExcludeComments(subTree.excludeComments());
             } else {
-                @SuppressWarnings("unchecked")
                 Set<Node> nodeSet =
                     Utils.toNodeSet(((NodeSetData)data).iterator());
                 in = new XMLSignatureInput(nodeSet);

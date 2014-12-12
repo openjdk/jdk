@@ -53,9 +53,8 @@ size_t CardTableModRefBS::compute_byte_map_size()
   return align_size_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
 
-CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
-                                     int max_covered_regions):
-  ModRefBarrierSet(max_covered_regions),
+CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap) :
+  ModRefBarrierSet(),
   _whole_heap(whole_heap),
   _guard_index(0),
   _guard_region(),
@@ -172,19 +171,19 @@ CardTableModRefBS::~CardTableModRefBS() {
     _committed = NULL;
   }
   if (_lowest_non_clean) {
-    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean, mtGC);
+    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean);
     _lowest_non_clean = NULL;
   }
   if (_lowest_non_clean_chunk_size) {
-    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size, mtGC);
+    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size);
     _lowest_non_clean_chunk_size = NULL;
   }
   if (_lowest_non_clean_base_chunk_index) {
-    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index, mtGC);
+    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index);
     _lowest_non_clean_base_chunk_index = NULL;
   }
   if (_last_LNC_resizing_collection) {
-    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection, mtGC);
+    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection);
     _last_LNC_resizing_collection = NULL;
   }
 }
@@ -463,19 +462,6 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     // equal to active_workers.  When a different mechanism for shutting
     // off parallelism is used, then active_workers can be used in
     // place of n_par_threads.
-    //  This is an example of a path where n_par_threads is
-    // set to 0 to turn off parallelism.
-    //  [7] CardTableModRefBS::non_clean_card_iterate()
-    //  [8] CardTableRS::younger_refs_in_space_iterate()
-    //  [9] Generation::younger_refs_in_space_iterate()
-    //  [10] OneContigSpaceCardGeneration::younger_refs_iterate()
-    //  [11] CompactingPermGenGen::younger_refs_iterate()
-    //  [12] CardTableRS::younger_refs_iterate()
-    //  [13] SharedHeap::process_strong_roots()
-    //  [14] G1CollectedHeap::verify()
-    //  [15] Universe::verify()
-    //  [16] G1CollectedHeap::do_collection_pause_at_safepoint()
-    //
     int n_threads =  SharedHeap::heap()->n_par_threads();
     bool is_par = n_threads > 0;
     if (is_par) {

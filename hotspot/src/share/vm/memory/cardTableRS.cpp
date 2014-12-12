@@ -38,21 +38,18 @@
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
 
-CardTableRS::CardTableRS(MemRegion whole_heap,
-                         int max_covered_regions) :
+CardTableRS::CardTableRS(MemRegion whole_heap) :
   GenRemSet(),
-  _cur_youngergen_card_val(youngergenP1_card),
-  _regions_to_iterate(max_covered_regions - 1)
+  _cur_youngergen_card_val(youngergenP1_card)
 {
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
-      _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap,
-                                                  max_covered_regions);
+      _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap);
   } else {
-    _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
+    _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
   }
 #else
-  _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
+  _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
 #endif
   _ct_bs->initialize();
   set_bs(_ct_bs);
@@ -73,7 +70,7 @@ CardTableRS::~CardTableRS() {
     _ct_bs = NULL;
   }
   if (_last_cur_val_in_gen) {
-    FREE_C_HEAP_ARRAY(jbyte, _last_cur_val_in_gen, mtInternal);
+    FREE_C_HEAP_ARRAY(jbyte, _last_cur_val_in_gen);
   }
 }
 
@@ -286,14 +283,14 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
   // Convert the assertion check to a warning if we are running
   // CMS+ParNew until related bug is fixed.
   MemRegion ur    = sp->used_region();
-  assert(ur.contains(urasm) || (UseConcMarkSweepGC && UseParNewGC),
+  assert(ur.contains(urasm) || (UseConcMarkSweepGC),
          err_msg("Did you forget to call save_marks()? "
                  "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
                  "[" PTR_FORMAT ", " PTR_FORMAT ")",
                  p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end())));
   // In the case of CMS+ParNew, issue a warning
   if (!ur.contains(urasm)) {
-    assert(UseConcMarkSweepGC && UseParNewGC, "Tautology: see assert above");
+    assert(UseConcMarkSweepGC, "Tautology: see assert above");
     warning("CMS+ParNew: Did you forget to call save_marks()? "
             "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
             "[" PTR_FORMAT ", " PTR_FORMAT ")",
@@ -612,21 +609,3 @@ void CardTableRS::verify() {
     _ct_bs->verify();
     }
   }
-
-
-void CardTableRS::verify_aligned_region_empty(MemRegion mr) {
-  if (!mr.is_empty()) {
-    jbyte* cur_entry = byte_for(mr.start());
-    jbyte* limit = byte_after(mr.last());
-    // The region mr may not start on a card boundary so
-    // the first card may reflect a write to the space
-    // just prior to mr.
-    if (!is_aligned(mr.start())) {
-      cur_entry++;
-    }
-    for (;cur_entry < limit; cur_entry++) {
-      guarantee(*cur_entry == CardTableModRefBS::clean_card,
-                "Unexpected dirty card found");
-    }
-  }
-}

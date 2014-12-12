@@ -64,6 +64,7 @@ $(eval $(call SetupJavaCompilation,BUILD_GENMODULESLIST, \
     SETUP := BOOT_JAVAC, \
     SRC := $(JDK_TOPDIR)/make/src/classes, \
     INCLUDES := build/tools/module, \
+    EXCLUDE_FILES := ImageBuilder.java ModuleArchive.java, \
     BIN := $(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist, \
     DISABLE_SJAVAC := true))
 

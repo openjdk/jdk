@@ -68,9 +68,7 @@ SharedHeap::SharedHeap(CollectorPolicy* policy_) :
     vm_exit_during_initialization("Failed necessary allocation.");
   }
   _sh = this;  // ch is static, should be set only once.
-  if (UseParNewGC ||
-      UseG1GC ||
-      (UseConcMarkSweepGC && (CMSParallelInitialMarkEnabled || CMSParallelRemarkEnabled) && use_parallel_gc_threads())) {
+  if (UseConcMarkSweepGC || UseG1GC) {
     _workers = new FlexibleWorkGang("Parallel GC Threads", ParallelGCThreads,
                             /* are_GC_task_threads */true,
                             /* are_ConcurrentGC_threads */false);

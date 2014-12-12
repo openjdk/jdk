@@ -59,10 +59,6 @@ public:
     set_init_size(align_size_up(init_size(), alignment));
     set_max_size(align_size_up(max_size(), alignment));
   }
-
-  // Return the number of regions contained in the generation which
-  // might need to be independently covered by a remembered set.
-  virtual int n_covered_regions() const { return 1; }
 };
 
 typedef GenerationSpec* GenerationSpecPtr;

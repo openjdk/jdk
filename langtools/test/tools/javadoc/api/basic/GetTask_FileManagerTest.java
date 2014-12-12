@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @run main GetTask_FileManagerTest
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -36,10 +37,14 @@ import java.util.Set;
 
 import javax.tools.DocumentationTool;
 import javax.tools.DocumentationTool.DocumentationTask;
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.nio.JavacPathFileManager;
 import com.sun.tools.javac.nio.PathFileManager;
 import com.sun.tools.javac.util.Context;
@@ -60,11 +65,11 @@ public class GetTask_FileManagerTest extends APITest {
     public void testFileManager() throws Exception {
         JavaFileObject srcFile = createSimpleJavaFileObject();
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
-        PathFileManager fm = new JavacPathFileManager(new Context(), false, null);
-        Path outDir = getOutDir().toPath();
+        StandardJavaFileManager fm = new TestFileManager();
+        File outDir = getOutDir();
         fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
         Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
-        DocumentationTask t = tool.getTask(null, fm, null, null, null, files);
+        DocumentationTask t = tool.getTask(null, fm, null, null, Arrays.asList("-verbose"), files);
         if (t.call()) {
             System.err.println("task succeeded");
             checkFiles(outDir, standardExpectFiles);
@@ -80,7 +85,7 @@ public class GetTask_FileManagerTest extends APITest {
     public void testBadFileManager() throws Exception {
         JavaFileObject srcFile = createSimpleJavaFileObject();
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
-        PathFileManager fm = new JavacPathFileManager(new Context(), false, null) {
+        StandardJavaFileManager fm = new TestFileManager() {
             @Override
             public Iterable<JavaFileObject> list(Location location,
                     String packageName,
@@ -90,8 +95,7 @@ public class GetTask_FileManagerTest extends APITest {
                 throw new UnexpectedError();
             }
         };
-        Path outDir = getOutDir().toPath();
-        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
+        fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(getOutDir()));
         Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
         DocumentationTask t = tool.getTask(null, fm, null, null, null, files);
         try {
@@ -108,4 +112,45 @@ public class GetTask_FileManagerTest extends APITest {
 
     public static class UnexpectedError extends Error { }
 
+    /*
+     * A JavaFileManager which is not a JavacFileManager, even though it uses one internally for
+     * convenience.
+     */
+    static class TestFileManager extends ForwardingJavaFileManager<StandardJavaFileManager>
+            implements StandardJavaFileManager  {
+        TestFileManager() {
+            super(new JavacFileManager(new Context(), false, null));
+        }
+
+        @Override
+        public Iterable<? extends JavaFileObject> getJavaFileObjectsFromFiles(Iterable<? extends File> files) {
+            return fileManager.getJavaFileObjectsFromFiles(files);
+        }
+
+        @Override
+        public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
+            return fileManager.getJavaFileObjects(files);
+        }
+
+        @Override
+        public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
+            return fileManager.getJavaFileObjectsFromStrings(names);
+        }
+
+        @Override
+        public Iterable<? extends JavaFileObject> getJavaFileObjects(String... names) {
+            return fileManager.getJavaFileObjects(names);
+        }
+
+        @Override
+        public void setLocation(Location location, Iterable<? extends File> path) throws IOException {
+            fileManager.setLocation(location, path);
+        }
+
+        @Override
+        public Iterable<? extends File> getLocation(Location location) {
+            return fileManager.getLocation(location);
+        }
+
+    }
 }

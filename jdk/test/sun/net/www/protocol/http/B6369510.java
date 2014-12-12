@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class B6369510
     com.sun.net.httpserver.HttpServer httpServer;
     ExecutorService executorService;
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
         new B6369510();
     }
@@ -58,13 +58,15 @@ public class B6369510
     void doClient() {
         try {
             InetSocketAddress address = httpServer.getAddress();
+            String urlString = "http://" + InetAddress.getLocalHost().getHostName() + ":" + address.getPort() + "/test/";
+            System.out.println("URL == " + urlString);
 
             // GET Request
-            URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/test/");
+            URL url = new URL("http://" + InetAddress.getLocalHost().getHostName() + ":" + address.getPort() + "/test/");
             HttpURLConnection uc = (HttpURLConnection)url.openConnection();
             int resp = uc.getResponseCode();
             if (resp != 200)
-                throw new RuntimeException("Failed: Response code from GET is not 200");
+                throw new RuntimeException("Failed: Response code from GET is not 200 RSP == " + resp);
 
             System.out.println("Response code from GET = 200 OK");
 
@@ -75,12 +77,13 @@ public class B6369510
             OutputStream os = uc.getOutputStream();
             resp = uc.getResponseCode();
             if (resp != 200)
-                throw new RuntimeException("Failed: Response code form POST is not 200");
+                throw new RuntimeException("Failed: Response code form POST is not 200 RSP == " + resp);
 
             System.out.println("Response code from POST = 200 OK");
 
         } catch (IOException e) {
             e.printStackTrace();
+            throw new RuntimeException("Failed with IOException");
         } finally {
             httpServer.stop(1);
             executorService.shutdown();

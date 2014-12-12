@@ -31,6 +31,10 @@
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_FileChannelImpl.h"
+#include "java_lang_Integer.h"
+
+#include <Mswsock.h>
+#pragma comment(lib, "Mswsock.lib")
 
 static jfieldID chan_fd; /* id for jobject 'fd' in java.io.FileChannel */
 
@@ -175,9 +179,42 @@ Java_sun_nio_ch_FileChannelImpl_close0(JNIEnv *env, jobject this, jobject fdo)
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
-                                            jint srcFD,
+                                            jobject srcFD,
                                             jlong position, jlong count,
-                                            jint dstFD)
+                                            jobject dstFD)
 {
-    return IOS_UNSUPPORTED;
+    const int PACKET_SIZE = 524288;
+
+    HANDLE src = (HANDLE)(handleval(env, srcFD));
+    SOCKET dst = (SOCKET)(fdval(env, dstFD));
+    DWORD chunkSize = (count > java_lang_Integer_MAX_VALUE) ?
+        java_lang_Integer_MAX_VALUE : (DWORD)count;
+    BOOL result = 0;
+
+    jlong pos = Java_sun_nio_ch_FileChannelImpl_position0(env, this, srcFD, position);
+    if (pos == IOS_THROWN) {
+        return IOS_THROWN;
+    }
+
+    result = TransmitFile(
+        dst,
+        src,
+        chunkSize,
+        PACKET_SIZE,
+        NULL,
+        NULL,
+        TF_USE_KERNEL_APC
+    );
+    if (!result) {
+        int error = WSAGetLastError();
+        if (WSAEINVAL == error && count >= 0) {
+            return IOS_UNSUPPORTED_CASE;
+        }
+        if (WSAENOTSOCK == error) {
+            return IOS_UNSUPPORTED_CASE;
+        }
+        JNU_ThrowIOExceptionWithLastError(env, "transfer failed");
+        return IOS_THROWN;
+    }
+    return chunkSize;
 }
