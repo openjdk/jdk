@@ -676,14 +676,13 @@ public class Main {
                             ((man.getAttributes(name) != null) ||
                              (man.getAttributes("./"+name) != null) ||
                              (man.getAttributes("/"+name) != null));
-                        sb.append(
-                          (isSigned ? rb.getString("s") : rb.getString("SPACE")) +
-                          (inManifest ? rb.getString("m") : rb.getString("SPACE")) +
-                          (inStore ? rb.getString("k") : rb.getString("SPACE")) +
-                          (inScope ? rb.getString("i") : rb.getString("SPACE")) +
-                          ((inStoreOrScope & NOT_ALIAS) != 0 ?"X":" ") +
-                          rb.getString("SPACE"));
-                        sb.append("|");
+                        sb.append(isSigned ? rb.getString("s") : rb.getString("SPACE"))
+                                .append(inManifest ? rb.getString("m") : rb.getString("SPACE"))
+                                .append(inStore ? rb.getString("k") : rb.getString("SPACE"))
+                                .append(inScope ? rb.getString("i") : rb.getString("SPACE"))
+                                .append((inStoreOrScope & NOT_ALIAS) != 0 ? 'X' : ' ')
+                                .append(rb.getString("SPACE"));
+                        sb.append('|');
                     }
 
                     // When -certs provided, display info has extra empty
@@ -704,11 +703,15 @@ public class Main {
                         // Print no info for unsigned entries when -verbose:all,
                         // to be consistent with old behavior.
                         if (signatureRelated(name)) {
-                            sb.append("\n" + tab + rb.getString(
-                                    ".Signature.related.entries.") + "\n\n");
+                            sb.append('\n')
+                                    .append(tab)
+                                    .append(rb
+                                            .getString(".Signature.related.entries."))
+                                    .append("\n\n");
                         } else {
-                            sb.append("\n" + tab + rb.getString(
-                                    ".Unsigned.entries.") + "\n\n");
+                            sb.append('\n').append(tab)
+                                    .append(rb.getString(".Unsigned.entries."))
+                                    .append("\n\n");
                         }
                     }
 
@@ -1605,8 +1608,8 @@ public class Main {
                 // No more warning, we alreay have hasExpiredCert or notYetValidCert
             } else {
                 chainNotValidated = true;
-                sb.append(tab + rb.getString(".CertPath.not.validated.") +
-                        e.getLocalizedMessage() + "]\n");   // TODO
+                sb.append(tab).append(rb.getString(".CertPath.not.validated."))
+                        .append(e.getLocalizedMessage()).append("]\n"); // TODO
             }
         }
         String result = sb.toString();
