@@ -28,6 +28,7 @@
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/parNew/parOopClosures.hpp"
 #include "memory/cardTableRS.hpp"
+#include "memory/genCollectedHeap.hpp"
 
 template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
   assert (!oopDesc::is_null(*p), "null weak reference?");

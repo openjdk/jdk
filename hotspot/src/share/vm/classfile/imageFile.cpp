@@ -90,7 +90,7 @@ ImageFile::~ImageFile() {
   close();
 
   // Free up name.
-  FREE_C_HEAP_ARRAY(char, _name, mtClass);
+  FREE_C_HEAP_ARRAY(char, _name);
 }
 
 bool ImageFile::open() {

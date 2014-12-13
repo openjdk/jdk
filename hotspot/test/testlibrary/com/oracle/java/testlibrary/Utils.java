@@ -314,6 +314,35 @@ public final class Utils {
     }
 
     /**
+     * Return the contents of the named file as a single String,
+     * or null if not found.
+     * @param filename name of the file to read
+     * @return String contents of file, or null if file not found.
+     */
+    public static String fileAsString(String filename) {
+        StringBuilder result = new StringBuilder();
+        try {
+            File file = new File(filename);
+            if (file.exists()) {
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    result.append(line).append("\n");
+                }
+            } else {
+                // Does not exist:
+                return null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result.toString();
+    }
+
+    /**
      * @return Unsafe instance.
      */
     public static synchronized Unsafe getUnsafe() {

@@ -154,10 +154,13 @@ Java_sun_nio_ch_FileChannelImpl_close0(JNIEnv *env, jobject this, jobject fdo)
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
-                                            jint srcFD,
+                                            jobject srcFDO,
                                             jlong position, jlong count,
-                                            jint dstFD)
+                                            jobject dstFDO)
 {
+    jint srcFD = fdval(env, srcFDO);
+    jint dstFD = fdval(env, dstFDO);
+
 #if defined(__linux__)
     off64_t offset = (off64_t)position;
     jlong n = sendfile64(dstFD, srcFD, &offset, (size_t)count);

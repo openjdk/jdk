@@ -31,6 +31,7 @@
 
 import java.io.*;
 import java.net.*;
+import java.security.*;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
@@ -176,6 +177,7 @@ public class T6348193 extends AbstractProcessor
         public void checkPropertyAccess(String key) { /*OK*/ }
 
         public void checkDelete(String file) { /*OK*/ }
+        public void checkPermission(Permission perm) { /*OK*/ }
         public void checkRead(FileDescriptor fd) { /*OK*/ }
         public void checkRead(String file) { /*OK*/ }
         public void checkRead(String file, Object context) { /*OK*/ }

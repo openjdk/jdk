@@ -26,7 +26,6 @@
  * @bug 8046703
  * @summary Test verifies that lambda forms are garbage collected
  * @author kshefov
- * @ignore 8057020
  * @library /lib/testlibrary/jsr292 /lib/testlibrary
  * @build TestMethods
  * @build LambdaFormTestCase
