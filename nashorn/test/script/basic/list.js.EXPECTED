@@ -10,7 +10,7 @@ bar
 l[0]=foo
 l[1]=a
 l[0.9]=null
-l['blah']=null
+l['blah']=undefined
 l[size_name]()=2
 java.lang.IndexOutOfBoundsException: Index: 2, Size: 2
 java.lang.IndexOutOfBoundsException: Index: Infinity, Size: 2

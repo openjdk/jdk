@@ -62,6 +62,8 @@ public class Pack200Props {
 
         List<String> cmdsList = new ArrayList<>();
         cmdsList.add(Utils.getPack200Cmd());
+        cmdsList.add("-J-Xshare:off");
+        cmdsList.add("-J-Xmx1280m");
         cmdsList.add("--effort=1");
         cmdsList.add("--verbose");
         cmdsList.add("--no-gzip");

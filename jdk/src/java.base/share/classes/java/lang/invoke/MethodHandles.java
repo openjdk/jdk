@@ -2028,7 +2028,7 @@ return invoker;
         MethodType oldType = target.type();
         if (oldType == newType)  return target;
         if (oldType.explicitCastEquivalentToAsType(newType)) {
-            return target.asType(newType);
+            return target.asFixedArity().asType(newType);
         }
         return MethodHandleImpl.makePairwiseConvert(target, newType, false);
     }

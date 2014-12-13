@@ -936,7 +936,7 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
   // so making them eagerly shouldn't be too expensive.
   AdapterHandlerEntry* adapter = AdapterHandlerLibrary::get_adapter(mh);
   if (adapter == NULL ) {
-    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "out of space in CodeCache for adapters");
+    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
   }
 
   mh->set_adapter_entry(adapter);
@@ -1757,7 +1757,7 @@ class JNIMethodBlockNode : public CHeapObj<mtClass> {
 
   JNIMethodBlockNode(int num_methods = min_block_size);
 
-  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods, mtInternal); }
+  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods); }
 
   void ensure_methods(int num_addl_methods) {
     if (_top < _number_of_methods) {

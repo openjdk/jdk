@@ -466,11 +466,6 @@ public:
   void verify_region(MemRegion mr, jbyte val, bool val_equals) PRODUCT_RETURN;
   void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
-
-  static size_t par_chunk_heapword_alignment() {
-    return ParGCCardsPerStrideChunk * card_size_in_words;
-  }
-
 };
 
 class CardTableRS;

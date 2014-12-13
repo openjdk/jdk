@@ -24,22 +24,29 @@
 /*
  * @test
  * @bug 8023014
- * @summary Test ensures that there is no crash if there is not enough ReservedCodeacacheSize
+ * @summary Test ensures that there is no crash if there is not enough ReservedCodeCacheSize
  *          to initialize all compiler threads. The option -Xcomp gives the VM more time to
- *          to trigger the old bug.
+ *          trigger the old bug.
  * @library /testlibrary
  */
 import com.oracle.java.testlibrary.*;
+import static com.oracle.java.testlibrary.Asserts.assertTrue;
 
 public class SmallCodeCacheStartup {
-  public static void main(String[] args) throws Exception {
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m",
-                                                                "-XX:CICompilerCount=64",
-                                                                "-Xcomp",
-                                                                "-version");
-      OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
-      analyzer.shouldHaveExitValue(0);
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m",
+                                                                  "-XX:CICompilerCount=64",
+                                                                  "-Xcomp",
+                                                                  "-version");
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        try {
+            analyzer.shouldHaveExitValue(0);
+        } catch (RuntimeException e) {
+            // Error occurred during initialization, did we run out of adapter space?
+            assertTrue(analyzer.getOutput().contains("VirtualMachineError: Out of space in CodeCache"),
+                    "Expected VirtualMachineError");
+        }
 
-      System.out.println("TEST PASSED");
+        System.out.println("TEST PASSED");
   }
 }
