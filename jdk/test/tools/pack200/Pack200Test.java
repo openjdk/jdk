@@ -34,7 +34,7 @@ import java.util.jar.*;
   * @summary check for memory leaks, test general packer/unpacker functionality\
   *          using native and java unpackers
   * @compile -XDignore.symbol.file Utils.java Pack200Test.java
-  * @run main/othervm/timeout=1200 -Xmx512m Pack200Test
+  * @run main/othervm/timeout=1200 -Xmx1280m -Xshare:off Pack200Test
   * @author ksrini
   */
 

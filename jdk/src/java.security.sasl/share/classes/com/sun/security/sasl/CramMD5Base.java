@@ -196,8 +196,7 @@ abstract class CramMD5Base {
 
         for (i = 0; i < digest.length; i++) {
             if ((digest[i] & 0x000000ff) < 0x10) {
-                digestString.append("0" +
-                    Integer.toHexString(digest[i] & 0x000000ff));
+                digestString.append('0').append(Integer.toHexString(digest[i] & 0x000000ff));
             } else {
                 digestString.append(
                     Integer.toHexString(digest[i] & 0x000000ff));

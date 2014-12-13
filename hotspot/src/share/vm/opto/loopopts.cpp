@@ -241,8 +241,13 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   ProjNode* dp_proj  = dp->as_Proj();
   ProjNode* unc_proj = iff->as_If()->proj_out(1 - dp_proj->_con)->as_Proj();
   if (exclude_loop_predicate &&
-      unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate))
+      (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) ||
+       unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check))) {
+    // If this is a range check (IfNode::is_range_check), do not
+    // reorder because Compile::allow_range_check_smearing might have
+    // changed the check.
     return; // Let IGVN transformation change control dependence.
+  }
 
   IdealLoopTree *old_loop = get_loop(dp);
 
@@ -898,23 +903,23 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
   int n_op = n->Opcode();
 
   // Check for an IF being dominated by another IF same test
-  if( n_op == Op_If ) {
+  if (n_op == Op_If) {
     Node *bol = n->in(1);
     uint max = bol->outcnt();
     // Check for same test used more than once?
-    if( n_op == Op_If && max > 1 && bol->is_Bool() ) {
+    if (max > 1 && bol->is_Bool()) {
       // Search up IDOMs to see if this IF is dominated.
       Node *cutoff = get_ctrl(bol);
 
       // Now search up IDOMs till cutoff, looking for a dominating test
       Node *prevdom = n;
       Node *dom = idom(prevdom);
-      while( dom != cutoff ) {
-        if( dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom ) {
+      while (dom != cutoff) {
+        if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by( prevdom, n, false, true );
+          dominated_by(prevdom, n, false, true);
 #ifndef PRODUCT
           if( VerifyLoopOptimizations ) verify();
 #endif
