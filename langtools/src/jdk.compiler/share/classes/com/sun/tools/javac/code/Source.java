@@ -209,6 +209,9 @@ public enum Source {
     public boolean allowPrivateSafeVarargs() {
         return compareTo(JDK1_9) >= 0;
     }
+    public boolean allowUnderscoreIdentifier() {
+        return compareTo(JDK1_8) <= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:

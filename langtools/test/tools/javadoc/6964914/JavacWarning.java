@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,5 +22,5 @@
  */
 
 public class JavacWarning {
-    String _ = null; // this will cause a warning.  It may be deprecated in JDK8
+    String _ = null; // this will cause a warning with -source 8 (this is an error as of -source 9)
 }

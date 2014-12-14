@@ -156,7 +156,7 @@ class SharedScopeCall {
         assert !isCall || valueType.isObject(); // Callables are always objects
         // If flags are optimistic, but we're doing a call, remove optimistic flags from the getter, as they obviously
         // only apply to the call.
-        method.dynamicGet(valueType, symbol.getName(), isCall ? CodeGenerator.nonOptimisticFlags(flags) : flags, isCall);
+        method.dynamicGet(valueType, symbol.getName(), isCall ? CodeGenerator.nonOptimisticFlags(flags) : flags, isCall, false);
 
         // If this is a get we're done, otherwise call the value as function.
         if (isCall) {

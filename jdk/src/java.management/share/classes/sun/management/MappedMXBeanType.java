@@ -289,7 +289,7 @@ public abstract class MappedMXBeanType {
             if (et.isPrimitive()) {
                 className = new StringBuilder(c.getName());
             } else {
-                className.append("L" + baseElementType.getTypeName() + ";");
+                className.append('L').append(baseElementType.getTypeName()).append(';');
             }
             try {
                 mappedTypeClass = Class.forName(className.toString());
@@ -385,7 +385,7 @@ public abstract class MappedMXBeanType {
             if (elementType instanceof Class && ((Class) elementType).isPrimitive()) {
                 className = new StringBuilder(gat.toString());
             } else {
-                className.append("L" + baseElementType.getTypeName() + ";");
+                className.append('L').append(baseElementType.getTypeName()).append(';');
             }
             try {
                 mappedTypeClass = Class.forName(className.toString());

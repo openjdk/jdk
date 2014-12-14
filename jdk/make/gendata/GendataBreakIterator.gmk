@@ -44,17 +44,10 @@ TEXT_SOURCES := $(TEXT_PKG)/BreakIteratorRules.java \
 # Generate BreakIteratorData
 BREAK_ITERATOR_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/break_iterator_classes
 
-# JAVAC_SOURCE_PATH_OVERRIDE is set to isolate the compile to just those
-# two files in that directory and not get anything implicit from
-# surrounding directories which aren't jdk N-1 compatible.
-# Because we are targeting jdk N-1, but the surrounding source code is jdk N.
-# These two files should be moved out to a build tool! We have to disable
-# sjavac here as well.
+# These two files should be moved out to a build tool!
 $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(TEXT_SRCDIR), \
-    DISABLE_SJAVAC := true, \
-    JAVAC_SOURCE_PATH_OVERRIDE := $(patsubst %, %/$(TEXT_PKG), $(TEXT_SRCDIR)), \
     INCLUDES := $(TEXT_PKG), \
     INCLUDE_FILES := $(TEXT_SOURCES), \
     BIN := $(BREAK_ITERATOR_CLASSES)))
