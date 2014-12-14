@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,8 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Check usages of underscore as identifier generate warnings
- * @compile/fail/ref=WarnUnderscoreAsIdent.out -XDrawDiagnostics -Werror WarnUnderscoreAsIdent.java
- */
-package _._;
+// key: compiler.err.underscore.as.identifier
 
-import _._;
-
-class _ {
+class UnderscoreAsIdentifierError {
     String _ = null;
-    void _(String _) { }
-    void testLocal() {
-        String _ = null;
-    }
-    void testFor() {
-        for (int _ = 0; _ < 10; _++);
-    }
-    void testTry() {
-        try { } catch (Throwable _) { }
-    }
-    void testLabel() {
-        _:
-        for (;;) {
-            break _;
-        }
-        _:
-        for (;;) {
-            continue _;
-        }
-    }
 }

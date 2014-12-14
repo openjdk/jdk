@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,22 +367,6 @@ inline double CMSStats::cms_consumption_rate() const {
 
 inline void ConcurrentMarkSweepGeneration::save_sweep_limit() {
   cmsSpace()->save_sweep_limit();
-}
-
-inline size_t ConcurrentMarkSweepGeneration::capacity() const {
-  return _cmsSpace->capacity();
-}
-
-inline size_t ConcurrentMarkSweepGeneration::used() const {
-  return _cmsSpace->used();
-}
-
-inline size_t ConcurrentMarkSweepGeneration::free() const {
-  return _cmsSpace->free();
-}
-
-inline MemRegion ConcurrentMarkSweepGeneration::used_region() const {
-  return _cmsSpace->used_region();
 }
 
 inline MemRegion ConcurrentMarkSweepGeneration::used_region_at_save_marks() const {

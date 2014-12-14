@@ -25,21 +25,21 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.security.PrivilegedAction;
 import sun.misc.SharedSecrets;
 import sun.misc.JavaIOFileDescriptorAccess;
 
-class FileDispatcherImpl extends FileDispatcher
-{
+class FileDispatcherImpl extends FileDispatcher {
+
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
-    static {
-        IOUtil.load();
-    }
+    // set to true if fast file transmission (TransmitFile) is enabled
+    private static final boolean fastFileTransfer;
 
-    FileDispatcherImpl() {
-    }
+    FileDispatcherImpl() { }
 
     @Override
     boolean needsPositionLock() {
@@ -108,6 +108,36 @@ class FileDispatcherImpl extends FileDispatcher
         long handle = duplicateHandle(fdAccess.getHandle(fd));
         fdAccess.setHandle(result, handle);
         return result;
+    }
+
+    boolean canTransferToDirectly(java.nio.channels.SelectableChannel sc) {
+        return fastFileTransfer && sc.isBlocking();
+    }
+
+    boolean transferToDirectlyNeedsPositionLock() {
+        return true;
+    }
+
+    static boolean isFastFileTransferRequested() {
+        String fileTransferProp = java.security.AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    return System.getProperty("jdk.net.enableFastFileTransfer");
+                }
+            });
+        boolean enable;
+        if ("".equals(fileTransferProp)) {
+            enable = true;
+        } else {
+            enable = Boolean.parseBoolean(fileTransferProp);
+        }
+        return enable;
+    }
+
+    static {
+        IOUtil.load();
+        fastFileTransfer = isFastFileTransferRequested();
     }
 
     //-- Native methods

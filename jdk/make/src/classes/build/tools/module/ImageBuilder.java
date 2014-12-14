@@ -349,21 +349,6 @@ class ImageBuilder {
         return (new SimpleResolver(mods, moduleGraph)).resolve();
     }
 
-    /**
-     * chmod ugo+x file
-     */
-    private void setExecutable(Path file) {
-        try {
-            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
-            perms.add(PosixFilePermission.OWNER_EXECUTE);
-            perms.add(PosixFilePermission.GROUP_EXECUTE);
-            perms.add(PosixFilePermission.OTHERS_EXECUTE);
-            Files.setPosixFilePermissions(file, perms);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
-        }
-    }
-
     private void createImage() throws IOException {
         Collection<String> modules = resolve(options.mods);
         log.print(modules.stream().collect(Collectors.joining(" ")));
@@ -377,7 +362,7 @@ class ImageBuilder {
                                      .filter(f -> f.getFileName().equals(jspawnhelper))
                                      .findFirst();
         if (helper.isPresent())
-            setExecutable(helper.get());
+            helper.get().toFile().setExecutable(true, false);
     }
 
     private class ImageFileHelper {
