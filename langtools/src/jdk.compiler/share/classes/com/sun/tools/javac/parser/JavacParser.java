@@ -157,6 +157,7 @@ public class JavacParser implements Parser {
         this.allowIntersectionTypesInCast = source.allowIntersectionTypesInCast();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
         this.allowAnnotationsAfterTypeParams = source.allowAnnotationsAfterTypeParams();
+        this.allowUnderscoreIdentifier = source.allowUnderscoreIdentifier();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
@@ -229,6 +230,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow annotations after the method type parameters?
      */
     boolean allowAnnotationsAfterTypeParams;
+
+    /** Switch: should we allow '_' as an identifier?
+     */
+    boolean allowUnderscoreIdentifier;
 
     /** Switch: is "this" allowed as an identifier?
      * This is needed to parse receiver types.
@@ -595,7 +600,11 @@ public class JavacParser implements Parser {
                 return names.error;
             }
         } else if (token.kind == UNDERSCORE) {
-            warning(token.pos, "underscore.as.identifier");
+            if (allowUnderscoreIdentifier) {
+                warning(token.pos, "underscore.as.identifier");
+            } else {
+                error(token.pos, "underscore.as.identifier");
+            }
             Name name = token.name();
             nextToken();
             return name;
@@ -3067,7 +3076,7 @@ public class JavacParser implements Parser {
         boolean checkForImports = true;
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
-            if (token.pos > 0 && token.pos <= endPosTable.errorEndPos) {
+            if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(checkForImports, false, false, false);
                 if (token.kind == EOF)
@@ -4083,7 +4092,7 @@ public class JavacParser implements Parser {
         /**
          * Store the last error position.
          */
-        protected int errorEndPos;
+        protected int errorEndPos = Position.NOPOS;
 
         public AbstractEndPosTable(JavacParser parser) {
             this.parser = parser;

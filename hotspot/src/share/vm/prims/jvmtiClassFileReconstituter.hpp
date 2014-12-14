@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,11 @@ class JvmtiConstantPoolReconstituter : public StackObj {
 
   ~JvmtiConstantPoolReconstituter() {
     if (_symmap != NULL) {
-      os::free(_symmap, mtClass);
+      os::free(_symmap);
       _symmap = NULL;
     }
     if (_classmap != NULL) {
-      os::free(_classmap, mtClass);
+      os::free(_classmap);
       _classmap = NULL;
     }
   }

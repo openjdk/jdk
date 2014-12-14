@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,15 +21,9 @@
  * questions.
  */
 
-#ifndef _VERSION_COMP_H
-#define _VERSION_COMP_H
+// key: compiler.warn.underscore.as.identifier
+// options: -source 8 -Xlint:-options
 
-/*
- * Function prototypes.
- */
-int JLI_ExactVersionId(const char *id1, char *id2);
-int JLI_PrefixVersionId(const char *id1, char *id2);
-int JLI_AcceptableRelease(const char *release, char *version_string);
-int JLI_ValidVersionString(char *version_string);
-
-#endif /* _VERSION_COMP_H */
+class UnderscoreAsIdentifierWarning {
+    String _ = null;
+}
