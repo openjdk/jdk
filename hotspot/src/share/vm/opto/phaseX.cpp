@@ -1431,7 +1431,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
             Node* castii = in1->raw_out(i);
             if (castii->in(0) != NULL && castii->in(0)->in(0) != NULL && castii->in(0)->in(0)->is_If()) {
               Node* ifnode = castii->in(0)->in(0);
-              if (ifnode->in(1) != NULL && ifnode->in(1)->in(1) == use) {
+              if (ifnode->in(1) != NULL && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == use) {
                 // Reprocess a CastII node that may depend on an
                 // opaque node value when the opaque node is
                 // removed. In case it carries a dependency we can do

@@ -881,12 +881,12 @@ class VirtualMachineImpl extends MirrorImpl
             } else if (tag == JDWP.TypeTag.ARRAY) {
                 sb.append("ArrayType");
             } else {
-                sb.append("UNKNOWN TAG: " + tag);
+                sb.append("UNKNOWN TAG: ").append(tag);
             }
             if (signature != null) {
-                sb.append(", signature='" + signature + "'");
+                sb.append(", signature='").append(signature).append('\'');
             }
-            sb.append(", id=" + id);
+            sb.append(", id=").append(id);
             vm.printTrace(sb.toString());
         }
         if (id == 0) {

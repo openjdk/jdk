@@ -56,15 +56,18 @@ class WhiteBox;
 class NMethodSweeper : public AllStatic {
   friend class WhiteBox;
  private:
+  enum MethodStateChange {
+    None,
+    MadeZombie,
+    MarkedForReclamation,
+    Flushed
+  };
   static long      _traversals;                   // Stack scan count, also sweep ID.
   static long      _total_nof_code_cache_sweeps;  // Total number of full sweeps of the code cache
   static long      _time_counter;                 // Virtual time used to periodically invoke sweeper
   static long      _last_sweep;                   // Value of _time_counter when the last sweep happened
   static NMethodIterator _current;                // Current nmethod
   static int       _seen;                         // Nof. nmethod we have currently processed in current pass of CodeCache
-  static int       _flushed_count;                // Nof. nmethods flushed in current sweep
-  static int       _zombified_count;              // Nof. nmethods made zombie in current sweep
-  static int       _marked_for_reclamation_count; // Nof. nmethods marked for reclaim in current sweep
 
   static volatile int  _sweep_started;            // Flag to control conc sweeper
   static volatile bool _should_sweep;             // Indicates if we should invoke the sweeper
@@ -83,8 +86,10 @@ class NMethodSweeper : public AllStatic {
   static Tickspan  _peak_sweep_time;              // Peak time for a full sweep
   static Tickspan  _peak_sweep_fraction_time;     // Peak time sweeping one fraction
 
-  static int  process_nmethod(nmethod *nm);
-  static void release_nmethod(nmethod* nm);
+  static Monitor*  _stat_lock;
+
+  static MethodStateChange process_nmethod(nmethod *nm);
+  static void              release_nmethod(nmethod* nm);
 
   static void init_sweeper_log() NOT_DEBUG_RETURN;
   static bool wait_for_stack_scanning();

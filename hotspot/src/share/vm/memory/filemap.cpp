@@ -331,7 +331,7 @@ bool FileMapInfo::init_from_file(int fd) {
   n = os::read(fd, _paths_misc_info, (unsigned int)info_size);
   if (n != info_size) {
     fail_continue("Unable to read the shared path info header.");
-    FREE_C_HEAP_ARRAY(char, _paths_misc_info, mtClass);
+    FREE_C_HEAP_ARRAY(char, _paths_misc_info);
     _paths_misc_info = NULL;
     return false;
   }
@@ -714,7 +714,7 @@ bool FileMapInfo::validate_header() {
   }
 
   if (_paths_misc_info != NULL) {
-    FREE_C_HEAP_ARRAY(char, _paths_misc_info, mtClass);
+    FREE_C_HEAP_ARRAY(char, _paths_misc_info);
     _paths_misc_info = NULL;
   }
   return status;

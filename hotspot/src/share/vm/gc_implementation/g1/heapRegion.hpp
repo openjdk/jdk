@@ -101,28 +101,25 @@ public:
 // OffsetTableContigSpace.  If the two versions of BlockOffsetTable could
 // be reconciled, then G1OffsetTableContigSpace could go away.
 
-// The idea behind time stamps is the following. Doing a save_marks on
-// all regions at every GC pause is time consuming (if I remember
-// well, 10ms or so). So, we would like to do that only for regions
-// that are GC alloc regions. To achieve this, we use time
-// stamps. For every evacuation pause, G1CollectedHeap generates a
-// unique time stamp (essentially a counter that gets
-// incremented). Every time we want to call save_marks on a region,
-// we set the saved_mark_word to top and also copy the current GC
-// time stamp to the time stamp field of the space. Reading the
-// saved_mark_word involves checking the time stamp of the
-// region. If it is the same as the current GC time stamp, then we
-// can safely read the saved_mark_word field, as it is valid. If the
-// time stamp of the region is not the same as the current GC time
-// stamp, then we instead read top, as the saved_mark_word field is
-// invalid. Time stamps (on the regions and also on the
-// G1CollectedHeap) are reset at every cleanup (we iterate over
-// the regions anyway) and at the end of a Full GC. The current scheme
-// that uses sequential unsigned ints will fail only if we have 4b
+// The idea behind time stamps is the following. We want to keep track of
+// the highest address where it's safe to scan objects for each region.
+// This is only relevant for current GC alloc regions so we keep a time stamp
+// per region to determine if the region has been allocated during the current
+// GC or not. If the time stamp is current we report a scan_top value which
+// was saved at the end of the previous GC for retained alloc regions and which is
+// equal to the bottom for all other regions.
+// There is a race between card scanners and allocating gc workers where we must ensure
+// that card scanners do not read the memory allocated by the gc workers.
+// In order to enforce that, we must not return a value of _top which is more recent than the
+// time stamp. This is due to the fact that a region may become a gc alloc region at
+// some point after we've read the timestamp value as being < the current time stamp.
+// The time stamps are re-initialized to zero at cleanup and at Full GCs.
+// The current scheme that uses sequential unsigned ints will fail only if we have 4b
 // evacuation pauses between two cleanups, which is _highly_ unlikely.
 class G1OffsetTableContigSpace: public CompactibleSpace {
   friend class VMStructs;
   HeapWord* _top;
+  HeapWord* volatile _scan_top;
  protected:
   G1BlockOffsetArrayContigSpace _offsets;
   Mutex _par_alloc_lock;
@@ -166,10 +163,11 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   void set_bottom(HeapWord* value);
   void set_end(HeapWord* value);
 
-  virtual HeapWord* saved_mark_word() const;
-  void record_top_and_timestamp();
+  HeapWord* scan_top() const;
+  void record_timestamp();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
   unsigned get_gc_time_stamp() { return _gc_time_stamp; }
+  void record_retained_region();
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.
@@ -190,6 +188,8 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   // Add offset table update.
   virtual HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
+
+  HeapWord* saved_mark_word() const { ShouldNotReachHere(); return NULL; }
 
   // MarkSweep support phase3
   virtual HeapWord* initialize_threshold();

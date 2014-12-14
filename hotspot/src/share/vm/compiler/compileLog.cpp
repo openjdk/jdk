@@ -58,10 +58,8 @@ CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
 CompileLog::~CompileLog() {
   delete _out; // Close fd in fileStream::~fileStream()
   _out = NULL;
-  // Remove partial file after merging in CompileLog::finish_log_on_error
-  unlink(_file);
-  FREE_C_HEAP_ARRAY(char, _identities, mtCompiler);
-  FREE_C_HEAP_ARRAY(char, _file, mtCompiler);
+  FREE_C_HEAP_ARRAY(char, _identities);
+  FREE_C_HEAP_ARRAY(char, _file);
 }
 
 

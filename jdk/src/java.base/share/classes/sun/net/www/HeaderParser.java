@@ -220,21 +220,23 @@ public class HeaderParser {
 
     public String toString () {
         Iterator<String> k = keys();
-        StringBuffer sbuf = new StringBuffer();
-        sbuf.append ("{size="+asize+" nkeys="+nkeys+" ");
+        StringBuilder sb = new StringBuilder();
+        sb.append("{size=").append(asize).append(" nkeys=").append(nkeys)
+                .append(' ');
         for (int i=0; k.hasNext(); i++) {
             String key = k.next();
             String val = findValue (i);
             if (val != null && "".equals (val)) {
                 val = null;
             }
-            sbuf.append (" {"+key+(val==null?"":","+val)+"}");
+            sb.append(" {").append(key).append(val == null ? "" : "," + val)
+                    .append('}');
             if (k.hasNext()) {
-                sbuf.append (",");
+                sb.append (',');
             }
         }
-        sbuf.append (" }");
-        return new String (sbuf);
+        sb.append (" }");
+        return sb.toString();
     }
 
     public int findInt(String k, int Default) {

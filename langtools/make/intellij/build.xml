@@ -14,14 +14,14 @@
         <sequential>
             <java classname="org.apache.tools.ant.Main" fork="true" spawn="true">
                 <arg value="-f"/>
-                <arg value="@{antfile}"/>  
+                <arg value="@{antfile}"/>
                 <arg value="-Dboot.java.home=${boot.java.home}"/>
                 <arg value="-Dtarget.java.home=${target.java.home}"/>
                 <arg value="-Djtreg.home=${jtreg.home}"/>
                 <arg value="-Djtreg.tests=${jtreg.tests}"/>
                 <arg value="-Djtreg.jpda.jvmargs=${jtreg.jpda.jvmargs}"/>
                 <arg value="@{target}"/>
-                <classpath>           
+                <classpath>
                     <pathelement path="${java.class.path}"/>
                 </classpath>
             </java>

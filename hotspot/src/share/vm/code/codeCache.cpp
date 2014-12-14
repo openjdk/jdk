@@ -1190,7 +1190,7 @@ void CodeCache::print_internals() {
     }
   }
 
-  FREE_C_HEAP_ARRAY(int, buckets, mtCode);
+  FREE_C_HEAP_ARRAY(int, buckets);
   print_memory_overhead();
 }
 
