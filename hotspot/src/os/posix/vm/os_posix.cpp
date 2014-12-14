@@ -89,8 +89,8 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
     } else {
       stack[frame_idx ++] = fr.pc();
     }
-    if (fr.fp() == NULL || os::is_first_C_frame(&fr)
-        ||fr.sender_pc() == NULL || fr.cb() != NULL) break;
+    if (fr.fp() == NULL || fr.cb() != NULL ||
+        fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) break;
 
     if (fr.sender_pc() && !os::is_first_C_frame(&fr)) {
       fr = os::get_sender_for_C_frame(&fr);
