@@ -394,7 +394,11 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // during deoptimization so the interpreter needs to skip it when
     // the frame is popped.
     thread->set_do_not_unlock_if_synchronized(true);
+#ifdef CC_INTERP
+    return (address) -1;
+#else
     return Interpreter::remove_activation_entry();
+#endif
   }
 
   // Need to do this check first since when _do_not_unlock_if_synchronized
