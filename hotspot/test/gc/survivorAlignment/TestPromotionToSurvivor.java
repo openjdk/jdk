@@ -35,36 +35,37 @@
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32 -XX:OldSize=128m
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent
  *                   TestPromotionToSurvivor 10m 9 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32 -XX:OldSize=128m
+ *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent
  *                   TestPromotionToSurvivor 20m 47 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64 -XX:OldSize=128m
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent
  *                   TestPromotionToSurvivor 8m 9 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64 -XX:OldSize=128m
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent
  *                   TestPromotionToSurvivor 20m 87 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=256m -XX:MaxNewSize=256m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
- *                   -XX:SurvivorAlignmentInBytes=128 -XX:OldSize=32m
- *                   -XX:InitialHeapSize=288m  -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorAlignmentInBytes=128 -XX:OldSize=128m
+ *                   -XX:MaxHeapSize=384m  -XX:-ExplicitGCInvokesConcurrent
  *                   TestPromotionToSurvivor 10m 9 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128 -XX:OldSize=128m
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent
  *                   TestPromotionToSurvivor 20m 147 SURVIVOR
  */
 public class TestPromotionToSurvivor {
