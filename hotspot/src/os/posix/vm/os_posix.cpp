@@ -51,15 +51,24 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   struct rlimit rlim;
   bool success;
 
-  n = get_core_path(buffer, bufferSize);
+  char core_path[PATH_MAX];
+  n = get_core_path(core_path, PATH_MAX);
 
-  if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
-    jio_snprintf(buffer + n, bufferSize - n, "/core or core.%d (may not exist)", current_process_id());
+  if (n <= 0) {
+    jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
+    success = true;
+#ifdef LINUX
+  } else if (core_path[0] == '"') { // redirect to user process
+    jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
+    success = true;
+#endif
+  } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
+    jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
     success = true;
   } else {
     switch(rlim.rlim_cur) {
       case RLIM_INFINITY:
-        jio_snprintf(buffer + n, bufferSize - n, "/core or core.%d", current_process_id());
+        jio_snprintf(buffer, bufferSize, "%s", core_path);
         success = true;
         break;
       case 0:
@@ -67,11 +76,12 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
         success = false;
         break;
       default:
-        jio_snprintf(buffer + n, bufferSize - n, "/core or core.%d (max size %lu kB). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", current_process_id(), (unsigned long)(rlim.rlim_cur >> 10));
+        jio_snprintf(buffer, bufferSize, "%s (max size %lu kB). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, (unsigned long)(rlim.rlim_cur >> 10));
         success = true;
         break;
     }
   }
+
   VMError::report_coredump_status(buffer, success);
 }
 
