@@ -32,6 +32,9 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +43,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import sun.misc.Unsafe;
 
 /**
@@ -325,28 +329,15 @@ public final class Utils {
      * or null if not found.
      * @param filename name of the file to read
      * @return String contents of file, or null if file not found.
+     * @throws  IOException
+     *          if an I/O error occurs reading from the file or a malformed or
+     *          unmappable byte sequence is read
      */
-    public static String fileAsString(String filename) {
-        StringBuilder result = new StringBuilder();
-        try {
-            File file = new File(filename);
-            if (file.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                while (true) {
-                    String line = reader.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    result.append(line).append("\n");
-                }
-            } else {
-                // Does not exist:
-                return null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result.toString();
+    public static String fileAsString(String filename) throws IOException {
+        Path filePath = Paths.get(filename);
+        return Files.exists(filePath)
+            ? Files.lines(filePath).collect(Collectors.joining(NEW_LINE))
+            : null;
     }
 
     /**
