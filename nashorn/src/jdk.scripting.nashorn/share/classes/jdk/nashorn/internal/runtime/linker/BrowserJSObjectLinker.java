@@ -40,6 +40,7 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
+import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
 
 /**
@@ -185,12 +186,12 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             if (index > -1) {
                 return JSOBJECT_GETSLOT.invokeExact(jsobj, index);
             }
-        } else if (key instanceof String) {
-            final String name = (String)key;
+        } else if (key instanceof String || key instanceof ConsString) {
+            final String name = key.toString();
             if (name.indexOf('(') != -1) {
-                return fallback.invokeExact(jsobj, key);
+                return fallback.invokeExact(jsobj, (Object) name);
             }
-            return JSOBJECT_GETMEMBER.invokeExact(jsobj, (String)key);
+            return JSOBJECT_GETMEMBER.invokeExact(jsobj, name);
         }
         return null;
     }
@@ -201,8 +202,8 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             JSOBJECT_SETSLOT.invokeExact(jsobj, (int)key, value);
         } else if (key instanceof Number) {
             JSOBJECT_SETSLOT.invokeExact(jsobj, getIndex((Number)key), value);
-        } else if (key instanceof String) {
-            JSOBJECT_SETMEMBER.invokeExact(jsobj, (String)key, value);
+        } else if (key instanceof String || key instanceof ConsString) {
+            JSOBJECT_SETMEMBER.invokeExact(jsobj, key.toString(), value);
         }
     }
 
