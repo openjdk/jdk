@@ -5988,11 +5988,68 @@ bool os::is_headless_jre() {
 // Get the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
-  const char* p = get_current_directory(buffer, bufferSize);
+  /*
+   * Max length of /proc/sys/kernel/core_pattern is 128 characters.
+   * See https://www.kernel.org/doc/Documentation/sysctl/kernel.txt
+   */
+  const int core_pattern_len = 129;
+  char core_pattern[core_pattern_len] = {0};
 
-  if (p == NULL) {
-    assert(p != NULL, "failed to get current directory");
+  int core_pattern_file = ::open("/proc/sys/kernel/core_pattern", O_RDONLY);
+  if (core_pattern_file != -1) {
+    ssize_t ret = ::read(core_pattern_file, core_pattern, core_pattern_len);
+    ::close(core_pattern_file);
+
+    if (ret > 0) {
+      char *last_char = core_pattern + strlen(core_pattern) - 1;
+
+      if (*last_char == '\n') {
+        *last_char = '\0';
+      }
+    }
+  }
+
+  if (strlen(core_pattern) == 0) {
     return 0;
+  }
+
+  char *pid_pos = strstr(core_pattern, "%p");
+  size_t written;
+
+  if (core_pattern[0] == '/') {
+    written = jio_snprintf(buffer, bufferSize, core_pattern);
+  } else {
+    char cwd[PATH_MAX];
+
+    const char* p = get_current_directory(cwd, PATH_MAX);
+    if (p == NULL) {
+      assert(p != NULL, "failed to get current directory");
+      return 0;
+    }
+
+    if (core_pattern[0] == '|') {
+      written = jio_snprintf(buffer, bufferSize,
+                        "\"%s\" (or dumping to %s/core.%d)",
+                                     &core_pattern[1], p, current_process_id());
+    } else {
+      written = jio_snprintf(buffer, bufferSize, "%s/%s", p, core_pattern);
+    }
+  }
+
+  if ((written >= 0) && (written < bufferSize)
+            && (pid_pos == NULL) && (core_pattern[0] != '|')) {
+    int core_uses_pid_file = ::open("/proc/sys/kernel/core_uses_pid", O_RDONLY);
+
+    if (core_uses_pid_file != -1) {
+      char core_uses_pid = 0;
+      ssize_t ret = ::read(core_uses_pid_file, &core_uses_pid, 1);
+      ::close(core_uses_pid_file);
+
+      if (core_uses_pid == '1'){
+        jio_snprintf(buffer + written, bufferSize - written,
+                                          ".%d", current_process_id());
+      }
+    }
   }
 
   return strlen(buffer);
