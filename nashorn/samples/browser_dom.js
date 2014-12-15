@@ -1,4 +1,4 @@
-#// Usage: jjs -fx browser.js
+#// Usage: jjs -fx browser_dom.js
 
 /*
  * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
@@ -32,7 +32,7 @@
  */
 
 if (!$OPTIONS._fx) {
-    print("Usage: jjs -fx browser.js");
+    print("Usage: jjs -fx browser_dom.js");
     exit(1);
 }
 
@@ -74,10 +74,10 @@ EOF, "text/html");
                var btn = document.createElement("button");
                var n = 0;
                // attach a button handler - nashorn function!
-               btn.onclick = new EventListener(function() {
+               btn.onclick = function() {
                    n++; print("You clicked " + n + " time(s)");
                    print("you clicked OK " + wv.engine.executeScript("okCount"));
-               });
+               };
                // attach text to button
                var t = document.createTextNode("Click Me!"); 
                btn.appendChild(t);

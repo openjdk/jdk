@@ -118,20 +118,21 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
     private GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request, final LinkerServices linkerServices) throws Exception {
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
         final int c = desc.getNameTokenCount();
+        GuardedInvocation inv;
+        try {
+            inv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
+        } catch (Throwable th) {
+            inv = null;
+        }
 
         switch (operator) {
             case "getProp":
             case "getElem":
             case "getMethod":
-                if (c > 2) {
-                    return findGetMethod(desc);
-                }
-            // For indexed get, we want GuardedInvocation from beans linker and pass it.
-            // BrowserJSObjectLinker.get uses this fallback getter for explicit signature method access.
-            return findGetIndexMethod(nashornBeansLinker.getGuardedInvocation(request, linkerServices));
+                return c > 2? findGetMethod(desc, inv) : findGetIndexMethod(inv);
             case "setProp":
             case "setElem":
-                return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
+                return c > 2? findSetMethod(desc, inv) : findSetIndexMethod();
             case "call":
                 return findCallMethod(desc);
             default:
@@ -139,7 +140,10 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
         }
     }
 
-    private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc) {
+    private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final GuardedInvocation inv) {
+        if (inv != null) {
+            return inv;
+        }
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final MethodHandle getter = MH.insertArguments(JSOBJECT_GETMEMBER, 1, name);
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
@@ -150,7 +154,10 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
         return inv.replaceMethods(getter, inv.getGuard());
     }
 
-    private static GuardedInvocation findSetMethod(final CallSiteDescriptor desc) {
+    private static GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final GuardedInvocation inv) {
+        if (inv != null) {
+            return inv;
+        }
         final MethodHandle getter = MH.insertArguments(JSOBJECT_SETMEMBER, 1, desc.getNameToken(2));
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
     }
