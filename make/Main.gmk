@@ -442,7 +442,7 @@ exploded-image: $(ALL_MODULE_TARGETS)
 # alias for ease of use.
 jdk: exploded-image
 
-images: jimages demos samples zip-security
+images: jimages demos samples zip-security verify-modules
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   images: mac-bundles
