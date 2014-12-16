@@ -26,12 +26,16 @@
 package jdk.nashorn.internal.codegen;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.BlockStatement;
+import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.EmptyNode;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IfNode;
@@ -40,6 +44,7 @@ import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Statement;
+import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
@@ -126,9 +131,35 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
     public Node leaveTernaryNode(final TernaryNode ternaryNode) {
         final Node test = ternaryNode.getTest();
         if (test instanceof LiteralNode.PrimitiveLiteralNode) {
-            return ((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue() ? ternaryNode.getTrueExpression() : ternaryNode.getFalseExpression();
+            return (((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue() ? ternaryNode.getTrueExpression() : ternaryNode.getFalseExpression()).getExpression();
         }
         return ternaryNode;
+    }
+
+    @Override
+    public Node leaveSwitchNode(final SwitchNode switchNode) {
+        return switchNode.setUniqueInteger(lc, isUniqueIntegerSwitchNode(switchNode));
+    }
+
+    private static boolean isUniqueIntegerSwitchNode(final SwitchNode switchNode) {
+        final Set<Integer> alreadySeen = new HashSet<>();
+        for (final CaseNode caseNode : switchNode.getCases()) {
+            final Expression test = caseNode.getTest();
+            if (test != null && !isUniqueIntegerLiteral(test, alreadySeen)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isUniqueIntegerLiteral(final Expression expr, final Set<Integer> alreadySeen) {
+        if (expr instanceof LiteralNode) {
+            final Object value = ((LiteralNode<?>)expr).getValue();
+            if (value instanceof Integer) {
+                return alreadySeen.add((Integer)value);
+            }
+        }
+        return false;
     }
 
     /**

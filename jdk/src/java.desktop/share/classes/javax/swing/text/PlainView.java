@@ -385,11 +385,11 @@ public class PlainView extends View implements TabExpander {
         int x = (int) fx;
         int y = (int) fy;
         if (y < alloc.y) {
-            // above the area covered by this icon, so the the position
+            // above the area covered by this icon, so the position
             // is assumed to be the start of the coverage for this view.
             return getStartOffset();
         } else if (y > alloc.y + alloc.height) {
-            // below the area covered by this icon, so the the position
+            // below the area covered by this icon, so the position
             // is assumed to be the end of the coverage for this view.
             return getEndOffset() - 1;
         } else {

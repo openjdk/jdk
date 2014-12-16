@@ -158,6 +158,7 @@ public abstract class PerfDataBufferImpl {
      * the sun.jvmstat.perfdata.aliasmap file indicates some other
      * file as the source.
      */
+    @SuppressWarnings("deprecation")
     private void buildAliasMap() {
         assert Thread.holdsLock(this);
 
@@ -228,7 +229,7 @@ public abstract class PerfDataBufferImpl {
      *
      * @param name the name of the Instrumentation object to find.
      * @return Monitor - the {@link Monitor} object that can be used to
-     *                   monitor the the named instrumentation object, or
+     *                   monitor the named instrumentation object, or
      *                   <tt>null</tt> if the named object doesn't exist.
      * @throws MonitorException Thrown if an error occurs while communicating
      *                          with the target Java Virtual Machine.

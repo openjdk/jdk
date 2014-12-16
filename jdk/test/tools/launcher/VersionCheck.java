@@ -69,6 +69,7 @@ public class VersionCheck extends TestHelper {
         "java-rmi",
         "java-rmi.cgi",
         "javadoc",
+        "javacpl",
         "javaws",
         "jcmd",
         "jconsole",

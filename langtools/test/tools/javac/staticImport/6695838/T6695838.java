@@ -27,5 +27,5 @@
  * @summary javac does not detect cyclic inheritance involving static inner classes after import clause
  * @author Maurizio Cimadamore
  *
- * @compile/fail a/FooInterface.java
+ * @compile/fail/ref=T6695838.out -XDrawDiagnostics a/FooInterface.java
  */

@@ -38,7 +38,7 @@ import java.io.IOException;
 @jdk.Exported
 public interface AttachingConnector extends Connector {
     /**
-     * Attaches to a running application and and returns a
+     * Attaches to a running application and returns a
      * mirror of its VM.
      * <p>
      * The connector uses the given argument map in

@@ -53,7 +53,7 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   }
 
   ~WorkerDataArray() {
-    FREE_C_HEAP_ARRAY(T, _data, mtGC);
+    FREE_C_HEAP_ARRAY(T, _data);
   }
 
   void set(uint worker_i, T value) {

@@ -569,13 +569,13 @@ void os::init_system_properties_values() {
   char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
   sprintf(ld_library_path, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
-  FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
+  FREE_C_HEAP_ARRAY(char, ld_library_path);
 
   // Extensions directories.
   sprintf(buf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, buf);
 
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
@@ -1300,11 +1300,11 @@ bool os::dll_build_name(char* buffer, size_t buflen,
     // release the storage
     for (int i = 0; i < n; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
+      FREE_C_HEAP_ARRAY(char*, pelements);
     }
   } else {
     snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
@@ -4144,8 +4144,29 @@ int os::available(int fd, jlong *bytes) {
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
                         bool allow_exec) {
-  Unimplemented();
-  return NULL;
+  int prot;
+  int flags = MAP_PRIVATE;
+
+  if (read_only) {
+    prot = PROT_READ;
+  } else {
+    prot = PROT_READ | PROT_WRITE;
+  }
+
+  if (allow_exec) {
+    prot |= PROT_EXEC;
+  }
+
+  if (addr != NULL) {
+    flags |= MAP_FIXED;
+  }
+
+  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
+                                     fd, file_offset);
+  if (mapped_address == MAP_FAILED) {
+    return NULL;
+  }
+  return mapped_address;
 }
 
 

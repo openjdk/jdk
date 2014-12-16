@@ -723,7 +723,7 @@ static void pDataDisposeMethod(JNIEnv *env, jlong pData)
     }
 
     /* AWT fonts are always "multifonts" and probably have been in
-     * all post 1.0 releases, so this test test for multi fonts is
+     * all post 1.0 releases, so this test for multi fonts is
      * probably not needed, and the singleton xfont is probably never used.
      */
     if (fdata->charset_num > 0) {

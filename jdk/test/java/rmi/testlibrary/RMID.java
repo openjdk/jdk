@@ -257,7 +257,7 @@ public class RMID extends JavaVM {
         waitTime = waitTime * slopFactor;
 
         long startTime = System.currentTimeMillis();
-        long deadline = startTime + waitTime;
+        long deadline = computeDeadline(startTime, waitTime);
 
         while (true) {
             try {

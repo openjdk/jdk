@@ -162,7 +162,7 @@ public abstract class ClassValue<T> {
      * observe the time-dependent states as it computes {@code V1}, etc.
      * This does not remove the threat of a stale value, since there is a window of time
      * between the return of {@code computeValue} in {@code T} and the installation
-     * of the the new value.  No user synchronization is possible during this time.
+     * of the new value.  No user synchronization is possible during this time.
      *
      * @param type the type whose class value must be removed
      * @throws NullPointerException if the argument is null
@@ -285,7 +285,7 @@ public abstract class ClassValue<T> {
      * will receive the notification without delay.
      * <p>
      * If version were not volatile, one thread T1 could persistently hold onto
-     * a stale value this.value == V1, while while another thread T2 advances
+     * a stale value this.value == V1, while another thread T2 advances
      * (under a lock) to this.value == V2.  This will typically be harmless,
      * but if T1 and T2 interact causally via some other channel, such that
      * T1's further actions are constrained (in the JMM) to happen after
