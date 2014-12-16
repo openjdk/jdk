@@ -426,7 +426,7 @@ INT32 MIDI_IN_StartDevice(MidiDeviceHandle* handle) {
 
     err = midiInStart((HMIDIIN) handle->deviceHandle);
         /* $$mp 200308-11: This method is already called in ...open(). It is
-           unclear why is is called again. The specification says that
+           unclear why it is called again. The specification says that
            MidiDevice.getMicrosecondPosition() returns the time since the
            device was opened (the spec doesn't know about start/stop).
            So I guess this call is obsolete. */

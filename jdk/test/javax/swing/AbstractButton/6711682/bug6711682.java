@@ -28,8 +28,6 @@
    @run main bug6711682
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
 import javax.swing.table.TableCellEditor;
@@ -47,13 +45,12 @@ public class bug6711682 {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 createAndShowGUI();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         Point l = table.getLocationOnScreen();
         int h = table.getRowHeight();
         for (int i = 0; i < 3; i++) {

@@ -115,7 +115,7 @@ public final class AnnotationSupport {
 
 
     /**
-     * Figures out if conatiner class comes before containee class among the
+     * Figures out if container class comes before containee class among the
      * keys of the given map.
      *
      * @return true if container class is found before containee class when

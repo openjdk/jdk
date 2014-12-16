@@ -88,7 +88,7 @@ public class NTNumericCredential {
      * @param o Object to be compared for equality with this
      *          <code>NTNumericCredential</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>NTNumericCredential</code>.
      */
     public boolean equals(Object o) {

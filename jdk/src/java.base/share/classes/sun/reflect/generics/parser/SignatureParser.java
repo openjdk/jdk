@@ -227,7 +227,7 @@ public class SignatureParser {
      *     "<" FormalTypeParameter+ ">"
      */
     private FormalTypeParameter[] parseFormalTypeParameters(){
-        List<FormalTypeParameter> ftps =  new ArrayList<>(3);
+        List<FormalTypeParameter> ftps = new ArrayList<>(3);
         assert(current() == '<'); // should not have been called at all
         if (current() != '<') { throw error("expected '<'");}
         advance();

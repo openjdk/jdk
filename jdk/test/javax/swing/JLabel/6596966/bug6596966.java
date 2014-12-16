@@ -25,16 +25,19 @@
    @bug 6596966
    @summary Some JFileChooser mnemonics do not work with sticky keys
    @library ../../regtesthelpers
-   @build Util
+   @library ../../../../lib/testlibrary
+   @build Util jdk.testlibrary.OSInfo
    @run main bug6596966
    @author Pavel Porvatov
 */
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
 import java.util.ArrayList;
 import javax.swing.*;
-import sun.awt.SunToolkit;
+
+import jdk.testlibrary.OSInfo;
 
 public class bug6596966 {
     private static JFrame frame;
@@ -45,7 +48,6 @@ public class bug6596966 {
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
-        SunToolkit toolkit = (SunToolkit) SunToolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -70,20 +72,25 @@ public class bug6596966 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
-        ArrayList<Integer> keys = Util.getSystemMnemonicKeyCodes();
+
+        int keyMask = InputEvent.ALT_MASK;
+        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+            keyMask = InputEvent.CTRL_MASK | InputEvent.ALT_MASK;
+        }
+        ArrayList<Integer> keys = Util.getKeyCodesFromKeyMask(keyMask);
         for (int i = 0; i < keys.size(); ++i) {
             robot.keyPress(keys.get(i));
         }
 
         robot.keyPress(KeyEvent.VK_L);
 
-        toolkit.realSync();
-        toolkit.getSystemEventQueue().postEvent(new KeyEvent(label, KeyEvent.KEY_RELEASED,
+        robot.waitForIdle();
+        Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(new KeyEvent(label, KeyEvent.KEY_RELEASED,
                 EventQueue.getMostRecentEventTime(), 0, KeyEvent.VK_L, 'L'));
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -98,7 +105,7 @@ public class bug6596966 {
             for (int i = 0; i < keys.size(); ++i) {
                 robot.keyRelease(keys.get(i));
             }
-            toolkit.realSync();
+            robot.waitForIdle();
         }
     }
 }

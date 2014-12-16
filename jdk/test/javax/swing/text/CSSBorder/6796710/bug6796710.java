@@ -34,7 +34,6 @@
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class bug6796710 {
     // The page is inlined because we want to be sure that the JEditorPane filled synchronously
@@ -95,7 +94,7 @@ public class bug6796710 {
             }
         });
 
-        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         // This delay should be added for MacOSX, realSync is not enough
         Thread.sleep(1000);
@@ -109,7 +108,7 @@ public class bug6796710 {
             }
         });
 
-        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         // On Linux platforms realSync doesn't guaranties setSize completion
         Thread.sleep(1000);

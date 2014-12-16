@@ -116,7 +116,7 @@ class MethodType implements java.io.Serializable {
     /**
      * Construct a temporary unchecked instance of MethodType for use only as a key to the intern table.
      * Does not check the given parameters for validity, and must be discarded after it is used as a searching key.
-     * The parameters are reversed for this constructor, so that is is not accidentally used.
+     * The parameters are reversed for this constructor, so that it is not accidentally used.
      */
     private MethodType(Class<?>[] ptypes, Class<?> rtype) {
         this.rtype = rtype;
@@ -1006,7 +1006,7 @@ class MethodType implements java.io.Serializable {
      * Therefore, the number returned is the number of arguments
      * <em>including</em> and <em>after</em> the given parameter,
      * <em>plus</em> the number of long or double arguments
-     * at or after after the argument for the given parameter.
+     * at or after the argument for the given parameter.
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and invokedynamic.

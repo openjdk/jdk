@@ -212,7 +212,7 @@ public class TabularDataSupport
     /**
      * Returns <tt>true</tt> if and only if this <tt>TabularData</tt> instance contains a <tt>CompositeData</tt> value
      * (ie a row) whose index is the specified <var>key</var>. If <var>key</var> cannot be cast to a one dimension array
-     * of Object instances, this method simply returns <tt>false</tt>; otherwise it returns the the result of the call to
+     * of Object instances, this method simply returns <tt>false</tt>; otherwise it returns the result of the call to
      * <tt>this.containsKey((Object[]) key)</tt>.
      *
      * @param  key  the index value whose presence in this <tt>TabularData</tt> instance is to be tested.

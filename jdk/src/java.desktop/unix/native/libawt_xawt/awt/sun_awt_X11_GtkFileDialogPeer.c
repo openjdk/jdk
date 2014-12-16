@@ -72,6 +72,11 @@ static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gp
 
 static void quit(JNIEnv * env, jobject jpeer, gboolean isSignalHandler)
 {
+    jthrowable pendingException;
+    if (pendingException = (*env)->ExceptionOccurred(env)) {
+         (*env)->ExceptionClear(env);
+    }
+
     GtkWidget * dialog = (GtkWidget*)jlong_to_ptr(
             (*env)->GetLongField(env, jpeer, widgetFieldID));
 
@@ -94,6 +99,10 @@ static void quit(JNIEnv * env, jobject jpeer, gboolean isSignalHandler)
         if (!isSignalHandler) {
             fp_gdk_threads_leave();
         }
+    }
+
+    if (pendingException) {
+         (*env)->Throw(env, pendingException);
     }
 }
 
