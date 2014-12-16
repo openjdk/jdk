@@ -1427,6 +1427,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
                 }
             }
 
+            @SuppressWarnings("deprecation")
             public boolean isFocusTraversable() {
                 AccessibleContext ac = getCurrentAccessibleContext();
                 if (ac instanceof AccessibleComponent) {

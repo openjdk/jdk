@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.beans.*;
 public class FontEditor extends Panel implements java.beans.PropertyEditor {
     private static final long serialVersionUID = 6732704486002715933L;
 
+    @SuppressWarnings("deprecation")
     public FontEditor() {
         setLayout(null);
 
@@ -62,6 +63,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
     }
 
 
+    @SuppressWarnings("deprecation")
     public Dimension preferredSize() {
         return new Dimension(300, 40);
     }
@@ -93,6 +95,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void changeFont(Font f) {
         font = f;
         if (sample != null) {
@@ -124,6 +127,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
                    font.getStyle() + ", " + font.getSize() + ")";
     }
 
+    @SuppressWarnings("deprecation")
     public boolean action(Event e, Object arg) {
         String family = familyChoser.getSelectedItem();
         int style = styles[styleChoser.getSelectedIndex()];

@@ -502,6 +502,7 @@ public class BasicFileChooserUI extends FileChooserUI {
         public void mouseReleased(MouseEvent evt) {
         }
 
+        @SuppressWarnings("deprecation")
         public void valueChanged(ListSelectionEvent evt) {
             if(!evt.getValueIsAdjusting()) {
                 JFileChooser chooser = getFileChooser();
@@ -1305,6 +1306,7 @@ public class BasicFileChooserUI extends FileChooserUI {
          * @return  The representation of the data to be transfered.
          *
          */
+        @SuppressWarnings("deprecation")
         protected Transferable createTransferable(JComponent c) {
             Object[] values = null;
             if (c instanceof JList) {

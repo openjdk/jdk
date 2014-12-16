@@ -2931,6 +2931,7 @@ public class BasicListUI extends ListUI
          * @return  The representation of the data to be transfered.
          *
          */
+        @SuppressWarnings("deprecation")
         protected Transferable createTransferable(JComponent c) {
             if (c instanceof JList) {
                 JList<?> list = (JList) c;

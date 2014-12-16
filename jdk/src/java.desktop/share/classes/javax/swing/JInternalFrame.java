@@ -1494,6 +1494,7 @@ public class JInternalFrame extends JComponent implements
      * @param width  an integer giving the component's new width in pixels
      * @param height an integer giving the component's new height in pixels
      */
+    @SuppressWarnings("deprecation")
     public void reshape(int x, int y, int width, int height) {
         super.reshape(x, y, width, height);
         validate();
@@ -1735,6 +1736,7 @@ public class JInternalFrame extends JComponent implements
      * @see InternalFrameEvent#INTERNAL_FRAME_OPENED
      * @see #setVisible
      */
+    @SuppressWarnings("deprecation")
     public void show() {
         // bug 4312922
         if (isVisible()) {
@@ -1766,6 +1768,7 @@ public class JInternalFrame extends JComponent implements
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void hide() {
         if (isIcon()) {
             getDesktopIcon().setVisible(false);

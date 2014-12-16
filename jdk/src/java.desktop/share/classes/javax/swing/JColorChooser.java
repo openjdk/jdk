@@ -133,6 +133,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("deprecation")
     public static Color showDialog(Component component,
         String title, Color initialColor) throws HeadlessException {
 
@@ -654,6 +655,7 @@ class ColorChooserDialog extends JDialog {
         okButton.getAccessibleContext().setAccessibleDescription(okString);
         okButton.setActionCommand("OK");
         okButton.addActionListener(new ActionListener() {
+            @SuppressWarnings("deprecation")
             public void actionPerformed(ActionEvent e) {
                 hide();
             }
@@ -685,6 +687,7 @@ class ColorChooserDialog extends JDialog {
 
         cancelButton.setActionCommand("cancel");
         cancelButton.addActionListener(new ActionListener() {
+            @SuppressWarnings("deprecation")
             public void actionPerformed(ActionEvent e) {
                 hide();
             }
@@ -723,6 +726,7 @@ class ColorChooserDialog extends JDialog {
         this.addWindowListener(new Closer());
     }
 
+    @SuppressWarnings("deprecation")
     public void show() {
         initialColor = chooserPane.getColor();
         super.show();
@@ -734,6 +738,7 @@ class ColorChooserDialog extends JDialog {
 
     @SuppressWarnings("serial") // JDK-implementation class
     class Closer extends WindowAdapter implements Serializable{
+        @SuppressWarnings("deprecation")
         public void windowClosing(WindowEvent e) {
             cancelButton.doClick(0);
             Window w = e.getWindow();
