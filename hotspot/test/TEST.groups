@@ -50,6 +50,9 @@
 # runs those tests that only require compact1 and compact2 API's.
 #
 
+hotspot_all = \
+  /
+
 # Full JDK can run all tests
 #
 jdk = \
@@ -432,13 +435,15 @@ hotspot_serviceability = \
   sanity/ExecuteInternalVMTests.java \
   serviceability/dcmd/compiler
 
-hotspot_all = \
+hotspot_jprt = \
+  :hotspot_wbapitest \
   :hotspot_compiler_1 \
   :hotspot_compiler_2 \
   :hotspot_compiler_3 \
   :hotspot_compiler_closed \
   :hotspot_gc \
   :hotspot_runtime \
+  :hotspot_runtime_closed \
   :hotspot_serviceability
 
 #All tests that depends on nashorn extension.
