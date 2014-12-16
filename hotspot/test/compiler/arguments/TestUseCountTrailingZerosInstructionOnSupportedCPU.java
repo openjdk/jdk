@@ -59,6 +59,9 @@ public class TestUseCountTrailingZerosInstructionOnSupportedCPU
           -XX:-UseBMI1Instructions -version
         */
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                "Option 'UseCountTrailingZerosInstruction' should have "
+                    + "'false' value if all BMI1 instructions are explicitly"
+                    + " disabled (-XX:-UseBMI1Instructions flag used)",
                 TestUseCountTrailingZerosInstructionOnSupportedCPU.DISABLE_BMI);
 
         /*
@@ -68,6 +71,9 @@ public class TestUseCountTrailingZerosInstructionOnSupportedCPU
           -XX:+UseCountTrailingZerosInstruction -version
         */
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true",
+                "Option 'UseCountTrailingZerosInstruction' should be able to "
+                    + "be turned on even if all BMI1 instructions are "
+                    + "disabled (-XX:-UseBMI1Instructions flag used)",
                 TestUseCountTrailingZerosInstructionOnSupportedCPU.DISABLE_BMI,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
     }
