@@ -29,8 +29,6 @@
  * @run main bug8023474
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -45,7 +43,6 @@ public class bug8023474 {
     private static JTree tree;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -55,14 +52,14 @@ public class bug8023474 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = getRowPointToClick(1);
         robot.mouseMove(point.x, point.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Boolean result = (Boolean)tree.getCellEditor().getCellEditorValue();
         if (!result) {

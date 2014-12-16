@@ -29,13 +29,13 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 
-import sun.awt.SunToolkit;
-
 /**
  * @test
  * @bug 8008728
  * @summary [macosx] Swing. JDialog. Modal dialog goes to background
  * @author Alexandr Scherbatiy
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
  * @run main ModalDialogOrderingTest
  */
 public class ModalDialogOrderingTest {
@@ -69,12 +69,12 @@ public class ModalDialogOrderingTest {
 
     private static void runTest(Dialog dialog, Frame frame) {
         try {
-            Robot robot = new Robot();
+            ExtendedRobot robot = new ExtendedRobot();
             robot.setAutoDelay(50);
             robot.mouseMove(300, 300);
 
             while (!dialog.isVisible()) {
-                sleep();
+                robot.waitForIdle(1000);
             }
 
             Rectangle dialogBounds = dialog.getBounds();
@@ -89,30 +89,23 @@ public class ModalDialogOrderingTest {
             robot.mouseMove(clickX, clickY);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            sleep();
+            robot.waitForIdle(1000);
 
             int colorX = dialogBounds.x + dialogBounds.width / 2;
             int colorY = dialogBounds.y + dialogBounds.height / 2;
 
             Color color = robot.getPixelColor(colorX, colorY);
 
-            dialog.dispose();
-            frame.dispose();
 
             if (!DIALOG_COLOR.equals(color)) {
                 throw new RuntimeException("The frame is on top"
                         + " of the modal dialog!");
+            }else{
+                frame.dispose();
+                dialog.dispose();
             }
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
-    }
-
-    private static void sleep() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ignored) {
-        }
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
     }
 }

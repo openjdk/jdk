@@ -29,8 +29,6 @@
  * @run main bug6987844
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -40,7 +38,6 @@ public class bug6987844 {
     static JMenu menu2;
 
     public static void main(String... args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(200);
 
@@ -64,7 +61,7 @@ public class bug6987844 {
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         Point point1 = menu1.getLocationOnScreen();
         Point point2 = menu2.getLocationOnScreen();
 
@@ -79,7 +76,7 @@ public class bug6987844 {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
         robot.mouseMove(point1.x + 1, point1.y + 1);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

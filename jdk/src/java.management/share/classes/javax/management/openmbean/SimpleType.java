@@ -244,7 +244,7 @@ public final class SimpleType<T> extends OpenType<T> {
 
     /**
      * Returns the hash code value for this <code>SimpleType</code> instance.
-     * The hash code of a <code>SimpleType</code> instance is the the hash code of
+     * The hash code of a <code>SimpleType</code> instance is the hash code of
      * the string value returned by the {@link OpenType#getClassName() getClassName} method.
      * <p>
      * As <code>SimpleType</code> instances are immutable, the hash code for this instance is calculated once,

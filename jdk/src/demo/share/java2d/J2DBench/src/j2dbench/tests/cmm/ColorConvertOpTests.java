@@ -60,7 +60,7 @@ import j2dbench.tests.iio.IIOTests;
 public class ColorConvertOpTests extends ColorConversionTests {
 
     private static class ImageContent {
-        static ImageContent BLANK = new ImageContent("bank", "Blank (opaque black)");
+        static ImageContent BLANK = new ImageContent("blank", "Blank (opaque black)");
         static ImageContent RANDOM = new ImageContent("random", "Random");
         static ImageContent VECTOR = new ImageContent("vector", "Vector Art");
         static ImageContent PHOTO= new ImageContent("photo", "Photograph");
@@ -83,7 +83,7 @@ public class ColorConvertOpTests extends ColorConversionTests {
         static ImageType INT_RGB = new ImageType(BufferedImage.TYPE_INT_RGB, "INT_RGB", "TYPE_INT_RGB");
         static ImageType INT_BGR = new ImageType(BufferedImage.TYPE_INT_BGR, "INT_BGR", "TYPE_INT_BGR");
         static ImageType BYTE_3BYTE_BGR = new ImageType(BufferedImage.TYPE_3BYTE_BGR, "3BYTE_BGR", "TYPE_3BYTE_BGR");
-        static ImageType BYTE_4BYTE_ABGR = new ImageType(BufferedImage.TYPE_4BYTE_ABGR, "4BYTE_BGR", "TYPE_4BYTE_BGR");
+        static ImageType BYTE_4BYTE_ABGR = new ImageType(BufferedImage.TYPE_4BYTE_ABGR, "4BYTE_ABGR", "TYPE_4BYTE_ABGR");
         static ImageType COMPATIBLE_DST = new ImageType(0, "Compatible", "Compatible destination");
 
         private ImageType(int type, String abbr, String descr) {
@@ -130,7 +130,7 @@ public class ColorConvertOpTests extends ColorConversionTests {
 
         for (int i = 0; i < num; i++) {
             t[i] = allTypes[i];
-            names[i] = t[i].toString();
+            names[i] = t[i].abbrev;
             abbrev[i] = t[i].abbrev;
             descr[i] = t[i].descr;
         }

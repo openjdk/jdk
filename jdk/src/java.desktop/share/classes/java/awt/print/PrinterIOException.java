@@ -76,7 +76,7 @@ public class PrinterIOException extends PrinterException {
     }
 
     /**
-     * Returns the the cause of this exception (the <code>IOException</code>
+     * Returns the cause of this exception (the <code>IOException</code>
      * that terminated the print job).
      *
      * @return  the cause of this exception.

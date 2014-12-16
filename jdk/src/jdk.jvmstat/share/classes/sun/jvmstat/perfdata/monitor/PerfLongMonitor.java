@@ -62,7 +62,7 @@ public class PerfLongMonitor extends AbstractMonitor implements LongMonitor {
      * The object returned contains a Long object containing the
      * current value of the LongInstrument.
      *
-     * @return Object - the current value of the the LongInstrument. The
+     * @return Object - the current value of the LongInstrument. The
      *                  return type is guaranteed to be of type Long.
      */
     public Object getValue() {
