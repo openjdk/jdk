@@ -34,7 +34,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.Callable;
 import javax.swing.SwingUtilities;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class SimpleWindowActivationTest {
@@ -45,7 +44,6 @@ public class SimpleWindowActivationTest {
     private static Button wbutton;
     private static Label label;
     private static Robot robot;
-    private static SunToolkit toolkit;
 
     public static void main(String[] args) throws Exception {
 
@@ -54,7 +52,6 @@ public class SimpleWindowActivationTest {
             return;
         }
 
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -66,10 +63,10 @@ public class SimpleWindowActivationTest {
         }, FocusEvent.FOCUS_EVENT_MASK | WindowEvent.WINDOW_FOCUS_EVENT_MASK);
 
         createAndShowWindow();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         createAndShowFrame();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // click on Frame
         clickOn(getClickPoint(frame));
@@ -96,7 +93,7 @@ public class SimpleWindowActivationTest {
         //         won't activate it.
 
         window.setFocusableWindowState(false);
-        toolkit.realSync();
+        robot.waitForIdle();
 
 
         clickOn(getClickPoint(label));
@@ -136,11 +133,12 @@ public class SimpleWindowActivationTest {
     static void clickOn(Point point) {
 
         robot.mouseMove(point.x, point.y);
+        robot.waitForIdle();
 
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 
     static Point getClickPoint(Component c) {

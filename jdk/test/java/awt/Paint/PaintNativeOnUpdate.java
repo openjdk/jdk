@@ -28,21 +28,22 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Label;
 import java.awt.Point;
-import java.awt.Robot;
-import java.awt.Toolkit;
-
-import sun.awt.SunToolkit;
 
 /**
  * @test
  * @bug 7157680
+ * @library ../../../lib/testlibrary
+ * @build ExtendedRobot
  * @author Sergey Bylokhov
+ @ @run main PaintNativeOnUpdate
  */
 public final class PaintNativeOnUpdate extends Label {
 
     private boolean fullUpdate = true;
 
     public static void main(final String[] args) throws AWTException {
+        ExtendedRobot robot = new ExtendedRobot();
+        robot.setAutoDelay(50);
         final Frame frame = new Frame();
         final Component label = new PaintNativeOnUpdate();
         frame.setBackground(Color.RED);
@@ -51,14 +52,12 @@ public final class PaintNativeOnUpdate extends Label {
         frame.setUndecorated(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        sleep();
+        robot.waitForIdle(1000);
         label.repaint();// first paint
-        sleep();
+        robot.waitForIdle(1000);
         label.repaint();// incremental paint
-        sleep();
+        robot.waitForIdle(1000);
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
         Point point = label.getLocationOnScreen();
         Color color = robot.getPixelColor(point.x + label.getWidth() / 2,
                                           point.y + label.getHeight() / 2);
@@ -86,13 +85,5 @@ public final class PaintNativeOnUpdate extends Label {
     @Override
     public void paint(final Graphics g) {
         // Do nothing
-    }
-
-    private static void sleep() {
-        try {
-            ((SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
-            Thread.sleep(1000);
-        } catch (InterruptedException ignored) {
-        }
     }
 }

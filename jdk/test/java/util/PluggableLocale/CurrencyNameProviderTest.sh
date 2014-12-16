@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 4052440 7199750 8000997
+# @bug 4052440 7199750 8000997 8062588
 # @summary CurrencyNameProvider tests
-# @run shell ExecTest.sh bar CurrencyNameProviderTest true
+# @run shell ExecTest.sh bar CurrencyNameProviderTest

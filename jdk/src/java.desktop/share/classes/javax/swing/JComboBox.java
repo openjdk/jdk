@@ -1320,8 +1320,8 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      */
     public void actionPerformed(ActionEvent e) {
         ComboBoxEditor editor = getEditor();
-        if ((editor != null) && (e != null)
-                && (editor.getEditorComponent() == e.getSource())) {
+        if ((editor != null) && (e != null) && (editor == e.getSource()
+                || editor.getEditorComponent() == e.getSource())) {
             setPopupVisible(false);
             getModel().setSelectedItem(editor.getItem());
             String oldCommand = getActionCommand();
@@ -1919,7 +1919,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
          * Perform the specified Action on the object
          *
          * @param i zero-based index of actions
-         * @return true if the the action was performed; else false.
+         * @return true if the action was performed; else false.
          */
         public boolean doAccessibleAction(int i) {
             if (i == 0) {

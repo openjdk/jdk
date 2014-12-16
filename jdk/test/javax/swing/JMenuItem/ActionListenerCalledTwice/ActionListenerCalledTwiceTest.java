@@ -26,10 +26,12 @@
  * @bug 7160951
  * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
  * @author vera.akulova@oracle.com
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main ActionListenerCalledTwiceTest
  */
 
-import sun.awt.*;
+import jdk.testlibrary.OSInfo;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -47,7 +49,7 @@ public class ActionListenerCalledTwiceTest {
 
     static volatile int listenerCallCounter = 0;
     public static void main(String[] args) throws Exception {
-        if (sun.awt.OSInfo.getOSType() != sun.awt.OSInfo.OSType.MACOSX) {
+        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }
@@ -59,7 +61,6 @@ public class ActionListenerCalledTwiceTest {
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(100);
 
@@ -78,7 +79,7 @@ public class ActionListenerCalledTwiceTest {
                 robot.keyRelease(modKeyCode);
             }
 
-            toolkit.realSync();
+            robot.waitForIdle();
 
             if (listenerCallCounter != 1) {
                 throw new Exception("Test failed: ActionListener for " + menuItems[i] +

@@ -121,7 +121,7 @@ public class Encoder {
      * it is returned.
      * <li>
      * A persistence delegate is then looked up by the name
-     * composed of the the fully qualified name of the given type
+     * composed of the fully qualified name of the given type
      * and the "PersistenceDelegate" postfix.
      * For example, a persistence delegate for the {@code Bean} class
      * should be named {@code BeanPersistenceDelegate}

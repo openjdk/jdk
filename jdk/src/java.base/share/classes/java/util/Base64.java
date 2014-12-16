@@ -556,7 +556,7 @@ public class Base64 {
          *
          * <p> It is the responsibility of the invoker of this method to make
          * sure the output byte array {@code dst} has enough space for decoding
-         * all bytes from the input byte array. No bytes will be be written to
+         * all bytes from the input byte array. No bytes will be written to
          * the output byte array if the output byte array is not big enough.
          *
          * <p> If the input byte array is not in valid Base64 encoding scheme
