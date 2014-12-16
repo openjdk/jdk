@@ -53,7 +53,7 @@ class IsindexView extends ComponentView implements ActionListener {
     }
 
     /**
-     * Creates the components necessary to to implement
+     * Creates the components necessary to implement
      * this view.  The component returned is a <code>JPanel</code>,
      * that contains the PROMPT to the left and <code>JTextField</code>
      * to the right.

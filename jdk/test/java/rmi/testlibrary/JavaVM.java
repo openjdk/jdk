@@ -194,7 +194,7 @@ public class JavaVM {
             throws InterruptedException, TimeoutException {
         if (vm == null)
             throw new IllegalStateException("can't wait for JavaVM that isn't running");
-        long deadline = System.currentTimeMillis() + timeout;
+        long deadline = computeDeadline(System.currentTimeMillis(), timeout);
 
         while (true) {
             try {
@@ -217,5 +217,22 @@ public class JavaVM {
     public int execute() throws IOException, InterruptedException {
         start();
         return waitFor();
+    }
+
+    /**
+     * Computes a deadline from a timestamp and a timeout value.
+     * Maximum timeout (before multipliers are applied) is one hour.
+     */
+    public static long computeDeadline(long timestamp, long timeout) {
+        final long MAX_TIMEOUT_MS = 3_600_000L;
+
+        if (timeout < 0L || timeout > MAX_TIMEOUT_MS) {
+            throw new IllegalArgumentException("timeout " + timeout + "ms out of range");
+        }
+
+        // TODO apply test.timeout.factor (and possibly jcov.sleep.multiplier)
+        // here instead of upstream
+
+        return timestamp + timeout;
     }
 }

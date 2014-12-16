@@ -171,9 +171,9 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
 void Thread::operator delete(void* p) {
   if (UseBiasedLocking) {
     void* real_malloc_addr = ((Thread*) p)->_real_malloc_address;
-    FreeHeap(real_malloc_addr, mtThread);
+    FreeHeap(real_malloc_addr);
   } else {
-    FreeHeap(p, mtThread);
+    FreeHeap(p);
   }
 }
 
@@ -1076,7 +1076,7 @@ static void reset_vm_info_property(TRAPS) {
 }
 
 
-void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
+void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
                                     bool daemon, TRAPS) {
   assert(thread_group.not_null(), "thread group should be specified");
   assert(threadObj() == NULL, "should only create Java thread object once");
@@ -1123,8 +1123,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
     return;
   }
 
-  KlassHandle group(this, SystemDictionary::ThreadGroup_klass());
-  Handle threadObj(this, this->threadObj());
+  KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
+  Handle threadObj(THREAD, this->threadObj());
 
   JavaCalls::call_special(&result,
                           thread_group,
@@ -1133,8 +1133,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name,
                           vmSymbols::thread_void_signature(),
                           threadObj,          // Arg 1
                           THREAD);
-
-
 }
 
 // NamedThread --  non-JavaThread subclasses with multiple
@@ -1146,7 +1144,7 @@ NamedThread::NamedThread() : Thread() {
 
 NamedThread::~NamedThread() {
   if (_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, _name, mtThread);
+    FREE_C_HEAP_ARRAY(char, _name);
     _name = NULL;
   }
 }
@@ -2998,7 +2996,7 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 
 void JavaThread::popframe_free_preserved_args() {
   assert(_popframe_preserved_args != NULL, "should not free PopFrame preserved arguments twice");
-  FREE_C_HEAP_ARRAY(char, (char*) _popframe_preserved_args, mtThread);
+  FREE_C_HEAP_ARRAY(char, (char*) _popframe_preserved_args);
   _popframe_preserved_args = NULL;
   _popframe_preserved_args_size = 0;
 }
@@ -3608,7 +3606,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
         jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
         // If we can't find the agent, exit.
         vm_exit_during_initialization(buf, NULL);
-        FREE_C_HEAP_ARRAY(char, buf, mtThread);
+        FREE_C_HEAP_ARRAY(char, buf);
       }
     } else {
       // Try to load the agent from the standard dll directory
@@ -3628,7 +3626,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
           jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
           // If we can't find the agent, exit.
           vm_exit_during_initialization(buf, NULL);
-          FREE_C_HEAP_ARRAY(char, buf, mtThread);
+          FREE_C_HEAP_ARRAY(char, buf);
         }
       }
     }

@@ -142,9 +142,6 @@ long     NMethodSweeper::_total_nof_code_cache_sweeps  = 0;    // Total number o
 long     NMethodSweeper::_time_counter                 = 0;    // Virtual time used to periodically invoke sweeper
 long     NMethodSweeper::_last_sweep                   = 0;    // Value of _time_counter when the last sweep happened
 int      NMethodSweeper::_seen                         = 0;    // Nof. nmethod we have currently processed in current pass of CodeCache
-int      NMethodSweeper::_flushed_count                = 0;    // Nof. nmethods flushed in current sweep
-int      NMethodSweeper::_zombified_count              = 0;    // Nof. nmethods made zombie in current sweep
-int      NMethodSweeper::_marked_for_reclamation_count = 0;    // Nof. nmethods marked for reclaim in current sweep
 
 volatile bool NMethodSweeper::_should_sweep            = true; // Indicates if we should invoke the sweeper
 volatile int  NMethodSweeper::_bytes_changed           = 0;    // Counts the total nmethod size if the nmethod changed from:
@@ -161,6 +158,7 @@ Tickspan NMethodSweeper::_total_time_this_sweep;               // Total time thi
 Tickspan NMethodSweeper::_peak_sweep_time;                     // Peak time for a full sweep
 Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time sweeping one fraction
 
+Monitor* NMethodSweeper::_stat_lock = new Monitor(Mutex::special, "Sweeper::Statistics", true);
 
 class MarkActivationClosure: public CodeBlobClosure {
 public:
@@ -370,9 +368,10 @@ void NMethodSweeper::sweep_code_cache() {
   ResourceMark rm;
   Ticks sweep_start_counter = Ticks::now();
 
-  _flushed_count                = 0;
-  _zombified_count              = 0;
-  _marked_for_reclamation_count = 0;
+  int flushed_count                = 0;
+  int zombified_count              = 0;
+  int marked_for_reclamation_count = 0;
+  int flushed_c2_count     = 0;
 
   if (PrintMethodFlushing && Verbose) {
     tty->print_cr("### Sweep at %d out of %d", _seen, CodeCache::nof_nmethods());
@@ -386,10 +385,8 @@ void NMethodSweeper::sweep_code_cache() {
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    // The last invocation iterates until there are no more nmethods
     while (!_current.end()) {
       swept_count++;
-      handle_safepoint_request();
       // Since we will give up the CodeCache_lock, always skip ahead
       // to the next nmethod.  Other blobs can be deleted by other
       // threads but nmethods are only reclaimed by the sweeper.
@@ -399,9 +396,32 @@ void NMethodSweeper::sweep_code_cache() {
       // Now ready to process nmethod and give up CodeCache_lock
       {
         MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-        freed_memory += process_nmethod(nm);
+        int size = nm->total_size();
+        bool is_c2_method = nm->is_compiled_by_c2();
+
+        MethodStateChange type = process_nmethod(nm);
+        switch (type) {
+          case Flushed:
+            freed_memory += size;
+            ++flushed_count;
+            if (is_c2_method) {
+              ++flushed_c2_count;
+            }
+            break;
+          case MarkedForReclamation:
+            ++marked_for_reclamation_count;
+            break;
+          case MadeZombie:
+            ++zombified_count;
+            break;
+          case None:
+            break;
+          default:
+           ShouldNotReachHere();
+        }
       }
       _seen++;
+      handle_safepoint_request();
     }
   }
 
@@ -409,21 +429,25 @@ void NMethodSweeper::sweep_code_cache() {
 
   const Ticks sweep_end_counter = Ticks::now();
   const Tickspan sweep_time = sweep_end_counter - sweep_start_counter;
-  _total_time_sweeping  += sweep_time;
-  _total_time_this_sweep += sweep_time;
-  _peak_sweep_fraction_time = MAX2(sweep_time, _peak_sweep_fraction_time);
-  _total_flushed_size += freed_memory;
-  _total_nof_methods_reclaimed += _flushed_count;
-
+  {
+    MutexLockerEx mu(_stat_lock, Mutex::_no_safepoint_check_flag);
+    _total_time_sweeping  += sweep_time;
+    _total_time_this_sweep += sweep_time;
+    _peak_sweep_fraction_time = MAX2(sweep_time, _peak_sweep_fraction_time);
+    _total_flushed_size += freed_memory;
+    _total_nof_methods_reclaimed += flushed_count;
+    _total_nof_c2_methods_reclaimed += flushed_c2_count;
+    _peak_sweep_time = MAX2(_peak_sweep_time, _total_time_this_sweep);
+  }
   EventSweepCodeCache event(UNTIMED);
   if (event.should_commit()) {
     event.set_starttime(sweep_start_counter);
     event.set_endtime(sweep_end_counter);
     event.set_sweepIndex(_traversals);
     event.set_sweptCount(swept_count);
-    event.set_flushedCount(_flushed_count);
-    event.set_markedCount(_marked_for_reclamation_count);
-    event.set_zombifiedCount(_zombified_count);
+    event.set_flushedCount(flushed_count);
+    event.set_markedCount(marked_for_reclamation_count);
+    event.set_zombifiedCount(zombified_count);
     event.commit();
   }
 
@@ -433,7 +457,6 @@ void NMethodSweeper::sweep_code_cache() {
   }
 #endif
 
-  _peak_sweep_time = MAX2(_peak_sweep_time, _total_time_this_sweep);
   log_sweep("finished");
 
   // Sweeper is the only case where memory is released, check here if it
@@ -511,10 +534,11 @@ void NMethodSweeper::release_nmethod(nmethod* nm) {
   nm->flush();
 }
 
-int NMethodSweeper::process_nmethod(nmethod* nm) {
+NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
+  assert(nm != NULL, "sanity");
   assert(!CodeCache_lock->owned_by_self(), "just checking");
 
-  int freed_memory = 0;
+  MethodStateChange result = None;
   // Make sure this nmethod doesn't get unloaded during the scan,
   // since safepoints may happen during acquired below locks.
   NMethodMarker nmm(nm);
@@ -529,7 +553,7 @@ int NMethodSweeper::process_nmethod(nmethod* nm) {
       nm->cleanup_inline_caches();
       SWEEP(nm);
     }
-    return freed_memory;
+    return result;
   }
 
   if (nm->is_zombie()) {
@@ -541,12 +565,9 @@ int NMethodSweeper::process_nmethod(nmethod* nm) {
       if (PrintMethodFlushing && Verbose) {
         tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (marked for reclamation) being flushed", nm->compile_id(), nm);
       }
-      freed_memory = nm->total_size();
-      if (nm->is_compiled_by_c2()) {
-        _total_nof_c2_methods_reclaimed++;
-      }
       release_nmethod(nm);
-      _flushed_count++;
+      assert(result == None, "sanity");
+      result = Flushed;
     } else {
       if (PrintMethodFlushing && Verbose) {
         tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (zombie) being marked for reclamation", nm->compile_id(), nm);
@@ -554,8 +575,9 @@ int NMethodSweeper::process_nmethod(nmethod* nm) {
       nm->mark_for_reclamation();
       // Keep track of code cache state change
       _bytes_changed += nm->total_size();
-      _marked_for_reclamation_count++;
       SWEEP(nm);
+      assert(result == None, "sanity");
+      result = MarkedForReclamation;
     }
   } else if (nm->is_not_entrant()) {
     // If there are no current activations of this method on the
@@ -576,8 +598,9 @@ int NMethodSweeper::process_nmethod(nmethod* nm) {
         }
         // Code cache state change is tracked in make_zombie()
         nm->make_zombie();
-        _zombified_count++;
         SWEEP(nm);
+        assert(result == None, "sanity");
+        result = MadeZombie;
       }
       assert(nm->is_zombie(), "nmethod must be zombie");
     } else {
@@ -594,17 +617,15 @@ int NMethodSweeper::process_nmethod(nmethod* nm) {
     if (nm->is_osr_method()) {
       SWEEP(nm);
       // No inline caches will ever point to osr methods, so we can just remove it
-      freed_memory = nm->total_size();
-      if (nm->is_compiled_by_c2()) {
-        _total_nof_c2_methods_reclaimed++;
-      }
       release_nmethod(nm);
-      _flushed_count++;
+      assert(result == None, "sanity");
+      result = Flushed;
     } else {
       // Code cache state change is tracked in make_zombie()
       nm->make_zombie();
-      _zombified_count++;
       SWEEP(nm);
+      assert(result == None, "sanity");
+      result = MadeZombie;
     }
   } else {
     possibly_flush(nm);
@@ -613,7 +634,7 @@ int NMethodSweeper::process_nmethod(nmethod* nm) {
     nm->cleanup_inline_caches();
     SWEEP(nm);
   }
-  return freed_memory;
+  return result;
 }
 
 

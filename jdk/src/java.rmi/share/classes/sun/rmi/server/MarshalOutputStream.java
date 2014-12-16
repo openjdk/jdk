@@ -88,7 +88,7 @@ public class MarshalOutputStream extends ObjectOutputStream
     }
 
     /**
-     * Serializes a location from which to load the the specified class.
+     * Serializes a location from which to load the specified class.
      */
     protected void annotateClass(Class<?> cl) throws IOException {
         writeLocation(java.rmi.server.RMIClassLoader.getClassAnnotation(cl));

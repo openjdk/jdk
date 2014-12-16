@@ -458,8 +458,8 @@ public class ArrayType<T> extends OpenType<T> {
             elementType = at.getElementOpenType();
             isPrimitiveArray = at.isPrimitiveArray();
         }
-        StringBuilder result =
-            new StringBuilder(dimension + "-dimension array of ");
+        StringBuilder result = new StringBuilder();
+        result.append(dimension).append("-dimension array of ");
         final String elementClassName = elementType.getClassName();
         if (isPrimitiveArray) {
             // Convert from wrapper type to primitive type
@@ -570,7 +570,7 @@ public class ArrayType<T> extends OpenType<T> {
         // In case this ArrayType instance describes an array of classes implementing the TabularData or CompositeData interface,
         // we first check for the assignability of obj to such an array of TabularData or CompositeData,
         // which ensures that:
-        //  . obj is of the the same dimension as this ArrayType instance,
+        //  . obj is of the same dimension as this ArrayType instance,
         //  . it is declared as an array of elements which are either all TabularData or all CompositeData.
         //
         // If the assignment check is positive,

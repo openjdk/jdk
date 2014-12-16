@@ -2070,7 +2070,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
              * so we switch to IPV6_ADD_MEMBERSHIP socket option.
              * As of 2.4.7 kernel IPV6_ADD_MEMBERSHIP can't handle IPv4-mapped
              * addresses so we have to use IP_ADD_MEMBERSHIP for IPv4 multicast
-             * groups. However if the socket is an IPv6 socket then then setsockopt
+             * groups. However if the socket is an IPv6 socket then setsockopt
              * should return ENOPROTOOPT. We assume this will be fixed in Linux
              * at some stage.
              */

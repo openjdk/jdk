@@ -36,7 +36,6 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genOopClosures.inline.hpp"
-#include "memory/generation.inline.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/sharedHeap.hpp"
@@ -182,10 +181,10 @@ void GenCollectedHeap::post_initialize() {
   SharedHeap::post_initialize();
   GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
   guarantee(policy->is_generation_policy(), "Illegal policy type");
-  DefNewGeneration* def_new_gen = (DefNewGeneration*) get_gen(0);
-  assert(def_new_gen->kind() == Generation::DefNew ||
-         def_new_gen->kind() == Generation::ParNew,
-         "Wrong generation kind");
+  assert((get_gen(0)->kind() == Generation::DefNew) ||
+         (get_gen(0)->kind() == Generation::ParNew),
+    "Wrong youngest generation type");
+  DefNewGeneration* def_new_gen = (DefNewGeneration*)get_gen(0);
 
   Generation* old_gen = get_gen(1);
   assert(old_gen->kind() == Generation::ConcurrentMarkSweep ||
@@ -363,7 +362,6 @@ void GenCollectedHeap::do_collection(bool  full,
 
     bool complete = full && (max_level == (n_gens()-1));
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
-    gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
     // so we can assume here that the next GC id is what we want.
@@ -1118,10 +1116,8 @@ void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 
 void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
 #if INCLUDE_ALL_GCS
-  if (UseParNewGC) {
-    workers()->print_worker_threads_on(st);
-  }
   if (UseConcMarkSweepGC) {
+    workers()->print_worker_threads_on(st);
     ConcurrentMarkSweepThread::print_all_on(st);
   }
 #endif // INCLUDE_ALL_GCS

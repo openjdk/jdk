@@ -344,7 +344,7 @@ public class BasicTableUI extends TableUI
             }
 
             // In cases where the lead is not within the search range,
-            // we need to bring it within one cell for the the search
+            // we need to bring it within one cell for the search
             // to work properly. Check these here.
             leadRow = Math.min(Math.max(leadRow, minY - 1), maxY + 1);
             leadColumn = Math.min(Math.max(leadColumn, minX - 1), maxX + 1);
