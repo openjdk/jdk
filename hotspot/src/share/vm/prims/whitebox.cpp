@@ -69,6 +69,14 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 bool WhiteBox::_used = false;
 volatile bool WhiteBox::compilation_locked = false;
 
+class VM_WhiteBoxOperation : public VM_Operation {
+ public:
+  VM_WhiteBoxOperation()                         { }
+  VMOp_Type type()                  const        { return VMOp_WhiteBoxOperation; }
+  bool allow_nested_vm_operations() const        { return true; }
+};
+
+
 WB_ENTRY(jlong, WB_GetObjectAddress(JNIEnv* env, jobject o, jobject obj))
   return (jlong)(void*)JNIHandles::resolve(obj);
 WB_END
@@ -404,6 +412,43 @@ static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobje
   return env->FromReflectedMethod(method);
 }
 
+// Deoptimizes all compiled frames and makes nmethods not entrant if it's requested
+class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
+ private:
+  int _result;
+  const bool _make_not_entrant;
+ public:
+  VM_WhiteBoxDeoptimizeFrames(bool make_not_entrant) :
+        _result(0), _make_not_entrant(make_not_entrant) { }
+  int  result() const { return _result; }
+
+  void doit() {
+    for (JavaThread* t = Threads::first(); t != NULL; t = t->next()) {
+      if (t->has_last_Java_frame()) {
+        for (StackFrameStream fst(t, UseBiasedLocking); !fst.is_done(); fst.next()) {
+          frame* f = fst.current();
+          if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
+            RegisterMap* reg_map = fst.register_map();
+            Deoptimization::deoptimize(t, *f, reg_map);
+            if (_make_not_entrant) {
+                nmethod* nm = CodeCache::find_nmethod(f->pc());
+                assert(nm != NULL, "sanity check");
+                nm->make_not_entrant();
+            }
+            ++_result;
+          }
+        }
+      }
+    }
+  }
+};
+
+WB_ENTRY(jint, WB_DeoptimizeFrames(JNIEnv* env, jobject o, jboolean make_not_entrant))
+  VM_WhiteBoxDeoptimizeFrames op(make_not_entrant == JNI_TRUE);
+  VMThread::execute(&op);
+  return op.result();
+WB_END
+
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
   MutexLockerEx mu(Compile_lock);
   CodeCache::mark_all_nmethods_for_deoptimization();
@@ -525,13 +570,6 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
   MutexLockerEx mu(Compile_lock);
   return (mh->queued_for_compilation() || nm != NULL);
 WB_END
-
-class VM_WhiteBoxOperation : public VM_Operation {
- public:
-  VM_WhiteBoxOperation()                         { }
-  VMOp_Type type()                  const        { return VMOp_WhiteBoxOperation; }
-  bool allow_nested_vm_operations() const        { return true; }
-};
 
 class AlwaysFalseClosure : public BoolObjectClosure {
  public:
@@ -760,7 +798,6 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
     FREE_C_HEAP_ARRAY(char, ccstrResult);
   }
 WB_END
-
 
 WB_ENTRY(void, WB_LockCompilation(JNIEnv* env, jobject o, jlong timeout))
   WhiteBox::compilation_locked = true;
@@ -1201,6 +1238,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
   {CC"NMTGetHashSize",      CC"()I",                  (void*)&WB_NMTGetHashSize     },
 #endif // INCLUDE_NMT
+  {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;Z)I",
                                                       (void*)&WB_DeoptimizeMethod  },
