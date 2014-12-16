@@ -25,13 +25,13 @@
  * @test
  * @bug 8055910
  * @summary Arrays.copyOf doesn't perform subtype check
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayOfNoTypeCheck
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArraysCopyOfNoTypeCheck
  *
  */
 
 import java.util.Arrays;
 
-public class TestArrayOfNoTypeCheck {
+public class TestArraysCopyOfNoTypeCheck {
 
     static class A {
     }
