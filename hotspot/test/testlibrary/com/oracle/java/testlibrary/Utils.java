@@ -307,25 +307,6 @@ public final class Utils {
     }
 
     /**
-     * Returns file content as a list of strings
-     *
-     * @param file File to operate on
-     * @return List of strings
-     * @throws IOException
-     */
-    public static List<String> fileAsList(File file) throws IOException {
-        assertTrue(file.exists() && file.isFile(),
-                file.getAbsolutePath() + " does not exist or not a file");
-        List<String> output = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file.getAbsolutePath()))) {
-            while (reader.ready()) {
-                output.add(reader.readLine().replace(NEW_LINE, ""));
-            }
-        }
-        return output;
-    }
-
-    /**
      * Return the contents of the named file as a single String,
      * or null if not found.
      * @param filename name of the file to read
