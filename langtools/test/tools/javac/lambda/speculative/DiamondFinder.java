@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8003280
+ * @bug 8003280 8064365
  * @summary Add lambda tests
  *  spurious crashes when running in 'diamond finder' mode
  * @compile -XDfind=diamond DiamondFinder.java

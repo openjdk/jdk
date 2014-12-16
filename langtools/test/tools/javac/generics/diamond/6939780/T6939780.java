@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939780 7020044 8009459 8021338
+ * @bug 6939780 7020044 8009459 8021338 8064365
  *
  * @summary  add a warning to detect diamond sites
  * @author mcimadamore
