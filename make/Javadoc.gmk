@@ -231,17 +231,17 @@ endef
 
 # Common echo of option
 define OptionOnly # opt
-	if [ "$1" != "" ] ; then \
-		$(PRINTF) "%s\n" "$1"; \
+	if [ "$(strip $1)" != "" ] ; then \
+		$(PRINTF) "%s\n" "$(strip $1)"; \
 	fi
 endef
 
 define OptionPair # opt arg
-	$(PRINTF) "%s '%s'\n" "$1" '$2'
+	$(PRINTF) "%s '%s'\n" "$(strip $1)" '$(strip $2)'
 endef
 
 define OptionTrip # opt arg arg
-	$(PRINTF) "%s '%s' '%s'\n" "$1" '$2' '$3'
+	$(PRINTF) "%s '%s' '%s'\n" "$(strip $1)" '$(strip $2)' '$(strip $3)'
 endef
 
 # Core api bottom argument (with special sauce)
