@@ -1588,7 +1588,7 @@ public class CSS implements Serializable {
 
                 /*
                  * HTML.Attribute.ALIGN needs special processing.
-                 * It can map to to 1 of many(3) possible CSS attributes
+                 * It can map to 1 of many(3) possible CSS attributes
                  * depending on the nature of the tag the attribute is
                  * part off and depending on the value of the attribute.
                  */

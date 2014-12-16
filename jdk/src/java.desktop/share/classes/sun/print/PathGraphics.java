@@ -888,7 +888,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
              * since it doesn't actually require "layout" (even though its
              * considered a layout attribute), it just requires a fractional
              * tweak to the[default]advances. So we need to specifically
-             * check for tracking until such time as as we can trust
+             * check for tracking until such time as we can trust
              * the GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS bit.
              */
             Map<TextAttribute, ?> map = font.getAttributes();

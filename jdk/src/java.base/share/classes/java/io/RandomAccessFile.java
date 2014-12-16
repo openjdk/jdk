@@ -26,6 +26,7 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -59,7 +60,7 @@ import sun.nio.ch.FileChannelImpl;
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private FileDescriptor fd;
-    private FileChannel channel = null;
+    private volatile FileChannel channel;
     private boolean rw;
 
     /**
@@ -68,8 +69,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     private final String path;
 
-    private Object closeLock = new Object();
-    private volatile boolean closed = false;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     private static final int O_RDONLY = 1;
     private static final int O_RDWR =   2;
@@ -276,13 +276,24 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @since 1.4
      * @spec JSR-51
      */
-    public final FileChannel getChannel() {
-        synchronized (this) {
-            if (channel == null) {
-                channel = FileChannelImpl.open(fd, path, true, rw, this);
+    public FileChannel getChannel() {
+        FileChannel fc = this.channel;
+        if (fc == null) {
+            synchronized (this) {
+                fc = this.channel;
+                if (fc == null) {
+                    this.channel = fc = FileChannelImpl.open(fd, path, true, rw, this);
+                    if (closed.get()) {
+                        try {
+                            fc.close();
+                        } catch (IOException ioe) {
+                            throw new InternalError(ioe); // should not happen
+                        }
+                    }
+                }
             }
-            return channel;
         }
+        return fc;
     }
 
     /**
@@ -604,14 +615,14 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @spec JSR-51
      */
     public void close() throws IOException {
-        synchronized (closeLock) {
-            if (closed) {
-                return;
-            }
-            closed = true;
+        if (!closed.compareAndSet(false, true)) {
+            // if compareAndSet() returns false closed was already true
+            return;
         }
-        if (channel != null) {
-            channel.close();
+
+        FileChannel fc = channel;
+        if (fc != null) {
+           fc.close();
         }
 
         fd.closeAll(new Closeable() {

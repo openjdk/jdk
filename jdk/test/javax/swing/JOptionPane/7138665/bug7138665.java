@@ -27,8 +27,6 @@
    @author Pavel Porvatov
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -55,16 +53,14 @@ public class bug7138665 {
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-
-        toolkit.realSync();
-
         Robot robot = new Robot();
+
+        robot.waitForIdle();
 
         robot.setAutoDelay(100);
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
 
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 }

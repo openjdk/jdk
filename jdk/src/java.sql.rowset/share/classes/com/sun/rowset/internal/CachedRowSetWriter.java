@@ -843,7 +843,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                for (String pkName : primaryKeys) {
                    if (!isPKNameValid(pkName, rsmd)) {
 
-                       /* We came here as one of the the primary keys
+                       /* We came here as one of the primary keys
                         * of the table is not present in the cached
                         * rowset object, it should be an autoincrement column
                         * and not included while creating CachedRowSet

@@ -431,7 +431,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * provider to assist in determining the choice of the synchronizaton
      * provider such as:
      * <ul>
-     * <li><code>ROWSET_SYNC_PROVIDER</code> - the property specifying the the
+     * <li><code>ROWSET_SYNC_PROVIDER</code> - the property specifying the
      * <code>SyncProvider</code> class name to be instantiated by the
      * <code>SyncFacttory</code>
      * <li><code>ROWSET_SYNC_VENDOR</code> - the property specifying the software
@@ -3727,7 +3727,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         /*
          * Each call to internalPrevious may move the cursor
-         * over multiple rows, the absolute position moves one one row
+         * over multiple rows, the absolute position moves one row
          */
         if (ret == true)
             --absolutePos;

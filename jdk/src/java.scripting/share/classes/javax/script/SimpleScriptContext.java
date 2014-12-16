@@ -132,7 +132,7 @@ public class SimpleScriptContext  implements ScriptContext {
      * is determined by the numeric value of the scope parameter (lowest
      * scope values first.)
      *
-     * @param name The name of the the attribute to retrieve.
+     * @param name The name of the attribute to retrieve.
      * @return The value of the attribute in the lowest scope for
      * which an attribute with the given name is defined.  Returns
      * null if no attribute with the name exists in any scope.

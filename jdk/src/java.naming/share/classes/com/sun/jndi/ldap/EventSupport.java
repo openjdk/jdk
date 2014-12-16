@@ -260,7 +260,7 @@ final class EventSupport {
         if (unsolicited == null || unsolicited.size() == 0) {
             // This shouldn't really happen, but might in case
             // there is a timing problem that removes a listener
-            // before a fired event event reaches here.
+            // before a fired event reaches here.
             return;
         }
 

@@ -80,7 +80,7 @@ public class VerifyAccess {
      * @param defc the class in which the proposed member is actually defined
      * @param mods modifier flags for the proposed member
      * @param lookupClass the class for which the access check is being made
-     * @return true iff the the accessing class can access such a member
+     * @return true iff the accessing class can access such a member
      */
     public static boolean isMemberAccessible(Class<?> refc,  // symbolic ref class
                                              Class<?> defc,  // actual def class

@@ -27,8 +27,6 @@
    @author Pavel Porvatov
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -82,9 +80,9 @@ public class bug7146377 {
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Robot robot = new Robot();
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // On Linux platforms realSync doesn't guaranties setSize completion
         Thread.sleep(1000);
@@ -95,7 +93,6 @@ public class bug7146377 {
             }
         });
 
-        Robot robot = new Robot();
 
         robot.setAutoDelay(200);
 
@@ -117,7 +114,7 @@ public class bug7146377 {
             robot.mouseRelease(button);
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
