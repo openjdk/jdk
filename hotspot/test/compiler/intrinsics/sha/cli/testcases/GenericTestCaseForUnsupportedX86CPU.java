@@ -38,33 +38,45 @@ public class GenericTestCaseForUnsupportedX86CPU
 
     @Override
     protected void verifyWarnings() throws Throwable {
+        String shouldPassMessage = String.format("JVM should start with '-XX:+"
+                + "%s' flag, but output should contain warning.", optionName);
         // Verify that when the tested option is explicitly enabled, then
         // a warning will occur in VM output.
         CommandLineOptionTest.verifySameJVMStartup(new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, null, ExitCode.OK,
+                }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
+        shouldPassMessage = String.format("JVM should start with '-XX:-%s' "
+                + "flag without any warnings", optionName);
         // Verify that the tested option could be explicitly disabled without
         // a warning.
         CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, ExitCode.OK,
+                }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 
     @Override
     protected void verifyOptionValues() throws Throwable {
         // Verify that the tested option is disabled by default.
-        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false");
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should be disabled by default",
+                        optionName));
 
         // Verify that it is not possible to explicitly enable the option.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should be off on unsupported "
+                        + "X86CPU even if set to true directly", optionName),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         // Verify that the tested option is disabled even if +UseSHA was passed
         // to JVM.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should be off on unsupported "
+                        + "X86CPU even if %s flag set to JVM",
+                        optionName, CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, true)),
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true));
     }

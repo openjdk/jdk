@@ -51,26 +51,40 @@ public class TestUseRTMDeoptOptionOnSupportedConfig
 
     @Override
     public void runTestCases() throws Throwable {
+        String shouldPassMessage = " JVM should startup with option '"
+                + "-XX:+UseRTMDeopt' without any warnings";
         // verify that option could be turned on
         CommandLineOptionTest.verifySameJVMStartup(
-                null, null, ExitCode.OK, "-XX:+UseRTMDeopt");
+                null, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
+                "-XX:+UseRTMDeopt");
+        shouldPassMessage = " JVM should startup with option '"
+                + "-XX:-UseRTMDeopt' without any warnings";
         // verify that option could be turned off
         CommandLineOptionTest.verifySameJVMStartup(
-                null, null, ExitCode.OK, "-XX:-UseRTMDeopt");
-        // verify default value
-        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt",
-                TestUseRTMDeoptOptionOnSupportedConfig.DEFAULT_VALUE);
+                null, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
+                "-XX:-UseRTMDeopt");
+        String defValMessage = String.format("UseRTMDeopt should have '%s'"
+                                    + "default value",
+                        TestUseRTMDeoptOptionOnSupportedConfig.DEFAULT_VALUE);
         // verify default value
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt",
                 TestUseRTMDeoptOptionOnSupportedConfig.DEFAULT_VALUE,
+                defValMessage);
+        // verify default value
+        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt",
+                TestUseRTMDeoptOptionOnSupportedConfig.DEFAULT_VALUE,
+                defValMessage,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking");
         // verify that option is off when UseRTMLocking is off
-        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt", "false",
+        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt",
+                "false", "UseRTMDeopt should be off when UseRTMLocking is off",
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:-UseRTMLocking", "-XX:+UseRTMDeopt");
         // verify that option could be turned on
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt", "true",
+                "UseRTMDeopt should be on when UseRTMLocking is on and "
+                        + "'-XX:+UseRTMDeopt' flag set",
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking", "-XX:+UseRTMDeopt");
     }
