@@ -329,6 +329,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public synchronized void setFullScreenWindow(Window w) {
         Window old = getFullScreenWindow();
         if (w == old) {
@@ -404,6 +405,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public synchronized void setDisplayMode(DisplayMode dm) {
         if (!isDisplayChangeSupported()) {
             super.setDisplayMode(dm);
