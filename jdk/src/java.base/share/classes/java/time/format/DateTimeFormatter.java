@@ -1097,7 +1097,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 instant format.
      * When formatting, the second-of-minute is always output.
-     * The nano-of-second outputs zero, three, six or nine digits digits as necessary.
+     * The nano-of-second outputs zero, three, six or nine digits as necessary.
      * When parsing, time to at least the seconds field is required.
      * Fractional seconds from zero to nine are parsed.
      * The localized decimal style is not used.

@@ -204,7 +204,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
 
         // Check to see if we hid either of the scrollbars but left
         // ourselves scrolled off of the top and/or right of the pane.
-        // If we did, we need to scroll to the top and/or right of of
+        // If we did, we need to scroll to the top and/or right of
         // the pane to make it visible.
         //
         // Reminder: see if there is a better place to put this code.

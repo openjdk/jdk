@@ -3195,7 +3195,7 @@ public class Container extends Component {
      *        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
      *        KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS, or
      *        KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS
-     * @return <code>true</code> if the the Set of focus traversal keys for the
+     * @return <code>true</code> if the Set of focus traversal keys for the
      *         given focus traversal operation has been explicitly defined for
      *         this Component; <code>false</code> otherwise.
      * @throws IllegalArgumentException if id is not one of

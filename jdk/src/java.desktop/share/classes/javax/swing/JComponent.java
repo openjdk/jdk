@@ -1882,7 +1882,7 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     /**
-     * Sets the the horizontal alignment.
+     * Sets the horizontal alignment.
      *
      * @param alignmentY  the new horizontal alignment
      * @see #getAlignmentY
@@ -1911,7 +1911,7 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     /**
-     * Sets the the vertical alignment.
+     * Sets the vertical alignment.
      *
      * @param alignmentX  the new vertical alignment
      * @see #getAlignmentX
@@ -4799,7 +4799,7 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * Notifies this component that it no longer has a parent component.
      * When this method is invoked, any <code>KeyboardAction</code>s
-     * set up in the the chain of parent components are removed.
+     * set up in the chain of parent components are removed.
      * This method is called by the toolkit internally and should
      * not be called directly by programs.
      *
@@ -5576,7 +5576,7 @@ public abstract class JComponent extends Container implements Serializable,
      * the UI before any of the <code>JComponent</code>'s children
      * (or its <code>LayoutManager</code> etc.) are written,
      * and we don't want to restore the UI until the most derived
-     * <code>JComponent</code> subclass has been been stored.
+     * <code>JComponent</code> subclass has been stored.
      *
      * @param s the <code>ObjectOutputStream</code> in which to write
      */

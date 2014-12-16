@@ -664,7 +664,7 @@ class os: AllStatic {
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
 
-  static void  free    (void *memblock, MEMFLAGS flags = mtNone);
+  static void  free    (void *memblock);
   static bool  check_heap(bool force = false);      // verify C heap integrity
   static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
   // Like strdup, but exit VM when strdup() returns NULL

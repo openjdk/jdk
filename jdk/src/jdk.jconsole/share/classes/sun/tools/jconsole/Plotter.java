@@ -838,7 +838,7 @@ public class Plotter extends JComponent
     private static class TimeStamps {
         // Time stamps (long) are split into offsets (long) and a
         // series of times from the offsets (int). A new offset is
-        // stored when the the time value doesn't fit in an int
+        // stored when the time value doesn't fit in an int
         // (approx every 24 days).  An array of indices is used to
         // define the starting point for each offset in the times
         // array.

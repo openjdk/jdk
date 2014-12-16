@@ -48,7 +48,7 @@ final class ListHelper implements XScrollbarClient {
     private final int BORDER_WIDTH; // Width of border drawn around the list
                                     // of items
     private final int ITEM_MARGIN;  // Margin between the border of the list
-                                    // of items and and item's bg, and between
+                                    // of items and item's bg, and between
                                     // items
     private final int TEXT_SPACE;   // Space between the edge of an item and
                                     // the text

@@ -29,10 +29,11 @@ import java.util.ArrayList;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.BlobType;
 import com.oracle.java.testlibrary.Asserts;
+import com.oracle.java.testlibrary.InfiniteLoop;
 
 /*
  * @test AllocationCodeBlobTest
- * @bug 8059624
+ * @bug 8059624 8064669
  * @library /testlibrary /testlibrary/whitebox
  * @build AllocationCodeBlobTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -53,11 +54,32 @@ public class AllocationCodeBlobTest {
 
     public static void main(String[] args) {
         // check that Sweeper handels dummy blobs correctly
-        new ForcedSweeper(500).start();
+        Thread t = new Thread(
+                new InfiniteLoop(WHITE_BOX::forceNMethodSweep, 1L),
+                "ForcedSweeper");
+        t.setDaemon(true);
+        System.out.println("Starting " + t.getName());
+        t.start();
+
         EnumSet<BlobType> blobTypes = BlobType.getAvailable();
         for (BlobType type : blobTypes) {
             new AllocationCodeBlobTest(type).test();
         }
+
+        // check that deoptimization works well w/ dummy blobs
+        t = new Thread(
+                new InfiniteLoop(WHITE_BOX::deoptimizeAll, 1L),
+                "Deoptimize Thread");
+        t.setDaemon(true);
+        System.out.println("Starting " + t.getName());
+        t.start();
+
+        for (int i = 0; i < 10_000; ++i) {
+            for (BlobType type : blobTypes) {
+                long addr = WHITE_BOX.allocateCodeBlob(SIZE, type.id);
+            }
+        }
+
     }
 
     private final BlobType type;
@@ -104,25 +126,5 @@ public class AllocationCodeBlobTest {
 
     private long getUsage() {
         return bean.getUsage().getUsed();
-    }
-
-    private static class ForcedSweeper extends Thread {
-        private final int millis;
-        public ForcedSweeper(int millis) {
-            super("ForcedSweeper");
-            setDaemon(true);
-            this.millis = millis;
-        }
-        public void run() {
-            try {
-                while (true) {
-                    WHITE_BOX.forceNMethodSweep();
-                    Thread.sleep(millis);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new Error(e);
-            }
-        }
     }
 }

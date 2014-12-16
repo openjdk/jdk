@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "manifest_info.h"
-#include "version_comp.h"
 
 
 #define JVM_DLL "libjvm.so"
@@ -90,7 +89,7 @@
  *
  * However, if the environment contains a LD_LIBRARY_PATH, this will cause the
  * launcher to inspect the LD_LIBRARY_PATH. The launcher will check
- *  a. if the LD_LIBRARY_PATH's first component is the the path to the desired
+ *  a. if the LD_LIBRARY_PATH's first component is the path to the desired
  *     libjvm.so
  *  b. if any other libjvm.so is found in any of the paths.
  * If case b is true, then the launcher will set the LD_LIBRARY_PATH to the
@@ -98,10 +97,6 @@
  *
  *  Main
  *  (incoming argv)
- *  |
- * \|/
- * SelectVersion
- * (selects the JRE version, note: not data model)
  *  |
  * \|/
  * CreateExecutionEnvironment

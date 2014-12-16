@@ -155,6 +155,9 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Used to keep track of limit of sweep for the space
   HeapWord* _sweep_limit;
 
+  // Used to make the young collector update the mod union table
+  MemRegionClosure* _preconsumptionDirtyCardClosure;
+
   // Support for compacting cms
   HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
   HeapWord* forward(oop q, size_t size, CompactPoint* cp, HeapWord* compact_top);
@@ -355,6 +358,14 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void initialize_sequential_subtasks_for_rescan(int n_threads);
   void initialize_sequential_subtasks_for_marking(int n_threads,
          HeapWord* low = NULL);
+
+  virtual MemRegionClosure* preconsumptionDirtyCardClosure() const {
+    return _preconsumptionDirtyCardClosure;
+  }
+
+  void setPreconsumptionDirtyCardClosure(MemRegionClosure* cl) {
+    _preconsumptionDirtyCardClosure = cl;
+  }
 
   // Space enquiries
   size_t used() const;
