@@ -303,9 +303,6 @@ com/sun/jdi/RedefinePop.sh                                      generic-all
 
 # jdk_util
 
-# 8051641
-sun/util/calendar/zi/TestZoneInfo310.java                        generic-all
-
 # 8062512
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
 
