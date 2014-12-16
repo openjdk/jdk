@@ -150,7 +150,7 @@ public class VM {
     private static volatile boolean booted = false;
     private static final Object lock = new Object();
 
-    // Invoked by by System.initializeSystemClass just before returning.
+    // Invoked by System.initializeSystemClass just before returning.
     // Subsystems that are invoked during initialization can check this
     // property in order to avoid doing things that should wait until the
     // application class loader has been set up.

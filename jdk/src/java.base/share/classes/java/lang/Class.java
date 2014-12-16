@@ -1529,7 +1529,7 @@ public final class Class<T> implements java.io.Serializable,
      * the accessible public fields of the class or interface represented by
      * this {@code Class} object.
      *
-     * <p> If this {@code Class} object represents a class or interface with no
+     * <p> If this {@code Class} object represents a class or interface with
      * no accessible public fields, then this method returns an array of length
      * 0.
      *

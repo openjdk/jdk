@@ -116,7 +116,7 @@ define SetupLauncher
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), aix)
-    $1_LDFLAGS_SUFFIX += -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE) -ljli_static
+    $1_LDFLAGS_SUFFIX += -L$(SUPPORT_OUTPUTDIR)/native/java.base -ljli_static
   endif
 
   ifeq ($(USE_EXTERNAL_LIBZ), true)

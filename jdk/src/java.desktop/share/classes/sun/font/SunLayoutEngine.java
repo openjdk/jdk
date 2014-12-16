@@ -72,7 +72,7 @@ import java.util.Locale;
  * font tables (the selector indicates which).  Then layout is called,
  * the contents are copied (or not), and the stack is destroyed on
  * exit. So the association is between the font/script (layout engine
- * desc) and and one of a few permanent engine objects, which are
+ * desc) and one of a few permanent engine objects, which are
  * handed the key when they need to process something.  In the native
  * case, the engine holds an index, and just passes it together with
  * the key info down to native.  Some default cases are the 'default

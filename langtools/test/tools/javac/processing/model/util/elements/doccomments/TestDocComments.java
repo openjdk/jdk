@@ -265,19 +265,19 @@ public class TestDocComments extends JavacTestingAbstractProcessor {
 
     class TestElementScanner extends ElementScanner<Void, Void> {
         @Override
-        public Void visitExecutable(ExecutableElement e, Void _) {
+        public Void visitExecutable(ExecutableElement e, Void p) {
             check(e);
-            return super.visitExecutable(e, _);
+            return super.visitExecutable(e, p);
         }
         @Override
-        public Void visitType(TypeElement e, Void _) {
+        public Void visitType(TypeElement e, Void p) {
             check(e);
-            return super.visitType(e, _);
+            return super.visitType(e, p);
         }
         @Override
-        public Void visitVariable(VariableElement e, Void _) {
+        public Void visitVariable(VariableElement e, Void p) {
             check(e);
-            return super.visitVariable(e, _);
+            return super.visitVariable(e, p);
         }
     }
 

@@ -840,7 +840,7 @@ public final class Integer extends Number implements Comparable<Integer> {
     /**
      * Parses the string argument as an unsigned decimal integer. The
      * characters in the string must all be decimal digits, except
-     * that the first character may be an an ASCII plus sign {@code
+     * that the first character may be an ASCII plus sign {@code
      * '+'} ({@code '\u005Cu002B'}). The resulting integer value
      * is returned, exactly as if the argument and the radix 10 were
      * given as arguments to the {@link

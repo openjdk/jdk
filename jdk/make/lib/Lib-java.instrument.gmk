@@ -72,8 +72,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
         -framework Cocoa -framework Security -framework ApplicationServices, \
     LDFLAGS_SUFFIX := $(LIBINSTRUMENT_LDFLAGS_SUFFIX), \
     LDFLAGS_SUFFIX_macosx := -liconv $(LIBZ), \
-    LDFLAGS_SUFFIX_solaris := $(LIBZ) -L $(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL) -lc, \
-    LDFLAGS_SUFFIX_linux := $(LIBZ) -L $(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL), \
+    LDFLAGS_SUFFIX_solaris := $(LIBZ) -L$(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL) -lc, \
+    LDFLAGS_SUFFIX_linux := $(LIBZ) -L$(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL), \
     LDFLAGS_SUFFIX_aix := $(LIBZ) -L$(SUPPORT_OUTPUTDIR)/native/java.base -ljli_static $(LIBDL),\
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \

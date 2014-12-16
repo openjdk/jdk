@@ -422,6 +422,8 @@
             <isset property="jtreg.home"/>
         </condition>
         <replace file=".idea/ant.xml" token="@@@" value="${jtreg.idea.home}"/>
+        <replace file=".idea/workspace.xml" token="@FILE_SEP@" value="${file.separator}"/>
+        <replace file=".idea/workspace.xml" token="@PATH_SEP@" value="${path.separator}"/>
         <mkdir dir=".idea/classes"/>
         <javac srcdir="make/intellij/src"
                destdir=".idea/classes"/>

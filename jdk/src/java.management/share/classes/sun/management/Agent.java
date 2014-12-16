@@ -499,7 +499,7 @@ public class Agent {
         } else {
             StringBuilder message = new StringBuilder(params[0]);
             for (int i = 1; i < params.length; i++) {
-                message.append(" " + params[i]);
+                message.append(' ').append(params[i]);
             }
             error(key, message.toString());
         }

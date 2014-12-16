@@ -47,7 +47,7 @@ public final class BidiUtils {
      * array instead of iterating over the runs.
      *
      * @param levels the array to receive the character levels
-     * @param start the starting offset into the the array
+     * @param start the starting offset into the array
      * @throws IndexOutOfBoundsException if <code>start</code> is less than 0 or
      * <code>start + getLength()</code> is greater than <code>levels.length</code>.
      */

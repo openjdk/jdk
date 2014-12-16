@@ -93,7 +93,7 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
     }
 
     /**
-     * Constructs a new <code>WebRowSet</code> object initialized with the the
+     * Constructs a new <code>WebRowSet</code> object initialized with the
      * synchronization SPI provider properties as specified in the <code>Hashtable</code>. If
      * this hashtable is empty or is <code>null</code> the default constructor is invoked.
      *
@@ -234,7 +234,7 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
     /**
      * Writes this <code>WebRowSet</code> object to the given <code> OutputStream</code>
      * object in XML format.
-     * Creates an an output stream of the internal state and contents of a
+     * Creates an output stream of the internal state and contents of a
      * <code>WebRowSet</code> for XML proceessing
      *
      * @throws SQLException if a datasource access error occurs
