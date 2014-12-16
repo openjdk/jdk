@@ -732,6 +732,7 @@ public class ScrollPane extends Container implements Accessible {
         /**
          * Invoked when the value of the adjustable has changed.
          */
+        @SuppressWarnings("deprecation")
         public void adjustmentValueChanged(AdjustmentEvent e) {
             Adjustable adj = e.getAdjustable();
             int value = e.getValue();
@@ -831,6 +832,7 @@ class PeerFixer implements AdjustmentListener, java.io.Serializable {
     /**
      * Invoked when the value of the adjustable has changed.
      */
+    @SuppressWarnings("deprecation")
     public void adjustmentValueChanged(AdjustmentEvent e) {
         Adjustable adj = e.getAdjustable();
         int value = e.getValue();

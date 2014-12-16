@@ -2363,6 +2363,7 @@ public class BasicTreeUI extends TreeUI
      * @param messageCancel message to cancel editing
      * @param messageTree message to tree
      */
+    @SuppressWarnings("deprecation")
     protected void completeEditing(boolean messageStop,
                                    boolean messageCancel,
                                    boolean messageTree) {

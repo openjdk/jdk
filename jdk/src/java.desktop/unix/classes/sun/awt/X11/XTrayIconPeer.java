@@ -347,6 +347,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     }
 
     // It's synchronized with disposal by EDT.
+    @SuppressWarnings("deprecation")
     public void showPopupMenu(int x, int y) {
         if (isDisposed())
             return;
@@ -415,6 +416,7 @@ public class XTrayIconPeer implements TrayIconPeer,
         canvas.addMouseMotionListener(eventProxy);
     }
 
+    @SuppressWarnings("deprecation")
     long getWindow() {
         return ((XEmbeddedFramePeer)eframe.getPeer()).getWindow();
     }

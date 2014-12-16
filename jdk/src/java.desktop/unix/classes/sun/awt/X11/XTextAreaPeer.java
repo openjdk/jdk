@@ -1164,6 +1164,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public ComponentPeer getPeer() {
             return (ComponentPeer) (xwin);
         }

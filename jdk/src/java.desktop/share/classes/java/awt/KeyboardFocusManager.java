@@ -3054,6 +3054,7 @@ public abstract class KeyboardFocusManager
         return (wto != wfrom);
     }
 
+    @SuppressWarnings("deprecation")
     static Component getHeavyweight(Component comp) {
         if (comp == null || comp.getPeer() == null) {
             return null;
