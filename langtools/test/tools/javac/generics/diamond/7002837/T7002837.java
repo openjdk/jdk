@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 7002837
+ * @bug 7002837 8064365
  *
  * @summary  Diamond: javac generates diamond inference errors when in 'finder' mode
  * @author mcimadamore
