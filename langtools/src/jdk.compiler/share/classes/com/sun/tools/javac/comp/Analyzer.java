@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
@@ -36,6 +37,7 @@ import com.sun.tools.javac.tree.JCTree.JCEnhancedForLoop;
 import com.sun.tools.javac.tree.JCTree.JCForLoop;
 import com.sun.tools.javac.tree.JCTree.JCIf;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
+import com.sun.tools.javac.tree.JCTree.JCLambda.ParameterKind;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
@@ -50,6 +52,8 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
@@ -488,6 +492,18 @@ public class Analyzer {
                 context.treeMap.put(tree, newTree);
             }
             return newTree;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public JCTree visitLambdaExpression(LambdaExpressionTree node, Void _unused) {
+            JCLambda oldLambda = (JCLambda)node;
+            JCLambda newLambda = (JCLambda)super.visitLambdaExpression(node, _unused);
+            if (oldLambda.paramKind == ParameterKind.IMPLICIT) {
+                //reset implicit lambda parameters (whose type might have been set during attr)
+                newLambda.paramKind = ParameterKind.IMPLICIT;
+                newLambda.params.forEach(p -> p.vartype = null);
+            }
+            return newLambda;
         }
     }
 }
