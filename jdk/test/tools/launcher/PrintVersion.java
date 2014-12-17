@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,9 @@
  * This stub simply prints out the java version string. It is used
  * by MultipleJRE.sh.
  */
-import sun.misc.Version;
 
 public class PrintVersion {
-
-        public static void main(String argv[]) {
-                Version.print();
-        }
-
+    public static void main(String argv[]) {
+        System.out.println(System.getProperty("java.version"));
+    }
 }
