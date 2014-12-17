@@ -109,6 +109,7 @@ public class WhiteBox {
   public native int NMTGetHashSize();
 
   // Compiler
+  public native int     deoptimizeFrames(boolean makeNotEntrant);
   public native void    deoptimizeAll();
   public        boolean isMethodCompiled(Executable method) {
     return isMethodCompiled(method, false /*not osr*/);
