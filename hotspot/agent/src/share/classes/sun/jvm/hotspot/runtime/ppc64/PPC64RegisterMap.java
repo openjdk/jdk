@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 20014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,30 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+package sun.jvm.hotspot.runtime.ppc64;
 
-public class MachineDescriptionPPC64 extends MachineDescriptionTwosComplement implements MachineDescription {
-  public long getAddressSize() {
-    return 8;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.*;
+
+public class PPC64RegisterMap extends RegisterMap {
+
+  /** This is the only public constructor */
+  public PPC64RegisterMap(JavaThread thread, boolean updateMap) {
+    super(thread, updateMap);
   }
 
-  public boolean isLP64() {
-    return true;
+  protected PPC64RegisterMap(RegisterMap map) {
+    super(map);
   }
 
-  public boolean isBigEndian() {
-    return "big".equals(System.getProperty("sun.cpu.endian"));
+  public Object clone() {
+    PPC64RegisterMap retval = new PPC64RegisterMap(this);
+    return retval;
   }
+
+  // no PD state to clear or copy:
+  protected void clearPD() {}
+  protected void initializePD() {}
+  protected void initializeFromPD(RegisterMap map) {}
+  protected Address getLocationPD(VMReg reg) { return null; }
 }
