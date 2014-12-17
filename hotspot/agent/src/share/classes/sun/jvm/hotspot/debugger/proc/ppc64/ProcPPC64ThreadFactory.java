@@ -22,18 +22,23 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+package sun.jvm.hotspot.debugger.proc.ppc64;
 
-public class MachineDescriptionPPC64 extends MachineDescriptionTwosComplement implements MachineDescription {
-  public long getAddressSize() {
-    return 8;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.proc.*;
+
+public class ProcPPC64ThreadFactory implements ProcThreadFactory {
+  private ProcDebugger debugger;
+
+  public ProcPPC64ThreadFactory(ProcDebugger debugger) {
+    this.debugger = debugger;
   }
 
-  public boolean isLP64() {
-    return true;
+  public ThreadProxy createThreadWrapper(Address threadIdentifierAddr) {
+    return new ProcPPC64Thread(debugger, threadIdentifierAddr);
   }
 
-  public boolean isBigEndian() {
-    return "big".equals(System.getProperty("sun.cpu.endian"));
+  public ThreadProxy createThreadWrapper(long id) {
+    return new ProcPPC64Thread(debugger, id);
   }
 }
