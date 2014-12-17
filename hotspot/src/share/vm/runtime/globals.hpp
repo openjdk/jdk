@@ -1472,7 +1472,8 @@ class CommandLineFlags {
           "Size of young gen promotion LAB's (in HeapWords)")               \
                                                                             \
   product(uintx, OldPLABSize, 1024,                                         \
-          "Size of old gen promotion LAB's (in HeapWords)")                 \
+          "Size of old gen promotion LAB's (in HeapWords), or Number        \
+          of blocks to attempt to claim when refilling CMS LAB's")          \
                                                                             \
   product(uintx, GCTaskTimeStampEntries, 200,                               \
           "Number of time stamp entries per gc worker thread")              \
@@ -1583,14 +1584,10 @@ class CommandLineFlags {
           "The number of cards in each chunk of the parallel chunks used "  \
           "during card table scanning")                                     \
                                                                             \
-  product(uintx, CMSParPromoteBlocksToClaim, 16,                            \
-          "Number of blocks to attempt to claim when refilling CMS LAB's "  \
-          "for parallel GC")                                                \
-                                                                            \
   product(uintx, OldPLABWeight, 50,                                         \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for resizing "          \
-          "CMSParPromoteBlocksToClaim")                                     \
+          "OldPLABSize")                                                    \
                                                                             \
   product(bool, ResizeOldPLAB, true,                                        \
           "Dynamically resize (old gen) promotion LAB's")                   \
