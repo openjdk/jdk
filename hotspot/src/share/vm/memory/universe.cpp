@@ -1176,9 +1176,7 @@ bool universe_post_init() {
 
   MemoryService::set_universe_heap(Universe::_collectedHeap);
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
-    SharedClassUtil::initialize(CHECK_false);
-  }
+  SharedClassUtil::initialize(CHECK_false);
 #endif
   return true;
 }
