@@ -70,6 +70,7 @@ enum GCH_strong_roots_tasks {
 
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   SharedHeap(policy),
+  _rem_set(NULL),
   _gen_policy(policy),
   _gen_process_roots_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _full_collections_completed(0)

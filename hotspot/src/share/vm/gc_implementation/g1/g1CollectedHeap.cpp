@@ -1886,13 +1886,12 @@ jint G1CollectedHeap::initialize() {
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  // Create the gen rem set (and barrier set) for the entire reserved region.
-  _rem_set = collector_policy()->create_rem_set(reserved_region());
-  set_barrier_set(rem_set()->bs());
-  if (!barrier_set()->is_a(BarrierSet::G1SATBCTLogging)) {
-    vm_exit_during_initialization("G1 requires a G1SATBLoggingCardTableModRefBS");
-    return JNI_ENOMEM;
-  }
+  // Create the barrier set for the entire reserved region.
+  G1SATBCardTableLoggingModRefBS* bs
+    = new G1SATBCardTableLoggingModRefBS(reserved_region());
+  bs->initialize();
+  assert(bs->is_a(BarrierSet::G1SATBCTLogging), "sanity");
+  set_barrier_set(bs);
 
   // Also create a G1 rem set.
   _g1_rem_set = new G1RemSet(this, g1_barrier_set());
@@ -3153,8 +3152,6 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
         failures = true;
       }
     }
-    if (!silent) gclog_or_tty->print("RemSet ");
-    rem_set()->verify();
 
     if (G1StringDedup::is_enabled()) {
       if (!silent) gclog_or_tty->print("StrDedup ");
@@ -5587,8 +5584,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   G1ParTask g1_par_task(this, _task_queues);
 
   init_for_evac_failure(NULL);
-
-  rem_set()->prepare_for_younger_refs_iterate(true);
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
   double start_par_time_sec = os::elapsedTime();
