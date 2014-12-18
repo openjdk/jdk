@@ -53,8 +53,7 @@ BUILD_NUMBER=$(JDK_BUILD_NUMBER)
 
 JAVADOC_CMD = $(JAVA) \
     -Djava.awt.headless=true \
-    $(NEW_JAVADOC) \
-    -bootclasspath $(JDK_OUTPUTDIR)/classes
+    $(NEW_JAVADOC)
 
 # Copyright year for beginning of Java and some of the apis
 # (Needed when creating the javadocs)
