@@ -1301,7 +1301,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       // Temporarily clear the STW ref processor's _is_alive_non_header field.
       ReferenceProcessorIsAliveMutator stw_rp_is_alive_null(ref_processor_stw(), NULL);
 
-      ref_processor_stw()->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
+      ref_processor_stw()->enable_discovery();
       ref_processor_stw()->setup_policy(do_clear_all_soft_refs);
 
       // Do collection work
@@ -3750,8 +3750,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // reference processing currently works in G1.
 
       // Enable discovery in the STW reference processor
-      ref_processor_stw()->enable_discovery(true /*verify_disabled*/,
-                                            true /*verify_no_refs*/);
+      ref_processor_stw()->enable_discovery();
 
       {
         // We want to temporarily turn off discovery by the
