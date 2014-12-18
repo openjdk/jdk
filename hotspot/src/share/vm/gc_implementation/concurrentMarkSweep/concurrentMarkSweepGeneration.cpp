@@ -479,7 +479,9 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _restart_addr(NULL),
   _overflow_list(NULL),
   _stats(cmsGen),
-  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true)),
+  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true,
+                             //verify that this lock should be acquired with safepoint check.
+                             Monitor::_safepoint_check_sometimes)),
   _eden_chunk_array(NULL),     // may be set in ctor body
   _eden_chunk_capacity(0),     // -- ditto --
   _eden_chunk_index(0),        // -- ditto --
@@ -5946,7 +5948,8 @@ HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
 CMSBitMap::CMSBitMap(int shifter, int mutex_rank, const char* mutex_name):
   _bm(),
   _shifter(shifter),
-  _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true) : NULL)
+  _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true,
+                                    Monitor::_safepoint_check_sometimes) : NULL)
 {
   _bmStartWord = 0;
   _bmWordSize  = 0;
