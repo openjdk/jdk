@@ -26,6 +26,7 @@
  * @bug 8067438
  * @requires vm.gc=="null"
  * @summary Verify that starting the VM with a small heap works
+ * @library /testlibrary
  * @run main/othervm -Xmx4m -XX:+UseParallelGC TestSmallHeap
  * @run main/othervm -Xmx4m -XX:+UseSerialGC TestSmallHeap
  * @run main/othervm -Xmx4m -XX:+UseG1GC TestSmallHeap
