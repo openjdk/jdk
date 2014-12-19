@@ -731,10 +731,12 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
     Method* m = iklass->find_method(_method_name, _method_signature);
     // private interface methods are not candidates for default methods
     // invokespecial to private interface methods doesn't use default method logic
+    // private class methods are not candidates for default methods,
+    // private methods do not override default methods, so need to perform
+    // default method inheritance without including private methods
     // The overpasses are your supertypes' errors, we do not include them
     // future: take access controls into account for superclass methods
-    if (m != NULL && !m->is_static() && !m->is_overpass() &&
-         (!iklass->is_interface() || m->is_public())) {
+    if (m != NULL && !m->is_static() && !m->is_overpass() && !m->is_private()) {
       if (_family == NULL) {
         _family = new StatefulMethodFamily();
       }
@@ -745,6 +747,9 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
       } else {
         // This is the rule that methods in classes "win" (bad word) over
         // methods in interfaces. This works because of single inheritance
+        // private methods in classes do not "win", they will be found
+        // first on searching, but overriding for invokevirtual needs
+        // to find default method candidates for the same signature
         _family->set_target_if_empty(m);
       }
     }
