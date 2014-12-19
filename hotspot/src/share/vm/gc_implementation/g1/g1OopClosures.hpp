@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
 
 #include "memory/iterator.hpp"
+#include "oops/markOop.hpp"
 
 class HeapRegion;
 class G1CollectedHeap;
@@ -256,7 +257,8 @@ public:
   }
 
   bool self_forwarded(oop obj) {
-    bool result = (obj->is_forwarded() && (obj->forwardee()== obj));
+    markOop m = obj->mark();
+    bool result = (m->is_marked() && ((oop)m->decode_pointer() == obj));
     return result;
   }
 

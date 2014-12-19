@@ -67,8 +67,8 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
 
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    G1CollectedHeap::in_cset_state_t state = _g1->in_cset_state(obj);
-    if (state == G1CollectedHeap::InCSet) {
+    const InCSetState state = _g1->in_cset_state(obj);
+    if (state.is_in_cset()) {
       // We're not going to even bother checking whether the object is
       // already forwarded or not, as this usually causes an immediate
       // stall. We'll try to prefetch the object (for write, given that
@@ -87,7 +87,7 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
 
       _par_scan_state->push_on_queue(p);
     } else {
-      if (state == G1CollectedHeap::IsHumongous) {
+      if (state.is_humongous()) {
         _g1->set_humongous_is_live(obj);
       }
       _par_scan_state->update_rs(_from, p, _worker_id);
