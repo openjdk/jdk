@@ -263,10 +263,10 @@ generate_replay() {
         dir=`dirname $core_with_dir`
         file=`basename $core_with_dir`
         # add <core_path>/core.<pid> core
-        core_locations="'$core_with_dir' '$file'"
+        core_locations='$core_with_dir' '$file'
         if [ -n "${core_with_pid}" ]
         then
-            core_locations="$core_locations '$core_with_pid' '$dir${FS}$core_with_pid'"
+            core_locations=$core_locations '$core_with_pid' '$dir${FS}$core_with_pid'
         fi
     fi
 
