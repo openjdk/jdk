@@ -38,21 +38,21 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
   // set, due to (benign) races in the claim mechanism during RSet scanning more
   // than one thread might claim the same card. So the same card may be
   // processed multiple times. So redo this check.
-  G1CollectedHeap::in_cset_state_t in_cset_state = _g1h->in_cset_state(obj);
-  if (in_cset_state == G1CollectedHeap::InCSet) {
+  const InCSetState in_cset_state = _g1h->in_cset_state(obj);
+  if (in_cset_state.is_in_cset()) {
     oop forwardee;
     markOop m = obj->mark();
     if (m->is_marked()) {
       forwardee = (oop) m->decode_pointer();
     } else {
-      forwardee = copy_to_survivor_space(obj, m);
+      forwardee = copy_to_survivor_space(in_cset_state, obj, m);
     }
     oopDesc::encode_store_heap_oop(p, forwardee);
-  } else if (in_cset_state == G1CollectedHeap::IsHumongous) {
+  } else if (in_cset_state.is_humongous()) {
     _g1h->set_humongous_is_live(obj);
   } else {
-    assert(in_cset_state == G1CollectedHeap::InNeither,
-           err_msg("In_cset_state must be InNeither here, but is %d", in_cset_state));
+    assert(!in_cset_state.is_in_cset_or_humongous(),
+           err_msg("In_cset_state must be NotInCSet here, but is " CSETSTATE_FORMAT, in_cset_state.value()));
   }
 
   assert(obj != NULL, "Must be");
