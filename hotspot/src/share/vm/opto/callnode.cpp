@@ -658,7 +658,7 @@ void CallNode::dump_req(outputStream *st) const {
 
 void CallNode::dump_spec(outputStream *st) const {
   st->print(" ");
-  tf()->dump_on(st);
+  if (tf() != NULL)  tf()->dump_on(st);
   if (_cnt != COUNT_UNKNOWN)  st->print(" C=%f",_cnt);
   if (jvms() != NULL)  jvms()->dump_spec(st);
 }
