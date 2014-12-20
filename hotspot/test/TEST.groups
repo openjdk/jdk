@@ -410,7 +410,9 @@ hotspot_compiler_closed = \
   -closed/compiler/loopopts/8021898
 
 hotspot_gc = \
-  sanity/ExecuteInternalVMTests.java
+  sanity/ExecuteInternalVMTests.java \
+  gc/ \
+  -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
 
 hotspot_runtime = \
   runtime/ \
@@ -429,7 +431,8 @@ hotspot_runtime = \
  -runtime/7158988/FieldMonitor.java
 
 hotspot_runtime_closed = \
-  sanity/ExecuteInternalVMTests.java
+  sanity/ExecuteInternalVMTests.java \
+  testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
 hotspot_serviceability = \
   sanity/ExecuteInternalVMTests.java \
