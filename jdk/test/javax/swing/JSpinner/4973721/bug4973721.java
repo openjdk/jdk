@@ -30,21 +30,18 @@
 */
 
 import java.awt.Robot;
-import java.awt.Toolkit;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.FocusEvent;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class bug4973721 implements ChangeListener, FocusListener {
     static volatile boolean bStateChanged = false;
     static volatile boolean bFocusGained = false;
     static JSpinner spinner;
     static final Object listener = new bug4973721();
-    private static final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
     public void focusLost(FocusEvent e) {}
 
@@ -100,7 +97,7 @@ public class bug4973721 implements ChangeListener, FocusListener {
         robot.setAutoDelay(50);
 
         Util.hitKeys(robot, KeyEvent.VK_UP);
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000);
 
         if (!bStateChanged) {
@@ -110,7 +107,7 @@ public class bug4973721 implements ChangeListener, FocusListener {
         bStateChanged = false;
 
         Util.hitKeys(robot, KeyEvent.VK_DOWN);
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000);
 
         if (!bStateChanged) {

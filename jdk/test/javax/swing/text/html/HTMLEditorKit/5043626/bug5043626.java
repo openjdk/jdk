@@ -37,7 +37,6 @@ import javax.swing.*;
 import javax.swing.text.Document;
 import javax.swing.text.BadLocationException;
 import java.awt.event.KeyEvent;
-import sun.awt.SunToolkit;
 
 public class bug5043626 {
 
@@ -45,7 +44,6 @@ public class bug5043626 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -54,12 +52,12 @@ public class bug5043626 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_HOME);
         Util.hitKeys(robot, KeyEvent.VK_1);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         String test = getText();
 
@@ -70,7 +68,7 @@ public class bug5043626 {
         Util.hitKeys(robot, KeyEvent.VK_HOME);
         Util.hitKeys(robot, KeyEvent.VK_2);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         test = getText();
 

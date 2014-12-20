@@ -52,7 +52,7 @@ package javax.sound.midi;
  * API uses integers instead of bytes when expressing MIDI data. For example,
  * the {@link #getStatus()} method of {@code MidiMessage} returns MIDI status
  * bytes as integers. If you are processing MIDI data that originated outside
- * Java Sound and now is encoded as signed bytes, the bytes can can be
+ * Java Sound and now is encoded as signed bytes, the bytes can be
  * converted to integers using this conversion:
  *
  * <center>{@code int i = (int)(byte & 0xFF)}</center>

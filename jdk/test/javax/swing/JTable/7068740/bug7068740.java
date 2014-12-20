@@ -28,8 +28,6 @@
    @run main bug7068740
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.LayerUI;
 import javax.swing.plaf.metal.MetalLookAndFeel;
@@ -43,7 +41,6 @@ public class bug7068740 extends JFrame {
 
     private static Robot robot = null;
     private static JTable table = null;
-    private static SunToolkit toolkit = null;
 
     bug7068740() {
         super();
@@ -83,10 +80,6 @@ public class bug7068740 extends JFrame {
                 robot.setAutoDelay(50);
             }
 
-            if (toolkit == null) {
-                toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-            }
-
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
@@ -118,11 +111,11 @@ public class bug7068740 extends JFrame {
     }
 
     private static void doTest() throws Exception {
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_PAGE_DOWN);
         robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (getSelectedRow() != 19) {
             throw new RuntimeException("Test failed");
@@ -130,7 +123,7 @@ public class bug7068740 extends JFrame {
 
         robot.keyPress(KeyEvent.VK_PAGE_UP);
         robot.keyRelease(KeyEvent.VK_PAGE_UP);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (getSelectedRow() != 0) {
             throw new RuntimeException("Test failed");
         }

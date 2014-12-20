@@ -31,8 +31,6 @@
    @run main bug6236162
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.basic.*;
 import javax.swing.plaf.metal.MetalComboBoxUI;
@@ -40,7 +38,6 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class bug6236162 {
-    private static final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
     private static JFrame frame;
     private static JComboBox combo;
     private static MyComboUI comboUI;
@@ -52,7 +49,6 @@ public class bug6236162 {
                 createAndShowGUI();
             }
         });
-        toolkit.realSync();
         test();
         System.out.println("Test passed");
     }
@@ -78,11 +74,11 @@ public class bug6236162 {
         robot.setAutoDelay(50);
 
         // Open popup menu
-        realSync();
+        robot.waitForIdle();
         Util.hitKeys(robot, KeyEvent.VK_DOWN);
 
         // Move mouse to the first popup menu item
-        realSync();
+        robot.waitForIdle();
         Point p = combo.getLocationOnScreen();
         Dimension size = combo.getSize();
         p.x += size.width / 2;
@@ -94,10 +90,10 @@ public class bug6236162 {
         }
 
         // Select the second popup menu item
-        realSync();
+        robot.waitForIdle();
         Util.hitKeys(robot, KeyEvent.VK_DOWN);
 
-        realSync();
+        robot.waitForIdle();
         JList list = comboUI.getComboPopup().getList();
         if (list.getSelectedIndex() != 1) {
             throw new RuntimeException("There is an inconsistence in combo box " +
@@ -106,9 +102,6 @@ public class bug6236162 {
         }
     }
 
-    private static void realSync() {
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-    }
 
     // Gives access to BasicComboBoxUI.popup field
     private static class MyComboUI extends MetalComboBoxUI {

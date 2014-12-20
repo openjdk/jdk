@@ -33,7 +33,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Random;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class bug4962534 extends Applet {
 
@@ -45,7 +44,6 @@ public class bug4962534 extends Applet {
     Component titleComponent;
     JLayeredPane lPane;
     volatile boolean titleFound = false;
-    SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
     public static Object LOCK = new Object();
 
     @Override
@@ -91,13 +89,13 @@ public class bug4962534 extends Applet {
                 robot = new Robot();
                 robot.setAutoDelay(70);
 
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 robot.mouseMove(framePosition.x + getJFrameWidthEDT() / 2,
                         framePosition.y + titleComponent.getHeight() / 2);
                 robot.mousePress(InputEvent.BUTTON1_MASK);
 
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 gcBounds =
                         GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()[0].getConfigurations()[0].getBounds();
@@ -105,7 +103,7 @@ public class bug4962534 extends Applet {
                 robot.mouseMove(framePosition.x + getJFrameWidthEDT() / 2,
                         framePosition.y + titleComponent.getHeight() / 2);
 
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 int multier = gcBounds.height / 2 - 10; //we will not go out the borders
                 for (int i = 0; i < 10; i++) {
@@ -113,7 +111,7 @@ public class bug4962534 extends Applet {
                 }
                 robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-                toolkit.realSync();
+                robot.waitForIdle();
 
             } catch (AWTException e) {
                 throw new RuntimeException("Test Failed. AWTException thrown." + e.getMessage());

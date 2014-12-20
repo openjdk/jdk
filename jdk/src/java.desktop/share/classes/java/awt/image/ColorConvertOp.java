@@ -577,7 +577,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
 
     /**
      * Returns the bounding box of the destination, given this source.
-     * Note that this will be the same as the the bounding box of the
+     * Note that this will be the same as the bounding box of the
      * source.
      * @param src the source <code>BufferedImage</code>
      * @return a <code>Rectangle2D</code> that is the bounding box
@@ -589,7 +589,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
 
     /**
      * Returns the bounding box of the destination, given this source.
-     * Note that this will be the same as the the bounding box of the
+     * Note that this will be the same as the bounding box of the
      * source.
      * @param src the source <code>Raster</code>
      * @return a <code>Rectangle2D</code> that is the bounding box

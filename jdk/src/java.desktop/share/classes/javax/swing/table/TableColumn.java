@@ -127,7 +127,7 @@ public class TableColumn extends Object implements Serializable {
     /**
      *  This object is not used internally by the drawing machinery of
      *  the <code>JTable</code>; identifiers may be set in the
-     *  <code>TableColumn</code> as as an
+     *  <code>TableColumn</code> as an
      *  optional way to tag and locate table columns. The table package does
      *  not modify or invoke any methods in these identifier objects other
      *  than the <code>equals</code> method which is used in the

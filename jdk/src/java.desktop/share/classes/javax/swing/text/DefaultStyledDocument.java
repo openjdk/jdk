@@ -409,7 +409,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
 
 
     /**
-     * Fetches the list of of style names.
+     * Fetches the list of style names.
      *
      * @return all the style names
      */

@@ -33,7 +33,6 @@ import java.awt.event.*;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import sun.awt.SunToolkit;
 
 public class EmptyListEventTest {
 
@@ -41,7 +40,6 @@ public class EmptyListEventTest {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -53,7 +51,7 @@ public class EmptyListEventTest {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // press mouse -> ItemEvent
         Point point = getClickPoint();
@@ -61,7 +59,7 @@ public class EmptyListEventTest {
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -71,7 +69,7 @@ public class EmptyListEventTest {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != list) {
             throw new RuntimeException("Test failed - list isn't focus owner.");
@@ -80,12 +78,12 @@ public class EmptyListEventTest {
         // press key ENTER -> ActionEvent
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // press key SPACE -> ItemEvent
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // mouse double click -> ActionEvent
         robot.setAutoDelay(10);
@@ -93,7 +91,7 @@ public class EmptyListEventTest {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 
     private static Point getClickPoint() throws Exception {

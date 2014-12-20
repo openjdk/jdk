@@ -1846,7 +1846,7 @@ class Parser implements DTDConstants {
 
             if (unknown) {
                 // we will not see a corresponding start tag
-                // on the the stack.  If we are seeing an
+                // on the stack.  If we are seeing an
                 // end tag, lets send this on as an empty
                 // tag with the end tag attribute set to
                 // true.

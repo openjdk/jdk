@@ -116,7 +116,7 @@ public  interface XMLStreamWriter {
     public void writeStartDocument() throws XMLStreamException;
 
     /**
-     * Write the XML Declaration. Defaults the the encoding to utf-8
+     * Write the XML Declaration. Defaults the encoding to utf-8
      * @param version version of the xml document
      * @throws XMLStreamException
      */
