@@ -29,7 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import javax.swing.*;
-import sun.awt.*;
+import sun.awt.EmbeddedFrame;
 import java.io.*;
 import test.java.awt.regtesthelpers.Util;
 
@@ -141,7 +141,6 @@ public abstract class OverlappingTestBase {
     public void getVerifyColor() {
         try {
             final int size = 200;
-            final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
             final Point[] p = new Point[1];
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run(){
@@ -155,7 +154,7 @@ public abstract class OverlappingTestBase {
                 }
             });
             Robot robot = new Robot();
-            toolkit.realSync();
+            robot.waitForIdle();
             Thread.sleep(ROBOT_DELAY);
             AWT_VERIFY_COLOR = robot.getPixelColor(p[0].x+size/2, p[0].y+size/2);
             System.out.println("Color will be compared with " + AWT_VERIFY_COLOR + " instead of " + AWT_BACKGROUND_COLOR);
@@ -434,6 +433,11 @@ public abstract class OverlappingTestBase {
     protected Component currentAwtControl;
 
     private void testComponent(Component component) throws InterruptedException, InvocationTargetException {
+        Robot robot = null;
+        try {
+            robot = new Robot();
+        }catch(Exception ignorex) {
+        }
         currentAwtControl = component;
         System.out.println("Testing " + currentAwtControl.getClass().getSimpleName());
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -444,7 +448,7 @@ public abstract class OverlappingTestBase {
         if (component != null) {
             Util.waitTillShown(component);
         }
-        Util.waitForIdle(null);
+        Util.waitForIdle(robot);
         try {
             Thread.sleep(500); // wait for graphic effects on systems like Win7
         } catch (InterruptedException ex) {
@@ -461,6 +465,11 @@ public abstract class OverlappingTestBase {
     }
 
     private void testEmbeddedFrame() throws InvocationTargetException, InterruptedException {
+        Robot robot = null;
+        try {
+            robot = new Robot();
+        }catch(Exception ignorex) {
+        }
         System.out.println("Testing EmbeddedFrame");
         currentAwtControl = null;
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -468,7 +477,7 @@ public abstract class OverlappingTestBase {
                 prepareControls();
             }
         });
-        Util.waitForIdle(null);
+        Util.waitForIdle(robot);
         try {
             Thread.sleep(500); // wait for graphic effects on systems like Win7
         } catch (InterruptedException ex) {

@@ -837,7 +837,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
      * The resolution of the page is chosen so that it
      * is similar to the screen resolution.
      * Except (since 1.3) when the application specifies a resolution.
-     * In that case it it scaled accordingly.
+     * In that case it is scaled accordingly.
      */
     public Dimension getPageDimension() {
         double wid, hgt, scale;

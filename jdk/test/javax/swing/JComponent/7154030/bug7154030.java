@@ -29,7 +29,6 @@ import javax.swing.JButton;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-import sun.awt.SunToolkit;
 
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
@@ -46,7 +45,9 @@ import java.awt.image.BufferedImage;
  * @summary Swing components fail to hide after calling hide()
  * @author Jonathan Lu
  * @library ../../regtesthelpers/
+ * @library ../../../../lib/testlibrary/
  * @build Util
+ * @build ExtendedRobot
  * @run main bug7154030
  */
 
@@ -61,9 +62,7 @@ public class bug7154030 {
 
         BufferedImage imageHide = null;
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-
-        Robot robot = new Robot();
+        ExtendedRobot robot = new ExtendedRobot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -89,7 +88,7 @@ public class bug7154030 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle(500);
         imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -100,13 +99,13 @@ public class bug7154030 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle(500);
         imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
         if (Util.compareBufferedImages(imageInit, imageShow)) {
             throw new Exception("Failed to show opaque button");
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -116,7 +115,7 @@ public class bug7154030 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle(500);
         imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
 
         if (!Util.compareBufferedImages(imageInit, imageHide)) {
@@ -133,7 +132,7 @@ public class bug7154030 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle(500);
         imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -144,7 +143,7 @@ public class bug7154030 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle(500);
         imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -159,7 +158,7 @@ public class bug7154030 {
             throw new Exception("Failed to show non-opaque button");
         }
 
-        toolkit.realSync();
+        robot.waitForIdle(500);
         imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
 
         if (!Util.compareBufferedImages(imageInit, imageHide)) {

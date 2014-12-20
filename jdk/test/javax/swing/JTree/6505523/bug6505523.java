@@ -31,7 +31,6 @@
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -42,14 +41,12 @@ import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import sun.awt.SunToolkit;
 
 public class bug6505523 {
 
     private static JTree tree;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -61,14 +58,14 @@ public class bug6505523 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = getRowPointToClick(2);
         robot.mouseMove(point.x, point.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
     }
 

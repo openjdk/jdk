@@ -184,7 +184,7 @@ public class SolarisNumericGroupPrincipal implements
      * @param o Object to be compared for equality with this
      *          <code>SolarisNumericGroupPrincipal</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>SolarisNumericGroupPrincipal</code>.
      */
     public boolean equals(Object o) {

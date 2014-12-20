@@ -744,7 +744,7 @@ parse_size(const char *s, jlong *result) {
 }
 
 /*
- * Adds a new VM option with the given given name and value.
+ * Adds a new VM option with the given name and value.
  */
 void
 AddOption(char *str, void *info)

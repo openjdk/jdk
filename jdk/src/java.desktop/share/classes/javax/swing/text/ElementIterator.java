@@ -79,7 +79,7 @@ public class ElementIterator implements Cloneable {
      * as well as a child index.  If the
      * index is -1, then the element represented
      * on the stack is the element itself.
-     * Otherwise, the index functions as as index
+     * Otherwise, the index functions as an index
      * into the vector of children of the element.
      * In this case, the item on the stack
      * represents the "index"th child of the element

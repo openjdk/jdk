@@ -613,7 +613,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     /**
-     * Propagate the the thread state change information
+     * Propagate the thread state change information
      * to registered listeners.
      * Must be entered while synchronized on vm.state()
      */

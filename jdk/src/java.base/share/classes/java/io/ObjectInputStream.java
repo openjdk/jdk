@@ -2345,7 +2345,7 @@ public class ObjectInputStream
                 skipped++;
                 n--;
             }
-            return skipped + skip(n);
+            return skipped + in.skip(n);
         }
 
         public int available() throws IOException {
