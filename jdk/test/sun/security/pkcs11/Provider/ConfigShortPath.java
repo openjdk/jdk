@@ -22,8 +22,8 @@
  */
 /**
  * @test
- * @bug 6581254 6986789 7196009
- * @summary Allow '~', '+' and quoted paths in config file
+ * @bug 6581254 6986789 7196009 8062170
+ * @summary Allow '~', '+', and quoted paths in config file
  * @author Valerie Peng
  */
 
@@ -34,7 +34,7 @@ import java.lang.reflect.*;
 public class ConfigShortPath {
 
     private static final String[] configNames = {
-        "csp.cfg", "cspPlus.cfg", "cspQuotedPath.cfg"
+        "csp.cfg", "cspPlus.cfg", "cspSpace.cfg", "cspQuotedPath.cfg"
     };
 
     public static void main(String[] args) throws Exception {
