@@ -259,7 +259,8 @@ class ExecutableInputMethodManager extends InputMethodManager
                 AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                     public Object run() {
                         for (InputMethodDescriptor descriptor :
-                            ServiceLoader.loadInstalled(InputMethodDescriptor.class)) {
+                            ServiceLoader.load(InputMethodDescriptor.class,
+                                               ClassLoader.getSystemClassLoader())) {
                             ClassLoader cl = descriptor.getClass().getClassLoader();
                             javaInputMethodLocatorList.add(new InputMethodLocator(descriptor, cl, null));
                         }
