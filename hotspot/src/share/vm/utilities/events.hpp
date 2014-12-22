@@ -90,7 +90,7 @@ template <class T> class EventLogBase : public EventLog {
     _length(length),
     _count(0),
     _index(0),
-    _mutex(Mutex::event, name) {
+    _mutex(Mutex::event, name, false, Monitor::_safepoint_check_never) {
     _records = new EventRecord<T>[length];
   }
 

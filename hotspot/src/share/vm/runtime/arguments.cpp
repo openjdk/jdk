@@ -2980,17 +2980,20 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #endif
     // -D
     } else if (match_option(option, "-D", &tail)) {
-      if (match_option(option, "-Djava.endorsed.dirs=", &tail)) {
+      const char* value;
+      if (match_option(option, "-Djava.endorsed.dirs=", &value) &&
+            *value!= '\0' && strcmp(value, "\"\"") != 0) {
         // abort if -Djava.endorsed.dirs is set
         jio_fprintf(defaultStream::output_stream(),
-          "-Djava.endorsed.dirs is not supported. Endorsed standards and standalone APIs\n"
-          "in modular form will be supported via the concept of upgradeable modules.\n");
+          "-Djava.endorsed.dirs=%s is not supported. Endorsed standards and standalone APIs\n"
+          "in modular form will be supported via the concept of upgradeable modules.\n", value);
         return JNI_EINVAL;
       }
-      if (match_option(option, "-Djava.ext.dirs=", &tail)) {
+      if (match_option(option, "-Djava.ext.dirs=", &value) &&
+            *value != '\0' && strcmp(value, "\"\"") != 0) {
         // abort if -Djava.ext.dirs is set
         jio_fprintf(defaultStream::output_stream(),
-          "-Djava.ext.dirs is not supported.  Use -classpath instead.\n");
+          "-Djava.ext.dirs=%s is not supported.  Use -classpath instead.\n", value);
         return JNI_EINVAL;
       }
 
