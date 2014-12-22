@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMAbortThreshold option affects
  *          amount of aborts after which abort ratio is calculated.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMAbortThreshold
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

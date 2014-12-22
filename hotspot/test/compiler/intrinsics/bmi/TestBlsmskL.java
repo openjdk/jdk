@@ -27,7 +27,7 @@
  * @bug 8031321
  * @summary Verify that results of computations are the same w/
  *          and w/o usage of BLSMSK instruction
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestBlsmskL BMITestRunner Expr
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

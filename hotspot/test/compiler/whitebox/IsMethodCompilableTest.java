@@ -24,7 +24,7 @@
 /*
  * @test IsMethodCompilableTest
  * @bug 8007270 8006683 8007288 8022832
- * @library /testlibrary /testlibrary/whitebox /testlibrary/com/oracle/java/testlibrary
+ * @library /testlibrary /../../test/lib /testlibrary/com/oracle/java/testlibrary
  * @build IsMethodCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

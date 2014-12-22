@@ -91,8 +91,9 @@ void os::initialize_thread(Thread *thread) { }
 
 // Frame information (pc, sp, fp) retrieved via ucontext
 // always looks like a C-frame according to the frame
-// conventions in frame_ppc64.hpp.
-address os::Aix::ucontext_get_pc(ucontext_t * uc) {
+// conventions in frame_ppc.hpp.
+
+address os::Aix::ucontext_get_pc(const ucontext_t * uc) {
   return (address)uc->uc_mcontext.jmp_context.iar;
 }
 
@@ -486,7 +487,7 @@ void os::Aix::init_thread_fpu_state(void) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Aix::min_stack_allowed = 768*K;
+size_t os::Aix::min_stack_allowed = 128*K;
 
 // Aix is always in floating stack mode. The stack size for a new
 // thread can be set via pthread_attr_setstacksize().
@@ -499,7 +500,7 @@ size_t os::Aix::default_stack_size(os::ThreadType thr_type) {
   // because of the strange 'fallback logic' in os::create_thread().
   // Better set CompilerThreadStackSize in globals_<os_cpu>.hpp if you want to
   // specify a different stack size for compiler threads!
-  size_t s = (thr_type == os::compiler_thread ? 4 * M : 1024 * K);
+  size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }
 

@@ -121,7 +121,9 @@ public abstract class RTMGenericCommandLineOptionTest
      */
     protected void runNonX86TestCases() throws Throwable {
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[] { errorMessage }, null, ExitCode.FAIL,
+                new String[] { errorMessage }, null,
+                String.format("Option '%s' should be unknown on non-X86CPUs.%n"
+                + "JVM startup should fail", optionName), "", ExitCode.FAIL,
                 prepareOptionValue(defaultValue));
     }
 
@@ -136,12 +138,18 @@ public abstract class RTMGenericCommandLineOptionTest
 
     protected void verifyJVMStartup() throws Throwable {
         String optionValue = prepareOptionValue(defaultValue);
+        String shouldFailMessage = String.format("VM option '%s' is "
+                + "experimental.%nVM startup expected to fail without "
+                + "-XX:+UnlockExperimentalVMOptions option", optionName);
+        String shouldPassMessage = String.format("VM option '%s' is "
+                + "experimental%nVM startup should pass with "
+                + "-XX:+UnlockExperimentalVMOptions option", optionName);
         if (isExperimental) {
             // verify that option is experimental
             CommandLineOptionTest.verifySameJVMStartup(
                     new String[] { experimentalOptionError },
-                    new String[] { errorMessage }, ExitCode.FAIL,
-                    optionValue);
+                    new String[] { errorMessage }, shouldFailMessage,
+                    shouldFailMessage, ExitCode.FAIL, optionValue);
             // verify that it could be passed if experimental options
             // are unlocked
             CommandLineOptionTest.verifySameJVMStartup(null,
@@ -149,13 +157,19 @@ public abstract class RTMGenericCommandLineOptionTest
                             experimentalOptionError,
                             errorMessage
                     },
+                    shouldPassMessage,
+                    "JVM should start without any warnings or errors",
                     ExitCode.OK,
                     CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                     optionValue);
         } else {
             // verify that option could be passed
             CommandLineOptionTest.verifySameJVMStartup(null,
-                    new String[]{errorMessage}, ExitCode.OK, optionValue);
+                    new String[]{errorMessage},
+                    String.format("VM startup shuld pass with '%s' option",
+                            optionName),
+                    "JVM should start without any warnings or errors",
+                    ExitCode.OK, optionValue);
         }
     }
 
@@ -164,10 +178,14 @@ public abstract class RTMGenericCommandLineOptionTest
         if (isExperimental) {
             CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                     defaultValue,
+                    String.format("Option '%s' is expected to have '%s' "
+                            + "default value", optionName, defaultValue),
                     CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS);
         } else {
             CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
-                    defaultValue);
+                    defaultValue,
+                    String.format("Option '%s' is expected to have '%s' "
+                            + "default value", optionName, defaultValue));
         }
         // verify other specified option values
         if (optionValues == null) {
@@ -178,11 +196,15 @@ public abstract class RTMGenericCommandLineOptionTest
             if (isExperimental) {
                 CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                         value,
+                        String.format("Option '%s' is set to have '%s' value",
+                                optionName, value),
                         CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                         prepareOptionValue(value));
             } else {
                 CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
-                        value, prepareOptionValue(value));
+                        value,
+                        String.format("Option '%s' is set to have '%s' value",
+                                optionName, value), prepareOptionValue(value));
             }
         }
     }

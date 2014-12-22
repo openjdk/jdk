@@ -24,7 +24,7 @@
 /*
  * @test
  * @key nmt jcmd
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build ThreadedMallocTestType
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

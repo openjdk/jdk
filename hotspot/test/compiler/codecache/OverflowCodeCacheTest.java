@@ -34,7 +34,7 @@ import com.oracle.java.testlibrary.Asserts;
 /*
  * @test OverflowCodeCacheTest
  * @bug 8059550
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build OverflowCodeCacheTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

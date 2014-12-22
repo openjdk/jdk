@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMLockingThreshold affects rtm state transition
  *          ProfileRTM => UseRTM.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMLockingThreshold
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

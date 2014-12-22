@@ -60,8 +60,11 @@ public class BMISupportedCPUTest extends BMICommandLineOptionTestBase {
           VM will be launched with following flags:
           -XX:+<tested option> -version
         */
+        String errorString = String.format("JVM should start with '-XX:+%s'"
+                + " flag without any warnings", optionName);
         CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { warningMessage }, ExitCode.OK,
+                new String[] { warningMessage }, errorString, errorString,
+                ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         /*
@@ -69,8 +72,11 @@ public class BMISupportedCPUTest extends BMICommandLineOptionTestBase {
           VM will be launched with following flags:
           -XX:-<tested option> -version
         */
+        errorString = String.format("JVM should start with '-XX:-%s'"
+                + " flag without any warnings", optionName);
         CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { warningMessage }, ExitCode.OK,
+                new String[] { warningMessage }, errorString,
+                errorString, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
         /*
@@ -78,7 +84,9 @@ public class BMISupportedCPUTest extends BMICommandLineOptionTestBase {
           VM will be launched with following flags:
           -version
         */
-        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true");
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true",
+                String.format("Option '%s' is expected to have default value "
+                    + "'true'", optionName));
 
         /*
           Verify that option could be explicitly turned off.
@@ -86,6 +94,8 @@ public class BMISupportedCPUTest extends BMICommandLineOptionTestBase {
           -XX:-<tested option> -version
         */
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' is set to have value 'false'",
+                    optionName),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 }
