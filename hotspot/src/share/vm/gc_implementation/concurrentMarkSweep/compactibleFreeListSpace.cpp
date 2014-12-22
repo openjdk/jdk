@@ -83,9 +83,11 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // Note: this requires that CFLspace c'tors
   // are called serially in the order in which the locks are
   // are acquired in the program text. This is true today.
-  _freelistLock(_lockRank--, "CompactibleFreeListSpace._lock", true),
+  _freelistLock(_lockRank--, "CompactibleFreeListSpace._lock", true,
+                Monitor::_safepoint_check_sometimes),
   _parDictionaryAllocLock(Mutex::leaf - 1,  // == rank(ExpandHeap_lock) - 1
-                          "CompactibleFreeListSpace._dict_par_lock", true),
+                          "CompactibleFreeListSpace._dict_par_lock", true,
+                          Monitor::_safepoint_check_never),
   _rescan_task_size(CardTableModRefBS::card_size_in_words * BitsPerWord *
                     CMSRescanMultiple),
   _marking_task_size(CardTableModRefBS::card_size_in_words * BitsPerWord *
@@ -152,8 +154,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // Initialize locks for parallel case.
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     _indexedFreeListParLocks[i] = new Mutex(Mutex::leaf - 1, // == ExpandHeap_lock - 1
-                                            "a freelist par lock",
-                                            true);
+                                            "a freelist par lock", true, Mutex::_safepoint_check_sometimes);
     DEBUG_ONLY(
       _indexedFreeList[i].set_protecting_lock(_indexedFreeListParLocks[i]);
     )

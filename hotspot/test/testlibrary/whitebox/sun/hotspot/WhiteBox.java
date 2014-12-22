@@ -248,4 +248,6 @@ public class WhiteBox {
     return offset;
   }
 
+  // Safepoint Checking
+  public native void assertMatchingSafepointCalls(boolean mutexSafepointValue, boolean attemptedNoSafepointValue);
 }
