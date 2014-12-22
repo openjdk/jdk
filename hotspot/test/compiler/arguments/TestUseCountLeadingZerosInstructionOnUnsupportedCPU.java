@@ -26,7 +26,7 @@
  * @bug 8031321
  * @summary Verify processing of UseCountLeadingZerosInstruction option
  *          on CPU without LZCNT support.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestUseCountLeadingZerosInstructionOnUnsupportedCPU
  *        BMIUnsupportedCPUTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

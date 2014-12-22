@@ -26,7 +26,7 @@
  * @test
  * @bug 8031320
  * @summary Verify that rtm locking is used for inflated locks.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMForInflatedLocks
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

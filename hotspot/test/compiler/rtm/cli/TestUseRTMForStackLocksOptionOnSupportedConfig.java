@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMForStackLocks option processing on CPU with
  *          rtm support when VM supports rtm locking.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMForStackLocksOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -58,43 +58,67 @@ public class TestUseRTMForStackLocksOptionOnSupportedConfig
         String warningMessage
                 = RTMGenericCommandLineOptionTest.RTM_FOR_STACK_LOCKS_WARNING;
 
+        String shouldFailMessage = " VM option 'UseRTMForStackLocks' is "
+                + "experimental%nJVM startup should fail without "
+                + "-XX:+UnlockExperimentalVMOptions flag";
+
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[] { errorMessage }, null, ExitCode.FAIL,
+                new String[] { errorMessage }, null, shouldFailMessage,
+                shouldFailMessage + "%nError message expected", ExitCode.FAIL,
                 "-XX:+UseRTMForStackLocks");
+        String shouldPassMessage = " VM option 'UseRTMForStackLocks'"
+                + " is experimental%nJVM startup should pass with "
+                + "-XX:+UnlockExperimentalVMOptions flag";
         // verify that we get a warning when trying to use rtm for stack
         // lock, but not using rtm locking.
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[] { warningMessage }, null, ExitCode.OK,
+                new String[] { warningMessage }, null, shouldPassMessage,
+                "There should be warning when trying to use rtm for stack "
+                        + "lock, but not using rtm locking", ExitCode.OK,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMForStackLocks",
                 "-XX:-UseRTMLocking");
         // verify that we don't get a warning when no using rtm for stack
         // lock and not using rtm locking.
         CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { warningMessage }, ExitCode.OK,
+                new String[] { warningMessage }, shouldPassMessage,
+                "There should not be any warning when use both "
+                        + "-XX:-UseRTMForStackLocks and -XX:-UseRTMLocking "
+                        + "flags",
+                ExitCode.OK,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:-UseRTMForStackLocks",
                 "-XX:-UseRTMLocking");
         // verify that we don't get a warning when using rtm for stack
         // lock and using rtm locking.
         CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { warningMessage }, ExitCode.OK,
+                new String[] { warningMessage }, shouldPassMessage,
+                "There should not be any warning when use both "
+                        + "-XX:+UseRTMForStackLocks and -XX:+UseRTMLocking"
+                        + " flags",
+                ExitCode.OK,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMForStackLocks",
                 "-XX:+UseRTMLocking");
         // verify that default value if false
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMForStackLocks",
                 TestUseRTMForStackLocksOptionOnSupportedConfig.DEFAULT_VALUE,
+                "Default value of option 'UseRTMForStackLocks' should be false",
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS);
         // verify that default value is false even with +UseRTMLocking
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMForStackLocks",
                 TestUseRTMForStackLocksOptionOnSupportedConfig.DEFAULT_VALUE,
+                "Default value of option 'UseRTMForStackLocks' should be false",
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking");
         // verify that we can turn the option on
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMForStackLocks",
-                "true", CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
-                "-XX:+UseRTMLocking", "-XX:+UseRTMForStackLocks");
+                        "true", "Value of option 'UseRTMForStackLocks' should "
+                                + "be able to be set as 'true' when both "
+                                + "-XX:+UseRTMForStackLocks and "
+                                + "-XX:+UseRTMLocking flags used",
+                        CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                        "-XX:+UseRTMLocking", "-XX:+UseRTMForStackLocks");
     }
 
     public static void main(String args[]) throws Throwable {

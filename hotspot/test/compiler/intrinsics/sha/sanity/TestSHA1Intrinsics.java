@@ -25,7 +25,7 @@
  * @test
  * @bug 8035968
  * @summary Verify that SHA-1 intrinsic is actually used.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary ../
+ * @library /testlibrary /../../test/lib /compiler/testlibrary ../
  * @build TestSHA intrinsics.Verifier TestSHA1Intrinsics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
