@@ -214,6 +214,9 @@ class G1CollectedHeap : public SharedHeap {
   friend class G1MarkSweep;
   friend class HeapRegionClaimer;
 
+  // Testing classes.
+  friend class G1CheckCSetFastTableClosure;
+
 private:
   // The one and only G1CollectedHeap, so static functions can find it.
   static G1CollectedHeap* _g1h;

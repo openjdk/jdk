@@ -5900,56 +5900,68 @@ void G1CollectedHeap::check_bitmaps(const char* caller) {
   guarantee(!cl.failures(), "bitmap verification");
 }
 
-bool G1CollectedHeap::check_cset_fast_test() {
-  bool failures = false;
-  for (uint i = 0; i < _hrm.length(); i += 1) {
-    HeapRegion* hr = _hrm.at(i);
-    InCSetState cset_state = (InCSetState) _in_cset_fast_test.get_by_index((uint) i);
+class G1CheckCSetFastTableClosure : public HeapRegionClosure {
+ private:
+  bool _failures;
+ public:
+  G1CheckCSetFastTableClosure() : HeapRegionClosure(), _failures(false) { }
+
+  virtual bool doHeapRegion(HeapRegion* hr) {
+    uint i = hr->hrm_index();
+    InCSetState cset_state = (InCSetState) G1CollectedHeap::heap()->_in_cset_fast_test.get_by_index(i);
     if (hr->is_humongous()) {
       if (hr->in_collection_set()) {
         gclog_or_tty->print_cr("\n## humongous region %u in CSet", i);
-        failures = true;
-        break;
+        _failures = true;
+        return true;
       }
       if (cset_state.is_in_cset()) {
         gclog_or_tty->print_cr("\n## inconsistent cset state %d for humongous region %u", cset_state.value(), i);
-        failures = true;
-        break;
+        _failures = true;
+        return true;
       }
       if (hr->is_continues_humongous() && cset_state.is_humongous()) {
         gclog_or_tty->print_cr("\n## inconsistent cset state %d for continues humongous region %u", cset_state.value(), i);
-        failures = true;
-        break;
+        _failures = true;
+        return true;
       }
     } else {
       if (cset_state.is_humongous()) {
         gclog_or_tty->print_cr("\n## inconsistent cset state %d for non-humongous region %u", cset_state.value(), i);
-        failures = true;
-        break;
+        _failures = true;
+        return true;
       }
       if (hr->in_collection_set() != cset_state.is_in_cset()) {
         gclog_or_tty->print_cr("\n## in CSet %d / cset state %d inconsistency for region %u",
                                hr->in_collection_set(), cset_state.value(), i);
-        failures = true;
-        break;
+        _failures = true;
+        return true;
       }
       if (cset_state.is_in_cset()) {
         if (hr->is_young() != (cset_state.is_young())) {
           gclog_or_tty->print_cr("\n## is_young %d / cset state %d inconsistency for region %u",
                                  hr->is_young(), cset_state.value(), i);
-          failures = true;
-          break;
+          _failures = true;
+          return true;
         }
         if (hr->is_old() != (cset_state.is_old())) {
           gclog_or_tty->print_cr("\n## is_old %d / cset state %d inconsistency for region %u",
                                  hr->is_old(), cset_state.value(), i);
-          failures = true;
-          break;
+          _failures = true;
+          return true;
         }
       }
     }
+    return false;
   }
-  return !failures;
+
+  bool failures() const { return _failures; }
+};
+
+bool G1CollectedHeap::check_cset_fast_test() {
+  G1CheckCSetFastTableClosure cl;
+  _hrm.iterate(&cl);
+  return !cl.failures();
 }
 #endif // PRODUCT
 
