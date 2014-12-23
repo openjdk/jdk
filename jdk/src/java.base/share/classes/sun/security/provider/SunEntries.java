@@ -228,7 +228,10 @@ final class SunEntries {
         /*
          * KeyStore
          */
-        map.put("KeyStore.JKS", "sun.security.provider.JavaKeyStore$JKS");
+        map.put("KeyStore.PKCS12",
+                        "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12");
+        map.put("KeyStore.JKS",
+                        "sun.security.provider.JavaKeyStore$DualFormatJKS");
         map.put("KeyStore.CaseExactJKS",
                         "sun.security.provider.JavaKeyStore$CaseExactJKS");
         map.put("KeyStore.DKS", "sun.security.provider.DomainKeyStore$DKS");
