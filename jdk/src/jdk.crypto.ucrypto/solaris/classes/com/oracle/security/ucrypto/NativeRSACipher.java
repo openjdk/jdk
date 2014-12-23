@@ -178,6 +178,7 @@ public class NativeRSACipher extends CipherSpi {
 
     // see JCE spec
     @Override
+    @SuppressWarnings("deprecation")
     protected synchronized void engineInit(int opmode, Key newKey,
             AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -331,6 +332,7 @@ public class NativeRSACipher extends CipherSpi {
 
     // see JCE spec
     @Override
+    @SuppressWarnings("deprecation")
     protected synchronized Key engineUnwrap(byte[] wrappedKey,
             String wrappedKeyAlgorithm, int wrappedKeyType)
             throws InvalidKeyException, NoSuchAlgorithmException {

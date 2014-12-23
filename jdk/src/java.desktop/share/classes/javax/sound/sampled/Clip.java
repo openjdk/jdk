@@ -178,7 +178,7 @@ public interface Clip extends DataLine {
     /**
      * Sets the first and last sample frames that will be played in the loop.
      * The ending point must be greater than or equal to the starting point, and
-     * both must fall within the the size of the loaded media. A value of 0 for
+     * both must fall within the size of the loaded media. A value of 0 for
      * the starting point means the beginning of the loaded media. Similarly, a
      * value of -1 for the ending point indicates the last frame of the media.
      *

@@ -38,8 +38,6 @@
 import java.awt.*;
 import java.awt.event.*;
 
-import sun.awt.SunToolkit;
-
 public class CtorTest
 {
     public static void main(String []s) throws Exception
@@ -57,7 +55,7 @@ public class CtorTest
         frame.setBounds(100, 100, 100, 100);
         frame.setVisible(true);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         // click in the middle of the frame
         robot.mouseMove(150, 150);
@@ -66,6 +64,6 @@ public class CtorTest
         robot.delay(50);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
     }
 }

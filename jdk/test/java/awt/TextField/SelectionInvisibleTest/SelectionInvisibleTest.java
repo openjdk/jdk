@@ -27,9 +27,7 @@ import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.TextField;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -54,11 +52,10 @@ public class SelectionInvisibleTest {
         frame.add(panel);
         frame.setVisible(true);
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
-
         Robot robot = new Robot();
         robot.setAutoDelay(50);
+
+        robot.waitForIdle();
 
         Point point = textField.getLocationOnScreen();
         int x = point.x + textField.getWidth() / 2;
@@ -66,7 +63,7 @@ public class SelectionInvisibleTest {
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.mousePress(InputEvent.BUTTON1_MASK);
         int N = 10;
@@ -76,7 +73,7 @@ public class SelectionInvisibleTest {
             robot.mouseMove(x, y);
         }
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!textField.getSelectedText().endsWith(LAST_WORD)) {
             throw new RuntimeException("Last word is not selected!");

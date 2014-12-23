@@ -23,7 +23,6 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -40,7 +39,6 @@ public class bug7161568 {
     public static void main(String[] args) throws Exception {
         UIManager.put("TabbedPane.selectionFollowsFocus", Boolean.FALSE);
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -52,7 +50,7 @@ public class bug7161568 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -62,12 +60,12 @@ public class bug7161568 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         for (int i = 0; i < N; i++) {
             robot.keyPress(KeyEvent.VK_LEFT);
             robot.keyRelease(KeyEvent.VK_LEFT);
-            toolkit.realSync();
+            robot.waitForIdle();
         }
     }
 

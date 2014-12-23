@@ -418,7 +418,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
             // each interval
             gradients[i] = new int[GRADIENT_SIZE];
 
-            // get the the 2 colors
+            // get the 2 colors
             rgb1 = colors[i].getRGB();
             rgb2 = colors[i+1].getRGB();
 

@@ -28,8 +28,6 @@
    @run main bug6884066
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
@@ -46,7 +44,6 @@ public class bug6884066 {
 
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(20);
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -62,7 +59,7 @@ public class bug6884066 {
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         Point point = header.getLocationOnScreen();
         robot.mouseMove(point.x + 3, point.y + 3);
         robot.mousePress(InputEvent.BUTTON1_MASK);

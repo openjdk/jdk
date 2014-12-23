@@ -25,7 +25,9 @@
 
 package sun.reflect.generics.reflectiveObjects;
 
+import java.lang.reflect.Type;
 import sun.reflect.generics.factory.GenericsFactory;
+import sun.reflect.generics.tree.FieldTypeSignature;
 import sun.reflect.generics.visitor.Reifier;
 
 
@@ -53,5 +55,17 @@ public abstract class LazyReflectiveObjectGenerator {
 
     // produce a reifying visitor (could this be typed as a TypeTreeVisitor?
     protected Reifier getReifier(){return Reifier.make(getFactory());}
+
+    Type[] reifyBounds(FieldTypeSignature[] boundASTs) {
+        final int length = boundASTs.length;
+        final Type[] bounds = new Type[length];
+        // iterate over bound trees, reifying each in turn
+        for (int i = 0; i < length; i++) {
+            Reifier r = getReifier();
+            boundASTs[i].accept(r);
+            bounds[i] = r.getResult();
+        }
+        return bounds;
+    }
 
 }

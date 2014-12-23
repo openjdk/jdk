@@ -42,7 +42,7 @@ import sun.management.GarbageCollectionNotifInfoCompositeData;
  * The notification emitted will contain the garbage collection notification
  * information about the status of the memory:
  * <u1>
- *   <li>The name of the garbage collector used perform the collection.</li>
+ *   <li>The name of the garbage collector used to perform the collection.</li>
  *   <li>The action performed by the garbage collector.</li>
  *   <li>The cause of the garbage collection action.</li>
  *   <li>A {@link GcInfo} object containing some statistics about the GC cycle
@@ -109,7 +109,7 @@ public class GarbageCollectionNotificationInfo implements  CompositeDataView {
      *
      * @param gcName The name of the garbage collector used to perform the collection
      * @param gcAction The name of the action performed by the garbage collector
-     * @param gcCause The cause the garbage collection action
+     * @param gcCause The cause of the garbage collection action
      * @param gcInfo  a GcInfo object providing statistics about the GC cycle
      */
     public GarbageCollectionNotificationInfo(String gcName,
@@ -152,18 +152,18 @@ public class GarbageCollectionNotificationInfo implements  CompositeDataView {
     }
 
     /**
-     * Returns the action of the performed by the garbage collector
+     * Returns the action performed by the garbage collector
      *
-     * @return the the action of the performed by the garbage collector
+     * @return the action performed by the garbage collector
      */
     public String getGcAction() {
         return gcAction;
     }
 
     /**
-     * Returns the cause  the garbage collection
+     * Returns the cause of the garbage collection
      *
-     * @return the the cause  the garbage collection
+     * @return the cause of the garbage collection
      */
     public String getGcCause() {
         return gcCause;
