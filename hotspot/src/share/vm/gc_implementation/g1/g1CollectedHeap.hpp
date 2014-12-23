@@ -186,32 +186,14 @@ class G1CollectedHeap : public SharedHeap {
   friend class SurvivorGCAllocRegion;
   friend class OldGCAllocRegion;
   friend class G1Allocator;
-  friend class G1DefaultAllocator;
-  friend class G1ResManAllocator;
 
   // Closures used in implementation.
-  template <G1Barrier barrier, G1Mark do_mark_object>
-  friend class G1ParCopyClosure;
-  friend class G1IsAliveClosure;
-  friend class G1EvacuateFollowersClosure;
   friend class G1ParScanThreadState;
-  friend class G1ParScanClosureSuper;
-  friend class G1ParEvacuateFollowersClosure;
   friend class G1ParTask;
   friend class G1ParGCAllocator;
-  friend class G1DefaultParGCAllocator;
-  friend class G1FreeGarbageRegionClosure;
-  friend class RefineCardTableEntryClosure;
   friend class G1PrepareCompactClosure;
-  friend class RegionSorter;
-  friend class RegionResetter;
-  friend class CountRCClosure;
-  friend class EvacPopObjClosure;
-  friend class G1ParCleanupCTTask;
 
-  friend class G1FreeHumongousRegionClosure;
   // Other related classes.
-  friend class G1MarkSweep;
   friend class HeapRegionClaimer;
 
   // Testing classes.
