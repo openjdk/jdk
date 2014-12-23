@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_AIX_PPC_64_VM_PREFETCH_AIX_PPC_64_INLINE_HPP
-#define OS_CPU_AIX_PPC_64_VM_PREFETCH_AIX_PPC_64_INLINE_HPP
+#ifndef OS_CPU_AIX_PPC_VM_PREFETCH_AIX_PPC_INLINE_HPP
+#define OS_CPU_AIX_PPC_VM_PREFETCH_AIX_PPC_INLINE_HPP
 
 #include "runtime/prefetch.hpp"
 
@@ -55,4 +55,4 @@ inline void Prefetch::write(void *loc, intx interval) {
 #endif
 }
 
-#endif // OS_CPU_AIX_PPC_64_VM_PREFETCH_AIX_PPC_64_INLINE_HPP
+#endif // OS_CPU_AIX_PPC_VM_PREFETCH_AIX_PPC_INLINE_HPP

@@ -255,6 +255,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void record_klass_in_profile(Register receiver, Register scratch1, Register scratch2, bool is_virtual_call);
   void record_klass_in_profile_helper(Register receiver, Register scratch1, Register scratch2, int start_row, Label& done, bool is_virtual_call);
 
+  // Argument and return type profiling.
+  void profile_obj_type(Register obj, Register mdo_addr_base, RegisterOrConstant mdo_addr_offs, Register tmp, Register tmp2);
+  void profile_arguments_type(Register callee, Register tmp1, Register tmp2, bool is_virtual);
+  void profile_return_type(Register ret, Register tmp1, Register tmp2);
+  void profile_parameters_type(Register tmp1, Register tmp2, Register tmp3, Register tmp4);
+
 #endif // !CC_INTERP
 
   // Debugging

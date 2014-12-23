@@ -23,7 +23,7 @@
 
 /*
  * @test UnloadTest
- * @library /runtime/testlibrary /testlibrary /testlibrary/whitebox
+ * @library /runtime/testlibrary /testlibrary /../../test/lib
  * @library classes
  * @build ClassUnloadCommon test.Empty
  * @build UnloadTest

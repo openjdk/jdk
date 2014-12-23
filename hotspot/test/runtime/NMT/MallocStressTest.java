@@ -25,7 +25,7 @@
  * @test
  * @summary Stress test for malloc tracking
  * @key nmt jcmd stress
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build MallocStressTest
  * @ignore - This test is disabled since it will stress NMT and timeout during normal testing
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

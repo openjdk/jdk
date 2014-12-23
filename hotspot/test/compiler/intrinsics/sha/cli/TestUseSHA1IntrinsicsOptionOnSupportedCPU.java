@@ -25,7 +25,7 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA1Intrinsics option processing on supported CPU,
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary testcases
+ * @library /testlibrary /../../test/lib /compiler/testlibrary testcases
  * @build TestUseSHA1IntrinsicsOptionOnSupportedCPU
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
