@@ -66,11 +66,6 @@ STRIP_LIBS_SRC := \
     $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
         -name '*$(SHARED_LIBRARY_SUFFIX)' -type f)
 
-# On Windows, don't include debug info for libs either.
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  COPY_LIBS_SRC := $(filter-out %.diz %.map %.pdb, $(COPY_LIBS_SRC))
-endif
-
 $(eval $(call SetupCopyFiles,STRIP_MODULES_CMDS, \
     SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds, \
     DEST := $(MODULES_CMDS_STRIPPED), \
