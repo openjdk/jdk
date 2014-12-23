@@ -136,7 +136,7 @@ public class JPEGQTable {
     /**
      * Constructs a quantization table from the argument, which must
      * contain 64 elements in natural order (not zig-zag order).
-     * A copy is made of the the input array.
+     * A copy is made of the input array.
      * @param table the quantization table, as an <code>int</code> array.
      * @throws IllegalArgumentException if <code>table</code> is
      * <code>null</code> or <code>table.length</code> is not equal to 64.

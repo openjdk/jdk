@@ -111,7 +111,7 @@ public class NTUserPrincipal implements Principal, java.io.Serializable {
      * @param o Object to be compared for equality with this
      *          <code>NTPrincipal</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>NTPrincipal</code>.
      */
     public boolean equals(Object o) {

@@ -33,27 +33,29 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class ActionAfterRemove
 {
     private static volatile boolean passed = true;
 
-    // handle the uncaught exception
-    public void handle(Throwable e) {
-        e.printStackTrace();
-        passed = false;
-    }
-
     public static final void main(String args[])
     {
+        // In order to handle all uncaught exceptions in the EDT
+        final Thread.UncaughtExceptionHandler eh = new Thread.UncaughtExceptionHandler()
+        {
+            @Override
+            public void uncaughtException(Thread t, Throwable e)
+            {
+                e.printStackTrace();
+                passed = false;
+            }
+        };
+
         final Frame frame = new Frame();
         final List list = new List();
         Robot robot = null;
 
-        // In order to handle all uncaught exceptions in the EDT
-        System.setProperty("sun.awt.exception.handler", "ActionAfterRemove");
 
         list.add("will be removed");
         frame.add(list);
@@ -72,9 +74,9 @@ public class ActionAfterRemove
         }
 
         Util.clickOnComp(list, robot);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
         Util.clickOnComp(list, robot);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         if (!passed){
             throw new RuntimeException("Test failed: exception was thrown on EDT.");

@@ -716,7 +716,7 @@ public class JEditorPane extends JTextComponent {
      * like fetch the stream from a cache, monitor the progress
      * of the stream, etc.
      * <p>
-     * This method is expected to have the the side effect of
+     * This method is expected to have the side effect of
      * establishing the content type, and therefore setting the
      * appropriate <code>EditorKit</code> to use for loading the stream.
      * <p>
@@ -1826,7 +1826,7 @@ public class JEditorPane extends JTextComponent {
              * Perform the specified Action on the object
              *
              * @param i zero-based index of actions
-             * @return true if the the action was performed; else false.
+             * @return true if the action was performed; else false.
              * @see #getAccessibleActionCount
              */
             public boolean doAccessibleAction(int i) {

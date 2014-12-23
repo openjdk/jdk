@@ -33,8 +33,8 @@ package sun.reflect.annotation;
  */
 public class EnumConstantNotPresentExceptionProxy extends ExceptionProxy {
     private static final long serialVersionUID = -604662101303187330L;
-    Class<? extends Enum<?>> enumType;
-    String constName;
+    final Class<? extends Enum<?>> enumType;
+    final String constName;
 
     public EnumConstantNotPresentExceptionProxy(Class<? extends Enum<?>> enumType,
                                                 String constName) {

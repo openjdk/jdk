@@ -407,7 +407,7 @@ public class ScriptEngineManager  {
     /** Map of script file extension to script engine factory. */
     private HashMap<String, ScriptEngineFactory> extensionAssociations;
 
-    /** Map of script script MIME type to script engine factory. */
+    /** Map of script MIME type to script engine factory. */
     private HashMap<String, ScriptEngineFactory> mimeTypeAssociations;
 
     /** Global bindings associated with script engines created by this manager. */

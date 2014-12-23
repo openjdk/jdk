@@ -137,7 +137,7 @@ echo "DEFFMTCTRY=${DEFFMTCTRY}"
 
 runTest()
 {
-    RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $METHODNAME $PARAM1 $PARAM2 $PARAM3"
+    RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES}${PS}${SPICLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $METHODNAME $PARAM1 $PARAM2 $PARAM3"
     echo ${RUNCMD}
     ${RUNCMD}
     result=$?
@@ -189,6 +189,7 @@ else
   PARAM2=zh
   PARAM3=CN
 fi
+SPICLASSES=
 runTest
 
 # testing SPI is NOT selected, as there is none.
@@ -197,6 +198,7 @@ PREFLIST=SPI,JRE
 PARAM1=JRE
 PARAM2=en
 PARAM3=US
+SPICLASSES=
 runTest
 
 # testing the order, variaton #1. This assumes en_GB DateFormat data are available both in JRE & CLDR
@@ -205,6 +207,7 @@ PREFLIST=CLDR,JRE
 PARAM1=CLDR
 PARAM2=en
 PARAM3=GB
+SPICLASSES=
 runTest
 
 # testing the order, variaton #2. This assumes en_GB DateFormat data are available both in JRE & CLDR
@@ -213,6 +216,7 @@ PREFLIST=JRE,CLDR
 PARAM1=JRE
 PARAM2=en
 PARAM3=GB
+SPICLASSES=
 runTest
 
 # testing the order, variaton #3 for non-existent locale in JRE assuming "haw" is not in JRE.
@@ -221,6 +225,7 @@ PREFLIST=JRE,CLDR
 PARAM1=CLDR
 PARAM2=haw
 PARAM3=GB
+SPICLASSES=
 runTest
 
 # testing the order, variaton #4 for the bug 7196799. CLDR's "zh" data should be used in "zh_CN"
@@ -229,6 +234,7 @@ PREFLIST=CLDR
 PARAM1=CLDR
 PARAM2=zh
 PARAM3=CN
+SPICLASSES=
 runTest
 
 # testing FALLBACK provider. SPI and invalid one cases.
@@ -237,16 +243,19 @@ PREFLIST=SPI
 PARAM1=FALLBACK
 PARAM2=en
 PARAM3=US
+SPICLASSES=
 runTest
 PREFLIST=FOO
 PARAM1=JRE
 PARAM2=en
 PARAM3=US
+SPICLASSES=
 runTest
 PREFLIST=BAR,SPI
 PARAM1=FALLBACK
 PARAM2=en
 PARAM3=US
+SPICLASSES=
 runTest
 
 # testing 7198834 fix. Only works on Windows Vista or upper.
@@ -255,22 +264,25 @@ PREFLIST=HOST
 PARAM1=
 PARAM2=
 PARAM3=
+SPICLASSES=
 runTest
 
 # testing 8000245 fix.
 METHODNAME=tzNameTest
-PREFLIST="JRE -Djava.ext.dirs=${SPIDIR}"
+PREFLIST=JRE
 PARAM1=Europe/Moscow
 PARAM2=
 PARAM3=
+SPICLASSES=${SPIDIR}
 runTest
 
 # testing 8000615 fix.
 METHODNAME=tzNameTest
-PREFLIST="JRE -Djava.ext.dirs=${SPIDIR}"
+PREFLIST=JRE
 PARAM1=America/Los_Angeles
 PARAM2=
 PARAM3=
+SPICLASSES=${SPIDIR}
 runTest
 
 # testing 8001440 fix.
@@ -279,6 +291,7 @@ PREFLIST=CLDR
 PARAM1=
 PARAM2=
 PARAM3=
+SPICLASSES=
 runTest
 
 # testing 8010666 fix.
@@ -289,15 +302,17 @@ then
   PARAM1=
   PARAM2=
   PARAM3=
+  SPICLASSES=
   runTest
 fi
 
 # testing 8013086 fix.
 METHODNAME=bug8013086Test
-PREFLIST="JRE,SPI -Djava.ext.dirs=${SPIDIR}"
+PREFLIST=JRE,SPI
 PARAM1=ja
 PARAM2=JP
 PARAM3=
+SPICLASSES=${SPIDIR}
 runTest
 
 # testing 8013903 fix. (Windows only)
@@ -306,12 +321,14 @@ PREFLIST=HOST,JRE
 PARAM1=
 PARAM2=
 PARAM3=
+SPICLASSES=
 runTest
 METHODNAME=bug8013903Test
 PREFLIST=HOST
 PARAM1=
 PARAM2=
 PARAM3=
+SPICLASSES=
 runTest
 
 # testing 8027289 fix, if the platform format default is zh_CN
@@ -323,12 +340,14 @@ if [ "${DEFFMTLANG}" = "zh" ] && [ "${DEFFMTCTRY}" = "CN" ]; then
   PARAM1=FFE5
   PARAM2=
   PARAM3=
+  SPICLASSES=
   runTest
   METHODNAME=bug8027289Test
   PREFLIST=HOST
   PARAM1=00A5
   PARAM2=
   PARAM3=
+  SPICLASSES=
   runTest
 fi
 
