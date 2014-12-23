@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,10 @@
 #include "gc_implementation/shared/gcStats.hpp"
 #include "gc_implementation/shared/gcWhen.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
+#include "memory/cardGeneration.hpp"
 #include "memory/freeBlockDictionary.hpp"
-#include "memory/generation.hpp"
 #include "memory/iterator.hpp"
+#include "memory/space.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
 #include "services/memoryService.hpp"
@@ -171,9 +172,7 @@ class CMSBitMap VALUE_OBJ_CLASS_SPEC {
 // Represents a marking stack used by the CMS collector.
 // Ideally this should be GrowableArray<> just like MSC's marking stack(s).
 class CMSMarkStack: public CHeapObj<mtGC>  {
-  //
   friend class CMSCollector;   // To get at expansion stats further below.
-  //
 
   VirtualSpace _virtual_space;  // Space for the stack
   oop*   _base;      // Bottom of stack
@@ -1031,6 +1030,9 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void set_expansion_cause(CMSExpansionCause::Cause v) { _expansion_cause = v;}
   CMSExpansionCause::Cause expansion_cause() const { return _expansion_cause; }
 
+  // Accessing spaces
+  CompactibleSpace* space() const { return (CompactibleSpace*)_cmsSpace; }
+
  private:
   // For parallel young-gen GC support.
   CMSParGCThreadState** _par_gc_thread_states;
@@ -1063,6 +1065,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // getter and initializer for _initiating_occupancy field.
   double initiating_occupancy() const { return _initiating_occupancy; }
   void   init_initiating_occupancy(intx io, uintx tr);
+
+  void expand_for_gc_cause(size_t bytes, size_t expand_bytes, CMSExpansionCause::Cause cause);
+
+  void assert_correct_size_change_locking();
 
  public:
   ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
@@ -1100,23 +1106,14 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Override
   virtual void ref_processor_init();
 
-  // Grow generation by specified size (returns false if unable to grow)
-  bool grow_by(size_t bytes);
-  // Grow generation to reserved size.
-  bool grow_to_reserved();
-
   void clear_expansion_cause() { _expansion_cause = CMSExpansionCause::_no_expansion; }
 
   // Space enquiries
-  size_t capacity() const;
-  size_t used() const;
-  size_t free() const;
   double occupancy() const { return ((double)used())/((double)capacity()); }
   size_t contiguous_available() const;
   size_t unsafe_max_alloc_nogc() const;
 
   // over-rides
-  MemRegion used_region() const;
   MemRegion used_region_at_save_marks() const;
 
   // Does a "full" (forced) collection invoked on this generation collect
@@ -1127,10 +1124,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
     return !ScavengeBeforeFullGC;
   }
 
-  void space_iterate(SpaceClosure* blk, bool usedOnly = false);
-
-  // Support for compaction
-  CompactibleSpace* first_compaction_space() const;
   // Adjust quantities in the generation affected by
   // the compaction.
   void reset_after_compaction();
@@ -1190,18 +1183,13 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   }
 
   // Allocation failure
-  void expand(size_t bytes, size_t expand_bytes,
-    CMSExpansionCause::Cause cause);
-  virtual bool expand(size_t bytes, size_t expand_bytes);
   void shrink(size_t bytes);
-  void shrink_by(size_t bytes);
   HeapWord* expand_and_par_lab_allocate(CMSParGCThreadState* ps, size_t word_sz);
   bool expand_and_ensure_spooling_space(PromotionInfo* promo);
 
   // Iteration support and related enquiries
   void save_marks();
   bool no_allocs_since_save_marks();
-  void younger_refs_iterate(OopsInGenClosure* cl);
 
   // Iteration support specific to CMS generations
   void save_sweep_limit();
