@@ -40,21 +40,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
-import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.BreakableNode;
+import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.Expression;
+import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.GetSplitState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
@@ -65,9 +66,11 @@ import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.ObjectNode;
 import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
@@ -82,6 +85,7 @@ import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
+import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
 
@@ -131,8 +135,44 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         OBJECT(Type.OBJECT);
 
         private final Type type;
+        private final TypeHolderExpression typeExpression;
+
         private LvarType(final Type type) {
             this.type = type;
+            this.typeExpression = new TypeHolderExpression(type);
+        }
+    }
+
+    /**
+     * A bogus Expression subclass that only reports its type. Used to interrogate BinaryNode and UnaryNode about their
+     * types by creating temporary copies of them and replacing their operands with instances of these. An alternative
+     * solution would be to add BinaryNode.getType(Type lhsType, Type rhsType) and UnaryNode.getType(Type exprType)
+     * methods. For the time being though, this is easier to implement and is in fact fairly clean. It does result in
+     * generation of higher number of temporary short lived nodes, though.
+     */
+    private static class TypeHolderExpression extends Expression {
+        private static final long serialVersionUID = 1L;
+
+        private final Type type;
+
+        TypeHolderExpression(final Type type) {
+            super(0L, 0, 0);
+            this.type = type;
+        }
+
+        @Override
+        public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
+            throw new AssertionError();
+        }
+
+        @Override
+        public Type getType() {
+            return type;
+        }
+
+        @Override
+        public void toString(final StringBuilder sb, final boolean printType) {
+            throw new AssertionError();
         }
     }
 
@@ -359,6 +399,8 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     // allocates a new map. Immutability of maps allows for cheap snapshots by just keeping the reference to the current
     // value.
     private Map<Symbol, LvarType> localVariableTypes = new IdentityHashMap<>();
+    // Stack for evaluated expression types.
+    private final Deque<LvarType> typeStack = new ArrayDeque<>();
 
     // Whether the current point in the AST is reachable code
     private boolean reachable = true;
@@ -374,8 +416,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     private final Map<IdentNode, LvarType> identifierLvarTypes = new IdentityHashMap<>();
     private final Map<Symbol, SymbolConversions> symbolConversions = new IdentityHashMap<>();
-
-    private SymbolToType symbolToType = new SymbolToType();
 
     // Stack of open labels for starts of catch blocks, one for every currently traversed try block; for inserting
     // control flow edges to them. Note that we currently don't insert actual control flow edges, but instead edges that
@@ -400,62 +440,56 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     private void doesNotContinueSequentially() {
         reachable = false;
         localVariableTypes = Collections.emptyMap();
+        assertTypeStackIsEmpty();
     }
 
+    private boolean pushExpressionType(final Expression expr) {
+        typeStack.push(toLvarType(expr.getType()));
+        return false;
+    }
+
+    @Override
+    public boolean enterAccessNode(final AccessNode accessNode) {
+        visitExpression(accessNode.getBase());
+        return pushExpressionType(accessNode);
+    }
 
     @Override
     public boolean enterBinaryNode(final BinaryNode binaryNode) {
         // NOTE: regardless of operator's lexical associativity, lhs is always evaluated first.
         final Expression lhs = binaryNode.lhs();
-        final boolean isAssignment = binaryNode.isAssignment();
-        LvarType lhsTypeOnLoad = null;
-        if(isAssignment) {
-            if(lhs instanceof BaseNode) {
-                ((BaseNode)lhs).getBase().accept(this);
-                if(lhs instanceof IndexNode) {
-                    ((IndexNode)lhs).getIndex().accept(this);
-                } else {
-                    assert lhs instanceof AccessNode;
-                }
-            } else {
-                assert lhs instanceof IdentNode;
-                if(binaryNode.isSelfModifying()) {
-                    final IdentNode ident = ((IdentNode)lhs);
-                    ident.accept(this);
-                    // Self-assignment can cause a change in the type of the variable. For purposes of evaluating
-                    // the type of the operation, we must use its type as it was when it was loaded. If we didn't
-                    // do this, some awkward expressions would end up being calculated incorrectly, e.g.
-                    // "var x; x += x = 0;". In this case we have undefined+int so the result type is double (NaN).
-                    // However, if we used the type of "x" on LHS after we evaluated RHS, we'd see int+int, so the
-                    // result type would be either optimistic int or pessimistic long, which would be wrong.
-                    lhsTypeOnLoad = getLocalVariableTypeIfBytecode(ident.getSymbol());
-                }
-            }
+        final LvarType lhsType;
+        if (!(lhs instanceof IdentNode && binaryNode.tokenType() == TokenType.ASSIGN)) {
+            lhsType = visitExpression(lhs);
         } else {
-            lhs.accept(this);
+            // Can't visit IdentNode on LHS of a simple assignment, as visits imply use, and this is def.
+            // The type is irrelevant, as only RHS is used to determine the type anyway.
+            lhsType = LvarType.UNDEFINED;
         }
 
         final boolean isLogical = binaryNode.isLogical();
-        assert !(isAssignment && isLogical); // there are no logical assignment operators in JS
         final Label joinLabel = isLogical ? new Label("") : null;
         if(isLogical) {
             jumpToLabel((JoinPredecessor)lhs, joinLabel);
         }
 
         final Expression rhs = binaryNode.rhs();
-        rhs.accept(this);
+        final LvarType rhsType = visitExpression(rhs);
         if(isLogical) {
             jumpToLabel((JoinPredecessor)rhs, joinLabel);
         }
         joinOnLabel(joinLabel);
 
-        if(isAssignment && lhs instanceof IdentNode) {
+        final LvarType type = toLvarType(binaryNode.setOperands(lhsType.typeExpression, rhsType.typeExpression).getType());
+
+        if(binaryNode.isAssignment() && lhs instanceof IdentNode) {
             if(binaryNode.isSelfModifying()) {
-                onSelfAssignment((IdentNode)lhs, binaryNode, lhsTypeOnLoad);
+                onSelfAssignment((IdentNode)lhs, type);
             } else {
-                onAssignment((IdentNode)lhs, rhs);
+                onAssignment((IdentNode)lhs, type);
             }
         }
+        typeStack.push(type);
         return false;
     }
 
@@ -475,6 +509,17 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     @Override
+    public boolean enterCallNode(final CallNode callNode) {
+        visitExpression(callNode.getFunction());
+        visitExpressions(callNode.getArgs());
+        final CallNode.EvalArgs evalArgs = callNode.getEvalArgs();
+        if (evalArgs != null) {
+            visitExpressions(evalArgs.getArgs());
+        }
+        return pushExpressionType(callNode);
+    }
+
+    @Override
     public boolean enterContinueNode(final ContinueNode continueNode) {
         return enterJumpStatement(continueNode);
     }
@@ -483,6 +528,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         if(!reachable) {
             return false;
         }
+        assertTypeStackIsEmpty();
         final BreakableNode target = jump.getTarget(lc);
         jumpToLabel(jump, jump.getTargetLabel(target), getBreakTargetTypes(target));
         doesNotContinueSequentially();
@@ -495,6 +541,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     private void enterDoWhileLoop(final WhileNode loopNode) {
+        assertTypeStackIsEmpty();
         final JoinPredecessorExpression test = loopNode.getTest();
         final Block body = loopNode.getBody();
         final Label continueLabel = loopNode.getContinueLabel();
@@ -512,7 +559,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             if(!reachable) {
                 break;
             }
-            test.accept(this);
+            visitExpressionOnEmptyStack(test);
             jumpToLabel(test, breakLabel);
             if(isAlwaysFalse(test)) {
                 break;
@@ -535,6 +582,45 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     @Override
+    public boolean enterExpressionStatement(final ExpressionStatement expressionStatement) {
+        if (reachable) {
+            visitExpressionOnEmptyStack(expressionStatement.getExpression());
+        }
+        return false;
+    }
+
+    private void assertTypeStackIsEmpty() {
+        assert typeStack.isEmpty();
+    }
+
+    @Override
+    protected Node leaveDefault(final Node node) {
+        assert !(node instanceof Expression); // All expressions were handled
+        assert !(node instanceof Statement) || typeStack.isEmpty(); // No statements leave with a non-empty stack
+        return node;
+    }
+
+    private LvarType visitExpressionOnEmptyStack(final Expression expr) {
+        assertTypeStackIsEmpty();
+        return visitExpression(expr);
+    }
+
+    private LvarType visitExpression(final Expression expr) {
+        final int stackSize = typeStack.size();
+        expr.accept(this);
+        assert typeStack.size() == stackSize + 1;
+        return typeStack.pop();
+    }
+
+    private void visitExpressions(final List<Expression> exprs) {
+        for(final Expression expr: exprs) {
+            if (expr != null) {
+                visitExpression(expr);
+            }
+        }
+    }
+
+    @Override
     public boolean enterForNode(final ForNode forNode) {
         if(!reachable) {
             return false;
@@ -543,7 +629,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         final Expression init = forNode.getInit();
         if(forNode.isForIn()) {
             final JoinPredecessorExpression iterable = forNode.getModify();
-            iterable.accept(this);
+            visitExpression(iterable);
             enterTestFirstLoop(forNode, null, init,
                     // If we're iterating over property names, and we can discern from the runtime environment
                     // of the compilation that the object being iterated over must use strings for property
@@ -552,16 +638,18 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                     !compiler.useOptimisticTypes() || (!forNode.isForEach() && compiler.hasStringPropertyIterator(iterable.getExpression())));
         } else {
             if(init != null) {
-                init.accept(this);
+                visitExpressionOnEmptyStack(init);
             }
             enterTestFirstLoop(forNode, forNode.getModify(), null, false);
         }
+        assertTypeStackIsEmpty();
         return false;
     }
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         if(alreadyEnteredTopLevelFunction) {
+            typeStack.push(LvarType.OBJECT);
             return false;
         }
         int pos = 0;
@@ -603,11 +691,20 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     @Override
+    public boolean enterGetSplitState(final GetSplitState getSplitState) {
+        return pushExpressionType(getSplitState);
+    }
+
+    @Override
     public boolean enterIdentNode(final IdentNode identNode) {
         final Symbol symbol = identNode.getSymbol();
         if(symbol.isBytecodeLocal()) {
             symbolIsUsed(symbol);
-            setIdentifierLvarType(identNode, getLocalVariableType(symbol));
+            final LvarType type = getLocalVariableType(symbol);
+            setIdentifierLvarType(identNode, type);
+            typeStack.push(type);
+        } else {
+            pushExpressionType(identNode);
         }
         return false;
     }
@@ -622,11 +719,12 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         final Block pass = ifNode.getPass();
         final Block fail = ifNode.getFail();
 
-        test.accept(this);
+        visitExpressionOnEmptyStack(test);
 
         final Map<Symbol, LvarType> afterTestLvarTypes = localVariableTypes;
         if(!isAlwaysFalse(test)) {
             pass.accept(this);
+            assertTypeStackIsEmpty();
         }
         final Map<Symbol, LvarType> passLvarTypes = localVariableTypes;
         final boolean reachableFromPass = reachable;
@@ -635,6 +733,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         localVariableTypes = afterTestLvarTypes;
         if(!isAlwaysTrue(test) && fail != null) {
             fail.accept(this);
+            assertTypeStackIsEmpty();
             final boolean reachableFromFail = reachable;
             reachable |= reachableFromPass;
             if(!reachable) {
@@ -667,12 +766,51 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     @Override
-    public boolean enterPropertyNode(final PropertyNode propertyNode) {
-        // Avoid falsely adding property keys to the control flow graph
-        if(propertyNode.getValue() != null) {
-            propertyNode.getValue().accept(this);
+    public boolean enterIndexNode(final IndexNode indexNode) {
+        visitExpression(indexNode.getBase());
+        visitExpression(indexNode.getIndex());
+        return pushExpressionType(indexNode);
+    }
+
+    @Override
+    public boolean enterJoinPredecessorExpression(final JoinPredecessorExpression joinExpr) {
+        final Expression expr = joinExpr.getExpression();
+        if (expr != null) {
+            expr.accept(this);
+        } else {
+            typeStack.push(LvarType.UNDEFINED);
         }
         return false;
+    }
+
+    @Override
+    public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
+        if (literalNode instanceof ArrayLiteralNode) {
+            final List<Expression> expressions = ((ArrayLiteralNode)literalNode).getElementExpressions();
+            if (expressions != null) {
+                visitExpressions(expressions);
+            }
+        }
+        pushExpressionType(literalNode);
+        return false;
+    }
+
+    @Override
+    public boolean enterObjectNode(final ObjectNode objectNode) {
+        for(final PropertyNode propertyNode: objectNode.getElements()) {
+            // Avoid falsely adding property keys to the control flow graph
+            final Expression value = propertyNode.getValue();
+            if (value != null) {
+                visitExpression(value);
+            }
+        }
+        return pushExpressionType(objectNode);
+    }
+
+    @Override
+    public boolean enterPropertyNode(final PropertyNode propertyNode) {
+        // Property nodes are only accessible through object literals, and we handled that case above
+        throw new AssertionError();
     }
 
     @Override
@@ -684,14 +822,20 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         final Expression returnExpr = returnNode.getExpression();
         final Type returnExprType;
         if(returnExpr != null) {
-            returnExpr.accept(this);
-            returnExprType = getType(returnExpr);
+            returnExprType = visitExpressionOnEmptyStack(returnExpr).type;
         } else {
+            assertTypeStackIsEmpty();
             returnExprType = Type.UNDEFINED;
         }
         returnType = Type.widestReturnType(returnType, returnExprType);
         doesNotContinueSequentially();
         return false;
+    }
+
+    @Override
+    public boolean enterRuntimeNode(final RuntimeNode runtimeNode) {
+        visitExpressions(runtimeNode.getArgs());
+        return pushExpressionType(runtimeNode);
     }
 
     @Override
@@ -706,8 +850,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             return false;
         }
 
-        final Expression expr = switchNode.getExpression();
-        expr.accept(this);
+        visitExpressionOnEmptyStack(switchNode.getExpression());
 
         final List<CaseNode> cases = switchNode.getCases();
         if(cases.isEmpty()) {
@@ -724,7 +867,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         for(final CaseNode caseNode: cases) {
             final Expression test = caseNode.getTest();
             if(!isInteger && test != null) {
-                test.accept(this);
+                visitExpressionOnEmptyStack(test);
                 if(!tagUsed) {
                     symbolIsUsed(switchNode.getTag(), LvarType.OBJECT);
                     tagUsed = true;
@@ -769,29 +912,42 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         final Expression trueExpr = ternaryNode.getTrueExpression();
         final Expression falseExpr = ternaryNode.getFalseExpression();
 
-        test.accept(this);
+        visitExpression(test);
 
         final Map<Symbol, LvarType> testExitLvarTypes = localVariableTypes;
+        final LvarType trueType;
         if(!isAlwaysFalse(test)) {
-            trueExpr.accept(this);
+            trueType = visitExpression(trueExpr);
+        } else {
+            trueType = null;
         }
         final Map<Symbol, LvarType> trueExitLvarTypes = localVariableTypes;
         localVariableTypes = testExitLvarTypes;
+        final LvarType falseType;
         if(!isAlwaysTrue(test)) {
-            falseExpr.accept(this);
+            falseType = visitExpression(falseExpr);
+        } else {
+            falseType = null;
         }
         final Map<Symbol, LvarType> falseExitLvarTypes = localVariableTypes;
         localVariableTypes = getUnionTypes(trueExitLvarTypes, falseExitLvarTypes);
         setConversion((JoinPredecessor)trueExpr, trueExitLvarTypes, localVariableTypes);
         setConversion((JoinPredecessor)falseExpr, falseExitLvarTypes, localVariableTypes);
+
+        typeStack.push(trueType != null ? falseType != null ? widestLvarType(trueType, falseType) : trueType : assertNotNull(falseType));
         return false;
+    }
+
+    private static <T> T assertNotNull(final T t) {
+        assert t != null;
+        return t;
     }
 
     private void enterTestFirstLoop(final LoopNode loopNode, final JoinPredecessorExpression modify,
             final Expression iteratorValues, final boolean iteratorValuesAreObject) {
         final JoinPredecessorExpression test = loopNode.getTest();
         if(isAlwaysFalse(test)) {
-            test.accept(this);
+            visitExpressionOnEmptyStack(test);
             return;
         }
 
@@ -804,7 +960,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             jumpToLabel(loopNode, repeatLabel, beforeLoopTypes);
             final Map<Symbol, LvarType> beforeRepeatTypes = localVariableTypes;
             if(test != null) {
-                test.accept(this);
+                visitExpressionOnEmptyStack(test);
             }
             if(!isAlwaysTrue(test)) {
                 jumpToLabel(test, breakLabel);
@@ -827,7 +983,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                 break;
             }
             if(modify != null) {
-                modify.accept(this);
+                visitExpressionOnEmptyStack(modify);
                 jumpToLabel(modify, repeatLabel);
                 joinOnLabel(repeatLabel);
             }
@@ -853,7 +1009,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             return false;
         }
 
-        throwNode.getExpression().accept(this);
+        visitExpressionOnEmptyStack(throwNode.getExpression());
         jumpToCatchBlock(throwNode);
         doesNotContinueSequentially();
         return false;
@@ -892,7 +1048,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             onAssignment(exception, LvarType.OBJECT);
             final Expression condition = catchNode.getExceptionCondition();
             if(condition != null) {
-                condition.accept(this);
+                visitExpression(condition);
             }
             final Map<Symbol, LvarType> afterConditionTypes = localVariableTypes;
             final Block catchBody = catchNode.getBody();
@@ -927,14 +1083,11 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     @Override
     public boolean enterUnaryNode(final UnaryNode unaryNode) {
         final Expression expr = unaryNode.getExpression();
-        expr.accept(this);
-
-        if(unaryNode.isSelfModifying()) {
-            if(expr instanceof IdentNode) {
-                final IdentNode ident = (IdentNode)expr;
-                onSelfAssignment(ident, unaryNode, getLocalVariableTypeIfBytecode(ident.getSymbol()));
-            }
+        final LvarType unaryType = toLvarType(unaryNode.setExpression(visitExpression(expr).typeExpression).getType());
+        if(unaryNode.isSelfModifying() && expr instanceof IdentNode) {
+            onSelfAssignment((IdentNode)expr, unaryType);
         }
+        typeStack.push(unaryType);
         return false;
     }
 
@@ -945,8 +1098,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         }
         final Expression init = varNode.getInit();
         if(init != null) {
-            init.accept(this);
-            onAssignment(varNode.getName(), init);
+            onAssignment(varNode.getName(), visitExpression(init));
         }
         return false;
     }
@@ -963,6 +1115,15 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         }
         return false;
     }
+
+    @Override
+    public boolean enterWithNode(final WithNode withNode) {
+        if (reachable) {
+            visitExpression(withNode.getExpression());
+            withNode.getBody().accept(this);
+        }
+        return false;
+    };
 
     private Map<Symbol, LvarType> getBreakTargetTypes(final BreakableNode target) {
         // Remove symbols defined in the the blocks that are being broken out of.
@@ -999,18 +1160,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         final LvarType type = getLocalVariableTypeOrNull(symbol);
         assert type != null;
         return type;
-    }
-
-    /**
-     * Gets the type for a local variable if it is a bytecode local, otherwise null. Can be used in circumstances where
-     * the type is irrelevant if the symbol is not a bytecode local. Note that for bytecode locals, it delegates to
-     * {@link #getLocalVariableType(Symbol)}, so it will still assert that the type for such variable is already
-     * defined (that is, not null).
-     * @param symbol the symbol representing the variable.
-     * @return the current variable type, if it is a bytecode local, otherwise null.
-     */
-    private LvarType getLocalVariableTypeIfBytecode(final Symbol symbol) {
-        return symbol.isBytecodeLocal() ? getLocalVariableType(symbol) : null;
     }
 
     /**
@@ -1154,6 +1303,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
      */
     private void leaveBreakable(final BreakableNode breakable) {
         joinOnLabel(breakable.getBreakLabel());
+        assertTypeStackIsEmpty();
     }
 
     @Override
@@ -1329,10 +1479,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         return conv == null || !conv.isLive();
     }
 
-    private void onAssignment(final IdentNode identNode, final Expression rhs) {
-        onAssignment(identNode, toLvarType(getType(rhs)));
-    }
-
     private void onAssignment(final IdentNode identNode, final LvarType type) {
         final Symbol symbol = identNode.getSymbol();
         assert symbol != null : identNode.getName();
@@ -1400,13 +1546,12 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         jumpToCatchBlock(identNode);
     }
 
-    private void onSelfAssignment(final IdentNode identNode, final Expression assignment, final LvarType typeOnLoad) {
+    private void onSelfAssignment(final IdentNode identNode, final LvarType type) {
         final Symbol symbol = identNode.getSymbol();
         assert symbol != null : identNode.getName();
         if(!symbol.isBytecodeLocal()) {
             return;
         }
-        final LvarType type = toLvarType(getType(assignment, symbol, typeOnLoad.type));
         // Self-assignment never produce either a boolean or undefined
         assert type != null && type != LvarType.UNDEFINED && type != LvarType.BOOLEAN;
         setType(symbol, type);
@@ -1466,7 +1611,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
      * @param symbol the symbol representing the variable
      * @param type the type
      */
-    @SuppressWarnings("unused")
     private void setType(final Symbol symbol, final LvarType type) {
         if(getLocalVariableTypeOrNull(symbol) == type) {
             return;
@@ -1485,78 +1629,5 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
      */
     private void symbolIsUsed(final Symbol symbol) {
         symbolIsUsed(symbol, getLocalVariableType(symbol));
-    }
-
-    /**
-     * Gets the type of the expression, dependent on the current types of the local variables.
-     *
-     * @param expr the expression
-     * @return the current type of the expression dependent on the current types of the local variables.
-     */
-    private Type getType(final Expression expr) {
-        return expr.getType(getSymbolToType());
-    }
-
-    /**
-     * Returns a function object from symbols to their types, used by the expressions to evaluate their type.
-     * {@link BinaryNode} specifically uses identity of the function to cache type calculations. This method makes
-     * sure to return the same function object while the local variable types don't change, and create a new function
-     * object if the local variable types have been changed.
-     * @return a function object representing a mapping from symbols to their types.
-     */
-    private Function<Symbol, Type> getSymbolToType() {
-        if(symbolToType.isStale()) {
-            symbolToType = new SymbolToType();
-        }
-        return symbolToType;
-    }
-
-    private class SymbolToType implements Function<Symbol, Type> {
-        private final Object boundTypes = localVariableTypes;
-        @Override
-        public Type apply(final Symbol t) {
-            return getLocalVariableType(t).type;
-        }
-
-        boolean isStale() {
-            return boundTypes != localVariableTypes;
-        }
-    }
-
-    /**
-     * Gets the type of the expression, dependent on the current types of the local variables and a single overridden
-     * symbol type. Used by type calculation on compound operators to ensure the type of the LHS at the time it was
-     * loaded (which can potentially be different after RHS evaluation, e.g. "var x; x += x = 0;") is preserved for
-     * the calculation.
-     *
-     * @param expr the expression
-     * @param overriddenSymbol the overridden symbol
-     * @param overriddenType the overridden type
-     * @return the current type of the expression dependent on the current types of the local variables and the single
-     * potentially overridden type.
-     */
-    private Type getType(final Expression expr, final Symbol overriddenSymbol, final Type overriddenType) {
-        return expr.getType(getSymbolToType(overriddenSymbol, overriddenType));
-    }
-
-    private Function<Symbol, Type> getSymbolToType(final Symbol overriddenSymbol, final Type overriddenType) {
-        return getLocalVariableType(overriddenSymbol).type == overriddenType ? getSymbolToType() :
-            new SymbolToTypeOverride(overriddenSymbol, overriddenType);
-    }
-
-    private class SymbolToTypeOverride implements Function<Symbol, Type> {
-        private final Function<Symbol, Type> originalSymbolToType = getSymbolToType();
-        private final Symbol overriddenSymbol;
-        private final Type overriddenType;
-
-        SymbolToTypeOverride(final Symbol overriddenSymbol, final Type overriddenType) {
-            this.overriddenSymbol = overriddenSymbol;
-            this.overriddenType = overriddenType;
-        }
-
-        @Override
-        public Type apply(final Symbol symbol) {
-            return symbol == overriddenSymbol ? overriddenType : originalSymbolToType.apply(symbol);
-        }
     }
 }
