@@ -239,9 +239,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
-# 8049312
-com/sun/crypto/provider/Cipher/AES/CICO.java			generic-all
-
 # 8062758
 java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 
