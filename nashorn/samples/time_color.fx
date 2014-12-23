@@ -1,4 +1,4 @@
-#// Usage: jjs -fx browser_dom.js
+#// Usage: jjs -fx time_color.js [-- true/false]
 
 /*
  * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
@@ -31,60 +31,59 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// A simple javafx program that changes background color
+// of scene based on current time value (once per sec).
+// inspired by http://whatcolourisit.scn9a.org/
+
 if (!$OPTIONS._fx) {
-    print("Usage: jjs -fx browser_dom.js");
+    print("Usage: jjs -fx time_color.js");
+    print("       jjs -fx time_color.js -- true");
     exit(1);
 }
 
 // JavaFX classes used
-var ChangeListener = Java.type("javafx.beans.value.ChangeListener");
-var Scene     = Java.type("javafx.scene.Scene");
-var WebView   = Java.type("javafx.scene.web.WebView");
+var Color = Java.type("javafx.scene.paint.Color");
+var Group = Java.type("javafx.scene.Group");
+var Label = Java.type("javafx.scene.control.Label");
+var Platform = Java.type("javafx.application.Platform");
+var Scene = Java.type("javafx.scene.Scene");
+var Timer = Java.type("java.util.Timer");
+
+// execute function periodically once per given time in millisec
+function setInterval(func, ms) {
+    // New timer, run as daemon so the application can quit
+    var timer = new Timer("setInterval", true);
+    timer.schedule(function() Platform.runLater(func), ms, ms);	
+    return timer;
+}
+
+// do you want to flip hour/min/sec for RGB?
+var flip = arguments.length > 0? "true".equals(arguments[0]) : false;
 
 // JavaFX start method
 function start(stage) {
-    start.title = "Web View";
-    var wv = new WebView();
-    wv.engine.loadContent(<<EOF
-<html>
-<head>
-<title>
-This is the title
-</title>
-<script>
-// click count for OK button
-var okCount = 0;
-</script>
-</head>
-<body>
-Button from the input html<br>
-<button type="button" onclick="okCount++">OK</button><br>
-</body>
-</html>
-EOF, "text/html");
+    start.title = "Time Color";
+    var root = new Group();
+    var label = new Label("time");
+    label.textFill = Color.WHITE;
+    root.children.add(label); 
+    stage.scene = new Scene(root, 700, 500);
 
-    // attach onload handler
-    wv.engine.loadWorker.stateProperty().addListener(
-        new ChangeListener() {
-            changed: function() {
-               // DOM document element
-               var document = wv.engine.document;
-               // DOM manipulation
-               var btn = document.createElement("button");
-               var n = 0;
-               // attach a button handler - nashorn function!
-               btn.onclick = function() {
-                   n++; print("You clicked " + n + " time(s)");
-                   print("you clicked OK " + wv.engine.executeScript("okCount"));
-               };
-               // attach text to button
-               var t = document.createTextNode("Click Me!"); 
-               btn.appendChild(t);
-               // attach button to the document
-               document.body.appendChild(btn); 
-           }
-        }
-    );
-    stage.scene = new Scene(wv, 750, 500);
+    setInterval(function() {
+        var d = new Date();
+        var hours = d.getHours();
+	var mins = d.getMinutes();
+	var secs = d.getSeconds();
+
+        if (hours < 10) hours = "0" + hours;
+        if (mins < 10) mins = "0" + mins;
+        if (secs < 10) secs = "0" + secs;
+
+	var hex = flip?
+            "#" + secs + mins + hours : "#" + hours + mins + secs;
+        label.text = "Color: " + hex;
+        stage.scene.fill = Color.web(hex);
+    }, 1000);
+
     stage.show();
 }
