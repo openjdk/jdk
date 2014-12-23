@@ -22,8 +22,8 @@
  */
 
 // key: compiler.warn.diamond.redundant.args.1
-// options: -XDfindDiamond
+// options: -XDfind=diamond
 
-class Foo<X> {
-   Foo<?> fs = new Foo<String>();
+class DiamondRedundantArgs1<X> {
+   DiamondRedundantArgs1<?> fs = new DiamondRedundantArgs1<String>();
 }
