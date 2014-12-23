@@ -23,7 +23,6 @@
 #
 #
 # @test
-# @bug 6388652
-# @summary  Checks whether providers can only be loaded from extension directories, 
-#     not from classpath.
-# @run shell ExecTest.sh bar ClasspathTest false
+# @bug 6388652 8062588
+# @summary  Checks whether providers can be loaded from classpath.
+# @run shell ExecTest.sh bar ClasspathTest

@@ -135,10 +135,6 @@ java/lang/instrument/RetransformBigClass.sh                     generic-all
 
 # jdk_management
 
-# 8044591
-com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
-com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
-
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
 
@@ -243,9 +239,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
-# 8049312
-com/sun/crypto/provider/Cipher/AES/CICO.java			generic-all
-
 # 8062758
 java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 
@@ -302,25 +295,6 @@ com/sun/jdi/RedefinePop.sh                                      generic-all
 ############################################################################
 
 # jdk_util
-
-# 8051641
-sun/util/calendar/zi/TestZoneInfo310.java                        generic-all
-
-# 8062588
-java/util/Locale/LocaleProviders.sh                              generic-all
-java/util/PluggableLocale/BreakIteratorProviderTest.sh           generic-all
-java/util/PluggableLocale/CalendarDataProviderTest.sh            generic-all
-java/util/PluggableLocale/CalendarNameProviderTest.sh            generic-all
-java/util/PluggableLocale/CollatorProviderTest.sh                generic-all
-java/util/PluggableLocale/CurrencyNameProviderTest.sh            generic-all
-java/util/PluggableLocale/DateFormatProviderTest.sh              generic-all
-java/util/PluggableLocale/DateFormatSymbolsProviderTest.sh       generic-all
-java/util/PluggableLocale/DecimalFormatSymbolsProviderTest.sh    generic-all
-java/util/PluggableLocale/GenericTest.sh                         generic-all
-java/util/PluggableLocale/LocaleNameProviderTest.sh              generic-all
-java/util/PluggableLocale/NumberFormatProviderTest.sh            generic-all
-java/util/PluggableLocale/TimeZoneNameProviderTest.sh            generic-all
-java/util/ResourceBundle/Bug6299235Test.sh                       generic-all
 
 # 8062512
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
