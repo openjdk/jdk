@@ -385,6 +385,18 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   int                handler_bci;
   int                current_bci = bci(thread);
 
+  if (thread->frames_to_pop_failed_realloc() > 0) {
+    // Allocation of scalar replaced object used in this frame
+    // failed. Unconditionally pop the frame.
+    thread->dec_frames_to_pop_failed_realloc();
+    thread->set_vm_result(h_exception());
+    // If the method is synchronized we already unlocked the monitor
+    // during deoptimization so the interpreter needs to skip it when
+    // the frame is popped.
+    thread->set_do_not_unlock_if_synchronized(true);
+    return Interpreter::remove_activation_entry();
+  }
+
   // Need to do this check first since when _do_not_unlock_if_synchronized
   // is set, we don't want to trigger any classloading which may make calls
   // into java, or surprisingly find a matching exception handler for bci 0
