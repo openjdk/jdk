@@ -3235,6 +3235,8 @@ void TemplateTable::generate_vtable_call(Register Rrecv_klass, Register Rindex, 
   // Load target.
   __ addi(Rrecv_klass, Rrecv_klass, base + vtableEntry::method_offset_in_bytes());
   __ ldx(Rtarget_method, Rindex, Rrecv_klass);
+  // Argument and return type profiling.
+  __ profile_arguments_type(Rtarget_method, Rrecv_klass /* scratch1 */, Rtemp /* scratch2 */, true);
   __ call_from_interpreter(Rtarget_method, Rret, Rrecv_klass /* scratch1 */, Rtemp /* scratch2 */);
 }
 
@@ -3318,6 +3320,8 @@ void TemplateTable::invokevfinal_helper(Register Rmethod, Register Rflags, Regis
   __ null_check_throw(Rrecv, -1, Rscratch1);
 
   __ profile_final_call(Rrecv, Rscratch1);
+  // Argument and return type profiling.
+  __ profile_arguments_type(Rmethod, Rscratch1, Rscratch2, true);
 
   // Do the call.
   __ call_from_interpreter(Rmethod, Rret_addr, Rscratch1, Rscratch2);
@@ -3339,6 +3343,8 @@ void TemplateTable::invokespecial(int byte_no) {
   __ null_check_throw(Rreceiver, -1, R11_scratch1);
 
   __ profile_call(R11_scratch1, R12_scratch2);
+  // Argument and return type profiling.
+  __ profile_arguments_type(Rmethod, R11_scratch1, R12_scratch2, false);
   __ call_from_interpreter(Rmethod, Rret_addr, R11_scratch1, R12_scratch2);
 }
 
@@ -3353,6 +3359,8 @@ void TemplateTable::invokestatic(int byte_no) {
   prepare_invoke(byte_no, R19_method, Rret_addr, noreg, noreg, Rflags, R11_scratch1);
 
   __ profile_call(R11_scratch1, R12_scratch2);
+  // Argument and return type profiling.
+  __ profile_arguments_type(R19_method, R11_scratch1, R12_scratch2, false);
   __ call_from_interpreter(R19_method, Rret_addr, R11_scratch1, R12_scratch2);
 }
 
@@ -3374,6 +3382,8 @@ void TemplateTable::invokeinterface_object_method(Register Rrecv_klass,
 
   // Final call case.
   __ profile_final_call(Rtemp1, Rscratch);
+  // Argument and return type profiling.
+  __ profile_arguments_type(Rindex, Rscratch, Rrecv_klass /* scratch */, true);
   // Do the final call - the index (f2) contains the method.
   __ call_from_interpreter(Rindex, Rret, Rscratch, Rrecv_klass /* scratch */);
 
@@ -3425,6 +3435,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ cmpdi(CCR0, Rindex, 0);
   __ beq(CCR0, Lthrow_ame);
   // Found entry. Jump off!
+  // Argument and return type profiling.
+  __ profile_arguments_type(Rindex, Rscratch1, Rscratch2, true);
   __ call_from_interpreter(Rindex, Rret_addr, Rscratch1, Rscratch2);
 
   // Vtable entry was NULL => Throw abstract method error.
@@ -3468,6 +3480,8 @@ void TemplateTable::invokedynamic(int byte_no) {
   // to be the callsite object the bootstrap method returned. This is passed to a
   // "link" method which does the dispatch (Most likely just grabs the MH stored
   // inside the callsite and does an invokehandle).
+  // Argument and return type profiling.
+  __ profile_arguments_type(Rmethod, Rscratch1, Rscratch2, false);
   __ call_from_interpreter(Rmethod, Rret_addr, Rscratch1 /* scratch1 */, Rscratch2 /* scratch2 */);
 }
 
@@ -3488,6 +3502,8 @@ void TemplateTable::invokehandle(int byte_no) {
   __ profile_final_call(Rrecv, Rscratch1);
 
   // Still no call from handle => We call the method handle interpreter here.
+  // Argument and return type profiling.
+  __ profile_arguments_type(Rmethod, Rscratch1, Rscratch2, true);
   __ call_from_interpreter(Rmethod, Rret_addr, Rscratch1 /* scratch1 */, Rscratch2 /* scratch2 */);
 }
 

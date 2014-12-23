@@ -29,7 +29,7 @@ import com.oracle.java.testlibrary.Asserts;
 /*
  * @test GetNMethodTest
  * @bug 8038240
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build GetNMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

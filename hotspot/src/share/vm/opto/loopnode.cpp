@@ -1147,7 +1147,7 @@ const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *u
 // Dump special per-node info
 #ifndef PRODUCT
 void CountedLoopEndNode::dump_spec(outputStream *st) const {
-  if( in(TestValue)->is_Bool() ) {
+  if( in(TestValue) != NULL && in(TestValue)->is_Bool() ) {
     BoolTest bt( test_trip()); // Added this for g++.
 
     st->print("[");

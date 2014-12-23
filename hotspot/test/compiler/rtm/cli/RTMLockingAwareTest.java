@@ -131,10 +131,14 @@ public abstract class RTMLockingAwareTest
         }
         options.add(prepareOptionValue(value));
 
+        String errorString =  String.format("JVM should start with option '%s'"
+                + "'%nWarnings should be shown: %s", optionName,
+                isWarningExpected);
         CommandLineOptionTest.verifySameJVMStartup(
                 (isWarningExpected ? warnings : null),
                 (isWarningExpected ? null : warnings),
-                ExitCode.OK, options.toArray(new String[options.size()]));
+                errorString, errorString, ExitCode.OK,
+                options.toArray(new String[options.size()]));
     }
 
     private void verifyOptionValues(String value, boolean useRTMLocking,
@@ -149,6 +153,9 @@ public abstract class RTMLockingAwareTest
         options.add(prepareOptionValue(value));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
-                expectedValue, options.toArray(new String[options.size()]));
+                expectedValue, String.format("Option '%s' should have '%s' "
+                        + "value if '%s' flag set",
+                        optionName, expectedValue, prepareOptionValue(value)),
+                options.toArray(new String[options.size()]));
     }
 }

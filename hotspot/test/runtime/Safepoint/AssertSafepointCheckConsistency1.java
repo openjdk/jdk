@@ -25,7 +25,7 @@
  * @test
  * @bug 8047290
  * @summary Ensure that a Monitor::lock_without_safepoint_check fires an assert when it incorrectly acquires a lock which must always have safepoint checks.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build AssertSafepointCheckConsistency1
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

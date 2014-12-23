@@ -27,7 +27,7 @@
  * @summary Verify that objects promoted from survivor space to tenured space
  *          when their age exceeded tenuring threshold are not aligned to
  *          SurvivorAlignmentInBytes value.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestPromotionFromSurvivorToTenuredAfterMinorGC
  *        SurvivorAlignmentTestMain AlignmentHelper
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
