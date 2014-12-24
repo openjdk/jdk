@@ -3779,6 +3779,9 @@ class CommandLineFlags {
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
                                                                             \
+  product(uintx, SharedSymbolTableBucketSize, 4,                            \
+          "Average number of symbols per bucket in shared table")           \
+                                                                            \
   diagnostic(bool, IgnoreUnverifiableClassesDuringDump, false,              \
           "Do not quit -Xshare:dump even if we encounter unverifiable "     \
           "classes. Just exclude them from the shared dictionary.")         \
