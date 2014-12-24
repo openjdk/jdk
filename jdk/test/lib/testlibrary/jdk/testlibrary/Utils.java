@@ -271,25 +271,6 @@ public final class Utils {
     }
 
     /**
-     * Returns file content as a list of strings
-     *
-     * @param file File to operate on
-     * @return List of strings
-     * @throws IOException
-     */
-    public static List<String> fileAsList(File file) throws IOException {
-        assertTrue(file.exists() && file.isFile(),
-                file.getAbsolutePath() + " does not exist or not a file");
-        List<String> output = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file.getAbsolutePath()))) {
-            while (reader.ready()) {
-                output.add(reader.readLine().replace(NEW_LINE, ""));
-            }
-        }
-        return output;
-    }
-
-    /**
      * Adjusts the provided timeout value for the TIMEOUT_FACTOR
      * @param tOut the timeout value to be adjusted
      * @return The timeout value adjusted for the value of "test.timeout.factor"
