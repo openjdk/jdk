@@ -148,6 +148,10 @@ void VM_RedefineClasses::doit() {
     _scratch_classes[i] = NULL;
   }
 
+  // Clean out MethodData pointing to old Method*
+  MethodDataCleaner clean_weak_method_links;
+  ClassLoaderDataGraph::classes_do(&clean_weak_method_links);
+
   // Disable any dependent concurrent compilations
   SystemDictionary::notice_modification();
 
@@ -155,8 +159,8 @@ void VM_RedefineClasses::doit() {
   // See jvmtiExport.hpp for detailed explanation.
   JvmtiExport::set_has_redefined_a_class();
 
-// check_class() is optionally called for product bits, but is
-// always called for non-product bits.
+  // check_class() is optionally called for product bits, but is
+  // always called for non-product bits.
 #ifdef PRODUCT
   if (RC_TRACE_ENABLED(0x00004000)) {
 #endif
@@ -3440,6 +3444,22 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
                                         _matching_new_methods,
                                         _matching_methods_length,
                                         &trace_name_printed);
+      }
+    }
+  }
+}
+
+// Clean method data for this class
+void VM_RedefineClasses::MethodDataCleaner::do_klass(Klass* k) {
+  if (k->oop_is_instance()) {
+    InstanceKlass *ik = InstanceKlass::cast(k);
+    // Clean MethodData of this class's methods so they don't refer to
+    // old methods that are no longer running.
+    Array<Method*>* methods = ik->methods();
+    int num_methods = methods->length();
+    for (int index = 0; index < num_methods; ++index) {
+      if (methods->at(index)->method_data() != NULL) {
+        methods->at(index)->method_data()->clean_weak_method_links();
       }
     }
   }
