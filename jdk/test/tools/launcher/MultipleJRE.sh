@@ -1,15 +1,14 @@
 #!/bin/sh
 # @test MultipleJRE.sh
-# @bug 4811102 4953711 4955505 4956301 4991229 4998210 5018605 6387069 6733959
+# @bug 4811102 4953711 4955505 4956301 4991229 4998210 5018605 6387069 6733959 8058407 8067421
 # @build PrintVersion
 # @build UglyPrintVersion
 # @build ZipMeUp
 # @run shell MultipleJRE.sh
 # @summary Verify Multiple JRE version support has been removed
 # @author Joseph E. Kowalski
-
 #
-# Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,6 +87,36 @@ TestSyntax() {
 		echo "Unexpected error message for invalid syntax $1"
 		exit 1
 	fi
+}
+
+#
+# Shell routine to ensure help page does not include mjre options
+#
+TestHelp() {
+    mess="`$JAVA -help 2>&1`"
+    # make sure it worked
+    if [ $? -ne 0 ]; then
+        echo "java -help failed ????"
+        exit 1
+    fi
+
+    echo $mess | grep '\-version:<value>' > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+       echo "help message contains obsolete option version:<value>"
+       exit 1
+    fi
+
+    echo $mess | grep '\-jre-restrict-search' > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+       echo "help message contains obsolete option jre-restrict-search"
+       exit 1
+    fi
+
+    echo $mess | grep '\-no-jre-restrict-search' > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+       echo "help message contains obsolete option no-jre-restrict-search"
+       exit 1
+    fi
 }
 
 #
@@ -457,7 +486,8 @@ fi
 	LaunchVM "" "${RELEASE}"
         # Going to silently ignore JRE-Version setting in jar file manifest
 	#LaunchVM "" "warning: The jarfile JRE-Version"
-	
+
+	# Verify help does not contain obsolete options
+	TestHelp
 
 exit 0
-

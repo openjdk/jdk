@@ -1711,7 +1711,7 @@ public abstract class Provider extends Properties {
          *
          * @param parameter the parameter to test
          *
-         * @return false if this this service cannot use the specified
+         * @return false if this service cannot use the specified
          * parameter; true if it can possibly use the parameter
          *
          * @throws InvalidParameterException if the value of parameter is

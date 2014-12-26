@@ -39,10 +39,7 @@ import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import sun.awt.SunToolkit;
-
 public class Test6541987 implements Runnable {
-    private static final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
     private static Robot robot;
 
     public static void main(String[] args) throws AWTException {
@@ -50,14 +47,14 @@ public class Test6541987 implements Runnable {
         // test escape after selection
         start();
         click(KeyEvent.VK_ESCAPE);
-        toolkit.realSync();
+        robot.waitForIdle();
         // test double escape after editing
         start();
         click(KeyEvent.VK_1);
         click(KeyEvent.VK_0);
         click(KeyEvent.VK_ESCAPE);
         click(KeyEvent.VK_ESCAPE);
-        toolkit.realSync();
+        robot.waitForIdle();
         // all windows should be closed
         for (Window window : Window.getWindows()) {
             if (window.isVisible()) {
@@ -76,7 +73,7 @@ public class Test6541987 implements Runnable {
     }
 
     private static void click(int...keys) {
-        toolkit.realSync();
+        robot.waitForIdle();
         for (int key : keys) {
             robot.keyPress(key);
         }

@@ -5575,7 +5575,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
              * object behind the TreeCellRenderer.
              *
              * @param i zero-based index of actions
-             * @return true if the the action was performed; else false.
+             * @return true if the action was performed; else false.
              */
             public boolean doAccessibleAction(int i) {
                 if (i < 0 || i >= getAccessibleActionCount()) {

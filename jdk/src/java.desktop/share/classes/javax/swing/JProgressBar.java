@@ -330,7 +330,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
     public JProgressBar(int orient, int min, int max)
     {
         // Creating the model this way is a bit simplistic, but
-        //  I believe that it is the the most common usage of this
+        //  I believe that it is the most common usage of this
         //  component - it's what people will expect.
         setModel(new DefaultBoundedRangeModel(min, 0, min, max));
         updateUI();

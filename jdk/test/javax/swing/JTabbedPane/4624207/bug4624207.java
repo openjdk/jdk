@@ -26,8 +26,9 @@
  * @bug 4624207
  * @summary JTabbedPane mnemonics don't work from outside the tabbed pane
  * @author Oleg Mokhovikov
+ * @library ../../../../lib/testlibrary
  * @library ../../regtesthelpers
- * @build Util
+ * @build Util jdk.testlibrary.OSInfo
  * @run main bug4624207
  */
 import javax.swing.*;
@@ -38,8 +39,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+import jdk.testlibrary.OSInfo;
 
 public class bug4624207 implements ChangeListener, FocusListener {
 
@@ -65,7 +65,6 @@ public class bug4624207 implements ChangeListener, FocusListener {
     }
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -76,7 +75,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -85,7 +84,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!focusGained) {
             throw new RuntimeException("Couldn't gain focus for text field");
@@ -99,7 +98,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
             Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_B);
@@ -107,7 +106,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
             Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_B);
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!stateChanged || tab.getSelectedIndex() != 1) {
             throw new RuntimeException("JTabbedPane mnemonics don't work from outside the tabbed pane");

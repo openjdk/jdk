@@ -24,7 +24,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -101,7 +100,6 @@ public class bug4670486 {
     }
 
     public static void main(String[] args) throws Throwable {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(250);
 
@@ -120,7 +118,7 @@ public class bug4670486 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Change the default button to
         // force a call to BasicRootPaneUI.updateDefaultButtonBindings()
@@ -131,14 +129,14 @@ public class bug4670486 {
         // effect.
         Util.hitMnemonics(robot, KeyEvent.VK_U);
         Util.hitKeys(robot, KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkAction();
 
         Util.hitMnemonics(robot, KeyEvent.VK_U);
         Util.hitKeys(robot, KeyEvent.VK_DOWN);
         Util.hitKeys(robot, KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkAction();
     }

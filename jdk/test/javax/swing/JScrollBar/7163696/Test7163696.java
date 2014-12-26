@@ -28,12 +28,9 @@
  * @author Sergey Malenkov
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 
 import javax.swing.JFrame;
@@ -54,12 +51,11 @@ public class Test7163696 implements Runnable {
 
     private void test() throws Exception {
         Robot robot = new Robot();
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
             UIManager.setLookAndFeel(info.getClassName());
 
             SwingUtilities.invokeAndWait(this);
-            toolkit.realSync(); // after creation
+            robot.waitForIdle(); // after creation
             Thread.sleep(1000);
 
             Point point = this.bar.getLocation();
@@ -70,7 +66,7 @@ public class Test7163696 implements Runnable {
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-            toolkit.realSync(); // before validation
+            robot.waitForIdle(); // before validation
             Thread.sleep(1000);
             SwingUtilities.invokeAndWait(this);
 

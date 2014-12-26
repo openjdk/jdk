@@ -61,6 +61,7 @@ public class TestMonomorphicObjectCall {
         String[] vmOpts = new String[] {
                 "-Xbootclasspath/p:" + testClasses,
                 "-Xcomp",
+                "-XX:+IgnoreUnrecognizedVMOptions",
                 "-XX:-VerifyDependencies",
                 "-XX:CompileOnly=TestMonomorphicObjectCall::callFinalize",
                 "-XX:CompileOnly=Object::finalizeObject",

@@ -62,7 +62,7 @@ public final class LocateRegistry {
     private LocateRegistry() {}
 
     /**
-     * Returns a reference to the the remote object <code>Registry</code> for
+     * Returns a reference to the remote object <code>Registry</code> for
      * the local host on the default registry port of 1099.
      *
      * @return reference (a stub) to the remote object registry
@@ -76,7 +76,7 @@ public final class LocateRegistry {
     }
 
     /**
-     * Returns a reference to the the remote object <code>Registry</code> for
+     * Returns a reference to the remote object <code>Registry</code> for
      * the local host on the specified <code>port</code>.
      *
      * @param port port on which the registry accepts requests
