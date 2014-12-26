@@ -40,7 +40,7 @@
 
             static void AssertCallback(const char * expr, const char * file,
                                        int line);
-            /* This method signals that the VM is exiting cleanly, and thus the
+            /* This method signals that the VM is exiting cleanly, and thus
                the debug memory manager should dump a leaks report when the
                VM has finished exiting. This method should not be called for
                termination exits (such as <CTRL>-C) */

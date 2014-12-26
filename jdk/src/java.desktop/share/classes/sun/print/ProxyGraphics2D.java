@@ -744,7 +744,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * paint or color, and composite attributes.
      * For characters in script systems such as Hebrew and Arabic,
      * the glyphs may be draw from right to left, in which case the
-     * coordinate supplied is the the location of the leftmost character
+     * coordinate supplied is the location of the leftmost character
      * on the baseline.
      * @param iterator the iterator whose text is to be drawn
      * @param x,y the coordinates where the iterator's text should be drawn.
@@ -769,7 +769,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * paint or color, and composite attributes.
      * For characters in script systems such as Hebrew and Arabic,
      * the glyphs may be draw from right to left, in which case the
-     * coordinate supplied is the the location of the leftmost character
+     * coordinate supplied is the location of the leftmost character
      * on the baseline.
      * @param iterator the iterator whose text is to be drawn
      * @param x,y the coordinates where the iterator's text should be drawn.

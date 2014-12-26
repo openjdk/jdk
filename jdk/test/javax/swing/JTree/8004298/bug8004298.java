@@ -36,7 +36,6 @@ import java.awt.event.InputEvent;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.util.concurrent.Callable;
-import sun.awt.SunToolkit;
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 import com.sun.java.swing.plaf.windows.WindowsTreeUI;
 
@@ -47,7 +46,6 @@ public class bug8004298 {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         try {
             UIManager.setLookAndFeel(new WindowsLookAndFeel());
         } catch (javax.swing.UnsupportedLookAndFeelException ulafe) {
@@ -63,7 +61,7 @@ public class bug8004298 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = Util.invokeOnEDT(new Callable<Point>() {
 
@@ -81,7 +79,7 @@ public class bug8004298 {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
     }
 

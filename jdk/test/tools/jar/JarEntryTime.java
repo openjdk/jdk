@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,6 @@ public class JarEntryTime {
 
     static void extractJar(File jarFile, boolean useExtractionTime) throws Throwable {
         String javahome = System.getProperty("java.home");
-        if (javahome.endsWith("jre")) {
-            javahome = javahome.substring(0, javahome.length() - 4);
-        }
         String jarcmd = javahome + File.separator + "bin" + File.separator + "jar";
         String[] args;
         if (useExtractionTime) {
