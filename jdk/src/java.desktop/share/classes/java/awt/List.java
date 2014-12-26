@@ -347,7 +347,7 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * Adds the specified item to the the scrolling list
+     * Adds the specified item to the scrolling list
      * at the position indicated by the index.  The index is
      * zero-based.  If the value of the index is less than zero,
      * or if the value of the index is greater than or equal to
@@ -364,7 +364,7 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * Adds the specified item to the the list
+     * Adds the specified item to the list
      * at the position indicated by the index.
      *
      * @param  item the item to be added
