@@ -554,8 +554,9 @@ class JdepsTask {
         classpaths.addAll(PlatformClassPath.getModules(options.mpath));
         if (options.mpath != null) {
             initialArchives.addAll(PlatformClassPath.getModules(options.mpath));
+        } else {
+            classpaths.addAll(PlatformClassPath.getJarFiles());
         }
-        classpaths.addAll(PlatformClassPath.getJarFiles());
         // add all classpath archives to the source locations for reporting
         sourceLocations.addAll(classpaths);
     }

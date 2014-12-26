@@ -275,7 +275,7 @@ public abstract class ArrayData {
     /**
      * Align an array size up to the nearest array chunk size
      * @param size size required
-     * @return size given, always >= size
+     * @return size given, always &gt;= size
      */
     protected final static int alignUp(final int size) {
         return size + CHUNK_SIZE - 1 & ~(CHUNK_SIZE - 1);

@@ -74,7 +74,7 @@ class WhiteBox : public AllStatic {
   static JavaThread* create_sweeper_thread(TRAPS);
   static int get_blob_type(const CodeBlob* code);
   static CodeHeap* get_code_heap(int blob_type);
-  static CodeBlob* allocate_code_blob(int blob_type, int size);
+  static CodeBlob* allocate_code_blob(int size, int blob_type);
   static int array_bytes_to_length(size_t bytes);
   static void register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
     JNINativeMethod* method_array, int method_count);
