@@ -295,7 +295,7 @@ class ClassDefinition implements Constants {
     }
 
     /**
-     * Tell if the class is local or or anonymous class, or inside
+     * Tell if the class is local or anonymous class, or inside
      * such a class, which means it cannot be mentioned outside of
      * its file.
      */
@@ -770,7 +770,7 @@ class ClassDefinition implements Constants {
     }
 
     /**
-     * We know the the field is marked protected (and not public) and that
+     * We know the field is marked protected (and not public) and that
      * the field is visible (as per canAccess).  Can we access the field as
      * <accessor>.<field>, where <accessor> has the type <accessorType>?
      *

@@ -89,7 +89,7 @@ public class NativeCipherWithJavaPadding extends CipherSpi {
 
     private static class PKCS5Padding implements Padding {
         private final int blockSize;
-        // buffer for storing the the potential padding bytes
+        // buffer for storing the potential padding bytes
         private ByteBuffer trailingBytes = null;
 
         PKCS5Padding(int blockSize)

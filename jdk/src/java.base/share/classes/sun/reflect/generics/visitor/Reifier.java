@@ -39,7 +39,7 @@ import sun.reflect.generics.factory.*;
  */
 public class Reifier implements TypeTreeVisitor<Type> {
     private Type resultType;
-    private GenericsFactory factory;
+    private final GenericsFactory factory;
 
     private Reifier(GenericsFactory f){
         factory = f;

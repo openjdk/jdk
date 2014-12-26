@@ -147,7 +147,7 @@ public class UnixNumericUserPrincipal implements
      * @param o Object to be compared for equality with this
      *          <code>UnixNumericUserPrincipal</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>UnixNumericUserPrincipal</code>.
      */
     public boolean equals(Object o) {

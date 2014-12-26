@@ -24,9 +24,7 @@
 import java.awt.Frame;
 import java.awt.Robot;
 import java.awt.TextField;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
-import sun.awt.SunToolkit;
 /*
  * @test
  * @bug 8013849
@@ -39,25 +37,25 @@ public class DeadKeySystemAssertionDialog {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Frame frame = new Frame();
         frame.setSize(300, 200);
 
         TextField textField = new TextField();
         frame.add(textField);
 
-        frame.setVisible(true);
-        toolkit.realSync();
-
-        textField.requestFocus();
-        toolkit.realSync();
-
-        // Check that the system assertion dialog does not block Java
         Robot robot = new Robot();
         robot.setAutoDelay(50);
+
+        frame.setVisible(true);
+        robot.waitForIdle();
+
+        textField.requestFocus();
+        robot.waitForIdle();
+
+        // Check that the system assertion dialog does not block Java
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         frame.setVisible(false);
         frame.dispose();
