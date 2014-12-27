@@ -41,25 +41,35 @@ public class GenericTestCaseForUnsupportedSparcCPU extends
 
     @Override
     protected void verifyWarnings() throws Throwable {
+        String shouldPassMessage = String.format("JVM startup should pass with"
+                + "option '-XX:-%s' without any warnings", optionName);
         //Verify that option could be disabled without any warnings.
         CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, ExitCode.OK,
+                }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 
     @Override
     protected void verifyOptionValues() throws Throwable {
         // Verify that option is disabled by default.
-        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false");
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should be disabled by default",
+                        optionName));
 
         // Verify that option is disabled even if it was explicitly enabled
         // using CLI options.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should be off on unsupported "
+                        + "SparcCPU even if set to true directly", optionName),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         // Verify that option is disabled when +UseSHA was passed to JVM.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should be off on unsupported "
+                        + "SparcCPU even if %s flag set to JVM",
+                        optionName, CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, true)),
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true));
     }

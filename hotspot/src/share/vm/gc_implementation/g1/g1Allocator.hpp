@@ -27,13 +27,8 @@
 
 #include "gc_implementation/g1/g1AllocationContext.hpp"
 #include "gc_implementation/g1/g1AllocRegion.hpp"
+#include "gc_implementation/g1/g1InCSetState.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
-
-enum GCAllocPurpose {
-  GCAllocForTenured,
-  GCAllocForSurvived,
-  GCAllocPurposeCount
-};
 
 // Base class for G1 allocators.
 class G1Allocator : public CHeapObj<mtGC> {
@@ -178,20 +173,40 @@ class G1ParGCAllocator : public CHeapObj<mtGC> {
 protected:
   G1CollectedHeap* _g1h;
 
+  // The survivor alignment in effect in bytes.
+  // == 0 : don't align survivors
+  // != 0 : align survivors to that alignment
+  // These values were chosen to favor the non-alignment case since some
+  // architectures have a special compare against zero instructions.
+  const uint _survivor_alignment_bytes;
+
   size_t _alloc_buffer_waste;
   size_t _undo_waste;
 
   void add_to_alloc_buffer_waste(size_t waste) { _alloc_buffer_waste += waste; }
   void add_to_undo_waste(size_t waste)         { _undo_waste += waste; }
 
-  HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz, AllocationContext_t context);
-
   virtual void retire_alloc_buffers() = 0;
-  virtual G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose, AllocationContext_t context) = 0;
+  virtual G1ParGCAllocBuffer* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
+
+  // Calculate the survivor space object alignment in bytes. Returns that or 0 if
+  // there are no restrictions on survivor alignment.
+  static uint calc_survivor_alignment_bytes() {
+    assert(SurvivorAlignmentInBytes >= ObjectAlignmentInBytes, "sanity");
+    if (SurvivorAlignmentInBytes == ObjectAlignmentInBytes) {
+      // No need to align objects in the survivors differently, return 0
+      // which means "survivor alignment is not used".
+      return 0;
+    } else {
+      assert(SurvivorAlignmentInBytes > 0, "sanity");
+      return SurvivorAlignmentInBytes;
+    }
+  }
 
 public:
   G1ParGCAllocator(G1CollectedHeap* g1h) :
-    _g1h(g1h), _alloc_buffer_waste(0), _undo_waste(0) {
+    _g1h(g1h), _survivor_alignment_bytes(calc_survivor_alignment_bytes()),
+    _alloc_buffer_waste(0), _undo_waste(0) {
   }
 
   static G1ParGCAllocator* create_allocator(G1CollectedHeap* g1h);
@@ -199,24 +214,40 @@ public:
   size_t alloc_buffer_waste() { return _alloc_buffer_waste; }
   size_t undo_waste() {return _undo_waste; }
 
-  HeapWord* allocate(GCAllocPurpose purpose, size_t word_sz, AllocationContext_t context) {
-    HeapWord* obj = NULL;
-    if (purpose == GCAllocForSurvived) {
-      obj = alloc_buffer(purpose, context)->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
+  // Allocate word_sz words in dest, either directly into the regions or by
+  // allocating a new PLAB. Returns the address of the allocated memory, NULL if
+  // not successful.
+  HeapWord* allocate_direct_or_new_plab(InCSetState dest,
+                                        size_t word_sz,
+                                        AllocationContext_t context);
+
+  // Allocate word_sz words in the PLAB of dest.  Returns the address of the
+  // allocated memory, NULL if not successful.
+  HeapWord* plab_allocate(InCSetState dest,
+                          size_t word_sz,
+                          AllocationContext_t context) {
+    G1ParGCAllocBuffer* buffer = alloc_buffer(dest, context);
+    if (_survivor_alignment_bytes == 0) {
+      return buffer->allocate(word_sz);
     } else {
-      obj = alloc_buffer(purpose, context)->allocate(word_sz);
+      return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);
     }
+  }
+
+  HeapWord* allocate(InCSetState dest, size_t word_sz,
+                     AllocationContext_t context) {
+    HeapWord* const obj = plab_allocate(dest, word_sz, context);
     if (obj != NULL) {
       return obj;
     }
-    return allocate_slow(purpose, word_sz, context);
+    return allocate_direct_or_new_plab(dest, word_sz, context);
   }
 
-  void undo_allocation(GCAllocPurpose purpose, HeapWord* obj, size_t word_sz, AllocationContext_t context) {
-    if (alloc_buffer(purpose, context)->contains(obj)) {
-      assert(alloc_buffer(purpose, context)->contains(obj + word_sz - 1),
+  void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context) {
+    if (alloc_buffer(dest, context)->contains(obj)) {
+      assert(alloc_buffer(dest, context)->contains(obj + word_sz - 1),
              "should contain whole object");
-      alloc_buffer(purpose, context)->undo_allocation(obj, word_sz);
+      alloc_buffer(dest, context)->undo_allocation(obj, word_sz);
     } else {
       CollectedHeap::fill_with_object(obj, word_sz);
       add_to_undo_waste(word_sz);
@@ -227,13 +258,17 @@ public:
 class G1DefaultParGCAllocator : public G1ParGCAllocator {
   G1ParGCAllocBuffer  _surviving_alloc_buffer;
   G1ParGCAllocBuffer  _tenured_alloc_buffer;
-  G1ParGCAllocBuffer* _alloc_buffers[GCAllocPurposeCount];
+  G1ParGCAllocBuffer* _alloc_buffers[InCSetState::Num];
 
 public:
   G1DefaultParGCAllocator(G1CollectedHeap* g1h);
 
-  virtual G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose, AllocationContext_t context) {
-    return _alloc_buffers[purpose];
+  virtual G1ParGCAllocBuffer* alloc_buffer(InCSetState dest, AllocationContext_t context) {
+    assert(dest.is_valid(),
+           err_msg("Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value()));
+    assert(_alloc_buffers[dest.value()] != NULL,
+           err_msg("Allocation buffer is NULL: " CSETSTATE_FORMAT, dest.value()));
+    return _alloc_buffers[dest.value()];
   }
 
   virtual void retire_alloc_buffers() ;

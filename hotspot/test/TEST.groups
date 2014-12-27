@@ -205,7 +205,6 @@ needs_compact2 = \
 compact1_minimal = \
   serviceability/ \
   compiler/ \
-  testlibrary_tests/ \
   sanity/ \
   runtime/ \
   gc/ \

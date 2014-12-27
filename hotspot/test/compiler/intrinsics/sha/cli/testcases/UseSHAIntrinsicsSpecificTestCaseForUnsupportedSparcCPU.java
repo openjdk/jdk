@@ -50,10 +50,13 @@ public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedSparcCPU
     }
     @Override
     protected void verifyWarnings() throws Throwable {
-        // Verify that attempt to enable the tested option will cause a warning.
+        String shouldPassMessage = String.format("JVM should start with "
+                + "'-XX:+%s' flag, but output should contain warning.",
+                optionName);
+        // Verify that attempt to enable the tested option will cause a warning
         CommandLineOptionTest.verifySameJVMStartup(new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, null, ExitCode.OK,
+                }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
     }
 }

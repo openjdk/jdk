@@ -34,7 +34,7 @@ import com.oracle.java.testlibrary.InfiniteLoop;
 /*
  * @test AllocationCodeBlobTest
  * @bug 8059624 8064669
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build AllocationCodeBlobTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -26,7 +26,7 @@
  * @bug 8031323
  * @summary Verify that objects promoted from survivor space to tenured space
  *          during full GC are not aligned to SurvivorAlignmentInBytes value.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestPromotionFromSurvivorToTenuredAfterFullGC
  *        SurvivorAlignmentTestMain AlignmentHelper
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

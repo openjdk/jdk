@@ -26,7 +26,7 @@
  * @bug 8031323
  * @summary Verify that objects promoted from eden space to survivor space after
  *          minor GC are aligned to SurvivorAlignmentInBytes.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestPromotionToSurvivor
  *        SurvivorAlignmentTestMain AlignmentHelper
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
