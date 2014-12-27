@@ -24,7 +24,7 @@
 /*
  * @test MakeMethodNotCompilableTest
  * @bug 8012322 8006683 8007288 8022832
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

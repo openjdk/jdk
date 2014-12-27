@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class G1SATBCardTableLoggingModRefBS;
 // This barrier is specialized to use a logging barrier to support
 // snapshot-at-the-beginning marking.
 
-class G1SATBCardTableModRefBS: public CardTableModRefBSForCTRS {
+class G1SATBCardTableModRefBS: public CardTableModRefBS {
 protected:
   enum G1CardValues {
     g1_young_gen = CT_MR_BS_last_reserved << 1

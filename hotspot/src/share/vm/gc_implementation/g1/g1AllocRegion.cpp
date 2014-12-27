@@ -254,25 +254,23 @@ void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
 HeapRegion* SurvivorGCAllocRegion::allocate_new_region(size_t word_size,
                                                        bool force) {
   assert(!force, "not supported for GC alloc regions");
-  return _g1h->new_gc_alloc_region(word_size, count(), GCAllocForSurvived);
+  return _g1h->new_gc_alloc_region(word_size, count(), InCSetState::Young);
 }
 
 void SurvivorGCAllocRegion::retire_region(HeapRegion* alloc_region,
                                           size_t allocated_bytes) {
-  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes,
-                               GCAllocForSurvived);
+  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes, InCSetState::Young);
 }
 
 HeapRegion* OldGCAllocRegion::allocate_new_region(size_t word_size,
                                                   bool force) {
   assert(!force, "not supported for GC alloc regions");
-  return _g1h->new_gc_alloc_region(word_size, count(), GCAllocForTenured);
+  return _g1h->new_gc_alloc_region(word_size, count(), InCSetState::Old);
 }
 
 void OldGCAllocRegion::retire_region(HeapRegion* alloc_region,
                                      size_t allocated_bytes) {
-  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes,
-                               GCAllocForTenured);
+  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes, InCSetState::Old);
 }
 
 HeapRegion* OldGCAllocRegion::release() {

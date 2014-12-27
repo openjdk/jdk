@@ -330,7 +330,7 @@ public class CheckCompileThresholdScaling {
         } catch (RuntimeException e) {
             // Check if tiered compilation is available in this JVM
             // Version. Throw exception only if it is available.
-            if (!(tiered && out.getOutput().contains("Client VM warning: TieredCompilation is disabled in this release."))) {
+            if (!(tiered && out.getOutput().contains("TieredCompilation is disabled in this release."))) {
                 throw new RuntimeException(e);
             }
         }
