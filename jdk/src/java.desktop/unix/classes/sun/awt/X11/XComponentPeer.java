@@ -167,6 +167,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return System.getProperty("sun.awt.X11.XComponentPeer.reparentNotSupported", "false").equals("false");
     }
 
+    @SuppressWarnings("deprecation")
     public boolean isObscured() {
         Container container  = (target instanceof Container) ?
             (Container)target : target.getParent();
@@ -279,6 +280,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
+    @SuppressWarnings("deprecation")
     final public boolean requestFocus(Component lightweightChild, boolean temporary,
                                       boolean focusedWindowChangeAllowed, long time,
                                       CausedFocusEvent.Cause cause)
@@ -388,6 +390,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     /**
      * @see java.awt.peer.ComponentPeer
      */
+    @SuppressWarnings("deprecation")
     public void setEnabled(final boolean value) {
         if (enableLog.isLoggable(PlatformLogger.Level.FINE)) {
             enableLog.fine("{0}ing {1}", (value ? "Enabl" : "Disabl"), this);
@@ -1324,6 +1327,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void addTree(Collection<Long> order, Set<Long> set, Container cont) {
         for (int i = 0; i < cont.getComponentCount(); i++) {
             Component comp = cont.getComponent(i);
@@ -1344,6 +1348,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     /****** DropTargetPeer implementation ********************/
 
+    @SuppressWarnings("deprecation")
     public void addDropTarget(DropTarget dt) {
         Component comp = target;
         while(!(comp == null || comp instanceof Window)) {
@@ -1358,6 +1363,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void removeDropTarget(DropTarget dt) {
         Component comp = target;
         while(!(comp == null || comp instanceof Window)) {

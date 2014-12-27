@@ -37,6 +37,7 @@ public enum UcryptoMech {
     CRYPTO_AES_ECB(1, new String[]
         { "Cipher.AES/ECB/NoPadding;com.oracle.security.ucrypto.NativeCipher$AesEcbNoPadding",
           "Cipher.AES/ECB/PKCS5Padding;com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesEcbPKCS5",
+          "Alg.Alias.Cipher.AES;AES/ECB/PKCS5Padding",
           "Cipher.AES_128/ECB/NoPadding;com.oracle.security.ucrypto.NativeCipher$Aes128EcbNoPadding",
           "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.1;AES_128/ECB/NoPadding",
           "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.1;AES_128/ECB/NoPadding",
@@ -81,7 +82,8 @@ public enum UcryptoMech {
         { "Cipher.AES/CFB128/NoPadding;com.oracle.security.ucrypto.NativeCipher$AesCfb128NoPadding",
           "Cipher.AES/CFB128/PKCS5Padding;com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesCfb128PKCS5" }),
     CRYPTO_RSA_PKCS(31, new String[]
-        { "Cipher.RSA/ECB/PKCS1Padding;com.oracle.security.ucrypto.NativeRSACipher$PKCS1Padding" }),
+        { "Cipher.RSA/ECB/PKCS1Padding;com.oracle.security.ucrypto.NativeRSACipher$PKCS1Padding",
+          "Alg.Alias.Cipher.RSA;RSA/ECB/PKCS1Padding" }),
     CRYPTO_RSA_X_509(32, new String[]
         { "Cipher.RSA/ECB/NoPadding;com.oracle.security.ucrypto.NativeRSACipher$NoPadding" }),
     CRYPTO_MD5_RSA_PKCS(33, new String[]
