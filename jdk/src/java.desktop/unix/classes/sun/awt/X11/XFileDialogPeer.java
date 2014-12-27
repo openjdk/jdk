@@ -135,6 +135,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         this.target = target;
     }
 
+    @SuppressWarnings("deprecation")
     private void init(FileDialog target) {
         fileDialog = target; //new Dialog(target, target.getTitle(), false);
         this.title = target.getTitle();
@@ -414,6 +415,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
     /**
      * handle the cancel event
      */
+    @SuppressWarnings("deprecation")
     void handleCancel() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
             .removeKeyEventDispatcher(this);
@@ -435,6 +437,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
     /**
      * handle the quit event
      */
+    @SuppressWarnings("deprecation")
     void handleQuitButton() {
         dir = null;
         file = null;
@@ -444,6 +447,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
     /**
      * set the entry of the new dir with f
      */
+    @SuppressWarnings("deprecation")
     void setFilterEntry(String d, String f) {
         File fe = new File(d);
 
@@ -638,6 +642,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         }
     }
 
+    @SuppressWarnings("deprecation")
     public boolean dispatchKeyEvent(KeyEvent keyEvent) {
         int id = keyEvent.getID();
         int keyCode = keyEvent.getKeyCode();
@@ -774,6 +779,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
     }
 
     // 03/02/2005 b5097243 Pressing 'ESC' on a file dlg does not dispose the dlg on Xtoolkit
+    @SuppressWarnings("deprecation")
     public void setVisible(boolean b){
         if (fileDialog == null) {
             init(target);
@@ -852,6 +858,7 @@ class Separator extends Canvas {
     public final static int VERTICAL = 1;
     int orientation;
 
+    @SuppressWarnings("deprecation")
     public Separator(int length, int thickness, int orient) {
         super();
         orientation = orient;
@@ -863,6 +870,7 @@ class Separator extends Canvas {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void paint(Graphics g) {
         int x1, y1, x2, y2;
         Rectangle bbox = bounds();

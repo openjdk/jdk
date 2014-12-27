@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,6 +413,7 @@ public final class AppContext {
      *                                    contained within this AppContext
      * @since      1.2
      */
+    @SuppressWarnings("deprecation")
     public void dispose() throws IllegalThreadStateException {
         // Check to be sure that the current Thread isn't in this AppContext
         if (this.threadGroup.parentOf(Thread.currentThread().getThreadGroup())) {
