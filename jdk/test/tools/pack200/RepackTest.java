@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class RepackTest {
 
         // make a copy of the test specimen to local directory
         File testFile = new File("src_tools.jar");
-        Utils.copyFile(Utils.locateJar("golden.jar"), testFile);
+        Utils.copyFile(Utils.getGoldenJar(), testFile);
         List<String> cmdsList = new ArrayList<>();
 
         // case 1:
