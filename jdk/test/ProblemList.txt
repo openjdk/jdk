@@ -138,9 +138,6 @@ java/lang/instrument/RetransformBigClass.sh                     generic-all
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
 
-# 8058506
-java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java                              generic-all
-
 ############################################################################
 
 # jdk_jmx
