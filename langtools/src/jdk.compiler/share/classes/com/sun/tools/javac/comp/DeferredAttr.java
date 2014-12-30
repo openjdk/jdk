@@ -41,6 +41,7 @@ import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -838,6 +839,14 @@ public class DeferredAttr extends JCTree.Visitor {
     /** an empty deferred attribution context - all methods throw exceptions */
     final DeferredAttrContext emptyDeferredAttrContext;
 
+    /** The AttrMode to descriptive name mapping */
+    private static final EnumMap<AttrMode, String> deferredTypeMapDescriptions;
+    static {
+        deferredTypeMapDescriptions = new EnumMap<>(AttrMode.class);
+        deferredTypeMapDescriptions.put(AttrMode.CHECK, "deferredTypeMap[CHECK]");
+        deferredTypeMapDescriptions.put(AttrMode.SPECULATIVE, "deferredTypeMap[SPECULATIVE]");
+    }
+
     /**
      * Map a list of types possibly containing one or more deferred types
      * into a list of ordinary types. Each deferred type D is mapped into a type T,
@@ -845,11 +854,10 @@ public class DeferredAttr extends JCTree.Visitor {
      * computed for D during a previous deferred attribution round of the given kind.
      */
     class DeferredTypeMap extends Type.Mapping {
-
         DeferredAttrContext deferredAttrContext;
 
         protected DeferredTypeMap(AttrMode mode, Symbol msym, MethodResolutionPhase phase) {
-            super(String.format("deferredTypeMap[%s]", mode));
+            super(deferredTypeMapDescriptions.get(mode));
             this.deferredAttrContext = new DeferredAttrContext(mode, msym, phase,
                     infer.emptyContext, emptyDeferredAttrContext, types.noWarnings);
         }
