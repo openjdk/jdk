@@ -187,7 +187,8 @@ class CMSMarkStack: public CHeapObj<mtGC>  {
 
  public:
   CMSMarkStack():
-    _par_lock(Mutex::event, "CMSMarkStack._par_lock", true),
+    _par_lock(Mutex::event, "CMSMarkStack._par_lock", true,
+              Monitor::_safepoint_check_never),
     _hit_limit(0),
     _failed_double(0) {}
 

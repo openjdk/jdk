@@ -152,7 +152,7 @@ SharedHeap::StrongRootsScope::~StrongRootsScope() {
   }
 }
 
-Monitor* SharedHeap::StrongRootsScope::_lock = new Monitor(Mutex::leaf, "StrongRootsScope lock", false);
+Monitor* SharedHeap::StrongRootsScope::_lock = new Monitor(Mutex::leaf, "StrongRootsScope lock", false, Monitor::_safepoint_check_never);
 
 void SharedHeap::StrongRootsScope::mark_worker_done_with_threads(uint n_workers) {
   // The Thread work barrier is only needed by G1 Class Unloading.

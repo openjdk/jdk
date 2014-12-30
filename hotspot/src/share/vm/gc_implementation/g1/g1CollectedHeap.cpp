@@ -4933,7 +4933,7 @@ private:
   }
 };
 
-Monitor* G1CodeCacheUnloadingTask::_lock = new Monitor(Mutex::leaf, "Code Cache Unload lock");
+Monitor* G1CodeCacheUnloadingTask::_lock = new Monitor(Mutex::leaf, "Code Cache Unload lock", false, Monitor::_safepoint_check_never);
 
 class G1KlassCleaningTask : public StackObj {
   BoolObjectClosure*                      _is_alive;

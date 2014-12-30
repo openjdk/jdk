@@ -214,7 +214,8 @@ void VMThread::create() {
   _vm_queue = new VMOperationQueue();
   guarantee(_vm_queue != NULL, "just checking");
 
-  _terminate_lock = new Monitor(Mutex::safepoint, "VMThread::_terminate_lock", true);
+  _terminate_lock = new Monitor(Mutex::safepoint, "VMThread::_terminate_lock", true,
+                                Monitor::_safepoint_check_never);
 
   if (UsePerfData) {
     // jvmstat performance counters
