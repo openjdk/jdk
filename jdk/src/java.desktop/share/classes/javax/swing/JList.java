@@ -3663,6 +3663,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 }
             }
 
+            @SuppressWarnings("deprecation")
             public boolean isFocusTraversable() {
                 AccessibleContext ac = getCurrentAccessibleContext();
                 if (ac instanceof AccessibleComponent) {

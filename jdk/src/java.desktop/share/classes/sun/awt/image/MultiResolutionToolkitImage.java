@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
 
     private static class ObserverCache {
 
+        @SuppressWarnings("deprecation")
         static final SoftCache INSTANCE = new SoftCache();
     }
 
@@ -80,7 +81,7 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
         }
 
         synchronized (ObserverCache.INSTANCE) {
-            ImageObserver o = (ImageObserver) ObserverCache.INSTANCE.get(image);
+            ImageObserver o = (ImageObserver) ObserverCache.INSTANCE.get(observer);
 
             if (o == null) {
 
@@ -109,7 +110,7 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
                                     image, flags, x, y, width, height);
                         };
 
-                ObserverCache.INSTANCE.put(image, o);
+                ObserverCache.INSTANCE.put(observer, o);
             }
             return o;
         }

@@ -218,6 +218,7 @@ class FrameView extends ComponentView implements HyperlinkListener {
      * the scrolling attribute.  If not defined, the default is "auto" which
      * maps to the scrollbar's being displayed as needed.
      */
+    @SuppressWarnings("deprecation")
     private void createScrollPane() {
         AttributeSet attributes = getElement().getAttributes();
         String scrolling = (String)attributes.getAttribute(HTML.Attribute.SCROLLING);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
+import java.security.ProviderException;
+
 
 /**
  * This class represents ciphers in Plaintext Cipher Block Chaining (PCBC)
@@ -118,38 +120,36 @@ final class PCBC extends FeedbackCipher {
      *
      * <p>The input plain text <code>plain</code>, starting at
      * <code>plainOffset</code> and ending at
-     * <code>(plainOffset + len - 1)</code>, is encrypted.
+     * <code>(plainOffset + plainLen - 1)</code>, is encrypted.
      * The result is stored in <code>cipher</code>, starting at
      * <code>cipherOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>plainLen</code> is a multiple of the embedded cipher's block size,
-     * as any excess bytes are ignored.
-     *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
      *
      * @param plain the buffer with the input data to be encrypted
      * @param plainOffset the offset in <code>plain</code>
      * @param plainLen the length of the input data
      * @param cipher the buffer for the result
      * @param cipherOffset the offset in <code>cipher</code>
+     * @exception ProviderException if <code>plainLen</code> is not
+     * a multiple of the block size
+     * @return the length of the encrypted data
      */
     int encrypt(byte[] plain, int plainOffset, int plainLen,
                 byte[] cipher, int cipherOffset)
     {
+        if ((plainLen % blockSize) != 0) {
+            throw new ProviderException("Internal error in input buffering");
+        }
         int i;
         int endIndex = plainOffset + plainLen;
 
         for (; plainOffset < endIndex;
              plainOffset += blockSize, cipherOffset += blockSize) {
-            for (i=0; i<blockSize; i++) {
-                k[i] ^= plain[i+plainOffset];
+            for (i = 0; i < blockSize; i++) {
+                k[i] ^= plain[i + plainOffset];
             }
             embeddedCipher.encryptBlock(k, 0, cipher, cipherOffset);
             for (i = 0; i < blockSize; i++) {
-                k[i] = (byte)(plain[i+plainOffset] ^ cipher[i+cipherOffset]);
+                k[i] = (byte)(plain[i + plainOffset] ^ cipher[i + cipherOffset]);
             }
         }
         return plainLen;
@@ -160,27 +160,25 @@ final class PCBC extends FeedbackCipher {
      *
      * <p>The input cipher text <code>cipher</code>, starting at
      * <code>cipherOffset</code> and ending at
-     * <code>(cipherOffset + len - 1)</code>, is decrypted.
+     * <code>(cipherOffset + cipherLen - 1)</code>, is decrypted.
      * The result is stored in <code>plain</code>, starting at
      * <code>plainOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>cipherLen</code> is a multiple of the embedded cipher's block
-     * size, as any excess bytes are ignored.
-     *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
      *
      * @param cipher the buffer with the input data to be decrypted
      * @param cipherOffset the offset in <code>cipherOffset</code>
      * @param cipherLen the length of the input data
      * @param plain the buffer for the result
      * @param plainOffset the offset in <code>plain</code>
+     * @exception ProviderException if <code>cipherLen</code> is not
+     * a multiple of the block size
+     * @return the length of the decrypted data
      */
     int decrypt(byte[] cipher, int cipherOffset, int cipherLen,
                 byte[] plain, int plainOffset)
     {
+        if ((cipherLen % blockSize) != 0) {
+             throw new ProviderException("Internal error in input buffering");
+        }
         int i;
         int endIndex = cipherOffset + cipherLen;
 
@@ -189,10 +187,10 @@ final class PCBC extends FeedbackCipher {
             embeddedCipher.decryptBlock(cipher, cipherOffset,
                                    plain, plainOffset);
             for (i = 0; i < blockSize; i++) {
-                plain[i+plainOffset] ^= k[i];
+                plain[i + plainOffset] ^= k[i];
             }
             for (i = 0; i < blockSize; i++) {
-                k[i] = (byte)(plain[i+plainOffset] ^ cipher[i+cipherOffset]);
+                k[i] = (byte)(plain[i + plainOffset] ^ cipher[i + cipherOffset]);
             }
         }
         return cipherLen;

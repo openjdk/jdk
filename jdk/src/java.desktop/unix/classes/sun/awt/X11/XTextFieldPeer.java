@@ -208,6 +208,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
      * @see java.awt.peer.TextComponentPeer
      */
     @Override
+    @SuppressWarnings("deprecation")
     public String getText() {
         return xtext.getText();
     }
@@ -564,6 +565,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public void actionPerformed( ActionEvent actionEvent ) {
             peer.postEvent(new ActionEvent(peer.target,
                                            ActionEvent.ACTION_PERFORMED,
@@ -598,6 +600,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public ComponentPeer getPeer() {
             return (ComponentPeer) peer;
         }

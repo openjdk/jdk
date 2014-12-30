@@ -161,6 +161,7 @@ public class MetalComboBoxButton extends JButton {
         iconOnly = onlyIcon;
     }
 
+    @SuppressWarnings("deprecation")
     public boolean isFocusTraversable() {
         return false;
     }

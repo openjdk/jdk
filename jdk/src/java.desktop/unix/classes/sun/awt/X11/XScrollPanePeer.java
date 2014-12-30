@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
         repaint();
     }
 
+    @SuppressWarnings("deprecation")
     Dimension getChildSize() {
         ScrollPane sp = (ScrollPane)target;
         if (sp.countComponents() > 0) {
@@ -151,6 +152,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
         }
     }
 
+    @SuppressWarnings("deprecation")
     boolean setScrollbarSpace() {
         ScrollPane sp = (ScrollPane)target;
         boolean changed = false;
@@ -268,6 +270,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
     /**
      * Scroll the contents to position x, y
      */
+    @SuppressWarnings("deprecation")
     void scroll(int x, int y, int flag, int type) {
         checkSecurity();
         ScrollPane sp = (ScrollPane)target;
@@ -569,6 +572,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
      * ToDo(aim): needs to query native motif for more accurate size and
      * color information.
      */
+    @SuppressWarnings("deprecation")
     public void print(Graphics g) {
         ScrollPane sp = (ScrollPane)target;
         Dimension d = sp.size();
