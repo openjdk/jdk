@@ -796,6 +796,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * @return <code>true</code>
      * @see Component#dispatchEvent
      */
+    @SuppressWarnings("deprecation")
     public boolean dispatchKeyEvent(KeyEvent e) {
         Component focusOwner = (((AWTEvent)e).isPosted) ? getFocusOwner() : e.getComponent();
 
@@ -1021,6 +1022,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private boolean preDispatchKeyEvent(KeyEvent ke) {
         if (((AWTEvent) ke).isPosted) {
             Component focusOwner = getFocusOwner();

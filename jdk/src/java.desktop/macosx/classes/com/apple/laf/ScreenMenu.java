@@ -229,6 +229,7 @@ final class ScreenMenu extends Menu
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
             super.addNotify();
@@ -354,6 +355,7 @@ final class ScreenMenu extends Menu
     public void setIndeterminate(boolean indeterminate) { }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setToolTipText(final String text) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;
@@ -363,6 +365,7 @@ final class ScreenMenu extends Menu
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setIcon(final Icon i) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;

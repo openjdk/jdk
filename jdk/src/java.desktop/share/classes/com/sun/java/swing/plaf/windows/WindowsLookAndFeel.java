@@ -2487,6 +2487,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     /**
      * Calculates the dialog unit mapping.
      */
+    @SuppressWarnings("deprecation")
     private void calculateBaseUnits() {
         // This calculation comes from:
         // http://support.microsoft.com/default.aspx?scid=kb;EN-US;125681

@@ -717,6 +717,7 @@ search:
      * Primary translation function for translating a Transferable into
      * a byte array, given a source DataFlavor and target format.
      */
+    @SuppressWarnings("deprecation")
     public byte[] translateTransferable(Transferable contents,
                                         DataFlavor flavor,
                                         long format) throws IOException
@@ -1287,6 +1288,7 @@ search:
      * an InputStream into an Object, given a source format and a target
      * DataFlavor.
      */
+    @SuppressWarnings("deprecation")
     public Object translateStream(InputStream str, DataFlavor flavor,
                                   long format, Transferable localeTransferable)
         throws IOException

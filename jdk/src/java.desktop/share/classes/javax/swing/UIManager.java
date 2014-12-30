@@ -1436,6 +1436,7 @@ public class UIManager implements Serializable
     /*
      * Sets default swing focus traversal policy.
      */
+    @SuppressWarnings("deprecation")
     private static void maybeInitializeFocusPolicy(JComponent comp) {
         // Check for JRootPane which indicates that a swing toplevel
         // is coming, in which case a swing default focus policy

@@ -277,9 +277,6 @@ public class bug8024061 {
                     try {
                         Transferable t = dtde.getTransferable();
                         Object data = t.getTransferData(DropObjectFlavor);
-                        if (data != null) {
-                            throw new Exception("getTransferData returned non-null");
-                        }
                     } catch (Exception e) {
                         dragEnterException = e;
                         e.printStackTrace();

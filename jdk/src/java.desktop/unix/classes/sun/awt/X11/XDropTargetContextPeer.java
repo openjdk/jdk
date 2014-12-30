@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,6 +188,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
     // If source is an XEmbedCanvasPeer, passes the event to it for processing and
     // return true if the event is forwarded to the XEmbed child.
     // Otherwise, does nothing and return false.
+    @SuppressWarnings("deprecation")
     private boolean processSunDropTargetEvent(SunDropTargetEvent event) {
         Object source = event.getSource();
 

@@ -253,4 +253,18 @@ public class Util {
         }
         return result;
     }
+
+    /**
+     * Gets key codes from system mnemonic key mask
+     * @return key codes list
+     */
+    public static ArrayList<Integer> getSystemMnemonicKeyCodes() {
+        String osName = System.getProperty("os.name");
+        ArrayList<Integer> result = new ArrayList<>();
+        if (osName.contains("OS X")) {
+            result.add(KeyEvent.VK_CONTROL);
+        }
+        result.add(KeyEvent.ALT_MASK);
+        return result;
+    }
 }

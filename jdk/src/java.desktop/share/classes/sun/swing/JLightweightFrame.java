@@ -241,6 +241,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void notifyDisplayChanged(final int scaleFactor) {
         if (scaleFactor != this.scaleFactor) {
             if (!copyBufferEnabled) content.paintLock();
@@ -260,6 +261,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         super.addNotify();
         if (getPeer() instanceof DisplayChangedListener) {

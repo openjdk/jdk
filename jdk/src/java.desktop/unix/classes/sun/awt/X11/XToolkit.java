@@ -2438,12 +2438,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             awtUnlock();
         }
     }
+    @SuppressWarnings("deprecation")
     public void grab(Window w) {
         if (w.getPeer() != null) {
             ((XWindowPeer)w.getPeer()).setGrab(true);
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void ungrab(Window w) {
         if (w.getPeer() != null) {
            ((XWindowPeer)w.getPeer()).setGrab(false);
