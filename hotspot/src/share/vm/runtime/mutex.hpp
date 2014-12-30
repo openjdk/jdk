@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,24 @@ class Monitor : public CHeapObj<mtInternal> {
     _as_suspend_equivalent_flag = true
   };
 
+  // Locks can be acquired with or without safepoint check.
+  // Monitor::lock and Monitor::lock_without_safepoint_check
+  // checks these flags when acquiring a lock to ensure
+  // consistent checking for each lock.
+  // A few existing locks will sometimes have a safepoint check and
+  // sometimes not, but these locks are set up in such a way to avoid deadlocks.
+  enum SafepointCheckRequired {
+    _safepoint_check_never,       // Monitors with this value will cause errors
+                                  // when acquired with a safepoint check.
+    _safepoint_check_sometimes,   // Certain locks are called sometimes with and
+                                  // sometimes without safepoint checks. These
+                                  // locks will not produce errors when locked.
+    _safepoint_check_always       // Causes error if locked without a safepoint
+                                  // check.
+  };
+
+  NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
+
   enum WaitResults {
     CONDVAR_EVENT,         // Wait returned because of condition variable notification
     INTERRUPT_EVENT,       // Wait returned because waiting thread was interrupted
@@ -175,7 +193,8 @@ class Monitor : public CHeapObj<mtInternal> {
    Monitor() ;
 
  public:
-  Monitor(int rank, const char *name, bool allow_vm_block=false);
+  Monitor(int rank, const char *name, bool allow_vm_block = false,
+          SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
   ~Monitor();
 
   // Wait until monitor is notified (or times out).
@@ -261,7 +280,8 @@ class Monitor : public CHeapObj<mtInternal> {
 
 class Mutex : public Monitor {      // degenerate Monitor
  public:
-   Mutex (int rank, const char *name, bool allow_vm_block=false);
+   Mutex(int rank, const char *name, bool allow_vm_block = false,
+         SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
    ~Mutex () ;
  private:
    bool notify ()    { ShouldNotReachHere(); return false; }

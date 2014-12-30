@@ -400,7 +400,8 @@ void GCTaskManager::initialize() {
   assert(workers() != 0, "no workers");
   _monitor = new Monitor(Mutex::barrier,                // rank
                          "GCTaskManager monitor",       // name
-                         Mutex::_allow_vm_block_flag);  // allow_vm_block
+                         Mutex::_allow_vm_block_flag,   // allow_vm_block
+                         Monitor::_safepoint_check_never);
   // The queue for the GCTaskManager must be a CHeapObj.
   GCTaskQueue* unsynchronized_queue = GCTaskQueue::create_on_c_heap();
   _queue = SynchronizedGCTaskQueue::create(unsynchronized_queue, lock());
@@ -1125,7 +1126,8 @@ Monitor* MonitorSupply::reserve() {
     } else {
       result = new Monitor(Mutex::barrier,                  // rank
                            "MonitorSupply monitor",         // name
-                           Mutex::_allow_vm_block_flag);    // allow_vm_block
+                           Mutex::_allow_vm_block_flag,     // allow_vm_block
+                           Monitor::_safepoint_check_never);
     }
     guarantee(result != NULL, "shouldn't return NULL");
     assert(!result->is_locked(), "shouldn't be locked");

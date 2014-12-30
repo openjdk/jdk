@@ -5090,6 +5090,9 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
     return 0;
   }
 
+  jio_snprintf(buffer, bufferSize, "%s/core or core.%d",
+                                               p, current_process_id());
+
   return strlen(buffer);
 }
 
