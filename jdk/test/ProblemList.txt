@@ -120,6 +120,10 @@
 
 # jdk_lang
 
+# 8029891
+java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
+
+
 ############################################################################
 
 # jdk_instrument
