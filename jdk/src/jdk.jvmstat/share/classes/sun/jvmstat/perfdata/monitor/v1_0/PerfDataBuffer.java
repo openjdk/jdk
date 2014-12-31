@@ -44,7 +44,8 @@ import java.nio.*;
  */
 public class PerfDataBuffer extends PerfDataBufferImpl {
 
-    private static final boolean DEBUG = false;
+    // 8028357 removed old, inefficient debug logging
+
     private static final int syncWaitMs =
             Integer.getInteger("sun.jvmstat.perdata.syncWaitMs", 5000);
     private static final ArrayList<Monitor> EMPTY_LIST = new ArrayList<Monitor>(0);
@@ -268,18 +269,13 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
          * loop waiting for the ticks counter to be non zero. This is
          * an indication that the jvm is initialized.
          */
-        log("synchWithTarget: " + lvmid + " ");
         while (ticks.longValue() == 0) {
-            log(".");
-
             try { Thread.sleep(20); } catch (InterruptedException e) { }
 
             if (System.currentTimeMillis() > timeLimit) {
-                lognl("failed: " + lvmid);
                 throw new MonitorException("Could Not Synchronize with target");
             }
         }
-        lognl("success: " + lvmid);
     }
 
     /**
@@ -291,24 +287,18 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
                       throws MonitorException {
         Monitor monitor = null;
 
-        log("polling for: " + lvmid + "," + name + " ");
-
         pollForEntry = nextEntry;
         while ((monitor = map.get(name)) == null) {
-            log(".");
 
             try { Thread.sleep(20); } catch (InterruptedException e) { }
 
             long t = System.currentTimeMillis();
             if ((t > timeLimit) || (overflow.intValue() > 0)) {
-                lognl("failed: " + lvmid + "," + name);
-                dumpAll(map, lvmid);
                 throw new MonitorException("Could not find expected counter");
             }
 
             getNewMonitors(map);
         }
-        lognl("success: " + lvmid + "," + name);
         return monitor;
     }
 
@@ -481,8 +471,6 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
 
         // check for the end of the buffer
         if (nextEntry == buffer.limit()) {
-            lognl("getNextMonitorEntry():"
-                  + " nextEntry == buffer.limit(): returning");
             return null;
         }
 
@@ -613,38 +601,5 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         // setup index to next entry for next iteration of the loop.
         nextEntry = entryStart + entryLength;
         return monitor;
-    }
-
-    /**
-     * Method to dump debugging information
-     */
-    private void dumpAll(Map<String, Monitor> map, int lvmid) {
-        if (DEBUG) {
-            Set<String> keys = map.keySet();
-
-            System.err.println("Dump for " + lvmid);
-            int j = 0;
-            for (Iterator<String> i = keys.iterator(); i.hasNext(); j++) {
-                Monitor monitor = map.get(i.next());
-                System.err.println(j + "\t" + monitor.getName()
-                                   + "=" + monitor.getValue());
-            }
-            System.err.println("nextEntry = " + nextEntry
-                               + " pollForEntry = " + pollForEntry);
-            System.err.println("Buffer info:");
-            System.err.println("buffer = " + buffer);
-        }
-    }
-
-    private void lognl(String s) {
-        if (DEBUG) {
-            System.err.println(s);
-        }
-    }
-
-    private void log(String s) {
-        if (DEBUG) {
-            System.err.print(s);
-        }
     }
 }
