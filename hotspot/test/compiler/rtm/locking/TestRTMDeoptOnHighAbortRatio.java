@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that on high abort ratio method will be recompiled
  *          without rtm locking.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMDeoptOnHighAbortRatio
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

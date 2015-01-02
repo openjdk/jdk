@@ -28,7 +28,7 @@
  * @summary Verify that UseRTMLockEliding option could be applied to
  *          specified method and that such method will not be deoptimized
  *          on high abort ratio.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMLockElidingOption
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

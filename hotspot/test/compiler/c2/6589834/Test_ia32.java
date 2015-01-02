@@ -26,7 +26,7 @@
  * @bug 6589834
  * @summary Safepoint placed between stack pointer increment and decrement leads
  *          to interpreter's stack corruption after deoptimization.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build ClassFileInstaller sun.hotspot.WhiteBox com.oracle.java.testlibrary.*
  *        Test_ia32 InlinedArrayCloneTestCase
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

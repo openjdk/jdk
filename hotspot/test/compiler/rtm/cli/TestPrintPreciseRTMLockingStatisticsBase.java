@@ -47,27 +47,42 @@ public abstract class TestPrintPreciseRTMLockingStatisticsBase
     protected void verifyJVMStartup() throws Throwable {
         if (Platform.isServer()) {
             if (!Platform.isDebugBuild()) {
+                String shouldFailMessage = String.format("VM option '%s' is "
+                        + "diagnostic%nJVM startup should fail without "
+                        + "-XX:\\+UnlockDiagnosticVMOptions flag", optionName);
+                String shouldPassMessage = String.format("VM option '%s' is "
+                        + "diagnostic%nJVM startup should pass with "
+                        + "-XX:\\+UnlockDiagnosticVMOptions in debug build",
+                        optionName);
                 String errorMessage = CommandLineOptionTest.
                         getDiagnosticOptionErrorMessage(optionName);
                 // verify that option is actually diagnostic
                 CommandLineOptionTest.verifySameJVMStartup(
-                        new String[] { errorMessage }, null, ExitCode.FAIL,
+                        new String[] { errorMessage }, null, shouldFailMessage,
+                        shouldFailMessage, ExitCode.FAIL,
                         prepareOptionValue("true"));
 
                 CommandLineOptionTest.verifySameJVMStartup(null,
-                        new String[] { errorMessage }, ExitCode.OK,
+                        new String[] { errorMessage }, shouldPassMessage,
+                        shouldPassMessage + "without any warnings", ExitCode.OK,
                         CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                         prepareOptionValue("true"));
             } else {
-                CommandLineOptionTest.verifySameJVMStartup(
-                        null, null, ExitCode.OK, prepareOptionValue("true"));
+                String shouldPassMessage = String.format("JVM startup should "
+                                + "pass with '%s' option in debug build",
+                                optionName);
+                CommandLineOptionTest.verifySameJVMStartup(null, null,
+                        shouldPassMessage, shouldPassMessage,
+                        ExitCode.OK, prepareOptionValue("true"));
             }
         } else {
             String errorMessage = CommandLineOptionTest.
                     getUnrecognizedOptionErrorMessage(optionName);
-
+            String shouldFailMessage =  String.format("JVM startup should fail"
+                    + " with '%s' option in not debug build", optionName);
             CommandLineOptionTest.verifySameJVMStartup(
-                    new String[]{errorMessage}, null, ExitCode.FAIL,
+                    new String[]{errorMessage}, null, shouldFailMessage,
+                    shouldFailMessage, ExitCode.FAIL,
                     CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                     prepareOptionValue("true"));
         }
@@ -79,6 +94,9 @@ public abstract class TestPrintPreciseRTMLockingStatisticsBase
             // Verify default value
             CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                     TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE,
+                    String.format("Option '%s' should have '%s' default value",
+                            optionName,
+                       TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE),
                     CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS);
         }
     }

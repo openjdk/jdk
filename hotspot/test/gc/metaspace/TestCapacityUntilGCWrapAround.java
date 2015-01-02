@@ -25,7 +25,7 @@
  * @test
  * @key gc
  * @bug 8049831
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestCapacityUntilGCWrapAround
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

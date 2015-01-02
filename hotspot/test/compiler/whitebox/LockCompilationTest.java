@@ -24,7 +24,7 @@
 /*
  * @test LockCompilationTest
  * @bug 8059624
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build LockCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

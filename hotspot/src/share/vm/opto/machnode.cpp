@@ -473,8 +473,13 @@ bool MachNode::rematerialize() const {
 // Print any per-operand special info
 void MachNode::dump_spec(outputStream *st) const {
   uint cnt = num_opnds();
-  for( uint i=0; i<cnt; i++ )
-    _opnds[i]->dump_spec(st);
+  for( uint i=0; i<cnt; i++ ) {
+    if (_opnds[i] != NULL) {
+      _opnds[i]->dump_spec(st);
+    } else {
+      st->print(" _");
+    }
+  }
   const TypePtr *t = adr_type();
   if( t ) {
     Compile* C = Compile::current();
@@ -493,7 +498,11 @@ void MachNode::dump_format(PhaseRegAlloc *ra, outputStream *st) const {
 //=============================================================================
 #ifndef PRODUCT
 void MachTypeNode::dump_spec(outputStream *st) const {
-  _bottom_type->dump_on(st);
+  if (_bottom_type != NULL) {
+    _bottom_type->dump_on(st);
+  } else {
+    st->print(" NULL");
+  }
 }
 #endif
 
@@ -635,7 +644,7 @@ const Type *MachCallNode::Value(PhaseTransform *phase) const { return tf()->rang
 #ifndef PRODUCT
 void MachCallNode::dump_spec(outputStream *st) const {
   st->print("# ");
-  tf()->dump_on(st);
+  if (tf() != NULL)  tf()->dump_on(st);
   if (_cnt != COUNT_UNKNOWN)  st->print(" C=%f",_cnt);
   if (jvms() != NULL)  jvms()->dump_spec(st);
 }

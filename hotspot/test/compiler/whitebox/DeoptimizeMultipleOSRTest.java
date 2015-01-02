@@ -28,7 +28,7 @@ import java.lang.reflect.Method;
 /*
  * @test DeoptimizeMultipleOSRTest
  * @bug 8061817
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build DeoptimizeMultipleOSRTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
