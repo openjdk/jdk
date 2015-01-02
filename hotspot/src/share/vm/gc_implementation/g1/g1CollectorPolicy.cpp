@@ -1437,18 +1437,6 @@ bool G1CollectorPolicy::can_expand_young_list() {
   return young_list_length < young_list_max_length;
 }
 
-uint G1CollectorPolicy::max_regions(int purpose) {
-  switch (purpose) {
-    case GCAllocForSurvived:
-      return _max_survivor_regions;
-    case GCAllocForTenured:
-      return REGIONS_UNLIMITED;
-    default:
-      ShouldNotReachHere();
-      return REGIONS_UNLIMITED;
-  };
-}
-
 void G1CollectorPolicy::update_max_gc_locker_expansion() {
   uint expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
@@ -1634,7 +1622,7 @@ void G1CollectorPolicy::add_old_region_to_cset(HeapRegion* hr) {
   hr->set_next_in_collection_set(_collection_set);
   _collection_set = hr;
   _collection_set_bytes_used_before += hr->used();
-  _g1->register_region_with_in_cset_fast_test(hr);
+  _g1->register_old_region_with_in_cset_fast_test(hr);
   size_t rs_length = hr->rem_set()->occupied();
   _recorded_rs_lengths += rs_length;
   _old_cset_region_length += 1;
@@ -1767,7 +1755,7 @@ void G1CollectorPolicy::add_region_to_incremental_cset_common(HeapRegion* hr) {
   hr->set_in_collection_set(true);
   assert( hr->next_in_collection_set() == NULL, "invariant");
 
-  _g1->register_region_with_in_cset_fast_test(hr);
+  _g1->register_young_region_with_in_cset_fast_test(hr);
 }
 
 // Add the region at the RHS of the incremental cset

@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMDeopt option processing on CPUs without rtm support
  *          or on VMs without rtm locking support.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMDeoptOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -50,7 +50,8 @@ public class TestUseRTMDeoptOptionOnUnsupportedConfig
         super(new NotPredicate(new AndPredicate(new SupportedCPU(),
                         new SupportedVM())),
                 "UseRTMDeopt", true, false,
-                TestUseRTMDeoptOptionOnUnsupportedConfig.DEFAULT_VALUE, "true");
+                TestUseRTMDeoptOptionOnUnsupportedConfig.DEFAULT_VALUE,
+                "true");
     }
 
     @Override
@@ -58,11 +59,16 @@ public class TestUseRTMDeoptOptionOnUnsupportedConfig
         super.verifyJVMStartup();
         // verify default value
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
-                defaultValue);
+                defaultValue, String.format("'%s' should have '%s' "
+                        + "default value on unsupported configs.",
+                        optionName, DEFAULT_VALUE));
         // verify that until RTMLocking is not used, value
         // will be set to default false.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
-                defaultValue, "-XX:+UseRTMDeopt");
+                defaultValue, String.format("'%s' should be off on unsupported"
+                        + " configs even if '-XX:+%s' flag set", optionName,
+                        optionName),
+                "-XX:+UseRTMDeopt");
     }
 
     public static void main(String args[]) throws Throwable {

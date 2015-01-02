@@ -1936,8 +1936,9 @@ ArchOpcode MachSpillCopyNode_archOpcode(MachSpillCopyNode *n, PhaseRegAlloc *ra_
   // --------------------------------------------------------------------
   // Check for hi bits still needing moving. Only happens for misaligned
   // arguments to native calls.
-  if (src_hi == dst_hi)
+  if (src_hi == dst_hi) {
     return ppc64Opcode_none;               // Self copy; no move.
+  }
 
   ShouldNotReachHere();
   return ppc64Opcode_undefined;
@@ -1959,14 +1960,15 @@ void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *) const {
 }
 
 uint MachNopNode::size(PhaseRegAlloc *ra_) const {
-   return _count * 4;
+  return _count * 4;
 }
 
 #ifndef PRODUCT
 void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
-  int reg = ra_->get_reg_first(this);
-  st->print("ADDI %s, SP, %d \t// box node", Matcher::regName[reg], offset);
+  char reg_str[128];
+  ra_->dump_register(this, reg_str);
+  st->print("ADDI    %s, SP, %d \t// box node", reg_str, offset);
 }
 #endif
 

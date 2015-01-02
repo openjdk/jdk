@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
+#include "memory/cardGeneration.inline.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/genMarkSweep.hpp"
 #include "memory/genOopClosures.inline.hpp"

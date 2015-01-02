@@ -925,8 +925,8 @@ bool Arguments::process_argument(const char* arg,
                     "Warning: support for %s was removed in %s\n",
                     fuzzy_matched->_name,
                     version);
-      }
     }
+  }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
@@ -1382,41 +1382,24 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   if (FLAG_IS_DEFAULT(SurvivorRatio) && MaxTenuringThreshold == 0) {
     FLAG_SET_ERGO(uintx, SurvivorRatio, MAX2((uintx)1024, SurvivorRatio));
   }
-  // If OldPLABSize is set and CMSParPromoteBlocksToClaim is not,
-  // set CMSParPromoteBlocksToClaim equal to OldPLABSize.
-  // This is done in order to make ParNew+CMS configuration to work
-  // with YoungPLABSize and OldPLABSize options.
-  // See CR 6362902.
-  if (!FLAG_IS_DEFAULT(OldPLABSize)) {
-    if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
-      // OldPLABSize is not the default value but CMSParPromoteBlocksToClaim
-      // is.  In this situation let CMSParPromoteBlocksToClaim follow
-      // the value (either from the command line or ergonomics) of
-      // OldPLABSize.  Following OldPLABSize is an ergonomics decision.
-      FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, OldPLABSize);
+
+  // OldPLABSize is interpreted in CMS as not the size of the PLAB in words,
+  // but rather the number of free blocks of a given size that are used when
+  // replenishing the local per-worker free list caches.
+  if (FLAG_IS_DEFAULT(OldPLABSize)) {
+    if (!FLAG_IS_DEFAULT(ResizeOldPLAB) && !ResizeOldPLAB) {
+      // OldPLAB sizing manually turned off: Use a larger default setting,
+      // unless it was manually specified. This is because a too-low value
+      // will slow down scavenges.
+      FLAG_SET_ERGO(uintx, OldPLABSize, CFLS_LAB::_default_static_old_plab_size); // default value before 6631166
     } else {
-      // OldPLABSize and CMSParPromoteBlocksToClaim are both set.
-      // CMSParPromoteBlocksToClaim is a collector-specific flag, so
-      // we'll let it to take precedence.
-      jio_fprintf(defaultStream::error_stream(),
-                  "Both OldPLABSize and CMSParPromoteBlocksToClaim"
-                  " options are specified for the CMS collector."
-                  " CMSParPromoteBlocksToClaim will take precedence.\n");
+      FLAG_SET_DEFAULT(OldPLABSize, CFLS_LAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
     }
   }
-  if (!FLAG_IS_DEFAULT(ResizeOldPLAB) && !ResizeOldPLAB) {
-    // OldPLAB sizing manually turned off: Use a larger default setting,
-    // unless it was manually specified. This is because a too-low value
-    // will slow down scavenges.
-    if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
-      FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, 50); // default value before 6631166
-    }
-  }
-  // Overwrite OldPLABSize which is the variable we will internally use everywhere.
-  FLAG_SET_ERGO(uintx, OldPLABSize, CMSParPromoteBlocksToClaim);
+
   // If either of the static initialization defaults have changed, note this
   // modification.
-  if (!FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
+  if (!FLAG_IS_DEFAULT(OldPLABSize) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
     CFLS_LAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
   if (PrintGCDetails && Verbose) {
@@ -3225,52 +3208,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         FLAG_SET_CMDLINE(bool, NeverTenure, false);
         FLAG_SET_CMDLINE(bool, AlwaysTenure, false);
       }
-    } else if (match_option(option, "-XX:+CMSPermGenSweepingEnabled") ||
-               match_option(option, "-XX:-CMSPermGenSweepingEnabled")) {
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use CMSClassUnloadingEnabled in place of "
-        "CMSPermGenSweepingEnabled in the future\n");
-    } else if (match_option(option, "-XX:+UseGCTimeLimit")) {
-      FLAG_SET_CMDLINE(bool, UseGCOverheadLimit, true);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:+UseGCOverheadLimit in place of "
-        "-XX:+UseGCTimeLimit in the future\n");
-    } else if (match_option(option, "-XX:-UseGCTimeLimit")) {
-      FLAG_SET_CMDLINE(bool, UseGCOverheadLimit, false);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:-UseGCOverheadLimit in place of "
-        "-XX:-UseGCTimeLimit in the future\n");
-    // The TLE options are for compatibility with 1.3 and will be
-    // removed without notice in a future release.  These options
-    // are not to be documented.
-    } else if (match_option(option, "-XX:MaxTLERatio=", &tail)) {
-      // No longer used.
-    } else if (match_option(option, "-XX:+ResizeTLE")) {
-      FLAG_SET_CMDLINE(bool, ResizeTLAB, true);
-    } else if (match_option(option, "-XX:-ResizeTLE")) {
-      FLAG_SET_CMDLINE(bool, ResizeTLAB, false);
-    } else if (match_option(option, "-XX:+PrintTLE")) {
-      FLAG_SET_CMDLINE(bool, PrintTLAB, true);
-    } else if (match_option(option, "-XX:-PrintTLE")) {
-      FLAG_SET_CMDLINE(bool, PrintTLAB, false);
-    } else if (match_option(option, "-XX:TLEFragmentationRatio=", &tail)) {
-      // No longer used.
-    } else if (match_option(option, "-XX:TLESize=", &tail)) {
-      julong long_tlab_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_tlab_size, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid TLAB size: %s\n", option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
-      }
-      FLAG_SET_CMDLINE(uintx, TLABSize, long_tlab_size);
-    } else if (match_option(option, "-XX:TLEThreadRatio=", &tail)) {
-      // No longer used.
-    } else if (match_option(option, "-XX:+UseTLE")) {
-      FLAG_SET_CMDLINE(bool, UseTLAB, true);
-    } else if (match_option(option, "-XX:-UseTLE")) {
-      FLAG_SET_CMDLINE(bool, UseTLAB, false);
     } else if (match_option(option, "-XX:+DisplayVMOutputToStderr")) {
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStdout, false);
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStderr, true);
@@ -3294,44 +3231,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // disable scavenge before parallel mark-compact
       FLAG_SET_CMDLINE(bool, ScavengeBeforeFullGC, false);
 #endif
-    } else if (match_option(option, "-XX:CMSParPromoteBlocksToClaim=", &tail)) {
-      julong cms_blocks_to_claim = (julong)atol(tail);
-      FLAG_SET_CMDLINE(uintx, CMSParPromoteBlocksToClaim, cms_blocks_to_claim);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:OldPLABSize in place of "
-        "-XX:CMSParPromoteBlocksToClaim in the future\n");
-    } else if (match_option(option, "-XX:ParCMSPromoteBlocksToClaim=", &tail)) {
-      julong cms_blocks_to_claim = (julong)atol(tail);
-      FLAG_SET_CMDLINE(uintx, CMSParPromoteBlocksToClaim, cms_blocks_to_claim);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:OldPLABSize in place of "
-        "-XX:ParCMSPromoteBlocksToClaim in the future\n");
-    } else if (match_option(option, "-XX:ParallelGCOldGenAllocBufferSize=", &tail)) {
-      julong old_plab_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &old_plab_size, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid old PLAB size: %s\n", option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
-      }
-      FLAG_SET_CMDLINE(uintx, OldPLABSize, old_plab_size);
-      jio_fprintf(defaultStream::error_stream(),
-                  "Please use -XX:OldPLABSize in place of "
-                  "-XX:ParallelGCOldGenAllocBufferSize in the future\n");
-    } else if (match_option(option, "-XX:ParallelGCToSpaceAllocBufferSize=", &tail)) {
-      julong young_plab_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &young_plab_size, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid young PLAB size: %s\n", option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
-      }
-      FLAG_SET_CMDLINE(uintx, YoungPLABSize, young_plab_size);
-      jio_fprintf(defaultStream::error_stream(),
-                  "Please use -XX:YoungPLABSize in place of "
-                  "-XX:ParallelGCToSpaceAllocBufferSize in the future\n");
     } else if (match_option(option, "-XX:CMSMarkStackSize=", &tail) ||
                match_option(option, "-XX:G1MarkStackSize=", &tail)) {
       julong stack_size = 0;
@@ -3342,6 +3241,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
+      jio_fprintf(defaultStream::error_stream(),
+        "Please use -XX:MarkStackSize in place of "
+        "-XX:CMSMarkStackSize or -XX:G1MarkStackSize in the future\n");
       FLAG_SET_CMDLINE(uintx, MarkStackSize, stack_size);
     } else if (match_option(option, "-XX:CMSMarkStackSizeMax=", &tail)) {
       julong max_stack_size = 0;
@@ -3353,6 +3255,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
+      jio_fprintf(defaultStream::error_stream(),
+         "Please use -XX:MarkStackSizeMax in place of "
+         "-XX:CMSMarkStackSizeMax in the future\n");
       FLAG_SET_CMDLINE(uintx, MarkStackSizeMax, max_stack_size);
     } else if (match_option(option, "-XX:ParallelMarkingThreads=", &tail) ||
                match_option(option, "-XX:ParallelCMSThreads=", &tail)) {
@@ -3362,6 +3267,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                     "Invalid concurrent threads: %s\n", option->optionString);
         return JNI_EINVAL;
       }
+      jio_fprintf(defaultStream::error_stream(),
+        "Please use -XX:ConcGCThreads in place of "
+        "-XX:ParallelMarkingThreads or -XX:ParallelCMSThreads in the future\n");
       FLAG_SET_CMDLINE(uintx, ConcGCThreads, conc_threads);
     } else if (match_option(option, "-XX:MaxDirectMemorySize=", &tail)) {
       julong max_direct_memory_size = 0;
