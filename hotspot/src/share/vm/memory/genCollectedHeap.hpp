@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@ public:
   int _n_gens;
   Generation* _gens[max_gens];
   GenerationSpec** _gen_specs;
+
+  // The singleton Gen Remembered Set.
+  GenRemSet* _rem_set;
 
   // The generational collector policy.
   GenCollectorPolicy* _gen_policy;
@@ -382,6 +385,10 @@ public:
     assert(_n_gens == gen_policy()->number_of_generations(), "Sanity");
     return _n_gens;
   }
+
+  // This function returns the "GenRemSet" object that allows us to scan
+  // generations in a fully generational heap.
+  GenRemSet* rem_set() { return _rem_set; }
 
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.

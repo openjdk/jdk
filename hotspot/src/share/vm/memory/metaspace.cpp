@@ -792,7 +792,8 @@ const int SpaceManager::_expand_lock_rank = Monitor::leaf - 1;
 Mutex* const SpaceManager::_expand_lock =
   new Mutex(SpaceManager::_expand_lock_rank,
             SpaceManager::_expand_lock_name,
-            Mutex::_allow_vm_block_flag);
+            Mutex::_allow_vm_block_flag,
+            Monitor::_safepoint_check_never);
 
 void VirtualSpaceNode::inc_container_count() {
   assert_lock_strong(SpaceManager::expand_lock());
@@ -3158,7 +3159,25 @@ void Metaspace::global_initialize() {
     SharedMiscDataSize  = align_size_up(SharedMiscDataSize,  max_alignment);
     SharedMiscCodeSize  = align_size_up(SharedMiscCodeSize,  max_alignment);
 
-    // the min_misc_code_size estimate is based on MetaspaceShared::generate_vtable_methods()
+    // make sure SharedReadOnlySize and SharedReadWriteSize are not less than
+    // the minimum values.
+    if (SharedReadOnlySize < MetaspaceShared::min_ro_size){
+      report_out_of_shared_space(SharedReadOnly);
+    }
+
+    if (SharedReadWriteSize < MetaspaceShared::min_rw_size){
+      report_out_of_shared_space(SharedReadWrite);
+    }
+
+    // the min_misc_data_size and min_misc_code_size estimates are based on
+    // MetaspaceShared::generate_vtable_methods()
+    uint min_misc_data_size = align_size_up(
+      MetaspaceShared::num_virtuals * MetaspaceShared::vtbl_list_size * sizeof(void*), max_alignment);
+
+    if (SharedMiscDataSize < min_misc_data_size) {
+      report_out_of_shared_space(SharedMiscData);
+    }
+
     uintx min_misc_code_size = align_size_up(
       (MetaspaceShared::num_virtuals * MetaspaceShared::vtbl_list_size) *
         (sizeof(void*) + MetaspaceShared::vtbl_method_size) + MetaspaceShared::vtbl_common_code_size,

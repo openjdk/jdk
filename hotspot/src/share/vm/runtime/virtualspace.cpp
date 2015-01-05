@@ -615,19 +615,7 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
   }
 
   if (pre_touch || AlwaysPreTouch) {
-    int vm_ps = os::vm_page_size();
-    for (char* curr = previous_high;
-         curr < unaligned_new_high;
-         curr += vm_ps) {
-      // Note the use of a write here; originally we tried just a read, but
-      // since the value read was unused, the optimizer removed the read.
-      // If we ever have a concurrent touchahead thread, we'll want to use
-      // a read, to avoid the potential of overwriting data (if a mutator
-      // thread beats the touchahead thread to a page).  There are various
-      // ways of making sure this read is not optimized away: for example,
-      // generating the code for a read procedure at runtime.
-      *curr = 0;
-    }
+    os::pretouch_memory(previous_high, unaligned_new_high);
   }
 
   _high += bytes;

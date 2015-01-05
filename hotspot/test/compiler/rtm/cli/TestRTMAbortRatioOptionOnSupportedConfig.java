@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify RTMAbortRatio option processing on CPU with rtm
  *          support and on VM with rtm locking support.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMAbortRatioOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

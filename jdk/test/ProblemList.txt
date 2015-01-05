@@ -120,6 +120,10 @@
 
 # jdk_lang
 
+# 8029891
+java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
+
+
 ############################################################################
 
 # jdk_instrument
@@ -264,7 +268,7 @@ java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 
 # Tests take too long, on sparcs see 7143279
 # also see 8059906
-tools/pack200/CommandLineTests.java
+tools/pack200/CommandLineTests.java                             generic-all
 tools/pack200/Pack200Test.java                                  solaris-all,macosx-all
 
 # 8007410

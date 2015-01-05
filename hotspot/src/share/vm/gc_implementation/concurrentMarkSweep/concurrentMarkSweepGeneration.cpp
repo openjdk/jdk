@@ -42,6 +42,7 @@
 #include "gc_implementation/shared/isGCActiveMark.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/allocation.hpp"
+#include "memory/cardGeneration.inline.hpp"
 #include "memory/cardTableRS.hpp"
 #include "memory/collectorPolicy.hpp"
 #include "memory/gcLocker.inline.hpp"
@@ -479,7 +480,9 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _restart_addr(NULL),
   _overflow_list(NULL),
   _stats(cmsGen),
-  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true)),
+  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true,
+                             //verify that this lock should be acquired with safepoint check.
+                             Monitor::_safepoint_check_sometimes)),
   _eden_chunk_array(NULL),     // may be set in ctor body
   _eden_chunk_capacity(0),     // -- ditto --
   _eden_chunk_index(0),        // -- ditto --
@@ -793,11 +796,6 @@ void ConcurrentMarkSweepGeneration::promotion_failure_occurred() {
   }
 }
 
-CompactibleSpace*
-ConcurrentMarkSweepGeneration::first_compaction_space() const {
-  return _cmsSpace;
-}
-
 void ConcurrentMarkSweepGeneration::reset_after_compaction() {
   // Clear the promotion information.  These pointers can be adjusted
   // along with all the other pointers into the heap but
@@ -806,10 +804,6 @@ void ConcurrentMarkSweepGeneration::reset_after_compaction() {
   for (uint i = 0; i < ParallelGCThreads; i++) {
     _par_gc_thread_states[i]->promo.reset();
   }
-}
-
-void ConcurrentMarkSweepGeneration::space_iterate(SpaceClosure* blk, bool usedOnly) {
-  blk->do_space(_cmsSpace);
 }
 
 void ConcurrentMarkSweepGeneration::compute_new_size() {
@@ -882,7 +876,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
         expand_bytes);
     }
     // safe if expansion fails
-    expand(expand_bytes, 0, CMSExpansionCause::_satisfy_free_ratio);
+    expand_for_gc_cause(expand_bytes, 0, CMSExpansionCause::_satisfy_free_ratio);
     if (PrintGCDetails && Verbose) {
       gclog_or_tty->print_cr("  Expanded free fraction %f",
         ((double) free()) / capacity());
@@ -1048,8 +1042,7 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
   if (res == NULL) {
     // expand and retry
     size_t s = _cmsSpace->expansionSpaceRequired(obj_size);  // HeapWords
-    expand(s*HeapWordSize, MinHeapDeltaBytes,
-      CMSExpansionCause::_satisfy_promotion);
+    expand_for_gc_cause(s*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_satisfy_promotion);
     // Since there's currently no next generation, we don't try to promote
     // into a more senior generation.
     assert(next_gen() == NULL, "assumption, based upon which no attempt "
@@ -1618,14 +1611,15 @@ void CMSCollector::acquire_control_and_collect(bool full,
 
   // If the collection is being acquired from the background
   // collector, there may be references on the discovered
-  // references lists that have NULL referents (being those
-  // that were concurrently cleared by a mutator) or
-  // that are no longer active (having been enqueued concurrently
-  // by the mutator).
-  // Scrub the list of those references because Mark-Sweep-Compact
-  // code assumes referents are not NULL and that all discovered
-  // Reference objects are active.
-  ref_processor()->clean_up_discovered_references();
+  // references lists.  Abandon those references, since some
+  // of them may have become unreachable after concurrent
+  // discovery; the STW compacting collector will redo discovery
+  // more precisely, without being subject to floating garbage.
+  // Leaving otherwise unreachable references in the discovered
+  // lists would require special handling.
+  ref_processor()->disable_discovery();
+  ref_processor()->abandon_partial_discovery();
+  ref_processor()->verify_no_references_recorded();
 
   if (first_state > Idling) {
     save_heap_summary();
@@ -1691,7 +1685,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(ref_processor(), false);
 
   ref_processor()->set_enqueuing_is_done(false);
-  ref_processor()->enable_discovery(false /*verify_disabled*/, false /*check_no_refs*/);
+  ref_processor()->enable_discovery();
   ref_processor()->setup_policy(clear_all_soft_refs);
   // If an asynchronous collection finishes, the _modUnionTable is
   // all clear.  If we are assuming the collection from an asynchronous
@@ -2625,13 +2619,6 @@ oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {   \
 ALL_SINCE_SAVE_MARKS_CLOSURES(CMS_SINCE_SAVE_MARKS_DEFN)
 
 void
-ConcurrentMarkSweepGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
-  cl->set_generation(this);
-  younger_refs_in_space_iterate(_cmsSpace, cl);
-  cl->reset_generation();
-}
-
-void
 ConcurrentMarkSweepGeneration::oop_iterate(ExtendedOopClosure* cl) {
   if (freelistLock()->owned_by_self()) {
     Generation::oop_iterate(cl);
@@ -2803,23 +2790,17 @@ ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
   CMSSynchronousYieldRequest yr;
   assert(!tlab, "Can't deal with TLAB allocation");
   MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
-  expand(word_size*HeapWordSize, MinHeapDeltaBytes,
-    CMSExpansionCause::_satisfy_allocation);
+  expand_for_gc_cause(word_size*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_satisfy_allocation);
   if (GCExpandToAllocateDelayMillis > 0) {
     os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
   }
   return have_lock_and_allocate(word_size, tlab);
 }
 
-// YSR: All of this generation expansion/shrinking stuff is an exact copy of
-// TenuredGeneration, which makes me wonder if we should move this
-// to CardGeneration and share it...
-bool ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes) {
-  return CardGeneration::expand(bytes, expand_bytes);
-}
-
-void ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes,
-  CMSExpansionCause::Cause cause)
+void ConcurrentMarkSweepGeneration::expand_for_gc_cause(
+    size_t bytes,
+    size_t expand_bytes,
+    CMSExpansionCause::Cause cause)
 {
 
   bool success = expand(bytes, expand_bytes);
@@ -2848,8 +2829,7 @@ HeapWord* ConcurrentMarkSweepGeneration::expand_and_par_lab_allocate(CMSParGCThr
       return NULL;
     }
     // Otherwise, we try expansion.
-    expand(word_sz*HeapWordSize, MinHeapDeltaBytes,
-      CMSExpansionCause::_allocate_par_lab);
+    expand_for_gc_cause(word_sz*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_allocate_par_lab);
     // Now go around the loop and try alloc again;
     // A competing par_promote might beat us to the expansion space,
     // so we may go around the loop again if promotion fails again.
@@ -2876,8 +2856,7 @@ bool ConcurrentMarkSweepGeneration::expand_and_ensure_spooling_space(
       return false;
     }
     // Otherwise, we try expansion.
-    expand(refill_size_bytes, MinHeapDeltaBytes,
-      CMSExpansionCause::_allocate_par_spooling_space);
+    expand_for_gc_cause(refill_size_bytes, MinHeapDeltaBytes, CMSExpansionCause::_allocate_par_spooling_space);
     // Now go around the loop and try alloc again;
     // A competing allocation might beat us to the expansion space,
     // so we may go around the loop again if allocation fails again.
@@ -2887,77 +2866,16 @@ bool ConcurrentMarkSweepGeneration::expand_and_ensure_spooling_space(
   }
 }
 
-
-void ConcurrentMarkSweepGeneration::shrink_by(size_t bytes) {
-  assert_locked_or_safepoint(ExpandHeap_lock);
-  // Shrink committed space
-  _virtual_space.shrink_by(bytes);
-  // Shrink space; this also shrinks the space's BOT
-  _cmsSpace->set_end((HeapWord*) _virtual_space.high());
-  size_t new_word_size = heap_word_size(_cmsSpace->capacity());
-  // Shrink the shared block offset array
-  _bts->resize(new_word_size);
-  MemRegion mr(_cmsSpace->bottom(), new_word_size);
-  // Shrink the card table
-  Universe::heap()->barrier_set()->resize_covered_region(mr);
-
-  if (Verbose && PrintGC) {
-    size_t new_mem_size = _virtual_space.committed_size();
-    size_t old_mem_size = new_mem_size + bytes;
-    gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                  name(), old_mem_size/K, new_mem_size/K);
-  }
-}
-
 void ConcurrentMarkSweepGeneration::shrink(size_t bytes) {
-  assert_locked_or_safepoint(Heap_lock);
-  size_t size = ReservedSpace::page_align_size_down(bytes);
   // Only shrink if a compaction was done so that all the free space
   // in the generation is in a contiguous block at the end.
-  if (size > 0 && did_compact()) {
-    shrink_by(size);
+  if (did_compact()) {
+    CardGeneration::shrink(bytes);
   }
 }
 
-bool ConcurrentMarkSweepGeneration::grow_by(size_t bytes) {
+void ConcurrentMarkSweepGeneration::assert_correct_size_change_locking() {
   assert_locked_or_safepoint(Heap_lock);
-  bool result = _virtual_space.expand_by(bytes);
-  if (result) {
-    size_t new_word_size =
-      heap_word_size(_virtual_space.committed_size());
-    MemRegion mr(_cmsSpace->bottom(), new_word_size);
-    _bts->resize(new_word_size);  // resize the block offset shared array
-    Universe::heap()->barrier_set()->resize_covered_region(mr);
-    // Hmmmm... why doesn't CFLS::set_end verify locking?
-    // This is quite ugly; FIX ME XXX
-    _cmsSpace->assert_locked(freelistLock());
-    _cmsSpace->set_end((HeapWord*)_virtual_space.high());
-
-    // update the space and generation capacity counters
-    if (UsePerfData) {
-      _space_counters->update_capacity();
-      _gen_counters->update_all();
-    }
-
-    if (Verbose && PrintGC) {
-      size_t new_mem_size = _virtual_space.committed_size();
-      size_t old_mem_size = new_mem_size - bytes;
-      gclog_or_tty->print_cr("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                    name(), old_mem_size/K, bytes/K, new_mem_size/K);
-    }
-  }
-  return result;
-}
-
-bool ConcurrentMarkSweepGeneration::grow_to_reserved() {
-  assert_locked_or_safepoint(Heap_lock);
-  bool success = true;
-  const size_t remaining_bytes = _virtual_space.uncommitted_size();
-  if (remaining_bytes > 0) {
-    success = grow_by(remaining_bytes);
-    DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
-  }
-  return success;
 }
 
 void ConcurrentMarkSweepGeneration::shrink_free_list_by(size_t bytes) {
@@ -3084,7 +3002,7 @@ void CMSCollector::checkpointRootsInitial() {
                     Mutex::_no_safepoint_check_flag);
     checkpointRootsInitialWork();
     // enable ("weak") refs discovery
-    rp->enable_discovery(true /*verify_disabled*/, true /*check_no_refs*/);
+    rp->enable_discovery();
     _collectorState = Marking;
   }
   SpecializationStats::print();
@@ -6031,7 +5949,8 @@ HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
 CMSBitMap::CMSBitMap(int shifter, int mutex_rank, const char* mutex_name):
   _bm(),
   _shifter(shifter),
-  _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true) : NULL)
+  _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true,
+                                    Monitor::_safepoint_check_sometimes) : NULL)
 {
   _bmStartWord = 0;
   _bmWordSize  = 0;

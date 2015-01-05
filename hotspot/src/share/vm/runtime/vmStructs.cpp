@@ -556,9 +556,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
                                                                                                                                      \
   nonstatic_field(TenuredGeneration,           _min_heap_delta_bytes,                         size_t)                                \
   nonstatic_field(TenuredGeneration,           _the_space,                                    ContiguousSpace*)                      \
-  nonstatic_field(TenuredGeneration,           _last_gc,                                      WaterMark)                             \
-                                                                                                                                     \
-                                                                                                                                     \
                                                                                                                                      \
   nonstatic_field(Space,                       _bottom,                                       HeapWord*)                             \
   nonstatic_field(Space,                       _end,                                          HeapWord*)                             \

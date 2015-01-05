@@ -26,50 +26,50 @@
  * @bug 8031323
  * @summary Verify that objects promoted from eden space to tenured space during
  *          full GC are not aligned to SurvivorAlignmentInBytes value.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestPromotionFromEdenToTenured SurvivorAlignmentTestMain
  *        AlignmentHelper
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
- *                   -XX:OldSize=32m -XX:SurvivorRatio=1
- *                    -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
+ *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
  *                   TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
- *                   -XX:OldSize=32m -XX:SurvivorRatio=1
- *                    -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
+ *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
  *                   TestPromotionFromEdenToTenured 10m 47 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
- *                   -XX:OldSize=32m -XX:SurvivorRatio=1
- *                    -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32m  -XX:MaxHeapSize=96m
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
  *                   TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
- *                   -XX:OldSize=32m -XX:SurvivorRatio=1
- *                    -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32m -XX:MaxHeapSize=128m
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
  *                   TestPromotionFromEdenToTenured 10m 87 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
- *                   -XX:OldSize=32M -XX:SurvivorRatio=1
- *                    -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
+ *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
  *                   TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
- *                   -XX:OldSize=32m -XX:SurvivorRatio=1
- *                    -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
+ *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
  *                   TestPromotionFromEdenToTenured 10m 147 TENURED

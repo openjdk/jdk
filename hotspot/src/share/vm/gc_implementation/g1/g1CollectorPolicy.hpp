@@ -881,28 +881,20 @@ private:
 public:
   uint tenuring_threshold() const { return _tenuring_threshold; }
 
-  inline GCAllocPurpose
-    evacuation_destination(HeapRegion* src_region, uint age, size_t word_sz) {
-      if (age < _tenuring_threshold && src_region->is_young()) {
-        return GCAllocForSurvived;
-      } else {
-        return GCAllocForTenured;
-      }
-  }
-
-  inline bool track_object_age(GCAllocPurpose purpose) {
-    return purpose == GCAllocForSurvived;
-  }
-
   static const uint REGIONS_UNLIMITED = (uint) -1;
 
-  uint max_regions(int purpose);
-
-  // The limit on regions for a particular purpose is reached.
-  void note_alloc_region_limit_reached(int purpose) {
-    if (purpose == GCAllocForSurvived) {
-      _tenuring_threshold = 0;
+  uint max_regions(InCSetState dest) {
+    switch (dest.value()) {
+      case InCSetState::Young:
+        return _max_survivor_regions;
+      case InCSetState::Old:
+        return REGIONS_UNLIMITED;
+      default:
+        assert(false, err_msg("Unknown dest state: " CSETSTATE_FORMAT, dest.value()));
+        break;
     }
+    // keep some compilers happy
+    return 0;
   }
 
   void note_start_adding_survivor_regions() {
