@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,6 +530,11 @@ class CommandLineFlags {
                                                                             \
   product_pd(uintx, HeapBaseMinAddress,                                     \
           "OS specific low limit for heap base address")                    \
+                                                                            \
+  product(uintx, HeapSearchSteps, 3 PPC64_ONLY(+17),                        \
+          "Heap allocation steps through preferred address regions to find" \
+          " where it can allocate the heap. Number of steps to take per "   \
+          "region.")                                                        \
                                                                             \
   diagnostic(bool, PrintCompressedOopsMode, false,                          \
           "Print compressed oops base address and encoding mode")           \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -694,103 +694,6 @@ jint universe_init() {
 //     NarrowOopHeapBaseMin + heap_size < 32Gb
 // HeapBased - Use compressed oops with heap base + encoding.
 
-// 4Gb
-static const uint64_t UnscaledOopHeapMax = (uint64_t(max_juint) + 1);
-// 32Gb
-// OopEncodingHeapMax == UnscaledOopHeapMax << LogMinObjAlignmentInBytes;
-
-char* Universe::preferred_heap_base(size_t heap_size, size_t alignment, NARROW_OOP_MODE mode) {
-  assert(is_size_aligned((size_t)OopEncodingHeapMax, alignment), "Must be");
-  assert(is_size_aligned((size_t)UnscaledOopHeapMax, alignment), "Must be");
-  assert(is_size_aligned(heap_size, alignment), "Must be");
-
-  uintx heap_base_min_address_aligned = align_size_up(HeapBaseMinAddress, alignment);
-
-  size_t base = 0;
-#ifdef _LP64
-  if (UseCompressedOops) {
-    assert(mode == UnscaledNarrowOop  ||
-           mode == ZeroBasedNarrowOop ||
-           mode == HeapBasedNarrowOop, "mode is invalid");
-    const size_t total_size = heap_size + heap_base_min_address_aligned;
-    // Return specified base for the first request.
-    if (!FLAG_IS_DEFAULT(HeapBaseMinAddress) && (mode == UnscaledNarrowOop)) {
-      base = heap_base_min_address_aligned;
-
-    // If the total size is small enough to allow UnscaledNarrowOop then
-    // just use UnscaledNarrowOop.
-    } else if ((total_size <= OopEncodingHeapMax) && (mode != HeapBasedNarrowOop)) {
-      if ((total_size <= UnscaledOopHeapMax) && (mode == UnscaledNarrowOop) &&
-          (Universe::narrow_oop_shift() == 0)) {
-        // Use 32-bits oops without encoding and
-        // place heap's top on the 4Gb boundary
-        base = (UnscaledOopHeapMax - heap_size);
-      } else {
-        // Can't reserve with NarrowOopShift == 0
-        Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
-
-        if (mode == UnscaledNarrowOop ||
-            mode == ZeroBasedNarrowOop && total_size <= UnscaledOopHeapMax) {
-
-          // Use zero based compressed oops with encoding and
-          // place heap's top on the 32Gb boundary in case
-          // total_size > 4Gb or failed to reserve below 4Gb.
-          uint64_t heap_top = OopEncodingHeapMax;
-
-          // For small heaps, save some space for compressed class pointer
-          // space so it can be decoded with no base.
-          if (UseCompressedClassPointers && !UseSharedSpaces &&
-              OopEncodingHeapMax <= 32*G) {
-
-            uint64_t class_space = align_size_up(CompressedClassSpaceSize, alignment);
-            assert(is_size_aligned((size_t)OopEncodingHeapMax-class_space,
-                   alignment), "difference must be aligned too");
-            uint64_t new_top = OopEncodingHeapMax-class_space;
-
-            if (total_size <= new_top) {
-              heap_top = new_top;
-            }
-          }
-
-          // Align base to the adjusted top of the heap
-          base = heap_top - heap_size;
-        }
-      }
-    } else {
-      // UnscaledNarrowOop encoding didn't work, and no base was found for ZeroBasedOops or
-      // HeapBasedNarrowOop encoding was requested.  So, can't reserve below 32Gb.
-      Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
-    }
-
-    // Set narrow_oop_base and narrow_oop_use_implicit_null_checks
-    // used in ReservedHeapSpace() constructors.
-    // The final values will be set in initialize_heap() below.
-    if ((base != 0) && ((base + heap_size) <= OopEncodingHeapMax)) {
-      // Use zero based compressed oops
-      Universe::set_narrow_oop_base(NULL);
-      // Don't need guard page for implicit checks in indexed
-      // addressing mode with zero based Compressed Oops.
-      Universe::set_narrow_oop_use_implicit_null_checks(true);
-    } else {
-      // Set to a non-NULL value so the ReservedSpace ctor computes
-      // the correct no-access prefix.
-      // The final value will be set in initialize_heap() below.
-      Universe::set_narrow_oop_base((address)UnscaledOopHeapMax);
-#if defined(_WIN64) || defined(AIX)
-      if (UseLargePages) {
-        // Cannot allocate guard pages for implicit checks in indexed
-        // addressing mode when large pages are specified on windows.
-        Universe::set_narrow_oop_use_implicit_null_checks(false);
-      }
-#endif //  _WIN64
-    }
-  }
-#endif
-
-  assert(is_ptr_aligned((char*)base, alignment), "Must be");
-  return (char*)base; // also return NULL (don't care) for 32-bit VM
-}
-
 jint Universe::initialize_heap() {
 
   if (UseParallelGC) {
@@ -844,30 +747,13 @@ jint Universe::initialize_heap() {
     // See needs_explicit_null_check.
     // Only set the heap base for compressed oops because it indicates
     // compressed oops for pstack code.
-    if (((uint64_t)Universe::heap()->reserved_region().end() > OopEncodingHeapMax)) {
-      // Can't reserve heap below 32Gb.
-      // keep the Universe::narrow_oop_base() set in Universe::reserve_heap()
+    if ((uint64_t)Universe::heap()->reserved_region().end() > UnscaledOopHeapMax) {
+      // Didn't reserve heap below 4Gb.  Must shift.
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
-#ifdef AIX
-      // There is no protected page before the heap. This assures all oops
-      // are decoded so that NULL is preserved, so this page will not be accessed.
-      Universe::set_narrow_oop_use_implicit_null_checks(false);
-#endif
-    } else {
+    }
+    if ((uint64_t)Universe::heap()->reserved_region().end() <= OopEncodingHeapMax) {
+      // Did reserve heap below 32Gb. Can use base == 0;
       Universe::set_narrow_oop_base(0);
-#ifdef _WIN64
-      if (!Universe::narrow_oop_use_implicit_null_checks()) {
-        // Don't need guard page for implicit checks in indexed addressing
-        // mode with zero based Compressed Oops.
-        Universe::set_narrow_oop_use_implicit_null_checks(true);
-      }
-#endif //  _WIN64
-      if((uint64_t)Universe::heap()->reserved_region().end() > UnscaledOopHeapMax) {
-        // Can't reserve heap below 4Gb.
-        Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
-      } else {
-        Universe::set_narrow_oop_shift(0);
-      }
     }
 
     Universe::set_narrow_ptrs_base(Universe::narrow_oop_base());
@@ -875,6 +761,11 @@ jint Universe::initialize_heap() {
     if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
       Universe::print_compressed_oops_mode();
     }
+
+    // Tell tests in which mode we run.
+    Arguments::PropertyList_add(new SystemProperty("java.vm.compressedOopsMode",
+                                                   narrow_oop_mode_to_string(narrow_oop_mode()),
+                                                   false));
   }
   // Universe::narrow_oop_base() is one page below the heap.
   assert((intptr_t)Universe::narrow_oop_base() <= (intptr_t)(Universe::heap()->base() -
@@ -903,22 +794,27 @@ void Universe::print_compressed_oops_mode() {
   tty->print(", Compressed Oops mode: %s", narrow_oop_mode_to_string(narrow_oop_mode()));
 
   if (Universe::narrow_oop_base() != 0) {
-    tty->print(":" PTR_FORMAT, Universe::narrow_oop_base());
+    tty->print(": " PTR_FORMAT, Universe::narrow_oop_base());
   }
 
   if (Universe::narrow_oop_shift() != 0) {
     tty->print(", Oop shift amount: %d", Universe::narrow_oop_shift());
   }
 
+  if (!Universe::narrow_oop_use_implicit_null_checks()) {
+    tty->print(", no protected page in front of the heap");
+  }
+
   tty->cr();
   tty->cr();
 }
 
-// Reserve the Java heap, which is now the same for all GCs.
 ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
       err_msg("actual alignment "SIZE_FORMAT" must be within maximum heap alignment "SIZE_FORMAT,
           alignment, Arguments::conservative_max_heap_alignment()));
+
   size_t total_reserved = align_size_up(heap_size, alignment);
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
@@ -928,46 +824,31 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
       || UseParallelGC
       || use_large_pages, "Wrong alignment to use large pages");
 
-  char* addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::UnscaledNarrowOop);
+  // Now create the space.
+  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages);
 
-  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages, addr);
+  if (total_rs.is_reserved()) {
+    assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
+           "must be exactly of required size and alignment");
+    // We are good.
 
-  if (UseCompressedOops) {
-    if (addr != NULL && !total_rs.is_reserved()) {
-      // Failed to reserve at specified address - the requested memory
-      // region is taken already, for example, by 'java' launcher.
-      // Try again to reserver heap higher.
-      addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::ZeroBasedNarrowOop);
-
-      ReservedHeapSpace total_rs0(total_reserved, alignment,
-          use_large_pages, addr);
-
-      if (addr != NULL && !total_rs0.is_reserved()) {
-        // Failed to reserve at specified address again - give up.
-        addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::HeapBasedNarrowOop);
-        assert(addr == NULL, "");
-
-        ReservedHeapSpace total_rs1(total_reserved, alignment,
-            use_large_pages, addr);
-        total_rs = total_rs1;
-      } else {
-        total_rs = total_rs0;
-      }
+    if (UseCompressedOops) {
+      // Universe::initialize_heap() will reset this to NULL if unscaled
+      // or zero-based narrow oops are actually used.
+      // Else heap start and base MUST differ, so that NULL can be encoded nonambigous.
+      Universe::set_narrow_oop_base((address)total_rs.compressed_oop_base());
     }
-  }
 
-  if (!total_rs.is_reserved()) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space for " SIZE_FORMAT "KB object heap", total_reserved/K));
     return total_rs;
   }
 
-  if (UseCompressedOops) {
-    // Universe::initialize_heap() will reset this to NULL if unscaled
-    // or zero-based narrow oops are actually used.
-    address base = (address)(total_rs.base() - os::vm_page_size());
-    Universe::set_narrow_oop_base(base);
-  }
-  return total_rs;
+  vm_exit_during_initialization(
+    err_msg("Could not reserve enough space for " SIZE_FORMAT "KB object heap",
+            total_reserved/K));
+
+  // satisfy compiler
+  ShouldNotReachHere();
+  return ReservedHeapSpace(0, 0, false);
 }
 
 
@@ -985,6 +866,8 @@ const char* Universe::narrow_oop_mode_to_string(Universe::NARROW_OOP_MODE mode) 
       return "32-bit";
     case ZeroBasedNarrowOop:
       return "Zero based";
+    case DisjointBaseNarrowOop:
+      return "Non-zero disjoint base";
     case HeapBasedNarrowOop:
       return "Non-zero based";
   }
@@ -995,6 +878,10 @@ const char* Universe::narrow_oop_mode_to_string(Universe::NARROW_OOP_MODE mode) 
 
 
 Universe::NARROW_OOP_MODE Universe::narrow_oop_mode() {
+  if (narrow_oop_base_disjoint()) {
+    return DisjointBaseNarrowOop;
+  }
+
   if (narrow_oop_base() != 0) {
     return HeapBasedNarrowOop;
   }
