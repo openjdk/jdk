@@ -85,7 +85,7 @@ public interface ScriptEngineFactory {
     public List<String> getNames();
 
     /**
-     * Returns the name of the scripting langauge supported by this
+     * Returns the name of the scripting language supported by this
      * <code>ScriptEngine</code>.
      * @return The name of the supported language.
      */

@@ -4370,7 +4370,7 @@ void MergeMemNode::dump_spec(outputStream *st) const {
   st->print(" {");
   Node* base_mem = base_memory();
   for( uint i = Compile::AliasIdxRaw; i < req(); i++ ) {
-    Node* mem = memory_at(i);
+    Node* mem = (in(i) != NULL) ? memory_at(i) : base_mem;
     if (mem == base_mem) { st->print(" -"); continue; }
     st->print( " N%d:", mem->_idx );
     Compile::current()->get_adr_type(i)->dump_on(st);

@@ -33,7 +33,7 @@ import com.oracle.java.testlibrary.Asserts;
 /*
  * @test GetCodeHeapEntriesTest
  * @bug 8059624
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build GetCodeHeapEntriesTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

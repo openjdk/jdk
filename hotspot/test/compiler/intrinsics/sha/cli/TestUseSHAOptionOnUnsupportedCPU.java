@@ -25,7 +25,7 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA option processing on unsupported CPU.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary testcases
+ * @library /testlibrary /../../test/lib /compiler/testlibrary testcases
  * @build TestUseSHAOptionOnUnsupportedCPU
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

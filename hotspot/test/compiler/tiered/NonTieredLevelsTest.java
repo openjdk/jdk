@@ -25,7 +25,7 @@ import java.util.function.IntPredicate;
 
 /**
  * @test NonTieredLevelsTest
- * @library /testlibrary /testlibrary/whitebox /compiler/whitebox
+ * @library /testlibrary /../../test/lib /compiler/whitebox
  * @build NonTieredLevelsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -55,9 +55,7 @@ public class NonTieredLevelsTest extends CompLevelsTest {
 
     }
     public static void main(String[] args) throws Exception {
-        if (TIERED_COMPILATION) {
-            System.err.println("Test isn't applicable w/ enabled "
-                    + "TieredCompilation. Skip test.");
+        if (CompilerWhiteBoxTest.skipOnTieredCompilation(true)) {
             return;
         }
         CompilerWhiteBoxTest.main(NonTieredLevelsTest::new, args);

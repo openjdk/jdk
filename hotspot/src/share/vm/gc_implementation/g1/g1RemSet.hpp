@@ -33,6 +33,7 @@
 class G1CollectedHeap;
 class CardTableModRefBarrierSet;
 class ConcurrentG1Refine;
+class G1ParPushHeapRSClosure;
 
 // A G1RemSet in which each heap region has a rem set that records the
 // external heap references into it.  Uses a mod ref bs to track updates,
@@ -68,7 +69,7 @@ protected:
 
   // Used for caching the closure that is responsible for scanning
   // references into the collection set.
-  OopsInHeapRegionClosure** _cset_rs_update_cl;
+  G1ParPushHeapRSClosure** _cset_rs_update_cl;
 
   // Print the given summary info
   virtual void print_summary_info(G1RemSetSummary * summary, const char * header = NULL);
@@ -95,7 +96,7 @@ public:
   // partitioning the work to be done. It should be the same as
   // the "i" passed to the calling thread's work(i) function.
   // In the sequential case this param will be ignored.
-  void oops_into_collection_set_do(OopsInHeapRegionClosure* blk,
+  void oops_into_collection_set_do(G1ParPushHeapRSClosure* blk,
                                    CodeBlobClosure* code_root_cl,
                                    uint worker_i);
 
@@ -107,7 +108,7 @@ public:
   void prepare_for_oops_into_collection_set_do();
   void cleanup_after_oops_into_collection_set_do();
 
-  void scanRS(OopsInHeapRegionClosure* oc,
+  void scanRS(G1ParPushHeapRSClosure* oc,
               CodeBlobClosure* code_root_cl,
               uint worker_i);
 

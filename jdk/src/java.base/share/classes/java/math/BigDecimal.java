@@ -393,7 +393,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <p>Note that if the sequence of characters is already available
      * within a character array, using this constructor is faster than
      * converting the {@code char} array to string and using the
-     * {@code BigDecimal(String)} constructor .
+     * {@code BigDecimal(String)} constructor.
      *
      * @param  in {@code char} array that is the source of characters.
      * @param  offset first character in the array to inspect.
@@ -466,7 +466,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     } else if (c == '.') {   // have dot
                         // have dot
                         if (dot) // two dots
-                            throw new NumberFormatException();
+                            throw new NumberFormatException("Character array"
+                                + " contains more than one decimal point.");
                         dot = true;
                     } else if (Character.isDigit(c)) { // slow path
                         int digit = Character.digit(c, 10);
@@ -488,14 +489,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         exp = parseExp(in, offset, len);
                         // Next test is required for backwards compatibility
                         if ((int) exp != exp) // overflow
-                            throw new NumberFormatException();
+                            throw new NumberFormatException("Exponent overflow.");
                         break; // [saves a test]
                     } else {
-                        throw new NumberFormatException();
+                        throw new NumberFormatException("Character " + c
+                            + " is neither a decimal digit number, decimal point, nor"
+                            + " \"e\" notation exponential mark.");
                     }
                 }
                 if (prec == 0) // no digits found
-                    throw new NumberFormatException();
+                    throw new NumberFormatException("No digits found.");
                 // Adjust scale if exp is not zero.
                 if (exp != 0) { // had significant exponent
                     scl = adjustScale(scl, exp);
@@ -541,22 +544,24 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     if (c == '.') {
                         // have dot
                         if (dot) // two dots
-                            throw new NumberFormatException();
+                            throw new NumberFormatException("Character array"
+                                + " contains more than one decimal point.");
                         dot = true;
                         continue;
                     }
                     // exponent expected
                     if ((c != 'e') && (c != 'E'))
-                        throw new NumberFormatException();
+                        throw new NumberFormatException("Character array"
+                            + " is missing \"e\" notation exponential mark.");
                     exp = parseExp(in, offset, len);
                     // Next test is required for backwards compatibility
                     if ((int) exp != exp) // overflow
-                        throw new NumberFormatException();
+                        throw new NumberFormatException("Exponent overflow.");
                     break; // [saves a test]
                 }
                 // here when no characters left
                 if (prec == 0) // no digits found
-                    throw new NumberFormatException();
+                    throw new NumberFormatException("No digits found.");
                 // Adjust scale if exp is not zero.
                 if (exp != 0) { // had significant exponent
                     scl = adjustScale(scl, exp);
@@ -592,10 +597,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     }
                 }
             }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new NumberFormatException();
-        } catch (NegativeArraySizeException e) {
-            throw new NumberFormatException();
+        } catch (ArrayIndexOutOfBoundsException | NegativeArraySizeException e) {
+            NumberFormatException nfe = new NumberFormatException();
+            nfe.initCause(e);
+            throw nfe;
         }
         this.scale = scl;
         this.precision = prec;
@@ -627,7 +632,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             len--;
         }
         if (len <= 0) // no exponent digits
-            throw new NumberFormatException();
+            throw new NumberFormatException("No exponent digits.");
         // skip leading zeros in the exponent
         while (len > 10 && (c=='0' || (Character.digit(c, 10) == 0))) {
             offset++;
@@ -635,7 +640,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             len--;
         }
         if (len > 10) // too many nonzero exponent digits
-            throw new NumberFormatException();
+            throw new NumberFormatException("Too many nonzero exponent digits.");
         // c now holds first digit of exponent
         for (;; len--) {
             int v;
@@ -644,7 +649,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             } else {
                 v = Character.digit(c, 10);
                 if (v < 0) // not a digit
-                    throw new NumberFormatException();
+                    throw new NumberFormatException("Not a digit.");
             }
             exp = exp * 10 + v;
             if (len == 1)

@@ -230,7 +230,8 @@ Thread::Thread() {
   _visited_for_critical_count = false;
 #endif
 
-  _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true);
+  _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true,
+                         Monitor::_safepoint_check_sometimes);
   _suspend_flags = 0;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
@@ -1448,6 +1449,7 @@ void JavaThread::initialize() {
   _popframe_condition = popframe_inactive;
   _popframe_preserved_args = NULL;
   _popframe_preserved_args_size = 0;
+  _frames_to_pop_failed_realloc = 0;
 
   pd_initialize();
 }

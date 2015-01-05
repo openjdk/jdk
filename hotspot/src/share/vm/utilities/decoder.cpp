@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ AbstractDecoder*  Decoder::_shared_decoder = NULL;
 AbstractDecoder*  Decoder::_error_handler_decoder = NULL;
 NullDecoder       Decoder::_do_nothing_decoder;
 Mutex*            Decoder::_shared_decoder_lock = new Mutex(Mutex::native,
-                                "SharedDecoderLock");
+                                "SharedDecoderLock",
+                                false,
+                                Monitor::_safepoint_check_never);
 
 AbstractDecoder* Decoder::get_shared_instance() {
   assert(_shared_decoder_lock != NULL && _shared_decoder_lock->owned_by_self(),

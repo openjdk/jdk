@@ -38,10 +38,6 @@
                     <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
-                    <label>../src</label>
-                    <location>../src</location>
-                </source-folder>
-                <source-folder>
                     <label>../test/src</label>
                     <location>../test/src</location>
                 </source-folder>
@@ -50,21 +46,25 @@
                     <location>../buildtools/nasgen/src</location>
                 </source-folder>
                 <source-folder>
+                    <label>../src/jdk.scripting.nashorn/share/classes</label>
+                    <location>../src/jdk.scripting.nashorn/share/classes</location>
+                </source-folder>
+                <source-folder>
                     <label>../test/src</label>
                     <type>java</type>
                     <location>../test/src</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
-                    <label>../src</label>
-                    <type>java</type>
-                    <location>../src</location>
-                    <encoding>UTF-8</encoding>
-                </source-folder>
-                <source-folder>
                     <label>../buildtools/nasgen/src</label>
                     <type>java</type>
                     <location>../buildtools/nasgen/src</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>../src/jdk.scripting.nashorn/share/classes</label>
+                    <type>java</type>
+                    <location>../src/jdk.scripting.nashorn/share/classes</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
             </folders>
@@ -132,12 +132,12 @@
                         <location>../test/src</location>
                     </source-folder>
                     <source-folder style="packages">
-                        <label>../src</label>
-                        <location>../src</location>
-                    </source-folder>
-                    <source-folder style="packages">
                         <label>../buildtools/nasgen/src</label>
                         <location>../buildtools/nasgen/src</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>../src/jdk.scripting.nashorn/share/classes</label>
+                        <location>../src/jdk.scripting.nashorn/share/classes</location>
                     </source-folder>
                     <source-file>
                         <location>build.xml</location>
@@ -159,16 +159,16 @@
             <compilation-unit>
                 <package-root>../test/src</package-root>
                 <unit-tests/>
-                <classpath mode="compile">../test/lib/testng.jar:../build/classes:../src</classpath>
-                <source-level>1.7</source-level>
-            </compilation-unit>
-            <compilation-unit>
-                <package-root>../src</package-root>
+                <classpath mode="compile">../test/lib/testng.jar:../build/classes:../src/jdk.scripting.nashorn/share/classes</classpath>
                 <source-level>1.7</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>../buildtools/nasgen/src</package-root>
                 <classpath mode="compile">../build/classes:../src</classpath>
+                <source-level>1.7</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>../src/jdk.scripting.nashorn/share/classes</package-root>
                 <source-level>1.7</source-level>
             </compilation-unit>
         </java-data>
