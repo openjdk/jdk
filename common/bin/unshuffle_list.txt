@@ -26,10 +26,8 @@ corba/src/java.corba/share/classes/com/sun/org/omg : corba/src/share/classes/com
 corba/src/java.corba/share/classes/com/sun/tools/corba/se/idl : corba/src/share/classes/com/sun/tools/corba/se/idl
 corba/src/java.corba/share/classes/javax/activity : corba/src/share/classes/javax/activity
 corba/src/java.corba/share/classes/javax/rmi : corba/src/share/classes/javax/rmi
-corba/src/java.corba/share/classes/javax/transaction : corba/src/share/classes/javax/transaction
 corba/src/java.corba/share/classes/org/omg : corba/src/share/classes/org/omg
 corba/src/java.corba/share/classes/sun/corba : corba/src/share/classes/sun/corba
-corba/src/java.sql/share/classes/javax/transaction/xa : corba/src/share/classes/javax/transaction/xa
 corba/src/jdk.rmic/share/classes/sun/rmi/rmic/iiop : corba/src/share/classes/sun/rmi/rmic/iiop
 jaxp/src/java.xml/share/classes/com/sun/java_cup/internal/runtime : jaxp/src/com/sun/java_cup/internal/runtime
 jaxp/src/java.xml/share/classes/com/sun/org/apache/bcel/internal : jaxp/src/com/sun/org/apache/bcel/internal
@@ -1245,6 +1243,8 @@ jdk/src/java.sql.rowset/share/classes/com/sun/rowset : jdk/src/share/classes/com
 jdk/src/java.sql.rowset/share/classes/javax/sql/rowset : jdk/src/share/classes/javax/sql/rowset
 jdk/src/java.sql/share/classes/java/sql : jdk/src/share/classes/java/sql
 jdk/src/java.sql/share/classes/javax/sql : jdk/src/share/classes/javax/sql
+jdk/src/java.sql/share/classes/javax/transaction/xa : corba/src/share/classes/javax/transaction/xa
+jdk/src/java.transaction/share/classes/javax/transaction : corba/src/share/classes/javax/transaction
 jdk/src/java.xml.crypto/share/classes/com/sun/org/apache/xml/internal/security : jdk/src/share/classes/com/sun/org/apache/xml/internal/security
 jdk/src/java.xml.crypto/share/classes/javax/xml/crypto : jdk/src/share/classes/javax/xml/crypto
 jdk/src/java.xml.crypto/share/classes/org/jcp/xml/dsig/internal : jdk/src/share/classes/org/jcp/xml/dsig/internal

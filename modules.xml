@@ -482,6 +482,7 @@
     <depend>java.logging</depend>
     <depend>java.naming</depend>
     <depend re-exports="true">java.rmi</depend>
+    <depend>java.transaction</depend>
     <export>
       <name>javax.activity</name>
     </export>
@@ -490,9 +491,6 @@
     </export>
     <export>
       <name>javax.rmi.CORBA</name>
-    </export>
-    <export>
-      <name>javax.transaction</name>
     </export>
     <export>
       <name>org.omg.CORBA</name>
@@ -888,6 +886,7 @@
     <depend re-exports="true">java.compact3</depend>
     <depend re-exports="true">java.corba</depend>
     <depend re-exports="true">java.desktop</depend>
+    <depend re-exports="true">java.transaction</depend>
     <depend re-exports="true">java.xml.bind</depend>
     <depend re-exports="true">java.xml.ws</depend>
   </module>
@@ -978,6 +977,14 @@
     </export>
     <export>
       <name>javax.sql.rowset.spi</name>
+    </export>
+  </module>
+  <module>
+    <name>java.transaction</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.rmi</depend>
+    <export>
+      <name>javax.transaction</name>
     </export>
   </module>
   <module>
