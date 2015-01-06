@@ -66,8 +66,8 @@ jaxws/src/java.xml.bind/share/classes/com/sun/xml/internal/fastinfoset : jaxws/s
 jaxws/src/java.xml.bind/share/classes/com/sun/xml/internal/org : jaxws/src/share/jaxws_classes/com/sun/xml/internal/org
 jaxws/src/java.xml.bind/share/classes/com/sun/xml/internal/txw2 : jaxws/src/share/jaxws_classes/com/sun/xml/internal/txw2
 jaxws/src/java.xml.bind/share/classes/javax/xml/bind : jaxws/src/share/jaxws_classes/javax/xml/bind
-jaxws/src/java.xml.soap/share/classes/com/sun/xml/internal/messaging : jaxws/src/share/jaxws_classes/com/sun/xml/internal/messaging
-jaxws/src/java.xml.soap/share/classes/javax/xml/soap : jaxws/src/share/jaxws_classes/javax/xml/soap
+jaxws/src/java.xml.ws/share/classes/com/sun/xml/internal/messaging : jaxws/src/share/jaxws_classes/com/sun/xml/internal/messaging
+jaxws/src/java.xml.ws/share/classes/javax/xml/soap : jaxws/src/share/jaxws_classes/javax/xml/soap
 jaxws/src/java.xml.ws/share/classes/com/oracle/webservices/internal : jaxws/src/share/jaxws_classes/com/oracle/webservices/internal
 jaxws/src/java.xml.ws/share/classes/com/oracle/xmlns/internal : jaxws/src/share/jaxws_classes/com/oracle/xmlns/internal
 jaxws/src/java.xml.ws/share/classes/com/sun/org/glassfish : jaxws/src/share/jaxws_classes/com/sun/org/glassfish
