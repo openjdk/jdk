@@ -20,7 +20,6 @@ java.sql.rowset
 java.xml
 java.xml.bind
 java.xml.crypto
-java.xml.soap
 java.xml.ws
 jdk.charsets
 jdk.deploy
