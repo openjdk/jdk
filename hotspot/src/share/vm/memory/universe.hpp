@@ -484,16 +484,6 @@ class Universe: AllStatic {
   static uintptr_t verify_mark_bits()         PRODUCT_RETURN0;
   static uintptr_t verify_mark_mask()         PRODUCT_RETURN0;
 
-  // Flushing and deoptimization
-  static void flush_dependents_on(instanceKlassHandle dependee);
-  static void flush_dependents_on(Handle call_site, Handle method_handle);
-#ifdef HOTSWAP
-  // Flushing and deoptimization in case of evolution
-  static void flush_evol_dependents_on(instanceKlassHandle dependee);
-#endif // HOTSWAP
-  // Support for fullspeed debugging
-  static void flush_dependents_on_method(methodHandle dependee);
-
   // Compiler support
   static int base_vtable_size()               { return _base_vtable_size; }
 };
