@@ -567,16 +567,21 @@ class MacroAssembler: public Assembler {
   inline void load_with_trap_null_check(Register d, int si16, Register s1);
 
   // Load heap oop and decompress. Loaded oop may not be null.
-  inline void load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1 = noreg);
+  // Specify tmp to save one cycle.
+  inline void load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1 = noreg,
+                                     Register tmp = noreg);
+  // Store heap oop and decompress.  Decompressed oop may not be null.
+  // Specify tmp register if d should not be changed.
   inline void store_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1,
-                                      /*specify if d must stay uncompressed*/ Register tmp = noreg);
+                                      Register tmp = noreg);
 
   // Null allowed.
   inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1 = noreg);
 
   // Encode/decode heap oop. Oop may not be null, else en/decoding goes wrong.
+  // src == d allowed.
   inline Register encode_heap_oop_not_null(Register d, Register src = noreg);
-  inline void decode_heap_oop_not_null(Register d);
+  inline Register decode_heap_oop_not_null(Register d, Register src = noreg);
 
   // Null allowed.
   inline void decode_heap_oop(Register d);
