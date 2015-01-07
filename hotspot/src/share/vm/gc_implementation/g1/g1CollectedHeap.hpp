@@ -641,6 +641,9 @@ public:
   // Returns whether the given region (which must be a humongous (start) region)
   // is to be considered conservatively live regardless of any other conditions.
   bool humongous_region_is_always_live(uint index);
+  // Returns whether the given region (which must be a humongous (start) region)
+  // is considered a candidate for eager reclamation.
+  bool humongous_region_is_candidate(uint index);
   // Register the given region to be part of the collection set.
   inline void register_humongous_region_with_in_cset_fast_test(uint index);
   // Register regions with humongous objects (actually on the start region) in
