@@ -123,7 +123,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
             // used to execute scripts concurrently on multiple threads.
             return null;
         default:
-            throw new IllegalArgumentException("Invalid key");
+            return null;
         }
     }
 
