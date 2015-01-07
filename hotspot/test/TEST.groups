@@ -416,6 +416,9 @@ hotspot_gc = \
 hotspot_gc_closed = \
   sanity/ExecuteInternalVMTests.java
 
+hotspot_gc_gcold = \
+  stress/gc/TestGCOld.java
+
 hotspot_runtime = \
   runtime/ \
  -runtime/6888954/vmerrors.sh \
@@ -448,6 +451,7 @@ hotspot_jprt = \
   :hotspot_compiler_closed \
   :hotspot_gc \
   :hotspot_gc_closed \
+  :hotspot_gc_gcold \
   :hotspot_runtime \
   :hotspot_runtime_closed \
   :hotspot_serviceability
