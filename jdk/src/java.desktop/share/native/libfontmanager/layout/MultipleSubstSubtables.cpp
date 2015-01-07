@@ -75,6 +75,8 @@ le_uint32 MultipleSubstitutionSubtable::process(const LETableReference &base, Gl
             return 0;
         }
         le_uint16 glyphCount = SWAPW(sequenceTable->glyphCount);
+        LEReferenceToArrayOf<Offset>
+            substituteArrayRef(base, success, sequenceTable->substituteArray, glyphCount);
 
         if (glyphCount == 0) {
             glyphIterator->setCurrGlyphID(0xFFFF);
