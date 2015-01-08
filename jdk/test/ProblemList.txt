@@ -325,6 +325,9 @@ sun/tools/jinfo/JInfoRunningProcessFlagTest.java		generic-all
 # 8057732
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
 
+# 8064572 8060736 8062938
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
+
 # 8060088
 com/sun/tracing/BasicWithSecurityMgr.java                       generic-all
 
