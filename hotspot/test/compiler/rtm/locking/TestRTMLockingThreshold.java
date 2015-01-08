@@ -143,10 +143,7 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
 
         @Override
         public String[] getMethodsToCompileNames() {
-            return new String[] {
-                getMethodWithLockName(),
-                sun.misc.Unsafe.class.getName() + "::addressSize"
-            };
+            return new String[] { getMethodWithLockName() };
         }
 
         public void lock(boolean abort) {
@@ -164,11 +161,12 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
         public static void main(String args[]) throws Throwable {
             Asserts.assertGTE(args.length, 1, "One argument required.");
             Test t = new Test();
-
-            if (Boolean.valueOf(args[0])) {
+            boolean shouldBeInflated = Boolean.valueOf(args[0]);
+            if (shouldBeInflated) {
                 AbortProvoker.inflateMonitor(t.monitor);
             }
             for (int i = 0; i < Test.TOTAL_ITERATIONS; i++) {
+                AbortProvoker.verifyMonitorState(t.monitor, shouldBeInflated);
                 t.lock(i % 2 == 1);
             }
         }

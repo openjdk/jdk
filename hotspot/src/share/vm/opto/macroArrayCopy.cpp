@@ -519,7 +519,8 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // Test S[] against D[], not S against D, because (probably)
     // the secondary supertype cache is less busy for S[] than S.
     // This usually only matters when D is an interface.
-    Node* not_subtype_ctrl = ac->is_arraycopy_notest() ? top() : Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, &_igvn);
+    Node* not_subtype_ctrl = ac->is_arraycopy_validated() ? top() :
+      Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, &_igvn);
     // Plug failing path into checked_oop_disjoint_arraycopy
     if (not_subtype_ctrl != top()) {
       Node* local_ctrl = not_subtype_ctrl;
@@ -1109,7 +1110,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     assert(alloc != NULL, "expect alloc");
   }
 
-  assert(ac->is_arraycopy() || ac->is_arraycopy_notest(), "should be an arraycopy");
+  assert(ac->is_arraycopy() || ac->is_arraycopy_validated(), "should be an arraycopy");
 
   // Compile time checks.  If any of these checks cannot be verified at compile time,
   // we do not make a fast path for this call.  Instead, we let the call remain as it
@@ -1191,7 +1192,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   RegionNode* slow_region = new RegionNode(1);
   transform_later(slow_region);
 
-  if (!ac->is_arraycopy_notest()) {
+  if (!ac->is_arraycopy_validated()) {
     // (3) operands must not be null
     // We currently perform our null checks with the null_check routine.
     // This means that the null exceptions will be reported in the caller

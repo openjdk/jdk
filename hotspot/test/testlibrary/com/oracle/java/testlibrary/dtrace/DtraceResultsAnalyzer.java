@@ -20,44 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.oracle.java.testlibrary.dtrace;
 
-/*
- * @test
- * @bug 8055910
- * @summary Arrays.copyOf doesn't perform subtype check
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayOfNoTypeCheck
- *
- */
+import com.oracle.java.testlibrary.OutputAnalyzer;
 
-import java.util.Arrays;
-
-public class TestArrayOfNoTypeCheck {
-
-    static class A {
-    }
-
-    static class B extends A {
-    }
-
-    static B[] test(A[] arr) {
-        return Arrays.copyOf(arr, 10, B[].class);
-    }
-
-    static public void main(String[] args) {
-        A[] arr = new A[20];
-        for (int i = 0; i < 20000; i++) {
-            test(arr);
-        }
-        A[] arr2 = new A[20];
-        arr2[0] = new A();
-        boolean exception = false;
-        try {
-            test(arr2);
-        } catch (ArrayStoreException ase) {
-            exception = true;
-        }
-        if (!exception) {
-            throw new RuntimeException("TEST FAILED: ArrayStoreException not thrown");
-        }
-    }
+public interface DtraceResultsAnalyzer {
+    public void analyze(OutputAnalyzer oa, String logFilePath);
 }
