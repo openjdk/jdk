@@ -31,7 +31,9 @@ import java.util.regex.Pattern;
  */
 class MessageFile {
     static final Pattern emptyOrCommentPattern = Pattern.compile("( *#.*)?");
-    static final Pattern infoPattern = Pattern.compile("# ([0-9]+: [-A-Za-z ]+, )*[0-9]+: [-A-Za-z ]+");
+    static final Pattern typePattern = Pattern.compile("[-\\\\'A-Z\\.a-z ]+( \\([A-Za-z 0-9]+\\))?");
+    static final Pattern infoPattern = Pattern.compile(String.format("# ([0-9]+: %s, )*[0-9]+: %s",
+            typePattern.pattern(), typePattern.pattern()));
 
     /**
      * A line of text within the message file.

@@ -28,7 +28,7 @@
         </sequential>
     </macrodef>
 
-    <target name="post-make" depends="build-all-tools"/>
+    <target name="post-make" depends="clean, build-all-tools"/>
 
     <target name="jtreg-debug" depends="build-all-tools,-def-jtreg">
         <exec-target target="jtreg-debug-internal"/>
