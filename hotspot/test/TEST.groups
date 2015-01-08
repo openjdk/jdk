@@ -145,6 +145,7 @@ needs_compact3 = \
   gc/survivorAlignment \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
+  compiler/codecache/jmx
 
 # Compact 2 adds full VM tests
 compact2 = \
