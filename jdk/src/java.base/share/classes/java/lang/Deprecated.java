@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,13 @@ import static java.lang.annotation.ElementType.*;
  * or because a better alternative exists.  Compilers warn when a
  * deprecated program element is used or overridden in non-deprecated code.
  *
+ * <p>Use of the &#64;Deprecated annotation on a local variable
+ * declaration or on a parameter declaration or a package declaration
+ * has no effect.
+ *
  * @author  Neal Gafter
  * @since 1.5
- * @jls 9.6.3.6 @Deprecated
+ * @jls 9.6.4.6 @Deprecated
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
