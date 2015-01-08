@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1627,7 +1628,7 @@ void SystemDictionary::add_to_hierarchy(instanceKlassHandle k, TRAPS) {
   // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
   // Also, first reinitialize vtable because it may have gotten out of synch
   // while the new class wasn't connected to the class hierarchy.
-  Universe::flush_dependents_on(k);
+  CodeCache::flush_dependents_on(k);
 }
 
 // ----------------------------------------------------------------------------
