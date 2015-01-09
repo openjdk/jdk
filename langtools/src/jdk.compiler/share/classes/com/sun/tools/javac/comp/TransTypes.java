@@ -739,7 +739,9 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitUnary(JCUnary tree) {
-        tree.arg = translate(tree.arg, tree.operator.type.getParameterTypes().head);
+        tree.arg = translate(tree.arg, (tree.getTag() == Tag.NULLCHK)
+            ? tree.type
+            : tree.operator.type.getParameterTypes().head);
         result = tree;
     }
 
