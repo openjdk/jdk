@@ -25,7 +25,7 @@
  * @test
  * @bug 8058897
  * @library /testlibrary
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=20m Reallocate
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m Reallocate
  */
 
 import com.oracle.java.testlibrary.*;
@@ -57,7 +57,7 @@ public class Reallocate {
 
         // Make sure we can throw an OOME when we fail to reallocate due to OOM
         try {
-            unsafe.reallocateMemory(address, 20 * 1024 * 1024 * 8);
+            unsafe.reallocateMemory(address, 100 * 1024 * 1024 * 8);
         } catch (OutOfMemoryError e) {
             // Expected
             return;
