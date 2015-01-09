@@ -117,9 +117,7 @@ public class TestRTMTotalCountIncrRate extends CommandLineOptionTest {
 
         @Override
         public String[] getMethodsToCompileNames() {
-            return new String[] {
-                getMethodWithLockName()
-            };
+            return new String[] { getMethodWithLockName() };
         }
 
         public void lock() {
@@ -135,11 +133,13 @@ public class TestRTMTotalCountIncrRate extends CommandLineOptionTest {
         public static void main(String args[]) throws Throwable {
             Asserts.assertGTE(args.length, 1, "One argument required.");
             Test test = new Test();
-
-            if (Boolean.valueOf(args[0])) {
+            boolean shouldBeInflated = Boolean.valueOf(args[0]);
+            if (shouldBeInflated) {
                 AbortProvoker.inflateMonitor(test.monitor);
             }
             for (long i = 0L; i < Test.TOTAL_ITERATIONS; i++) {
+                AbortProvoker.verifyMonitorState(test.monitor,
+                        shouldBeInflated);
                 test.lock();
             }
         }

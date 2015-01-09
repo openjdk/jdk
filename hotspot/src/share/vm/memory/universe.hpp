@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,8 @@ class Universe: AllStatic {
   friend class MarkSweep;
   friend class oopDesc;
   friend class ClassLoader;
-  friend class Arguments;
   friend class SystemDictionary;
+  friend class ReservedHeapSpace;
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
@@ -351,17 +351,40 @@ class Universe: AllStatic {
   //     NarrowOopHeapBaseMin + heap_size < 4Gb
   // 1 - Use zero based compressed oops with encoding when
   //     NarrowOopHeapBaseMin + heap_size < 32Gb
-  // 2 - Use compressed oops with heap base + encoding.
+  // 2 - Use compressed oops with disjoint heap base if
+  //     base is 32G-aligned and base > 0. This allows certain
+  //     optimizations in encoding/decoding.
+  //     Disjoint: Bits used in base are disjoint from bits used
+  //     for oops ==> oop = (cOop << 3) | base.  One can disjoint
+  //     the bits of an oop into base and compressed oop.
+  // 3 - Use compressed oops with heap base + encoding.
   enum NARROW_OOP_MODE {
     UnscaledNarrowOop  = 0,
     ZeroBasedNarrowOop = 1,
-    HeapBasedNarrowOop = 2
+    DisjointBaseNarrowOop = 2,
+    HeapBasedNarrowOop = 3,
+    AnyNarrowOopMode = 4
   };
   static NARROW_OOP_MODE narrow_oop_mode();
   static const char* narrow_oop_mode_to_string(NARROW_OOP_MODE mode);
   static char*    preferred_heap_base(size_t heap_size, size_t alignment, NARROW_OOP_MODE mode);
   static char*    preferred_metaspace_base(size_t heap_size, NARROW_OOP_MODE mode);
-  static address  narrow_oop_base()                       { return  _narrow_oop._base; }
+  static address  narrow_oop_base()                  { return  _narrow_oop._base; }
+  // Test whether bits of addr and possible offsets into the heap overlap.
+  static bool     is_disjoint_heap_base_address(address addr) {
+    return (((uint64_t)(intptr_t)addr) &
+            (((uint64_t)UCONST64(0xFFFFffffFFFFffff)) >> (32-LogMinObjAlignmentInBytes))) == 0;
+  }
+  // Check for disjoint base compressed oops.
+  static bool     narrow_oop_base_disjoint()        {
+    return _narrow_oop._base != NULL && is_disjoint_heap_base_address(_narrow_oop._base);
+  }
+  // Check for real heapbased compressed oops.
+  // We must subtract the base as the bits overlap.
+  // If we negate above function, we also get unscaled and zerobased.
+  static bool     narrow_oop_base_overlaps()          {
+    return _narrow_oop._base != NULL && !is_disjoint_heap_base_address(_narrow_oop._base);
+  }
   static bool  is_narrow_oop_base(void* addr)             { return (narrow_oop_base() == (address)addr); }
   static int      narrow_oop_shift()                      { return  _narrow_oop._shift; }
   static bool     narrow_oop_use_implicit_null_checks()   { return  _narrow_oop._use_implicit_null_checks; }
@@ -460,16 +483,6 @@ class Universe: AllStatic {
   static uintptr_t verify_oop_bits()          PRODUCT_RETURN0;
   static uintptr_t verify_mark_bits()         PRODUCT_RETURN0;
   static uintptr_t verify_mark_mask()         PRODUCT_RETURN0;
-
-  // Flushing and deoptimization
-  static void flush_dependents_on(instanceKlassHandle dependee);
-  static void flush_dependents_on(Handle call_site, Handle method_handle);
-#ifdef HOTSWAP
-  // Flushing and deoptimization in case of evolution
-  static void flush_evol_dependents_on(instanceKlassHandle dependee);
-#endif // HOTSWAP
-  // Support for fullspeed debugging
-  static void flush_dependents_on_method(methodHandle dependee);
 
   // Compiler support
   static int base_vtable_size()               { return _base_vtable_size; }
