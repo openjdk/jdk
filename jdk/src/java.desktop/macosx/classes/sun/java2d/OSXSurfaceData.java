@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         return fConfig;
     }
 
+    @SuppressWarnings("deprecation")
     protected void setBounds(int x, int y, int w, int h) {
         fBounds.reshape(x, y, w, y + h);
     }
@@ -1094,7 +1095,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     }
 
     /**
-     * Clips the copy area to the heavywieght bounds and returns the cliped rectangle. The tricky part here is the the
+     * Clips the copy area to the heavywieght bounds and returns the cliped rectangle. The tricky part here is the
      * passed arguments x, y are in the coordinate space of the sg2d/lightweight comp. In order to do the clipping we
      * translate them to the coordinate space of the surface, and the returned clipped rectangle is in the coordinate
      * space of the surface.

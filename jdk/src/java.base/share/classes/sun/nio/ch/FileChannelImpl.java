@@ -110,6 +110,9 @@ public class FileChannelImpl
     // -- Standard channel operations --
 
     protected void implCloseChannel() throws IOException {
+        if (!fd.valid())
+            return; // nothing to do
+
         // Release and invalidate any locks that we still hold
         if (fileLockTable != null) {
             for (FileLock fl: fileLockTable.removeAll()) {

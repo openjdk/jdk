@@ -23,17 +23,16 @@
 
 import java.awt.Frame;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
-import sun.awt.ExtendedKeyCodes;
-import sun.awt.SunToolkit;
 
 /*
  * @test
  * @bug 8007156 8025126
  * @summary Extended key code is not set for a key event
  * @author Alexandr Scherbatiy
+ * @library ../../../../../lib/testlibrary
+ * @build ExtendedRobot
  * @run main ExtendedKeyCodeTest
  */
 public class ExtendedKeyCodeTest {
@@ -42,8 +41,7 @@ public class ExtendedKeyCodeTest {
     private static volatile int eventsCount = 0;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        Robot robot = new Robot();
+        ExtendedRobot robot = new ExtendedRobot();
         robot.setAutoDelay(50);
 
         Frame frame = new Frame();
@@ -55,23 +53,23 @@ public class ExtendedKeyCodeTest {
             public void keyPressed(KeyEvent e) {
                 eventsCount++;
                 setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode()
-                        == ExtendedKeyCodes.getExtendedKeyCodeForChar(e.getKeyChar()));
+                        == KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar()));
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
                 eventsCount++;
                 setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode()
-                        == ExtendedKeyCodes.getExtendedKeyCodeForChar(e.getKeyChar()));
+                        == KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar()));
             }
         });
 
         frame.setVisible(true);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_D);
         robot.keyRelease(KeyEvent.VK_D);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         frame.dispose();
 
@@ -92,11 +90,11 @@ public class ExtendedKeyCodeTest {
         });
 
         frame.setVisible(true);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_LEFT);
         robot.keyRelease(KeyEvent.VK_LEFT);
-        toolkit.realSync();
+        robot.waitForIdle();
         frame.dispose();
 
         if (!setExtendedKeyCode) {

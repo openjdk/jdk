@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,7 @@ final class DebugSettings {
     /*
      * Sets up default property values
      */
+    @SuppressWarnings("deprecation")
     private void loadDefaultProperties() {
         // is there a more inefficient way to setup default properties?
         // maybe, but this has got to be close to 100% non-optimal

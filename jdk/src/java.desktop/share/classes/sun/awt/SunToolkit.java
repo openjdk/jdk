@@ -713,6 +713,7 @@ public abstract class SunToolkit extends Toolkit
     }
 
 
+    @SuppressWarnings("deprecation")
     static final SoftCache imgCache = new SoftCache();
 
     static Image getImageFromHash(Toolkit tk, URL url) {

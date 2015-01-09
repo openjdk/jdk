@@ -44,6 +44,7 @@ class AppletProps extends Frame {
     TextField proxyPort;
     Choice accessMode;
 
+    @SuppressWarnings("deprecation")
     AppletProps() {
         setTitle(amh.getMessage("title"));
         Panel p = new Panel();
@@ -100,6 +101,7 @@ class AppletProps extends Frame {
         }
     }
 
+    @SuppressWarnings("deprecation")
     void apply() {
         String proxyHostValue = proxyHost.getText().trim();
         String proxyPortValue = proxyPort.getText().trim();
@@ -172,6 +174,7 @@ class AppletProps extends Frame {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public boolean action(Event evt, Object obj) {
         if (amh.getMessage("button.apply").equals(obj)) {
             apply();
@@ -197,6 +200,7 @@ class AppletProps extends Frame {
 /* Dialog class to display property-related errors to user */
 @SuppressWarnings("serial") // JDK implementation class
 class AppletPropsErrorDialog extends Dialog {
+    @SuppressWarnings("deprecation")
     public AppletPropsErrorDialog(Frame parent, String title, String message,
                 String buttonText) {
         super(parent, title, true);
@@ -212,6 +216,7 @@ class AppletPropsErrorDialog extends Dialog {
              fRect.y + ((fRect.height - dDim.height) / 2));
     }
 
+    @SuppressWarnings("deprecation")
     public boolean action(Event event, Object object) {
         hide();
         dispose();

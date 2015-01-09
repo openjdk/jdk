@@ -442,7 +442,7 @@ public abstract class IIOParam {
     }
 
     /**
-     * Returns the set of of source bands to be used. The returned
+     * Returns the set of source bands to be used. The returned
      * value is that set by the most recent call to
      * <code>setSourceBands</code>, or <code>null</code> if there have
      * been no calls to <code>setSourceBands</code>.

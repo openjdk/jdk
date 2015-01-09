@@ -344,7 +344,7 @@ public class BasicTableUI extends TableUI
             }
 
             // In cases where the lead is not within the search range,
-            // we need to bring it within one cell for the the search
+            // we need to bring it within one cell for the search
             // to work properly. Check these here.
             leadRow = Math.min(Math.max(leadRow, minY - 1), maxY + 1);
             leadColumn = Math.min(Math.max(leadColumn, minX - 1), maxX + 1);
@@ -2230,11 +2230,11 @@ public class BasicTableUI extends TableUI
                     for (int col = 0; col < cols.length; col++) {
                         Object obj = table.getValueAt(rows[row], cols[col]);
                         String val = ((obj == null) ? "" : obj.toString());
-                        plainStr.append(val + "\t");
-                        htmlStr.append("  <td>" + val + "</td>\n");
+                        plainStr.append(val).append('\t');
+                        htmlStr.append("  <td>").append(val).append("</td>\n");
                     }
                     // we want a newline at the end of each line and not a tab
-                    plainStr.deleteCharAt(plainStr.length() - 1).append("\n");
+                    plainStr.deleteCharAt(plainStr.length() - 1).append('\n');
                     htmlStr.append("</tr>\n");
                 }
 

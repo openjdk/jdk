@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     public void stop(ObjectReference throwable) throws InvalidTypeException {
-        validateMirror(throwable);
+        validateMirrorOrNull(throwable);
         // Verify that the given object is a Throwable instance
         List<ReferenceType> list = vm.classesByName("java.lang.Throwable");
         ClassTypeImpl throwableClass = (ClassTypeImpl)list.get(0);
@@ -613,7 +613,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     /**
-     * Propagate the the thread state change information
+     * Propagate the thread state change information
      * to registered listeners.
      * Must be entered while synchronized on vm.state()
      */

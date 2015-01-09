@@ -533,7 +533,7 @@ public abstract class AtomicContext extends ComponentContext {
       * This function is used when implementing a naming system that
       * supports junctions.  For example, when the a_list_nns(newobj)
       * method is invoked, that means the caller is attempting to list the
-      * the nns context of of this context.  For a context that supports
+      * the nns context of this context.  For a context that supports
       * junctions, it by default does not have any nns.  Consequently,
       * a NameNotFoundException is thrown.
       */

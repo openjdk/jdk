@@ -120,7 +120,7 @@ final class MAC extends Authenticator {
      * @param buf compressed record on which the MAC is computed
      * @param offset start of compressed record data
      * @param len the size of the compressed record
-     * @param isSimulated if true, simulate the the MAC computation
+     * @param isSimulated if true, simulate the MAC computation
      */
     final byte[] compute(byte type, byte buf[],
             int offset, int len, boolean isSimulated) {
@@ -147,7 +147,7 @@ final class MAC extends Authenticator {
      * @param type record type
      * @param bb a ByteBuffer in which the position and limit
      *          demarcate the data to be MAC'd.
-     * @param isSimulated if true, simulate the the MAC computation
+     * @param isSimulated if true, simulate the MAC computation
      */
     final byte[] compute(byte type, ByteBuffer bb, boolean isSimulated) {
         if (macAlg.size == 0) {

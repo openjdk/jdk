@@ -757,6 +757,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("deprecation")
     public int showDialog(Component parent, String approveButtonText)
         throws HeadlessException {
         if (dialog != null) {

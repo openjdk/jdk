@@ -1433,7 +1433,7 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 
     /*
      * On Linux the receive buffer is used for both socket
-     * structures and the the packet payload. The implication
+     * structures and the packet payload. The implication
      * is that if SO_RCVBUF is too small then small packets
      * must be discard.
      */

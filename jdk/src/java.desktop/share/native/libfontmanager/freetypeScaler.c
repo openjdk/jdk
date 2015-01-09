@@ -183,7 +183,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                           bBuffer, offset, numBytes);
             return bread;
         } else {
-            /* We probably hit bug bug 4845371. For reasons that
+            /* We probably hit bug 4845371. For reasons that
              * are currently unclear, the call stacks after the initial
              * createScaler call that read large amounts of data seem to
              * be OK and can create the byte buffer above, but this code
@@ -253,7 +253,7 @@ Java_sun_font_FreetypeFontScaler_initNativeScaler(
        We can consider sharing freetype library between different
        scalers. However, Freetype docs suggest to use different libraries
        for different threads. Also, our architecture implies that single
-       FontScaler object is shared for for different sizes/transforms/styles
+       FontScaler object is shared for different sizes/transforms/styles
        of the same font.
 
        On other hand these methods can not be concurrently executed
