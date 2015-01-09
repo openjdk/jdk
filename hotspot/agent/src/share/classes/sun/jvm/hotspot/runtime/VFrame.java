@@ -78,7 +78,7 @@ public class VFrame {
         }
 
         if (f.isRuntimeFrame()) {
-          // This is a conversion frame. Skip this frame and try again.
+          // This is a conversion frame or a Stub routine. Skip this frame and try again.
           RegisterMap tempMap = regMap.copy();
           Frame s = f.sender(tempMap);
           return newVFrame(s, tempMap, thread, unsafe, false);

@@ -27,6 +27,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "oops/method.hpp"
 #include "opto/addnode.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/castnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/locknode.hpp"
@@ -986,7 +987,18 @@ void Parse::do_exits() {
   if (tf()->range()->cnt() > TypeFunc::Parms) {
     const Type* ret_type = tf()->range()->field_at(TypeFunc::Parms);
     Node*       ret_phi  = _gvn.transform( _exits.argument(0) );
-    assert(_exits.control()->is_top() || !_gvn.type(ret_phi)->empty(), "return value must be well defined");
+    if (!_exits.control()->is_top() && _gvn.type(ret_phi)->empty()) {
+      // In case of concurrent class loading, the type we set for the
+      // ret_phi in build_exits() may have been too optimistic and the
+      // ret_phi may be top now.
+#ifdef ASSERT
+      {
+        MutexLockerEx ml(Compile_lock, Mutex::_no_safepoint_check_flag);
+        assert(ret_type->isa_ptr() && C->env()->system_dictionary_modification_counter_changed(), "return value must be well defined");
+      }
+#endif
+      C->record_failure(C2Compiler::retry_class_loading_during_parsing());
+    }
     _exits.push_node(ret_type->basic_type(), ret_phi);
   }
 
