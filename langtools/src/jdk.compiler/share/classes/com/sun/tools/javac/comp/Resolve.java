@@ -1008,7 +1008,7 @@ public class Resolve {
                 DeferredType dt = (DeferredType)found;
                 return dt.check(this);
             } else {
-                Type uResult = U(found.baseType());
+                Type uResult = U(found);
                 Type capturedType = pos == null || pos.getTree() == null ?
                         types.capture(uResult) :
                         checkContext.inferenceContext()
