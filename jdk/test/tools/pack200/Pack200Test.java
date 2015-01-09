@@ -127,7 +127,7 @@ public class Pack200Test {
         // select the jars carefully, adding more jars will increase the
         // testing time, especially for jprt.
         jarList.add(Utils.createRtJar());
-        jarList.add(Utils.locateJar("golden.jar"));
+        jarList.add(Utils.getGoldenJar());
         System.out.println(jarList);
         doPackUnpack();
     }

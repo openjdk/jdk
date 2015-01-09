@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 4052440
+# @bug 4052440 8062588
 # @summary DecimalFormatSymbolsProvider tests
-# @run shell ExecTest.sh foo DecimalFormatSymbolsProviderTest true
+# @run shell ExecTest.sh foo DecimalFormatSymbolsProviderTest

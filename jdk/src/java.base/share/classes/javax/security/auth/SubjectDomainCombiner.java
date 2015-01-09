@@ -137,7 +137,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      * @param currentDomains the ProtectionDomains associated with the
      *          current execution Thread, up to the most recent
      *          privileged {@code ProtectionDomain}.
-     *          The ProtectionDomains are are listed in order of execution,
+     *          The ProtectionDomains are listed in order of execution,
      *          with the most recently executing {@code ProtectionDomain}
      *          residing at the beginning of the array. This parameter may
      *          be {@code null} if the current execution Thread

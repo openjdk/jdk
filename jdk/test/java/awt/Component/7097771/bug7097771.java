@@ -21,14 +21,12 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 import java.awt.AWTException;
 import java.awt.Button;
 import java.awt.Frame;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -53,13 +51,14 @@ public final class bug7097771 extends Frame implements ActionListener {
         button.addActionListener(frame);
         frame.add(button);
         frame.setVisible(true);
-        sleep();
+        Robot robot = new Robot();
+        sleep(robot);
         frame.setEnabled(false);
         button.setEnabled(false);
         button.setEnabled(true);
-        sleep();
-        Util.clickOnComp(button, new Robot());
-        sleep();
+        sleep(robot);
+        Util.clickOnComp(button, robot);
+        sleep(robot);
         frame.dispose();
         if (action) {
             throw new RuntimeException("Button is not disabled.");
@@ -71,8 +70,8 @@ public final class bug7097771 extends Frame implements ActionListener {
         action = true;
     }
 
-    private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+    private static void sleep(Robot robot) {
+        robot.waitForIdle();
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ignored) {

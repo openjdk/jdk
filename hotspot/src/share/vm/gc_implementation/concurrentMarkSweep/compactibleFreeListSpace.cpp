@@ -2560,12 +2560,12 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
      x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x,   \
      x }
 
-// Initialize with default setting of CMSParPromoteBlocksToClaim, _not_
-// OldPLABSize, whose static default is different; if overridden at the
+// Initialize with default setting for CMS, _not_
+// generic OldPLABSize, whose static default is different; if overridden at the
 // command-line, this will get reinitialized via a call to
 // modify_initialization() below.
 AdaptiveWeightedAverage CFLS_LAB::_blocks_to_claim[]    =
-  VECTOR_257(AdaptiveWeightedAverage(OldPLABWeight, (float)CMSParPromoteBlocksToClaim));
+  VECTOR_257(AdaptiveWeightedAverage(OldPLABWeight, (float)CFLS_LAB::_default_dynamic_old_plab_size));
 size_t CFLS_LAB::_global_num_blocks[]  = VECTOR_257(0);
 uint   CFLS_LAB::_global_num_workers[] = VECTOR_257(0);
 

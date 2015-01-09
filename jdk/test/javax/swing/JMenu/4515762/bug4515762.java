@@ -24,7 +24,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -107,7 +106,6 @@ public class bug4515762 {
     }
 
     public static void main(String[] args) throws Throwable {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(250);
 
@@ -123,17 +121,17 @@ public class bug4515762 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitMnemonics(robot, KeyEvent.VK_D);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Press the S key many times (should not cause an action peformed)
         int TIMES = 5;
         for (int i = 0; i < TIMES; i++) {
             Util.hitKeys(robot, KeyEvent.VK_S);
         }
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Unique menu items.
         actionExpected = true;
@@ -141,31 +139,31 @@ public class bug4515762 {
 
         robot.keyPress(KeyEvent.VK_S);
         robot.keyRelease(KeyEvent.VK_S);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkAction();
 
         Util.hitMnemonics(robot, KeyEvent.VK_U);
         robot.keyPress(KeyEvent.VK_M);
         robot.keyRelease(KeyEvent.VK_M);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkAction();
 
         Util.hitMnemonics(robot, KeyEvent.VK_U);
         Util.hitKeys(robot, KeyEvent.VK_T);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkAction();
         Util.hitMnemonics(robot, KeyEvent.VK_U);
         Util.hitKeys(robot, KeyEvent.VK_W);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkAction();
 
         Util.hitMnemonics(robot, KeyEvent.VK_U);
         Util.hitKeys(robot, KeyEvent.VK_U);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkAction();
     }

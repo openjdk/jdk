@@ -245,7 +245,7 @@ public class SynthGraphicsUtils {
     }
 
     /**
-     * Returns the maximum height of the the Font from the passed in
+     * Returns the maximum height of the Font from the passed in
      * SynthContext.
      *
      * @param context SynthContext used to determine font.

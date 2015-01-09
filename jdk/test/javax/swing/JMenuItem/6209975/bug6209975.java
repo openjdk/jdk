@@ -25,15 +25,12 @@
  * @test
  * @bug 6209975
  * @summary regression: JMenuItem icons overimposed on JMenuItem labels under Metal LAF
- * @library ../../regtesthelpers
- * @build Util
  * @author Alexander Zuev
  * @run main bug6209975
  */
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
-import sun.awt.SunToolkit;
 
 public class bug6209975 {
 
@@ -45,7 +42,6 @@ public class bug6209975 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(500);
 
@@ -58,19 +54,19 @@ public class bug6209975 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point clickPoint = getButtonClickPoint();
         robot.mouseMove(clickPoint.x, clickPoint.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickPoint = getMenuClickPoint();
         robot.mouseMove(clickPoint.x, clickPoint.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (RO1.itsValue <= RO2.itsValue) {
             throw new RuntimeException("Offset if the second icon is invalid.");

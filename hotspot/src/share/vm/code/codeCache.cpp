@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1002,6 +1002,117 @@ void CodeCache::make_marked_nmethods_not_entrant() {
     if (nm->is_marked_for_deoptimization()) {
       nm->make_not_entrant();
     }
+  }
+}
+
+// Flushes compiled methods dependent on dependee.
+void CodeCache::flush_dependents_on(instanceKlassHandle dependee) {
+  assert_lock_strong(Compile_lock);
+
+  if (number_of_nmethods_with_dependencies() == 0) return;
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  KlassDepChange changes(dependee);
+
+  // Compute the dependent nmethods
+  if (mark_for_deoptimization(changes) > 0) {
+    // At least one nmethod has been marked for deoptimization
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+}
+
+// Flushes compiled methods dependent on a particular CallSite
+// instance when its target is different than the given MethodHandle.
+void CodeCache::flush_dependents_on(Handle call_site, Handle method_handle) {
+  assert_lock_strong(Compile_lock);
+
+  if (number_of_nmethods_with_dependencies() == 0) return;
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  CallSiteDepChange changes(call_site(), method_handle());
+
+  // Compute the dependent nmethods that have a reference to a
+  // CallSite object.  We use InstanceKlass::mark_dependent_nmethod
+  // directly instead of CodeCache::mark_for_deoptimization because we
+  // want dependents on the call site class only not all classes in
+  // the ContextStream.
+  int marked = 0;
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    InstanceKlass* call_site_klass = InstanceKlass::cast(call_site->klass());
+    marked = call_site_klass->mark_dependent_nmethods(changes);
+  }
+  if (marked > 0) {
+    // At least one nmethod has been marked for deoptimization
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+}
+
+#ifdef HOTSWAP
+// Flushes compiled methods dependent on dependee in the evolutionary sense
+void CodeCache::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
+  // --- Compile_lock is not held. However we are at a safepoint.
+  assert_locked_or_safepoint(Compile_lock);
+  if (number_of_nmethods_with_dependencies() == 0) return;
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  // Compute the dependent nmethods
+  if (mark_for_evol_deoptimization(ev_k_h) > 0) {
+    // At least one nmethod has been marked for deoptimization
+
+    // All this already happens inside a VM_Operation, so we'll do all the work here.
+    // Stuff copied from VM_Deoptimize and modified slightly.
+
+    // We do not want any GCs to happen while we are in the middle of this VM operation
+    ResourceMark rm;
+    DeoptimizationMarker dm;
+
+    // Deoptimize all activations depending on marked nmethods
+    Deoptimization::deoptimize_dependents();
+
+    // Make the dependent methods not entrant (in VM_Deoptimize they are made zombies)
+    make_marked_nmethods_not_entrant();
+  }
+}
+#endif // HOTSWAP
+
+
+// Flushes compiled methods dependent on dependee
+void CodeCache::flush_dependents_on_method(methodHandle m_h) {
+  // --- Compile_lock is not held. However we are at a safepoint.
+  assert_locked_or_safepoint(Compile_lock);
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped dring the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  // Compute the dependent nmethods
+  if (mark_for_deoptimization(m_h()) > 0) {
+    // At least one nmethod has been marked for deoptimization
+
+    // All this already happens inside a VM_Operation, so we'll do all the work here.
+    // Stuff copied from VM_Deoptimize and modified slightly.
+
+    // We do not want any GCs to happen while we are in the middle of this VM operation
+    ResourceMark rm;
+    DeoptimizationMarker dm;
+
+    // Deoptimize all activations depending on marked nmethods
+    Deoptimization::deoptimize_dependents();
+
+    // Make the dependent methods not entrant (in VM_Deoptimize they are made zombies)
+    make_marked_nmethods_not_entrant();
   }
 }
 

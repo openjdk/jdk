@@ -25,7 +25,6 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
-import sun.awt.SunToolkit;
 
 /*
  * @test
@@ -42,7 +41,6 @@ public class bug4361477 {
 
     public static void main(String args[]) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -54,7 +52,7 @@ public class bug4361477 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 

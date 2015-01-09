@@ -48,6 +48,8 @@ int MetaspaceShared::_max_alignment = 0;
 
 ReservedSpace* MetaspaceShared::_shared_rs = NULL;
 
+MetaspaceSharedStats MetaspaceShared::_stats;
+
 bool MetaspaceShared::_link_classes_made_progress;
 bool MetaspaceShared::_check_classes_made_progress;
 bool MetaspaceShared::_has_error_classes;
@@ -259,7 +261,7 @@ public:
 #define SHAREDSPACE_OBJ_TYPES_DO(f) \
   METASPACE_OBJ_TYPES_DO(f) \
   f(SymbolHashentry) \
-  f(SymbolBuckets) \
+  f(SymbolBucket) \
   f(Other)
 
 #define SHAREDSPACE_OBJ_TYPE_DECLARE(name) name ## Type,
@@ -315,18 +317,16 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
   int other_bytes = md_all + mc_all;
 
   // Calculate size of data that was not allocated by Metaspace::allocate()
-  int symbol_count = _counts[RO][MetaspaceObj::SymbolType];
-  int symhash_bytes = symbol_count * sizeof (HashtableEntry<Symbol*, mtSymbol>);
-  int symbuck_count = SymbolTable::the_table()->table_size();
-  int symbuck_bytes = symbuck_count * sizeof(HashtableBucket<mtSymbol>);
+  MetaspaceSharedStats *stats = MetaspaceShared::stats();
 
-  _counts[RW][SymbolHashentryType] = symbol_count;
-  _bytes [RW][SymbolHashentryType] = symhash_bytes;
-  other_bytes -= symhash_bytes;
+  // symbols
+  _counts[RW][SymbolHashentryType] = stats->symbol.hashentry_count;
+  _bytes [RW][SymbolHashentryType] = stats->symbol.hashentry_bytes;
+  other_bytes -= stats->symbol.hashentry_bytes;
 
-  _counts[RW][SymbolBucketsType] = symbuck_count;
-  _bytes [RW][SymbolBucketsType] = symbuck_bytes;
-  other_bytes -= symbuck_bytes;
+  _counts[RW][SymbolBucketType] = stats->symbol.bucket_count;
+  _bytes [RW][SymbolBucketType] = stats->symbol.bucket_bytes;
+  other_bytes -= stats->symbol.bucket_bytes;
 
   // TODO: count things like dictionary, vtable, etc
   _bytes[RW][OtherType] =  other_bytes;
@@ -424,6 +424,13 @@ public:
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit();   // outline because gdb sucks
+
+private:
+  void handle_misc_data_space_failure(bool success) {
+    if (!success) {
+      report_out_of_shared_space(SharedMiscData);
+    }
+  }
 }; // class VM_PopulateDumpSharedSpace
 
 
@@ -517,9 +524,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   // buckets first [read-write], then copy the linked lists of entries
   // [read-only].
 
-  SymbolTable::reverse(md_top);
   NOT_PRODUCT(SymbolTable::verify());
-  SymbolTable::copy_buckets(&md_top, md_end);
+  handle_misc_data_space_failure(SymbolTable::copy_compact_table(&md_top, md_end));
 
   SystemDictionary::reverse();
   SystemDictionary::copy_buckets(&md_top, md_end);
@@ -528,7 +534,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   ClassLoader::copy_package_info_buckets(&md_top, md_end);
   ClassLoader::verify();
 
-  SymbolTable::copy_table(&md_top, md_end);
   SystemDictionary::copy_table(&md_top, md_end);
   ClassLoader::verify();
   ClassLoader::copy_package_info_table(&md_top, md_end);
@@ -1000,17 +1005,12 @@ void MetaspaceShared::initialize_shared_spaces() {
   buffer += sizeof(intptr_t);
   buffer += vtable_size;
 
-  // Create the symbol table using the bucket array at this spot in the
-  // misc data space.  Since the symbol table is often modified, this
-  // region (of mapped pages) will be copy-on-write.
+  // Create the shared symbol table using the bucket array at this spot in the
+  // misc data space. (Todo: move this to read-only space. Currently
+  // this is mapped copy-on-write but will never be written into).
 
-  int symbolTableLen = *(intptr_t*)buffer;
-  buffer += sizeof(intptr_t);
-  int number_of_entries = *(intptr_t*)buffer;
-  buffer += sizeof(intptr_t);
-  SymbolTable::create_table((HashtableBucket<mtSymbol>*)buffer, symbolTableLen,
-                            number_of_entries);
-  buffer += symbolTableLen;
+  buffer = (char*)SymbolTable::init_shared_table(buffer);
+  SymbolTable::create_table();
 
   // Create the shared dictionary using the bucket array at this spot in
   // the misc data space.  Since the shared dictionary table is never
@@ -1019,7 +1019,7 @@ void MetaspaceShared::initialize_shared_spaces() {
 
   int sharedDictionaryLen = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);
-  number_of_entries = *(intptr_t*)buffer;
+  int number_of_entries = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);
   SystemDictionary::set_shared_dictionary((HashtableBucket<mtClass>*)buffer,
                                           sharedDictionaryLen,
@@ -1041,18 +1041,10 @@ void MetaspaceShared::initialize_shared_spaces() {
   ClassLoader::verify();
 
   // The following data in the shared misc data region are the linked
-  // list elements (HashtableEntry objects) for the symbol table, string
-  // table, and shared dictionary.  The heap objects referred to by the
-  // symbol table, string table, and shared dictionary are permanent and
-  // unmovable.  Since new entries added to the string and symbol tables
-  // are always added at the beginning of the linked lists, THESE LINKED
-  // LIST ELEMENTS ARE READ-ONLY.
+  // list elements (HashtableEntry objects) for the shared dictionary
+  // and package info table.
 
-  int len = *(intptr_t*)buffer; // skip over symbol table entries
-  buffer += sizeof(intptr_t);
-  buffer += len;
-
-  len = *(intptr_t*)buffer;     // skip over shared dictionary entries
+  int len = *(intptr_t*)buffer;     // skip over shared dictionary entries
   buffer += sizeof(intptr_t);
   buffer += len;
 
