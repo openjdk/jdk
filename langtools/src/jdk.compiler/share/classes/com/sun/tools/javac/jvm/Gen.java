@@ -1096,9 +1096,10 @@ public class Gen extends JCTree.Visitor {
                 code.resolve(c.jumpTrue(), startpc);
                 code.resolve(c.falseJumps);
             }
-            code.resolve(loopEnv.info.exit);
-            if (loopEnv.info.exit != null) {
-                loopEnv.info.exit.state.defined.excludeFrom(code.nextreg);
+            Chain exit = loopEnv.info.exit;
+            if (exit != null) {
+                code.resolve(exit);
+                exit.state.defined.excludeFrom(code.nextreg);
             }
         }
 
@@ -1109,7 +1110,11 @@ public class Gen extends JCTree.Visitor {
     public void visitLabelled(JCLabeledStatement tree) {
         Env<GenContext> localEnv = env.dup(tree, new GenContext());
         genStat(tree.body, localEnv, CRT_STATEMENT);
-        code.resolve(localEnv.info.exit);
+        Chain exit = localEnv.info.exit;
+        if (exit != null) {
+            code.resolve(exit);
+            exit.state.defined.excludeFrom(code.nextreg);
+        }
     }
 
     public void visitSwitch(JCSwitch tree) {
@@ -1218,7 +1223,11 @@ public class Gen extends JCTree.Visitor {
             }
 
             // Resolve all breaks.
-            code.resolve(switchEnv.info.exit);
+            Chain exit = switchEnv.info.exit;
+            if  (exit != null) {
+                code.resolve(exit);
+                exit.state.defined.excludeFrom(code.nextreg);
+            }
 
             // If we have not set the default offset, we do so now.
             if (code.get4(tableBase) == -1) {
