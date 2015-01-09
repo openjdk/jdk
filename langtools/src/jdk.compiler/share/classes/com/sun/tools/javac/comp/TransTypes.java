@@ -755,7 +755,15 @@ public class TransTypes extends TreeTranslator {
         tree.clazz = translate(tree.clazz, null);
         Type originalTarget = tree.type;
         tree.type = erasure(tree.type);
-        tree.expr = translate(tree.expr, erasure(tree.expr.type));
+        JCExpression newExpression = translate(tree.expr, erasure(tree.expr.type));
+        if (newExpression != tree.expr) {
+            JCTypeCast typeCast = newExpression.hasTag(Tag.TYPECAST)
+                ? (JCTypeCast) newExpression
+                : null;
+            tree.expr = typeCast != null && types.isSameType(typeCast.type, originalTarget, true)
+                ? typeCast.expr
+                : newExpression;
+        }
         if (originalTarget.isCompound()) {
             Type.IntersectionClassType ict = (Type.IntersectionClassType)originalTarget;
             for (Type c : ict.getExplicitComponents()) {
