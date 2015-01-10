@@ -1214,6 +1214,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * of distinct PS fonts needed to draw this text. This saves us
      * doing this processing one extra time.
      */
+    @SuppressWarnings("deprecation")
     protected int platformFontCount(Font font, String str) {
         if (mFontProps == null) {
             return 0;
@@ -1228,6 +1229,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         return (psFonts == null) ? 0 : psFonts.length;
     }
 
+    @SuppressWarnings("deprecation")
      protected boolean textOut(Graphics g, String str, float x, float y,
                                Font mLastFont, FontRenderContext frc,
                                float width) {
@@ -2123,6 +2125,7 @@ public class PSPrinterJob extends RasterPrinterJob {
          * @param w the width of the applet panel in the browser window
          * @param h the width of the applet panel in the browser window
          */
+        @SuppressWarnings("deprecation")
         public PluginPrinter(Component applet,
                              PrintStream stream,
                              int x, int y, int w, int h) {

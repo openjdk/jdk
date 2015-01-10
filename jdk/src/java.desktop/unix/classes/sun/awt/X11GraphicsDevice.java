@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,6 +325,7 @@ public class X11GraphicsDevice
         return (isFullScreenSupported() && (getFullScreenWindow() != null));
     }
 
+    @SuppressWarnings("deprecation")
     private static void enterFullScreenExclusive(Window w) {
         X11ComponentPeer peer = (X11ComponentPeer)w.getPeer();
         if (peer != null) {
@@ -333,6 +334,7 @@ public class X11GraphicsDevice
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static void exitFullScreenExclusive(Window w) {
         X11ComponentPeer peer = (X11ComponentPeer)w.getPeer();
         if (peer != null) {

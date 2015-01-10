@@ -38,8 +38,8 @@ import java.awt.image.BufferedImage;
 public class bug6683775 {
     public static void main(String[] args) throws Exception {
         GraphicsConfiguration gc = getGC();
-        if (!AWTUtilities.isTranslucencySupported(
-                AWTUtilities.Translucency.PERPIXEL_TRANSLUCENT)
+       if (!AWTUtilities.isTranslucencySupported(
+               AWTUtilities.Translucency.PERPIXEL_TRANSLUCENT)
                 || gc == null) {
             return;
         }

@@ -1355,6 +1355,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     /**
      * @param index visual index of the file to be edited
      */
+    @SuppressWarnings("deprecation")
     private void editFileName(int index) {
         JFileChooser chooser = getFileChooser();
         File currentDirectory = chooser.getCurrentDirectory();
@@ -1521,6 +1522,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
 
+    @SuppressWarnings("deprecation")
     void setFileSelected() {
         if (getFileChooser().isMultiSelectionEnabled() && !isDirectorySelected()) {
             File[] files = getFileChooser().getSelectedFiles(); // Should be selected

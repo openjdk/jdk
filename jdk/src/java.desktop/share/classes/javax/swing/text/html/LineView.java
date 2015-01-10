@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ class LineView extends ParagraphView {
      * This is implemented to try and locate a <code>TabSet</code>
      * in the paragraph element's attribute set.  If one can be
      * found, its settings will be used, otherwise a default expansion
-     * will be provided.  The base location for for tab expansion
+     * will be provided.  The base location for tab expansion
      * is the left inset from the paragraphs most recent allocation
      * (which is what the layout of the children is based upon).
      *
@@ -161,6 +161,7 @@ class LineView extends ParagraphView {
     /**
      * Returns the location for the tab.
      */
+    @SuppressWarnings("deprecation")
     protected float getPreTab(float x, int tabOffset) {
         Document d = getDocument();
         View v = getViewAtPosition(tabOffset, null);

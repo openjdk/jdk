@@ -38,13 +38,11 @@
 
 
 import java.awt.Robot;
-import java.awt.Toolkit;
 
 import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.event.*;
-import sun.awt.SunToolkit;
 
 public class KeyEventForBadFocusOwnerTest {
     final static String ITEM_ONE_TEXT = "one";
@@ -55,7 +53,6 @@ public class KeyEventForBadFocusOwnerTest {
     volatile static boolean unexpectedItemSelected = false;
 
     static Robot robot;
-    static SunToolkit toolkit;
 
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -122,16 +119,15 @@ public class KeyEventForBadFocusOwnerTest {
             }
         });
 
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
 
         robot = new Robot();
         robot.setAutoDelay(100);
+        robot.waitForIdle();
 
         Util.hitMnemonics(robot, KeyEvent.VK_O);
         Util.hitMnemonics(robot, KeyEvent.VK_T);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000); // workaround for MacOS
 
         if (unexpectedItemSelected) {

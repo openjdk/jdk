@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,6 @@ abstract class DSA extends SignatureSpi {
         if (params == null) {
             throw new InvalidKeyException("DSA private key lacks parameters");
         }
-        checkKey(params);
 
         this.params = params;
         this.presetX = priv.getX();
@@ -149,7 +148,6 @@ abstract class DSA extends SignatureSpi {
         if (params == null) {
             throw new InvalidKeyException("DSA public key lacks parameters");
         }
-        checkKey(params);
 
         this.params = params;
         this.presetY = pub.getY();
@@ -289,16 +287,6 @@ abstract class DSA extends SignatureSpi {
     @Deprecated
     protected Object engineGetParameter(String key) {
         return null;
-    }
-
-    protected void checkKey(DSAParams params) throws InvalidKeyException {
-        // FIPS186-3 states in sec4.2 that a hash function which provides
-        // a lower security strength than the (L, N) pair ordinarily should
-        // not be used.
-        int valueN = params.getQ().bitLength();
-        if (valueN > md.getDigestLength()*8) {
-            throw new InvalidKeyException("Key is too strong for this signature algorithm");
-        }
     }
 
     private BigInteger generateR(BigInteger p, BigInteger q, BigInteger g,
@@ -478,14 +466,6 @@ abstract class DSA extends SignatureSpi {
            } else {
                return null;
            }
-        }
-
-        @Override
-        protected void checkKey(DSAParams params) throws InvalidKeyException {
-            int valueL = params.getP().bitLength();
-            if (valueL > 1024) {
-                throw new InvalidKeyException("Key is too long for this algorithm");
-            }
         }
 
         /*

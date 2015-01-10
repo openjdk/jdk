@@ -1123,6 +1123,16 @@ WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean 
                    attemptedNoSafepointValue == JNI_TRUE);
 WB_END
 
+WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
+  oop obj_oop = JNIHandles::resolve(obj);
+  return (jboolean) obj_oop->mark()->has_monitor();
+WB_END
+
+WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
+  VM_ForceSafepoint force_safepoint_op;
+  VMThread::execute(&force_safepoint_op);
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -1321,6 +1331,8 @@ static JNINativeMethod methods[] = {
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
+  {CC"isMonitorInflated",  CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
+  {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
 };
 
 #undef CC

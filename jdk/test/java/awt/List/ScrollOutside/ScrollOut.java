@@ -33,7 +33,6 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class ScrollOut
@@ -54,13 +53,13 @@ public class ScrollOut
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
 
         try{
             robot = new Robot();
         }catch(AWTException e){
             throw new RuntimeException(e);
         }
+        robot.waitForIdle();
 
         //Drag from center to the outside on left
         Point from = new Point(list.getLocationOnScreen().x + list.getWidth()/2,
@@ -68,16 +67,16 @@ public class ScrollOut
         Point to = new Point(list.getLocationOnScreen().x - 30,
                              from.y);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
         Util.drag(robot, from, to, InputEvent.BUTTON1_MASK);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         //Drag from center to the outside on up
         to = new Point(from.x,
                        list.getLocationOnScreen().y - 50);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
         Util.drag(robot, from, to, InputEvent.BUTTON1_MASK);
 
     }//End  init()

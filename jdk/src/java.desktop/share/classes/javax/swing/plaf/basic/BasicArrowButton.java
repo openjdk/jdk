@@ -216,6 +216,7 @@ public class BasicArrowButton extends JButton implements SwingConstants
          *
          * @return {@code false}
          */
+        @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
           return false;
         }

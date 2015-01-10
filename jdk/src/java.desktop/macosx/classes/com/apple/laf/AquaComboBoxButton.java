@@ -70,6 +70,7 @@ class AquaComboBoxButton extends JButton {
         return comboBox == null ? true : comboBox.isEnabled();
     }
 
+    @SuppressWarnings("deprecation")
     public boolean isFocusTraversable() {
         return false;
     }

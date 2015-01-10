@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class IsindexView extends ComponentView implements ActionListener {
     }
 
     /**
-     * Creates the components necessary to to implement
+     * Creates the components necessary to implement
      * this view.  The component returned is a <code>JPanel</code>,
      * that contains the PROMPT to the left and <code>JTextField</code>
      * to the right.
@@ -88,6 +88,7 @@ class IsindexView extends ComponentView implements ActionListener {
      * contents of the JTextField.  The search
      * contents are URLEncoded.
      */
+    @SuppressWarnings("deprecation")
     public void actionPerformed(ActionEvent evt) {
 
         String data = textField.getText();

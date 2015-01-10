@@ -183,6 +183,10 @@ public:
   // Returns whether the remembered set contains the given reference.
   bool contains_reference(OopOrNarrowOopStar from) const;
 
+  // Returns whether this remembered set (and all sub-sets) have an occupancy
+  // that is less or equal than the given occupancy.
+  bool occupancy_less_or_equal_than(size_t limit) const;
+
   // Removes any entries shown by the given bitmaps to contain only dead
   // objects. Not thread safe.
   // Set bits in the bitmaps indicate that the given region or card is live.
@@ -259,6 +263,10 @@ public:
 
   bool is_empty() const {
     return (strong_code_roots_list_length() == 0) && _other_regions.is_empty();
+  }
+
+  bool occupancy_less_or_equal_than(size_t occ) const {
+    return (strong_code_roots_list_length() == 0) && _other_regions.occupancy_less_or_equal_than(occ);
   }
 
   size_t occupied() {

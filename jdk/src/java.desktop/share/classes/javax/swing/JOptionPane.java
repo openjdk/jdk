@@ -566,6 +566,7 @@ public class JOptionPane extends JComponent implements Accessible
      *   <code>true</code>
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("deprecation")
     public static Object showInputDialog(Component parentComponent,
         Object message, String title, int messageType, Icon icon,
         Object[] selectionValues, Object initialSelectionValue)
@@ -855,6 +856,7 @@ public class JOptionPane extends JComponent implements Accessible
      *   <code>true</code>
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("deprecation")
     public static int showOptionDialog(Component parentComponent,
         Object message, String title, int optionType, int messageType,
         Icon icon, Object[] options, Object initialValue)

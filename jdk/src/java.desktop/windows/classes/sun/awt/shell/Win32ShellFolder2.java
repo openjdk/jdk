@@ -251,7 +251,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                         // Get a child pidl relative to 'parent'
                         long childPIDL = copyFirstPIDLEntry(pIDL);
                         if (childPIDL != 0) {
-                            // Get a handle to the the rest of the ID list
+                            // Get a handle to the rest of the ID list
                             // i,e, parent's grandchilren and down
                             pIDL = getNextPIDLEntry(pIDL);
                             if (pIDL != 0) {

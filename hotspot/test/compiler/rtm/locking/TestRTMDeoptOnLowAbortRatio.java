@@ -130,10 +130,7 @@ public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
 
         @Override
         public String[] getMethodsToCompileNames() {
-            return new String[] {
-                getMethodWithLockName(),
-                sun.misc.Unsafe.class.getName() + "::addressSize"
-            };
+            return new String[] { getMethodWithLockName() };
         }
 
         public void forceAbort(boolean abort) {
@@ -151,11 +148,12 @@ public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
         public static void main(String args[]) throws Throwable {
             Asserts.assertGTE(args.length, 1, "One argument required.");
             Test t = new Test();
-
-            if (Boolean.valueOf(args[0])) {
+            boolean shouldBeInflated = Boolean.valueOf(args[0]);
+            if (shouldBeInflated) {
                 AbortProvoker.inflateMonitor(t.monitor);
             }
             for (int i = 0; i < AbortProvoker.DEFAULT_ITERATIONS; i++) {
+                AbortProvoker.verifyMonitorState(t.monitor, shouldBeInflated);
                 t.forceAbort(
                         i == TestRTMDeoptOnLowAbortRatio.LOCKING_THRESHOLD);
             }
