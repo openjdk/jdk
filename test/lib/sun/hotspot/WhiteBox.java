@@ -109,6 +109,7 @@ public class WhiteBox {
   public native int NMTGetHashSize();
 
   // Compiler
+  public native int     deoptimizeFrames(boolean makeNotEntrant);
   public native void    deoptimizeAll();
   public        boolean isMethodCompiled(Executable method) {
     return isMethodCompiled(method, false /*not osr*/);
@@ -153,6 +154,14 @@ public class WhiteBox {
   public native int     getMethodEntryBci(Executable method);
   public native Object[] getNMethod(Executable method, boolean isOsr);
   public native long    allocateCodeBlob(int size, int type);
+  public        long    allocateCodeBlob(long size, int type) {
+      int intSize = (int) size;
+      if ((long) intSize != size || size < 0) {
+          throw new IllegalArgumentException(
+                "size argument has illegal value " + size);
+      }
+      return allocateCodeBlob( intSize, type);
+  }
   public native void    freeCodeBlob(long addr);
   public        void    forceNMethodSweep() {
     try {
@@ -240,4 +249,6 @@ public class WhiteBox {
     return offset;
   }
 
+  // Safepoint Checking
+  public native void assertMatchingSafepointCalls(boolean mutexSafepointValue, boolean attemptedNoSafepointValue);
 }

@@ -24,7 +24,7 @@
 /*
  * @test Uint64Test
  * @bug 8028756
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build Uint64Test
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

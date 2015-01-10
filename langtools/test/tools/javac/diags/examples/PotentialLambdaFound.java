@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.note.potential.lambda.found
-// options: -XDidentifyLambdaCandidate=true
+// key: compiler.warn.potential.lambda.found
+// options: -XDfind=lambda
 
 class PotentialLambdaFound {
 

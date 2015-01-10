@@ -88,7 +88,7 @@ public final class NativeRegExpExecResult extends ScriptObject {
     @Setter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public static void length(final Object self, final Object length) {
         if (self instanceof ScriptObject) {
-            ((ScriptObject)self).setLength(NativeArray.validLength(length, true));
+            ((ScriptObject)self).setLength(NativeArray.validLength(length));
         }
     }
 }

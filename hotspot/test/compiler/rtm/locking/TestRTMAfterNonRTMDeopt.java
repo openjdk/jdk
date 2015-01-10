@@ -29,7 +29,7 @@
  *          caused by reason other then rtm_state_change will reset
  *          method's RTM state. And if we don't use RTMDeopt, then
  *          RTM state remain the same after such deoptimization.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMAfterNonRTMDeopt
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

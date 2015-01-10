@@ -1,13 +1,9 @@
 /*
- * security policy used by test activation groups
+ * security policy used by activation groups
  */
 
 grant {
   permission java.io.FilePermission "..${/}..${/}test.props", "read";
-
-  // allow remote objects to be exported on arbitrary ports.
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
-
-  // allow exporting of non-public remote interface
-  permission java.rmi.RMIPermission "exportRemoteInterface.ActivateMe";
+  permission java.util.PropertyPermission "test.*", "read";
 };

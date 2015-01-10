@@ -26,7 +26,7 @@
 /*
  * @test TestStableChar
  * @summary tests on stable fields and arrays
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestStableChar StableConfiguration sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main ClassFileInstaller

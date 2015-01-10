@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that UseRTMDeopt affects uncommon trap installation in
  *          copmpiled methods with synchronized block.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMDeopt
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

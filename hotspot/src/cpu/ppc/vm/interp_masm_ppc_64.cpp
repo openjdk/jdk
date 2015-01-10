@@ -544,6 +544,9 @@ void InterpreterMacroAssembler::index_check_without_pop(Register Rarray, Registe
   cmplw(CCR0, Rindex, Rlength);
   sldi(RsxtIndex, RsxtIndex, index_shift);
   blt(CCR0, LnotOOR);
+  // Index should be in R17_tos, array should be in R4_ARG2.
+  mr(R17_tos, Rindex);
+  mr(R4_ARG2, Rarray);
   load_dispatch_table(Rtmp, (address*)Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
   mtctr(Rtmp);
   bctr();
@@ -1678,6 +1681,228 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   }
 }
 
+// Argument and return type profilig.
+// kills: tmp, tmp2, R0, CR0, CR1
+void InterpreterMacroAssembler::profile_obj_type(Register obj, Register mdo_addr_base,
+                                                 RegisterOrConstant mdo_addr_offs, Register tmp, Register tmp2) {
+  Label do_nothing, do_update;
+
+  // tmp2 = obj is allowed
+  assert_different_registers(obj, mdo_addr_base, tmp, R0);
+  assert_different_registers(tmp2, mdo_addr_base, tmp, R0);
+  const Register klass = tmp2;
+
+  verify_oop(obj);
+
+  ld(tmp, mdo_addr_offs, mdo_addr_base);
+
+  // Set null_seen if obj is 0.
+  cmpdi(CCR0, obj, 0);
+  ori(R0, tmp, TypeEntries::null_seen);
+  beq(CCR0, do_update);
+
+  load_klass(klass, obj);
+
+  clrrdi(R0, tmp, exact_log2(-TypeEntries::type_klass_mask));
+  // Basically same as andi(R0, tmp, TypeEntries::type_klass_mask);
+  cmpd(CCR1, R0, klass);
+  // Klass seen before, nothing to do (regardless of unknown bit).
+  //beq(CCR1, do_nothing);
+
+  andi_(R0, klass, TypeEntries::type_unknown);
+  // Already unknown. Nothing to do anymore.
+  //bne(CCR0, do_nothing);
+  crorc(/*CCR0 eq*/2, /*CCR1 eq*/4+2, /*CCR0 eq*/2); // cr0 eq = cr1 eq or cr0 ne
+  beq(CCR0, do_nothing);
+
+  clrrdi_(R0, tmp, exact_log2(-TypeEntries::type_mask));
+  orr(R0, klass, tmp); // Combine klass and null_seen bit (only used if (tmp & type_mask)==0).
+  beq(CCR0, do_update); // First time here. Set profile type.
+
+  // Different than before. Cannot keep accurate profile.
+  ori(R0, tmp, TypeEntries::type_unknown);
+
+  bind(do_update);
+  // update profile
+  std(R0, mdo_addr_offs, mdo_addr_base);
+
+  align(32, 12);
+  bind(do_nothing);
+}
+
+void InterpreterMacroAssembler::profile_arguments_type(Register callee, Register tmp1, Register tmp2, bool is_virtual) {
+  if (!ProfileInterpreter) {
+    return;
+  }
+
+  assert_different_registers(callee, tmp1, tmp2, R28_mdx);
+
+  if (MethodData::profile_arguments() || MethodData::profile_return()) {
+    Label profile_continue;
+
+    test_method_data_pointer(profile_continue);
+
+    int off_to_start = is_virtual ? in_bytes(VirtualCallData::virtual_call_data_size()) : in_bytes(CounterData::counter_data_size());
+
+    lbz(tmp1, in_bytes(DataLayout::tag_offset()) - off_to_start, R28_mdx);
+    cmpwi(CCR0, tmp1, is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag);
+    bne(CCR0, profile_continue);
+
+    if (MethodData::profile_arguments()) {
+      Label done;
+      int off_to_args = in_bytes(TypeEntriesAtCall::args_data_offset());
+      add(R28_mdx, off_to_args, R28_mdx);
+
+      for (int i = 0; i < TypeProfileArgsLimit; i++) {
+        if (i > 0 || MethodData::profile_return()) {
+          // If return value type is profiled we may have no argument to profile.
+          ld(tmp1, in_bytes(TypeEntriesAtCall::cell_count_offset())-off_to_args, R28_mdx);
+          cmpdi(CCR0, tmp1, (i+1)*TypeStackSlotEntries::per_arg_count());
+          addi(tmp1, tmp1, -i*TypeStackSlotEntries::per_arg_count());
+          blt(CCR0, done);
+        }
+        ld(tmp1, in_bytes(Method::const_offset()), callee);
+        lhz(tmp1, in_bytes(ConstMethod::size_of_parameters_offset()), tmp1);
+        // Stack offset o (zero based) from the start of the argument
+        // list, for n arguments translates into offset n - o - 1 from
+        // the end of the argument list. But there's an extra slot at
+        // the top of the stack. So the offset is n - o from Lesp.
+        ld(tmp2, in_bytes(TypeEntriesAtCall::stack_slot_offset(i))-off_to_args, R28_mdx);
+        subf(tmp1, tmp2, tmp1);
+
+        sldi(tmp1, tmp1, Interpreter::logStackElementSize);
+        ldx(tmp1, tmp1, R15_esp);
+
+        profile_obj_type(tmp1, R28_mdx, in_bytes(TypeEntriesAtCall::argument_type_offset(i))-off_to_args, tmp2, tmp1);
+
+        int to_add = in_bytes(TypeStackSlotEntries::per_arg_size());
+        addi(R28_mdx, R28_mdx, to_add);
+        off_to_args += to_add;
+      }
+
+      if (MethodData::profile_return()) {
+        ld(tmp1, in_bytes(TypeEntriesAtCall::cell_count_offset())-off_to_args, R28_mdx);
+        addi(tmp1, tmp1, -TypeProfileArgsLimit*TypeStackSlotEntries::per_arg_count());
+      }
+
+      bind(done);
+
+      if (MethodData::profile_return()) {
+        // We're right after the type profile for the last
+        // argument. tmp1 is the number of cells left in the
+        // CallTypeData/VirtualCallTypeData to reach its end. Non null
+        // if there's a return to profile.
+        assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
+        sldi(tmp1, tmp1, exact_log2(DataLayout::cell_size));
+        add(R28_mdx, tmp1, R28_mdx);
+      }
+    } else {
+      assert(MethodData::profile_return(), "either profile call args or call ret");
+      update_mdp_by_constant(in_bytes(TypeEntriesAtCall::return_only_size()));
+    }
+
+    // Mdp points right after the end of the
+    // CallTypeData/VirtualCallTypeData, right after the cells for the
+    // return value type if there's one.
+    align(32, 12);
+    bind(profile_continue);
+  }
+}
+
+void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1, Register tmp2) {
+  assert_different_registers(ret, tmp1, tmp2);
+  if (ProfileInterpreter && MethodData::profile_return()) {
+    Label profile_continue;
+
+    test_method_data_pointer(profile_continue);
+
+    if (MethodData::profile_return_jsr292_only()) {
+      // If we don't profile all invoke bytecodes we must make sure
+      // it's a bytecode we indeed profile. We can't go back to the
+      // begining of the ProfileData we intend to update to check its
+      // type because we're right after it and we don't known its
+      // length.
+      lbz(tmp1, 0, R14_bcp);
+      lbz(tmp2, Method::intrinsic_id_offset_in_bytes(), R19_method);
+      cmpwi(CCR0, tmp1, Bytecodes::_invokedynamic);
+      cmpwi(CCR1, tmp1, Bytecodes::_invokehandle);
+      cror(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2);
+      cmpwi(CCR1, tmp2, vmIntrinsics::_compiledLambdaForm);
+      cror(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2);
+      bne(CCR0, profile_continue);
+    }
+
+    profile_obj_type(ret, R28_mdx, -in_bytes(ReturnTypeEntry::size()), tmp1, tmp2);
+
+    align(32, 12);
+    bind(profile_continue);
+  }
+}
+
+void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
+  if (ProfileInterpreter && MethodData::profile_parameters()) {
+    Label profile_continue, done;
+
+    test_method_data_pointer(profile_continue);
+
+    // Load the offset of the area within the MDO used for
+    // parameters. If it's negative we're not profiling any parameters.
+    lwz(tmp1, in_bytes(MethodData::parameters_type_data_di_offset()) - in_bytes(MethodData::data_offset()), R28_mdx);
+    cmpwi(CCR0, tmp1, 0);
+    blt(CCR0, profile_continue);
+
+    // Compute a pointer to the area for parameters from the offset
+    // and move the pointer to the slot for the last
+    // parameters. Collect profiling from last parameter down.
+    // mdo start + parameters offset + array length - 1
+
+    // Pointer to the parameter area in the MDO.
+    const Register mdp = tmp1;
+    add(mdp, tmp1, R28_mdx);
+
+    // Pffset of the current profile entry to update.
+    const Register entry_offset = tmp2;
+    // entry_offset = array len in number of cells
+    ld(entry_offset, in_bytes(ArrayData::array_len_offset()), mdp);
+
+    int off_base = in_bytes(ParametersTypeData::stack_slot_offset(0));
+    assert(off_base % DataLayout::cell_size == 0, "should be a number of cells");
+
+    // entry_offset (number of cells)  = array len - size of 1 entry + offset of the stack slot field
+    addi(entry_offset, entry_offset, -TypeStackSlotEntries::per_arg_count() + (off_base / DataLayout::cell_size));
+    // entry_offset in bytes
+    sldi(entry_offset, entry_offset, exact_log2(DataLayout::cell_size));
+
+    Label loop;
+    align(32, 12);
+    bind(loop);
+
+    // Load offset on the stack from the slot for this parameter.
+    ld(tmp3, entry_offset, mdp);
+    sldi(tmp3, tmp3, Interpreter::logStackElementSize);
+    neg(tmp3, tmp3);
+    // Read the parameter from the local area.
+    ldx(tmp3, tmp3, R18_locals);
+
+    // Make entry_offset now point to the type field for this parameter.
+    int type_base = in_bytes(ParametersTypeData::type_offset(0));
+    assert(type_base > off_base, "unexpected");
+    addi(entry_offset, entry_offset, type_base - off_base);
+
+    // Profile the parameter.
+    profile_obj_type(tmp3, mdp, entry_offset, tmp4, tmp3);
+
+    // Go to next parameter.
+    int delta = TypeStackSlotEntries::per_arg_count() * DataLayout::cell_size + (type_base - off_base);
+    cmpdi(CCR0, entry_offset, off_base + delta);
+    addi(entry_offset, entry_offset, -delta);
+    bge(CCR0, loop);
+
+    align(32, 12);
+    bind(profile_continue);
+  }
+}
+
 // Add a InterpMonitorElem to stack (see frame_sparc.hpp).
 void InterpreterMacroAssembler::add_monitor_to_stack(bool stack_is_empty, Register Rtemp1, Register Rtemp2) {
 
@@ -2039,20 +2264,19 @@ void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Regis
   bne(CCR0, test);
 
   address fd = CAST_FROM_FN_PTR(address, verify_return_address);
-  unsigned int nbytes_save = 10*8; // 10 volatile gprs
-
-  save_LR_CR(Rtmp);
+  const int nbytes_save = 11*8; // volatile gprs except R0
+  save_volatile_gprs(R1_SP, -nbytes_save); // except R0
+  save_LR_CR(Rtmp); // Save in old frame.
   push_frame_reg_args(nbytes_save, Rtmp);
-  save_volatile_gprs(R1_SP, 112); // except R0
 
   load_const_optimized(Rtmp, fd, R0);
   mr_if_needed(R4_ARG2, reg);
   mr(R3_ARG1, R19_method);
   call_c(Rtmp); // call C
 
-  restore_volatile_gprs(R1_SP, 112); // except R0
   pop_frame();
   restore_LR_CR(Rtmp);
+  restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
   b(skip);
 
   // Perform a more elaborate out-of-line call.
