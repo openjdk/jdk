@@ -88,7 +88,8 @@ static void _sltLoop(JavaThread* thread, TRAPS) {
 
 SurrogateLockerThread::SurrogateLockerThread() :
   JavaThread(&_sltLoop),
-  _monitor(Mutex::nonleaf, "SLTMonitor"),
+  _monitor(Mutex::nonleaf, "SLTMonitor", false,
+           Monitor::_safepoint_check_sometimes),
   _buffer(empty)
 {}
 

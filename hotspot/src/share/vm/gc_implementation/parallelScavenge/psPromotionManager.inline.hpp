@@ -64,6 +64,33 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   claim_or_forward_internal_depth(p);
 }
 
+inline void PSPromotionManager::promotion_trace_event(oop new_obj, oop old_obj,
+                                                      size_t obj_size,
+                                                      uint age, bool tenured,
+                                                      const PSPromotionLAB* lab) {
+  // Skip if memory allocation failed
+  if (new_obj != NULL) {
+    const ParallelScavengeTracer* gc_tracer = PSScavenge::gc_tracer();
+
+    if (lab != NULL) {
+      // Promotion of object through newly allocated PLAB
+      if (gc_tracer->should_report_promotion_in_new_plab_event()) {
+        size_t obj_bytes = obj_size * HeapWordSize;
+        size_t lab_size = lab->capacity();
+        gc_tracer->report_promotion_in_new_plab_event(old_obj->klass(), obj_bytes,
+                                                      age, tenured, lab_size);
+      }
+    } else {
+      // Promotion of object directly to heap
+      if (gc_tracer->should_report_promotion_outside_plab_event()) {
+        size_t obj_bytes = obj_size * HeapWordSize;
+        gc_tracer->report_promotion_outside_plab_event(old_obj->klass(), obj_bytes,
+                                                       age, tenured);
+      }
+    }
+  }
+}
+
 //
 // This method is pretty bulky. It would be nice to split it up
 // into smaller submethods, but we need to be careful not to hurt
@@ -85,11 +112,11 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
     bool new_obj_is_tenured = false;
     size_t new_obj_size = o->size();
 
-    if (!promote_immediately) {
-      // Find the objects age, MT safe.
-      uint age = (test_mark->has_displaced_mark_helper() /* o->has_displaced_mark() */) ?
-        test_mark->displaced_mark_helper()->age() : test_mark->age();
+    // Find the objects age, MT safe.
+    uint age = (test_mark->has_displaced_mark_helper() /* o->has_displaced_mark() */) ?
+      test_mark->displaced_mark_helper()->age() : test_mark->age();
 
+    if (!promote_immediately) {
       // Try allocating obj in to-space (unless too old)
       if (age < PSScavenge::tenuring_threshold()) {
         new_obj = (oop) _young_lab.allocate(new_obj_size);
@@ -98,6 +125,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
           if (new_obj_size > (YoungPLABSize / 2)) {
             // Allocate this object directly
             new_obj = (oop)young_space()->cas_allocate(new_obj_size);
+            promotion_trace_event(new_obj, o, new_obj_size, age, false, NULL);
           } else {
             // Flush and fill
             _young_lab.flush();
@@ -107,6 +135,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
               _young_lab.initialize(MemRegion(lab_base, YoungPLABSize));
               // Try the young lab allocation again.
               new_obj = (oop) _young_lab.allocate(new_obj_size);
+              promotion_trace_event(new_obj, o, new_obj_size, age, false, &_young_lab);
             } else {
               _young_gen_is_full = true;
             }
@@ -132,6 +161,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
           if (new_obj_size > (OldPLABSize / 2)) {
             // Allocate this object directly
             new_obj = (oop)old_gen()->cas_allocate(new_obj_size);
+            promotion_trace_event(new_obj, o, new_obj_size, age, true, NULL);
           } else {
             // Flush and fill
             _old_lab.flush();
@@ -148,6 +178,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
               _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
               // Try the old lab allocation again.
               new_obj = (oop) _old_lab.allocate(new_obj_size);
+              promotion_trace_event(new_obj, o, new_obj_size, age, true, &_old_lab);
             }
           }
         }

@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMForStackLocks option processing on CPUs without
  *          rtm support and/or on VMs without rtm locking support.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMForStackLocksOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -57,33 +57,50 @@ public class TestUseRTMForStackLocksOptionOnUnsupportedConfig
 
     @Override
     protected void runX86SupportedVMTestCases() throws Throwable {
+        String shouldFailMessage = String.format("VM option '%s' is "
+                + "experimental%nJVM startup should fail without "
+                + "-XX:+UnlockExperimentalVMOptions flag", optionName);
+
         // verify that option is experimental
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[]{ experimentalOptionError },
-                null, ExitCode.FAIL, prepareOptionValue("true"));
+                new String[] { experimentalOptionError }, null,
+                shouldFailMessage, shouldFailMessage + "%nError message "
+                        + "should be shown", ExitCode.FAIL,
+                prepareOptionValue("true"));
 
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[]{ experimentalOptionError },
-                null, ExitCode.FAIL, prepareOptionValue("false"));
+                new String[]{ experimentalOptionError }, null,
+                shouldFailMessage, shouldFailMessage + "%nError message "
+                        + "should be shown", ExitCode.FAIL,
+                prepareOptionValue("false"));
 
+        String shouldPassMessage = String.format("VM option '%s' is "
+                + " experimental%nJVM startup should pass with "
+                + "-XX:+UnlockExperimentalVMOptions flag", optionName);
         // verify that if we turn it on, then VM output will contain
         // warning saying that this option could be turned on only
         // when we use rtm locking
         CommandLineOptionTest.verifySameJVMStartup(
                 new String[]{
                     RTMGenericCommandLineOptionTest.RTM_FOR_STACK_LOCKS_WARNING
-                },
-                null, ExitCode.OK,
+                }, null, shouldPassMessage, "There should be warning when try "
+                    + "to use rtm for stack lock, but not using rtm locking",
+                ExitCode.OK,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 prepareOptionValue("true")
         );
         // verify that options is turned off by default
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                 TestUseRTMForStackLocksOptionOnUnsupportedConfig.DEFAULT_VALUE,
+                String.format("Default value of option '%s' should be '%s'",
+                        optionName, DEFAULT_VALUE),
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS);
         // verify that it could not be turned on without rtm locking
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                 TestUseRTMForStackLocksOptionOnUnsupportedConfig.DEFAULT_VALUE,
+                String.format("Value of '%s' shouldn't able to be set to "
+                        + "'true' without setting -XX:+UseRTMLocking flag",
+                        optionName),
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 prepareOptionValue("true"));
     }

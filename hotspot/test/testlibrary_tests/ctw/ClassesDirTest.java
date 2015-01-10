@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8012447
- * @library /testlibrary /testlibrary/whitebox /testlibrary/ctw/src
+ * @library /testlibrary /../../test/lib /testlibrary/ctw/src
  * @build ClassFileInstaller sun.hotspot.tools.ctw.CompileTheWorld sun.hotspot.WhiteBox Foo Bar
  * @run main ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

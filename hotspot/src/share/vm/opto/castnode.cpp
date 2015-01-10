@@ -104,7 +104,8 @@ const Type *CastIINode::Value(PhaseTransform *phase) const {
   // Try to improve the type of the CastII if we recognize a CmpI/If
   // pattern.
   if (_carry_dependency) {
-    if (in(0) != NULL && (in(0)->is_IfFalse() || in(0)->is_IfTrue())) {
+    if (in(0) != NULL && in(0)->in(0) != NULL && in(0)->in(0)->is_If()) {
+      assert(in(0)->is_IfFalse() || in(0)->is_IfTrue(), "should be If proj");
       Node* proj = in(0);
       if (proj->in(0)->in(1)->is_Bool()) {
         Node* b = proj->in(0)->in(1);

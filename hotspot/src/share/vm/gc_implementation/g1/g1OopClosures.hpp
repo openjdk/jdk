@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
 
 #include "memory/iterator.hpp"
+#include "oops/markOop.hpp"
 
 class HeapRegion;
 class G1CollectedHeap;
@@ -239,14 +240,14 @@ class G1UpdateRSOrPushRefOopClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;
   G1RemSet* _g1_rem_set;
   HeapRegion* _from;
-  OopsInHeapRegionClosure* _push_ref_cl;
+  G1ParPushHeapRSClosure* _push_ref_cl;
   bool _record_refs_into_cset;
   uint _worker_i;
 
 public:
   G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
                                 G1RemSet* rs,
-                                OopsInHeapRegionClosure* push_ref_cl,
+                                G1ParPushHeapRSClosure* push_ref_cl,
                                 bool record_refs_into_cset,
                                 uint worker_i = 0);
 
@@ -256,7 +257,8 @@ public:
   }
 
   bool self_forwarded(oop obj) {
-    bool result = (obj->is_forwarded() && (obj->forwardee()== obj));
+    markOop m = obj->mark();
+    bool result = (m->is_marked() && ((oop)m->decode_pointer() == obj));
     return result;
   }
 

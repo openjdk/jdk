@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_AIX_OJDKPPC_VM_THREADLS_AIX_PPC_HPP
-#define OS_CPU_AIX_OJDKPPC_VM_THREADLS_AIX_PPC_HPP
+#ifndef OS_CPU_AIX_PPC_VM_THREADLS_AIX_PPC_HPP
+#define OS_CPU_AIX_PPC_VM_THREADLS_AIX_PPC_HPP
 
   // Processor dependent parts of ThreadLocalStorage
 
@@ -33,4 +33,4 @@ public:
     return (Thread *) os::thread_local_storage_at(thread_index());
   }
 
-#endif // OS_CPU_AIX_OJDKPPC_VM_THREADLS_AIX_PPC_HPP
+#endif // OS_CPU_AIX_PPC_VM_THREADLS_AIX_PPC_HPP

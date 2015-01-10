@@ -33,6 +33,7 @@ TOPDIR=..
 # This makefile depends on the availability of sibling directories.
 LANGTOOLS_DIR=$(TOPDIR)/langtools
 JDK_DIR=$(TOPDIR)/jdk
+JAXP_DIR=$(TOPDIR)/jaxp
 HOTSPOT_DIR=$(TOPDIR)/hotspot
 
 # Macro to run a test target in a subdir
@@ -51,10 +52,10 @@ fi
 endef
 
 # Default test target (core)
-default: jdk_core langtools_jtreg
+default: jdk_core langtools_jtreg jaxp_all
 
 # All testing
-all: jdk_all langtools_all
+all: jdk_all langtools_all jaxp_all
 
 # Test targets
 langtools_% :
@@ -62,6 +63,9 @@ langtools_% :
 
 jdk_% core_%s svc_%:
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), TEST="$@" $@)
+
+jaxp_%:
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JAXP_DIR), TEST="$@" $@)
 
 hotspot_%:
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), TEST="$@" $@)

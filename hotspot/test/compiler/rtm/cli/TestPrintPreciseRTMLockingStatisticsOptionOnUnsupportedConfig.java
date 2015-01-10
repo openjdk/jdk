@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify PrintPreciseRTMLockingStatistics on CPUs without
  *          rtm support and/or unsupported VM.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestPrintPreciseRTMLockingStatisticsOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMTotalCountIncrRate option affects
  *          RTM locking statistics.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMTotalCountIncrRate
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
