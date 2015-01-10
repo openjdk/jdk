@@ -38,7 +38,6 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.JFrame;
@@ -49,7 +48,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import sun.awt.SunToolkit;
 import java.util.concurrent.Callable;
 
 public class bug7055065 {
@@ -57,7 +55,6 @@ public class bug7055065 {
     private static JTable table;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -67,15 +64,15 @@ public class bug7055065 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         clickCell(robot, 1, 1);
         Util.hitKeys(robot, KeyEvent.VK_BACK_SPACE, KeyEvent.VK_BACK_SPACE,
                 KeyEvent.VK_BACK_SPACE);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         clickColumnHeader(robot, 1);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         clickColumnHeader(robot, 1);
     }
 

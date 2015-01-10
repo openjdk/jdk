@@ -190,6 +190,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             nativeSetNSWindowRepresentedFilename(c.getNSWindowPtr(), filename);
         }}
     }) {
+        @SuppressWarnings("deprecation")
         public CPlatformWindow convertJComponentToTarget(final JRootPane p) {
             Component root = SwingUtilities.getRoot(p);
             if (root == null || (LWWindowPeer)root.getPeer() == null) return null;
@@ -519,6 +520,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override // PlatformWindow
+    @SuppressWarnings("deprecation")
     public void setVisible(boolean visible) {
         final long nsWindowPtr = getNSWindowPtr();
 
@@ -674,6 +676,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override  // PlatformWindow
+    @SuppressWarnings("deprecation")
     public void toFront() {
         final long nsWindowPtr = getNSWindowPtr();
         LWCToolkit lwcToolkit = (LWCToolkit) Toolkit.getDefaultToolkit();

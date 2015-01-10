@@ -111,8 +111,8 @@ hotspot$target:::gc-end
  *  arg4: uintptr_t,    the initial size of the memory pool (in bytes)
  *  arg5: uintptr_t,    the amount of memory in use in the memory pool
  *                          (in bytes)
- *  arg6: uintptr_t,    the the number of committed pages in the memory pool
- *  arg7: uintptr_t,    the the maximum size of the memory pool
+ *  arg6: uintptr_t,    the number of committed pages in the memory pool
+ *  arg7: uintptr_t,    the maximum size of the memory pool
  */
 hotspot$target:::mem-pool-gc-begin
 {

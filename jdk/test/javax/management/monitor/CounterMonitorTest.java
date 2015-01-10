@@ -68,7 +68,7 @@ public class CounterMonitorTest implements NotificationListener {
                 observedValue = count;
                 CounterMonitorTest.class.notifyAll();
             }
-            return count;
+            return observedValue;
         }
         public void setNbObjects(Object n) {
             echo(">>> StdObservedObject.setNbObjects: " + n);

@@ -587,6 +587,7 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
         Disposer_AddRecord(env, font, pDataDisposeMethod, ptr_to_jlong(fdata));
         return fdata;
     } else {
+        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
         Display *display = NULL;
         struct FontData *fdata = NULL;
         char fontSpec[1024];
@@ -722,7 +723,7 @@ static void pDataDisposeMethod(JNIEnv *env, jlong pData)
     }
 
     /* AWT fonts are always "multifonts" and probably have been in
-     * all post 1.0 releases, so this test test for multi fonts is
+     * all post 1.0 releases, so this test for multi fonts is
      * probably not needed, and the singleton xfont is probably never used.
      */
     if (fdata->charset_num > 0) {

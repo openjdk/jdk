@@ -288,7 +288,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
     }
 
     /**
-     * This passes a CachedRowSet as a row the the CachedRowSetWriter
+     * This passes a CachedRowSet as a row to the CachedRowSetWriter
      * after the values have been resolved, back to the datasource.
      *
      * @param row a <code>CachedRowSet</code> object which will hold the

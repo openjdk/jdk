@@ -97,6 +97,7 @@ final class ScreenMenuItem extends MenuItem implements ActionListener, Component
         fMenuItem.removeComponentListener(this);
     }
 
+    @SuppressWarnings("deprecation")
     static void syncLabelAndKS(MenuItem menuItem, String label, KeyStroke ks) {
         final MenuComponentPeer peer = menuItem.getPeer();
         if (!(peer instanceof CMenuItem)) {
@@ -165,6 +166,7 @@ final class ScreenMenuItem extends MenuItem implements ActionListener, Component
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void setToolTipText(final String text) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;
@@ -173,6 +175,7 @@ final class ScreenMenuItem extends MenuItem implements ActionListener, Component
         cmi.setToolTipText(text);
     }
 
+    @SuppressWarnings("deprecation")
     public void setIcon(final Icon i) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;

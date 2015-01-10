@@ -1,4 +1,4 @@
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,15 @@
 
 ${TESTJAVA}/bin/javac -cp ${TESTSRC} -d . ${TESTSRC}/BadDisplayTest.java
 
-
-DISPLAY=
-export DISPLAY
-
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    ${TESTJAVA}/bin/java ${TESTVMOPTS} BadDisplayTest
-    ;;
-  Linux )
-    ${TESTJAVA}/bin/java ${TESTVMOPTS} BadDisplayTest
-     ;;
-  * )
-    echo "Unsupported System: ${OS}"
-    exit 0;
-    ;;
+    Windows* | CYGWIN* | Darwin)
+        echo "Passed"; exit 0 ;;
 esac
 
-exit $?
+DISPLAY=SomeBadDisplay
+export DISPLAY
 
+${TESTJAVA}/bin/java ${TESTVMOPTS} BadDisplayTest
+
+exit $?

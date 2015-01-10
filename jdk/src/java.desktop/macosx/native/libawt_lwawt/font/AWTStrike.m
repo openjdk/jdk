@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,11 @@
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import "java_awt_geom_PathIterator.h"
-#import "sun_awt_SunHints.h"
 #import "sun_font_CStrike.h"
 #import "sun_font_CStrikeDisposer.h"
 #import "CGGlyphImages.h"
 #import "CGGlyphOutlines.h"
-#import "AWTStrike.h"
 #import "CoreTextSupport.h"
-//#import "jni_util.h"
 #include "fontscalerdefs.h"
 
 /* Use THIS_FILE when it is available. */
@@ -65,10 +62,10 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
         invDevTx.b *= -1;
         invDevTx.c *= -1;
         fFontTx = CGAffineTransformConcat(CGAffineTransformConcat(tx, invDevTx), sInverseTX);
-        fDevTx = CGAffineTransformInvert(invDevTx);
+        fDevTx = CGAffineTransformInvert(CGAffineTransformConcat(invDevTx, sInverseTX));
 
         // the "font size" is the square root of the determinant of the matrix
-        fSize = sqrt(abs(fFontTx.a * fFontTx.d - fFontTx.b * fFontTx.c));
+        fSize = sqrt(fabs(fFontTx.a * fFontTx.d - fFontTx.b * fFontTx.c));
     }
     return self;
 }

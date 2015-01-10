@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
+import java.security.ProviderException;
 
 /**
  * This class represents ciphers in electronic codebook (ECB) mode.
@@ -96,28 +97,24 @@ final class ElectronicCodeBook extends FeedbackCipher {
     /**
      * Performs encryption operation.
      *
-     * <p>The input plain text <code>plain</code>, starting at
-     * <code>plainOffset</code> and ending at
-     * <code>(plainOffset + len - 1)</code>, is encrypted.
-     * The result is stored in <code>cipher</code>, starting at
-     * <code>cipherOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>plainLen</code> is a multiple of the embedded cipher's block size,
-     * as any excess bytes are ignored.
-     *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
+     * <p>The input plain text <code>in</code>, starting at
+     * <code>inOff</code> and ending at * <code>(inOff + len - 1)</code>,
+     * is encrypted. The result is stored in <code>out</code>, starting at
+     * <code>outOff</code>.
      *
      * @param in the buffer with the input data to be encrypted
-     * @param inOffset the offset in <code>plain</code>
+     * @param inOff the offset in <code>plain</code>
      * @param len the length of the input data
      * @param out the buffer for the result
      * @param outOff the offset in <code>cipher</code>
+     * @exception ProviderException if <code>len</code> is not
+     * a multiple of the block size
      * @return the length of the encrypted data
      */
     int encrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
+        if ((len % blockSize) != 0) {
+             throw new ProviderException("Internal error in input buffering");
+        }
         for (int i = len; i >= blockSize; i -= blockSize) {
             embeddedCipher.encryptBlock(in, inOff, out, outOff);
             inOff += blockSize;
@@ -129,28 +126,24 @@ final class ElectronicCodeBook extends FeedbackCipher {
     /**
      * Performs decryption operation.
      *
-     * <p>The input cipher text <code>cipher</code>, starting at
-     * <code>cipherOffset</code> and ending at
-     * <code>(cipherOffset + len - 1)</code>, is decrypted.
-     * The result is stored in <code>plain</code>, starting at
-     * <code>plainOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>cipherLen</code> is a multiple of the embedded cipher's block
-     * size, as any excess bytes are ignored.
-     *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
+     * <p>The input cipher text <code>in</code>, starting at
+     * <code>inOff</code> and ending at * <code>(inOff + len - 1)</code>,
+     * is decrypted.The result is stored in <code>out</code>, starting at
+     * <code>outOff</code>.
      *
      * @param in the buffer with the input data to be decrypted
      * @param inOff the offset in <code>cipherOffset</code>
      * @param len the length of the input data
      * @param out the buffer for the result
      * @param outOff the offset in <code>plain</code>
+     * @exception ProviderException if <code>len</code> is not
+     * a multiple of the block size
      * @return the length of the decrypted data
      */
     int decrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
+        if ((len % blockSize) != 0) {
+             throw new ProviderException("Internal error in input buffering");
+        }
         for (int i = len; i >= blockSize; i -= blockSize) {
             embeddedCipher.decryptBlock(in, inOff, out, outOff);
             inOff += blockSize;

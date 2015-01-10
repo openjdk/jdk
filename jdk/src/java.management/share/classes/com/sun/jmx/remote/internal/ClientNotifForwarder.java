@@ -140,7 +140,7 @@ public abstract class ClientNotifForwarder {
     }
 
     /**
-     * Called to to fetch notifications from a server.
+     * Called to fetch notifications from a server.
      */
     abstract protected NotificationResult fetchNotifs(long clientSequenceNumber,
                                                       int maxNotifications,

@@ -53,10 +53,10 @@ public class GenericArrayTypeImpl
 
 
     /**
-     * Returns  a <tt>Type</tt> object representing the component type
+     * Returns a <tt>Type</tt> object representing the component type
      * of this array.
      *
-     * @return  a <tt>Type</tt> object representing the component type
+     * @return a <tt>Type</tt> object representing the component type
      *     of this array
      * @since 1.5
      */

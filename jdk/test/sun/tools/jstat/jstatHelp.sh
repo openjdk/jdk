@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
 #
 
 # @test
-# @bug 4990825
+# @bug 4990825 6364329
 # @run shell jstatHelp.sh
-# @summary Test that output of 'jstat -?' matches the usage.out file
+# @summary Test that output of 'jstat -?', 'jstat -help' and 'jstat' matches the usage.out file
 
 . ${TESTSRC-.}/../../jvmstat/testlibrary/utils.sh
 
@@ -38,7 +38,7 @@ ${JSTAT} -J-XX:+UsePerfData -? > jstat.out 2>&1
 diff -w jstat.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
-  echo "Output of jstat -? differ from expected output. Failed."
+  echo "Output of jstat -? differs from expected output. Failed."
   exit 1
 fi
 
@@ -48,7 +48,17 @@ ${JSTAT} -J-XX:+UsePerfData -help > jstat.out 2>&1
 diff -w jstat.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
-  echo "Output of jstat -help differ from expected output. Failed."
+  echo "Output of jstat -help differs from expected output. Failed."
+  exit 1
+fi
+
+rm -f jstat.out 2>/dev/null
+${JSTAT} -J-XX:+UsePerfData > jstat.out 2>&1
+
+diff -w jstat.out ${TESTSRC}/usage.out
+if [ $? != 0 ]
+then
+  echo "Output of jstat differs from expected output. Failed."
   exit 1
 fi
 

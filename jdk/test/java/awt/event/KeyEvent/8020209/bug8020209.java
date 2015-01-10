@@ -26,12 +26,15 @@
  * @bug 8020209
  * @summary [macosx] Mac OS X key event confusion for "COMMAND PLUS"
  * @author leonid.romanov@oracle.com
+ * @library ../../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main bug8020209
  */
 
-import sun.awt.*;
 import java.awt.*;
 import java.awt.event.*;
+
+import jdk.testlibrary.OSInfo;
 
 public class bug8020209 {
     static volatile int listenerCallCounter = 0;
@@ -43,19 +46,18 @@ public class bug8020209 {
     };
 
     public static void main(String[] args) throws Exception {
-        if (sun.awt.OSInfo.getOSType() != sun.awt.OSInfo.OSType.MACOSX) {
+        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
         createAndShowGUI();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         for (int i = 0; i < keyStrokes.length; ++i) {
             AWTKeyStroke ks = keyStrokes[i];
@@ -68,7 +70,7 @@ public class bug8020209 {
 
             robot.keyRelease(modKeyCode);
 
-            toolkit.realSync();
+            robot.waitForIdle();
 
             if (listenerCallCounter != 4) {
                 throw new Exception("Test failed: KeyListener for '" + ks.toString() +

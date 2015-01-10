@@ -344,11 +344,14 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     _last_redirty_logged_cards_time_ms.print(3, "Parallel Redirty");
     _last_redirty_logged_cards_processed_cards.print(3, "Redirtied Cards");
   }
-  if (G1ReclaimDeadHumongousObjectsAtYoungGC) {
-    print_stats(2, "Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
+  if (G1EagerReclaimHumongousObjects) {
+    print_stats(2, "Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
     if (G1Log::finest()) {
       print_stats(3, "Humongous Total", _cur_fast_reclaim_humongous_total);
       print_stats(3, "Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
+    }
+    print_stats(2, "Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
+    if (G1Log::finest()) {
       print_stats(3, "Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
     }
   }
