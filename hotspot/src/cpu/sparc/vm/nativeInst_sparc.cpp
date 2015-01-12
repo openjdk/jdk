@@ -36,11 +36,6 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-
-bool NativeInstruction::is_dtrace_trap() {
-  return !is_nop();
-}
-
 void NativeInstruction::set_data64_sethi(address instaddr, intptr_t x) {
   ResourceMark rm;
   CodeBuffer buf(instaddr, 10 * BytesPerInstWord );

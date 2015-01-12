@@ -602,7 +602,3 @@ address NativeGeneralJump::jump_destination() const {
   else
     return addr_at(0) + length + sbyte_at(offset);
 }
-
-bool NativeInstruction::is_dtrace_trap() {
-  return (*(int32_t*)this & 0xff) == 0xcc;
-}
