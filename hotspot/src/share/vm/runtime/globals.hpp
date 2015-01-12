@@ -3847,9 +3847,6 @@ class CommandLineFlags {
   product(bool, RelaxAccessControlCheck, false,                             \
           "Relax the access control checks in the verifier")                \
                                                                             \
-  diagnostic(bool, PrintDTraceDOF, false,                                   \
-          "Print the DTrace DOF passed to the system for JSDT probes")      \
-                                                                            \
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table")                 \
                                                                             \
