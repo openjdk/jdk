@@ -118,13 +118,26 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     /**
-     * Constructor called by (compiler) generated code for {@link ScriptObject}s.
+     * Factory method called by compiler generated code for functions that need parent scope.
      *
-     * @param data static function data
-     * @param scope scope object
+     * @param constants the generated class' constant array
+     * @param index the index of the {@code RecompilableScriptFunctionData} object in the constants array.
+     * @param scope the parent scope object
+     * @return a newly created function object
      */
-    public ScriptFunctionImpl(final RecompilableScriptFunctionData data, final ScriptObject scope) {
-        this(data, scope, Global.instance());
+    public static ScriptFunction create(final Object[] constants, final int index, final ScriptObject scope) {
+        return new ScriptFunctionImpl((RecompilableScriptFunctionData)constants[index], scope, Global.instance());
+    }
+
+    /**
+     * Factory method called by compiler generated code for functions that don't need parent scope.
+     *
+     * @param constants the generated class' constant array
+     * @param index the index of the {@code RecompilableScriptFunctionData} object in the constants array.
+     * @return a newly created function object
+     */
+    public static ScriptFunction create(final Object[] constants, final int index) {
+        return create(constants, index, null);
     }
 
     /**
