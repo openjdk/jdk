@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,6 +250,8 @@ enum SharedSpaceType {
 };
 
 void report_out_of_shared_space(SharedSpaceType space_type);
+
+void report_insufficient_metaspace(size_t required_size);
 
 // out of memory reporting
 void report_java_out_of_memory(const char* message);
