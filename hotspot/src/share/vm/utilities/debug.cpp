@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,6 +271,14 @@ void report_out_of_shared_space(SharedSpaceType shared_space) {
            "to increase the initial size of %s.\n",
            name[shared_space], flag[shared_space], name[shared_space]);
    exit(2);
+}
+
+void report_insufficient_metaspace(size_t required_size) {
+  warning("\nThe MaxMetaspaceSize of " UINTX_FORMAT " bytes is not large enough.\n"
+          "Either don't specify the -XX:MaxMetaspaceSize=<size>\n"
+          "or increase the size to at least " SIZE_FORMAT ".\n",
+          MaxMetaspaceSize, required_size);
+  exit(2);
 }
 
 void report_java_out_of_memory(const char* message) {
