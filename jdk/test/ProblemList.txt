@@ -293,6 +293,9 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 # 8058616
 com/sun/jdi/RedefinePop.sh                                      generic-all
 
+# 8068645
+com/sun/jdi/CatchPatternTest.sh                                 generic-all
+
 ############################################################################
 
 # jdk_util
