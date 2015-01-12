@@ -184,7 +184,7 @@ public final class JavaAdapterFactory {
         final ClassAndLoader definingClassAndLoader = ClassAndLoader.getDefiningClassAndLoader(types);
 
         final Map<List<Class<?>>, AdapterInfo> adapterInfoMap = ADAPTER_INFO_MAPS.get(definingClassAndLoader.getRepresentativeClass());
-        final List<Class<?>> typeList = types.length == 1 ? getSingletonClassList(types[0]) : Arrays.asList(types.clone());
+        final List<Class<?>> typeList = types.length == 1 ? Collections.<Class<?>>singletonList(types[0]) : Arrays.asList(types.clone());
         AdapterInfo adapterInfo;
         synchronized(adapterInfoMap) {
             adapterInfo = adapterInfoMap.get(typeList);
@@ -194,11 +194,6 @@ public final class JavaAdapterFactory {
             }
         }
         return adapterInfo;
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static List<Class<?>> getSingletonClassList(final Class<?> clazz) {
-        return (List)Collections.singletonList(clazz);
     }
 
    /**
@@ -241,6 +236,8 @@ public final class JavaAdapterFactory {
                     return new AdapterInfo(effectiveSuperClass, interfaces, definingClassAndLoader);
                 } catch (final AdaptationException e) {
                     return new AdapterInfo(e.getAdaptationResult());
+                } catch (final RuntimeException e) {
+                    return new AdapterInfo(new AdaptationResult(AdaptationResult.Outcome.ERROR_OTHER, Arrays.toString(types), e.toString()));
                 }
             }
         }, CREATE_ADAPTER_INFO_ACC_CTXT);
