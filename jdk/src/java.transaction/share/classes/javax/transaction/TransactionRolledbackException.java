@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/*
+ * Licensed Materials - Property of IBM
+ * RMI-IIOP v1.0
+ * Copyright IBM Corp. 1998 1999  All Rights Reserved
+ *
+ */
 
-package java.lang;
-
-import java.lang.annotation.*;
-import static java.lang.annotation.ElementType.*;
+package javax.transaction;
 
 /**
- * A program element annotated &#64;Deprecated is one that programmers
- * are discouraged from using, typically because it is dangerous,
- * or because a better alternative exists.  Compilers warn when a
- * deprecated program element is used or overridden in non-deprecated code.
- *
- * <p>Use of the &#64;Deprecated annotation on a local variable
- * declaration or on a parameter declaration or a package declaration
- * has no effect.
- *
- * @author  Neal Gafter
- * @since 1.5
- * @jls 9.6.4.6 @Deprecated
+ * This exception indicates that the transaction associated with processing
+ * of the request has been rolled back, or marked to roll back. Thus the
+ * requested operation either could not be performed or was not performed
+ * because further computation on behalf of the transaction would be
+ * fruitless
  */
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target(value={CONSTRUCTOR, FIELD, LOCAL_VARIABLE, METHOD, PACKAGE, PARAMETER, TYPE})
-public @interface Deprecated {
+@SuppressWarnings("serial")             // serialVersionUID intentionally omitted
+public class TransactionRolledbackException extends java.rmi.RemoteException {
+
+    public TransactionRolledbackException() {
+        super();
+    }
+
+    public TransactionRolledbackException(String msg) {
+        super(msg);
+    }
 }

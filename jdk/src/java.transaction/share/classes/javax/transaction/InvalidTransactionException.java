@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/*
+ * Licensed Materials - Property of IBM
+ * RMI-IIOP v1.0
+ * Copyright IBM Corp. 1998 1999  All Rights Reserved
+ *
+ */
 
-package java.lang;
-
-import java.lang.annotation.*;
-import static java.lang.annotation.ElementType.*;
+package javax.transaction;
 
 /**
- * A program element annotated &#64;Deprecated is one that programmers
- * are discouraged from using, typically because it is dangerous,
- * or because a better alternative exists.  Compilers warn when a
- * deprecated program element is used or overridden in non-deprecated code.
- *
- * <p>Use of the &#64;Deprecated annotation on a local variable
- * declaration or on a parameter declaration or a package declaration
- * has no effect.
- *
- * @author  Neal Gafter
- * @since 1.5
- * @jls 9.6.4.6 @Deprecated
+ * This exception indicates that the request carried an invalid transaction
+ * context. For example, this exception could be raised if an error
+ * occured when trying to register a resource.
  */
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target(value={CONSTRUCTOR, FIELD, LOCAL_VARIABLE, METHOD, PACKAGE, PARAMETER, TYPE})
-public @interface Deprecated {
+@SuppressWarnings("serial")             // serialVersionUID intentionally omitted
+public class InvalidTransactionException extends java.rmi.RemoteException {
+
+    public InvalidTransactionException() {
+        super();
+    }
+
+    public InvalidTransactionException(String msg) {
+        super(msg);
+    }
 }
