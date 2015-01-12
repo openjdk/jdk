@@ -107,8 +107,8 @@ public class TestGCLogMessages {
 
   private static void testWithToSpaceExhaustionLogs() throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xmx10M",
-                                               "-Xmn5M",
+                                               "-Xmx32M",
+                                               "-Xmn16M",
                                                "-XX:+PrintGCDetails",
                                                GCTestWithToSpaceExhaustion.class.getName());
 
@@ -120,8 +120,8 @@ public class TestGCLogMessages {
     output.shouldHaveExitValue(0);
 
     pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xmx10M",
-                                               "-Xmn5M",
+                                               "-Xmx32M",
+                                               "-Xmn16M",
                                                "-XX:+PrintGCDetails",
                                                "-XX:+UnlockExperimentalVMOptions",
                                                "-XX:G1LogLevel=finest",
@@ -151,7 +151,7 @@ public class TestGCLogMessages {
     private static byte[] garbage;
     private static byte[] largeObject;
     public static void main(String [] args) {
-      largeObject = new byte[5*1024*1024];
+      largeObject = new byte[16*1024*1024];
       System.out.println("Creating garbage");
       // create 128MB of garbage. This should result in at least one GC,
       // some of them with to-space exhaustion.
