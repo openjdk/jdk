@@ -48,28 +48,25 @@ final class AdaptationResult {
         ERROR_NO_ACCESSIBLE_CONSTRUCTOR,
         ERROR_MULTIPLE_SUPERCLASSES,
         ERROR_NO_COMMON_LOADER,
-        ERROR_FINAL_FINALIZER
+        ERROR_FINAL_FINALIZER,
+        ERROR_OTHER
     }
 
     static final AdaptationResult SUCCESSFUL_RESULT = new AdaptationResult(Outcome.SUCCESS, "");
 
     private final Outcome outcome;
-    private final String classList;
+    private final String[] messageArgs;
 
-    AdaptationResult(final Outcome outcome, final String classList) {
+    AdaptationResult(final Outcome outcome, final String... messageArgs) {
         this.outcome = outcome;
-        this.classList = classList;
+        this.messageArgs = messageArgs;
     }
 
     Outcome getOutcome() {
         return outcome;
     }
 
-    String getClassList() {
-        return classList;
-    }
-
     ECMAException typeError() {
-        return ECMAErrors.typeError("extend." + outcome, classList);
+        return ECMAErrors.typeError("extend." + outcome, messageArgs);
     }
 }
