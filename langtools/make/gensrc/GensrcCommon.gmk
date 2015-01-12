@@ -35,6 +35,11 @@ include JavaCompilation.gmk
 TOOL_COMPILEPROPS_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
     compileproperties.CompileProperties -quiet
 
+################################################################################
+# The compileprops tools compiles a properties file into an enum-like class.
+TOOL_PARSEPROPS_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
+    propertiesparser.PropertiesParser
+
 
 ################################################################################
 # Sets up a rule that creates a version.properties file in the gensrc output
@@ -90,6 +95,35 @@ define SetupCompileProperties
 	$(TOUCH) $$@
 
   $$(strip $1) += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_props
+endef
+
+################################################################################
+# Parse property files in given location and generate a Java-like enum in the gensrc folder.
+# Param 1 - Variable to add targets to
+# Param 2 - Extra properties files to process
+define SetupParseProperties
+  #property file to generate
+  PARSEPROPSOURCES := $$(foreach var,$2,$$(addsuffix $$(var),$(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes/))  
+
+  PARSEPROPALLDIRS := $$(patsubst $(LANGTOOLS_TOPDIR)/src/%, \
+      $(SUPPORT_OUTPUTDIR)/gensrc/%, \
+      $$(dir $$(PARSEPROPSOURCES)))
+
+  PARSEPROPDIRS := $$(sort $$(PARSEPROPALLDIRS))
+
+  PARSEPROPCMDLINE := $$(subst _SPACE_, $$(SPACE), \
+    $$(join $$(foreach var,$$(PARSEPROPSOURCES),$$(addprefix -compile_SPACE_,$$(var))), \
+    $$(addprefix _SPACE_, $$(PARSEPROPALLDIRS))))
+  
+  # Now setup the rule for the generation of the resource bundles.
+  $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props: $(PARSEPROPSOURCES)
+	$(CP) -r $(LANGTOOLS_TOPDIR)/make/tools/propertiesparser/resources $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes/propertiesparser/resources
+	$(MKDIR) -p $$(@D) $$(PARSEPROPDIRS)
+	$(ECHO) Parsing $$(words $$(PARSEPROPSOURCES)) properties into enum-like class for $(MODULE)
+	$(TOOL_PARSEPROPS_CMD) $$(PARSEPROPCMDLINE)
+	$(TOUCH) $$@
+
+  $$(strip $1) += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props
 endef
 
 ################################################################################

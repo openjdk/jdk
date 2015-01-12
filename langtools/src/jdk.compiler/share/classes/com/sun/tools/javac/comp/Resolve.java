@@ -39,7 +39,6 @@ import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
-import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.DiagnosticRewriter;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.Template;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option;
@@ -55,11 +54,12 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BiPredicate;
+import java.util.stream.Stream;
 
 import javax.lang.model.element.ElementVisitor;
 
@@ -1008,7 +1008,7 @@ public class Resolve {
                 DeferredType dt = (DeferredType)found;
                 return dt.check(this);
             } else {
-                Type uResult = U(found.baseType());
+                Type uResult = U(found);
                 Type capturedType = pos == null || pos.getTree() == null ?
                         types.capture(uResult) :
                         checkContext.inferenceContext()
@@ -2546,17 +2546,7 @@ public class Resolve {
                                 final JCDiagnostic details = sym.kind == WRONG_MTH ?
                                                 ((InapplicableSymbolError)sym.baseSymbol()).errCandidate().snd :
                                                 null;
-                                sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
-                                    @Override
-                                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
-                                            Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-                                        String key = details == null ?
-                                            "cant.apply.diamond" :
-                                            "cant.apply.diamond.1";
-                                        return diags.create(dkind, log.currentSource(), pos, key,
-                                                diags.fragment("diamond", site.tsym), details);
-                                    }
-                                };
+                                sym = new DiamondError(sym, currentResolutionContext);
                                 sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
                                 env.info.pendingResolutionPhase = currentResolutionContext.step;
                             }
@@ -3724,15 +3714,10 @@ public class Resolve {
             else {
                 Pair<Symbol, JCDiagnostic> c = errCandidate();
                 if (compactMethodDiags) {
-                    for (Map.Entry<Template, DiagnosticRewriter> _entry :
-                            MethodResolutionDiagHelper.rewriters.entrySet()) {
-                        if (_entry.getKey().matches(c.snd)) {
-                            JCDiagnostic simpleDiag =
-                                    _entry.getValue().rewriteDiagnostic(diags, pos,
-                                        log.currentSource(), dkind, c.snd);
-                            simpleDiag.setFlag(DiagnosticFlag.COMPRESSED);
-                            return simpleDiag;
-                        }
+                    JCDiagnostic simpleDiag =
+                        MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd);
+                    if (simpleDiag != null) {
+                        return simpleDiag;
                     }
                 }
                 Symbol ws = c.fst.asMemberOf(site, types);
@@ -3765,9 +3750,8 @@ public class Resolve {
     }
 
     /**
-     * ResolveError error class indicating that a set of symbols
-     * (either methods, constructors or operands) is not applicable
-     * given an actual arguments/type argument list.
+     * ResolveError error class indicating that a symbol (either methods, constructors or operand)
+     * is not applicable given an actual arguments/type argument list.
      */
     class InapplicableSymbolsError extends InapplicableSymbolError {
 
@@ -3861,6 +3845,44 @@ public class Resolve {
                 //conform to source order
                 return details;
             }
+    }
+
+    /**
+     * DiamondError error class indicating that a constructor symbol is not applicable
+     * given an actual arguments/type argument list using diamond inference.
+     */
+    class DiamondError extends InapplicableSymbolError {
+
+        Symbol sym;
+
+        public DiamondError(Symbol sym, MethodResolutionContext context) {
+            super(sym.kind, "diamondError", context);
+            this.sym = sym;
+        }
+
+        JCDiagnostic getDetails() {
+            return (sym.kind == WRONG_MTH) ?
+                    ((InapplicableSymbolError)sym.baseSymbol()).errCandidate().snd :
+                    null;
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
+                Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+            JCDiagnostic details = getDetails();
+            if (details != null && compactMethodDiags) {
+                JCDiagnostic simpleDiag =
+                        MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, details);
+                if (simpleDiag != null) {
+                    return simpleDiag;
+                }
+            }
+            String key = details == null ?
+                "cant.apply.diamond" :
+                "cant.apply.diamond.1";
+            return diags.create(dkind, log.currentSource(), pos, key,
+                    diags.fragment("diamond", site.tsym), details);
+        }
     }
 
     /**
@@ -4146,6 +4168,28 @@ public class Resolve {
             }
         }
 
+        /**
+         * Common rewriter for all argument mismatch simplifications.
+         */
+        static class ArgMismatchRewriter implements DiagnosticRewriter {
+
+            /** the index of the subdiagnostic to be used as primary. */
+            int causeIndex;
+
+            public ArgMismatchRewriter(int causeIndex) {
+                this.causeIndex = causeIndex;
+            }
+
+            @Override
+            public JCDiagnostic rewriteDiagnostic(JCDiagnostic.Factory diags,
+                    DiagnosticPosition preferedPos, DiagnosticSource preferredSource,
+                    DiagnosticType preferredKind, JCDiagnostic d) {
+                JCDiagnostic cause = (JCDiagnostic)d.getArgs()[causeIndex];
+                return diags.create(preferredKind, preferredSource, d.getDiagnosticPosition(),
+                        "prob.found.req", cause);
+            }
+        }
+
         /** a dummy template that match any diagnostic argument */
         static final Template skip = new Template("") {
             @Override
@@ -4154,22 +4198,61 @@ public class Resolve {
             }
         };
 
+        /** template for matching inference-free arguments mismatch failures */
+        static final Template argMismatchTemplate = new Template(MethodCheckDiag.ARG_MISMATCH.regex(), skip);
+
+        /** template for matching inference related arguments mismatch failures */
+        static final Template inferArgMismatchTemplate = new Template(MethodCheckDiag.ARG_MISMATCH.regex(), skip, skip) {
+            @Override
+            boolean matches(Object o) {
+                if (!super.matches(o)) {
+                    return false;
+                }
+                JCDiagnostic d = (JCDiagnostic)o;
+                @SuppressWarnings("unchecked")
+                List<Type> tvars = (List<Type>)d.getArgs()[0];
+                return !containsAny(d, tvars);
+            }
+
+            BiPredicate<Object, List<Type>> containsPredicate = (o, ts) -> {
+                if (o instanceof Type) {
+                    return ((Type)o).containsAny(ts);
+                } else if (o instanceof JCDiagnostic) {
+                    return containsAny((JCDiagnostic)o, ts);
+                } else {
+                    return false;
+                }
+            };
+
+            boolean containsAny(JCDiagnostic d, List<Type> ts) {
+                return Stream.of(d.getArgs())
+                        .anyMatch(o -> containsPredicate.test(o, ts));
+            }
+        };
+
         /** rewriter map used for method resolution simplification */
         static final Map<Template, DiagnosticRewriter> rewriters = new LinkedHashMap<>();
 
         static {
-            String argMismatchRegex = MethodCheckDiag.ARG_MISMATCH.regex();
-            rewriters.put(new Template(argMismatchRegex, skip),
-                    new DiagnosticRewriter() {
-                @Override
-                public JCDiagnostic rewriteDiagnostic(JCDiagnostic.Factory diags,
-                        DiagnosticPosition preferedPos, DiagnosticSource preferredSource,
-                        DiagnosticType preferredKind, JCDiagnostic d) {
-                    JCDiagnostic cause = (JCDiagnostic)d.getArgs()[0];
-                    return diags.create(preferredKind, preferredSource, d.getDiagnosticPosition(),
-                            "prob.found.req", cause);
+            rewriters.put(argMismatchTemplate, new ArgMismatchRewriter(0));
+            rewriters.put(inferArgMismatchTemplate, new ArgMismatchRewriter(1));
+        }
+
+        /**
+         * Main entry point for diagnostic rewriting - given a diagnostic, see if any templates matches it,
+         * and rewrite it accordingly.
+         */
+        static JCDiagnostic rewrite(JCDiagnostic.Factory diags, DiagnosticPosition pos, DiagnosticSource source,
+                                    DiagnosticType dkind, JCDiagnostic d) {
+            for (Map.Entry<Template, DiagnosticRewriter> _entry : rewriters.entrySet()) {
+                if (_entry.getKey().matches(d)) {
+                    JCDiagnostic simpleDiag =
+                            _entry.getValue().rewriteDiagnostic(diags, pos, source, dkind, d);
+                    simpleDiag.setFlag(DiagnosticFlag.COMPRESSED);
+                    return simpleDiag;
                 }
-            });
+            }
+            return null;
         }
     }
 
