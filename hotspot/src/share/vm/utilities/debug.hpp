@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,21 +225,22 @@ void report_untested(const char* file, int line, const char* message);
 
 void warning(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
 
-#ifdef ASSERT
-// Compile-time asserts.
-template <bool> struct StaticAssert;
-template <> struct StaticAssert<true> {};
+// Compile-time asserts.  Cond must be a compile-time constant expression that
+// is convertible to bool.  STATIC_ASSERT() can be used anywhere a declaration
+// may appear.
+//
+// Implementation Note: STATIC_ASSERT_FAILURE<true> provides a value member
+// rather than type member that could be used directly in the typedef, because
+// a type member would require conditional use of "typename", depending on
+// whether Cond is dependent or not.  The use of a value member leads to the
+// use of an array type.
 
-// Only StaticAssert<true> is defined, so if cond evaluates to false we get
-// a compile time exception when trying to use StaticAssert<false>.
-#define STATIC_ASSERT(cond)                   \
-  do {                                        \
-    StaticAssert<(cond)> DUMMY_STATIC_ASSERT; \
-    (void)DUMMY_STATIC_ASSERT; /* ignore */   \
-  } while (false)
-#else
-#define STATIC_ASSERT(cond)
-#endif
+template<bool x> struct STATIC_ASSERT_FAILURE;
+template<> struct STATIC_ASSERT_FAILURE<true> { enum { value = 1 }; };
+
+#define STATIC_ASSERT(Cond)                             \
+  typedef char STATIC_ASSERT_FAILURE_ ## __LINE__ [     \
+    STATIC_ASSERT_FAILURE< (Cond) >::value ]
 
 // out of shared space reporting
 enum SharedSpaceType {
