@@ -44,7 +44,10 @@ import jdk.nashorn.internal.runtime.Version;
  * </ul>
  * Programs executing in engines created using {@link #getScriptEngine(String[])} will have the passed arguments
  * accessible as a global variable named {@code "arguments"}.
+ *
+ * @since 1.8u40
  */
+@jdk.Exported
 public final class NashornScriptEngineFactory implements ScriptEngineFactory {
     @Override
     public String getEngineName() {
@@ -120,7 +123,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
             // used to execute scripts concurrently on multiple threads.
             return null;
         default:
-            throw new IllegalArgumentException("Invalid key");
+            return null;
         }
     }
 

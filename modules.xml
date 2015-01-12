@@ -482,6 +482,7 @@
     <depend>java.logging</depend>
     <depend>java.naming</depend>
     <depend re-exports="true">java.rmi</depend>
+    <depend>java.transaction</depend>
     <export>
       <name>javax.activity</name>
     </export>
@@ -490,9 +491,6 @@
     </export>
     <export>
       <name>javax.rmi.CORBA</name>
-    </export>
-    <export>
-      <name>javax.transaction</name>
     </export>
     <export>
       <name>org.omg.CORBA</name>
@@ -888,8 +886,8 @@
     <depend re-exports="true">java.compact3</depend>
     <depend re-exports="true">java.corba</depend>
     <depend re-exports="true">java.desktop</depend>
+    <depend re-exports="true">java.transaction</depend>
     <depend re-exports="true">java.xml.bind</depend>
-    <depend re-exports="true">java.xml.soap</depend>
     <depend re-exports="true">java.xml.ws</depend>
   </module>
   <module>
@@ -982,6 +980,14 @@
     </export>
   </module>
   <module>
+    <name>java.transaction</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.rmi</depend>
+    <export>
+      <name>javax.transaction</name>
+    </export>
+  </module>
+  <module>
     <name>java.xml</name>
     <depend>java.base</depend>
     <export>
@@ -1056,17 +1062,17 @@
     <export>
       <name>org.xml.sax.helpers</name>
     </export>
-    <export>
-      <name>com.sun.org.apache.xerces.internal.dom</name>
-      <to>java.xml.soap</to>
-    </export>
-    <export>
-      <name>com.sun.org.apache.xerces.internal.jaxp</name>
-      <to>java.xml.soap</to>
-    </export>
-    <export>
-      <name>com.sun.org.apache.xerces.internal.util</name>
-      <to>java.xml.soap</to>
+     <export>
+       <name>com.sun.org.apache.xerces.internal.dom</name>
+       <to>java.xml.ws</to>
+     </export>
+     <export>
+       <name>com.sun.org.apache.xerces.internal.jaxp</name>
+       <to>java.xml.ws</to>
+     </export>
+     <export>
+       <name>com.sun.org.apache.xerces.internal.util</name>
+       <to>java.xml.ws</to>
     </export>
     <export>
       <name>com.sun.org.apache.xml.internal.dtm</name>
@@ -1262,17 +1268,14 @@
     </export>
     <export>
       <name>com.sun.xml.internal.org.jvnet.mimepull</name>
-      <to>java.xml.soap</to>
       <to>java.xml.ws</to>
     </export>
     <export>
       <name>com.sun.xml.internal.org.jvnet.staxex</name>
-      <to>java.xml.soap</to>
       <to>java.xml.ws</to>
     </export>
     <export>
       <name>com.sun.xml.internal.org.jvnet.staxex.util</name>
-      <to>java.xml.soap</to>
       <to>java.xml.ws</to>
     </export>
     <export>
@@ -1319,35 +1322,25 @@
     </export>
   </module>
   <module>
-    <name>java.xml.soap</name>
-    <depend re-exports="true">java.activation</depend>
-    <depend>java.base</depend>
-    <depend>java.desktop</depend>
-    <depend>java.logging</depend>
-    <depend re-exports="true">java.xml</depend>
-    <depend>java.xml.bind</depend>
-    <export>
-      <name>javax.xml.soap</name>
-    </export>
-  </module>
-  <module>
     <name>java.xml.ws</name>
-    <depend>java.activation</depend>
     <depend>java.annotations.common</depend>
     <depend>java.base</depend>
     <depend>java.desktop</depend>
     <depend>java.logging</depend>
     <depend>java.management</depend>
     <depend>java.rmi</depend>
+    <depend re-exports="true">java.activation</depend>
     <depend re-exports="true">java.xml</depend>
     <depend re-exports="true">java.xml.bind</depend>
-    <depend re-exports="true">java.xml.soap</depend>
     <depend>jdk.httpserver</depend>
     <export>
       <name>javax.jws</name>
     </export>
     <export>
       <name>javax.jws.soap</name>
+    </export>
+    <export>
+      <name>javax.xml.soap</name>
     </export>
     <export>
       <name>javax.xml.ws</name>

@@ -41,7 +41,10 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * script object or Java access to script object properties via java.util.Map
  * interface. In these cases, user code will get an instance of this or
  * implementation defined subclass.
+ *
+ * @since 1.8u40
  */
+@jdk.Exported
 @SuppressWarnings("serial")
 public abstract class NashornException extends RuntimeException {
     // script file name
