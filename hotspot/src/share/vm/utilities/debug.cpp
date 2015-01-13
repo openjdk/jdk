@@ -334,9 +334,9 @@ void test_error_handler() {
 
   // Keep this in sync with test/runtime/6888954/vmerrors.sh.
   switch (n) {
-    case  1: assert(str == NULL, "expected null");
-    case  2: assert(num == 1023 && *str == 'X',
-                    err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
+    case  1: vmassert(str == NULL, "expected null");
+    case  2: vmassert(num == 1023 && *str == 'X',
+                      err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
     case  3: guarantee(str == NULL, "expected null");
     case  4: guarantee(num == 1023 && *str == 'X',
                        err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
