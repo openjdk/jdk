@@ -105,58 +105,42 @@ void FormatBuffer<bufsz>::append(const char* format, ...) {
   va_end(argp);
 }
 
-// Used to format messages for assert(), guarantee(), fatal(), etc.
+// Used to format messages for vmassert(), guarantee(), fatal(), etc.
 typedef FormatBuffer<> err_msg;
 typedef FormatBufferResource err_msg_res;
 
 // assertions
-#ifdef ASSERT
-#ifndef USE_REPEATED_ASSERTS
-#define assert(p, msg)                                                       \
+#ifndef ASSERT
+#define vmassert(p, msg)
+#else
+// Note: message says "assert" rather than "vmassert" for backward
+// compatibility with tools that parse/match the message text.
+#define vmassert(p, msg)                                                     \
 do {                                                                         \
   if (!(p)) {                                                                \
     report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", msg);       \
     BREAKPOINT;                                                              \
   }                                                                          \
 } while (0)
-#else // #ifndef USE_REPEATED_ASSERTS
-#define assert(p, msg)
-do {                                                                         \
-  for (int __i = 0; __i < AssertRepeat; __i++) {                             \
-    if (!(p)) {                                                              \
-      report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", msg);     \
-      BREAKPOINT;                                                            \
-    }                                                                        \
-  }                                                                          \
-} while (0)
-#endif // #ifndef USE_REPEATED_ASSERTS
+#endif
 
-// This version of assert is for use with checking return status from
+// For backward compatibility.
+#define assert(p, msg) vmassert(p, msg)
+
+// This version of vmassert is for use with checking return status from
 // library calls that return actual error values eg. EINVAL,
 // ENOMEM etc, rather than returning -1 and setting errno.
 // When the status is not what is expected it is very useful to know
 // what status was actually returned, so we pass the status variable as
 // an extra arg and use strerror to convert it to a meaningful string
 // like "Invalid argument", "out of memory" etc
-#define assert_status(p, status, msg)                                        \
-do {                                                                         \
-  if (!(p)) {                                                                \
-    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed",             \
-                    err_msg("error %s(%d) %s", strerror(status),             \
-                            status, msg));                                   \
-    BREAKPOINT;                                                              \
-  }                                                                          \
-} while (0)
+#define vmassert_status(p, status, msg) \
+  vmassert(p, err_msg("error %s(%d), %s", strerror(status), status, msg))
 
-// Do not assert this condition if there's already another error reported.
-#define assert_if_no_error(cond,msg) assert((cond) || is_error_reported(), msg)
-#else // #ifdef ASSERT
-  #define assert(p,msg)
-  #define assert_status(p,status,msg)
-  #define assert_if_no_error(cond,msg)
-#endif // #ifdef ASSERT
+// For backward compatibility.
+#define assert_status(p, status, msg) vmassert_status(p, status, msg)
 
-// guarantee is like assert except it's always executed -- use it for
+// guarantee is like vmassert except it's always executed -- use it for
 // cheap tests that catch errors that would otherwise be hard to find.
 // guarantee is also used for Verify options.
 #define guarantee(p, msg)                                                    \
@@ -260,7 +244,7 @@ void report_java_out_of_memory(const char* message);
 bool is_error_reported();
 void set_error_reported();
 
-/* Test assert(), fatal(), guarantee(), etc. */
+/* Test vmassert(), fatal(), guarantee(), etc. */
 NOT_PRODUCT(void test_error_handler();)
 
 void pd_ps(frame f);
