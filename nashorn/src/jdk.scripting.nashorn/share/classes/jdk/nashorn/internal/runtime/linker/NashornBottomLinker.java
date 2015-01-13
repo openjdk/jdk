@@ -30,9 +30,6 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -45,7 +42,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
@@ -95,22 +91,6 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
             }
             throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         case "call":
-            // Support dyn:call on any object that supports some @FunctionalInterface
-            // annotated interface. This way Java method, constructor references or
-            // implementations of java.util.function.* interfaces can be called as though
-            // those are script functions.
-            final Method m = getFunctionalInterfaceMethod(self.getClass());
-            if (m != null) {
-                final MethodType callType = desc.getMethodType();
-                // 'callee' and 'thiz' passed from script + actual arguments
-                if (callType.parameterCount() != m.getParameterCount() + 2) {
-                    throw typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
-                }
-                return Bootstrap.asTypeSafeReturn(new GuardedInvocation(
-                        // drop 'thiz' passed from the script.
-                        MH.dropArguments(desc.getLookup().unreflect(m), 1, callType.parameterType(1)),
-                        Guards.getInstanceOfGuard(m.getDeclaringClass())), linkerServices, desc);
-            }
             if(BeansLinker.isDynamicConstructor(self)) {
                 throw typeError("constructor.requires.new", ScriptRuntime.safeToString(self));
             }
@@ -217,45 +197,5 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
             return desc.getNameToken(2);
         }
         return ScriptRuntime.safeToString(linkRequest.getArguments()[1]);
-    }
-
-    // cache of @FunctionalInterface method of implementor classes
-    private static final ClassValue<Method> FUNCTIONAL_IFACE_METHOD = new ClassValue<Method>() {
-        @Override
-        protected Method computeValue(final Class<?> type) {
-            return findFunctionalInterfaceMethod(type);
-        }
-
-        private Method findFunctionalInterfaceMethod(final Class<?> clazz) {
-            if (clazz == null) {
-                return null;
-            }
-
-            for (final Class<?> iface : clazz.getInterfaces()) {
-                // check accessiblity up-front
-                if (! Context.isAccessibleClass(iface)) {
-                    continue;
-                }
-
-                // check for @FunctionalInterface
-                if (iface.isAnnotationPresent(FunctionalInterface.class)) {
-                    // return the first abstract method
-                    for (final Method m : iface.getMethods()) {
-                        if (Modifier.isAbstract(m.getModifiers())) {
-                            return m;
-                        }
-                    }
-                }
-            }
-
-            // did not find here, try super class
-            return findFunctionalInterfaceMethod(clazz.getSuperclass());
-        }
-    };
-
-    // Returns @FunctionalInterface annotated interface's single abstract
-    // method. If not found, returns null.
-    static Method getFunctionalInterfaceMethod(final Class<?> clazz) {
-        return FUNCTIONAL_IFACE_METHOD.get(clazz);
     }
 }
