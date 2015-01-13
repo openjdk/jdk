@@ -805,13 +805,13 @@ public class Types {
             return true;
         }
 
-        // Generally, if 's' is a type variable, recur on lower bound; but
+        // Generally, if 's' is a lower-bounded type variable, recur on lower bound; but
         // for inference variables and intersections, we need to keep 's'
         // (see JLS 4.10.2 for intersections and 18.2.3 for inference vars)
         if (!t.hasTag(UNDETVAR) && !t.isCompound()) {
             // TODO: JDK-8039198, bounds checking sometimes passes in a wildcard as s
             Type lower = cvarLowerBound(wildLowerBound(s));
-            if (s != lower)
+            if (s != lower && !lower.hasTag(BOT))
                 return isSubtype(capture ? capture(t) : t, lower, false);
         }
 
