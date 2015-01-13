@@ -774,7 +774,9 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     }
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == NULL) {
-      record_method_not_compilable("method parse failed");
+      if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {
+        record_method_not_compilable("method parse failed");
+      }
       return;
     }
     GraphKit kit(jvms);
