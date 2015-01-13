@@ -26,14 +26,17 @@ package sun.jvm.hotspot.debugger.linux;
 
 import java.io.*;
 import java.util.*;
+
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.sparc.*;
+import sun.jvm.hotspot.debugger.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.x86.*;
 import sun.jvm.hotspot.debugger.linux.amd64.*;
 import sun.jvm.hotspot.debugger.linux.sparc.*;
+import sun.jvm.hotspot.debugger.linux.ppc64.*;
 import sun.jvm.hotspot.utilities.*;
 
 class LinuxCDebugger implements CDebugger {
@@ -96,7 +99,14 @@ class LinuxCDebugger implements CDebugger {
        Address pc  = context.getRegisterAsAddress(SPARCThreadContext.R_O7);
        if (pc == null) return null;
        return new LinuxSPARCCFrame(dbg, sp, pc, LinuxDebuggerLocal.getAddressSize());
-    } else {
+    }  else if (cpu.equals("ppc64")) {
+        PPC64ThreadContext context = (PPC64ThreadContext) thread.getContext();
+        Address sp = context.getRegisterAsAddress(PPC64ThreadContext.SP);
+        if (sp == null) return null;
+        Address pc  = context.getRegisterAsAddress(PPC64ThreadContext.PC);
+        if (pc == null) return null;
+        return new LinuxPPC64CFrame(dbg, sp, pc, LinuxDebuggerLocal.getAddressSize());
+     } else {
        // Runtime exception thrown by LinuxThreadContextFactory if unknown cpu
        ThreadContext context = (ThreadContext) thread.getContext();
        return context.getTopFrame(dbg);
