@@ -875,11 +875,9 @@ public class LambdaToMethod extends TreeTranslator {
          */
         private JCExpression expressionInvoke(VarSymbol rcvr) {
             JCExpression qualifier =
-                    tree.sym.isStatic() ?
-                        make.Type(tree.sym.owner.type) :
-                        (rcvr != null) ?
-                            makeReceiver(rcvr) :
-                            tree.getQualifierExpression();
+                    (rcvr != null) ?
+                        makeReceiver(rcvr) :
+                        tree.getQualifierExpression();
 
             //create the qualifier expression
             JCFieldAccess select = make.Select(qualifier, tree.sym.name);
