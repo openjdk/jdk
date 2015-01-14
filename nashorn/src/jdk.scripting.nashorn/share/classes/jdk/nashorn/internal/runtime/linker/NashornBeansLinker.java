@@ -101,7 +101,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
             return invocation == null ? null : invocation.filterArguments(0, FILTER_CONSSTRING);
         }
 
-        if ("call".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
+        if (self != null && "call".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
             // Support dyn:call on any object that supports some @FunctionalInterface
             // annotated interface. This way Java method, constructor references or
             // implementations of java.util.function.* interfaces can be called as though
