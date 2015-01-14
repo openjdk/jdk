@@ -171,11 +171,11 @@ $(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).so
 		./lib$(GENOFFS).so
 
 CONDITIONALLY_UPDATE_JVMOFFS_TARGET = \
-	cmp -s $@ $@.tmp; \
-	case $$? in \
-	0) rm -f $@.tmp;; \
-	*) rm -f $@ && mv $@.tmp $@ && echo Updated $@;; \
-	esac
+	if cmp -s $@ $@.tmp; then \
+	  rm -f $@.tmp; \
+	else \
+	  rm -f $@ && mv $@.tmp $@ && echo Updated $@; \
+	fi
 
 # $@.tmp is created first to avoid an empty $(JVMOFFS).h if an error occurs.
 $(JVMOFFS).h: $(GENOFFS)
