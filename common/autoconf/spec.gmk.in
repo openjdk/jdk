@@ -78,6 +78,11 @@ endif
 OUTPUT_SYNC_SUPPORTED:=@OUTPUT_SYNC_SUPPORTED@
 OUTPUT_SYNC:=@OUTPUT_SYNC@
 
+# Override the shell with bash
+BASH:=@BASH@
+BASH_ARGS:=@BASH_ARGS@
+SHELL:=$(BASH) $(BASH_ARGS)
+
 # The "human readable" name of this configuration
 CONF_NAME:=@CONF_NAME@
 
@@ -495,7 +500,6 @@ endif
 # Tools adhering to a minimal and common standard of posix compliance.
 AWK:=@AWK@
 BASENAME:=@BASENAME@
-BASH:=@BASH@
 CAT:=@CAT@
 CCACHE:=@CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
