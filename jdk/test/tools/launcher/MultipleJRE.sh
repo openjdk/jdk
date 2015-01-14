@@ -90,36 +90,6 @@ TestSyntax() {
 }
 
 #
-# Shell routine to ensure help page does not include mjre options
-#
-TestHelp() {
-    mess="`$JAVA -help 2>&1`"
-    # make sure it worked
-    if [ $? -ne 0 ]; then
-        echo "java -help failed ????"
-        exit 1
-    fi
-
-    echo $mess | grep '\-version:<value>' > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-       echo "help message contains obsolete option version:<value>"
-       exit 1
-    fi
-
-    echo $mess | grep '\-jre-restrict-search' > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-       echo "help message contains obsolete option jre-restrict-search"
-       exit 1
-    fi
-
-    echo $mess | grep '\-no-jre-restrict-search' > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-       echo "help message contains obsolete option no-jre-restrict-search"
-       exit 1
-    fi
-}
-
-#
 # Just as the name says.  We sprinkle these in the appropriate location
 # in the test file system and they just say who they are pretending to be.
 #
@@ -460,34 +430,5 @@ if [ -x /usr/bin/zipnote ]; then
 	CommentZipFile "AfairlyLongNameEatsUpDirectorySpaceBetter20"
 	LaunchVM "" "${RELEASE}"
 fi
-
-#
-# Now test specification of mJRE
-#
-#   In some cases this should result in failure of the command,
-#   in some cases, a warning messages, with the command succeeding.
-#
-
-	# Commandline use of "-version:" should fail
-	#   with a message containing "no longer supported"
-	LaunchVM "-version:1.10+" "Error: Specifying an alternate JDK/JRE"
-	LaunchVM "-version:prettymuchanything" "Error: Specifying an alternate JDK/JRE"
-
-	# Commandline use of "-jre-restrict-search" should now fail
-	LaunchVM "-jre-restrict-search" "\-jre\-no\-restrict\-search are also no longer valid"
-	# Commandline use of "-jre-no-restrict-search" should now fail
-	LaunchVM "-jre-no-restrict-search" "\-jre\-no\-restrict\-search are also no longer valid"
-
-
-	# mJRE directives to use a specific version should be flagged
-	#   with a warning, but the jar should be executed with the
-	#   current jre
-	CreateFullJar "junk request" ""
-	LaunchVM "" "${RELEASE}"
-        # Going to silently ignore JRE-Version setting in jar file manifest
-	#LaunchVM "" "warning: The jarfile JRE-Version"
-
-	# Verify help does not contain obsolete options
-	TestHelp
 
 exit 0
