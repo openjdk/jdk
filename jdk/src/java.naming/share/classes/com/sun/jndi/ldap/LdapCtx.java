@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,6 +224,7 @@ final public class LdapCtx extends ComponentDirContext
     String hostname = null;             // host name of server (no brackets
                                         //   for IPv6 literals)
     LdapClient clnt = null;             // connection handle
+    private boolean reconnect = false;  // indicates that re-connect requested
     Hashtable<String, java.lang.Object> envprops = null; // environment properties of context
     int handleReferrals = DEFAULT_REFERRAL_MODE; // how referral is handled
     boolean hasLdapsScheme = false;     // true if the context was created
@@ -2663,6 +2664,7 @@ final public class LdapCtx extends ComponentDirContext
         }
 
         sharable = false;  // can't share with existing contexts
+        reconnect = true;
         ensureOpen();      // open or reauthenticated
     }
 
@@ -2739,7 +2741,7 @@ final public class LdapCtx extends ComponentDirContext
         try {
             boolean initial = (clnt == null);
 
-            if (initial) {
+            if (initial || reconnect) {
                 ldapVersion = (ver != null) ? Integer.parseInt(ver) :
                     DEFAULT_LDAP_VERSION;
 
@@ -2767,6 +2769,7 @@ final public class LdapCtx extends ComponentDirContext
                     // Required for SASL client identity
                     envprops);
 
+                reconnect = false;
 
                 /**
                  * Pooled connections are preauthenticated;
