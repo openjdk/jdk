@@ -512,7 +512,6 @@ define AddFileToCopy
   # 2 : Dest file
   # 3 : Variable to add targets to
   # 4 : Macro to call for copy operation
-
   $2: $1
 	$(ECHO) $(LOG_INFO) Copying $$(patsubst $(OUTPUT_ROOT)/%,%,$$@)
 	$$($$(strip $4))
@@ -523,11 +522,13 @@ endef
 define SetupCopyFiles
   # param 1 is for example COPY_MYFILES
   # param 2,3,4,5 are named args.
-  #   SRC   : Source root dir
-  #   DEST  : Dest root dir
-  #   FILES : List of files to copy with absolute paths, or path relative to SRC. Must be in SRC.
+  #   SRC     : Source root dir (defaults to dir of first file)
+  #   DEST    : Dest root dir
+  #   FILES   : List of files to copy with absolute paths, or path relative to SRC.
+  #             Must be in SRC.
   #   FLATTEN : Set to flatten the directory structure in the DEST dir.
-  #   MACRO : Optionally override the default macro used for making the copy. Default is 'install-file'
+  #   MACRO   : Optionally override the default macro used for making the copy.
+  #             Default is 'install-file'
   $(foreach i,2 3 4 5 6, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupCopyFiles($1),$2,$3,$4,$5,$6)
   $(if $(7),$(error Internal makefile error: Too many arguments to SetupCopyFiles))
@@ -535,6 +536,14 @@ define SetupCopyFiles
   ifeq ($$($1_MACRO), )
     $1_MACRO := install-file
   endif
+
+  # Default SRC to the dir of the first file.
+  ifeq ($$($1_SRC), )
+    $1_SRC := $$(dir $$(firstword $$($1_FILES)))
+  endif
+
+  # Remove any trailing slash from SRC
+  $1_SRC := $$(patsubst %/,%,$$($1_SRC))
 
   $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
       $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \

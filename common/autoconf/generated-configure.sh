@@ -645,6 +645,7 @@ NUM_CORES
 ENABLE_INTREE_EC
 SALIB_NAME
 HOTSPOT_MAKE_ARGS
+MSVCP_DLL
 MSVCR_DLL
 LIBCXX
 LLVM_LIBS
@@ -1076,6 +1077,7 @@ with_override_nashorn
 with_override_jdk
 with_import_hotspot
 with_toolchain_type
+with_toolchain_version
 with_jtreg
 with_extra_cflags
 with_extra_cxxflags
@@ -1100,6 +1102,7 @@ with_libpng
 with_zlib
 with_stdc__lib
 with_msvcr_dll
+with_msvcp_dll
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
@@ -1931,6 +1934,10 @@ Optional Packages:
                           source
   --with-toolchain-type   the toolchain type (or family) to use, use '--help'
                           to show possible values [platform dependent]
+  --with-toolchain-version
+                          the version of the toolchain to look for, use
+                          '--help' to show possible values [platform
+                          dependent]
   --with-jtreg            Regression Test Harness [probed]
   --with-extra-cflags     extra flags to be used when compiling jdk c-files
   --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
@@ -1966,8 +1973,10 @@ Optional Packages:
                           force linking of the C++ runtime on Linux to either
                           static or dynamic, default is static with dynamic as
                           fallback
-  --with-msvcr-dll        copy this msvcr100.dll into the built JDK (Windows
-                          only) [probed]
+  --with-msvcr-dll        path to microsoft C runtime dll (msvcr*.dll)
+                          (Windows only) [probed]
+  --with-msvcp-dll        path to microsoft C++ runtime dll (msvcp*.dll)
+                          (Windows only) [probed]
   --with-dxsdk            Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-dxsdk-lib        Deprecated. Option is kept for backwards
@@ -4303,15 +4312,64 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 # questions.
 #
 
+################################################################################
+
+VALID_VS_VERSIONS="2010 2012 2013"
+
+VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
+VS_VERSION_INTERNAL_2010=100
+VS_MSVCR_2010=msvcr100.dll
+# We don't use msvcp on Visual Studio 2010
+#VS_MSVCP_2010=msvcp100.dll
+VS_ENVVAR_2010="VS100COMNTOOLS"
+VS_VS_INSTALLDIR_2010="Microsoft Visual Studio 10.0"
+VS_SDK_INSTALLDIR_2010="Microsoft SDKs/Windows/v7.1"
+VS_VS_PLATFORM_NAME_2010="v100"
+VS_SDK_PLATFORM_NAME_2010="Windows7.1SDK"
+
+VS_DESCRIPTION_2012="Microsoft Visual Studio 2012"
+VS_VERSION_INTERNAL_2012=110
+VS_MSVCR_2012=msvcr110.dll
+VS_MSVCP_2012=msvcp110.dll
+VS_ENVVAR_2012="VS110COMNTOOLS"
+VS_VS_INSTALLDIR_2012="Microsoft Visual Studio 11.0"
+VS_SDK_INSTALLDIR_2012=
+VS_VS_PLATFORM_NAME_2012="v110"
+VS_SDK_PLATFORM_NAME_2012=
+
+VS_DESCRIPTION_2013="Microsoft Visual Studio 2013"
+VS_VERSION_INTERNAL_2013=120
+VS_MSVCR_2013=msvcr120.dll
+VS_MSVCP_2013=msvcp120.dll
+VS_ENVVAR_2013="VS120COMNTOOLS"
+VS_VS_INSTALLDIR_2013="Microsoft Visual Studio 12.0"
+VS_SDK_INSTALLDIR_2013=
+VS_VS_PLATFORM_NAME_2013="v120"
+VS_SDK_PLATFORM_NAME_2013=
+
+################################################################################
 
 
 
+################################################################################
 
 
 
+################################################################################
+# Finds the bat or cmd file in Visual Studio or the SDK that sets up a proper
+# build environment and assigns it to VS_ENV_CMD
+
+
+################################################################################
+
+
+
+################################################################################
 # Check if the VS env variables were setup prior to running configure.
 # If not, then find vcvarsall.bat and run it automatically, and integrate
 # the set env variables into the spec file.
+
+
 
 
 
@@ -4329,7 +4387,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1420811523
+DATE_WHEN_GENERATED=1421073193
 
 ###############################################################################
 #
@@ -26665,86 +26723,177 @@ $as_echo "no" >&6; }
 
   # First-hand choice is to locate and run the vsvars bat file.
 
-  if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-    VCVARSFILE="vc/bin/vcvars32.bat"
+
+# Check whether --with-toolchain-version was given.
+if test "${with_toolchain_version+set}" = set; then :
+  withval=$with_toolchain_version;
+fi
+
+
+  if test "x$with_toolchain_version" = xlist; then
+    # List all toolchains
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The following toolchain versions are valid on this platform:" >&5
+$as_echo "$as_me: The following toolchain versions are valid on this platform:" >&6;}
+    for version in $VALID_VS_VERSIONS; do
+      eval VS_DESCRIPTION=\${VS_DESCRIPTION_$version}
+      $PRINTF "  %-10s  %s\n" $version "$VS_DESCRIPTION"
+    done
+
+    exit 0
+  elif test "x$with_toolchain_version" != x; then
+    # User override; check that it is valid
+    if test "x${VALID_VS_VERSIONS/$with_toolchain_version/}" = "x${VALID_VS_VERSIONS}"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Visual Studio version $with_toolchain_version is not valid." >&5
+$as_echo "$as_me: Visual Studio version $with_toolchain_version is not valid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Valid Visual Studio versions: $VALID_VS_VERSIONS." >&5
+$as_echo "$as_me: Valid Visual Studio versions: $VALID_VS_VERSIONS." >&6;}
+      as_fn_error $? "Cannot continue." "$LINENO" 5
+    fi
+    VS_VERSIONS_PROBE_LIST="$with_toolchain_version"
   else
-    VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    # No flag given, use default
+    VS_VERSIONS_PROBE_LIST="$VALID_VS_VERSIONS"
+  fi
+
+  for VS_VERSION in $VS_VERSIONS_PROBE_LIST; do
+
+  VS_VERSION="$VS_VERSION"
+  eval VS_COMNTOOLS_VAR="\${VS_ENVVAR_${VS_VERSION}}"
+  eval VS_COMNTOOLS="\$${VS_COMNTOOLS_VAR}"
+  eval VS_INSTALL_DIR="\${VS_VS_INSTALLDIR_${VS_VERSION}}"
+  eval SDK_INSTALL_DIR="\${VS_SDK_INSTALLDIR_${VS_VERSION}}"
+
+  # When using --with-tools-dir, assume it points to the correct and default
+  # version of Visual Studio or that --with-toolchain-version was also set.
+  if test "x$with_tools_dir" != x; then
+
+  if test "x$VS_ENV_CMD" = x; then
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$with_tools_dir/../.."
+    METHOD="--with-tools-dir"
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    VS_BASE="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    VS_BASE="$unix_path"
+  fi
+
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
+$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+      fi
+    fi
+  fi
+
+
+  if test "x$VS_ENV_CMD" = x; then
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$with_tools_dir/../../.."
+    METHOD="--with-tools-dir"
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    VS_BASE="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    VS_BASE="$unix_path"
+  fi
+
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
+$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+      fi
+    fi
+  fi
+
+    if test "x$VS_ENV_CMD" = x; then
+      # Having specified an argument which is incorrect will produce an instant failure;
+      # we should not go on looking
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path given by --with-tools-dir does not contain a valid" >&5
+$as_echo "$as_me: The path given by --with-tools-dir does not contain a valid" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Visual Studio installation. Please point to the VC/bin or VC/bin/amd64" >&5
+$as_echo "$as_me: Visual Studio installation. Please point to the VC/bin or VC/bin/amd64" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: directory within the Visual Studio installation" >&5
+$as_echo "$as_me: directory within the Visual Studio installation" >&6;}
+      as_fn_error $? "Cannot locate a valid Visual Studio installation" "$LINENO" 5
+    fi
   fi
 
   VS_ENV_CMD=""
   VS_ENV_ARGS=""
-  if test "x$with_toolsdir" != x; then
+
+  if test "x$VS_COMNTOOLS" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="$with_toolsdir/../.."
-    METHOD="--with-tools-dir"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$VS_COMNTOOLS/../.."
+    METHOD="$VS_COMNTOOLS_VAR variable"
 
-  windows_path="$VS100BASE"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
-  fi
-
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
-      fi
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
     fi
-  fi
 
-  fi
 
-  if test "x$with_toolsdir" != x && test "x$VS_ENV_CMD" = x; then
-    # Having specified an argument which is incorrect will produce an instant failure;
-    # we should not go on looking
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path given by --with-tools-dir does not contain a valid Visual Studio installation" >&5
-$as_echo "$as_me: The path given by --with-tools-dir does not contain a valid Visual Studio installation" >&6;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Please point to the VC/bin directory within the Visual Studio installation" >&5
-$as_echo "$as_me: Please point to the VC/bin directory within the Visual Studio installation" >&6;}
-    as_fn_error $? "Cannot locate a valid Visual Studio installation" "$LINENO" 5
-  fi
-
-  if test "x$VS100COMNTOOLS" != x; then
-
-  if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="$VS100COMNTOOLS/../.."
-    METHOD="VS100COMNTOOLS variable"
-
-  windows_path="$VS100BASE"
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26755,30 +26904,80 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   if test "x$PROGRAMFILES" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="$PROGRAMFILES/Microsoft Visual Studio 10.0"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$PROGRAMFILES/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-  windows_path="$VS100BASE"
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
+$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+      fi
+    fi
+  fi
+
+  fi
+  # Work around the insanely named ProgramFiles(x86) env variable
+  PROGRAMFILES_X86="`env | $SED -n 's/^ProgramFiles(x86)=//p'`"
+  if test "x$PROGRAMFILES_X86" != x; then
+
+  if test "x$VS_ENV_CMD" = x; then
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$PROGRAMFILES_X86/$VS_INSTALL_DIR"
+    METHOD="well-known name"
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    VS_BASE="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    VS_BASE="$unix_path"
+  fi
+
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26788,30 +26987,37 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   fi
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="C:/Program Files/Microsoft Visual Studio 10.0"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="C:/Program Files/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-  windows_path="$VS100BASE"
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26820,30 +27026,37 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
 
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="C:/Program Files (x86)/Microsoft Visual Studio 10.0"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="C:/Program Files (x86)/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-  windows_path="$VS100BASE"
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26851,10 +27064,12 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   fi
 
 
-  if test "x$ProgramW6432" != x; then
+  if test "x$SDK_INSTALL_DIR" != x; then
+    if test "x$ProgramW6432" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="$ProgramW6432/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="$ProgramW6432/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -26869,15 +27084,15 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -26886,7 +27101,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -26896,11 +27111,12 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     fi
   fi
 
-  fi
-  if test "x$PROGRAMW6432" != x; then
+    fi
+    if test "x$PROGRAMW6432" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="$PROGRAMW6432/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="$PROGRAMW6432/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -26915,15 +27131,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -26932,7 +27148,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -26942,11 +27158,12 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     fi
   fi
 
-  fi
-  if test "x$PROGRAMFILES" != x; then
+    fi
+    if test "x$PROGRAMFILES" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="$PROGRAMFILES/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="$PROGRAMFILES/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -26961,15 +27178,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -26978,7 +27195,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -26988,10 +27205,11 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     fi
   fi
 
-  fi
+    fi
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="C:/Program Files/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="C:/Program Files/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -27006,15 +27224,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -27023,7 +27241,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -27035,7 +27253,8 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
 
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="C:/Program Files (x86)/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -27050,15 +27269,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -27067,7 +27286,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -27076,6 +27295,21 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
       fi
     fi
   fi
+
+  fi
+
+    if test "x$VS_ENV_CMD" != x; then
+      TOOLCHAIN_VERSION=$VS_VERSION
+      eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+      eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
+      eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
+      eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
+      # The rest of the variables are already evaled while probing
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found $VS_DESCRIPTION" >&5
+$as_echo "$as_me: Found $VS_DESCRIPTION" >&6;}
+      break
+    fi
+  done
 
 
   if test "x$VS_ENV_CMD" != x; then
@@ -40737,8 +40971,8 @@ $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
     CC_VERSION_OUTPUT=`$CC 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_CPU_TEST=`$ECHO $CC_VERSION_OUTPUT | $SED -n "s/^.* \(.*\)$/\1/p"`
     if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
-      if test "x$COMPILER_CPU_TEST" != "x80x86"; then
-        as_fn_error $? "Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for \"$COMPILER_CPU_TEST\"; expected \"80x86\"." "$LINENO" 5
+      if test "x$COMPILER_CPU_TEST" != "x80x86" -a "x$COMPILER_CPU_TEST" != "xx86"; then
+        as_fn_error $? "Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for \"$COMPILER_CPU_TEST\"; expected \"80x86\" or \"x86\"." "$LINENO" 5
       fi
     elif test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       if test "x$COMPILER_CPU_TEST" != "xx64"; then
@@ -42386,14 +42620,22 @@ fi
     CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
-    -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
-    -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
-    -DWIN32 -DIAL"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK \
+        -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
+        -DWIN32_LEAN_AND_MEAN \
+        -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
+        -DWIN32 -DIAL"
     if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_AMD64_ -Damd64"
     else
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_X86_ -Dx86"
+    fi
+    # If building with Visual Studio 2010, we can still use _STATIC_CPPLIB to
+    # avoid bundling msvcpNNN.dll. Doesn't work with newer versions of visual
+    # studio.
+    if test "x$TOOLCHAIN_VERSION" = "x2010"; then
+      COMMON_CXXFLAGS_JDK="$COMMON_CXXFLAGS_JDK \
+          -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
     fi
   fi
 
@@ -49545,16 +49787,17 @@ fi
   if test "x$with_msvcr_dll" != x; then
     # If given explicitely by user, do not probe. If not present, fail directly.
 
-  POSSIBLE_MSVCR_DLL="$with_msvcr_dll"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$with_msvcr_dll"
   METHOD="--with-msvcr-dll"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49570,28 +49813,32 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
-    if test "x$MSVCR_DLL" = x; then
-      as_fn_error $? "Could not find a proper msvcr100.dll as specified by --with-msvcr-dll" "$LINENO" 5
+    if test "x$MSVC_DLL" = x; then
+      as_fn_error $? "Could not find a proper $MSVCR_NAME as specified by --with-msvcr-dll" "$LINENO" 5
     fi
-  fi
+  else
 
-  if test "x$MSVCR_DLL" = x; then
+  VAR_NAME="MSVCR_DLL"
+  DLL_NAME="${MSVCR_NAME}"
+  MSVC_DLL=
+
+  if test "x$MSVC_DLL" = x; then
     # Probe: Using well-known location from Visual Studio 10.0
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
@@ -49606,21 +49853,23 @@ $as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETY
   fi
 
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC100.CRT/msvcr100.dll"
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
       else
-        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC100.CRT/msvcr100.dll"
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
       fi
+      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="well-known location in VCINSTALLDIR"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49636,39 +49885,40 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
     fi
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Check in the Boot JDK directory.
-    POSSIBLE_MSVCR_DLL="$BOOT_JDK/bin/msvcr100.dll"
+    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="well-known location in Boot JDK"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49684,25 +49934,25 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Look in the Windows system32 directory
     CYGWIN_SYSTEMROOT="$SYSTEMROOT"
 
@@ -49715,18 +49965,19 @@ $as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETY
     CYGWIN_SYSTEMROOT="$unix_path"
   fi
 
-    POSSIBLE_MSVCR_DLL="$CYGWIN_SYSTEMROOT/system32/msvcr100.dll"
+    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="well-known location in SYSTEMROOT"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49742,25 +49993,25 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: If Visual Studio Express is installed, there is usually one with the debugger
     if test "x$VS100COMNTOOLS" != x; then
       CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
@@ -49775,21 +50026,24 @@ $as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETY
   fi
 
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x64/ | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x64/ | $HEAD --lines 1`
       else
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x86/ | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x86/ | $HEAD --lines 1`
       fi
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="search of VS100COMNTOOLS"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49805,50 +50059,54 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
     fi
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
-    # (This was the original behaviour; kept since it might turn up something)
+    # (This was the original behaviour; kept since it might turn something up)
     if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x64 | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x64 | $HEAD --lines 1`
       else
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
-        if test "x$POSSIBLE_MSVCR_DLL" = x; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVC_DLL" = x; then
           # We're grasping at straws now...
-          POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $HEAD --lines 1`
+          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	      | $HEAD --lines 1`
         fi
       fi
 
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="search of VCINSTALLDIR"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49864,33 +50122,34 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
     fi
   fi
 
-  if test "x$MSVCR_DLL" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
+  if test "x$MSVC_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    as_fn_error $? "Could not find msvcr100.dll. Please specify using --with-msvcr-dll." "$LINENO" 5
+    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
   fi
 
+  MSVCR_DLL=$MSVC_DLL
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -50013,6 +50272,512 @@ $as_echo "$as_me: The path of MSVCR_DLL, which resolves as \"$path\", is invalid
     MSVCR_DLL="`cd "$path"; $THEPWDCMD -L`"
   fi
 
+  MSVCR_DLL=$MSVCR_DLL
+
+
+  fi
+
+
+# Check whether --with-msvcp-dll was given.
+if test "${with_msvcp_dll+set}" = set; then :
+  withval=$with_msvcp_dll;
+fi
+
+
+  if test "x$MSVCP_NAME" != "x"; then
+    if test "x$with_msvcp_dll" != x; then
+      # If given explicitely by user, do not probe. If not present, fail directly.
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$with_msvcp_dll"
+  METHOD="--with-msvcp-dll"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+      if test "x$MSVC_DLL" = x; then
+        as_fn_error $? "Could not find a proper $MSVCP_NAME as specified by --with-msvcp-dll" "$LINENO" 5
+      fi
+    else
+
+  VAR_NAME="MSVCP_DLL"
+  DLL_NAME="${MSVCP_NAME}"
+  MSVC_DLL=
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Using well-known location from Visual Studio 10.0
+    if test "x$VCINSTALLDIR" != x; then
+      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
+
+  windows_path="$CYGWIN_VC_INSTALL_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      else
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      fi
+      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Check in the Boot JDK directory.
+    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in Boot JDK"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Look in the Windows system32 directory
+    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
+
+  windows_path="$CYGWIN_SYSTEMROOT"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  fi
+
+    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in SYSTEMROOT"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
+    if test "x$VS100COMNTOOLS" != x; then
+      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+
+  windows_path="$CYGWIN_VS_TOOLS_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x64/ | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x86/ | $HEAD --lines 1`
+      fi
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VS100COMNTOOLS"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
+    # (This was the original behaviour; kept since it might turn something up)
+    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x64 | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVC_DLL" = x; then
+          # We're grasping at straws now...
+          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	      | $HEAD --lines 1`
+        fi
+      fi
+
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
+  fi
+
+  MSVCP_DLL=$MSVC_DLL
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVCP_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVCP_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVCP_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVCP_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVCP_DLL to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVCP_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVCP_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVCP_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVCP_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a unix platform. Hooray! :)
+    path="$MSVCP_DLL"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of MSVCP_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    MSVCP_DLL="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+  MSVCP_DLL=$MSVCP_DLL
+
+
+    fi
+  fi
 
 
 
@@ -50042,7 +50807,6 @@ fi
 
 
   fi
-
 
 
 ###############################################################################
@@ -52171,7 +52935,10 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
     printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION (root at $WINDOWS_ENV_ROOT_PATH)\n"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
-  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
+  if test "x$TOOLCHAIN_VERSION" != "x"; then
+    print_version=" $TOOLCHAIN_VERSION"
+  fi
+  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION$print_version)\n"
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
 
