@@ -2640,8 +2640,7 @@ public class Attr extends JCTree.Visitor {
             try {
                 refResult = rs.resolveMemberReference(localEnv, that, that.expr.type,
                         that.name, argtypes, typeargtypes, referenceCheck,
-                        resultInfo.checkContext.inferenceContext(),
-                        resultInfo.checkContext.deferredAttrContext().mode);
+                        resultInfo.checkContext.inferenceContext(), rs.basicReferenceChooser);
             } finally {
                 resultInfo.checkContext.inferenceContext().rollback(saved_undet);
             }
@@ -2659,9 +2658,8 @@ public class Attr extends JCTree.Visitor {
                     case WRONG_MTHS:
                     case AMBIGUOUS:
                     case HIDDEN:
-                    case STATICERR:
                     case MISSING_ENCL:
-                    case WRONG_STATICNESS:
+                    case STATICERR:
                         targetError = true;
                         break;
                     default:
@@ -2718,15 +2716,6 @@ public class Attr extends JCTree.Visitor {
                     //static ref with class type-args
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
                             diags.fragment("static.mref.with.targs"));
-                    result = that.type = types.createErrorType(currentTarget);
-                    return;
-                }
-
-                if (that.sym.isStatic() && !TreeInfo.isStaticSelector(that.expr, names) &&
-                        !that.kind.isUnbound()) {
-                    //no static bound mrefs
-                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
-                            diags.fragment("static.bound.mref"));
                     result = that.type = types.createErrorType(currentTarget);
                     return;
                 }
