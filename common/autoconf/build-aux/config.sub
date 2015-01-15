@@ -41,25 +41,8 @@ while test $# -gt 0 ; do
     case $1 in 
         -- )   # Stop option processing
             shift; break ;;
-        aarch64-gnu )
-            sub_args="$sub_args aarch64-unknown-gnu"
-            shift; ;;
-        aarch64-linux )
-            sub_args="$sub_args aarch64-unknown-linux-gnu"
-            shift; ;;
-        aarch64-*-linux )
-            os=`echo $1 | sed 's/aarch64-\(.*\)-linux/\1/'`
-            config="aarch64-unknown-linux-gnu"
-            sub_args="$sub_args $config"
-            shift; ;;
-        aarch64-*-gnu )
-            os=`echo $1 | sed 's/aarch64-\(.*\)-gnu.*$/\1/'`
-            config="aarch64-unknown-gnu"
-            sub_args="$sub_args $config"
-            shift; ;;
-        aarch64-*-linux-* )
-            os=`echo $1 | sed 's/aarch64-\(.*\)-linux-.*$/'`
-            config="aarch64-unknown-linux-gnu"
+        aarch64-* )
+            config=`echo $1 | sed 's/^aarch64-/arm-/'`
             sub_args="$sub_args $config"
             shift; ;;
         - )    # Use stdin as input.
@@ -74,9 +57,7 @@ done
 result=`. $DIR/autoconf-config.sub $sub_args "$@"`
 exitcode=$?
 
-if [ "x$os" != "x" ] ; then
-    result=`echo $result | sed "s/-unknown-/-$os-/"`
-fi
+result=`echo $result | sed "s/^arm-/aarch64-/"`
 
 echo $result
 exit $exitcode
