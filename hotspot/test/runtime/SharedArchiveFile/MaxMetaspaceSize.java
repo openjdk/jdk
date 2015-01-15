@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,29 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
 
 /*
  * @test
- * @bug 8038636
+ * @bug 8067187
+ * @summary Testing CDS dumping with the -XX:MaxMetaspaceSize=<size> option
  * @library /testlibrary
- * @build Agent
- * @ignore 7076820
- * @run main ClassFileInstaller Agent
- * @run main Launcher
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:ReservedCodeCacheSize=3M Agent
  */
-public class Launcher {
-    public static void main(String[] args) throws Exception  {
 
-      PrintWriter pw = new PrintWriter("MANIFEST.MF");
-      pw.println("Agent-Class: Agent");
-      pw.println("Can-Retransform-Classes: true");
-      pw.close();
+import com.oracle.java.testlibrary.*;
 
-      ProcessBuilder pb = new ProcessBuilder();
-      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", System.getProperty("test.classes",".") + "/agent.jar", "Agent.class"});
-      pb.start().waitFor();
-    }
+public class MaxMetaspaceSize {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:MaxMetaspaceSize=20m", "-Xshare:dump");
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+      output.shouldContain("is not large enough.\nEither don't specify the -XX:MaxMetaspaceSize=<size>\nor increase the size to at least");
+      output.shouldHaveExitValue(2);
+  }
 }
