@@ -232,7 +232,8 @@ needs_g1gc = \
   gc/g1/ \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
-  gc/startup_warnings/TestG1.java 
+  gc/startup_warnings/TestG1.java \
+  gc/whitebox/TestConcMarkCycleWB.java
 
 # All tests that explicitly set the serial GC
 #
