@@ -832,7 +832,7 @@ float Parse::dynamic_branch_prediction(float &cnt) {
       sprintf(prob_str_buf, "%g", prob);
       prob_str = prob_str_buf;
     }
-    C->log()->elem("branch target_bci='%d' taken='%d' not_taken='%d' cnt='%g' prob='%s'",
+    C->log()->elem("branch target_bci='%d' taken='%d' not_taken='%d' cnt='%f' prob='%s'",
                    iter().get_dest(), taken, not_taken, cnt, prob_str);
   }
   return prob;
