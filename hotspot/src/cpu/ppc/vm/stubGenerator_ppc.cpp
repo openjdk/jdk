@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1079,7 +1079,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sldi(tmp2, R5_ARG3, log2_elem_size); // size in bytes
     __ cmpld(CCR0, R3_ARG1, R4_ARG2); // Use unsigned comparison!
     __ cmpld(CCR1, tmp1, tmp2);
-    __ crand(/*CCR0 lt*/0, /*CCR1 lt*/4+0, /*CCR0 lt*/0);
+    __ crand(CCR0, Assembler::less, CCR1, Assembler::less);
     __ blt(CCR0, l_overlap); // Src before dst and distance smaller than size.
 
     // need to copy forwards

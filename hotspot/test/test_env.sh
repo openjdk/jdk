@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 #  This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ echo "TESTOPTS=${TESTOPTS}"
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux | Darwin )
+  AIX | Darwin | Linux | SunOS )
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -133,25 +133,30 @@ then
 fi
 
 VM_OS="unknown"
-grep "solaris" vm_version.out > ${NULL}
+grep "aix" vm_version.out > ${NULL}
 if [ $? = 0 ]
 then
-  VM_OS="solaris"
+  VM_OS="aix"
+fi
+grep "bsd" vm_version.out > ${NULL}
+if [ $? = 0 ]
+then
+  VM_OS="bsd"
 fi
 grep "linux" vm_version.out > ${NULL}
 if [ $? = 0 ]
 then
   VM_OS="linux"
 fi
+grep "solaris" vm_version.out > ${NULL}
+if [ $? = 0 ]
+then
+  VM_OS="solaris"
+fi
 grep "windows" vm_version.out > ${NULL}
 if [ $? = 0 ]
 then
   VM_OS="windows"
-fi
-grep "bsd" vm_version.out > ${NULL}
-if [ $? = 0 ]
-then
-  VM_OS="bsd"
 fi
 
 VM_CPU="unknown"

@@ -19,26 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 8054224
- * @summary Recursive method compiled by C1 is unable to catch StackOverflowError
- * @run main/othervm -Xcomp -XX:CompileOnly=Test.run -XX:+TieredCompilation -XX:TieredStopAtLevel=2 -Xss392K TestRecursiveReplacedException
  *
  */
 
-public class TestRecursiveReplacedException {
+import com.oracle.java.testlibrary.TimeLimitedRunner;
+import com.oracle.java.testlibrary.Utils;
 
-    public static void main(String args[]) {
-        new TestRecursiveReplacedException().run();
+public class CodeCacheStressRunner {
+    private final Runnable action;
+    public CodeCacheStressRunner(Runnable action) {
+        this.action = action;
     }
 
-    public void run() {
+    protected final void runTest() {
+        Helper.startInfiniteLoopThread(action);
         try {
-            run();
-        } catch (Throwable t) {
+            // adjust timeout and substract vm init and exit time
+            long timeout = Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
+            timeout *= 0.9;
+            new TimeLimitedRunner(timeout, 2.0d, this::test).call();
+        } catch (Exception e) {
+            throw new Error("Exception occurred during test execution", e);
         }
     }
+
+    private boolean test() {
+        Helper.TestCase obj = Helper.TestCase.get();
+        Helper.callMethod(obj.getCallable(), obj.expectedValue());
+        return true;
+    }
+
 }
