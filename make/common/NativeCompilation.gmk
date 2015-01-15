@@ -577,7 +577,7 @@ define SetupNativeCompilationInner
 
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
         $$($1_DEBUGINFO_EXTRA_DEPS)
-		$$(call LINKING_MSG,$$($1_BASENAME))
+		$(ECHO) $(LOG_INFO) "Linking $$($1_BASENAME)"
 		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(SYSROOT_LDFLAGS) \
 		    $(LD_OUT_OPTION)$$@ \
 		    $$($1_EXPECTED_OBJS) $$($1_RES) \
@@ -605,7 +605,7 @@ define SetupNativeCompilationInner
 
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST) \
         $$($1_DEBUGINFO_EXTRA_DEPS)
-		$$(call LINKING_EXE_MSG,$$($1_BASENAME))
+		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)"
 		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(SYSROOT_LDFLAGS) \
 		    $(EXE_OUT_OPTION)$$($1_TARGET) \
 		    $$($1_EXPECTED_OBJS) $$($1_RES) \
