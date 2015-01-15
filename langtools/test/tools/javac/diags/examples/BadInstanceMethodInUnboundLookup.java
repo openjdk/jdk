@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,19 @@
  * questions.
  */
 
-// key: compiler.err.invalid.mref
-// key: compiler.misc.static.bound.mref
+// key: compiler.misc.bad.instance.method.in.unbound.lookup
+// key: compiler.misc.invalid.mref
+// key: compiler.err.prob.found.req
 
-class StaticBoundMref {
+class BadInstanceMethodInUnboundLookup {
 
-    Runnable r = new StaticBoundMref()::m;
+    interface SAM {
+        void m(Integer u);
+    }
 
-    static void m() { }
+    void f(Integer i) { }
+
+    static void test() {
+        SAM s = BadInstanceMethodInUnboundLookup::f;
+    }
 }
