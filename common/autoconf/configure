@@ -36,6 +36,13 @@ else
   shift
 fi
 
+if test "x$BASH" = x; then
+  echo "Error: This script must be run using bash." 1>&2
+  exit 1
+fi
+# Force autoconf to use bash
+export CONFIG_SHELL=$BASH
+
 conf_script_dir="$TOPDIR/common/autoconf"
 
 if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
