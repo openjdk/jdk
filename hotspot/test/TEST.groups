@@ -357,7 +357,8 @@ hotspot_compiler_2 = \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
-  -compiler/codegen/7184394
+  -compiler/codegen/7184394 \
+  -compiler/codecache/stress
   
 hotspot_compiler_3 = \
   compiler/intrinsics/ \
