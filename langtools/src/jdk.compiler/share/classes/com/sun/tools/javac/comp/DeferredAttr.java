@@ -28,8 +28,6 @@ package com.sun.tools.javac.comp;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.comp.Resolve.ResolveError;
-import com.sun.tools.javac.resources.CompilerProperties;
-import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -798,7 +796,7 @@ public class DeferredAttr extends JCTree.Visitor {
                         case WRONG_MTHS:
                             //note: as argtypes are erroneous types, type-errors must
                             //have been caused by arity mismatch
-                            checkContext.report(tree, diags.fragment(Fragments.IncompatibleArgTypesInMref));
+                            checkContext.report(tree, diags.fragment("incompatible.arg.types.in.mref"));
                             break;
                         case ABSENT_MTH:
                         case STATICERR:
