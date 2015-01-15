@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1104,43 +1104,6 @@ UNSAFE_END
 
 
 
-UNSAFE_ENTRY(void, Unsafe_MonitorEnter(JNIEnv *env, jobject unsafe, jobject jobj))
-  UnsafeWrapper("Unsafe_MonitorEnter");
-  {
-    if (jobj == NULL) {
-      THROW(vmSymbols::java_lang_NullPointerException());
-    }
-    Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-    ObjectSynchronizer::jni_enter(obj, CHECK);
-  }
-UNSAFE_END
-
-
-UNSAFE_ENTRY(jboolean, Unsafe_TryMonitorEnter(JNIEnv *env, jobject unsafe, jobject jobj))
-  UnsafeWrapper("Unsafe_TryMonitorEnter");
-  {
-    if (jobj == NULL) {
-      THROW_(vmSymbols::java_lang_NullPointerException(), JNI_FALSE);
-    }
-    Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-    bool res = ObjectSynchronizer::jni_try_enter(obj, CHECK_0);
-    return (res ? JNI_TRUE : JNI_FALSE);
-  }
-UNSAFE_END
-
-
-UNSAFE_ENTRY(void, Unsafe_MonitorExit(JNIEnv *env, jobject unsafe, jobject jobj))
-  UnsafeWrapper("Unsafe_MonitorExit");
-  {
-    if (jobj == NULL) {
-      THROW(vmSymbols::java_lang_NullPointerException());
-    }
-    Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
-    ObjectSynchronizer::jni_exit(obj(), CHECK);
-  }
-UNSAFE_END
-
-
 UNSAFE_ENTRY(void, Unsafe_ThrowException(JNIEnv *env, jobject unsafe, jthrowable thr))
   UnsafeWrapper("Unsafe_ThrowException");
   {
@@ -1365,8 +1328,6 @@ static JNINativeMethod methods_140[] = {
     {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
     {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
     {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
     {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)}
 };
 
@@ -1411,8 +1372,6 @@ static JNINativeMethod methods_141[] = {
     {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
     {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
     {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
     {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)}
 
 };
@@ -1461,8 +1420,6 @@ static JNINativeMethod methods_15[] = {
     {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
     {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
     {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
     {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)},
     {CC"compareAndSwapObject", CC"("OBJ"J"OBJ""OBJ")Z",  FN_PTR(Unsafe_CompareAndSwapObject)},
     {CC"compareAndSwapInt",  CC"("OBJ"J""I""I"")Z",      FN_PTR(Unsafe_CompareAndSwapInt)},
@@ -1515,9 +1472,6 @@ static JNINativeMethod methods_16[] = {
     {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
     {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
     {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
-    {CC"tryMonitorEnter",    CC"("OBJ")Z",               FN_PTR(Unsafe_TryMonitorEnter)},
     {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)},
     {CC"compareAndSwapObject", CC"("OBJ"J"OBJ""OBJ")Z",  FN_PTR(Unsafe_CompareAndSwapObject)},
     {CC"compareAndSwapInt",  CC"("OBJ"J""I""I"")Z",      FN_PTR(Unsafe_CompareAndSwapInt)},
@@ -1571,9 +1525,6 @@ static JNINativeMethod methods_18[] = {
 
     {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
     {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
-    {CC"tryMonitorEnter",    CC"("OBJ")Z",               FN_PTR(Unsafe_TryMonitorEnter)},
     {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)},
     {CC"compareAndSwapObject", CC"("OBJ"J"OBJ""OBJ")Z",  FN_PTR(Unsafe_CompareAndSwapObject)},
     {CC"compareAndSwapInt",  CC"("OBJ"J""I""I"")Z",      FN_PTR(Unsafe_CompareAndSwapInt)},
