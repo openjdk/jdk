@@ -439,8 +439,10 @@ define SetupNativeCompilationInner
   # Now call add_native_source for each source file we are going to compile.
   $$(foreach p,$$($1_SRCS), \
       $$(eval $$(call add_native_source,$1,$$p,$$($1_OBJECT_DIR), \
-          $(SYSROOT_CFLAGS) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS),$$($1_CC), \
-          $(SYSROOT_CFLAGS) $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS),$$($1_CXX),$$($1_OBJC),$$($1_ASFLAGS))))
+          $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $(SYSROOT_CFLAGS), \
+          $$($1_CC), \
+          $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) $(SYSROOT_CFLAGS), \
+          $$($1_CXX),$$($1_OBJC),$$($1_ASFLAGS))))
 
   # On windows we need to create a resource file
   ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -576,9 +578,10 @@ define SetupNativeCompilationInner
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
         $$($1_DEBUGINFO_EXTRA_DEPS)
 		$$(call LINKING_MSG,$$($1_BASENAME))
-		$$($1_LD) $(SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(LD_OUT_OPTION)$$@ \
-		    $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) \
-		    $$($1_EXTRA_LDFLAGS_SUFFIX)
+		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(SYSROOT_LDFLAGS) \
+		    $(LD_OUT_OPTION)$$@ \
+		    $$($1_EXPECTED_OBJS) $$($1_RES) \
+		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
 		$$($1_CREATE_DEBUGINFO_CMDS)
                 # Touch target to make sure it has a later time stamp than the debug
                 # symbol files to avoid unnecessary relinking on rebuild.
@@ -603,9 +606,10 @@ define SetupNativeCompilationInner
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST) \
         $$($1_DEBUGINFO_EXTRA_DEPS)
 		$$(call LINKING_EXE_MSG,$$($1_BASENAME))
-		$$($1_LDEXE) $(SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(EXE_OUT_OPTION)$$($1_TARGET) \
-		    $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) \
-		    $$($1_EXTRA_LDFLAGS_SUFFIX)
+		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(SYSROOT_LDFLAGS) \
+		    $(EXE_OUT_OPTION)$$($1_TARGET) \
+		    $$($1_EXPECTED_OBJS) $$($1_RES) \
+		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
                 ifneq (,$$($1_GEN_MANIFEST))
 		  $(MT) -nologo -manifest $$($1_GEN_MANIFEST) -outputresource:$$@;#1
                 endif
