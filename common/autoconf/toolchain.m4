@@ -691,8 +691,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     CC_VERSION_OUTPUT=`$CC 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_CPU_TEST=`$ECHO $CC_VERSION_OUTPUT | $SED -n "s/^.* \(.*\)$/\1/p"`
     if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
-      if test "x$COMPILER_CPU_TEST" != "x80x86"; then
-        AC_MSG_ERROR([Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for "$COMPILER_CPU_TEST"; expected "80x86".])
+      if test "x$COMPILER_CPU_TEST" != "x80x86" -a "x$COMPILER_CPU_TEST" != "xx86"; then
+        AC_MSG_ERROR([Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for "$COMPILER_CPU_TEST"; expected "80x86" or "x86".])
       fi
     elif test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       if test "x$COMPILER_CPU_TEST" != "xx64"; then

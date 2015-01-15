@@ -23,43 +23,90 @@
 # questions.
 #
 
+################################################################################
+
+VALID_VS_VERSIONS="2010 2012 2013"
+
+VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
+VS_VERSION_INTERNAL_2010=100
+VS_MSVCR_2010=msvcr100.dll
+# We don't use msvcp on Visual Studio 2010
+#VS_MSVCP_2010=msvcp100.dll
+VS_ENVVAR_2010="VS100COMNTOOLS"
+VS_VS_INSTALLDIR_2010="Microsoft Visual Studio 10.0"
+VS_SDK_INSTALLDIR_2010="Microsoft SDKs/Windows/v7.1"
+VS_VS_PLATFORM_NAME_2010="v100"
+VS_SDK_PLATFORM_NAME_2010="Windows7.1SDK"
+
+VS_DESCRIPTION_2012="Microsoft Visual Studio 2012"
+VS_VERSION_INTERNAL_2012=110
+VS_MSVCR_2012=msvcr110.dll
+VS_MSVCP_2012=msvcp110.dll
+VS_ENVVAR_2012="VS110COMNTOOLS"
+VS_VS_INSTALLDIR_2012="Microsoft Visual Studio 11.0"
+VS_SDK_INSTALLDIR_2012=
+VS_VS_PLATFORM_NAME_2012="v110"
+VS_SDK_PLATFORM_NAME_2012=
+
+VS_DESCRIPTION_2013="Microsoft Visual Studio 2013"
+VS_VERSION_INTERNAL_2013=120
+VS_MSVCR_2013=msvcr120.dll
+VS_MSVCP_2013=msvcp120.dll
+VS_ENVVAR_2013="VS120COMNTOOLS"
+VS_VS_INSTALLDIR_2013="Microsoft Visual Studio 12.0"
+VS_SDK_INSTALLDIR_2013=
+VS_VS_PLATFORM_NAME_2013="v120"
+VS_SDK_PLATFORM_NAME_2013=
+
+################################################################################
+
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 [
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="$1"
-    METHOD="$2"
-    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(VS100BASE)
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        AC_MSG_NOTICE([Found Visual Studio installation at $VS100BASE using $METHOD])
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    VS_VERSION="$1"
+    VS_BASE="$2"
+    METHOD="$3"
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+  
+    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(VS_BASE)
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        AC_MSG_NOTICE([Found Visual Studio installation at $VS100BASE using $METHOD])
+        AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
         AC_MSG_NOTICE([Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring])
       fi
     fi
   fi
 ])
 
+################################################################################
+
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
 [
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="$1"
-    METHOD="$2"
+    VS_VERSION="$1"
+    WIN_SDK_BASE="$2"
+    METHOD="$3"
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(WIN_SDK_BASE)
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         AC_MSG_NOTICE([Warning: Installation is broken, lib dir is missing. Ignoring])
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -68,7 +115,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         AC_MSG_NOTICE([Warning: Installation is broken, SetEnv.Cmd is missing. Ignoring])
@@ -77,50 +124,121 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
   fi
 ])
 
+################################################################################
+# Finds the bat or cmd file in Visual Studio or the SDK that sets up a proper
+# build environment and assigns it to VS_ENV_CMD
 AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
 [
-  if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-    VCVARSFILE="vc/bin/vcvars32.bat"
-  else
-    VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+  VS_VERSION="$1"
+  eval VS_COMNTOOLS_VAR="\${VS_ENVVAR_${VS_VERSION}}"
+  eval VS_COMNTOOLS="\$${VS_COMNTOOLS_VAR}"
+  eval VS_INSTALL_DIR="\${VS_VS_INSTALLDIR_${VS_VERSION}}"
+  eval SDK_INSTALL_DIR="\${VS_SDK_INSTALLDIR_${VS_VERSION}}"
+
+  # When using --with-tools-dir, assume it points to the correct and default
+  # version of Visual Studio or that --with-toolchain-version was also set.
+  if test "x$with_tools_dir" != x; then
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+        [$with_tools_dir/../..], [--with-tools-dir])
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+        [$with_tools_dir/../../..], [--with-tools-dir])
+    if test "x$VS_ENV_CMD" = x; then
+      # Having specified an argument which is incorrect will produce an instant failure;
+      # we should not go on looking
+      AC_MSG_NOTICE([The path given by --with-tools-dir does not contain a valid])
+      AC_MSG_NOTICE([Visual Studio installation. Please point to the VC/bin or VC/bin/amd64])
+      AC_MSG_NOTICE([directory within the Visual Studio installation])
+      AC_MSG_ERROR([Cannot locate a valid Visual Studio installation])
+    fi
   fi
 
   VS_ENV_CMD=""
   VS_ENV_ARGS=""
-  if test "x$with_toolsdir" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$with_toolsdir/../..], [--with-tools-dir])
-  fi
 
-  if test "x$with_toolsdir" != x && test "x$VS_ENV_CMD" = x; then
-    # Having specified an argument which is incorrect will produce an instant failure;
-    # we should not go on looking
-    AC_MSG_NOTICE([The path given by --with-tools-dir does not contain a valid Visual Studio installation])
-    AC_MSG_NOTICE([Please point to the VC/bin directory within the Visual Studio installation])
-    AC_MSG_ERROR([Cannot locate a valid Visual Studio installation])
-  fi
-
-  if test "x$VS100COMNTOOLS" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$VS100COMNTOOLS/../..], [VS100COMNTOOLS variable])
+  if test "x$VS_COMNTOOLS" != x; then
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+        [$VS_COMNTOOLS/../..], [$VS_COMNTOOLS_VAR variable])
   fi
   if test "x$PROGRAMFILES" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$PROGRAMFILES/Microsoft Visual Studio 10.0], [well-known name])
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+        [$PROGRAMFILES/$VS_INSTALL_DIR], [well-known name])
   fi
-  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([C:/Program Files/Microsoft Visual Studio 10.0], [well-known name])
-  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([C:/Program Files (x86)/Microsoft Visual Studio 10.0], [well-known name])
+  # Work around the insanely named ProgramFiles(x86) env variable
+  PROGRAMFILES_X86="`env | $SED -n 's/^ProgramFiles(x86)=//p'`"
+  if test "x$PROGRAMFILES_X86" != x; then
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+        [$PROGRAMFILES_X86/$VS_INSTALL_DIR], [well-known name])
+  fi
+  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+      [C:/Program Files/$VS_INSTALL_DIR], [well-known name])
+  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+      [C:/Program Files (x86)/$VS_INSTALL_DIR], [well-known name])
 
-  if test "x$ProgramW6432" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$ProgramW6432/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
+  if test "x$SDK_INSTALL_DIR" != x; then
+    if test "x$ProgramW6432" != x; then
+      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+          [$ProgramW6432/$SDK_INSTALL_DIR], [well-known name])
+    fi
+    if test "x$PROGRAMW6432" != x; then
+      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+          [$PROGRAMW6432/$SDK_INSTALL_DIR], [well-known name])
+    fi
+    if test "x$PROGRAMFILES" != x; then
+      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+          [$PROGRAMFILES/$SDK_INSTALL_DIR], [well-known name])
+    fi
+    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+        [C:/Program Files/$SDK_INSTALL_DIR], [well-known name])
+    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+        [C:/Program Files (x86)/$SDK_INSTALL_DIR], [well-known name])
   fi
-  if test "x$PROGRAMW6432" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$PROGRAMW6432/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
-  fi
-  if test "x$PROGRAMFILES" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$PROGRAMFILES/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
-  fi
-  TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([C:/Program Files/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
-  TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
 ])
 
+################################################################################
+
+AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
+[
+  AC_ARG_WITH(toolchain-version, [AS_HELP_STRING([--with-toolchain-version],
+      [the version of the toolchain to look for, use '--help' to show possible values @<:@platform dependent@:>@])])
+
+  if test "x$with_toolchain_version" = xlist; then
+    # List all toolchains
+    AC_MSG_NOTICE([The following toolchain versions are valid on this platform:])
+    for version in $VALID_VS_VERSIONS; do
+      eval VS_DESCRIPTION=\${VS_DESCRIPTION_$version}
+      $PRINTF "  %-10s  %s\n" $version "$VS_DESCRIPTION"
+    done
+
+    exit 0
+  elif test "x$with_toolchain_version" != x; then
+    # User override; check that it is valid
+    if test "x${VALID_VS_VERSIONS/$with_toolchain_version/}" = "x${VALID_VS_VERSIONS}"; then
+      AC_MSG_NOTICE([Visual Studio version $with_toolchain_version is not valid.])
+      AC_MSG_NOTICE([Valid Visual Studio versions: $VALID_VS_VERSIONS.])
+      AC_MSG_ERROR([Cannot continue.])
+    fi
+    VS_VERSIONS_PROBE_LIST="$with_toolchain_version"
+  else
+    # No flag given, use default
+    VS_VERSIONS_PROBE_LIST="$VALID_VS_VERSIONS"
+  fi
+
+  for VS_VERSION in $VS_VERSIONS_PROBE_LIST; do
+    TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE([$VS_VERSION])
+    if test "x$VS_ENV_CMD" != x; then
+      TOOLCHAIN_VERSION=$VS_VERSION
+      eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+      eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
+      eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
+      eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
+      # The rest of the variables are already evaled while probing
+      AC_MSG_NOTICE([Found $VS_DESCRIPTION])
+      break
+    fi
+  done
+])
+
+################################################################################
 # Check if the VS env variables were setup prior to running configure.
 # If not, then find vcvarsall.bat and run it automatically, and integrate
 # the set env variables into the spec file.
@@ -142,7 +260,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
   fi
 
   # First-hand choice is to locate and run the vsvars bat file.
-  TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE
+  TOOLCHAIN_FIND_VISUAL_STUDIO
+
   if test "x$VS_ENV_CMD" != x; then
     # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
     BASIC_FIXUP_EXECUTABLE(VS_ENV_CMD)
@@ -242,16 +361,17 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
   fi
 ])
 
-AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL],
+AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
 [
-  POSSIBLE_MSVCR_DLL="$1"
-  METHOD="$2"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    AC_MSG_NOTICE([Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD])
-
+  DLL_NAME="$1"
+  POSSIBLE_MSVC_DLL="$2"
+  METHOD="$3"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    AC_MSG_NOTICE([Found $1 at $POSSIBLE_MSVC_DLL using $METHOD])
+    
     # Need to check if the found msvcr is correct architecture
-    AC_MSG_CHECKING([found msvcr100.dll architecture])
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    AC_MSG_CHECKING([found $1 architecture])
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -267,96 +387,135 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL],
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       AC_MSG_RESULT([ok])
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      AC_MSG_CHECKING([for msvcr100.dll])
-      AC_MSG_RESULT([$MSVCR_DLL])
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      AC_MSG_CHECKING([for $1])
+      AC_MSG_RESULT([$MSVC_DLL])
     else
       AC_MSG_RESULT([incorrect, ignoring])
-      AC_MSG_NOTICE([The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE])
+      AC_MSG_NOTICE([The file type of the located $1 is $MSVC_DLL_FILETYPE])
     fi
   fi
 ])
 
-AC_DEFUN([TOOLCHAIN_SETUP_MSVCR_DLL],
+AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 [
-  AC_ARG_WITH(msvcr-dll, [AS_HELP_STRING([--with-msvcr-dll],
-      [copy this msvcr100.dll into the built JDK (Windows only) @<:@probed@:>@])])
+  VAR_NAME="$1"
+  DLL_NAME="$2"
+  MSVC_DLL=
 
-  if test "x$with_msvcr_dll" != x; then
-    # If given explicitely by user, do not probe. If not present, fail directly.
-    TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$with_msvcr_dll], [--with-msvcr-dll])
-    if test "x$MSVCR_DLL" = x; then
-      AC_MSG_ERROR([Could not find a proper msvcr100.dll as specified by --with-msvcr-dll])
-    fi
-  fi
-
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Using well-known location from Visual Studio 10.0
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
       BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_VC_INSTALL_DIR)
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC100.CRT/msvcr100.dll"
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
       else
-        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC100.CRT/msvcr100.dll"
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
       fi
-      TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [well-known location in VCINSTALLDIR])
+      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
+      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
+          [well-known location in VCINSTALLDIR])
     fi
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Check in the Boot JDK directory.
-    POSSIBLE_MSVCR_DLL="$BOOT_JDK/bin/msvcr100.dll"
-    TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [well-known location in Boot JDK])
+    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
+    TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
+        [well-known location in Boot JDK])
   fi
-
-  if test "x$MSVCR_DLL" = x; then
-    # Probe: Look in the Windows system32 directory
+  
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Look in the Windows system32 directory 
     CYGWIN_SYSTEMROOT="$SYSTEMROOT"
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_SYSTEMROOT)
-    POSSIBLE_MSVCR_DLL="$CYGWIN_SYSTEMROOT/system32/msvcr100.dll"
-    TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [well-known location in SYSTEMROOT])
+    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
+    TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
+        [well-known location in SYSTEMROOT])
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: If Visual Studio Express is installed, there is usually one with the debugger
     if test "x$VS100COMNTOOLS" != x; then
       CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
       BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_VS_TOOLS_DIR)
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x64/ | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x64/ | $HEAD --lines 1`
       else
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x86/ | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x86/ | $HEAD --lines 1`
       fi
-      TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [search of VS100COMNTOOLS])
+      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
+          [search of VS100COMNTOOLS])
     fi
   fi
-
-  if test "x$MSVCR_DLL" = x; then
+      
+  if test "x$MSVC_DLL" = x; then
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
-    # (This was the original behaviour; kept since it might turn up something)
+    # (This was the original behaviour; kept since it might turn something up)
     if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x64 | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x64 | $HEAD --lines 1`
       else
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
-        if test "x$POSSIBLE_MSVCR_DLL" = x; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVC_DLL" = x; then
           # We're grasping at straws now...
-          POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $HEAD --lines 1`
+          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	      | $HEAD --lines 1`
         fi
       fi
-
-      TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [search of VCINSTALLDIR])
+      
+      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
+          [search of VCINSTALLDIR])
     fi
   fi
-
-  if test "x$MSVCR_DLL" = x; then
-    AC_MSG_CHECKING([for msvcr100.dll])
+  
+  if test "x$MSVC_DLL" = x; then
+    AC_MSG_CHECKING([for $DLL_NAME])
     AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Could not find msvcr100.dll. Please specify using --with-msvcr-dll.])
+    AC_MSG_ERROR([Could not find $DLL_NAME. Please specify using --with-msvcr-dll.])
   fi
 
-  BASIC_FIXUP_PATH(MSVCR_DLL)
+  $1=$MSVC_DLL
+  BASIC_FIXUP_PATH($1)
+  AC_SUBST($1, [$]$1)
+])
+
+AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
+[
+  AC_ARG_WITH(msvcr-dll, [AS_HELP_STRING([--with-msvcr-dll],
+      [path to microsoft C runtime dll (msvcr*.dll) (Windows only) @<:@probed@:>@])])
+
+  if test "x$with_msvcr_dll" != x; then
+    # If given explicitely by user, do not probe. If not present, fail directly.
+    TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$with_msvcr_dll],
+        [--with-msvcr-dll])
+    if test "x$MSVC_DLL" = x; then
+      AC_MSG_ERROR([Could not find a proper $MSVCR_NAME as specified by --with-msvcr-dll])
+    fi
+  else
+    TOOLCHAIN_SETUP_MSVC_DLL([MSVCR_DLL], [${MSVCR_NAME}])
+  fi
+
+  AC_ARG_WITH(msvcp-dll, [AS_HELP_STRING([--with-msvcp-dll],
+      [path to microsoft C++ runtime dll (msvcp*.dll) (Windows only) @<:@probed@:>@])])
+
+  if test "x$MSVCP_NAME" != "x"; then
+    if test "x$with_msvcp_dll" != x; then
+      # If given explicitely by user, do not probe. If not present, fail directly.
+      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$with_msvcp_dll],
+          [--with-msvcp-dll])
+      if test "x$MSVC_DLL" = x; then
+        AC_MSG_ERROR([Could not find a proper $MSVCP_NAME as specified by --with-msvcp-dll])
+      fi
+    else
+      TOOLCHAIN_SETUP_MSVC_DLL([MSVCP_DLL], [${MSVCP_NAME}])
+    fi
+  fi
 ])
