@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 package org.xml.sax.ptests;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
+import java.io.FilePermission;
 import javax.xml.parsers.SAXParserFactory;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
@@ -40,7 +39,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /**
  * Class containing the test cases for XMLReaderAdapter API
  */
-public class XMLReaderAdapterTest {
+public class XMLReaderAdapterTest extends JAXPBaseTest {
     /**
      * http://xml.org/sax/features/namespace-prefixes property name.
      */
@@ -58,60 +57,51 @@ public class XMLReaderAdapterTest {
     }
 
     /**
-     * To test the constructor that uses XMLReader
+     * To test the constructor that uses XMLReader.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void constructor02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-
-            assertNotNull(new XMLReaderAdapter(xmlReader));
-        } catch (ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void constructor02() throws Exception {
+        XMLReader xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+        assertNotNull(new XMLReaderAdapter(xmlReader));
     }
 
     /**
      * To test the parse method. The specification says that this method
      * will throw an exception if the embedded XMLReader does not support
      * the http://xml.org/sax/features/namespace-prefixes property.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void nsfeature01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-            if (!xmlReader.getFeature(NM_PREFIXES_PROPERTY)) {
-                xmlReader.setFeature(NM_PREFIXES_PROPERTY, true);
-            }
-
-            assertTrue(xmlReader.getFeature(NM_PREFIXES_PROPERTY));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
+    public void nsfeature01() throws Exception {
+        XMLReader xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+        if (!xmlReader.getFeature(NM_PREFIXES_PROPERTY)) {
+            xmlReader.setFeature(NM_PREFIXES_PROPERTY, true);
         }
+        assertTrue(xmlReader.getFeature(NM_PREFIXES_PROPERTY));
     }
 
     /**
      * To test the parse method. The specification says that this method
      * will throw an exception if the embedded XMLReader does not support
      * the http://xml.org/sax/features/namespace-prefixes property.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void parse01() {
+    public void parse01() throws Exception {
+        setPermissions(new FilePermission(XML_DIR + "/-", "read"));
         try (FileInputStream fis = new FileInputStream(XML_DIR + "namespace1.xml")) {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+            XMLReader xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
             if (!xmlReader.getFeature(NM_PREFIXES_PROPERTY)) {
                 xmlReader.setFeature(NM_PREFIXES_PROPERTY, true);
             }
             XMLReaderAdapter xmlRA = new XMLReaderAdapter(xmlReader);
-
-            InputSource is = new InputSource(fis);
             xmlRA.setDocumentHandler(new HandlerBase());
-            xmlRA.parse(is);
-        } catch (IOException | SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
+            xmlRA.parse(new InputSource(fis));
         }
+        setPermissions();
     }
 }

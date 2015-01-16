@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,80 +25,73 @@ package javax.xml.transform.ptests;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 
 /**
  * Unit test for SAXSource sourceToInputSource API.
  */
-public class SAXSourceTest01 {
+public class SAXSourceTest extends JAXPFileReadOnlyBaseTest {
     /**
-     * Test file name
+     * Test style-sheet file name
      */
     private final String TEST_FILE = XML_DIR + "cities.xsl";
 
     /**
      * Test obtaining a SAX InputSource object from a Source object.
+     *
+     * @throws IOException reading file error.
      */
-    @Test
-    public void source2inputsource01() {
-        try {
-            StreamSource streamSource = new StreamSource (
-                                new FileInputStream (TEST_FILE));
+    @Test(groups = {"readLocalFiles"})
+    public void source2inputsource01() throws IOException {
+        try (FileInputStream fis = new FileInputStream(TEST_FILE)) {
+            StreamSource streamSource = new StreamSource(fis);
             assertNotNull(SAXSource.sourceToInputSource(streamSource));
-        } catch (FileNotFoundException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * This test case tries to get InputSource from DOMSource using
      * sourceToInputSource method. It is not possible and hence null is
-     * expected. This is a negative test case
+     * expected. This is a negative test case,
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void source2inputsource02() {
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.newDocumentBuilder().parse(new File(TEST_FILE));
-            assertNull(SAXSource.sourceToInputSource(new DOMSource(null)));
-        } catch (ParserConfigurationException | SAXException | IOException ex) {
-            failUnexpected(ex);
-        }
-
+    @Test(groups = {"readLocalFiles"})
+    public void source2inputsource02() throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        dbf.newDocumentBuilder().parse(new File(TEST_FILE));
+        assertNull(SAXSource.sourceToInputSource(new DOMSource(null)));
     }
 
     /**
      * This test case tries to get InputSource from SAXSource using
      * sourceToInputSource method. This will also check if the systemId
      * remained the same. This is a positive test case.
+     *
+     * @throws IOException reading file error.
      */
-    @Test
-    public void source2inputsource03() {
+    @Test(groups = {"readLocalFiles"})
+    public void source2inputsource03() throws IOException {
         String SYSTEM_ID = "file:///" + XML_DIR;
-        try {
+        try (FileInputStream fis = new FileInputStream(TEST_FILE)) {
             SAXSource saxSource =
-                    new SAXSource(new InputSource(new FileInputStream(TEST_FILE)));
+                    new SAXSource(new InputSource(fis));
             saxSource.setSystemId(SYSTEM_ID);
             assertEquals(SAXSource.sourceToInputSource(saxSource).getSystemId(),
                     SYSTEM_ID);
-        } catch (FileNotFoundException ex) {
-            failUnexpected(ex);
         }
     }
 }

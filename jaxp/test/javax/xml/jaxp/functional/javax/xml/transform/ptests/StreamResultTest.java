@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,11 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
-import static javax.xml.transform.ptests.TransformerTestConst.CLASS_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
@@ -47,7 +48,7 @@ import org.xml.sax.SAXException;
  * Test a StreamResult using a file name that contains URL characters that need
  * to be encoded.
  */
-public class StreamResultTest01 {
+public class StreamResultTest extends JAXPFileBaseTest {
     /**
      * Unit test for StreamResult.
      */
@@ -82,7 +83,7 @@ public class StreamResultTest01 {
                 DOMSource domSource = new DOMSource(document);
                 StreamSource streamSource = new StreamSource(new FileInputStream(xmlFile));
 
-                File streamResultFile = new File(CLASS_DIR + file);
+                File streamResultFile = new File(USER_DIR + file);
                 StreamResult streamResult = new StreamResult(streamResultFile);
 
                 Transformer transformer = TransformerFactory.newInstance().newTransformer(domSource);

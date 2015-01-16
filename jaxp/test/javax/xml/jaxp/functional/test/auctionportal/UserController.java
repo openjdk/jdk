@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,17 @@ package test.auctionportal;
 import static com.sun.org.apache.xerces.internal.jaxp.JAXPConstants.JAXP_SCHEMA_LANGUAGE;
 import static org.testng.Assert.assertFalse;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareDocumentWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -50,8 +46,6 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSParser;
 import org.w3c.dom.ls.LSSerializer;
-import org.xml.sax.SAXException;
-import static test.auctionportal.HiBidConstants.CLASS_DIR;
 import static test.auctionportal.HiBidConstants.GOLDEN_DIR;
 import static test.auctionportal.HiBidConstants.PORTAL_ACCOUNT_NS;
 import static test.auctionportal.HiBidConstants.XML_DIR;
@@ -59,141 +53,127 @@ import static test.auctionportal.HiBidConstants.XML_DIR;
 /**
  * This is the user controller class for the Auction portal HiBid.com.
  */
-public class UserController {
+public class UserController extends JAXPFileBaseTest {
     /**
      * Checking when creating an XML document using DOM Level 2 validating
      * it without having a schema source or a schema location It must throw a
      * sax parse exception.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testCreateNewUser() {
-        String resultFile = CLASS_DIR + "accountInfoOut.xml";
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.setValidating(true);
+    public void testCreateNewUser() throws Exception {
+        String resultFile = USER_DIR + "accountInfoOut.xml";
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        dbf.setValidating(true);
 
-            DocumentBuilder docBuilder = dbf.newDocumentBuilder();
-            MyErrorHandler eh = new MyErrorHandler();
-            docBuilder.setErrorHandler(eh);
+        DocumentBuilder docBuilder = dbf.newDocumentBuilder();
+        MyErrorHandler eh = new MyErrorHandler();
+        docBuilder.setErrorHandler(eh);
 
-            Document document = docBuilder.newDocument();
+        Document document = docBuilder.newDocument();
 
-            Element account = document.createElementNS(PORTAL_ACCOUNT_NS, "acc:Account");
-            Attr accountID = document.createAttributeNS(PORTAL_ACCOUNT_NS, "acc:accountID");
-            account.setAttributeNode(accountID);
+        Element account = document.createElementNS(PORTAL_ACCOUNT_NS, "acc:Account");
+        Attr accountID = document.createAttributeNS(PORTAL_ACCOUNT_NS, "acc:accountID");
+        account.setAttributeNode(accountID);
 
-            account.appendChild(document.createElement("FirstName"));
-            account.appendChild(document.createElementNS(PORTAL_ACCOUNT_NS, "acc:LastName"));
-            account.appendChild(document.createElement("UserID"));
+        account.appendChild(document.createElement("FirstName"));
+        account.appendChild(document.createElementNS(PORTAL_ACCOUNT_NS, "acc:LastName"));
+        account.appendChild(document.createElement("UserID"));
 
-            DOMImplementationLS impl
-                    = (DOMImplementationLS) DOMImplementationRegistry
-                            .newInstance().getDOMImplementation("LS");
-            LSSerializer writer = impl.createLSSerializer();
-            LSParser builder = impl.createLSParser(DOMImplementationLS.MODE_SYNCHRONOUS, null);
-            FileOutputStream output = new FileOutputStream(resultFile);
+        DOMImplementationLS impl
+                = (DOMImplementationLS) DOMImplementationRegistry
+                        .newInstance().getDOMImplementation("LS");
+        LSSerializer writer = impl.createLSSerializer();
+        LSParser builder = impl.createLSParser(DOMImplementationLS.MODE_SYNCHRONOUS, null);
+        try(FileOutputStream output = new FileOutputStream(resultFile)) {
             MyDOMOutput domOutput = new MyDOMOutput();
-
             domOutput.setByteStream(output);
             writer.write(account, domOutput);
             docBuilder.parse(resultFile);
-
-            assertTrue(eh.isAnyError());
-        } catch (ParserConfigurationException | ClassNotFoundException |
-                InstantiationException | IllegalAccessException
-                | ClassCastException | SAXException | IOException e) {
-            failUnexpected(e);
         }
+        assertTrue(eh.isAnyError());
     }
 
     /**
      * Checking conflicting namespaces and use renameNode and normalizeDocument.
      * @see <a href="content/accountInfo.xml">accountInfo.xml</a>
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testAddUser() {
-        String resultFile = CLASS_DIR + "accountRole.out";
+    public void testAddUser() throws Exception {
+        String resultFile = USER_DIR + "accountRole.out";
         String xmlFile = XML_DIR + "accountInfo.xml";
 
-        try {
-            // Copy schema for outputfile
-            Files.copy(Paths.get(XML_DIR, "accountInfo.xsd"),
-                    Paths.get(CLASS_DIR, "accountInfo.xsd"),
-                    StandardCopyOption.REPLACE_EXISTING);
-            MyErrorHandler eh = new MyErrorHandler();
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        // Copy schema for outputfile
+        Files.copy(Paths.get(XML_DIR, "accountInfo.xsd"),
+                Paths.get(USER_DIR, "accountInfo.xsd"),
+                StandardCopyOption.REPLACE_EXISTING);
+        MyErrorHandler eh = new MyErrorHandler();
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
-            dbf.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
-            dbf.setNamespaceAware(true);
-            dbf.setValidating(true);
+        dbf.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
+        dbf.setNamespaceAware(true);
+        dbf.setValidating(true);
 
-            DocumentBuilder docBuilder = dbf.newDocumentBuilder();
-            docBuilder.setErrorHandler(eh);
+        DocumentBuilder docBuilder = dbf.newDocumentBuilder();
+        docBuilder.setErrorHandler(eh);
 
-            Document document = docBuilder.parse(xmlFile);
-            Element sell = (Element) document.getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "Sell").item(0);
-            Element role = (Element) sell.getParentNode();
+        Document document = docBuilder.parse(xmlFile);
+        Element sell = (Element) document.getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "Sell").item(0);
+        Element role = (Element) sell.getParentNode();
 
-            Element buy = (Element) document.renameNode(sell, PORTAL_ACCOUNT_NS, "acc:Buy");
-            role.appendChild(buy);
+        Element buy = (Element) document.renameNode(sell, PORTAL_ACCOUNT_NS, "acc:Buy");
+        role.appendChild(buy);
 
-            DOMImplementationLS impl
-                    = (DOMImplementationLS) DOMImplementationRegistry
-                            .newInstance().getDOMImplementation("LS");
-            LSSerializer writer = impl.createLSSerializer();
+        DOMImplementationLS impl
+                = (DOMImplementationLS) DOMImplementationRegistry
+                        .newInstance().getDOMImplementation("LS");
+        LSSerializer writer = impl.createLSSerializer();
 
 
-            try(FileOutputStream output = new FileOutputStream(resultFile)) {
-                MyDOMOutput mydomoutput = new MyDOMOutput();
-                mydomoutput.setByteStream(output);
-                writer.write(document, mydomoutput);
-            }
-
-            docBuilder.parse(resultFile);
-            assertFalse(eh.isAnyError());
-        } catch (ParserConfigurationException | SAXException | IOException
-                | ClassNotFoundException | InstantiationException
-                | IllegalAccessException | ClassCastException e) {
-            failUnexpected(e);
+        try(FileOutputStream output = new FileOutputStream(resultFile)) {
+            MyDOMOutput mydomoutput = new MyDOMOutput();
+            mydomoutput.setByteStream(output);
+            writer.write(document, mydomoutput);
         }
+
+        docBuilder.parse(resultFile);
+        assertFalse(eh.isAnyError());
     }
 
     /**
      * Checking Text content in XML file.
      * @see <a href="content/accountInfo.xml">accountInfo.xml</a>
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testMoreUserInfo() {
+    @Test(groups = {"readLocalFiles"})
+    public void testMoreUserInfo() throws Exception {
         String xmlFile = XML_DIR + "accountInfo.xml";
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
-        try {
-            System.out.println("Checking additional user info");
+        dbf.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
+        dbf.setNamespaceAware(true);
+        dbf.setValidating(true);
 
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = dbf.newDocumentBuilder();
+        MyErrorHandler eh = new MyErrorHandler();
+        docBuilder.setErrorHandler(eh);
 
-            dbf.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
-            dbf.setNamespaceAware(true);
-            dbf.setValidating(true);
+        Document document = docBuilder.parse(xmlFile);
+        Element account = (Element)document
+                .getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "Account").item(0);
+        String textContent = account.getTextContent();
+        assertTrue(textContent.trim().regionMatches(0, "Rachel", 0, 6));
+        assertEquals(textContent, "RachelGreen744");
 
-            DocumentBuilder docBuilder = dbf.newDocumentBuilder();
-            MyErrorHandler eh = new MyErrorHandler();
-            docBuilder.setErrorHandler(eh);
+        Attr accountID = account.getAttributeNodeNS(PORTAL_ACCOUNT_NS, "accountID");
+        assertTrue(accountID.getTextContent().trim().equals("1"));
 
-            Document document = docBuilder.parse(xmlFile);
-            Element account = (Element)document
-                    .getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "Account").item(0);
-            String textContent = account.getTextContent();
-            assertTrue(textContent.trim().regionMatches(0, "Rachel", 0, 6));
-            assertEquals(textContent, "RachelGreen744");
-
-            Attr accountID = account.getAttributeNodeNS(PORTAL_ACCOUNT_NS, "accountID");
-            assertTrue(accountID.getTextContent().trim().equals("1"));
-
-            assertFalse(eh.isAnyError());
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            failUnexpected(e);
-        }
+        assertFalse(eh.isAnyError());
     }
 
     /**
@@ -204,83 +184,73 @@ public class UserController {
      * into an XML file which is validated by the schema This covers Row 5
      * for the table
      * http://javaweb.sfbay/~jsuttor/JSR206/jsr-206-html/ch03s05.html. Filed
-     * bug 4893745 because there was a difference in behavior
+     * bug 4893745 because there was a difference in behavior.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testCreateUserAccount() {
-        System.out.println("Creating user account");
+    public void testCreateUserAccount() throws Exception {
         String userXmlFile = XML_DIR + "userInfo.xml";
         String accountXmlFile = XML_DIR + "accountInfo.xml";
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        dbf.setValidating(true);
 
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.setValidating(true);
+        DocumentBuilder docBuilder = dbf.newDocumentBuilder();
+        MyErrorHandler eh = new MyErrorHandler();
+        docBuilder.setErrorHandler(eh);
 
-            DocumentBuilder docBuilder = dbf.newDocumentBuilder();
-            MyErrorHandler eh = new MyErrorHandler();
-            docBuilder.setErrorHandler(eh);
+        Document document = docBuilder.parse(userXmlFile);
+        Element user = (Element) document.getElementsByTagName("FirstName").item(0);
+        // Set schema after parsing userInfo.xml. Otherwise it will conflict
+        // with DTD validation.
+        dbf.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
+        DocumentBuilder docBuilder1 = dbf.newDocumentBuilder();
+        docBuilder1.setErrorHandler(eh);
+        Document accDocument = docBuilder1.parse(accountXmlFile);
 
-            Document document = docBuilder.parse(userXmlFile);
-            Element user = (Element) document.getElementsByTagName("FirstName").item(0);
-            // Set schema after parsing userInfo.xml. Otherwise it will conflict
-            // with DTD validation.
-            dbf.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
-            DocumentBuilder docBuilder1 = dbf.newDocumentBuilder();
-            docBuilder1.setErrorHandler(eh);
-            Document accDocument = docBuilder1.parse(accountXmlFile);
+        Element firstName = (Element) accDocument
+                .getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "FirstName").item(0);
+        Element adoptedAccount = (Element) accDocument.adoptNode(user);
 
-            Element firstName = (Element) accDocument
-                    .getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "FirstName").item(0);
-            Element adoptedAccount = (Element) accDocument.adoptNode(user);
+        Element parent = (Element) firstName.getParentNode();
+        parent.replaceChild(adoptedAccount, firstName);
 
-            Element parent = (Element) firstName.getParentNode();
-            parent.replaceChild(adoptedAccount, firstName);
+        DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
+        DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
+        LSSerializer writer = impl.createLSSerializer();
 
-            DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
-            DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
-            LSSerializer writer = impl.createLSSerializer();
+        MyDOMOutput mydomoutput = new MyDOMOutput();
+        mydomoutput.setByteStream(System.out);
 
-            MyDOMOutput mydomoutput = new MyDOMOutput();
-            mydomoutput.setByteStream(System.out);
+        writer.write(document, mydomoutput);
+        writer.write(accDocument, mydomoutput);
 
-            writer.write(document, mydomoutput);
-            writer.write(accDocument, mydomoutput);
-
-            assertFalse(eh.isAnyError());
-        } catch (ParserConfigurationException | SAXException | IOException
-                | ClassNotFoundException | InstantiationException
-                | IllegalAccessException | ClassCastException e) {
-            failUnexpected(e);
-        }
+        assertFalse(eh.isAnyError());
     }
 
     /**
      * Checking for Row 8 from the schema table when setting the schemaSource
      * without the schemaLanguage must report an error.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testUserError() throws IllegalArgumentException {
-        System.out.println("Creating an error in user account");
-
+    public void testUserError() throws Exception {
         String xmlFile = XML_DIR + "userInfo.xml";
         String schema = "http://java.sun.com/xml/jaxp/properties/schemaSource";
         String schemaValue = "http://dummy.com/dummy.xsd";
 
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.setValidating(true);
-            dbf.setAttribute(schema, schemaValue);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        dbf.setValidating(true);
+        dbf.setAttribute(schema, schemaValue);
 
-            DocumentBuilder docBuilder = dbf.newDocumentBuilder();
-            MyErrorHandler eh = new MyErrorHandler();
-            docBuilder.setErrorHandler(eh);
-            Document document = docBuilder.parse(xmlFile);
-            assertFalse(eh.isAnyError());
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            failUnexpected(e);
-        }
+        DocumentBuilder docBuilder = dbf.newDocumentBuilder();
+        MyErrorHandler eh = new MyErrorHandler();
+        docBuilder.setErrorHandler(eh);
+        docBuilder.parse(xmlFile);
+        assertFalse(eh.isAnyError());
     }
 
     /**
@@ -288,10 +258,12 @@ public class UserController {
      * @see <a href="content/screenName.xml">screenName.xml</a> has prefix of
      * userName is bound to "http://hibid.com/user" namespace normalization
      * will create a namespace of prefix us and attach userEmail.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testCheckScreenNameExists() {
-        String resultFile = CLASS_DIR + "screenName.out";
+    public void testCheckScreenNameExists() throws Exception {
+        String resultFile = USER_DIR + "screenName.out";
         String xmlFile = XML_DIR + "screenName.xml";
         String goldFile = GOLDEN_DIR + "screenNameGold.xml";
 
@@ -318,21 +290,7 @@ public class UserController {
             MyDOMOutput domoutput = new MyDOMOutput();
             domoutput.setByteStream(output);
             writer.write(document, domoutput);
-
-            assertTrue(compareDocumentWithGold(goldFile, resultFile));
-        } catch (ClassNotFoundException | InstantiationException
-                | IllegalAccessException | ClassCastException | IOException
-                | ParserConfigurationException | SAXException e) {
-            failUnexpected(e);
-        } finally {
-            try {
-                Path resultPath = Paths.get(resultFile);
-                if (Files.exists(resultPath)) {
-                    Files.delete(resultPath);
-                }
-            } catch (IOException ex) {
-                failCleanup(ex, resultFile);
-            }
         }
+        assertTrue(compareDocumentWithGold(goldFile, resultFile));
     }
 }
