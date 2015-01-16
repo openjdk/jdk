@@ -63,7 +63,8 @@ endef
 # Param 2 - Extra properties files to process
 define SetupCompileProperties
   # Lookup the properties that need to be compiled into resource bundles.
-  PROPSOURCES := $2 $$(shell $(FIND) $(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes -name "*.properties")
+  PROPSOURCES := $2 \
+      $$(shell $(FIND) $(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes -name "*.properties")
 
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
@@ -74,7 +75,7 @@ define SetupCompileProperties
       $$(patsubst %.properties, %.java, \
       $$(subst /share/classes,, $$(PROPSOURCES))))
 
-  # Generate the package dirs for the tobe generated java files. Sort to remove
+  # Generate the package dirs for the to be generated java files. Sort to remove
   # duplicates.
   PROPDIRS := $$(sort $$(dir $$(PROPJAVAS)))
 
@@ -88,8 +89,8 @@ define SetupCompileProperties
 
   # Now setup the rule for the generation of the resource bundles.
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_props: $$(PROPSOURCES)
-	$(FIND) $$(@D) -name "*.java" $(FIND_DELETE)
 	$(MKDIR) -p $$(@D) $$(PROPDIRS)
+	$(FIND) $$(@D) -name "*.java" -a ! -name "*Properties.java" $(FIND_DELETE)
 	$(ECHO) Compiling $$(words $$(PROPSOURCES)) properties into resource bundles for $(MODULE)
 	$(TOOL_COMPILEPROPS_CMD) $$(PROPCMDLINE)
 	$(TOUCH) $$@
@@ -102,11 +103,11 @@ endef
 # Param 1 - Variable to add targets to
 # Param 2 - Extra properties files to process
 define SetupParseProperties
-  #property file to generate
-  PARSEPROPSOURCES := $$(foreach var,$2,$$(addsuffix $$(var),$(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes/))  
+  # property files to process
+  PARSEPROPSOURCES := $$(addprefix $(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes/, $2)
 
-  PARSEPROPALLDIRS := $$(patsubst $(LANGTOOLS_TOPDIR)/src/%, \
-      $(SUPPORT_OUTPUTDIR)/gensrc/%, \
+  PARSEPROPALLDIRS := $$(patsubst $(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes/%, \
+      $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/%, \
       $$(dir $$(PARSEPROPSOURCES)))
 
   PARSEPROPDIRS := $$(sort $$(PARSEPROPALLDIRS))
@@ -114,11 +115,11 @@ define SetupParseProperties
   PARSEPROPCMDLINE := $$(subst _SPACE_, $$(SPACE), \
     $$(join $$(foreach var,$$(PARSEPROPSOURCES),$$(addprefix -compile_SPACE_,$$(var))), \
     $$(addprefix _SPACE_, $$(PARSEPROPALLDIRS))))
-  
+
   # Now setup the rule for the generation of the resource bundles.
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props: $(PARSEPROPSOURCES)
-	$(CP) -r $(LANGTOOLS_TOPDIR)/make/tools/propertiesparser/resources $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes/propertiesparser/resources
 	$(MKDIR) -p $$(@D) $$(PARSEPROPDIRS)
+	$(FIND) $$(@D) -name "*Properties.java" $(FIND_DELETE)
 	$(ECHO) Parsing $$(words $$(PARSEPROPSOURCES)) properties into enum-like class for $(MODULE)
 	$(TOOL_PARSEPROPS_CMD) $$(PARSEPROPCMDLINE)
 	$(TOUCH) $$@
