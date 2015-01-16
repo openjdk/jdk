@@ -25,6 +25,9 @@ import static jdk.testlibrary.Asserts.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import jdk.testlibrary.JcmdBase;
@@ -95,11 +98,11 @@ public class TestJcmdDefaults {
     }
 
     private static void verifyOutputAgainstFile(OutputAnalyzer output) throws IOException {
-        File file = new File(TEST_SRC, "usage.out");
-        List<String> fileOutput = Utils.fileAsList(file);
+        Path path = Paths.get(TEST_SRC, "usage.out");
+        List<String> fileOutput = Files.readAllLines(path);
         List<String> outputAsLines = output.asLines();
         assertTrue(outputAsLines.containsAll(fileOutput),
-                "The ouput should contain all content of " + file.getAbsolutePath());
+                "The ouput should contain all content of " + path.toAbsolutePath());
     }
 
 }

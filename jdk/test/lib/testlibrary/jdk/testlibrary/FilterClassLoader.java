@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,29 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.testlibrary;
 
-/* @test
-   @bug 7173464
-   @summary Clipboard.getAvailableDataFlavors: Comparison method violates contract
-   @author Petr Pchelko
-   @run main DataFlavorComparatorTest
-*/
+import java.util.function.Predicate;
+/**
+ * A classloader, which using target classloader in case provided condition
+ * for class name is met, and using parent otherwise
+ */
+public class FilterClassLoader extends ClassLoader {
 
-import sun.awt.datatransfer.DataTransferer;
-import java.util.Comparator;
-import sun.datatransfer.DataFlavorUtil;
-import java.awt.datatransfer.DataFlavor;
+    private final ClassLoader target;
+    private final Predicate<String> condition;
 
-public class DataFlavorComparatorTest {
+    public FilterClassLoader(ClassLoader target, ClassLoader parent,
+            Predicate<String> condition) {
+        super(parent);
+        this.condition = condition;
+        this.target = target;
+    }
 
-    public static void main(String[] args) {
-        Comparator<DataFlavor> comparator = DataFlavorUtil.getDataFlavorComparator();
-        DataFlavor flavor1 = DataFlavor.imageFlavor;
-        DataFlavor flavor2 = DataFlavor.selectionHtmlFlavor;
-        if (comparator.compare(flavor1, flavor2) == 0) {
-            throw new RuntimeException(flavor1.getMimeType() + " and " + flavor2.getMimeType() +
-                " should not be equal");
+    @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        if (condition.test(name)) {
+            return target.loadClass(name);
         }
+        return super.loadClass(name);
     }
 }
-

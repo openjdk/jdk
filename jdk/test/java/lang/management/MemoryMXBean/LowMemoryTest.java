@@ -32,6 +32,7 @@
  *
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
+ * @requires vm.opt.ExplicitGCInvokesConcurrent == "false" | vm.opt.ExplicitGCInvokesConcurrent == "null"
  * @run main/timeout=600 LowMemoryTest
  */
 

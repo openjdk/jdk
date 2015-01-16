@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,30 @@
  * questions.
  */
 
-/* @test
-   @bug 7173464
-   @summary Clipboard.getAvailableDataFlavors: Comparison method violates contract
-   @author Petr Pchelko
-   @run main DataFlavorComparatorTest
-*/
+/*
+ * @test
+ * @summary Change default criticality of policy mappings and policy constraints
+            certificate extensions
+ * @bug 8059916
+ */
 
-import sun.awt.datatransfer.DataTransferer;
-import java.util.Comparator;
-import sun.datatransfer.DataFlavorUtil;
-import java.awt.datatransfer.DataFlavor;
+import sun.security.x509.PolicyConstraintsExtension;
+import sun.security.x509.PolicyMappingsExtension;
 
-public class DataFlavorComparatorTest {
-
-    public static void main(String[] args) {
-        Comparator<DataFlavor> comparator = DataFlavorUtil.getDataFlavorComparator();
-        DataFlavor flavor1 = DataFlavor.imageFlavor;
-        DataFlavor flavor2 = DataFlavor.selectionHtmlFlavor;
-        if (comparator.compare(flavor1, flavor2) == 0) {
-            throw new RuntimeException(flavor1.getMimeType() + " and " + flavor2.getMimeType() +
-                " should not be equal");
+public class DefaultCriticality {
+    public static void main(String [] args) throws Exception {
+        PolicyConstraintsExtension pce = new PolicyConstraintsExtension(-1,-1);
+        if (!pce.isCritical()) {
+            throw new Exception("PolicyConstraintsExtension should be " +
+                                "critical by default");
         }
+
+        PolicyMappingsExtension pme = new PolicyMappingsExtension();
+        if (!pme.isCritical()) {
+            throw new Exception("PolicyMappingsExtension should be " +
+                                "critical by default");
+        }
+
+        System.out.println("Test passed.");
     }
 }
-
