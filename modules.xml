@@ -41,7 +41,8 @@
   <module>
     <name>java.activation</name>
     <depend>java.base</depend>
-    <depend re-exports="true">java.desktop</depend>
+    <depend re-exports="true">java.datatransfer</depend>
+    <depend>java.desktop</depend>
     <depend>java.logging</depend>
     <export>
       <name>javax.activation</name>
@@ -312,6 +313,7 @@
     <export>
       <name>sun.reflect.misc</name>
       <to>java.corba</to>
+      <to>java.datatransfer</to>
       <to>java.desktop</to>
       <to>java.management</to>
       <to>java.rmi</to>
@@ -582,11 +584,23 @@
     </export>
   </module>
   <module>
+    <name>java.datatransfer</name>
+    <depend>java.base</depend>
+    <export>
+      <name>java.awt.datatransfer</name>
+    </export>
+    <export>
+      <name>sun.datatransfer</name>
+      <to>java.desktop</to>
+    </export>
+  </module>
+  <module>
     <name>java.desktop</name>
     <depend>java.base</depend>
     <depend>java.logging</depend>
     <depend>java.prefs</depend>
     <depend re-exports="true">java.xml</depend>
+    <depend re-exports="true">java.datatransfer</depend>
     <depend>jdk.charsets</depend>
     <export>
       <name>java.applet</name>
@@ -596,9 +610,6 @@
     </export>
     <export>
       <name>java.awt.color</name>
-    </export>
-    <export>
-      <name>java.awt.datatransfer</name>
     </export>
     <export>
       <name>java.awt.dnd</name>
@@ -885,6 +896,7 @@
     <depend re-exports="true">java.activation</depend>
     <depend re-exports="true">java.compact3</depend>
     <depend re-exports="true">java.corba</depend>
+    <depend re-exports="true">java.datatransfer</depend>
     <depend re-exports="true">java.desktop</depend>
     <depend re-exports="true">java.transaction</depend>
     <depend re-exports="true">java.xml.bind</depend>
@@ -1118,6 +1130,7 @@
     <depend re-exports="true">java.activation</depend>
     <depend>java.base</depend>
     <depend>java.compiler</depend>
+    <depend>java.datatransfer</depend>
     <depend>java.desktop</depend>
     <depend>java.logging</depend>
     <depend re-exports="true">java.xml</depend>
@@ -1325,6 +1338,7 @@
     <name>java.xml.ws</name>
     <depend>java.annotations.common</depend>
     <depend>java.base</depend>
+    <depend>java.datatransfer</depend>
     <depend>java.desktop</depend>
     <depend>java.logging</depend>
     <depend>java.management</depend>
@@ -1592,6 +1606,7 @@
   <module>
     <name>jdk.hotspot.agent</name>
     <depend>java.base</depend>
+    <depend>java.datatransfer</depend>
     <depend>java.desktop</depend>
     <depend>java.rmi</depend>
     <depend>java.scripting</depend>
@@ -1764,6 +1779,7 @@
     <depend>java.activation</depend>
     <depend>java.base</depend>
     <depend>java.compiler</depend>
+    <depend>java.datatransfer</depend>
     <depend>java.desktop</depend>
     <depend>java.logging</depend>
     <depend>java.xml</depend>
