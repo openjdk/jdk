@@ -20,25 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package javax.xml.transform.ptests.othervm;
+package jaxp.library;
 
-import javax.xml.transform.*;
-import jaxp.library.JAXPBaseTest;
-import static org.testng.Assert.fail;
-import org.testng.annotations.Test;
+import java.io.FilePermission;
+import static jaxp.library.JAXPBaseTest.setPermissions;
+import org.testng.annotations.AfterGroups;
+import org.testng.annotations.BeforeGroups;
 
 /**
- * Negative test for set invalid TransformerFactory property.
+ * This is a base class that every test class that need to reading local XML
+ * files must extend if it needs to be run with security mode.
  */
-public class TFCErrorTest  extends JAXPBaseTest {
-    @Test(expectedExceptions = ClassNotFoundException.class)
-    public void tfce01() throws Exception {
-        try{
-            setSystemProperty("javax.xml.transform.TransformerFactory","xx");
-            TransformerFactory.newInstance();
-            fail("Expect TransformerFactoryConfigurationError here");
-        } catch (TransformerFactoryConfigurationError expected) {
-            throw expected.getException();
-        }
+public class JAXPFileReadOnlyBaseTest extends JAXPBaseTest {
+    /**
+     * Source files/XML files directory.
+     */
+    private final String SRC_DIR = getSystemProperty("test.src");
+
+    /**
+     * Allowing access local file system for this group.
+     */
+    @BeforeGroups (groups = {"readLocalFiles"})
+    public void setFilePermissions() {
+        setPermissions(new FilePermission(SRC_DIR + "/-", "read"));
+    }
+
+    /**
+     * Restore the system property.
+     */
+    @AfterGroups (groups = {"readLocalFiles"})
+    public void restoreFilePermissions() {
+        setPermissions();
     }
 }

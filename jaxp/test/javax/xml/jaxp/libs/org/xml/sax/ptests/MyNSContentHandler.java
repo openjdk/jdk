@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,12 @@ import java.io.IOException;
 import java.io.FileWriter;
 import org.xml.sax.SAXException;
 
-class MyNSContentHandler extends DefaultHandler {
+class MyNSContentHandler extends DefaultHandler implements AutoCloseable{
     /**
      * Prefix for written string.
      */
     private final static String WRITE_ERROR = "bWrite error";
+
     /**
      * FileWriter to write output file.
      */
@@ -204,5 +205,15 @@ class MyNSContentHandler extends DefaultHandler {
         } catch (IOException ex) {
             throw new SAXException(WRITE_ERROR, ex);
         }
+    }
+
+    /**
+     * Close writer if it's initiated.
+     * @throws IOException if any I/O error when close writer.
+     */
+    @Override
+    public void close() throws IOException {
+        if (bWriter != null)
+            bWriter.close();
     }
 }

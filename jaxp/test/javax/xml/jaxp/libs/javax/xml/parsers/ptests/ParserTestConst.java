@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package javax.xml.transform.ptests.othervm;
+package javax.xml.parsers.ptests;
 
-import javax.xml.transform.*;
-import jaxp.library.JAXPBaseTest;
-import static org.testng.Assert.fail;
-import org.testng.annotations.Test;
+import static jaxp.library.JAXPTestUtilities.FILE_SEP;
+import static jaxp.library.JAXPTestUtilities.getPathByClassName;
+
 
 /**
- * Negative test for set invalid TransformerFactory property.
+ * Utility interface which includes final variables of XML, golden file
+ * directories.
  */
-public class TFCErrorTest  extends JAXPBaseTest {
-    @Test(expectedExceptions = ClassNotFoundException.class)
-    public void tfce01() throws Exception {
-        try{
-            setSystemProperty("javax.xml.transform.TransformerFactory","xx");
-            TransformerFactory.newInstance();
-            fail("Expect TransformerFactoryConfigurationError here");
-        } catch (TransformerFactoryConfigurationError expected) {
-            throw expected.getException();
-        }
-    }
+public class ParserTestConst {
+    /**
+     * XML source file directory.
+     */
+    public static final String XML_DIR = getPathByClassName(ParserTestConst.class,
+            ".." + FILE_SEP + "xmlfiles");
+
+
+    /**
+     * Golden validation files directory.
+     */
+    public static final String GOLDEN_DIR = getPathByClassName(ParserTestConst.class,
+            ".." + FILE_SEP + "xmlfiles" + FILE_SEP + "out");
 }
