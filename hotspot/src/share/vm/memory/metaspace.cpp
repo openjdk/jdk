@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,7 +422,7 @@ VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(
     bool large_pages = false; // No large pages when dumping the CDS archive.
     char* shared_base = (char*)align_ptr_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
 
-    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base, 0);
+    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base);
     if (_rs.is_reserved()) {
       assert(shared_base == 0 || _rs.base() == shared_base, "should match");
     } else {
@@ -3025,7 +3025,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   ReservedSpace metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                              _reserve_alignment,
                                              large_pages,
-                                             requested_addr, 0);
+                                             requested_addr);
   if (!metaspace_rs.is_reserved()) {
 #if INCLUDE_CDS
     if (UseSharedSpaces) {
@@ -3039,7 +3039,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
              can_use_cds_with_metaspace_addr(addr + increment, cds_base)) {
         addr = addr + increment;
         metaspace_rs = ReservedSpace(compressed_class_space_size(),
-                                     _reserve_alignment, large_pages, addr, 0);
+                                     _reserve_alignment, large_pages, addr);
       }
     }
 #endif
