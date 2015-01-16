@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,16 @@ package javax.xml.transform.ptests;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
-import static javax.xml.transform.ptests.TransformerTestConst.CLASS_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
@@ -48,7 +43,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
@@ -56,48 +50,36 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * DOM parse on test file to be compared with golden output file. No Exception
  * is expected.
  */
-public class DOMResultTest01 {
+public class DOMResultTest extends JAXPFileBaseTest {
     /**
      * Unit test for simple DOM parsing.
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testcase01() {
-        String resultFile = CLASS_DIR  + "domresult01.out";
+    public void testcase01() throws Exception {
+        String resultFile = USER_DIR  + "domresult01.out";
         String goldFile = GOLDEN_DIR  + "domresult01GF.out";
         String xsltFile = XML_DIR + "cities.xsl";
         String xmlFile = XML_DIR + "cities.xml";
 
-        try {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
-            SAXTransformerFactory saxTFactory
-                    = (SAXTransformerFactory) TransformerFactory.newInstance();
-            SAXSource saxSource = new SAXSource(new InputSource(xsltFile));
-            TransformerHandler handler
-                    = saxTFactory.newTransformerHandler(saxSource);
+        XMLReader reader = XMLReaderFactory.createXMLReader();
+        SAXTransformerFactory saxTFactory
+                = (SAXTransformerFactory) TransformerFactory.newInstance();
+        SAXSource saxSource = new SAXSource(new InputSource(xsltFile));
+        TransformerHandler handler
+                = saxTFactory.newTransformerHandler(saxSource);
 
-            DOMResult result = new DOMResult();
+        DOMResult result = new DOMResult();
 
-            handler.setResult(result);
-            reader.setContentHandler(handler);
-            reader.parse(xmlFile);
+        handler.setResult(result);
+        reader.setContentHandler(handler);
+        reader.parse(xmlFile);
 
-            Node node = result.getNode();
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))) {
-                writeNodes(node, writer);
-            }
-            assertTrue(compareWithGold(goldFile, resultFile));
-        } catch (SAXException | TransformerConfigurationException
-                | IllegalArgumentException | IOException ex) {
-            failUnexpected(ex);
-        } finally {
-            try {
-                Path resultPath = Paths.get(resultFile);
-                if(Files.exists(resultPath))
-                    Files.delete(resultPath);
-            } catch (IOException ex) {
-                failCleanup(ex, resultFile);
-            }
+        Node node = result.getNode();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))) {
+            writeNodes(node, writer);
         }
+        assertTrue(compareWithGold(goldFile, resultFile));
     }
 
     /**

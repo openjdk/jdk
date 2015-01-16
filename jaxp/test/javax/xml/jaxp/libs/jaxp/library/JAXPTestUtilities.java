@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,34 @@
 package jaxp.library;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import static org.testng.Assert.fail;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 /**
@@ -61,14 +74,17 @@ public class JAXPTestUtilities {
     public static final String FILE_SEP = "/";
 
     /**
-     * User home.
+     * Current test directory.
      */
-    public static final String USER_DIR = System.getProperty("user.dir", ".");
+    public static final String USER_DIR =
+            System.getProperty("user.dir", ".") + FILE_SEP;;
 
     /**
-     * TEMP file directory.
+     * A map storing every test's current test file pointer. File number should
+     * be incremental and it's a thread-safe reading on this file number.
      */
-    public static final String TEMP_DIR = System.getProperty("java.io.tmpdir", ".");
+    private static final ConcurrentHashMap<Class, Integer> currentFileNumber
+                = new ConcurrentHashMap<>();
 
     /**
      * BOM table for storing BOM header.
@@ -94,12 +110,60 @@ public class JAXPTestUtilities {
      * @return true if two files are identical.
      *         false if two files are not identical.
      * @throws IOException if an I/O error occurs reading from the file or a
-     *         malformed or unmappable byte sequence is read
+     *         malformed or unmappable byte sequence is read.
      */
     public static boolean compareWithGold(String goldfile, String outputfile)
             throws IOException {
+        return compareWithGold(goldfile, outputfile, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Compare contents of golden file with test output file line by line.
+     * return true if they're identical.
+     * @param goldfile Golden output file name.
+     * @param outputfile Test output file name.
+     * @param cs the charset to use for decoding.
+     * @return true if two files are identical.
+     *         false if two files are not identical.
+     * @throws IOException if an I/O error occurs reading from the file or a
+     *         malformed or unmappable byte sequence is read.
+     */
+    public static boolean compareWithGold(String goldfile, String outputfile,
+             Charset cs) throws IOException {
         return Files.readAllLines(Paths.get(goldfile)).
-                equals(Files.readAllLines(Paths.get(outputfile)));
+                equals(Files.readAllLines(Paths.get(outputfile), cs));
+    }
+
+    /**
+     * Compare contents of golden file with test output list line by line.
+     * return true if they're identical.
+     * @param goldfile Golden output file name.
+     * @param lines test output list.
+     * @return true if file's content is identical to given list.
+     *         false if file's content is not identical to given list.
+     * @throws IOException if an I/O error occurs reading from the file or a
+     *         malformed or unmappable byte sequence is read
+     */
+    public static boolean compareLinesWithGold(String goldfile, List<String> lines)
+            throws IOException {
+        return Files.readAllLines(Paths.get(goldfile)).equals(lines);
+    }
+
+    /**
+     * Compare contents of golden file with a test output string.
+     * return true if they're identical.
+     * @param goldfile Golden output file name.
+     * @param string test string.
+     * @return true if file's content is identical to given string.
+     *         false if file's content is not identical to given string.
+     * @throws IOException if an I/O error occurs reading from the file or a
+     *         malformed or unmappable byte sequence is read
+     */
+    public static boolean compareStringWithGold(String goldfile, String string)
+            throws IOException {
+        return Files.readAllLines(Paths.get(goldfile)).stream().collect(
+                Collectors.joining(System.getProperty("line.separator")))
+                .equals(string);
     }
 
     /**
@@ -132,6 +196,35 @@ public class JAXPTestUtilities {
         resultD.normalizeDocument();
         return goldD.isEqualNode(resultD);
     }
+
+    /**
+     * Compare contents of golden file with the serialization represent by given
+     * DOM node.
+     * Here we ignore the white space and comments. return true if they're
+     * lexical identical.
+     * @param goldfile Golden output file name.
+     * @param node A DOM node instance.
+     * @return true if file's content is identical to given node's serialization
+     *         represent.
+     *         false if file's content is not identical to given node's
+     *         serialization represent.
+     * @throws TransformerException If an unrecoverable error occurs during the
+     *         course of the transformation..
+     * @throws IOException if an I/O error occurs reading from the file or a
+     *         malformed or unmappable byte sequence is read .
+     */
+    public static boolean compareSerializeDOMWithGold(String goldfile, Node node)
+            throws TransformerException, IOException {
+        TransformerFactory factory = TransformerFactory.newInstance();
+        // Use identity transformer to serialize
+        Transformer identityTransformer = factory.newTransformer();
+        StringWriter sw = new StringWriter();
+        StreamResult streamResult = new StreamResult(sw);
+        DOMSource nodeSource = new DOMSource(node);
+        identityTransformer.transform(nodeSource, streamResult);
+        return compareStringWithGold(goldfile, sw.toString());
+    }
+
     /**
      * Convert stream to ByteArrayInputStream by given character set.
      * @param charset target character set.
@@ -159,6 +252,36 @@ public class JAXPTestUtilities {
         return new ByteArrayInputStream(bb.array());
     }
 
+   /**
+     * Worker method to detect common absolute URLs.
+     *
+     * @param s String path\filename or URL (or any, really)
+     * @return true if s starts with a common URI scheme (namely
+     * the ones found in the examples of RFC2396); false otherwise
+     */
+    protected static boolean isCommonURL(String s) {
+        if (null == s)
+            return false;
+        return Pattern.compile("^(file:|http:|ftp:|gopher:|mailto:|news:|telnet:)")
+                .matcher(s).matches();
+    }
+
+    /**
+     * Utility method to translate a String filename to URL.
+     *
+     * If the name starts with a common URI scheme (namely the ones
+     * found in the examples of RFC2396), then simply return the
+     * name as-is (the assumption is that it's already a URL).
+     * Otherwise we attempt (cheaply) to convert to a file:/ URL.
+     *
+     * @param filename local path/filename of a file.
+     * @return a file:/ URL if filename represent a file, the same string if
+     *         it appears to already be a URL.
+     */
+    public static String filenameToURL(String filename) {
+        return Paths.get(filename).toUri().toASCIIString();
+    }
+
     /**
      * Prints error message if an exception is thrown
      * @param ex The exception is thrown by test.
@@ -174,5 +297,39 @@ public class JAXPTestUtilities {
      */
     public static void failCleanup(IOException ex, String name) {
         fail(String.format(ERROR_MSG_CLEANUP, name), ex);
+    }
+
+    /**
+     * Retrieve next test output file name. This method is a thread-safe method.
+     * @param clazz test class.
+     * @return next test output file name.
+     */
+    public static String getNextFile(Class clazz) {
+        int nextNumber = currentFileNumber.contains(clazz)
+                ? currentFileNumber.get(clazz) + 1 : 1;
+        Integer i = currentFileNumber.putIfAbsent(clazz, nextNumber);
+        if (i != null && i != nextNumber) {
+            do {
+                nextNumber = currentFileNumber.get(clazz) + 1;
+            } while (currentFileNumber.replace(clazz, nextNumber -1, nextNumber));
+        }
+        return USER_DIR + clazz.getName() + nextNumber + ".out";
+    }
+
+    /**
+     * Acquire a full path string by given class name and relative path string.
+     * @param clazz Class name for the test.
+     * @param relativeDir relative path between java source file and expected
+     *        path.
+     * @return a string represents the full path of accessing path.
+     */
+    public static String getPathByClassName(Class clazz, String relativeDir) {
+        String packageName = FILE_SEP +
+                clazz.getPackage().getName().replaceAll("[.]", FILE_SEP);
+        String javaSourcePath = System.getProperty("test.src").replaceAll("\\" + File.separator, FILE_SEP)
+                + packageName + FILE_SEP;
+        String normalizedPath = Paths.get(javaSourcePath, relativeDir).normalize().
+                toAbsolutePath().toString();
+        return normalizedPath.replace("\\", FILE_SEP) + FILE_SEP;
     }
 }

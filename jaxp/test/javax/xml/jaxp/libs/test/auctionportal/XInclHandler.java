@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
 
     /**
      * Sets whether output is canonical.
+     *
+     * @param canonical if the output is canonical format.
      */
     public void setCanonical(boolean canonical) {
         fCanonical = canonical;
@@ -66,6 +68,8 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
      * Sets the output stream for printing.
      * @param stream OutputStream for message output.
      * @param encoding File encoding for message output.
+     * @throws UnsupportedEncodingException if given encoding is an unsupported
+     *         encoding name or invalid encoding name.
      */
     public XInclHandler(OutputStream stream, String encoding)
             throws UnsupportedEncodingException {
@@ -97,8 +101,8 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
      * @param target The processing instruction target.
      * @param data The processing instruction data, or null if
      *             none is supplied.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
-     *            wrapping another exception.
+     * @exception SAXException Any SAX exception, possibly wrapping another
+     *            exception.
      */
     @Override
     public void processingInstruction (String target, String data)
@@ -119,14 +123,16 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
      * @param uri The Namespace URI, or the empty string if the
      *        element has no Namespace URI or if Namespace
      *        processing is not being performed.
-     * @param localName The local name (without prefix), or the
+     * @param local The local name (without prefix), or the
      *        empty string if Namespace processing is not being
      *        performed.
-     * @param qName The qualified name (with prefix), or the
+     * @param raw The qualified name (with prefix), or the
      *        empty string if qualified names are not available.
-     * @param attributes The attributes attached to the element.  If
+     * @param attrs The attributes attached to the element.  If
      *        there are no attributes, it shall be an empty
      *        Attributes object.
+     * @throws SAXException Any SAX exception, possibly wrapping another
+     *         exception.
      */
     @Override
     public void startElement(String uri, String local, String raw,
@@ -181,11 +187,13 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
      * @param uri The Namespace URI, or the empty string if the
      *        element has no Namespace URI or if Namespace
      *        processing is not being performed.
-     * @param localName The local name (without prefix), or the
+     * @param local The local name (without prefix), or the
      *        empty string if Namespace processing is not being
      *        performed.
-     * @param qName The qualified name (with prefix), or the
+     * @param raw The qualified name (with prefix), or the
      *        empty string if qualified names are not available.
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
+     *            wrapping another exception.
      */
     @Override
     public void endElement(String uri, String local, String raw)
@@ -196,7 +204,7 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
 
     /**
      * Receive notification of a parser warning and print it out.
-     * @param e The warning information encoded as an exception.
+     * @param ex The warning information encoded as an exception.
      * @exception org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      */
@@ -207,10 +215,9 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
 
     /**
      * Receive notification of a parser error and print it out.
-     * @param e The error information encoded as an exception.
+     * @param ex The error information encoded as an exception.
      * @exception org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
-
      */
     @Override
     public void error(SAXParseException ex) throws SAXException {
@@ -220,7 +227,7 @@ public class XInclHandler extends DefaultHandler implements LexicalHandler {
     /**
      * Receive notification of a parser fatal error. Throw out fatal error
      * following print fatal error message.
-     * @param e The fatal error information encoded as an exception.
+     * @param ex The fatal error information encoded as an exception.
      * @exception org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
 
