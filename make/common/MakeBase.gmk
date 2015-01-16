@@ -377,7 +377,7 @@ $(eval $(call SetupLogging))
 # This is to be called by all SetupFoo macros
 define LogSetupMacroEntry
   $(if $(27),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
-  $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
+  $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,$(if $(strip $($i)),$(NEWLINE) $(strip [$i] $($i))))))
 endef
 
 # Support macro for all SetupFoo macros.
@@ -519,19 +519,30 @@ define AddFileToCopy
   $3 += $2
 endef
 
+# Setup make rules for copying files, with an option to do more complex
+# processing instead of copying.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   SRC     : Source root dir (defaults to dir of first file)
+#   DEST    : Dest root dir
+#   FILES   : List of files to copy with absolute paths, or path relative to SRC.
+#             Must be in SRC.
+#   FLATTEN : Set to flatten the directory structure in the DEST dir.
+#   MACRO   : Optionally override the default macro used for making the copy.
+#             Default is 'install-file'
+
 define SetupCopyFiles
-  # param 1 is for example COPY_MYFILES
-  # param 2,3,4,5 are named args.
-  #   SRC     : Source root dir (defaults to dir of first file)
-  #   DEST    : Dest root dir
-  #   FILES   : List of files to copy with absolute paths, or path relative to SRC.
-  #             Must be in SRC.
-  #   FLATTEN : Set to flatten the directory structure in the DEST dir.
-  #   MACRO   : Optionally override the default macro used for making the copy.
-  #             Default is 'install-file'
-  $(foreach i,2 3 4 5 6, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupCopyFiles, please update MakeBase.gmk))
+  $(call EvalDebugWrapper,$(strip $1),$(call SetupCopyFilesInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
+endef
+
+define SetupCopyFilesInner
+  $(foreach i,2 3 4 5 6, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupCopyFiles($1),$2,$3,$4,$5,$6)
-  $(if $(7),$(error Internal makefile error: Too many arguments to SetupCopyFiles))
+  $(if $(7),$(error Internal makefile error: Too many arguments to SetupCopyFiles, please update MakeBase.gmk))
 
   ifeq ($$($1_MACRO), )
     $1_MACRO := install-file

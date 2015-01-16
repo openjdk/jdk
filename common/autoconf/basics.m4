@@ -896,10 +896,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   fi
   AC_SUBST(IS_GNU_TIME)
 
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    BASIC_REQUIRE_PROGS(COMM, comm)
-  fi
-
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     BASIC_REQUIRE_PROGS(DSYMUTIL, dsymutil)
     BASIC_REQUIRE_PROGS(XATTR, xattr)
