@@ -31,6 +31,9 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.util.JCDiagnostic.Note;
+import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 
@@ -93,7 +96,15 @@ public abstract class AbstractLog {
      *  @param args   Fields of the error message.
      */
     public void error(String key, Object ... args) {
-        report(diags.error(source, null, key, args));
+        error(diags.errorKey(key, args));
+    }
+
+    /** Report an error, unless another error was already reported at same
+     *  source position.
+     *  @param errorKey    The key for the localized error message.
+     */
+    public void error(Error errorKey) {
+        report(diags.error(null, source, null, errorKey));
     }
 
     /** Report an error, unless another error was already reported at same
@@ -102,8 +113,17 @@ public abstract class AbstractLog {
      *  @param key    The key for the localized error message.
      *  @param args   Fields of the error message.
      */
-    public void error(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.error(source, pos, key, args));
+    public void error(DiagnosticPosition pos, String key, Object... args) {
+        error(pos, diags.errorKey(key, args));
+    }
+
+    /** Report an error, unless another error was already reported at same
+     *  source position.
+     *  @param pos    The source position at which to report the error.
+     *  @param errorKey    The key for the localized error message.
+     */
+    public void error(DiagnosticPosition pos, Error errorKey) {
+        report(diags.error(null, source, pos, errorKey));
     }
 
     /** Report an error, unless another error was already reported at same
@@ -114,9 +134,17 @@ public abstract class AbstractLog {
      *  @param args   Fields of the error message.
      */
     public void error(DiagnosticFlag flag, DiagnosticPosition pos, String key, Object ... args) {
-        JCDiagnostic d = diags.error(source, pos, key, args);
-        d.setFlag(flag);
-        report(d);
+        error(flag, pos, diags.errorKey(key, args));
+    }
+
+    /** Report an error, unless another error was already reported at same
+     *  source position.
+     *  @param flag   A flag to set on the diagnostic
+     *  @param pos    The source position at which to report the error.
+     *  @param errorKey    The key for the localized error message.
+     */
+    public void error(DiagnosticFlag flag, DiagnosticPosition pos, Error errorKey) {
+        report(diags.error(flag, source, pos, errorKey));
     }
 
     /** Report an error, unless another error was already reported at same
@@ -126,7 +154,16 @@ public abstract class AbstractLog {
      *  @param args   Fields of the error message.
      */
     public void error(int pos, String key, Object ... args) {
-        report(diags.error(source, wrap(pos), key, args));
+        error(pos, diags.errorKey(key, args));
+    }
+
+    /** Report an error, unless another error was already reported at same
+     *  source position.
+     *  @param pos    The source position at which to report the error.
+     *  @param errorKey    The key for the localized error message.
+     */
+    public void error(int pos, Error errorKey) {
+        report(diags.error(null, source, wrap(pos), errorKey));
     }
 
     /** Report an error, unless another error was already reported at same
@@ -137,9 +174,17 @@ public abstract class AbstractLog {
      *  @param args   Fields of the error message.
      */
     public void error(DiagnosticFlag flag, int pos, String key, Object ... args) {
-        JCDiagnostic d = diags.error(source, wrap(pos), key, args);
-        d.setFlag(flag);
-        report(d);
+        error(flag, pos, diags.errorKey(key, args));
+    }
+
+    /** Report an error, unless another error was already reported at same
+     *  source position.
+     *  @param flag   A flag to set on the diagnostic
+     *  @param pos    The source position at which to report the error.
+     *  @param errorKey    The key for the localized error message.
+     */
+    public void error(DiagnosticFlag flag, int pos, Error errorKey) {
+        report(diags.error(flag, source, wrap(pos), errorKey));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
@@ -148,7 +193,15 @@ public abstract class AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void warning(String key, Object ... args) {
-        report(diags.warning(source, null, key, args));
+        warning(diags.warningKey(key, args));
+    }
+
+    /** Report a warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(Warning warningKey) {
+        report(diags.warning(null, source, null, warningKey));
     }
 
     /** Report a lint warning, unless suppressed by the  -nowarn option or the
@@ -158,7 +211,16 @@ public abstract class AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void warning(LintCategory lc, String key, Object ... args) {
-        report(diags.warning(lc, key, args));
+        warning(lc, diags.warningKey(key, args));
+    }
+
+    /** Report a lint warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param lc     The lint category for the diagnostic
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(LintCategory lc, Warning warningKey) {
+        report(diags.warning(lc, null, null, warningKey));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
@@ -168,7 +230,16 @@ public abstract class AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void warning(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.warning(source, pos, key, args));
+        warning(pos, diags.warningKey(key, args));
+    }
+
+    /** Report a warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(DiagnosticPosition pos, Warning warningKey) {
+        report(diags.warning(null, source, pos, warningKey));
     }
 
     /** Report a lint warning, unless suppressed by the  -nowarn option or the
@@ -179,7 +250,17 @@ public abstract class AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void warning(LintCategory lc, DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.warning(lc, source, pos, key, args));
+        warning(lc, pos, diags.warningKey(key, args));
+    }
+
+    /** Report a lint warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param lc     The lint category for the diagnostic
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(LintCategory lc, DiagnosticPosition pos, Warning warningKey) {
+        report(diags.warning(lc, source, pos, warningKey));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
@@ -189,7 +270,16 @@ public abstract class AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void warning(int pos, String key, Object ... args) {
-        report(diags.warning(source, wrap(pos), key, args));
+        warning(pos, diags.warningKey(key, args));
+    }
+
+    /** Report a warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(int pos, Warning warningKey) {
+        report(diags.warning(null, source, wrap(pos), warningKey));
     }
 
     /** Report a warning.
@@ -198,7 +288,15 @@ public abstract class AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void mandatoryWarning(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.mandatoryWarning(source, pos, key, args));
+        mandatoryWarning(pos, diags.warningKey(key, args));
+    }
+
+    /** Report a warning.
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void mandatoryWarning(DiagnosticPosition pos, Warning warningKey) {
+        report(diags.mandatoryWarning(null, source, pos, warningKey));
     }
 
     /** Report a warning.
@@ -208,7 +306,16 @@ public abstract class AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void mandatoryWarning(LintCategory lc, DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.mandatoryWarning(lc, source, pos, key, args));
+        mandatoryWarning(lc, pos, diags.warningKey(key, args));
+    }
+
+    /** Report a warning.
+     *  @param lc     The lint category for the diagnostic
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void mandatoryWarning(LintCategory lc, DiagnosticPosition pos, Warning warningKey) {
+        report(diags.mandatoryWarning(lc, source, pos, warningKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
@@ -216,7 +323,14 @@ public abstract class AbstractLog {
      *  @param args   Fields of the notint an error or warning message:
      */
     public void note(String key, Object ... args) {
-        report(diags.note(source, null, key, args));
+        note(diags.noteKey(key, args));
+    }
+
+    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
+     *  @param noteKey    The key for the localized notification message.
+     */
+    public void note(Note noteKey) {
+        report(diags.note(source, null, noteKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
@@ -224,7 +338,14 @@ public abstract class AbstractLog {
      *  @param args   Fields of the notification message.
      */
     public void note(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.note(source, pos, key, args));
+        note(pos, diags.noteKey(key, args));
+    }
+
+    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
+     *  @param noteKey    The key for the localized notification message.
+     */
+    public void note(DiagnosticPosition pos, Note noteKey) {
+        report(diags.note(source, pos, noteKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
@@ -232,7 +353,14 @@ public abstract class AbstractLog {
      *  @param args   Fields of the notification message.
      */
     public void note(int pos, String key, Object ... args) {
-        report(diags.note(source, wrap(pos), key, args));
+        note(pos, diags.noteKey(key, args));
+    }
+
+    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
+     *  @param noteKey    The key for the localized notification message.
+     */
+    public void note(int pos, Note noteKey) {
+        report(diags.note(source, wrap(pos), noteKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
@@ -240,7 +368,14 @@ public abstract class AbstractLog {
      *  @param args   Fields of the notification message.
      */
     public void note(JavaFileObject file, String key, Object ... args) {
-        report(diags.note(getSource(file), null, key, args));
+        note(file, diags.noteKey(key, args));
+    }
+
+    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
+     *  @param noteKey    The key for the localized notification message.
+     */
+    public void note(JavaFileObject file, Note noteKey) {
+        report(diags.note(getSource(file), null, noteKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
@@ -248,7 +383,14 @@ public abstract class AbstractLog {
      *  @param args   Fields of the notification message.
      */
     public void mandatoryNote(final JavaFileObject file, String key, Object ... args) {
-        report(diags.mandatoryNote(getSource(file), key, args));
+        mandatoryNote(file, diags.noteKey(key, args));
+    }
+
+    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
+     *  @param noteKey    The key for the localized notification message.
+     */
+    public void mandatoryNote(final JavaFileObject file, Note noteKey) {
+        report(diags.mandatoryNote(getSource(file), noteKey));
     }
 
     protected abstract void report(JCDiagnostic diagnostic);
