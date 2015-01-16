@@ -162,8 +162,8 @@ void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
          "we should have already filtered out humongous regions");
   assert(_end == orig_end(),
          "we should have already filtered out humongous regions");
-
-  _in_collection_set = false;
+  assert(!_in_collection_set,
+         err_msg("Should not clear heap region %u in the collection set", hrm_index()));
 
   set_allocation_context(AllocationContext::system());
   set_young_index_in_cset(-1);
