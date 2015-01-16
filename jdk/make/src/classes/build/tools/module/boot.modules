@@ -1,4 +1,5 @@
 java.base
+java.datatransfer
 java.desktop
 java.activation
 java.annotations.common
