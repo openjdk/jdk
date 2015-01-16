@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ needs_jdk = \
   gc/metaspace/TestPerfCountersAndMemoryPools.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
   runtime/7158988/FieldMonitor.java \
-  runtime/7194254/Test7194254.java \
   runtime/Metaspace/FragmentMetaspace.java \
   runtime/NMT/BaselineWithParameter.java \
   runtime/NMT/JcmdBaselineDetail.java \
@@ -94,6 +93,7 @@ needs_jdk = \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \
   runtime/Thread/TestThreadDumpMonitorContention.java \
+  runtime/Thread/ThreadPriorities.java \
   runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java \
   serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java \
@@ -232,7 +232,8 @@ needs_g1gc = \
   gc/g1/ \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
-  gc/startup_warnings/TestG1.java 
+  gc/startup_warnings/TestG1.java \
+  gc/whitebox/TestConcMarkCycleWB.java
 
 # All tests that explicitly set the serial GC
 #

@@ -28,6 +28,7 @@ import com.oracle.java.testlibrary.*;
  * @bug 8038636
  * @library /testlibrary
  * @build Agent
+ * @ignore 7076820
  * @run main ClassFileInstaller Agent
  * @run main Launcher
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:ReservedCodeCacheSize=3M Agent

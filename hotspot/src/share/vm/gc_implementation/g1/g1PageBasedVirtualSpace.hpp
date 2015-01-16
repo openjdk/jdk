@@ -49,6 +49,12 @@ class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
   // Bitmap used for verification of commit/uncommit operations.
   BitMap _committed;
 
+  // Bitmap used to keep track of which pages are dirty or not for _special
+  // spaces. This is needed because for those spaces the underlying memory
+  // will only be zero filled the first time it is committed. Calls to commit
+  // will use this bitmap and return whether or not the memory is zero filled.
+  BitMap _dirty;
+
   // Indicates that the entire space has been committed and pinned in memory,
   // os::commit_memory() or os::uncommit_memory() have no function.
   bool _special;
@@ -71,12 +77,11 @@ class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
  public:
 
   // Commit the given area of pages starting at start being size_in_pages large.
-  MemRegion commit(uintptr_t start, size_t size_in_pages);
+  // Returns true if the given area is zero filled upon completion.
+  bool commit(uintptr_t start, size_t size_in_pages);
 
   // Uncommit the given area of pages starting at start being size_in_pages large.
-  MemRegion uncommit(uintptr_t start, size_t size_in_pages);
-
-  bool special() const { return _special; }
+  void uncommit(uintptr_t start, size_t size_in_pages);
 
   // Initialization
   G1PageBasedVirtualSpace();
