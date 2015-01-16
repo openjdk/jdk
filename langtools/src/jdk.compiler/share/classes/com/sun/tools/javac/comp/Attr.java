@@ -4188,6 +4188,8 @@ public class Attr extends JCTree.Visitor {
             chk.validate(tree.implementing, env);
         }
 
+        c.markAbstractIfNeeded(types);
+
         // If this is a non-abstract class, check that it has no abstract
         // methods or unimplemented methods of an implemented interface.
         if ((c.flags() & (ABSTRACT | INTERFACE)) == 0) {
