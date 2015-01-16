@@ -19,30 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
 
-/*
- * @test
- * @bug 8038636
- * @library /testlibrary
- * @build Agent
- * @ignore 7076820
- * @run main ClassFileInstaller Agent
- * @run main Launcher
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:ReservedCodeCacheSize=3M Agent
- */
-public class Launcher {
-    public static void main(String[] args) throws Exception  {
+import com.oracle.java.testlibrary.TimeLimitedRunner;
+import com.oracle.java.testlibrary.Utils;
 
-      PrintWriter pw = new PrintWriter("MANIFEST.MF");
-      pw.println("Agent-Class: Agent");
-      pw.println("Can-Retransform-Classes: true");
-      pw.close();
-
-      ProcessBuilder pb = new ProcessBuilder();
-      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", System.getProperty("test.classes",".") + "/agent.jar", "Agent.class"});
-      pb.start().waitFor();
+public class CodeCacheStressRunner {
+    private final Runnable action;
+    public CodeCacheStressRunner(Runnable action) {
+        this.action = action;
     }
+
+    protected final void runTest() {
+        Helper.startInfiniteLoopThread(action);
+        try {
+            // adjust timeout and substract vm init and exit time
+            long timeout = Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
+            timeout *= 0.9;
+            new TimeLimitedRunner(timeout, 2.0d, this::test).call();
+        } catch (Exception e) {
+            throw new Error("Exception occurred during test execution", e);
+        }
+    }
+
+    private boolean test() {
+        Helper.TestCase obj = Helper.TestCase.get();
+        Helper.callMethod(obj.getCallable(), obj.expectedValue());
+        return true;
+    }
+
 }
