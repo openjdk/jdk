@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.io.ObjectStreamField;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
+import java.lang.ref.WeakReference;
 import java.security.AccessController;
 
 import java.util.EventListener;
@@ -3321,16 +3322,6 @@ public class Container extends Component {
         }
     }
 
-    @Override
-    void clearLightweightDispatcherOnRemove(Component removedComponent) {
-        if (dispatcher != null) {
-            dispatcher.removeReferences(removedComponent);
-        } else {
-            //It is a Lightweight Container, should clear parent`s Dispatcher
-            super.clearLightweightDispatcherOnRemove(removedComponent);
-        }
-    }
-
     final Container getTraversalRoot() {
         if (isFocusCycleRoot()) {
             return findTraversalRoot();
@@ -4431,7 +4422,9 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
     LightweightDispatcher(Container nativeContainer) {
         this.nativeContainer = nativeContainer;
-        mouseEventTarget = null;
+        mouseEventTarget = new WeakReference<>(null);
+        targetLastEntered = new WeakReference<>(null);
+        targetLastEnteredDT = new WeakReference<>(null);
         eventMask = 0;
     }
 
@@ -4442,9 +4435,9 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     void dispose() {
         //System.out.println("Disposing lw dispatcher");
         stopListeningForOtherDrags();
-        mouseEventTarget = null;
-        targetLastEntered = null;
-        targetLastEnteredDT = null;
+        mouseEventTarget.clear();
+        targetLastEntered.clear();
+        targetLastEnteredDT.clear();
     }
 
     /**
@@ -4531,65 +4524,62 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
         trackMouseEnterExit(mouseOver, e);
 
-    // 4508327 : MOUSE_CLICKED should only go to the recipient of
-    // the accompanying MOUSE_PRESSED, so don't reset mouseEventTarget on a
-    // MOUSE_CLICKED.
-    if (!isMouseGrab(e) && id != MouseEvent.MOUSE_CLICKED) {
-            mouseEventTarget = (mouseOver != nativeContainer) ? mouseOver: null;
-            isCleaned = false;
+        Component met = mouseEventTarget.get();
+        // 4508327 : MOUSE_CLICKED should only go to the recipient of
+        // the accompanying MOUSE_PRESSED, so don't reset mouseEventTarget on a
+        // MOUSE_CLICKED.
+        if (!isMouseGrab(e) && id != MouseEvent.MOUSE_CLICKED) {
+            met = (mouseOver != nativeContainer) ? mouseOver : null;
+            mouseEventTarget = new WeakReference<>(met);
         }
 
-        if (mouseEventTarget != null) {
+        if (met != null) {
             switch (id) {
-            case MouseEvent.MOUSE_ENTERED:
-            case MouseEvent.MOUSE_EXITED:
-                break;
-            case MouseEvent.MOUSE_PRESSED:
-                retargetMouseEvent(mouseEventTarget, id, e);
-                break;
-        case MouseEvent.MOUSE_RELEASED:
-            retargetMouseEvent(mouseEventTarget, id, e);
-        break;
-        case MouseEvent.MOUSE_CLICKED:
-        // 4508327: MOUSE_CLICKED should never be dispatched to a Component
-        // other than that which received the MOUSE_PRESSED event.  If the
-        // mouse is now over a different Component, don't dispatch the event.
-        // The previous fix for a similar problem was associated with bug
-        // 4155217.
-        if (mouseOver == mouseEventTarget) {
-            retargetMouseEvent(mouseOver, id, e);
-        }
-        break;
-            case MouseEvent.MOUSE_MOVED:
-                retargetMouseEvent(mouseEventTarget, id, e);
-                break;
-        case MouseEvent.MOUSE_DRAGGED:
-            if (isMouseGrab(e)) {
-                retargetMouseEvent(mouseEventTarget, id, e);
-            }
-                break;
-        case MouseEvent.MOUSE_WHEEL:
-            // This may send it somewhere that doesn't have MouseWheelEvents
-            // enabled.  In this case, Component.dispatchEventImpl() will
-            // retarget the event to a parent that DOES have the events enabled.
-            if (eventLog.isLoggable(PlatformLogger.Level.FINEST) && (mouseOver != null)) {
-                eventLog.finest("retargeting mouse wheel to " +
+                case MouseEvent.MOUSE_ENTERED:
+                case MouseEvent.MOUSE_EXITED:
+                    break;
+                case MouseEvent.MOUSE_PRESSED:
+                    retargetMouseEvent(met, id, e);
+                    break;
+                case MouseEvent.MOUSE_RELEASED:
+                    retargetMouseEvent(met, id, e);
+                    break;
+                case MouseEvent.MOUSE_CLICKED:
+                    // 4508327: MOUSE_CLICKED should never be dispatched to a Component
+                    // other than that which received the MOUSE_PRESSED event.  If the
+                    // mouse is now over a different Component, don't dispatch the event.
+                    // The previous fix for a similar problem was associated with bug
+                    // 4155217.
+                    if (mouseOver == met) {
+                        retargetMouseEvent(mouseOver, id, e);
+                    }
+                    break;
+                case MouseEvent.MOUSE_MOVED:
+                    retargetMouseEvent(met, id, e);
+                    break;
+                case MouseEvent.MOUSE_DRAGGED:
+                    if (isMouseGrab(e)) {
+                        retargetMouseEvent(met, id, e);
+                    }
+                    break;
+                case MouseEvent.MOUSE_WHEEL:
+                    // This may send it somewhere that doesn't have MouseWheelEvents
+                    // enabled.  In this case, Component.dispatchEventImpl() will
+                    // retarget the event to a parent that DOES have the events enabled.
+                    if (eventLog.isLoggable(PlatformLogger.Level.FINEST) && (mouseOver != null)) {
+                        eventLog.finest("retargeting mouse wheel to " +
                                 mouseOver.getName() + ", " +
                                 mouseOver.getClass());
+                    }
+                    retargetMouseEvent(mouseOver, id, e);
+                    break;
             }
-            retargetMouseEvent(mouseOver, id, e);
-        break;
+            //Consuming of wheel events is implemented in "retargetMouseEvent".
+            if (id != MouseEvent.MOUSE_WHEEL) {
+                e.consume();
             }
-        //Consuming of wheel events is implemented in "retargetMouseEvent".
-        if (id != MouseEvent.MOUSE_WHEEL) {
-            e.consume();
         }
-    } else if (isCleaned && id != MouseEvent.MOUSE_WHEEL) {
-        //After mouseEventTarget was removed and cleaned should consume all events
-        //until new mouseEventTarget is found
-        e.consume();
-    }
-    return e.isConsumed();
+        return e.isConsumed();
     }
 
     private boolean processDropTargetEvent(SunDropTargetEvent e) {
@@ -4652,9 +4642,10 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         } else if (id == MouseEvent.MOUSE_EXITED) {
             isMouseDTInNativeContainer = false;
         }
-        targetLastEnteredDT = retargetMouseEnterExit(targetOver, e,
-                                                     targetLastEnteredDT,
+        Component tle = retargetMouseEnterExit(targetOver, e,
+                                                     targetLastEnteredDT.get(),
                                                      isMouseDTInNativeContainer);
+        targetLastEnteredDT = new WeakReference<>(tle);
     }
 
     /*
@@ -4680,9 +4671,10 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
             isMouseInNativeContainer = false;
             stopListeningForOtherDrags();
         }
-        targetLastEntered = retargetMouseEnterExit(targetOver, e,
-                                                   targetLastEntered,
+        Component tle = retargetMouseEnterExit(targetOver, e,
+                                                   targetLastEntered.get(),
                                                    isMouseInNativeContainer);
+        targetLastEntered = new WeakReference<>(tle);
     }
 
     private Component retargetMouseEnterExit(Component targetOver, MouseEvent e,
@@ -4944,22 +4936,17 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * is null, there are currently no events being forwarded to
      * a subcomponent.
      */
-    private transient Component mouseEventTarget;
+    private transient WeakReference<Component> mouseEventTarget;
 
     /**
      * The last component entered by the {@code MouseEvent}.
      */
-    private transient Component targetLastEntered;
+    private transient  WeakReference<Component> targetLastEntered;
 
     /**
      * The last component entered by the {@code SunDropTargetEvent}.
      */
-    private transient Component targetLastEnteredDT;
-
-    /**
-     * Indicates whether {@code mouseEventTarget} was removed and nulled
-     */
-    private transient boolean isCleaned;
+    private transient  WeakReference<Component> targetLastEnteredDT;
 
     /**
      * Is the mouse over the native container.
@@ -5000,17 +4987,4 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         AWTEvent.MOUSE_EVENT_MASK |
         AWTEvent.MOUSE_MOTION_EVENT_MASK |
         AWTEvent.MOUSE_WHEEL_EVENT_MASK;
-
-    void removeReferences(Component removedComponent) {
-        if (mouseEventTarget == removedComponent) {
-            isCleaned = true;
-            mouseEventTarget = null;
-        }
-        if (targetLastEntered == removedComponent) {
-            targetLastEntered = null;
-        }
-        if (targetLastEnteredDT == removedComponent) {
-            targetLastEnteredDT = null;
-        }
-    }
 }
