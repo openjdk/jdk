@@ -17,7 +17,7 @@ bean.readWrite: 17
 bean.readWrite = 18: 18
 obj1.readWrite: 18
 obj1.getReadWrite(): 18
-obj1.setReadWrite(19): null
+obj1.setReadWrite(19): undefined
 obj1.readWrite: 19
 bean.readWrite: 19
 
@@ -52,7 +52,7 @@ PropertyBind.staticReadWrite: 25
 PropertyBind.staticReadWrite = 26: 26
 obj2.staticReadWrite: 26
 obj2.getStaticReadWrite(): 26
-obj2.setStaticReadWrite(27): null
+obj2.setStaticReadWrite(27): undefined
 obj2.staticReadWrite: 27
 PropertyBind.staticReadWrite: 27
 
