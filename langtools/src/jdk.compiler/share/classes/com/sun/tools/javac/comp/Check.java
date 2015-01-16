@@ -2019,69 +2019,15 @@ public class Check {
      *  @param c            The class.
      */
     void checkAllDefined(DiagnosticPosition pos, ClassSymbol c) {
-        try {
-            MethodSymbol undef = firstUndef(c, c);
-            if (undef != null) {
-                if ((c.flags() & ENUM) != 0 &&
-                    types.supertype(c.type).tsym == syms.enumSym &&
-                    (c.flags() & FINAL) == 0) {
-                    // add the ABSTRACT flag to an enum
-                    c.flags_field |= ABSTRACT;
-                } else {
-                    MethodSymbol undef1 =
-                        new MethodSymbol(undef.flags(), undef.name,
-                                         types.memberType(c.type, undef), undef.owner);
-                    log.error(pos, "does.not.override.abstract",
-                              c, undef1, undef1.location());
-                }
-            }
-        } catch (CompletionFailure ex) {
-            completionError(pos, ex);
+        MethodSymbol undef = types.firstUnimplementedAbstract(c);
+        if (undef != null) {
+            MethodSymbol undef1 =
+                new MethodSymbol(undef.flags(), undef.name,
+                                 types.memberType(c.type, undef), undef.owner);
+            log.error(pos, "does.not.override.abstract",
+                      c, undef1, undef1.location());
         }
     }
-//where
-        /** Return first abstract member of class `c' that is not defined
-         *  in `impl', null if there is none.
-         */
-        private MethodSymbol firstUndef(ClassSymbol impl, ClassSymbol c) {
-            MethodSymbol undef = null;
-            // Do not bother to search in classes that are not abstract,
-            // since they cannot have abstract members.
-            if (c == impl || (c.flags() & (ABSTRACT | INTERFACE)) != 0) {
-                Scope s = c.members();
-                for (Symbol sym : s.getSymbols(NON_RECURSIVE)) {
-                    if (sym.kind == MTH &&
-                        (sym.flags() & (ABSTRACT|IPROXY|DEFAULT)) == ABSTRACT) {
-                        MethodSymbol absmeth = (MethodSymbol)sym;
-                        MethodSymbol implmeth = absmeth.implementation(impl, types, true);
-                        if (implmeth == null || implmeth == absmeth) {
-                            //look for default implementations
-                            if (allowDefaultMethods) {
-                                MethodSymbol prov = types.interfaceCandidates(impl.type, absmeth).head;
-                                if (prov != null && prov.overrides(absmeth, impl, types, true)) {
-                                    implmeth = prov;
-                                }
-                            }
-                        }
-                        if (implmeth == null || implmeth == absmeth) {
-                            undef = absmeth;
-                            break;
-                        }
-                    }
-                }
-                if (undef == null) {
-                    Type st = types.supertype(c.type);
-                    if (st.hasTag(CLASS))
-                        undef = firstUndef(impl, (ClassSymbol)st.tsym);
-                }
-                for (List<Type> l = types.interfaces(c.type);
-                     undef == null && l.nonEmpty();
-                     l = l.tail) {
-                    undef = firstUndef(impl, (ClassSymbol)l.head.tsym);
-                }
-            }
-            return undef;
-        }
 
     void checkNonCyclicDecl(JCClassDecl tree) {
         CycleChecker cc = new CycleChecker();

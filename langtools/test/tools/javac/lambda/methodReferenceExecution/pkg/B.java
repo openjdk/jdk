@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,32 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/*
- * @test
- * @bug 8006582 8037546
- * @summary javac should generate method parameters correctly.
- * @build Tester
- * @compile -parameters LambdaTest.java
- * @run main Tester LambdaTest LambdaTest.out
- */
-
-/**
- * Post https://bugs.openjdk.java.net/browse/JDK-8037546, this test verifies
- * that MethodParameters attribute for lambdas are emitted properly.
- */
-class LambdaTest {
-
-    interface I {
-        int m(int x);
-    }
-
-    static int foo(I i) { return i.m(0); }
-
-    static {
-        foo((int x1) -> { return foo((int x2) -> { return x1 + x2; }); });
+package pkg;
+class A {
+    public static void m() {
+        B.result += "A.m()";
     }
 }
 
-
-
+public class B extends A {
+    public static String result = "";
+}

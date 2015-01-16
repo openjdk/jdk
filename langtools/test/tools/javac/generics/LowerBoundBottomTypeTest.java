@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,32 @@
 
 /*
  * @test
- * @bug 8006582 8037546
- * @summary javac should generate method parameters correctly.
- * @build Tester
- * @compile -parameters LambdaTest.java
- * @run main Tester LambdaTest LambdaTest.out
- */
+ * @bug 8062358
+ * @summary ClassCastException in TransTypes.visitApply
+ * @compile LowerBoundBottomTypeTest.java
+*/
 
-/**
- * Post https://bugs.openjdk.java.net/browse/JDK-8037546, this test verifies
- * that MethodParameters attribute for lambdas are emitted properly.
- */
-class LambdaTest {
-
-    interface I {
-        int m(int x);
+public class LowerBoundBottomTypeTest {
+    void g() {
+        f().getInIntf3().getInIntf2().getInIntf1().getA();
+    }
+    interface IntfA {
+        int getA();
     }
 
-    static int foo(I i) { return i.m(0); }
+    interface Intf1<A extends IntfA> {
+        A getInIntf1();
+    }
 
-    static {
-        foo((int x1) -> { return foo((int x2) -> { return x1 + x2; }); });
+    interface Intf2<B> {
+        Intf1<? extends B> getInIntf2();
+    }
+
+    interface Intf3<C> {
+        Intf2<? extends C> getInIntf3();
+    }
+
+    Intf3<?> f() {
+        return null;
     }
 }
-
-
-

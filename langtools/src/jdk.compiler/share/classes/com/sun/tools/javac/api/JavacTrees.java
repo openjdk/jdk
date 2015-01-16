@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -924,12 +925,7 @@ public class JavacTrees extends DocTrees {
         try {
             switch (kind) {
             case ERROR:
-                boolean prev = log.multipleErrors;
-                try {
-                    log.error(pos, "proc.messager", msg.toString());
-                } finally {
-                    log.multipleErrors = prev;
-                }
+                log.error(DiagnosticFlag.MULTIPLE, pos, "proc.messager", msg.toString());
                 break;
 
             case WARNING:
