@@ -3543,11 +3543,12 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
               ("purge: %s(%s): prev method @%d in version @%d is alive",
               method->name()->as_C_string(),
               method->signature()->as_C_string(), j, version));
+#ifdef ASSERT
             if (method->method_data() != NULL) {
-              // Clean out any weak method links for running methods
-              // (also should include not EMCP methods)
-              method->method_data()->clean_weak_method_links();
+              // Verify MethodData for running methods don't refer to old methods.
+              method->method_data()->verify_clean_weak_method_links();
             }
+#endif // ASSERT
           }
         }
       }
@@ -3561,15 +3562,17 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
       deleted_count));
   }
 
-  // Clean MethodData of this class's methods so they don't refer to
+#ifdef ASSERT
+  // Verify clean MethodData for this class's methods, e.g. they don't refer to
   // old methods that are no longer running.
   Array<Method*>* methods = ik->methods();
   int num_methods = methods->length();
-  for (int index2 = 0; index2 < num_methods; ++index2) {
-    if (methods->at(index2)->method_data() != NULL) {
-      methods->at(index2)->method_data()->clean_weak_method_links();
+  for (int index = 0; index < num_methods; ++index) {
+    if (methods->at(index)->method_data() != NULL) {
+      methods->at(index)->method_data()->verify_clean_weak_method_links();
     }
   }
+#endif // ASSERT
 }
 
 void InstanceKlass::mark_newly_obsolete_methods(Array<Method*>* old_methods,

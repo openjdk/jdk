@@ -22,7 +22,7 @@
  */
 
 /*
- * @test TestEagerReclaimHumongousRegions2
+ * @test TestEagerReclaimHumongousRegionsClearMarkBits
  * @bug 8051973
  * @summary Test to make sure that eager reclaim of humongous objects correctly clears
  * mark bitmaps at reclaim.
@@ -109,7 +109,7 @@ class ReclaimRegionFast {
     }
 }
 
-public class TestEagerReclaimHumongousRegions2 {
+public class TestEagerReclaimHumongousRegionsClearMarkBits {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UseG1GC",

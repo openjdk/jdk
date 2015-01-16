@@ -59,7 +59,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _has_default_methods = ik->has_default_methods();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
-
+  _has_injected_fields = -1;
   _implementor = NULL; // we will fill these lazily
 
   Thread *thread = Thread::current();
@@ -100,6 +100,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _nonstatic_field_size = -1;
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
+  _has_injected_fields = -1;
   _loader = loader;
   _protection_domain = protection_domain;
   _is_shared = false;
@@ -498,6 +499,34 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
   }
   assert(fields->length() == flen, "sanity");
   return fields;
+}
+
+void ciInstanceKlass::compute_injected_fields_helper() {
+  ASSERT_IN_VM;
+  InstanceKlass* k = get_instanceKlass();
+
+  for (InternalFieldStream fs(k); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static())  continue;
+    _has_injected_fields++;
+    break;
+  }
+}
+
+bool ciInstanceKlass::compute_injected_fields() {
+  assert(_has_injected_fields == -1, "shouldn't be initialized yet");
+  assert(is_loaded(), "must be loaded");
+
+  if (super() != NULL && super()->has_injected_fields()) {
+    _has_injected_fields = 1;
+    return true;
+  }
+
+  _has_injected_fields = 0;
+  GUARDED_VM_ENTRY({
+      compute_injected_fields_helper();
+    });
+
+  return _has_injected_fields > 0 ? true : false;
 }
 
 // ------------------------------------------------------------------

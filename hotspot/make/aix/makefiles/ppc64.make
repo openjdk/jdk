@@ -46,7 +46,9 @@ CFLAGS += -qsuppress=1540-0198
 #  - 1540-1090 (I) The destructor of "..." might not be called.
 #  - 1500-010: (W) WARNING in ...: Infinite loop.  Program may not stop.
 #    There are several infinite loops in the vm, suppress.
-CFLAGS += -qsuppress=1540-1090 -qsuppress=1500-010
+#  - 1540-1639 (I) The behavior of long type bit fields has changed ...
+#                  ... long type bit fields now default to long, not int.
+CFLAGS += -qsuppress=1540-1090 -qsuppress=1500-010 -qsuppress=1540-1639
 
 # Suppress 
 #  - 540-1088 (W) The exception specification is being ignored.
