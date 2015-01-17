@@ -85,7 +85,7 @@ public class JavacParser implements Parser {
     private Names names;
 
     /** End position mappings container */
-    private final AbstractEndPosTable endPosTable;
+    protected final AbstractEndPosTable endPosTable;
 
     // Because of javac's limited lookahead, some contexts are ambiguous in
     // the presence of type annotations even though they are not ambiguous
