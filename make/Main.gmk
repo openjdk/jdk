@@ -238,8 +238,12 @@ profiles:
 mac-bundles:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
 
+prepare-test-image:
+	$(MKDIR) -p $(TEST_IMAGE_DIR)
+	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
+
 ALL_TARGETS += source-tips bootcycle-images zip-security zip-source strip-binaries \
-    jrtfs-jar jimages profiles mac-bundles
+    jrtfs-jar jimages profiles mac-bundles prepare-test-image
 
 ################################################################################
 # Docs targets
@@ -442,7 +446,7 @@ exploded-image: $(ALL_MODULE_TARGETS)
 # alias for ease of use.
 jdk: exploded-image
 
-images: jimages demos samples zip-security
+images: test-image jimages demos samples zip-security
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   images: mac-bundles
@@ -450,9 +454,11 @@ endif
 
 docs: docs-javadoc docs-jvmtidoc
 
+test-image: prepare-test-image
+
 ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers \
     jdk.jdwp.agent-gensrc $(ALL_MODULE_TARGETS) exploded-image jdk images \
-    docs
+    docs test-image
 
 ################################################################################
 
