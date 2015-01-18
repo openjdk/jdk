@@ -81,9 +81,17 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     DWORD ret, flags;
     IP_ADAPTER_ADDRESSES *adapterInfo;
     ULONG len;
+    char *error_msg_buf = NULL;
+    size_t error_msg_buf_size =
+            strlen("IP Helper Library GetAdaptersAddresses function failed"
+                   " with error == ") + 10;
+    int _ret = 0;
+
+
     adapterInfo = (IP_ADAPTER_ADDRESSES *)malloc (bufsize);
     if (adapterInfo == NULL) {
-        JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
+        JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
+            "Native heap allocation failure");
         return -1;
     }
 
@@ -94,10 +102,12 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
 
     if (ret == ERROR_BUFFER_OVERFLOW) {
-        IP_ADAPTER_ADDRESSES * newAdapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
+        IP_ADAPTER_ADDRESSES * newAdapterInfo =
+            (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
         if (newAdapterInfo == NULL) {
             free(adapterInfo);
-            JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
+            JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
+                "Native heap allocation failure");
             return -1;
         }
 
@@ -109,8 +119,32 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
 
     if (ret != ERROR_SUCCESS) {
         free (adapterInfo);
-        JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetAdaptersAddresses function failed");
+        if (ret == ERROR_INSUFFICIENT_BUFFER) {
+            JNU_ThrowByName(env, "java/lang/Error",
+                "IP Helper Library GetAdaptersAddresses function failed "
+                "with ERROR_INSUFFICIENT_BUFFER");
+        } else if (ret == ERROR_ADDRESS_NOT_ASSOCIATED ) {
+            JNU_ThrowByName(env, "java/lang/Error",
+                "IP Helper Library GetAdaptersAddresses function failed "
+                "with ERROR_ADDRESS_NOT_ASSOCIATED");
+        } else {
+            error_msg_buf = (char *)malloc(error_msg_buf_size);
+            if (error_msg_buf != NULL) {
+                memset(error_msg_buf, 0, error_msg_buf_size);
+                _ret = _snprintf_s(error_msg_buf, error_msg_buf_size,
+                    _TRUNCATE, "IP Helper Library GetAdaptersAddresses "
+                                "function failed with error == %d", ret);
+                if (_ret != -1) {
+                    JNU_ThrowByName(env, "java/lang/Error", error_msg_buf);
+                } else {
+                    JNU_ThrowByName(env, "java/lang/Error",
+                        "IP Helper Library GetAdaptersAddresses function failure");
+                }
+            } else {
+                JNU_ThrowByName(env, "java/lang/Error",
+                    "IP Helper Library GetAdaptersAddresses function failed");
+            }
+        }
         return -1;
     }
     *adapters = adapterInfo;
@@ -126,9 +160,14 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     DWORD flags, val;
     IP_ADAPTER_ADDRESSES *adapterInfo, *ptr, *ret;
     ULONG len;
+    char *error_msg_buf = NULL;
+    size_t error_msg_buf_size =
+        strlen("IP Helper Library GetAdaptersAddresses function failed with error == ") + 10;
+    int _ret = 0;
     adapterInfo = (IP_ADAPTER_ADDRESSES *)malloc (bufsize);
     if (adapterInfo == NULL) {
-        JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
+        JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
+            "Native heap allocation failure");
         return NULL;
     }
     len = bufsize;
@@ -137,10 +176,12 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     if (val == ERROR_BUFFER_OVERFLOW) {
-        IP_ADAPTER_ADDRESSES * newAdapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
+        IP_ADAPTER_ADDRESSES * newAdapterInfo =
+                (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
         if (newAdapterInfo == NULL) {
             free(adapterInfo);
-            JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
+            JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
+                "Native heap allocation failure");
             return NULL;
         }
 
@@ -152,10 +193,35 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
 
     if (val != ERROR_SUCCESS) {
         free (adapterInfo);
-        JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetAdaptersAddresses function failed");
+        if (val == ERROR_INSUFFICIENT_BUFFER) {
+            JNU_ThrowByName(env, "java/lang/Error",
+                "IP Helper Library GetAdaptersAddresses function failed "
+                "with ERROR_INSUFFICIENT_BUFFER");
+        } else if (val == ERROR_ADDRESS_NOT_ASSOCIATED ) {
+            JNU_ThrowByName(env, "java/lang/Error",
+                "IP Helper Library GetAdaptersAddresses function failed "
+                "with ERROR_ADDRESS_NOT_ASSOCIATED");
+        } else {
+            error_msg_buf = (char *)malloc(error_msg_buf_size);
+            if (error_msg_buf != NULL) {
+                memset(error_msg_buf, 0, error_msg_buf_size);
+                _ret = _snprintf_s(error_msg_buf, error_msg_buf_size,
+                    _TRUNCATE, "IP Helper Library GetAdaptersAddresses function failed "
+                               "with error == %d", val);
+                if (_ret != -1) {
+                    JNU_ThrowByName(env, "java/lang/Error", error_msg_buf);
+                } else {
+                    JNU_ThrowByName(env, "java/lang/Error",
+                        "IP Helper Library GetAdaptersAddresses function failure");
+                }
+            } else {
+                JNU_ThrowByName(env, "java/lang/Error",
+                    "IP Helper Library GetAdaptersAddresses function failed");
+            }
+        }
         return NULL;
     }
+
     ptr = adapterInfo;
     ret = NULL;
     while (ptr != NULL) {
@@ -168,7 +234,8 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
         ret = (IP_ADAPTER_ADDRESSES *) malloc(sizeof(IP_ADAPTER_ADDRESSES));
         if (ret == NULL) {
             free(adapterInfo);
-            JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
+            JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
+                "Native heap allocation failure");
             return NULL;
         }
 

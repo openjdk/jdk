@@ -535,7 +535,7 @@ public class Log extends AbstractLog {
      *  @param args   Fields of the warning message.
      */
     public void strictWarning(DiagnosticPosition pos, String key, Object ... args) {
-        writeDiagnostic(diags.warning(source, pos, key, args));
+        writeDiagnostic(diags.warning(null, source, pos, key, args));
         nwarnings++;
     }
 
