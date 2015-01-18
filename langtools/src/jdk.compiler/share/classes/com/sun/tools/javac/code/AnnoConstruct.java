@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.tools.javac.code;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Inherited;
+import java.lang.annotation.Repeatable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -183,64 +184,11 @@ public abstract class AnnoConstruct implements AnnotatedConstruct {
         return c == null ? null : AnnotationProxyMaker.generateAnnotation(c, annoType);
     }
 
-    // Needed to unpack the runtime view of containing annotations
-    private static final Class<? extends Annotation> REPEATABLE_CLASS = initRepeatable();
-    private static final Method VALUE_ELEMENT_METHOD = initValueElementMethod();
-
-    private static Class<? extends Annotation> initRepeatable() {
-        try {
-            // Repeatable will not be available when bootstrapping on
-            // JDK 7 so use a reflective lookup instead of a class
-            // literal for Repeatable.class.
-            return Class.forName("java.lang.annotation.Repeatable").asSubclass(Annotation.class);
-        } catch (ClassNotFoundException | SecurityException e) {
-            return null;
-        }
-    }
-
-    private static Method initValueElementMethod() {
-        if (REPEATABLE_CLASS == null)
-            return null;
-
-        Method m = null;
-        try {
-            m = REPEATABLE_CLASS.getMethod("value");
-            if (m != null)
-                m.setAccessible(true);
-            return m;
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-    }
-
-
     // Helper to getAnnotationsByType
     private static Class<? extends Annotation> getContainer(Class<? extends Annotation> annoType) {
-        // Since we can not refer to java.lang.annotation.Repeatable until we are
-        // bootstrapping with java 8 we need to get the Repeatable annotation using
-        // reflective invocations instead of just using its type and element method.
-        if (REPEATABLE_CLASS != null &&
-            VALUE_ELEMENT_METHOD != null) {
-            // Get the Repeatable instance on the annotations declaration
-            Annotation repeatable = (Annotation)annoType.getAnnotation(REPEATABLE_CLASS);
-            if (repeatable != null) {
-                try {
-                    // Get the value element, it should be a class
-                    // indicating the containing annotation type
-                    @SuppressWarnings("unchecked")
-                    Class<? extends Annotation> containerType = (Class)VALUE_ELEMENT_METHOD.invoke(repeatable);
-                    if (containerType == null)
-                        return null;
-
-                    return containerType;
-                } catch (ClassCastException | IllegalAccessException | InvocationTargetException e) {
-                    return null;
-                }
-            }
-        }
-        return null;
+        Repeatable repeatable = annoType.getAnnotation(Repeatable.class);
+        return (repeatable == null) ? null : repeatable.value();
     }
-
 
     // Helper to getAnnotationsByType
     private static Attribute[] unpackAttributes(Attribute.Compound container) {

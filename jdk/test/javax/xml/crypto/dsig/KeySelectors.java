@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,6 @@ class KeySelectors {
             throw new KeySelectorException("No KeyValue element found!");
         }
 
-        //@@@FIXME: this should also work for key types other than DSA/RSA
         static boolean algEquals(String algURI, String algName) {
             if (algName.equalsIgnoreCase("DSA") &&
                 algURI.equals(SignatureMethod.DSA_SHA1) ||
@@ -180,6 +179,10 @@ class KeySelectors {
                     ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha384") ||
                  algURI.equals
                     ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"))) {
+                return true;
+            } else if (algName.equalsIgnoreCase("EC") &&
+                (algURI.equals
+                    ("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"))) {
                 return true;
             } else {
                 return false;

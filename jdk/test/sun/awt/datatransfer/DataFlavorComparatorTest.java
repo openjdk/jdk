@@ -29,13 +29,14 @@
 */
 
 import sun.awt.datatransfer.DataTransferer;
-
+import java.util.Comparator;
+import sun.datatransfer.DataFlavorUtil;
 import java.awt.datatransfer.DataFlavor;
 
 public class DataFlavorComparatorTest {
 
     public static void main(String[] args) {
-        DataTransferer.DataFlavorComparator comparator = new DataTransferer.DataFlavorComparator();
+        Comparator<DataFlavor> comparator = DataFlavorUtil.getDataFlavorComparator();
         DataFlavor flavor1 = DataFlavor.imageFlavor;
         DataFlavor flavor2 = DataFlavor.selectionHtmlFlavor;
         if (comparator.compare(flavor1, flavor2) == 0) {
