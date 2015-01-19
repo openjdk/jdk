@@ -60,6 +60,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
+#include "semaphore_posix.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
@@ -2315,40 +2316,7 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-class Semaphore : public StackObj {
- public:
-  Semaphore();
-  ~Semaphore();
-  void signal();
-  void wait();
-  bool trywait();
-  bool timedwait(unsigned int sec, int nsec);
- private:
-  sem_t _semaphore;
-};
-
-Semaphore::Semaphore() {
-  sem_init(&_semaphore, 0, 0);
-}
-
-Semaphore::~Semaphore() {
-  sem_destroy(&_semaphore);
-}
-
-void Semaphore::signal() {
-  sem_post(&_semaphore);
-}
-
-void Semaphore::wait() {
-  sem_wait(&_semaphore);
-}
-
-bool Semaphore::trywait() {
-  return sem_trywait(&_semaphore) == 0;
-}
-
-bool Semaphore::timedwait(unsigned int sec, int nsec) {
-
+struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   // Semaphore's are always associated with CLOCK_REALTIME
   os::Linux::clock_gettime(CLOCK_REALTIME, &ts);
@@ -2365,18 +2333,7 @@ bool Semaphore::timedwait(unsigned int sec, int nsec) {
     }
   }
 
-  while (1) {
-    int result = sem_timedwait(&_semaphore, &ts);
-    if (result == 0) {
-      return true;
-    } else if (errno == EINTR) {
-      continue;
-    } else if (errno == ETIMEDOUT) {
-      return false;
-    } else {
-      return false;
-    }
-  }
+  return ts;
 }
 
 extern "C" {
@@ -2416,7 +2373,7 @@ static volatile jint pending_signals[NSIG+1] = { 0 };
 
 // Linux(POSIX) specific hand shaking semaphore.
 static sem_t sig_sem;
-static Semaphore sr_semaphore;
+static PosixSemaphore sr_semaphore;
 
 void os::signal_init_pd() {
   // Initialize signal structures
