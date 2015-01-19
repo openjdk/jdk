@@ -436,6 +436,13 @@ protected:
     return (this->uncast() == n->uncast());
   }
 
+  // Find out of current node that matches opcode.
+  Node* find_out_with(int opcode);
+  // Return true if the current node has an out that matches opcode.
+  bool has_out_with(int opcode);
+  // Return true if the current node has an out that matches any of the opcodes.
+  bool has_out_with(int opcode1, int opcode2, int opcode3, int opcode4);
+
 private:
   static Node* uncast_helper(const Node* n);
 
@@ -507,18 +514,25 @@ public:
 
 //----------------- Other Node Properties
 
-  // Generate class id for some ideal nodes to avoid virtual query
-  // methods is_<Node>().
-  // Class id is the set of bits corresponded to the node class and all its
-  // super classes so that queries for super classes are also valid.
-  // Subclasses of the same super class have different assigned bit
-  // (the third parameter in the macro DEFINE_CLASS_ID).
-  // Classes with deeper hierarchy are declared first.
-  // Classes with the same hierarchy depth are sorted by usage frequency.
+  // Generate class IDs for (some) ideal nodes so that it is possible to determine
+  // the type of a node using a non-virtual method call (the method is_<Node>() below).
   //
-  // The query method masks the bits to cut off bits of subclasses
-  // and then compare the result with the class id
-  // (see the macro DEFINE_CLASS_QUERY below).
+  // A class ID of an ideal node is a set of bits. In a class ID, a single bit determines
+  // the type of the node the ID represents; another subset of an ID's bits are reserved
+  // for the superclasses of the node represented by the ID.
+  //
+  // By design, if A is a supertype of B, A.is_B() returns true and B.is_A()
+  // returns false. A.is_A() returns true.
+  //
+  // If two classes, A and B, have the same superclass, a different bit of A's class id
+  // is reserved for A's type than for B's type. That bit is specified by the third
+  // parameter in the macro DEFINE_CLASS_ID.
+  //
+  // By convention, classes with deeper hierarchy are declared first. Moreover,
+  // classes with the same hierarchy depth are sorted by usage frequency.
+  //
+  // The query method masks the bits to cut off bits of subclasses and then compares
+  // the result with the class id (see the macro DEFINE_CLASS_QUERY below).
   //
   //  Class_MachCall=30, ClassMask_MachCall=31
   // 12               8               4               0
