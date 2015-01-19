@@ -329,7 +329,7 @@ public abstract class DCTree implements DocTree {
 
         DCErroneous(String body, JCDiagnostic.Factory diags, DiagnosticSource diagSource, String code, Object... args) {
             this.body = body;
-            this.diag = diags.error(diagSource, this, code, args);
+            this.diag = diags.error(null, diagSource, this, code, args);
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)

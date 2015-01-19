@@ -3170,7 +3170,9 @@ void Metaspace::global_initialize() {
     }
 
     // the min_misc_data_size and min_misc_code_size estimates are based on
-    // MetaspaceShared::generate_vtable_methods()
+    // MetaspaceShared::generate_vtable_methods().
+    // The minimum size only accounts for the vtable methods. Any size less than the
+    // minimum required size would cause vm crash when allocating the vtable methods.
     uint min_misc_data_size = align_size_up(
       MetaspaceShared::num_virtuals * MetaspaceShared::vtbl_list_size * sizeof(void*), max_alignment);
 
@@ -3336,6 +3338,10 @@ void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
   Metachunk* new_chunk = get_initialization_chunk(NonClassType,
                                                   word_size,
                                                   vsm()->medium_chunk_bunch());
+  // For dumping shared archive, report error if allocation has failed.
+  if (DumpSharedSpaces && new_chunk == NULL) {
+    report_insufficient_metaspace(MetaspaceAux::committed_bytes() + word_size * BytesPerWord);
+  }
   assert(!DumpSharedSpaces || new_chunk != NULL, "should have enough space for both chunks");
   if (new_chunk != NULL) {
     // Add to this manager's list of chunks in use and current_chunk().
@@ -3349,6 +3355,11 @@ void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
                                                       class_vsm()->medium_chunk_bunch());
     if (class_chunk != NULL) {
       class_vsm()->add_chunk(class_chunk, true);
+    } else {
+      // For dumping shared archive, report error if allocation has failed.
+      if (DumpSharedSpaces) {
+        report_insufficient_metaspace(MetaspaceAux::committed_bytes() + class_word_size * BytesPerWord);
+      }
     }
   }
 
