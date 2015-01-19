@@ -59,6 +59,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
+#include "semaphore_bsd.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
@@ -1940,47 +1941,54 @@ typedef sem_t os_semaphore_t;
   #define SEM_DESTROY(sem)        sem_destroy(&sem)
 #endif
 
-class Semaphore : public StackObj {
- public:
-  Semaphore();
-  ~Semaphore();
-  void signal();
-  void wait();
-  bool trywait();
-  bool timedwait(unsigned int sec, int nsec);
- private:
-  jlong currenttime() const;
-  os_semaphore_t _semaphore;
-};
+#ifdef __APPLE__
+// OS X doesn't support unamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
 
-Semaphore::Semaphore() : _semaphore(0) {
-  SEM_INIT(_semaphore, 0);
+static const char* sem_init_strerror(kern_return_t value) {
+  switch (value) {
+    case KERN_INVALID_ARGUMENT:  return "Invalid argument";
+    case KERN_RESOURCE_SHORTAGE: return "Resource shortage";
+    default:                     return "Unknown";
+  }
 }
 
-Semaphore::~Semaphore() {
+OSXSemaphore::OSXSemaphore(uint value) {
+  kern_return_t ret = SEM_INIT(_semaphore, value);
+
+  guarantee(ret == KERN_SUCCESS, err_msg("Failed to create semaphore: %s", sem_init_strerror(ret)));
+}
+
+OSXSemaphore::~OSXSemaphore() {
   SEM_DESTROY(_semaphore);
 }
 
-void Semaphore::signal() {
-  SEM_POST(_semaphore);
+void OSXSemaphore::signal(uint count) {
+  for (uint i = 0; i < count; i++) {
+    kern_return_t ret = SEM_POST(_semaphore);
+
+    assert(ret == KERN_SUCCESS, "Failed to signal semaphore");
+  }
 }
 
-void Semaphore::wait() {
-  SEM_WAIT(_semaphore);
+void OSXSemaphore::wait() {
+  kern_return_t ret;
+  while ((ret = SEM_WAIT(_semaphore)) == KERN_ABORTED) {
+    // Semaphore was interrupted. Retry.
+  }
+  assert(ret == KERN_SUCCESS, "Failed to wait on semaphore");
 }
 
-jlong Semaphore::currenttime() const {
+jlong OSXSemaphore::currenttime() {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return (tv.tv_sec * NANOSECS_PER_SEC) + (tv.tv_usec * 1000);
 }
 
-#ifdef __APPLE__
-bool Semaphore::trywait() {
+bool OSXSemaphore::trywait() {
   return timedwait(0, 0);
 }
 
-bool Semaphore::timedwait(unsigned int sec, int nsec) {
+bool OSXSemaphore::timedwait(unsigned int sec, int nsec) {
   kern_return_t kr = KERN_ABORTED;
   mach_timespec_t waitspec;
   waitspec.tv_sec = sec;
@@ -2011,33 +2019,24 @@ bool Semaphore::timedwait(unsigned int sec, int nsec) {
 }
 
 #else
+// Use POSIX implementation of semaphores.
 
-bool Semaphore::trywait() {
-  return sem_trywait(&_semaphore) == 0;
-}
-
-bool Semaphore::timedwait(unsigned int sec, int nsec) {
+struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
 
-  while (1) {
-    int result = sem_timedwait(&_semaphore, &ts);
-    if (result == 0) {
-      return true;
-    } else if (errno == EINTR) {
-      continue;
-    } else if (errno == ETIMEDOUT) {
-      return false;
-    } else {
-      return false;
-    }
-  }
+  return ts;
 }
 
 #endif // __APPLE__
 
 static os_semaphore_t sig_sem;
-static Semaphore sr_semaphore;
+
+#ifdef __APPLE__
+static OSXSemaphore sr_semaphore;
+#else
+static PosixSemaphore sr_semaphore;
+#endif
 
 void os::signal_init_pd() {
   // Initialize signal structures

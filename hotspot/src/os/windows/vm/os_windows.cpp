@@ -63,6 +63,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
+#include "semaphore_windows.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
@@ -1899,6 +1900,30 @@ int os::get_last_error() {
     error = errno;
   }
   return (int)error;
+}
+
+WindowsSemaphore::WindowsSemaphore(uint value) {
+  _semaphore = ::CreateSemaphore(NULL, value, LONG_MAX, NULL);
+
+  guarantee(_semaphore != NULL, err_msg("CreateSemaphore failed with error code: %lu", GetLastError()));
+}
+
+WindowsSemaphore::~WindowsSemaphore() {
+  ::CloseHandle(_semaphore);
+}
+
+void WindowsSemaphore::signal(uint count) {
+  if (count > 0) {
+    BOOL ret = ::ReleaseSemaphore(_semaphore, count, NULL);
+
+    assert(ret != 0, err_msg("ReleaseSemaphore failed with error code: %lu", GetLastError()));
+  }
+}
+
+void WindowsSemaphore::wait() {
+  DWORD ret = ::WaitForSingleObject(_semaphore, INFINITE);
+  assert(ret != WAIT_FAILED,   err_msg("WaitForSingleObject failed with error code: %lu", GetLastError()));
+  assert(ret == WAIT_OBJECT_0, err_msg("WaitForSingleObject failed with return value: %lu", ret));
 }
 
 // sun.misc.Signal
