@@ -616,6 +616,29 @@ public:
 #endif
 };
 
+// MachMergeNode is similar to a PhiNode in a sense it merges multiple values,
+// however it doesn't have a control input and is more like a MergeMem.
+// It is inserted after the register allocation is done to ensure that nodes use single
+// definition of a multidef lrg in a block.
+class MachMergeNode : public MachIdealNode {
+public:
+  MachMergeNode(Node *n1) {
+    init_class_id(Class_MachMerge);
+    add_req(NULL);
+    add_req(n1);
+  }
+  virtual const RegMask &out_RegMask() const { return in(1)->out_RegMask(); }
+  virtual const RegMask &in_RegMask(uint idx) const { return in(1)->in_RegMask(idx); }
+  virtual const class Type *bottom_type() const { return in(1)->bottom_type(); }
+  virtual uint ideal_reg() const { return bottom_type()->ideal_reg(); }
+  virtual uint oper_input_base() const { return 1; }
+  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }
+  virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
+#ifndef PRODUCT
+  virtual const char *Name() const { return "MachMerge"; }
+#endif
+};
+
 //------------------------------MachBranchNode--------------------------------
 // Abstract machine branch Node
 class MachBranchNode : public MachIdealNode {

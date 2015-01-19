@@ -110,6 +110,7 @@ void Phase::print_timers() {
     tty->print_cr ("         Compute Liveness:    %7.3f s", timers[_t_computeLive].seconds());
     tty->print_cr ("         Regalloc Split:      %7.3f s", timers[_t_regAllocSplit].seconds());
     tty->print_cr ("         Postalloc Copy Rem:  %7.3f s", timers[_t_postAllocCopyRemoval].seconds());
+    tty->print_cr ("         Merge multidefs:     %7.3f s", timers[_t_mergeMultidefs].seconds());
     tty->print_cr ("         Fixup Spills:        %7.3f s", timers[_t_fixupSpills].seconds());
     tty->print_cr ("         Compact:             %7.3f s", timers[_t_chaitinCompact].seconds());
     tty->print_cr ("         Coalesce 1:          %7.3f s", timers[_t_chaitinCoalesce1].seconds());
@@ -126,6 +127,7 @@ void Phase::print_timers() {
        timers[_t_computeLive].seconds() +
        timers[_t_regAllocSplit].seconds() +
        timers[_t_postAllocCopyRemoval].seconds() +
+       timers[_t_mergeMultidefs].seconds() +
        timers[_t_fixupSpills].seconds() +
        timers[_t_chaitinCompact].seconds() +
        timers[_t_chaitinCoalesce1].seconds() +

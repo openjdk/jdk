@@ -88,6 +88,7 @@ public:
       _t_computeLive,
       _t_regAllocSplit,
       _t_postAllocCopyRemoval,
+      _t_mergeMultidefs,
       _t_fixupSpills,
       _t_chaitinCompact,
       _t_chaitinCoalesce1,
