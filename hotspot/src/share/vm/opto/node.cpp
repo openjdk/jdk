@@ -881,6 +881,34 @@ Node* Node::uncast() const {
     return (Node*) this;
 }
 
+// Find out of current node that matches opcode.
+Node* Node::find_out_with(int opcode) {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* use = fast_out(i);
+    if (use->Opcode() == opcode) {
+      return use;
+    }
+  }
+  return NULL;
+}
+
+// Return true if the current node has an out that matches opcode.
+bool Node::has_out_with(int opcode) {
+  return (find_out_with(opcode) != NULL);
+}
+
+// Return true if the current node has an out that matches any of the opcodes.
+bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+      int opcode = fast_out(i)->Opcode();
+      if (opcode == opcode1 || opcode == opcode2 || opcode == opcode3 || opcode == opcode4) {
+        return true;
+      }
+  }
+  return false;
+}
+
+
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p) {
 #ifdef ASSERT
