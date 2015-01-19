@@ -25,7 +25,6 @@
 /**
  * @test
  * @bug 7052494
- * @ignore 7154567
  * @summary Eclipse test fails on JDK 7 b142
  *
  * @run main/othervm -Xbatch Test7052494
