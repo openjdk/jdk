@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1159,7 +1159,7 @@ public class ClassWriter extends ClassFile {
                     Assert.check(r.start_pc >= 0
                             && r.start_pc <= code.cp);
                     databuf.appendChar(r.start_pc);
-                    Assert.check(r.length >= 0
+                    Assert.check(r.length > 0
                             && (r.start_pc + r.length) <= code.cp);
                     databuf.appendChar(r.length);
                     VarSymbol sym = var.sym;

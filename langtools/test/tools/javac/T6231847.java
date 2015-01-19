@@ -1,9 +1,8 @@
 /*
- * @test  /nodynamiccopyright/
+ * @test    /nodynamiccopyright/
  * @bug     6231847
  * @summary Crash in com.sun.tools.javac.comp.Attr.visitNewClass:1352
  * @author  Peter von der Ah\u00e9
- * @compile/fail -XDdev T6231847.java
  * @compile/fail/ref=T6231847.out -XDdev -XDrawDiagnostics T6231847.java
  */
 

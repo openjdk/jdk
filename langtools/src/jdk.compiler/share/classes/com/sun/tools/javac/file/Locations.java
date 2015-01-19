@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,7 +428,7 @@ public class Locations {
 
     /**
      * General purpose implementation for search path locations, such as -sourcepath/SOURCE_PATH and
-     * -processorPath/ANNOTATION_PROCESS_PATH. All options are treated as equivalent (i.e. aliases.)
+     * -processorPath/ANNOTATION_PROCESSOR_PATH. All options are treated as equivalent (i.e. aliases.)
      * The value is an ordered set of files and/or directories.
      */
     private class SimpleLocationHandler extends LocationHandler {

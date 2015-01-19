@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  */
 
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class ConstFoldTest {
@@ -75,9 +77,10 @@ public class ConstFoldTest {
         ToolBox tb = new ToolBox();
 
         URL url = ConstFoldTest.class.getResource("ConstFoldTest$CFTest.class");
+        Path file = Paths.get(url.toURI());
         List<String> result = tb.new JavapTask()
                 .options("-c")
-                .classes(url.getFile())
+                .classes(file.toString())
                 .run()
                 .write(ToolBox.OutputKind.DIRECT)
                 .getOutputLines(ToolBox.OutputKind.DIRECT);
