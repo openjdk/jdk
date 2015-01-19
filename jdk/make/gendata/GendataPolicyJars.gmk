@@ -35,65 +35,62 @@ include JavaCompilation.gmk
 US_EXPORT_POLICY_JAR_DST := \
     $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/US_export_policy.jar
 
-ifneq ($(BUILD_CRYPTO), no)
+US_EXPORT_POLICY_JAR_LIMITED := \
+    $(SUPPORT_OUTPUTDIR)/jce/policy/limited/US_export_policy.jar
+US_EXPORT_POLICY_JAR_UNLIMITED := \
+    $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/US_export_policy.jar
 
-  US_EXPORT_POLICY_JAR_LIMITED := \
-      $(SUPPORT_OUTPUTDIR)/jce/policy/limited/US_export_policy.jar
-  US_EXPORT_POLICY_JAR_UNLIMITED := \
-      $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/US_export_policy.jar
-
-  ifndef OPENJDK
-    #
-    # In past releases, Oracle JDK has had a separately downloadable set of
-    # policy files which has been a nightmare for deployment.
-    #
-    # Now if we're closed and limited (default for Oracle JDK), create
-    # an "unlimited_policy" directory that contains the unlimited policy
-    # files.  It will be up to the user/deployer to make an informed choice
-    # as to whether they are legally entitled to use the unlimited policy
-    # file in their environment.  Users/deployers simply need to overwrite
-    # the files.  Consult README.txt (below) for more info.
-    #
-    UNLIMITED_POLICY_DIR := \
-        $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/unlimited_policy
-  endif
-
+ifndef OPENJDK
   #
-  # TODO fix so that SetupArchive does not write files into SRCS
-  # then we don't need this extra copying
+  # In past releases, Oracle JDK has had a separately downloadable set of
+  # policy files which has been a nightmare for deployment.
   #
-  # NOTE: We currently do not place restrictions on our limited export
-  # policy. This was not a typo. This means we are shipping the same file
-  # for both limited and unlimited US_export_policy.jar.  Only the local
-  # policy file currently has restrictions.
+  # Now if we're closed and limited (default for Oracle JDK), create
+  # an "unlimited_policy" directory that contains the unlimited policy
+  # files.  It will be up to the user/deployer to make an informed choice
+  # as to whether they are legally entitled to use the unlimited policy
+  # file in their environment.  Users/deployers simply need to overwrite
+  # the files.  Consult README.txt (below) for more info.
   #
-  US_EXPORT_POLICY_JAR_SRC_DIR := \
-      $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited
-  US_EXPORT_POLICY_JAR_TMP := \
-      $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/US_export_policy_jar.tmp
+  UNLIMITED_POLICY_DIR := \
+      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/unlimited_policy
+endif
 
-  $(US_EXPORT_POLICY_JAR_TMP)/%: $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
+#
+# TODO fix so that SetupArchive does not write files into SRCS
+# then we don't need this extra copying
+#
+# NOTE: We currently do not place restrictions on our limited export
+# policy. This was not a typo. This means we are shipping the same file
+# for both limited and unlimited US_export_policy.jar.  Only the local
+# policy file currently has restrictions.
+#
+US_EXPORT_POLICY_JAR_SRC_DIR := \
+    $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited
+US_EXPORT_POLICY_JAR_TMP := \
+    $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/US_export_policy_jar.tmp
+
+$(US_EXPORT_POLICY_JAR_TMP)/%: $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
 	$(install-file)
 
-  US_EXPORT_POLICY_JAR_DEPS := \
-      $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
+US_EXPORT_POLICY_JAR_DEPS := \
+    $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
 
-  $(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR, \
-      $(US_EXPORT_POLICY_JAR_DEPS), \
-      SRCS := $(US_EXPORT_POLICY_JAR_TMP), \
-      SUFFIXES := .policy, \
-      JAR := $(US_EXPORT_POLICY_JAR_UNLIMITED), \
-      EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
-      SKIP_METAINF := true))
+$(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR, \
+    $(US_EXPORT_POLICY_JAR_DEPS), \
+    SRCS := $(US_EXPORT_POLICY_JAR_TMP), \
+    SUFFIXES := .policy, \
+    JAR := $(US_EXPORT_POLICY_JAR_UNLIMITED), \
+    EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
+    SKIP_METAINF := true))
 
-  $(US_EXPORT_POLICY_JAR_LIMITED): \
-      $(US_EXPORT_POLICY_JAR_UNLIMITED)
-		$(ECHO) $(LOG_INFO) \
-		    Copying unlimited $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-		$(install-file)
+$(US_EXPORT_POLICY_JAR_LIMITED): \
+    $(US_EXPORT_POLICY_JAR_UNLIMITED)
+	$(ECHO) $(LOG_INFO) \
+	    Copying unlimited $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
 
-  TARGETS += $(US_EXPORT_POLICY_JAR_LIMITED) $(US_EXPORT_POLICY_JAR_UNLIMITED)
-endif
+TARGETS += $(US_EXPORT_POLICY_JAR_LIMITED) $(US_EXPORT_POLICY_JAR_UNLIMITED)
 
 ifeq ($(UNLIMITED_CRYPTO), true)
   $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_UNLIMITED)
@@ -119,57 +116,54 @@ POLICY_JARS += $(US_EXPORT_POLICY_JAR_DST)
 LOCAL_POLICY_JAR_DST := \
     $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/local_policy.jar
 
-ifneq ($(BUILD_CRYPTO), no)
+LOCAL_POLICY_JAR_LIMITED := \
+    $(SUPPORT_OUTPUTDIR)/jce/policy/limited/local_policy.jar
+LOCAL_POLICY_JAR_UNLIMITED := \
+    $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/local_policy.jar
 
-  LOCAL_POLICY_JAR_LIMITED := \
-      $(SUPPORT_OUTPUTDIR)/jce/policy/limited/local_policy.jar
-  LOCAL_POLICY_JAR_UNLIMITED := \
-      $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/local_policy.jar
+#
+# TODO fix so that SetupArchive does not write files into SRCS
+# then we don't need this extra copying
+#
+LOCAL_POLICY_JAR_LIMITED_TMP := \
+    $(SUPPORT_OUTPUTDIR)/jce/policy/limited/local_policy_jar.tmp
+LOCAL_POLICY_JAR_UNLIMITED_TMP := \
+    $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/local_policy_jar.tmp
 
-  #
-  # TODO fix so that SetupArchive does not write files into SRCS
-  # then we don't need this extra copying
-  #
-  LOCAL_POLICY_JAR_LIMITED_TMP := \
-      $(SUPPORT_OUTPUTDIR)/jce/policy/limited/local_policy_jar.tmp
-  LOCAL_POLICY_JAR_UNLIMITED_TMP := \
-      $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/local_policy_jar.tmp
+$(LOCAL_POLICY_JAR_LIMITED_TMP)/%: \
+    $(JDK_TOPDIR)/make/data/cryptopolicy/limited/%
+	$(install-file)
 
-  $(LOCAL_POLICY_JAR_LIMITED_TMP)/%: \
-      $(JDK_TOPDIR)/make/data/cryptopolicy/limited/%
+$(LOCAL_POLICY_JAR_UNLIMITED_TMP)/%: \
+    $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited/%
+	$(install-file)
+
+$(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_LIMITED, \
+    $(LOCAL_POLICY_JAR_LIMITED_TMP)/exempt_local.policy \
+    $(LOCAL_POLICY_JAR_LIMITED_TMP)/default_local.policy, \
+    SRCS := $(LOCAL_POLICY_JAR_LIMITED_TMP), \
+    SUFFIXES := .policy, \
+    JAR := $(LOCAL_POLICY_JAR_LIMITED), \
+    EXTRA_MANIFEST_ATTR := Crypto-Strength: limited, \
+    SKIP_METAINF := true))
+
+$(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
+    $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/default_local.policy, \
+    SRCS := $(LOCAL_POLICY_JAR_UNLIMITED_TMP), \
+    SUFFIXES := .policy, \
+    JAR := $(LOCAL_POLICY_JAR_UNLIMITED), \
+    EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
+    SKIP_METAINF := true))
+
+TARGETS += $(LOCAL_POLICY_JAR_LIMITED) $(LOCAL_POLICY_JAR_UNLIMITED)
+
+ifndef OPENJDK
+  ifneq ($(UNLIMITED_CRYPTO), true)
+    $(UNLIMITED_POLICY_DIR)/README.txt: \
+        $(JDK_TOPDIR)/make/closed/data/cryptopolicy/README.txt
 		$(install-file)
 
-  $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/%: \
-      $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited/%
-		$(install-file)
-
-  $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_LIMITED, \
-      $(LOCAL_POLICY_JAR_LIMITED_TMP)/exempt_local.policy \
-      $(LOCAL_POLICY_JAR_LIMITED_TMP)/default_local.policy, \
-      SRCS := $(LOCAL_POLICY_JAR_LIMITED_TMP), \
-      SUFFIXES := .policy, \
-      JAR := $(LOCAL_POLICY_JAR_LIMITED), \
-      EXTRA_MANIFEST_ATTR := Crypto-Strength: limited, \
-      SKIP_METAINF := true))
-
-  $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
-      $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/default_local.policy, \
-      SRCS := $(LOCAL_POLICY_JAR_UNLIMITED_TMP), \
-      SUFFIXES := .policy, \
-      JAR := $(LOCAL_POLICY_JAR_UNLIMITED), \
-      EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
-      SKIP_METAINF := true))
-
-  TARGETS += $(LOCAL_POLICY_JAR_LIMITED) $(LOCAL_POLICY_JAR_UNLIMITED)
-
-  ifndef OPENJDK
-    ifneq ($(UNLIMITED_CRYPTO), true)
-      $(UNLIMITED_POLICY_DIR)/README.txt: \
-          $(JDK_TOPDIR)/make/closed/data/cryptopolicy/README.txt
-		$(install-file)
-
-      TARGETS += $(UNLIMITED_POLICY_DIR)/README.txt
-    endif
+    TARGETS += $(UNLIMITED_POLICY_DIR)/README.txt
   endif
 endif
 
