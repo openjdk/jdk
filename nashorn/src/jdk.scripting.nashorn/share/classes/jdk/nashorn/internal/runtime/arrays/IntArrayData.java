@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -340,17 +341,6 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
     @Override
     public ArrayData slice(final long from, final long to) {
         return new IntArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)(to - (from < 0 ? from + length() : from)));
-    }
-
-    @Override
-    public final ArrayData push(final boolean strict, final int item) {
-        final long      len     = length();
-        final ArrayData newData = ensure(len);
-        if (newData == this) {
-            array[(int)len] = item;
-            return this;
-        }
-        return newData.set((int)len, item, strict);
     }
 
     @Override
