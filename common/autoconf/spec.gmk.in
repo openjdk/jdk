@@ -694,9 +694,14 @@ OS_VERSION_MICRO:=@OS_VERSION_MICRO@
 # Images directory definitions
 JDK_IMAGE_SUBDIR:=jdk
 JRE_IMAGE_SUBDIR:=jre
+
 # Colon left out to be able to override output dir for bootcycle-images
 JDK_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_IMAGE_SUBDIR)
 JRE_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
+
+# Test image, as above
+TEST_IMAGE_SUBDIR:=test
+TEST_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(TEST_IMAGE_SUBDIR)
 
 # Macosx bundles directory definitions
 JDK_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents

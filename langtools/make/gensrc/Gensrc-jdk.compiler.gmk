@@ -37,4 +37,7 @@ $(eval $(call SetupVersionProperties,JAVAP_VERSION,\
 $(eval $(call SetupCompileProperties,COMPILE_PROPERTIES,\
     $(JAVAC_VERSION) $(JAVAH_VERSION) $(JAVAP_VERSION)))
 
-all: $(COMPILE_PROPERTIES)
+$(eval $(call SetupParseProperties,PARSE_PROPERTIES,\
+	com/sun/tools/javac/resources/compiler.properties))
+
+all: $(COMPILE_PROPERTIES) $(PARSE_PROPERTIES)
