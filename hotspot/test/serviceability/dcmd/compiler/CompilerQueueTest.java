@@ -25,6 +25,7 @@
  * @test CompilerQueueTest
  * @bug 8054889
  * @library ..
+ * @ignore 8069160
  * @build DcmdUtil CompilerQueueTest
  * @run main CompilerQueueTest
  * @run main/othervm -XX:-TieredCompilation CompilerQueueTest
