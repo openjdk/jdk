@@ -28,7 +28,7 @@
  * @summary JVM crashes with "missing exception handler" error
  * @author volker.simonis@sap.com
  *
- * @run main/othervm -XX:CompileThreshold=100 -Xbatch -Xss248k StackOverflowBug
+ * @run main/othervm -XX:CompileThreshold=100 -Xbatch -Xss392k StackOverflowBug
  */
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/xmlstream.hpp"
+
+// Do not assert this condition if there's already another error reported.
+#define assert_if_no_error(cond, msg) \
+  vmassert((cond) || is_error_reported(), msg)
 
 void xmlStream::initialize(outputStream* out) {
   _out = out;

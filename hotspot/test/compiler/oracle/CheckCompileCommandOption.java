@@ -172,7 +172,7 @@ public class CheckCompileCommandOption {
             out.shouldContain(expected_output);
         }
 
-        out.shouldNotContain("CompilerOracle: unrecognized line");
+        out.shouldNotContain("CompileCommand: unrecognized line");
         out.shouldHaveExitValue(0);
     }
 
@@ -183,7 +183,7 @@ public class CheckCompileCommandOption {
         pb = ProcessTools.createJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
-        out.shouldContain("CompilerOracle: unrecognized line");
+        out.shouldContain("CompileCommand: unrecognized line");
         out.shouldHaveExitValue(0);
     }
 

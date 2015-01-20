@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2013, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2013, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,11 +335,11 @@ void TemplateTable::ldc(bool wide) {
 
   __ cmpwi(CCR0, Rscratch2, JVM_CONSTANT_UnresolvedClass); // Unresolved class?
   __ cmpwi(CCR1, Rscratch2, JVM_CONSTANT_UnresolvedClassInError); // Unresolved class in error state?
-  __ cror(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2);
+  __ cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
 
   // Resolved class - need to call vm to get java mirror of the class.
   __ cmpwi(CCR1, Rscratch2, JVM_CONSTANT_Class);
-  __ crnor(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2); // Neither resolved class nor unresolved case from above?
+  __ crnor(CCR0, Assembler::equal, CCR1, Assembler::equal); // Neither resolved class nor unresolved case from above?
   __ beq(CCR0, notClass);
 
   __ li(R4, wide ? 1 : 0);
@@ -2611,7 +2611,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
           __ cmpwi(CCR0, Rflags, ltos);
           __ cmpwi(CCR1, Rflags, dtos);
           __ addi(base, R15_esp, Interpreter::expr_offset_in_bytes(1));
-          __ crnor(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2);
+          __ crnor(CCR0, Assembler::equal, CCR1, Assembler::equal);
           __ beq(CCR0, is_one_slot);
           __ addi(base, R15_esp, Interpreter::expr_offset_in_bytes(2));
           __ bind(is_one_slot);
@@ -3563,7 +3563,7 @@ void TemplateTable::_new() {
     // Make sure klass does not have has_finalizer, or is abstract, or interface or java/lang/Class.
     __ andi_(R0, Rinstance_size, Klass::_lh_instance_slow_path_bit); // slow path bit equals 0?
 
-    __ crnand(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2); // slow path bit set or not fully initialized?
+    __ crnand(CCR0, Assembler::equal, CCR1, Assembler::equal); // slow path bit set or not fully initialized?
     __ beq(CCR0, Lslow_case);
 
     // --------------------------------------------------------------------------

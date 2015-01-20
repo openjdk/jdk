@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
- * @test
- * @bug 8059100
- * @summary Test that you can decrease NMT tracking level but not increase it.
- * @key nmt
+ * @test UnexpectedDeoptimizationTest
  * @library /testlibrary /../../test/lib
- * @ignore 8067167
- * @build ChangeTrackingLevel
+ * @build UnexpectedDeoptimizationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ChangeTrackingLevel
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
+ *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache -XX:-DeoptimizeRandom
+ *                   UnexpectedDeoptimizationTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
+ *                   -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom
+ *                   UnexpectedDeoptimizationTest
+ * @summary stressing code cache by forcing unexpected deoptimizations
  */
+public class UnexpectedDeoptimizationTest implements Runnable {
 
-import com.oracle.java.testlibrary.*;
-import sun.hotspot.WhiteBox;
-
-public class ChangeTrackingLevel {
-
-    public static WhiteBox wb = WhiteBox.getWhiteBox();
-    public static void main(String args[]) throws Exception {
-        boolean testChangeLevel = wb.NMTChangeTrackingLevel();
-        if (testChangeLevel) {
-            System.out.println("NMT level change test passed.");
-        } else {
-            // it also fails if the VM asserts.
-            throw new RuntimeException("NMT level change test failed");
-        }
+    public static void main(String[] args) {
+        new CodeCacheStressRunner(new UnexpectedDeoptimizationTest()).runTest();
     }
-};
+
+    @Override
+    public void run() {
+        Helper.WHITE_BOX.deoptimizeFrames(Helper.RNG.nextBoolean());
+    }
+
+}

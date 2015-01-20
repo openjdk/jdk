@@ -125,9 +125,6 @@ public class TestPrintPreciseRTMLockingStatistics
 
         RTMLockingStatistics lock = statistics.get(0);
 
-        Asserts.assertGT(lock.getTotalLocks(), 0L, "RTM locking statistics "
-                + "should contain non zero total locks count");
-
         Asserts.assertGT(lock.getTotalAborts(), 0L,
                 "RTM locking statistics should contain non zero total aborts "
                 + "count");
