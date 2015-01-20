@@ -47,7 +47,7 @@ public class WBStackSize {
     static final long K = 1024;
 
     static final long MIN_STACK_SIZE = 8 * K;
-    static final long MAX_STACK_SIZE_ALLOCATED_IN_MAIN = 200 * K; // current value is about 130k on 64-bit platforms
+    static final long MAX_STACK_SIZE_ALLOCATED_IN_MAIN = 150 * K; // current value is about 130k on 64-bit platforms
 
     static final WhiteBox wb = WhiteBox.getWhiteBox();
 
@@ -82,8 +82,10 @@ public class WBStackSize {
 
     public static void main(String[] args) {
         long configStackSize = wb.getIntxVMFlag("ThreadStackSize") * K;
-
         System.out.println("ThreadStackSize VM option: " + configStackSize);
+
+        long stackProtectionSize = wb.getIntxVMFlag("StackShadowPages") * wb.getVMPageSize();
+        System.out.println("Size of protected shadow pages: " + stackProtectionSize);
 
         long actualStackSize = wb.getThreadStackSize();
         System.out.println("Full stack size: " + actualStackSize);
@@ -96,14 +98,16 @@ public class WBStackSize {
         long remainingStackSize = wb.getThreadRemainingStackSize();
         System.out.println("Remaining stack size in main(): " + remainingStackSize);
 
-        // Up to 200k can be already allocated by VM
+        // Up to 150k can be already allocated by VM and some space is used for stack protection.
+        long spaceAlreadyOccupied = MAX_STACK_SIZE_ALLOCATED_IN_MAIN + stackProtectionSize;
+
         if (remainingStackSize > configStackSize
-                || (configStackSize > MAX_STACK_SIZE_ALLOCATED_IN_MAIN
-                && remainingStackSize < configStackSize - MAX_STACK_SIZE_ALLOCATED_IN_MAIN)) {
+            || (configStackSize > spaceAlreadyOccupied
+                && remainingStackSize < configStackSize - spaceAlreadyOccupied)) {
 
             throw new RuntimeException("getThreadRemainingStackSize value [" + remainingStackSize
                                      + "] should be at least ThreadStackSize value [" + configStackSize + "] minus ["
-                                     + MAX_STACK_SIZE_ALLOCATED_IN_MAIN + "]");
+                                     + spaceAlreadyOccupied + "]");
         }
 
         testStackOverflow();

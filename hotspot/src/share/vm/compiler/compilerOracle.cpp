@@ -105,7 +105,6 @@ class MethodMatcher : public CHeapObj<mtCompiler> {
     tty->print(".");
     print_symbol(method_name(), _method_mode);
     if (signature() != NULL) {
-      tty->print(" ");
       signature()->print_symbol_on(tty);
     }
   }
@@ -467,43 +466,85 @@ static OracleCommand parse_command_name(const char * line, int* bytes_read) {
   return UnknownCommand;
 }
 
-
 static void usage() {
-  tty->print_cr("  CompileCommand and the CompilerOracle allows simple control over");
-  tty->print_cr("  what's allowed to be compiled.  The standard supported directives");
-  tty->print_cr("  are exclude and compileonly.  The exclude directive stops a method");
-  tty->print_cr("  from being compiled and compileonly excludes all methods except for");
-  tty->print_cr("  the ones mentioned by compileonly directives.  The basic form of");
-  tty->print_cr("  all commands is a command name followed by the name of the method");
-  tty->print_cr("  in one of two forms: the standard class file format as in");
-  tty->print_cr("  class/name.methodName or the PrintCompilation format");
-  tty->print_cr("  class.name::methodName.  The method name can optionally be followed");
-  tty->print_cr("  by a space then the signature of the method in the class file");
-  tty->print_cr("  format.  Otherwise the directive applies to all methods with the");
-  tty->print_cr("  same name and class regardless of signature.  Leading and trailing");
-  tty->print_cr("  *'s in the class and/or method name allows a small amount of");
-  tty->print_cr("  wildcarding.  ");
   tty->cr();
-  tty->print_cr("  Examples:");
+  tty->print_cr("The CompileCommand option enables the user of the JVM to control specific");
+  tty->print_cr("behavior of the dynamic compilers. Many commands require a pattern that defines");
+  tty->print_cr("the set of methods the command shall be applied to. The CompileCommand");
+  tty->print_cr("option provides the following commands:");
   tty->cr();
-  tty->print_cr("  exclude java/lang/StringBuffer.append");
-  tty->print_cr("  compileonly java/lang/StringBuffer.toString ()Ljava/lang/String;");
-  tty->print_cr("  exclude java/lang/String*.*");
-  tty->print_cr("  exclude *.toString");
-}
+  tty->print_cr("  break,<pattern>       - debug breakpoint in compiler and in generated code");
+  tty->print_cr("  print,<pattern>       - print assembly");
+  tty->print_cr("  exclude,<pattern>     - don't compile or inline");
+  tty->print_cr("  inline,<pattern>      - always inline");
+  tty->print_cr("  dontinline,<pattern>  - don't inline");
+  tty->print_cr("  compileonly,<pattern> - compile only");
+  tty->print_cr("  log,<pattern>         - log compilation");
+  tty->print_cr("  option,<pattern>,<option type>,<option name>,<value>");
+  tty->print_cr("                        - set value of custom option");
+  tty->print_cr("  option,<pattern>,<bool option name>");
+  tty->print_cr("                        - shorthand for setting boolean flag");
+  tty->print_cr("  quiet                 - silence the compile command output");
+  tty->print_cr("  help                  - print this text");
+  tty->cr();
+  tty->print_cr("The preferred format for the method matching pattern is:");
+  tty->print_cr("  package/Class.method()");
+  tty->cr();
+  tty->print_cr("For backward compatibility this form is also allowed:");
+  tty->print_cr("  package.Class::method()");
+  tty->cr();
+  tty->print_cr("The signature can be separated by an optional whitespace or comma:");
+  tty->print_cr("  package/Class.method ()");
+  tty->cr();
+  tty->print_cr("The class and method identifier can be used together with leading or");
+  tty->print_cr("trailing *'s for a small amount of wildcarding:");
+  tty->print_cr("  *ackage/Clas*.*etho*()");
+  tty->cr();
+  tty->print_cr("It is possible to use more than one CompileCommand on the command line:");
+  tty->print_cr("  -XX:CompileCommand=exclude,java/*.* -XX:CompileCommand=log,java*.*");
+  tty->cr();
+  tty->print_cr("The CompileCommands can be loaded from a file with the flag");
+  tty->print_cr("-XX:CompileCommandFile=<file> or be added to the file '.hotspot_compiler'");
+  tty->print_cr("Use the same format in the file as the argument to the CompileCommand flag.");
+  tty->print_cr("Add one command on each line.");
+  tty->print_cr("  exclude java/*.*");
+  tty->print_cr("  option java/*.* ReplayInline");
+  tty->cr();
+  tty->print_cr("The following commands have conflicting behavior: 'exclude', 'inline', 'dontinline',");
+  tty->print_cr("and 'compileonly'. There is no priority of commands. Applying (a subset of) these");
+  tty->print_cr("commands to the same method results in undefined behavior.");
+  tty->cr();
+};
 
+// The JVM specification defines the allowed characters.
+// Tokens that are disallowed by the JVM specification can have
+// a meaning to the parser so we need to include them here.
+// The parser does not enforce all rules of the JVMS - a successful parse
+// does not mean that it is an allowed name. Illegal names will
+// be ignored since they never can match a class or method.
+//
+// '\0' and 0xf0-0xff are disallowed in constant string values
+// 0x20 ' ', 0x09 '\t' and, 0x2c ',' are used in the matching
+// 0x5b '[' and 0x5d ']' can not be used because of the matcher
+// 0x28 '(' and 0x29 ')' are used for the signature
+// 0x2e '.' is always replaced before the matching
+// 0x2f '/' is only used in the class name as package separator
 
-// The characters allowed in a class or method name.  All characters > 0x7f
-// are allowed in order to handle obfuscated class files (e.g. Volano)
-#define RANGEBASE "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$_<>" \
-        "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f" \
-        "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f" \
-        "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf" \
-        "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf" \
-        "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf" \
-        "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf" \
-        "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef" \
-        "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
+#define RANGEBASE "\x1\x2\x3\x4\x5\x6\x7\x8\xa\xb\xc\xd\xe\xf" \
+    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f" \
+    "\x21\x22\x23\x24\x25\x26\x27\x2a\x2b\x2c\x2d" \
+    "\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f" \
+    "\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f" \
+    "\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a\x5c\x5e\x5f" \
+    "\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c\x6d\x6e\x6f" \
+    "\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c\x7d\x7e\x7f" \
+    "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f" \
+    "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f" \
+    "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf" \
+    "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf" \
+    "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf" \
+    "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf" \
+    "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
 
 #define RANGE0 "[*" RANGEBASE "]"
 #define RANGESLASH "[*" RANGEBASE "/]"
@@ -681,8 +722,9 @@ void CompilerOracle::parse_from_line(char* line) {
 
   if (command == UnknownCommand) {
     ttyLocker ttyl;
-    tty->print_cr("CompilerOracle: unrecognized line");
+    tty->print_cr("CompileCommand: unrecognized command");
     tty->print_cr("  \"%s\"", original_line);
+    CompilerOracle::print_tip();
     return;
   }
 
@@ -712,9 +754,17 @@ void CompilerOracle::parse_from_line(char* line) {
     Symbol* signature = NULL;
 
     line += bytes_read;
+
+    // Skip any leading spaces before signature
+    int whitespace_read = 0;
+    sscanf(line, "%*[ \t]%n", &whitespace_read);
+    if (whitespace_read > 0) {
+      line += whitespace_read;
+    }
+
     // there might be a signature following the method.
     // signatures always begin with ( so match that by hand
-    if (1 == sscanf(line, "%*[ \t](%254[[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
+    if (1 == sscanf(line, "(%254[[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
       sig[0] = '(';
       line += bytes_read;
       signature = SymbolTable::new_symbol(sig, CHECK);
@@ -740,7 +790,7 @@ void CompilerOracle::parse_from_line(char* line) {
         if (match != NULL && !_quiet) {
           // Print out the last match added
           ttyLocker ttyl;
-          tty->print("CompilerOracle: %s ", command_names[command]);
+          tty->print("CompileCommand: %s ", command_names[command]);
           match->print();
         }
         line += bytes_read;
@@ -775,24 +825,34 @@ void CompilerOracle::parse_from_line(char* line) {
   ttyLocker ttyl;
   if (error_msg != NULL) {
     // an error has happened
-    tty->print_cr("CompilerOracle: unrecognized line");
+    tty->print_cr("CompileCommand: An error occured during parsing");
     tty->print_cr("  \"%s\"", original_line);
     if (error_msg != NULL) {
       tty->print_cr("%s", error_msg);
     }
+    CompilerOracle::print_tip();
+
   } else {
     // check for remaining characters
     bytes_read = 0;
     sscanf(line, "%*[ \t]%n", &bytes_read);
     if (line[bytes_read] != '\0') {
-      tty->print_cr("CompilerOracle: unrecognized line");
+      tty->print_cr("CompileCommand: Bad pattern");
       tty->print_cr("  \"%s\"", original_line);
       tty->print_cr("  Unrecognized text %s after command ", line);
+      CompilerOracle::print_tip();
     } else if (match != NULL && !_quiet) {
-      tty->print("CompilerOracle: %s ", command_names[command]);
+      tty->print("CompileCommand: %s ", command_names[command]);
       match->print();
     }
   }
+}
+
+void CompilerOracle::print_tip() {
+  tty->cr();
+  tty->print_cr("Usage: '-XX:CompileCommand=command,\"package/Class.method()\"'");
+  tty->print_cr("Use:   '-XX:CompileCommand=help' for more information.");
+  tty->cr();
 }
 
 static const char* default_cc_file = ".hotspot_compiler";
