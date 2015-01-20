@@ -385,7 +385,7 @@ public class Enter extends JCTree.Visitor {
         typeEnvs.put(c, localEnv);
 
         // Fill out class fields.
-        c.completer = typeEnter;
+        c.completer = null; // do not allow the initial completer linger on.
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree);
         c.sourcefile = env.toplevel.sourcefile;
         c.members_field = WriteableScope.create(c);
@@ -408,6 +408,9 @@ public class Enter extends JCTree.Visitor {
 
         // Enter type parameters.
         ct.typarams_field = classEnter(tree.typarams, localEnv);
+
+        // install further completer for this type.
+        c.completer = typeEnter;
 
         // Add non-local class to uncompleted, to make sure it will be
         // completed later.
