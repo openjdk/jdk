@@ -2783,7 +2783,8 @@ public class Attr extends JCTree.Visitor {
 
     @SuppressWarnings("fallthrough")
     void checkReferenceCompatible(JCMemberReference tree, Type descriptor, Type refType, CheckContext checkContext, boolean speculativeAttr) {
-        Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
+        InferenceContext inferenceContext = checkContext.inferenceContext();
+        Type returnType = inferenceContext.asUndetVar(descriptor.getReturnType());
 
         Type resType;
         switch (tree.getMode()) {
@@ -2812,10 +2813,20 @@ public class Attr extends JCTree.Visitor {
         if (incompatibleReturnType != null) {
             checkContext.report(tree, diags.fragment("incompatible.ret.type.in.mref",
                     diags.fragment("inconvertible.types", resType, descriptor.getReturnType())));
+        } else {
+            if (inferenceContext.free(refType)) {
+                // we need to wait for inference to finish and then replace inference vars in the referent type
+                inferenceContext.addFreeTypeListener(List.of(refType),
+                        instantiatedContext -> {
+                            tree.referentType = instantiatedContext.asInstType(refType);
+                        });
+            } else {
+                tree.referentType = refType;
+            }
         }
 
         if (!speculativeAttr) {
-            List<Type> thrownTypes = checkContext.inferenceContext().asUndetVars(descriptor.getThrownTypes());
+            List<Type> thrownTypes = inferenceContext.asUndetVars(descriptor.getThrownTypes());
             if (chk.unhandled(refType.getThrownTypes(), thrownTypes).nonEmpty()) {
                 log.error(tree, "incompatible.thrown.types.in.mref", refType.getThrownTypes());
             }
