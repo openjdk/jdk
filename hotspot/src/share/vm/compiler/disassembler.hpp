@@ -78,6 +78,9 @@ class Disassembler {
 #ifdef TARGET_ARCH_ppc
 # include "disassembler_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "disassembler_aarch64.hpp"
+#endif
 
 
  public:

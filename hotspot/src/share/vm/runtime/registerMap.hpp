@@ -135,6 +135,9 @@ class RegisterMap : public StackObj {
 #ifdef TARGET_ARCH_ppc
 # include "registerMap_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "registerMap_aarch64.hpp"
+#endif
 
 };
 

@@ -433,6 +433,9 @@ class AbstractAssembler : public ResourceObj  {
 #ifdef TARGET_ARCH_ppc
 # include "assembler_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "assembler_aarch64.hpp"
+#endif
 
 
 #endif // SHARE_VM_ASM_ASSEMBLER_HPP

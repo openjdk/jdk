@@ -337,6 +337,9 @@ class Copy : AllStatic {
 #ifdef TARGET_ARCH_ppc
 # include "copy_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "copy_aarch64.hpp"
+#endif
 
 };
 

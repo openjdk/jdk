@@ -1702,6 +1702,9 @@ class JavaThread: public Thread {
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "thread_linux_ppc.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_aarch64
+# include "thread_linux_aarch64.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_aix_ppc
 # include "thread_aix_ppc.hpp"
 #endif

@@ -39,6 +39,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "jni_ppc.h"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "jni_aarch64.h"
+#endif
 
 
 /*
