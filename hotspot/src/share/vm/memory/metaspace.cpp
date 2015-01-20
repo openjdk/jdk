@@ -3022,10 +3022,55 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   // Don't use large pages for the class space.
   bool large_pages = false;
 
+#ifndef AARCH64
   ReservedSpace metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                              _reserve_alignment,
                                              large_pages,
                                              requested_addr);
+#else // AARCH64
+  ReservedSpace metaspace_rs;
+
+  // Our compressed klass pointers may fit nicely into the lower 32
+  // bits.
+  if ((uint64_t)requested_addr + compressed_class_space_size() < 4*G) {
+    metaspace_rs = ReservedSpace(compressed_class_space_size(),
+                                             _reserve_alignment,
+                                             large_pages,
+                                             requested_addr, 0);
+  }
+
+  if (! metaspace_rs.is_reserved()) {
+    // Try to align metaspace so that we can decode a compressed klass
+    // with a single MOVK instruction.  We can do this iff the
+    // compressed class base is a multiple of 4G.
+    for (char *a = (char*)align_ptr_up(requested_addr, 4*G);
+         a < (char*)(1024*G);
+         a += 4*G) {
+
+#if INCLUDE_CDS
+      if (UseSharedSpaces
+          && ! can_use_cds_with_metaspace_addr(a, cds_base)) {
+        // We failed to find an aligned base that will reach.  Fall
+        // back to using our requested addr.
+        metaspace_rs = ReservedSpace(compressed_class_space_size(),
+                                     _reserve_alignment,
+                                     large_pages,
+                                     requested_addr, 0);
+        break;
+      }
+#endif
+
+      metaspace_rs = ReservedSpace(compressed_class_space_size(),
+                                   _reserve_alignment,
+                                   large_pages,
+                                   a, 0);
+      if (metaspace_rs.is_reserved())
+        break;
+    }
+  }
+
+#endif // AARCH64
+
   if (!metaspace_rs.is_reserved()) {
 #if INCLUDE_CDS
     if (UseSharedSpaces) {

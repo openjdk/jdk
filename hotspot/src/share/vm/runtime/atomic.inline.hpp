@@ -43,6 +43,9 @@
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "atomic_linux_ppc.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_aarch64
+# include "atomic_linux_aarch64.inline.hpp"
+#endif
 
 // Solaris
 #ifdef TARGET_OS_ARCH_solaris_x86
