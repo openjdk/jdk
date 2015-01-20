@@ -2101,6 +2101,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public PolyKind refPolyKind;
         public boolean ownerAccessible;
         public OverloadKind overloadKind;
+        public Type referentType;
 
         public enum OverloadKind {
             OVERLOADED,
