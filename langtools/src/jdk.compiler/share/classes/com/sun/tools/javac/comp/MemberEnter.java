@@ -227,7 +227,7 @@ public class MemberEnter extends JCTree.Visitor {
         annotate.annotateTypeLater(tree, localEnv, m, tree.pos());
 
         if (tree.defaultValue != null)
-            annotateDefaultValueLater(tree.defaultValue, localEnv, m);
+            annotateDefaultValueLater(tree.defaultValue, localEnv, m, tree.pos());
     }
 
     /** Create a fresh environment for method bodies.
@@ -438,7 +438,8 @@ public class MemberEnter extends JCTree.Visitor {
     /** Queue processing of an attribute default value. */
     void annotateDefaultValueLater(final JCExpression defaultValue,
                                    final Env<AttrContext> localEnv,
-                                   final MethodSymbol m) {
+                                   final MethodSymbol m,
+                                   final DiagnosticPosition deferPos) {
         annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
@@ -449,9 +450,11 @@ public class MemberEnter extends JCTree.Visitor {
                 @Override
                 public void run() {
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
+                    DiagnosticPosition prevLintPos = deferredLintHandler.setPos(deferPos);
                     try {
                         enterDefaultValue(defaultValue, localEnv, m);
                     } finally {
+                        deferredLintHandler.setPos(prevLintPos);
                         log.useSource(prev);
                     }
                 }
