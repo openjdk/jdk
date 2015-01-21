@@ -123,7 +123,6 @@
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-
 ############################################################################
 
 # jdk_instrument
@@ -141,6 +140,9 @@ java/lang/instrument/RetransformBigClass.sh                     generic-all
 
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
+
+# 8069286
+java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
 
 ############################################################################
 
