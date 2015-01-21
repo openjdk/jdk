@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.AbstractCollection;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.stream.Collector;
 
 /** A class for generic linked lists. Links are supposed to be
  *  immutable, the only exception being the incremental construction of
@@ -536,5 +537,15 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         }
 
         return Collections.unmodifiableList(a);
+    }
+
+    /**
+     * Collect elements into a new list (using a @code{ListBuffer})
+     */
+    public static <Z> Collector<Z, ListBuffer<Z>, List<Z>> collector() {
+        return Collector.of(ListBuffer::new,
+                (buf, el)->buf.add(el),
+                (buf1, buf2)-> { buf1.addAll(buf2); return buf1; },
+                buf->buf.toList());
     }
 }

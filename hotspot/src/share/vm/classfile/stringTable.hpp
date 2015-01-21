@@ -118,7 +118,7 @@ public:
 
   // Debugging
   static void verify();
-  static void dump(outputStream* st);
+  static void dump(outputStream* st, bool verbose=false);
 
   enum VerifyMesgModes {
     _verify_quietly    = 0,

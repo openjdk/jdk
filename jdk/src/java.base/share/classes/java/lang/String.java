@@ -135,7 +135,7 @@ public final class String
      * unnecessary since Strings are immutable.
      */
     public String() {
-        this.value = new char[0];
+        this.value = "".value;
     }
 
     /**
@@ -175,7 +175,7 @@ public final class String
      * not affect the newly created string.
      *
      * @param  value
-     *         Array that is the source of characters
+         *         Array that is the source of characters
      *
      * @param  offset
      *         The initial offset
@@ -191,8 +191,14 @@ public final class String
         if (offset < 0) {
             throw new StringIndexOutOfBoundsException(offset);
         }
-        if (count < 0) {
-            throw new StringIndexOutOfBoundsException(count);
+        if (count <= 0) {
+            if (count < 0) {
+                throw new StringIndexOutOfBoundsException(count);
+            }
+            if (offset <= value.length) {
+                this.value = "".value;
+                return;
+            }
         }
         // Note: offset or count might be near -1>>>1.
         if (offset > value.length - count) {
@@ -233,8 +239,14 @@ public final class String
         if (offset < 0) {
             throw new StringIndexOutOfBoundsException(offset);
         }
-        if (count < 0) {
-            throw new StringIndexOutOfBoundsException(count);
+        if (count <= 0) {
+            if (count < 0) {
+                throw new StringIndexOutOfBoundsException(count);
+            }
+            if (offset <= codePoints.length) {
+                this.value = "".value;
+                return;
+            }
         }
         // Note: offset or count might be near -1>>>1.
         if (offset > codePoints.length - count) {
@@ -246,11 +258,11 @@ public final class String
         // Pass 1: Compute precise size of char[]
         int n = count;
         for (int i = offset; i < end; i++) {
-            int c = codePoints[i];
-            if (Character.isBmpCodePoint(c))
-                continue;
-            else if (Character.isValidCodePoint(c))
-                n++;
+        int c = codePoints[i];
+        if (Character.isBmpCodePoint(c))
+            continue;
+        else if (Character.isValidCodePoint(c))
+            n++;
             else throw new IllegalArgumentException(Integer.toString(c));
         }
 
@@ -783,7 +795,7 @@ public final class String
      * subarray of {@code dst} starting at index {@code dstBegin}
      * and ending at index:
      * <blockquote><pre>
-     *     dstbegin + (srcEnd-srcBegin) - 1
+     *     dstBegin + (srcEnd-srcBegin) - 1
      * </pre></blockquote>
      *
      * @param      srcBegin   index of the first character in the string
@@ -828,7 +840,7 @@ public final class String
      * dst} starting at index {@code dstBegin} and ending at index:
      *
      * <blockquote><pre>
-     *     dstbegin + (srcEnd-srcBegin) - 1
+     *     dstBegin + (srcEnd-srcBegin) - 1
      * </pre></blockquote>
      *
      * @deprecated  This method does not properly convert characters into

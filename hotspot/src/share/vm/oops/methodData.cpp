@@ -1283,6 +1283,11 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
          DataLayout::compute_size_in_bytes(SpeculativeTrapData::static_cell_count()),
          "code needs to be adjusted");
 
+  // Do not create one of these if method has been redefined.
+  if (m != NULL && m->is_old()) {
+    return NULL;
+  }
+
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
 
@@ -1554,9 +1559,7 @@ public:
 class CleanExtraDataMethodClosure : public CleanExtraDataClosure {
 public:
   CleanExtraDataMethodClosure() {}
-  bool is_live(Method* m) {
-    return !m->is_old() || m->on_stack();
-  }
+  bool is_live(Method* m) { return !m->is_old(); }
 };
 
 
@@ -1658,3 +1661,16 @@ void MethodData::clean_weak_method_links() {
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
+
+#ifdef ASSERT
+void MethodData::verify_clean_weak_method_links() {
+  for (ProfileData* data = first_data();
+       is_valid(data);
+       data = next_data(data)) {
+    data->verify_clean_weak_method_links();
+  }
+
+  CleanExtraDataMethodClosure cl;
+  verify_extra_data_clean(&cl);
+}
+#endif // ASSERT

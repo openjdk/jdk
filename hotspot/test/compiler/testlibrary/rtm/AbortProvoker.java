@@ -29,8 +29,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.Utils;
-import sun.misc.Unsafe;
+import sun.hotspot.WhiteBox;
 
 /**
  * Base class for different transactional execution abortion
@@ -38,6 +37,9 @@ import sun.misc.Unsafe;
  */
 public abstract class AbortProvoker implements CompilableTest {
     public static final long DEFAULT_ITERATIONS = 10000L;
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    @SuppressWarnings("unused")
+    private static int sharedState = 0;
     /**
      * Inflates monitor associated with object {@code monitor}.
      * Inflation is forced by entering the same monitor from
@@ -48,36 +50,76 @@ public abstract class AbortProvoker implements CompilableTest {
      * @throws Exception if something went wrong.
      */
     public static Object inflateMonitor(Object monitor) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
         CyclicBarrier barrier = new CyclicBarrier(2);
 
         Runnable inflatingRunnable = () -> {
-            unsafe.monitorEnter(monitor);
-            try {
-                barrier.await();
-                barrier.await();
-            } catch (InterruptedException | BrokenBarrierException e) {
-                throw new RuntimeException(
-                        "Synchronization issue occurred.", e);
-            } finally {
-                unsafe.monitorExit(monitor);
+            synchronized (monitor) {
+                try {
+                    barrier.await();
+                } catch (BrokenBarrierException  | InterruptedException e) {
+                    throw new RuntimeException(
+                            "Synchronization issue occurred.", e);
+                }
+                try {
+                    monitor.wait();
+                } catch (InterruptedException e) {
+                    throw new AssertionError("The thread waiting on an"
+                            + " inflated monitor was interrupted, thus test"
+                            + " results may be incorrect.", e);
+                }
             }
         };
 
         Thread t = new Thread(inflatingRunnable);
+        t.setDaemon(true);
         t.start();
         // Wait until thread t enters the monitor.
         barrier.await();
-        // At this point monitor will be owned by thread t,
-        // so our attempt to enter the same monitor will force
-        // monitor inflation.
-        Asserts.assertFalse(unsafe.tryMonitorEnter(monitor),
-                            "Not supposed to enter the monitor first");
-        barrier.await();
-        t.join();
+        synchronized (monitor) {
+            // At this point thread t is already waiting on the monitor.
+            // Modifying static field just to avoid lock's elimination.
+            sharedState++;
+        }
+        verifyMonitorState(monitor, true /* inflated */);
         return monitor;
     }
 
+    /**
+     * Verifies that {@code monitor} is a stack-lock or inflated lock depending
+     * on {@code shouldBeInflated} value. If {@code monitor} is inflated while
+     * it is expected that it should be a stack-lock, then this method attempts
+     * to deflate it by forcing a safepoint and then verifies the state once
+     * again.
+     *
+     * @param monitor monitor to be verified.
+     * @param shouldBeInflated flag indicating whether or not monitor is
+     *                         expected to be inflated.
+     * @throws RuntimeException if the {@code monitor} in a wrong state.
+     */
+    public static void verifyMonitorState(Object monitor,
+            boolean shouldBeInflated) {
+        if (!shouldBeInflated && WHITE_BOX.isMonitorInflated(monitor)) {
+            WHITE_BOX.forceSafepoint();
+        }
+        Asserts.assertEQ(WHITE_BOX.isMonitorInflated(monitor), shouldBeInflated,
+                "Monitor in a wrong state.");
+    }
+    /**
+     * Verifies that monitor used by the {@code provoker} is a stack-lock or
+     * inflated lock depending on {@code shouldBeInflated} value. If such
+     * monitor is inflated while it is expected that it should be a stack-lock,
+     * then this method attempts to deflate it by forcing a safepoint and then
+     * verifies the state once again.
+     *
+     * @param provoker AbortProvoker whose monitor's state should be verified.
+     * @param shouldBeInflated flag indicating whether or not monitor is
+     *                         expected to be inflated.
+     * @throws RuntimeException if the {@code monitor} in a wrong state.
+     */
+    public static void verifyMonitorState(AbortProvoker provoker,
+            boolean shouldBeInflated) {
+        verifyMonitorState(provoker.monitor, shouldBeInflated);
+    }
 
     /**
      * Get instance of specified AbortProvoker, inflate associated monitor
@@ -120,6 +162,7 @@ public abstract class AbortProvoker implements CompilableTest {
         }
 
         for (long i = 0; i < iterations; i++) {
+            AbortProvoker.verifyMonitorState(provoker, monitorShouldBeInflated);
             provoker.forceAbort();
         }
     }
