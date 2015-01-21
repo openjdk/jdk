@@ -111,8 +111,8 @@ public class SerializedLambdaInInit {
             }
         }
     }
-}
 
-interface LSI extends Serializable {
-    String convert(String x);
+    interface LSI extends Serializable {
+        String convert(String x);
+    }
 }
