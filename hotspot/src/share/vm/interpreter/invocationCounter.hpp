@@ -36,7 +36,7 @@
 // Implementation notes: For space reasons, state & counter are both encoded in one word,
 // The state is encoded using some of the least significant bits, the counter is using the
 // more significant bits. The counter is incremented before a method is activated and an
-// action is triggered when when count() > limit().
+// action is triggered when count() > limit().
 
 class InvocationCounter VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
@@ -48,7 +48,6 @@ class InvocationCounter VALUE_OBJ_CLASS_SPEC {
     number_of_state_bits = 2,
     number_of_carry_bits = 1,
     number_of_noncount_bits = number_of_state_bits + number_of_carry_bits,
-    number_of_count_bits = BitsPerInt - number_of_noncount_bits,
     state_limit          = nth_bit(number_of_state_bits),
     count_grain          = nth_bit(number_of_state_bits + number_of_carry_bits),
     carry_mask           = right_n_bits(number_of_carry_bits) << number_of_state_bits,
@@ -68,6 +67,7 @@ class InvocationCounter VALUE_OBJ_CLASS_SPEC {
     count_increment      = count_grain,          // use this value to increment the 32bit _counter word
     count_mask_value     = count_mask,           // use this value to mask the backedge counter
     count_shift          = number_of_noncount_bits,
+    number_of_count_bits = BitsPerInt - number_of_noncount_bits,
     count_limit          = nth_bit(number_of_count_bits - 1)
   };
 

@@ -1126,16 +1126,35 @@ static void no_shared_spaces(const char* message) {
 }
 #endif
 
-// Returns threshold scaled with CompileThresholdScaling
-intx Arguments::get_scaled_compile_threshold(intx threshold) {
-  return (intx)(threshold * CompileThresholdScaling);
+intx Arguments::scaled_compile_threshold(intx threshold, double scale) {
+  if (scale == 1.0 || scale < 0.0) {
+    return threshold;
+  } else {
+    return (intx)(threshold * scale);
+  }
 }
 
 // Returns freq_log scaled with CompileThresholdScaling
-intx Arguments::get_scaled_freq_log(intx freq_log) {
-  intx scaled_freq = get_scaled_compile_threshold((intx)1 << freq_log);
-  if (scaled_freq == 0) {
-    return 0;
+intx Arguments::scaled_freq_log(intx freq_log, double scale) {
+  // Check if scaling is necessary or negative value was specified.
+  if (scale == 1.0 || scale < 0.0) {
+    return freq_log;
+  }
+
+  // Check value to avoid calculating log2 of 0.
+  if (scale == 0.0) {
+    return 1;
+  }
+
+  intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
+  // Determine the maximum notification frequency value currently supported.
+  // The largest mask value that the interpreter/C1 can handle is
+  // of length InvocationCounter::number_of_count_bits. Mask values are always
+  // one bit shorter then the value of the notification frequency. Set
+  // max_freq_bits accordingly.
+  intx max_freq_bits = InvocationCounter::number_of_count_bits + 1;
+  if (scaled_freq > nth_bit(max_freq_bits)) {
+    return max_freq_bits;
   } else {
     return log2_intptr(scaled_freq);
   }
@@ -1180,31 +1199,36 @@ void Arguments::set_tiered_flags() {
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
   }
+
+  if (CompileThresholdScaling < 0) {
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
+  }
+
   // Scale tiered compilation thresholds
   if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
-    FLAG_SET_ERGO(intx, Tier0InvokeNotifyFreqLog, get_scaled_freq_log(Tier0InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(intx, Tier0BackedgeNotifyFreqLog, get_scaled_freq_log(Tier0BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier0InvokeNotifyFreqLog, scaled_freq_log(Tier0InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier0BackedgeNotifyFreqLog, scaled_freq_log(Tier0BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier3InvocationThreshold, get_scaled_compile_threshold(Tier3InvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier3MinInvocationThreshold, get_scaled_compile_threshold(Tier3MinInvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier3CompileThreshold, get_scaled_compile_threshold(Tier3CompileThreshold));
-    FLAG_SET_ERGO(intx, Tier3BackEdgeThreshold, get_scaled_compile_threshold(Tier3BackEdgeThreshold));
+    FLAG_SET_ERGO(intx, Tier3InvocationThreshold, scaled_compile_threshold(Tier3InvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier3MinInvocationThreshold, scaled_compile_threshold(Tier3MinInvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier3CompileThreshold, scaled_compile_threshold(Tier3CompileThreshold));
+    FLAG_SET_ERGO(intx, Tier3BackEdgeThreshold, scaled_compile_threshold(Tier3BackEdgeThreshold));
 
     // Tier2{Invocation,MinInvocation,Compile,Backedge}Threshold should be scaled here
     // once these thresholds become supported.
 
-    FLAG_SET_ERGO(intx, Tier2InvokeNotifyFreqLog, get_scaled_freq_log(Tier2InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(intx, Tier2BackedgeNotifyFreqLog, get_scaled_freq_log(Tier2BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier2InvokeNotifyFreqLog, scaled_freq_log(Tier2InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier2BackedgeNotifyFreqLog, scaled_freq_log(Tier2BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier3InvokeNotifyFreqLog, get_scaled_freq_log(Tier3InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(intx, Tier3BackedgeNotifyFreqLog, get_scaled_freq_log(Tier3BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier3InvokeNotifyFreqLog, scaled_freq_log(Tier3InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier3BackedgeNotifyFreqLog, scaled_freq_log(Tier3BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier23InlineeNotifyFreqLog, get_scaled_freq_log(Tier23InlineeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier23InlineeNotifyFreqLog, scaled_freq_log(Tier23InlineeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier4InvocationThreshold, get_scaled_compile_threshold(Tier4InvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier4MinInvocationThreshold, get_scaled_compile_threshold(Tier4MinInvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier4CompileThreshold, get_scaled_compile_threshold(Tier4CompileThreshold));
-    FLAG_SET_ERGO(intx, Tier4BackEdgeThreshold, get_scaled_compile_threshold(Tier4BackEdgeThreshold));
+    FLAG_SET_ERGO(intx, Tier4InvocationThreshold, scaled_compile_threshold(Tier4InvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier4MinInvocationThreshold, scaled_compile_threshold(Tier4MinInvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier4CompileThreshold, scaled_compile_threshold(Tier4CompileThreshold));
+    FLAG_SET_ERGO(intx, Tier4BackEdgeThreshold, scaled_compile_threshold(Tier4BackEdgeThreshold));
   }
 }
 
@@ -3456,7 +3480,7 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   }
 
   if ((TieredCompilation && CompileThresholdScaling == 0)
-      || (!TieredCompilation && get_scaled_compile_threshold(CompileThreshold) == 0)) {
+      || (!TieredCompilation && scaled_compile_threshold(CompileThreshold) == 0)) {
     set_mode_flags(_int);
   }
 
@@ -3896,7 +3920,7 @@ jint Arguments::apply_ergo() {
     }
     // Scale CompileThreshold
     if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
-      FLAG_SET_ERGO(intx, CompileThreshold, get_scaled_compile_threshold(CompileThreshold));
+      FLAG_SET_ERGO(intx, CompileThreshold, scaled_compile_threshold(CompileThreshold));
     }
   }
 
