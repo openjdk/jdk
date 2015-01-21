@@ -1209,15 +1209,7 @@ public class JavacParser implements Parser {
                             if (annos.nonEmpty()) {
                                 t = toP(F.at(pos).AnnotatedType(annos, t));
                             }
-                            // .class is only allowed if there were no annotations
-                            JCExpression nt = bracketsSuffix(t);
-                            if (nt != t && (annos.nonEmpty() || TreeInfo.containsTypeAnnotation(t))) {
-                                // t and nt are different if bracketsSuffix parsed a .class.
-                                // The check for nonEmpty covers the case when the whole array is annotated.
-                                // Helper method isAnnotated looks for annos deeply within t.
-                                syntaxError("no.annotations.on.dot.class");
-                            }
-                            t = nt;
+                            t = bracketsSuffix(t);
                         } else {
                             if ((mode & EXPR) != 0) {
                                 mode = EXPR;
@@ -1956,6 +1948,12 @@ public class JavacParser implements Parser {
                 }
                 t = F.at(pos).Erroneous(List.<JCTree>of(toP(F.at(pos).Select(t, name))));
             } else {
+                Tag tag = t.getTag();
+                // Type annotations are illegal on class literals. Annotated non array class literals
+                // are complained about directly in term3(), Here check for type annotations on dimensions
+                // taking care to handle some interior dimension(s) being annotated.
+                if ((tag == TYPEARRAY && TreeInfo.containsTypeAnnotation(t)) || tag == ANNOTATED_TYPE)
+                    syntaxError("no.annotations.on.dot.class");
                 t = toP(F.at(pos).Select(t, names._class));
             }
         } else if ((mode & TYPE) != 0) {

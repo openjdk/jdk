@@ -263,7 +263,7 @@ public class LambdaToMethod extends TreeTranslator {
     @Override
     public void visitLambda(JCLambda tree) {
         LambdaTranslationContext localContext = (LambdaTranslationContext)context;
-        MethodSymbol sym = (MethodSymbol)localContext.translatedSym;
+        MethodSymbol sym = localContext.translatedSym;
         MethodType lambdaType = (MethodType) sym.type;
 
         {
@@ -875,11 +875,9 @@ public class LambdaToMethod extends TreeTranslator {
          */
         private JCExpression expressionInvoke(VarSymbol rcvr) {
             JCExpression qualifier =
-                    tree.sym.isStatic() ?
-                        make.Type(tree.sym.owner.type) :
-                        (rcvr != null) ?
-                            makeReceiver(rcvr) :
-                            tree.getQualifierExpression();
+                    (rcvr != null) ?
+                        makeReceiver(rcvr) :
+                        tree.getQualifierExpression();
 
             //create the qualifier expression
             JCFieldAccess select = make.Select(qualifier, tree.sym.name);
@@ -1755,7 +1753,7 @@ public class LambdaToMethod extends TreeTranslator {
             Map<LambdaSymbolKind, Map<Symbol, Symbol>> translatedSymbols;
 
             /** the synthetic symbol for the method hoisting the translated lambda */
-            Symbol translatedSym;
+            MethodSymbol translatedSym;
 
             List<JCVariableDecl> syntheticParams;
 
@@ -1997,6 +1995,7 @@ public class LambdaToMethod extends TreeTranslator {
 
                 //compute synthetic params
                 ListBuffer<JCVariableDecl> params = new ListBuffer<>();
+                ListBuffer<VarSymbol> parameterSymbols = new ListBuffer<>();
 
                 // The signature of the method is augmented with the following
                 // synthetic parameters:
@@ -2005,18 +2004,15 @@ public class LambdaToMethod extends TreeTranslator {
                 // 2) enclosing locals captured by the lambda expression
                 for (Symbol thisSym : getSymbolMap(CAPTURED_VAR).values()) {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
-                }
-                if (methodReferenceReceiver != null) {
-                    params.append(make.VarDef(
-                            make.Modifiers(PARAMETER|FINAL),
-                            names.fromString("$rcvr$"),
-                            make.Type(methodReferenceReceiver.type),
-                            null));
+                    parameterSymbols.append((VarSymbol) thisSym);
                 }
                 for (Symbol thisSym : getSymbolMap(PARAM).values()) {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
+                    parameterSymbols.append((VarSymbol) thisSym);
                 }
                 syntheticParams = params.toList();
+
+                translatedSym.params = parameterSymbols.toList();
 
                 // Compute and set the lambda name
                 translatedSym.name = isSerializable()

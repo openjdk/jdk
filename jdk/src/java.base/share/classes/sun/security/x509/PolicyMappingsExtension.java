@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ implements CertAttrSet<String> {
             throws IOException {
         this.maps = map;
         this.extensionId = PKIXExtensions.PolicyMappings_Id;
-        this.critical = false;
+        this.critical = true;
         encodeThis();
     }
 
@@ -100,8 +100,8 @@ implements CertAttrSet<String> {
      * Create a default PolicyMappingsExtension.
      */
     public PolicyMappingsExtension() {
-        extensionId = PKIXExtensions.KeyUsage_Id;
-        critical = false;
+        extensionId = PKIXExtensions.PolicyMappings_Id;
+        critical = true;
         maps = new ArrayList<CertificatePolicyMap>();
     }
 
@@ -153,7 +153,7 @@ implements CertAttrSet<String> {
         DerOutputStream tmp = new DerOutputStream();
         if (extensionValue == null) {
             extensionId = PKIXExtensions.PolicyMappings_Id;
-            critical = false;
+            critical = true;
             encodeThis();
         }
         super.encode(tmp);

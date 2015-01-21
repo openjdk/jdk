@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,18 @@
  *
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
+ * @requires vm.opt.ExplicitGCInvokesConcurrent == "false" | vm.opt.ExplicitGCInvokesConcurrent == "null"
  * @run main/timeout=600 LowMemoryTest
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
+ * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
+ * @requires vm.opt.DisableExplicitGC != "true"
  */
 
-import com.sun.management.DiagnosticCommandMBean;
 import java.lang.management.*;
 import java.util.*;
 import java.util.concurrent.Phaser;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
-import sun.management.ManagementFactoryHelper;
 
 public class LowMemoryTest {
     private static final MemoryMXBean mm = ManagementFactory.getMemoryMXBean();

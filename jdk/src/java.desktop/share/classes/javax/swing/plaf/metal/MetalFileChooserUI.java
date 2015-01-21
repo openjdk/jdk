@@ -1022,16 +1022,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
             directories.clear();
 
-            File[] baseFolders;
-            if (useShellFolder) {
-                baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
-                    public File[] run() {
-                        return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
-                    }
-                });
-            } else {
-                baseFolders = fsv.getRoots();
-            }
+            File[] baseFolders = (useShellFolder)
+                    ? (File[]) ShellFolder.get("fileChooserComboBoxFolders")
+                    : fsv.getRoots();
             directories.addAll(Arrays.asList(baseFolders));
 
             // Get the canonical (full) path. This has the side

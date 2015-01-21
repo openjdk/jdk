@@ -583,6 +583,8 @@ le_uint32 ChainingContextualSubstitutionFormat2Subtable::process(const LETableRe
                 LEReferenceTo<ChainSubClassRuleTable>
                      chainSubClassRuleTable(chainSubClassSetTable, success, chainSubClassRuleTableOffset);
                 le_uint16 backtrackGlyphCount = SWAPW(chainSubClassRuleTable->backtrackGlyphCount);
+                LEReferenceToArrayOf<le_uint16>   backtrackClassArray(base, success, chainSubClassRuleTable->backtrackClassArray, backtrackGlyphCount);
+                if( LE_FAILURE(success) ) { return 0; }
                 le_uint16 inputGlyphCount = SWAPW(chainSubClassRuleTable->backtrackClassArray[backtrackGlyphCount]) - 1;
                 LEReferenceToArrayOf<le_uint16>   inputClassArray(base, success, &chainSubClassRuleTable->backtrackClassArray[backtrackGlyphCount + 1],inputGlyphCount+2); // +2 for the lookaheadGlyphCount count
                 le_uint16 lookaheadGlyphCount = SWAPW(inputClassArray.getObject(inputGlyphCount, success));
@@ -599,8 +601,6 @@ le_uint32 ChainingContextualSubstitutionFormat2Subtable::process(const LETableRe
                 }
 
                 tempIterator.prev();
-                LEReferenceToArrayOf<le_uint16>   backtrackClassArray(base, success, chainSubClassRuleTable->backtrackClassArray, backtrackGlyphCount);
-                if( LE_FAILURE(success) ) { return 0; }
                 if (! matchGlyphClasses(backtrackClassArray, backtrackGlyphCount,
                                         &tempIterator, backtrackClassDefinitionTable, success, TRUE)) {
                     continue;

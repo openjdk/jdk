@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,15 +209,27 @@ class CodeCache : AllStatic {
   static void verify_icholder_relocations();
 
   // Deoptimization
+ private:
   static int  mark_for_deoptimization(DepChange& changes);
 #ifdef HOTSWAP
   static int  mark_for_evol_deoptimization(instanceKlassHandle dependee);
 #endif // HOTSWAP
 
+ public:
   static void mark_all_nmethods_for_deoptimization();
   static int  mark_for_deoptimization(Method* dependee);
   static void make_marked_nmethods_zombies();
   static void make_marked_nmethods_not_entrant();
+
+  // Flushing and deoptimization
+  static void flush_dependents_on(instanceKlassHandle dependee);
+  static void flush_dependents_on(Handle call_site, Handle method_handle);
+#ifdef HOTSWAP
+  // Flushing and deoptimization in case of evolution
+  static void flush_evol_dependents_on(instanceKlassHandle dependee);
+#endif // HOTSWAP
+  // Support for fullspeed debugging
+  static void flush_dependents_on_method(methodHandle dependee);
 
   // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
