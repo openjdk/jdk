@@ -25,8 +25,14 @@
 #ifndef SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_INLINE_HPP
 #define SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_INLINE_HPP
 
+#include "compiler/compilerOracle.hpp"
+
 template<CompLevel level>
-bool SimpleThresholdPolicy::call_predicate_helper(int i, int b, double scale) {
+bool SimpleThresholdPolicy::call_predicate_helper(int i, int b, double scale, Method* method) {
+  double threshold_scaling;
+  if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
+    scale *= threshold_scaling;
+  }
   switch(level) {
   case CompLevel_none:
   case CompLevel_limited_profile:
@@ -40,7 +46,11 @@ bool SimpleThresholdPolicy::call_predicate_helper(int i, int b, double scale) {
 }
 
 template<CompLevel level>
-bool SimpleThresholdPolicy::loop_predicate_helper(int i, int b, double scale) {
+bool SimpleThresholdPolicy::loop_predicate_helper(int i, int b, double scale, Method* method) {
+  double threshold_scaling;
+  if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
+    scale *= threshold_scaling;
+  }
   switch(level) {
   case CompLevel_none:
   case CompLevel_limited_profile:

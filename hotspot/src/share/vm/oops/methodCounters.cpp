@@ -23,10 +23,11 @@
  */
 #include "precompiled.hpp"
 #include "oops/methodCounters.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
-MethodCounters* MethodCounters::allocate(ClassLoaderData* loader_data, TRAPS) {
-  return new(loader_data, size(), false, MetaspaceObj::MethodCountersType, THREAD) MethodCounters();
+MethodCounters* MethodCounters::allocate(methodHandle mh, TRAPS) {
+  ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
+  return new(loader_data, size(), false, MetaspaceObj::MethodCountersType, THREAD) MethodCounters(mh);
 }
 
 void MethodCounters::clear_counters() {

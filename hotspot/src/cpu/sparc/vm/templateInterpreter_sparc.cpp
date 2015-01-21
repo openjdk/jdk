@@ -282,12 +282,11 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
   // Note: In tiered we increment either counters in MethodCounters* or in
   // MDO depending if we're profiling or not.
-  const Register Rcounters = G3_scratch;
+  const Register G3_method_counters = G3_scratch;
   Label done;
 
   if (TieredCompilation) {
     const int increment = InvocationCounter::count_increment;
-    const int mask = ((1 << Tier0InvokeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
     Label no_mdo;
     if (ProfileInterpreter) {
       // If no method data exists, go to profile_continue.
@@ -297,6 +296,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
       Address mdo_invocation_counter(G4_scratch,
                                      in_bytes(MethodData::invocation_counter_offset()) +
                                      in_bytes(InvocationCounter::counter_offset()));
+      Address mask(G4_scratch, in_bytes(MethodData::invoke_mask_offset()));
       __ increment_mask_and_jump(mdo_invocation_counter, increment, mask,
                                  G3_scratch, Lscratch,
                                  Assembler::zero, overflow);
@@ -305,20 +305,21 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
 
     // Increment counter in MethodCounters*
     __ bind(no_mdo);
-    Address invocation_counter(Rcounters,
+    Address invocation_counter(G3_method_counters,
             in_bytes(MethodCounters::invocation_counter_offset()) +
             in_bytes(InvocationCounter::counter_offset()));
-    __ get_method_counters(Lmethod, Rcounters, done);
+    __ get_method_counters(Lmethod, G3_method_counters, done);
+    Address mask(G3_method_counters, in_bytes(MethodCounters::invoke_mask_offset()));
     __ increment_mask_and_jump(invocation_counter, increment, mask,
                                G4_scratch, Lscratch,
                                Assembler::zero, overflow);
     __ bind(done);
-  } else {
+  } else { // not TieredCompilation
     // Update standard invocation counters
-    __ get_method_counters(Lmethod, Rcounters, done);
-    __ increment_invocation_counter(Rcounters, O0, G4_scratch);
+    __ get_method_counters(Lmethod, G3_method_counters, done);
+    __ increment_invocation_counter(G3_method_counters, O0, G4_scratch);
     if (ProfileInterpreter) {
-      Address interpreter_invocation_counter(Rcounters,
+      Address interpreter_invocation_counter(G3_method_counters,
             in_bytes(MethodCounters::interpreter_invocation_counter_offset()));
       __ ld(interpreter_invocation_counter, G4_scratch);
       __ inc(G4_scratch);
@@ -327,16 +328,16 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
 
     if (ProfileInterpreter && profile_method != NULL) {
       // Test to see if we should create a method data oop
-      AddressLiteral profile_limit((address)&InvocationCounter::InterpreterProfileLimit);
-      __ load_contents(profile_limit, G3_scratch);
-      __ cmp_and_br_short(O0, G3_scratch, Assembler::lessUnsigned, Assembler::pn, *profile_method_continue);
+      Address profile_limit(G3_method_counters, in_bytes(MethodCounters::interpreter_profile_limit_offset()));
+      __ ld(profile_limit, G1_scratch);
+      __ cmp_and_br_short(O0, G1_scratch, Assembler::lessUnsigned, Assembler::pn, *profile_method_continue);
 
       // if no method data exists, go to profile_method
       __ test_method_data_pointer(*profile_method);
     }
 
-    AddressLiteral invocation_limit((address)&InvocationCounter::InterpreterInvocationLimit);
-    __ load_contents(invocation_limit, G3_scratch);
+    Address invocation_limit(G3_method_counters, in_bytes(MethodCounters::interpreter_invocation_limit_offset()));
+    __ ld(invocation_limit, G3_scratch);
     __ cmp(O0, G3_scratch);
     __ br(Assembler::greaterEqualUnsigned, false, Assembler::pn, *overflow); // Far distance
     __ delayed()->nop();

@@ -267,7 +267,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void increment_invocation_counter( Register Rcounters, Register Rtmp, Register Rtmp2 );
   void increment_backedge_counter( Register Rcounters, Register Rtmp, Register Rtmp2 );
 #ifndef CC_INTERP
-  void test_backedge_count_for_osr( Register backedge_count, Register branch_bcp, Register Rtmp );
+  void test_backedge_count_for_osr(Register backedge_count, Register method_counters, Register branch_bcp, Register Rtmp );
 
 #endif /* CC_INTERP */
   // Object locking
@@ -280,7 +280,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void set_method_data_pointer_for_bcp();
   void test_method_data_pointer(Label& zero_continue);
   void verify_method_data_pointer();
-  void test_invocation_counter_for_mdp(Register invocation_count, Register Rtmp, Label &profile_continue);
+  void test_invocation_counter_for_mdp(Register invocation_count, Register method_counters, Register Rtmp, Label &profile_continue);
 
   void set_mdp_data_at(int constant, Register value);
   void increment_mdp_data_at(Address counter, Register bumped_count,
@@ -291,7 +291,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                              Register bumped_count, Register scratch2,
                              bool decrement = false);
   void increment_mask_and_jump(Address counter_addr,
-                               int increment, int mask,
+                               int increment, Address mask_addr,
                                Register scratch1, Register scratch2,
                                Condition cond, Label *where);
   void set_mdp_flag_at(int flag_constant, Register scratch);
