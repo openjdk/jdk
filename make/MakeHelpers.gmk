@@ -353,7 +353,7 @@ MAKE_MAKEDIR_LIST := make
 # Helper macro for DeclareRecipesForPhase
 # Declare a recipe for calling the module and phase specific makefile.
 # If there are multiple makefiles to call, create a rule for each topdir
-# that contains a makefile with the target $module-$suffix-$repodir, 
+# that contains a makefile with the target $module-$suffix-$repodir,
 # (i.e: java.base-gensrc-jdk)
 # Normally there is only one makefile, and the target will just be
 # $module-$suffix

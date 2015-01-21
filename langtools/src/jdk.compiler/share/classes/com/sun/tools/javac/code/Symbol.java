@@ -1175,6 +1175,16 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return v.visitClassSymbol(this, p);
         }
 
+        public void markAbstractIfNeeded(Types types) {
+            if (types.enter.getEnv(this) != null &&
+                (flags() & ENUM) != 0 && types.supertype(type).tsym == types.syms.enumSym &&
+                (flags() & (FINAL | ABSTRACT)) == 0) {
+                if (types.firstUnimplementedAbstract(this) != null)
+                    // add the ABSTRACT flag to an enum
+                    flags_field |= ABSTRACT;
+            }
+        }
+
         /**Resets the Symbol into the state good for next round of annotation processing.*/
         public void reset() {
             kind = TYP;

@@ -582,4 +582,21 @@ public abstract class PKCS11Test {
         return r;
     }
 
+    /**
+     * Returns supported algorithms of specified type.
+     */
+    static List<String> getSupportedAlgorithms(String type, String alg,
+            Provider p) {
+        // prepare a list of supported algorithms
+        List<String> algorithms = new ArrayList<>();
+        Set<Provider.Service> services = p.getServices();
+        for (Provider.Service service : services) {
+            if (service.getType().equals(type)
+                    && service.getAlgorithm().startsWith(alg)) {
+                algorithms.add(service.getAlgorithm());
+            }
+        }
+        return algorithms;
+    }
+
 }

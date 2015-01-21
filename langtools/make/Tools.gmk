@@ -40,6 +40,7 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS_LANGTOOLS, \
     ADD_JAVAC_FLAGS := -Xprefer:source, \
     SRC := $(LANGTOOLS_TOPDIR)/make/tools, \
     INCLUDES := compileproperties propertiesparser, \
+    COPY := .properties, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes))
 
 all: $(BUILD_TOOLS_LANGTOOLS)

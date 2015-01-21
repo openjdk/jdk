@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package javax.xml.xpath.ptests;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
 /**
  * Class containing the test cases for XPathFunctionResolver.
  */
-public class XPathFunctionResolverTest {
+public class XPathFunctionResolverTest extends JAXPBaseTest {
     /**
      * A XPath for evaluation environment and expressions.
      */
@@ -54,26 +54,22 @@ public class XPathFunctionResolverTest {
     /**
      * Test for resolveFunction(QName functionName,int arity). evaluate will
      * continue as long as functionName is meaningful.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPathFunctionResolver01() {
-        try {
-            assertEquals(xpath.evaluate("round(1.7)", (Object)null), "2");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPathFunctionResolver01() throws XPathExpressionException {
+        assertEquals(xpath.evaluate("round(1.7)", (Object)null), "2");
     }
 
     /**
      * Test for resolveFunction(QName functionName,int arity); evaluate throws
      * NPE if functionName  is null.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPathFunctionResolver02() {
-        try {
-            assertEquals(xpath.evaluate(null, "5"), "2");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPathFunctionResolver02() throws XPathExpressionException {
+        assertEquals(xpath.evaluate(null, "5"), "2");
     }
 }

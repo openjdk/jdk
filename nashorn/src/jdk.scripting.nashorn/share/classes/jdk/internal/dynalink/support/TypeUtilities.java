@@ -118,17 +118,13 @@ public class TypeUtilities {
     public static Class<?> getCommonLosslessConversionType(final Class<?> c1, final Class<?> c2) {
         if(c1 == c2) {
             return c1;
+        } else if (c1 == void.class || c2 == void.class) {
+            return Object.class;
         } else if(isConvertibleWithoutLoss(c2, c1)) {
             return c1;
         } else if(isConvertibleWithoutLoss(c1, c2)) {
             return c2;
-        }
-        if(c1 == void.class) {
-            return c2;
-        } else if(c2 == void.class) {
-            return c1;
-        }
-        if(c1.isPrimitive() && c2.isPrimitive()) {
+        } else if(c1.isPrimitive() && c2.isPrimitive()) {
             if((c1 == byte.class && c2 == char.class) || (c1 == char.class && c2 == byte.class)) {
                 // byte + char = int
                 return int.class;
@@ -268,20 +264,24 @@ public class TypeUtilities {
     }
 
     /**
-     * Determines whether a type can be converted to another without losing any
-     * precision.
+     * Determines whether a type can be converted to another without losing any precision. As a special case,
+     * void is considered convertible only to Object and void, while anything can be converted to void. This
+     * is because a target type of void means we don't care about the value, so the conversion is always
+     * permissible.
      *
      * @param sourceType the source type
      * @param targetType the target type
      * @return true if lossless conversion is possible
      */
     public static boolean isConvertibleWithoutLoss(final Class<?> sourceType, final Class<?> targetType) {
-        if(targetType.isAssignableFrom(sourceType)) {
+        if(targetType.isAssignableFrom(sourceType) || targetType == void.class) {
             return true;
         }
         if(sourceType.isPrimitive()) {
             if(sourceType == void.class) {
-                return false; // Void can't be losslessly represented by any type
+                // Void should be losslessly representable by Object, either as null or as a custom value that
+                // can be set with DynamicLinkerFactory.setAutoConversionStrategy.
+                return targetType == Object.class;
             }
             if(targetType.isPrimitive()) {
                 return isProperPrimitiveLosslessSubtype(sourceType, targetType);

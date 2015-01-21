@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,11 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
@@ -42,7 +38,6 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
-import static org.xml.sax.ptests.SAXTestConst.CLASS_DIR;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
@@ -50,46 +45,32 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
  * XMLReader parse XML with default handler that transverses XML and
  * print all visited node. Test verifies output is same as the golden file.
  */
-public class DefaultHandlerTest {
+public class DefaultHandlerTest extends JAXPFileBaseTest {
     /**
      * Test default handler that transverses XML and  print all visited node.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testDefaultHandler() {
-        String outputFile = CLASS_DIR + "DefaultHandler.out";
+    public void testDefaultHandler() throws Exception {
+        String outputFile = USER_DIR + "DefaultHandler.out";
         String goldFile = GOLDEN_DIR + "DefaultHandlerGF.out";
         String xmlFile = XML_DIR + "namespace1.xml";
 
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            SAXParser saxparser = spf.newSAXParser();
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        SAXParser saxparser = spf.newSAXParser();
 
-            MyDefaultHandler handler = new MyDefaultHandler(outputFile);
-            File file = new File(xmlFile);
-            String Absolutepath = file.getAbsolutePath();
-            String newAbsolutePath = Absolutepath;
-            if (File.separatorChar == '\\')
-                    newAbsolutePath = Absolutepath.replace('\\', '/');
-            String uri = "file:///" + newAbsolutePath;
-            saxparser.parse(uri, handler);
-        } catch (IOException | ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
-        // Need close the output file before we compare it with golden file.
-        try {
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (IOException ex) {
-            failUnexpected(ex);
-        } finally {
-            try {
-                Path outputPath = Paths.get(outputFile);
-                if(Files.exists(outputPath))
-                    Files.delete(outputPath);
-            } catch (IOException ex) {
-                failCleanup(ex, outputFile);
-            }
-        }
+        MyDefaultHandler handler = new MyDefaultHandler(outputFile);
+        File file = new File(xmlFile);
+        String Absolutepath = file.getAbsolutePath();
+        String newAbsolutePath = Absolutepath;
+        if (File.separatorChar == '\\')
+                newAbsolutePath = Absolutepath.replace('\\', '/');
+        saxparser.parse("file:///" + newAbsolutePath, handler);
+
+        assertTrue(compareWithGold(goldFile, outputFile));
+
     }
 }
 
