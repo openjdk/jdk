@@ -669,6 +669,13 @@
   product_pd(bool, TrapBasedRangeChecks,                                    \
           "Generate code for range checks that uses a cmp and trap "        \
           "instruction raising SIGTRAP. Used on PPC64.")                    \
+                                                                            \
+  product(intx, ArrayCopyLoadStoreMaxElem, 8,                               \
+          "Maximum number of arraycopy elements inlined as a sequence of"   \
+          "loads/stores")                                                   \
+                                                                            \
+  develop(bool, StressArrayCopyMacroNode, false,                            \
+          "Perform ArrayCopy load/store replacement during IGVN only")
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)
 

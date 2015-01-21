@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,22 @@
 package javax.xml.transform.ptests.othervm;
 
 import javax.xml.transform.*;
+import jaxp.library.JAXPBaseTest;
+import static org.testng.Assert.fail;
 import org.testng.annotations.Test;
 
 /**
  * Negative test for set invalid TransformerFactory property.
  */
-public class TFCErrorTest{
+public class TFCErrorTest  extends JAXPBaseTest {
     @Test(expectedExceptions = ClassNotFoundException.class)
     public void tfce01() throws Exception {
         try{
-            System.setProperty("javax.xml.transform.TransformerFactory","xx");
-            TransformerFactory tFactory = TransformerFactory.newInstance();
-        } catch (TransformerFactoryConfigurationError error) {
-            throw error.getException();
+            setSystemProperty("javax.xml.transform.TransformerFactory","xx");
+            TransformerFactory.newInstance();
+            fail("Expect TransformerFactoryConfigurationError here");
+        } catch (TransformerFactoryConfigurationError expected) {
+            throw expected.getException();
         }
     }
 }

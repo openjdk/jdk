@@ -546,7 +546,7 @@ define SetupJavaCompilationInner
     $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
 
     $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS)
-	$(MKDIR) -p $$(@D)
+	$(MKDIR) -p $$(@D) $$(dir $$($1_SJAVAC_PORTFILE))
         # As a workaround for sjavac not tracking api changed from the classpath, force full
         # recompile if an external dependency, which is something other than a source
         # change, triggered this compilation.
