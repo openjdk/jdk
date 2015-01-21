@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,15 +481,6 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
   __ br(Assembler::always, false, Assembler::pt, _continuation);
   __ delayed()->nop();
 
-}
-
-jbyte* G1PostBarrierStub::_byte_map_base = NULL;
-
-jbyte* G1PostBarrierStub::byte_map_base_slow() {
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->is_a(BarrierSet::G1SATBCTLogging),
-         "Must be if we're using this.");
-  return ((G1SATBCardTableModRefBS*)bs)->byte_map_base;
 }
 
 void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
