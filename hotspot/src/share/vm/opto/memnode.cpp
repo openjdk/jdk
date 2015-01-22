@@ -2609,7 +2609,6 @@ bool StoreNode::value_never_loaded( PhaseTransform *phase) const {
     return false; // if not a distinct instance, there may be aliases of the address
   for (DUIterator_Fast imax, i = adr->fast_outs(imax); i < imax; i++) {
     Node *use = adr->fast_out(i);
-    int opc = use->Opcode();
     if (use->is_Load() || use->is_LoadStore()) {
       return false;
     }

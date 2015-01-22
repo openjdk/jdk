@@ -155,7 +155,7 @@ bool AdvancedThresholdPolicy::is_method_profiled(Method* method) {
   if (mdo != NULL) {
     int i = mdo->invocation_count_delta();
     int b = mdo->backedge_count_delta();
-    return call_predicate_helper<CompLevel_full_profile>(i, b, 1);
+    return call_predicate_helper<CompLevel_full_profile>(i, b, 1, method);
   }
   return false;
 }
@@ -229,32 +229,32 @@ double AdvancedThresholdPolicy::threshold_scale(CompLevel level, int feedback_k)
 // Tier?LoadFeedback is basically a coefficient that determines of
 // how many methods per compiler thread can be in the queue before
 // the threshold values double.
-bool AdvancedThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level) {
+bool AdvancedThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
   case CompLevel_none:
   case CompLevel_limited_profile: {
     double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-    return loop_predicate_helper<CompLevel_none>(i, b, k);
+    return loop_predicate_helper<CompLevel_none>(i, b, k, method);
   }
   case CompLevel_full_profile: {
     double k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
-    return loop_predicate_helper<CompLevel_full_profile>(i, b, k);
+    return loop_predicate_helper<CompLevel_full_profile>(i, b, k, method);
   }
   default:
     return true;
   }
 }
 
-bool AdvancedThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level) {
+bool AdvancedThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
   case CompLevel_none:
   case CompLevel_limited_profile: {
     double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-    return call_predicate_helper<CompLevel_none>(i, b, k);
+    return call_predicate_helper<CompLevel_none>(i, b, k, method);
   }
   case CompLevel_full_profile: {
     double k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
-    return call_predicate_helper<CompLevel_full_profile>(i, b, k);
+    return call_predicate_helper<CompLevel_full_profile>(i, b, k, method);
   }
   default:
     return true;
@@ -271,7 +271,7 @@ bool AdvancedThresholdPolicy::should_create_mdo(Method* method, CompLevel cur_le
     int i = method->invocation_count();
     int b = method->backedge_count();
     double k = Tier0ProfilingStartPercentage / 100.0;
-    return call_predicate_helper<CompLevel_none>(i, b, k) || loop_predicate_helper<CompLevel_none>(i, b, k);
+    return call_predicate_helper<CompLevel_none>(i, b, k, method) || loop_predicate_helper<CompLevel_none>(i, b, k, method);
   }
   return false;
 }
@@ -348,7 +348,7 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
       // If we were at full profile level, would we switch to full opt?
       if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
         next_level = CompLevel_full_optimization;
-      } else if ((this->*p)(i, b, cur_level)) {
+      } else if ((this->*p)(i, b, cur_level, method)) {
         // C1-generated fully profiled code is about 30% slower than the limited profile
         // code that has only invocation and backedge counters. The observation is that
         // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -374,7 +374,7 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
           if (mdo->would_profile()) {
             if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                                      Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                     (this->*p)(i, b, cur_level))) {
+                                     (this->*p)(i, b, cur_level, method))) {
               next_level = CompLevel_full_profile;
             }
           } else {
@@ -390,7 +390,7 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
           if (mdo->would_profile()) {
             int mdo_i = mdo->invocation_count_delta();
             int mdo_b = mdo->backedge_count_delta();
-            if ((this->*p)(mdo_i, mdo_b, cur_level)) {
+            if ((this->*p)(mdo_i, mdo_b, cur_level, method)) {
               next_level = CompLevel_full_optimization;
             }
           } else {

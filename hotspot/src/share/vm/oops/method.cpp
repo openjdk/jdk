@@ -412,15 +412,14 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
   }
 
   methodHandle mh(m);
-  ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  MethodCounters* counters = MethodCounters::allocate(loader_data, THREAD);
+  MethodCounters* counters = MethodCounters::allocate(mh, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CompileBroker::log_metaspace_failure();
     ClassLoaderDataGraph::set_metaspace_oom(true);
     return NULL;   // return the exception (which is cleared)
   }
   if (!mh->init_method_counters(counters)) {
-    MetadataFactory::free_metadata(loader_data, counters);
+    MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
   }
   return mh->method_counters();
 }
