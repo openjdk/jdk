@@ -39,6 +39,7 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/sparc/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/c1/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/ci/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/classfile/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/code/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/compiler/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/*.java \
@@ -49,8 +50,10 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/bsd/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/dummy/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/amd64/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/ppc64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/sparc/*.java \
@@ -71,6 +74,7 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/sparc/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/win32/coff/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/amd64/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/amd64/*.java \
@@ -101,6 +105,8 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/solaris_sparc/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/solaris_x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/sparc/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/x86/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/win32_amd64/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/win32_x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/ppc64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/tools/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/tools/jcore/*.java \
