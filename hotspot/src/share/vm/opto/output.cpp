@@ -2475,7 +2475,7 @@ void Scheduling::DoScheduling() {
       if( iop == Op_Con ) continue;      // Do not schedule Top
       if( iop == Op_Node &&     // Do not schedule PhiNodes, ProjNodes
           mach->pipeline() == MachNode::pipeline_class() &&
-          !n->is_SpillCopy() )  // Breakpoints, Prolog, etc
+          !n->is_SpillCopy() && !n->is_MachMerge() )  // Breakpoints, Prolog, etc
         continue;
       break;                    // Funny loop structure to be sure...
     }
