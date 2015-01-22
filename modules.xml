@@ -737,7 +737,7 @@
     </export>
     <export>
       <name>sun.awt</name>
-      <to>oracle.accessbridge</to>
+      <to>jdk.accessbridge</to>
     </export>
   </module>
   <module>
