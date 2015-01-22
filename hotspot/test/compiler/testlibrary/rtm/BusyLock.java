@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
 
 package rtm;
 
-import com.oracle.java.testlibrary.Utils;
-import sun.misc.Unsafe;
-
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
@@ -42,7 +39,6 @@ public class BusyLock implements CompilableTest, Runnable {
     // Following field have to be static in order to avoid escape analysis.
     @SuppressWarnings("UnsuedDeclaration")
     private static int field = 0;
-    private static final Unsafe UNSAFE = Utils.getUnsafe();
     protected final Object monitor;
     protected final int timeout;
 
@@ -59,18 +55,9 @@ public class BusyLock implements CompilableTest, Runnable {
     @Override
     public void run() {
         try {
-            // wait until forceAbort leave monitor
-            barrier.await();
-            if (UNSAFE.tryMonitorEnter(monitor)) {
-                try {
-                    barrier.await();
-                    Thread.sleep(timeout);
-                } finally {
-                    UNSAFE.monitorExit(monitor);
-                }
-            } else {
-                throw new RuntimeException("Monitor should be entered by " +
-                                           "::run() first.");
+            synchronized (monitor) {
+                barrier.await();
+                Thread.sleep(timeout);
             }
         } catch (InterruptedException | BrokenBarrierException e) {
             throw new RuntimeException("Synchronization error happened.", e);
@@ -79,7 +66,6 @@ public class BusyLock implements CompilableTest, Runnable {
 
     public void syncAndTest() {
         try {
-            barrier.await();
             // wait until monitor is locked by a ::run method
             barrier.await();
         } catch (InterruptedException | BrokenBarrierException e) {

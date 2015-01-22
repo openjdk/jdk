@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class ProblematicFrameTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xmx64m", "-XX:-TransmitErrorReport", Crasher.class.getName());
+            "-Xmx64m", "-XX:-TransmitErrorReport", "-XX:-CreateMinidumpOnCrash", Crasher.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotMatch("error occurred during error reporting \\(printing problematic frame\\)");
     }

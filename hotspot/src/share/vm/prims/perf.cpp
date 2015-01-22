@@ -100,6 +100,11 @@ PERF_ENTRY(void, Perf_Detach(JNIEnv *env, jobject unused, jobject buffer))
 
   PerfWrapper("Perf_Detach");
 
+  if (!UsePerfData) {
+    // With -XX:-UsePerfData, detach is just a NOP
+    return;
+  }
+
   void* address = 0;
   jlong capacity = 0;
 
