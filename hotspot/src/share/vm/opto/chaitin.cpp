@@ -582,6 +582,9 @@ void PhaseChaitin::Register_Allocate() {
   // Peephole remove copies
   post_allocate_copy_removal();
 
+  // Merge multidefs if multiple defs representing the same value are used in a single block.
+  merge_multidefs();
+
 #ifdef ASSERT
   // Veify the graph after RA.
   verify(&live_arena);

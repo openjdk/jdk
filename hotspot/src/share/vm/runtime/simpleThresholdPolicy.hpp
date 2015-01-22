@@ -43,9 +43,9 @@ class SimpleThresholdPolicy : public CompilationPolicy {
   // Call and loop predicates determine whether a transition to a higher compilation
   // level should be performed (pointers to predicate functions are passed to common_TF().
   // Predicates also take compiler load into account.
-  typedef bool (SimpleThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level);
-  bool call_predicate(int i, int b, CompLevel cur_level);
-  bool loop_predicate(int i, int b, CompLevel cur_level);
+  typedef bool (SimpleThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level, Method* method);
+  bool call_predicate(int i, int b, CompLevel cur_level, Method* method);
+  bool loop_predicate(int i, int b, CompLevel cur_level, Method* method);
   // Common transition function. Given a predicate determines if a method should transition to another level.
   CompLevel common(Predicate p, Method* method, CompLevel cur_level);
   // Transition functions.
@@ -76,8 +76,8 @@ protected:
 
   // Predicate helpers are used by .*_predicate() methods as well as others.
   // They check the given counter values, multiplied by the scale against the thresholds.
-  template<CompLevel level> static inline bool call_predicate_helper(int i, int b, double scale);
-  template<CompLevel level> static inline bool loop_predicate_helper(int i, int b, double scale);
+  template<CompLevel level> static inline bool call_predicate_helper(int i, int b, double scale, Method* method);
+  template<CompLevel level> static inline bool loop_predicate_helper(int i, int b, double scale, Method* method);
 
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method) {

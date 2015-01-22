@@ -1142,17 +1142,18 @@ inline bool is_power_of_2_long(jlong x) {
   return ((x != NoLongBits) && (mask_long_bits(x, x - 1) == NoLongBits));
 }
 
-//* largest i such that 2^i <= x
-//  A negative value of 'x' will return '31'
+// Returns largest i such that 2^i <= x.
+// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
+// If x == 0, the function returns -1.
 inline int log2_intptr(intptr_t x) {
   int i = -1;
-  uintptr_t p =  1;
+  uintptr_t p = 1;
   while (p != 0 && p <= (uintptr_t)x) {
     // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
     i++; p *= 2;
   }
   // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // (if p = 0 then overflow occurred and i = 31)
+  // If p = 0, overflow has occurred and i = 31 or i = 63 (depending on the machine word size).
   return i;
 }
 

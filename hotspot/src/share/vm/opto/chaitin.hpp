@@ -681,6 +681,32 @@ private:
   // Extend the node to LRG mapping
   void add_reference( const Node *node, const Node *old_node);
 
+  // Record the first use of a def in the block for a register.
+  class RegDefUse {
+    Node* _def;
+    Node* _first_use;
+  public:
+    RegDefUse() : _def(NULL), _first_use(NULL) { }
+    Node* def() const       { return _def;       }
+    Node* first_use() const { return _first_use; }
+
+    void update(Node* def, Node* use) {
+      if (_def != def) {
+        _def = def;
+        _first_use = use;
+      }
+    }
+    void clear() {
+      _def = NULL;
+      _first_use = NULL;
+    }
+  };
+  typedef GrowableArray<RegDefUse> RegToDefUseMap;
+  int possibly_merge_multidef(Node *n, uint k, Block *block, RegToDefUseMap& reg2defuse);
+
+  // Merge nodes that are a part of a multidef lrg and produce the same value within a block.
+  void merge_multidefs();
+
 private:
 
   static int _final_loads, _final_stores, _final_copies, _final_memoves;

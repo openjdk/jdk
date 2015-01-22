@@ -535,12 +535,8 @@ bool PhaseChaitin::remove_node_if_not_used(Block* b, uint location, Node* n, uin
       // The method add_input_to_liveout() keeps such nodes alive (put them on liveout list)
       // when it sees SCMemProj node in a block. Unfortunately SCMemProj node could be placed
       // in block in such order that KILL MachProj nodes are processed first.
-      uint cnt = def->outcnt();
-      for (uint i = 0; i < cnt; i++) {
-        Node* proj = def->raw_out(i);
-        if (proj->Opcode() == Op_SCMemProj) {
-          return false;
-        }
+      if (def->has_out_with(Op_SCMemProj)) {
+        return false;
       }
     }
     b->remove_node(location);
