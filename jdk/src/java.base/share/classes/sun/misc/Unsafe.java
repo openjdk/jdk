@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -844,22 +844,6 @@ public final class Unsafe {
         Initializes the class if it has not yet been. */
     public native Object allocateInstance(Class<?> cls)
         throws InstantiationException;
-
-    /** Lock the object.  It must get unlocked via {@link #monitorExit}. */
-    public native void monitorEnter(Object o);
-
-    /**
-     * Unlock the object.  It must have been locked via {@link
-     * #monitorEnter}.
-     */
-    public native void monitorExit(Object o);
-
-    /**
-     * Tries to lock the object.  Returns true or false to indicate
-     * whether the lock succeeded.  If it did, the object must be
-     * unlocked via {@link #monitorExit}.
-     */
-    public native boolean tryMonitorEnter(Object o);
 
     /** Throw the exception without telling the verifier. */
     public native void throwException(Throwable ee);
