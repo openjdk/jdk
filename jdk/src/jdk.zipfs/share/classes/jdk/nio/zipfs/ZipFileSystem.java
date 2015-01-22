@@ -53,7 +53,6 @@ import java.util.zip.Deflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipException;
-import java.util.zip.ZipError;
 import static java.lang.Boolean.*;
 import static jdk.nio.zipfs.ZipConstants.*;
 import static jdk.nio.zipfs.ZipUtils.*;
@@ -119,7 +118,16 @@ class ZipFileSystem extends FileSystem {
         this.zc = ZipCoder.get(nameEncoding);
         this.defaultdir = new ZipPath(this, getBytes(defaultDir));
         this.ch = Files.newByteChannel(zfpath, READ);
-        this.cen = initCEN();
+        try {
+            this.cen = initCEN();
+        } catch (IOException x) {
+            try {
+                this.ch.close();
+            } catch (IOException xx) {
+                x.addSuppressed(xx);
+            }
+            throw x;
+        }
     }
 
     @Override
@@ -1058,12 +1066,15 @@ class ZipFileSystem extends FileSystem {
             int nlen   = CENNAM(cen, pos);
             int elen   = CENEXT(cen, pos);
             int clen   = CENCOM(cen, pos);
-            if ((CENFLG(cen, pos) & 1) != 0)
+            if ((CENFLG(cen, pos) & 1) != 0) {
                 zerror("invalid CEN header (encrypted entry)");
-            if (method != METHOD_STORED && method != METHOD_DEFLATED)
+            }
+            if (method != METHOD_STORED && method != METHOD_DEFLATED) {
                 zerror("invalid CEN header (unsupported compression method: " + method + ")");
-            if (pos + CENHDR + nlen > limit)
+            }
+            if (pos + CENHDR + nlen > limit) {
                 zerror("invalid CEN header (bad header size)");
+            }
             byte[] name = Arrays.copyOfRange(cen, pos + CENHDR, pos + CENHDR + nlen);
             IndexNode inode = new IndexNode(name, pos);
             inodes.put(inode, inode);
@@ -1609,8 +1620,8 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
-    static void zerror(String msg) {
-        throw new ZipError(msg);
+    static void zerror(String msg) throws ZipException {
+        throw new ZipException(msg);
     }
 
     // Maxmum number of de/inflater we cache
