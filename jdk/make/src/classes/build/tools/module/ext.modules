@@ -6,4 +6,4 @@ jdk.localedata
 jdk.naming.dns
 jdk.scripting.nashorn
 jdk.zipfs
-oracle.accessbridge
+jdk.accessbridge
