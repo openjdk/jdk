@@ -690,6 +690,13 @@ static MethodMatcher* scan_flag_and_value(const char* type, const char* line, in
   return NULL;
 }
 
+int skip_whitespace(char* line) {
+  // Skip any leading spaces
+  int whitespace_read = 0;
+  sscanf(line, "%*[ \t]%n", &whitespace_read);
+  return whitespace_read;
+}
+
 void CompilerOracle::parse_from_line(char* line) {
   if (line[0] == '\0') return;
   if (line[0] == '#')  return;
@@ -756,15 +763,9 @@ void CompilerOracle::parse_from_line(char* line) {
 
     line += bytes_read;
 
-    // Skip any leading spaces before signature
-    int whitespace_read = 0;
-    sscanf(line, "%*[ \t]%n", &whitespace_read);
-    if (whitespace_read > 0) {
-      line += whitespace_read;
-    }
-
     // there might be a signature following the method.
     // signatures always begin with ( so match that by hand
+    line += skip_whitespace(line);
     if (1 == sscanf(line, "(%254[[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
       sig[0] = '(';
       line += bytes_read;
@@ -787,7 +788,9 @@ void CompilerOracle::parse_from_line(char* line) {
       //
       // For future extensions: extend scan_flag_and_value()
       char option[256]; // stores flag for Type (1) and type of Type (2)
-      while (sscanf(line, "%*[ \t]%255[a-zA-Z0-9]%n", option, &bytes_read) == 1) {
+
+      line += skip_whitespace(line);
+      while (sscanf(line, "%255[a-zA-Z0-9]%n", option, &bytes_read) == 1) {
         if (match != NULL && !_quiet) {
           // Print out the last match added
           ttyLocker ttyl;
@@ -817,6 +820,7 @@ void CompilerOracle::parse_from_line(char* line) {
           // Type (1) option
           match = add_option_string(c_name, c_match, m_name, m_match, signature, option, true);
         }
+        line += skip_whitespace(line);
       } // while(
     } else {
       match = add_predicate(command, c_name, c_match, m_name, m_match, signature);
