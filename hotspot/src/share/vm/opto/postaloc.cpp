@@ -428,6 +428,7 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
         // Insert the merge node into the block before the first use.
         uint use_index = block->find_node(reg2defuse.at(reg).first_use());
         block->insert_node(merge, use_index++);
+        _cfg.map_node_to_block(merge, block);
 
         // Let the allocator know about the new node, use the same lrg
         _lrg_map.extend(merge->_idx, lrg);
