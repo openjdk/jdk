@@ -2057,10 +2057,9 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   }
   Node *main_cmp = main_bol->in(1);
   if( main_cmp->outcnt() > 1 ) { // CmpNode shared?
-    _igvn.hash_delete(main_bol);
     main_cmp = main_cmp->clone();// Clone a private CmpNode
     register_new_node( main_cmp, main_cle->in(0) );
-    main_bol->set_req(1,main_cmp);
+    _igvn.replace_input_of(main_bol, 1, main_cmp);
   }
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);

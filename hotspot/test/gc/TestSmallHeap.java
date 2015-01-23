@@ -25,6 +25,7 @@
  * @test TestSmallHeap
  * @bug 8067438
  * @requires vm.gc=="null"
+ * @requires (vm.opt.AggressiveOpts=="null") | (vm.opt.AggressiveOpts=="false")
  * @summary Verify that starting the VM with a small heap works
  * @library /testlibrary /../../test/lib
  * @build TestSmallHeap
@@ -33,8 +34,9 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseSerialGC TestSmallHeap
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseG1GC TestSmallHeap
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseConcMarkSweepGC TestSmallHeap
- *
- * Note: It would be nice to verify the minimal supported heap size (2m) here,
+ */
+
+/* Note: It would be nice to verify the minimal supported heap size (2m) here,
  * but we align the heap size based on the card table size. And the card table
  * size is aligned based on the minimal pages size provided by the os. This
  * means that on most platforms, where the minimal page size is 4k, we get a
