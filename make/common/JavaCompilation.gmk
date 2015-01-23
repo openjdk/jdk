@@ -126,17 +126,20 @@ define SetupArchiveInner
   $1_FIND_PATTERNS:=$(FALSE_FIND_PATTERN) $$(patsubst %,$(SPACE)-o$(SPACE)-name$(SPACE)$(DQUOTE)*%$(DQUOTE),$$($1_SUFFIXES))
   # On windows, a lot of includes/excludes risk making the command line too long, so
   # writing the grep patterns to files.
+  # Grep returns 1 if nothing is matched. Do not fail the build for this.
   ifneq (,$$($1_INCLUDES))
     $1_GREP_INCLUDE_PATTERNS:=$$(call EscapeDollar, \
         $$(foreach src,$$($1_SRCS), $$(addprefix $$(src)/,$$($1_INCLUDES))))
     # If there are a lot of include patterns, output to file to shorten command lines
     ifeq ($$(word 20,$$($1_GREP_INCLUDE_PATTERNS)),)
-      $1_GREP_INCLUDES:=| $(GREP) $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_INCLUDE_PATTERNS))
+      $1_GREP_INCLUDES:=| ( $(GREP) $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_INCLUDE_PATTERNS)) \
+          || test "$$$$?" = "1" )
     else
       $1_GREP_INCLUDE_OUTPUT:=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include $$(NEWLINE) \
           $$(call ListPathsSafely,$1_GREP_INCLUDE_PATTERNS,\n, \
           >> $$($1_BIN)/_the.$$($1_JARNAME)_include)
-      $1_GREP_INCLUDES:=| $(GREP) -f $$($1_BIN)/_the.$$($1_JARNAME)_include
+      $1_GREP_INCLUDES:=| ( $(GREP) -f $$($1_BIN)/_the.$$($1_JARNAME)_include \
+          || test "$$$$?" = "1" )
     endif
   endif
   ifneq (,$$($1_EXCLUDES)$$($1_EXCLUDE_FILES))
@@ -145,12 +148,14 @@ define SetupArchiveInner
         $$($1_EXCLUDES) $$($1_EXCLUDE_FILES))))
     # If there are a lot of include patterns, output to file to shorten command lines
     ifeq ($$(word 20,$$($1_GREP_EXCLUDE_PATTERNS)),)
-      $1_GREP_EXCLUDES:=| $(GREP) -v $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_EXCLUDE_PATTERNS))
+      $1_GREP_EXCLUDES:=| ( $(GREP) -v $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_EXCLUDE_PATTERNS)) \
+          || test "$$$$?" = "1" )
     else
       $1_GREP_EXCLUDE_OUTPUT=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude $$(NEWLINE) \
           $$(call ListPathsSafely,$1_GREP_EXCLUDE_PATTERNS,\n, \
           >> $$($1_BIN)/_the.$$($1_JARNAME)_exclude)
-      $1_GREP_EXCLUDES:=| $(GREP) -v -f $$($1_BIN)/_the.$$($1_JARNAME)_exclude
+      $1_GREP_EXCLUDES:=| ( $(GREP) -v -f $$($1_BIN)/_the.$$($1_JARNAME)_exclude \
+          || test "$$$$?" = "1" )
     endif
   endif
 
@@ -222,9 +227,11 @@ define SetupArchiveInner
       $$($1_CAPTURE_EXTRA_FILES)
 
   # The capture metainf macro finds all files below the META-INF directory that are newer than the jar-file.
+  # Find returns non zero if the META-INF dir does not exist, ignore this.
   ifeq (,$$($1_SKIP_METAINF))
     $1_CAPTURE_METAINF =$$(foreach src,$$($1_SRCS), \
-        ( $(FIND) $$(src)/META-INF -type f -a -newer $$@ 2> /dev/null | $(SED) 's|$$(src)/|-C $$(src) |g' >> \
+        ( ( $(FIND) $$(src)/META-INF -type f -a -newer $$@ 2> /dev/null || true ) \
+            | $(SED) 's|$$(src)/|-C $$(src) |g' >> \
         $$($1_BIN)/_the.$$($1_JARNAME)_contents ) $$(NEWLINE) )
   endif
   # The capture deletes macro finds all deleted files and concatenates them. The resulting file
@@ -248,9 +255,11 @@ define SetupArchiveInner
             >> $$($1_BIN)/_the.$$($1_JARNAME)_contents $$(NEWLINE)) \
       $$($1_CAPTURE_EXTRA_FILES)
 
+  # Find returns non zero if the META-INF dir does not exist, ignore this.
   ifeq (,$$($1_SKIP_METAINF))
     $1_SCAPTURE_METAINF=$$(foreach src,$$($1_SRCS), \
-        ( $(FIND) $$(src)/META-INF -type f 2> /dev/null | $(SED) 's|$$(src)/|-C $$(src) |g' >> \
+        ( ( $(FIND) $$(src)/META-INF -type f 2> /dev/null || true ) \
+            | $(SED) 's|$$(src)/|-C $$(src) |g' >> \
         $$($1_BIN)/_the.$$($1_JARNAME)_contents) $$(NEWLINE) )
   endif
   $1_SUPDATE_CONTENTS=$(JAR) $$($1_JAR_UPDATE_OPTIONS) $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents $$(NEWLINE)

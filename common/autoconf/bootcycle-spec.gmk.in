@@ -46,8 +46,11 @@ endif
 BOOT_JDK := $(JDK_IMAGE_DIR)
 
 # The bootcycle build has a different output directory
-BUILD_OUTPUT:=@BUILD_OUTPUT@/bootcycle-build
-SJAVAC_SERVER_DIR:=$(subst @BUILD_OUTPUT@,$(BUILD_OUTPUT),$(SJAVAC_SERVER_DIR))
+OLD_BUILD_OUTPUT:=@BUILD_OUTPUT@
+BUILD_OUTPUT:=$(OLD_BUILD_OUTPUT)/bootcycle-build
+# The HOTSPOT_DIST dir is not defined relative to BUILD_OUTPUT in spec.gmk
+HOTSPOT_DIST:=$(patsubst $(OLD_BUILD_OUTPUT)%, $(BUILD_OUTPUT)%, $(HOTSPOT_DIST))
+SJAVAC_SERVER_DIR:=$(patsubst $(OLD_BUILD_OUTPUT)%, $(BUILD_OUTPUT)%, $(SJAVAC_SERVER_DIR))
 
 JAVA_CMD:=$(BOOT_JDK)/bin/java
 JAVAC_CMD:=$(BOOT_JDK)/bin/javac
