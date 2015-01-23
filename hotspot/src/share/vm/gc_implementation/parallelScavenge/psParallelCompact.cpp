@@ -403,7 +403,7 @@ PSVirtualSpace*
 ParallelCompactData::create_vspace(size_t count, size_t element_size)
 {
   const size_t raw_bytes = count * element_size;
-  const size_t page_sz = os::page_size_for_region(raw_bytes, 10);
+  const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
   _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
 
