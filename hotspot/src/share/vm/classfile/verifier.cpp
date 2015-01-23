@@ -1950,7 +1950,7 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
   InstanceKlass* target_instance = InstanceKlass::cast(target_class);
   fieldDescriptor fd;
   if (is_method) {
-    Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::normal);
+    Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::find_overpass);
     if (m != NULL && m->is_protected()) {
       if (!this_class->is_same_class_package(m->method_holder())) {
         return true;
@@ -2487,7 +2487,7 @@ void ClassVerifier::verify_invoke_init(
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
         cp->signature_ref_at(bcs->get_index_u2()),
-        Klass::normal);
+        Klass::find_overpass);
       // Do nothing if method is not found.  Let resolution detect the error.
       if (m != NULL) {
         instanceKlassHandle mh(THREAD, m->method_holder());
