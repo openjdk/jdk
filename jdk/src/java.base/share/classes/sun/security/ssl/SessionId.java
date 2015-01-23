@@ -27,6 +27,7 @@
 package sun.security.ssl;
 
 import java.security.SecureRandom;
+import javax.net.ssl.SSLProtocolException;
 
 /**
  * Encapsulates an SSL session ID.  SSL Session IDs are not reused by
@@ -41,6 +42,7 @@ import java.security.SecureRandom;
 final
 class SessionId
 {
+    static int MAX_LENGTH = 32;
     private byte sessionId [];          // max 32 bytes
 
     /** Constructs a new session ID ... perhaps for a rejoinable session */
@@ -114,4 +116,19 @@ class SessionId
         }
         return true;
     }
+
+    /**
+     * Checks the length of the session ID to make sure it sits within
+     * the range called out in the specification
+     */
+    void checkLength(ProtocolVersion pv) throws SSLProtocolException {
+        // As of today all versions of TLS have a 32-byte maximum length.
+        // In the future we can do more here to support protocol versions
+        // that may have longer max lengths.
+        if (sessionId.length > MAX_LENGTH) {
+            throw new SSLProtocolException("Invalid session ID length (" +
+                    sessionId.length + " bytes)");
+        }
+    }
+
 }
