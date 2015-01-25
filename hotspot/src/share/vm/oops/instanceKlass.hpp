@@ -490,10 +490,16 @@ class InstanceKlass: public Klass {
   // find a local method (returns NULL if not found)
   Method* find_method(Symbol* name, Symbol* signature) const;
   static Method* find_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
+
+  // find a local method, but skip static methods
+  Method* find_instance_method(Symbol* name, Symbol* signature);
   static Method* find_instance_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
 
+  // true if method matches signature and conforms to skipping_X conditions.
+  static bool method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static);
+
   // find a local method index in default_methods (returns -1 if not found)
-  static int find_method_index(Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass);
+  static int find_method_index(Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass, bool skipping_static);
 
   // lookup operation (returns NULL if not found)
   Method* uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const;
@@ -1053,7 +1059,7 @@ private:
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(Symbol* name, Symbol* signature, bool skipping_overpass) const;
-  static Method* find_method_impl(Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass);
+  static Method* find_method_impl(Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass, bool skipping_static);
 
   // Free CHeap allocated fields.
   void release_C_heap_structures();
