@@ -504,9 +504,10 @@ abstract class SeedGenerator {
                         @Override
                         public InputStream run() throws IOException {
                             /*
-                             * return a FileInputStream for file URLs and
-                             * avoid buffering. The openStream() call wraps
-                             * InputStream in a BufferedInputStream which
+                             * return a shared InputStream for file URLs and
+                             * avoid buffering.
+                             * The URL.openStream() call wraps InputStream in a
+                             * BufferedInputStream which
                              * can buffer up to 8K bytes. This read is a
                              * performance issue for entropy sources which
                              * can be slow to replenish.
@@ -514,7 +515,8 @@ abstract class SeedGenerator {
                             if (device.getProtocol().equalsIgnoreCase("file")) {
                                 File deviceFile =
                                     SunEntries.getDeviceFile(device);
-                                return new FileInputStream(deviceFile);
+                                return FileInputStreamPool
+                                    .getInputStream(deviceFile);
                             } else {
                                 return device.openStream();
                             }

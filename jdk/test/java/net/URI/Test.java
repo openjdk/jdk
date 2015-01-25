@@ -24,7 +24,7 @@
 /* @test
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
- *      7171415
+ *      7171415 6933879
  * @author Mark Reinhold
  */
 
@@ -1600,6 +1600,7 @@ public class Test {
 
     static void bugs() {
         b6339649();
+        b6933879();
         b8037396();
     }
 
@@ -1612,6 +1613,18 @@ public class Test {
                 throw new RuntimeException ("No detail message");
             }
         }
+    }
+
+    // 6933879 - check that "." and "_" characters are allowed in IPv6 scope_id.
+    private static void b6933879() {
+        final String HOST = "fe80::c00:16fe:cebe:3214%eth1.12_55";
+        URI uri;
+        try {
+            uri = new URI("http", null, HOST, 10, "/", null, null);
+        } catch (URISyntaxException ex) {
+            throw new AssertionError("Should not happen", ex);
+        }
+        eq("[" + HOST + "]", uri.getHost());
     }
 
     private static void b8037396() {
