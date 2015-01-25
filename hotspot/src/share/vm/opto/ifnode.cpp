@@ -1122,12 +1122,21 @@ void IfNode::dominated_by( Node *prev_dom, PhaseIterGVN *igvn ) {
 
 //------------------------------Identity---------------------------------------
 // If the test is constant & we match, then we are the input Control
-Node *IfTrueNode::Identity( PhaseTransform *phase ) {
+Node *IfProjNode::Identity(PhaseTransform *phase) {
   // Can only optimize if cannot go the other way
   const TypeTuple *t = phase->type(in(0))->is_tuple();
-  return ( t == TypeTuple::IFNEITHER || t == TypeTuple::IFTRUE )
-    ? in(0)->in(0)              // IfNode control
-    : this;                     // no progress
+  if (t == TypeTuple::IFNEITHER ||
+      // kill dead branch first otherwise the IfNode's control will
+      // have 2 control uses (the IfNode that doesn't go away because
+      // it still has uses and this branch of the
+      // If). Node::has_special_unique_user() will cause this node to
+      // be reprocessed once the dead branch is killed.
+      (always_taken(t) && in(0)->outcnt() == 1)) {
+    // IfNode control
+    return in(0)->in(0);
+  }
+  // no progress
+  return this;
 }
 
 //------------------------------dump_spec--------------------------------------
@@ -1194,14 +1203,4 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
 
   // Progress
   return iff;
-}
-
-//------------------------------Identity---------------------------------------
-// If the test is constant & we match, then we are the input Control
-Node *IfFalseNode::Identity( PhaseTransform *phase ) {
-  // Can only optimize if cannot go the other way
-  const TypeTuple *t = phase->type(in(0))->is_tuple();
-  return ( t == TypeTuple::IFNEITHER || t == TypeTuple::IFFALSE )
-    ? in(0)->in(0)              // IfNode control
-    : this;                     // no progress
 }
