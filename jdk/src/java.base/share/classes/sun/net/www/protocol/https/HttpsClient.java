@@ -192,22 +192,6 @@ final class HttpsClient extends HttpClient
         return userAgent;
     }
 
-    // should remove once HttpClient.newHttpProxy is putback
-    private static Proxy newHttpProxy(String proxyHost, int proxyPort) {
-        InetSocketAddress saddr = null;
-        final String phost = proxyHost;
-        final int pport = proxyPort < 0 ? httpsPortNumber : proxyPort;
-        try {
-            saddr = java.security.AccessController.doPrivileged(new
-                java.security.PrivilegedExceptionAction<InetSocketAddress>() {
-                public InetSocketAddress run() {
-                    return new InetSocketAddress(phost, pport);
-                }});
-        } catch (java.security.PrivilegedActionException pae) {
-        }
-        return new Proxy(Proxy.Type.HTTP, saddr);
-    }
-
     // CONSTRUCTOR, FACTORY
 
 
@@ -251,7 +235,7 @@ final class HttpsClient extends HttpClient
         throws IOException {
         this(sf, url,
              (proxyHost == null? null:
-                HttpsClient.newHttpProxy(proxyHost, proxyPort)),
+                HttpClient.newHttpProxy(proxyHost, proxyPort, "https")),
                 connectTimeout);
     }
 
@@ -261,6 +245,11 @@ final class HttpsClient extends HttpClient
     HttpsClient(SSLSocketFactory sf, URL url, Proxy proxy,
                 int connectTimeout)
         throws IOException {
+        PlatformLogger logger = HttpURLConnection.getHttpLogger();
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
+             logger.finest("Creating new HttpsClient with url:" + url + " and proxy:" + proxy +
+             " with connect timeout:" + connectTimeout);
+        }
         this.proxy = proxy;
         setSSLSocketFactory(sf);
         this.proxyDisabled = true;
@@ -317,7 +306,7 @@ final class HttpsClient extends HttpClient
 
         return HttpsClient.New(sf, url, hv,
                                (proxyHost == null? null :
-                                HttpsClient.newHttpProxy(proxyHost, proxyPort)),
+                                HttpClient.newHttpProxy(proxyHost, proxyPort, "https")),
                                useCache, connectTimeout, httpuc);
     }
 
@@ -328,6 +317,11 @@ final class HttpsClient extends HttpClient
     {
         if (p == null) {
             p = Proxy.NO_PROXY;
+        }
+        PlatformLogger logger = HttpURLConnection.getHttpLogger();
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
+            logger.finest("Looking for HttpClient for URL " + url +
+                " and proxy value of " + p);
         }
         HttpsClient ret = null;
         if (useCache) {
@@ -342,14 +336,13 @@ final class HttpsClient extends HttpClient
 
             if (ret != null) {
                 if ((ret.proxy != null && ret.proxy.equals(p)) ||
-                    (ret.proxy == null && p == null)) {
+                    (ret.proxy == null && p == Proxy.NO_PROXY)) {
                     synchronized (ret) {
                         ret.cachedHttpClient = true;
                         assert ret.inCache;
                         ret.inCache = false;
                         if (httpuc != null && ret.needsTunneling())
                             httpuc.setTunnelState(TUNNELING);
-                        PlatformLogger logger = HttpURLConnection.getHttpLogger();
                         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                             logger.finest("KeepAlive stream retrieved from the cache, " + ret);
                         }
@@ -360,6 +353,9 @@ final class HttpsClient extends HttpClient
                     // This should be fine as it is very rare that a connection
                     // to the same host will not use the same proxy.
                     synchronized(ret) {
+                        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
+                            logger.finest("Not returning this connection to cache: " + ret);
+                        }
                         ret.inCache = false;
                         ret.closeServer();
                     }
