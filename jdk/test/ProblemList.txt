@@ -298,6 +298,9 @@ com/sun/jdi/RedefinePop.sh                                      generic-all
 # 8068645
 com/sun/jdi/CatchPatternTest.sh                                 generic-all
 
+# 8069402
+com/sun/jdi/ConnectedVMs.java					generic-all
+
 ############################################################################
 
 # jdk_util
