@@ -135,7 +135,7 @@ public class SchemaGenerator extends AbstractProcessor {
 
     private void filterClass(List<Reference> classes, Collection<? extends Element> elements) {
         for (Element element : elements) {
-            if (element.getKind().equals(ElementKind.CLASS)) {
+            if (element.getKind().equals(ElementKind.CLASS) || element.getKind().equals(ElementKind.ENUM)) {
                 classes.add(new Reference((TypeElement) element, processingEnv));
                 filterClass(classes, ElementFilter.typesIn(element.getEnclosedElements()));
             }
