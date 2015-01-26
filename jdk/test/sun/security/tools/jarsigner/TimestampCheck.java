@@ -309,7 +309,7 @@ public class TimestampCheck {
                 cmd = System.getProperty("java.home") + "/bin/jarsigner";
             }
 
-            cmd += System.getProperty("test.tool.vm.opts")
+            cmd += " " + System.getProperty("test.tool.vm.opts")
                     + " -J-Djava.security.egd=file:/dev/./urandom"
                     + " -debug -keystore " + TSKS + " -storepass changeit"
                     + " -tsa http://localhost:" + port + "/%d"
