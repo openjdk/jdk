@@ -2042,7 +2042,7 @@ public class Basic {
                     final Object deferred;
                     Class<?> c = s.getClass();
                     if (c.getName().equals(
-                        "java.lang.UNIXProcess$DeferredCloseInputStream"))
+                        "java.lang.ProcessImpl$DeferredCloseInputStream"))
                     {
                         deferred = s;
                     } else {
