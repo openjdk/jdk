@@ -114,7 +114,7 @@ define add_native_source
       endif
     endif
 
-    $$($1_$2_OBJ) : $2 | $$($1_BUILD_INFO)
+    $$($1_$2_OBJ) : $2 $$($1_COMPILE_VARDEPS_FILE) | $$($1_BUILD_INFO)
 	$(ECHO) $(LOG_INFO) "Compiling $$(notdir $2) (for $$(notdir $$($1_TARGET)))"
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
           # The Solaris studio compiler doesn't output the full path to the object file in the
@@ -306,7 +306,7 @@ define SetupNativeCompilationInner
   endif
 
   # Make sure the dirs exist.
-  $$(eval $$(call MakeDir,$$($1_OBJECT_DIR) $$($1_OUTPUT_DIR)))
+  $$(call MakeDir,$$($1_OBJECT_DIR) $$($1_OUTPUT_DIR))
   $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
 
   # Find all files in the source trees. Sort to remove duplicates.
@@ -426,15 +426,16 @@ define SetupNativeCompilationInner
 
   $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
 
-  # Setup rule for printing progress info when compiling source files.
-  # This is a rough heuristic and may not always print accurate information.
-  $$($1_BUILD_INFO): $$($1_SRCS)
-        ifeq ($$(wildcard $$($1_TARGET)),)
-	  $(ECHO) 'Creating $$($1_BASENAME) from $$(words $$?) file(s)'
-        else
-	  $(ECHO) 'Updating $$($1_BASENAME) from $$(words $$?) file(s)'
-        endif
-	$(TOUCH) $$@
+  # Track variable changes for all variables that affect the compilation command
+  # lines for all object files in this setup. This includes at least all the 
+  # variables used in the call to add_native_source below.
+  $1_COMPILE_VARDEPS := $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $(SYSROOT_CFLAGS) \
+      $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) \
+      $$($1_CC) $$($1_CXX) $$($1_OBJC) $$($1_ASFLAGS) \
+      $$(foreach s, $$($1_SRCS), \
+          $$($1_$$(notdir $$s)_CFLAGS) $$($1_$$(notdir $$s)_CXXFLAGS))
+  $1_COMPILE_VARDEPS_FILE := $$(call DependOnVariable, $1_COMPILE_VARDEPS, \
+      $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).comp.vardeps)
 
   # Now call add_native_source for each source file we are going to compile.
   $$(foreach p,$$($1_SRCS), \
@@ -444,13 +445,28 @@ define SetupNativeCompilationInner
           $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) $(SYSROOT_CFLAGS), \
           $$($1_CXX),$$($1_OBJC),$$($1_ASFLAGS))))
 
+  # Setup rule for printing progress info when compiling source files.
+  # This is a rough heuristic and may not always print accurate information.
+  $$($1_BUILD_INFO): $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
+        ifeq ($$(wildcard $$($1_TARGET)),)
+	  $(ECHO) 'Creating $$($1_BASENAME) from $$(words $$(filter-out %.vardeps, $$?)) file(s)'
+        else
+	  $(ECHO) 'Updating $$($1_BASENAME) from $$(words $$(filter-out %.vardeps, $$?)) file(s)'
+        endif
+	$(TOUCH) $$@
+
   # On windows we need to create a resource file
   ifeq ($(OPENJDK_TARGET_OS), windows)
     ifneq (,$$($1_VERSIONINFO_RESOURCE))
       $1_RES:=$$($1_OBJECT_DIR)/$$($1_BASENAME).res
       $1_RES_DEP:=$$($1_RES).d
       -include $$($1_RES_DEP)
-      $$($1_RES): $$($1_VERSIONINFO_RESOURCE)
+
+      $1_RES_VARDEPS := $(RC) $$($1_RC_FLAGS)
+      $1_RES_VARDEPS_FILE := $$(call DependOnVariable, $1_RES_VARDEPS, \
+          $$($1_RES).vardeps)
+
+      $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET)))"
 		$(RC) $$($1_RC_FLAGS) $(CC_OUT_OPTION)$$@ $$($1_VERSIONINFO_RESOURCE)
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
@@ -462,7 +478,9 @@ define SetupNativeCompilationInner
     ifneq (,$$($1_MANIFEST))
       $1_GEN_MANIFEST:=$$($1_OBJECT_DIR)/$$($1_PROGRAM).manifest
       IMVERSIONVALUE:=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VERSION).$(COOKED_BUILD_NUMBER)
-      $$($1_GEN_MANIFEST): $$($1_MANIFEST)
+      $1_MANIFEST_VARDEPS_FILE := $$(call DependOnVariable, IMVERSIONVALUE, \
+          $$($1_GEN_MANIFEST).vardeps)
+      $$($1_GEN_MANIFEST): $$($1_MANIFEST) $$($1_MANIFEST_VARDEPS_FILE)
 		$(SED) 's%IMVERSION%$$(IMVERSIONVALUE)%g;s%PROGRAM%$$($1_PROGRAM)%g' $$< > $$@
     endif
   endif
@@ -575,8 +593,13 @@ define SetupNativeCompilationInner
 
     $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
 
+    $1_VARDEPS := $$($1_LD) $(SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
+        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+        $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
-        $$($1_DEBUGINFO_EXTRA_DEPS)
+        $$($1_DEBUGINFO_EXTRA_DEPS) $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking $$($1_BASENAME)"
 		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(SYSROOT_LDFLAGS) \
 		    $(LD_OUT_OPTION)$$@ \
@@ -592,8 +615,12 @@ define SetupNativeCompilationInner
   endif
 
   ifneq (,$$($1_STATIC_LIBRARY))
+    $1_VARDEPS := $(AR) $$($1_ARFLAGS) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+        $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
     # Generating a static library, ie object file archive.
-    $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES)
+    $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_VARDEPS_FILE)
 	$(ECHO) $(LOG_INFO) "Archiving $$($1_STATIC_LIBRARY)"
 	$(AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
 	    $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
@@ -603,8 +630,13 @@ define SetupNativeCompilationInner
     # A executable binary has been specified, setup the target for it.
     $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
 
+    $1_VARDEPS := $$($1_LDEXE) $(SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
+        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+        $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST) \
-        $$($1_DEBUGINFO_EXTRA_DEPS)
+        $$($1_DEBUGINFO_EXTRA_DEPS) $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)"
 		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(SYSROOT_LDFLAGS) \
 		    $(EXE_OUT_OPTION)$$($1_TARGET) \
