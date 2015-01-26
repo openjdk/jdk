@@ -487,23 +487,23 @@ define SetupJavaCompilationInner
     $1_ALL_COPIES += $$(filter $$(addprefix %,$$($1_COPY)),$$($1_ALL_SRCS))
     # Copy these explicitly
     $1_ALL_COPIES += $$($1_COPY_FILES)
-    # Copy must also respect filters.
-    ifneq (,$$($1_INCLUDES))
-      $1_ALL_COPIES := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_COPIES))
-    endif
-    ifneq (,$$($1_EXCLUDES))
-      $1_ALL_COPIES := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_COPIES))
-    endif
-    ifneq (,$$($1_EXCLUDE_FILES))
-      $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$($1_ALL_COPIES))
-    endif
   endif
-    ifneq (,$$($1_ALL_COPIES))
-      # Yep, there are files to be copied!
-      $1_ALL_COPY_TARGETS:=
-          $$(foreach i,$$($1_ALL_COPIES),$$(eval $$(call add_file_to_copy,$1,$$i)))
-      # Now we can depend on $$($1_ALL_COPY_TARGETS) to copy all files!
-    endif
+  # Copy must also respect filters.
+  ifneq (,$$($1_INCLUDES))
+    $1_ALL_COPIES := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_COPIES))
+  endif
+  ifneq (,$$($1_EXCLUDES))
+    $1_ALL_COPIES := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_COPIES))
+  endif
+  ifneq (,$$($1_EXCLUDE_FILES))
+    $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$($1_ALL_COPIES))
+  endif
+  ifneq (,$$($1_ALL_COPIES))
+    # Yep, there are files to be copied!
+    $1_ALL_COPY_TARGETS:=
+        $$(foreach i,$$($1_ALL_COPIES),$$(eval $$(call add_file_to_copy,$1,$$i)))
+    # Now we can depend on $$($1_ALL_COPY_TARGETS) to copy all files!
+  endif
 
   # Find all property files to be copied and cleaned from source to bin.
   ifneq (,$$($1_CLEAN)$$($1_CLEAN_FILES))
