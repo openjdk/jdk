@@ -292,9 +292,6 @@ com/sun/jdi/JdbMethodExitTest.sh                                generic-all
 # 8043571
 com/sun/jdi/RepStep.java                                        generic-all
 
-# 8044419
-com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
-
 # 8058616
 com/sun/jdi/RedefinePop.sh                                      generic-all
 
