@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,12 @@ public class TimestampCheck {
 
     static final String defaultPolicyId = "2.3.4.5";
 
-    static class Handler implements HttpHandler {
+    static class Handler implements HttpHandler, AutoCloseable {
+
+        private final HttpServer httpServer;
+        private final String keystore;
+
+        @Override
         public void handle(HttpExchange t) throws IOException {
             int len = 0;
             for (String h: t.getRequestHeaders().keySet()) {
@@ -136,7 +141,9 @@ public class TimestampCheck {
             // Write TSResponse
             System.err.println("\nResponse\n===================");
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(TSKS), "changeit".toCharArray());
+            try (FileInputStream fis = new FileInputStream(keystore)) {
+                ks.load(fis, "changeit".toCharArray());
+            }
 
             String alias = "ts";
             if (path == 6) alias = "tsbad1";
@@ -240,33 +247,74 @@ public class TimestampCheck {
 
             return out.toByteArray();
         }
+
+        private Handler(HttpServer httpServer, String keystore) {
+            this.httpServer = httpServer;
+            this.keystore = keystore;
+        }
+
+        /**
+         * Initialize TSA instance.
+         *
+         * Extended Key Info extension of certificate that is used for
+         * signing TSA responses should contain timeStamping value.
+         */
+        static Handler init(int port, String keystore) throws IOException {
+            HttpServer httpServer = HttpServer.create(
+                    new InetSocketAddress(port), 0);
+            Handler tsa = new Handler(httpServer, keystore);
+            httpServer.createContext("/", tsa);
+            return tsa;
+        }
+
+        /**
+         * Start TSA service.
+         */
+        void start() {
+            httpServer.start();
+        }
+
+        /**
+         * Stop TSA service.
+         */
+        void stop() {
+            httpServer.stop(0);
+        }
+
+        /**
+         * Return server port number.
+         */
+        int getPort() {
+            return httpServer.getAddress().getPort();
+        }
+
+        @Override
+        public void close() throws Exception {
+            stop();
+        }
     }
 
     public static void main(String[] args) throws Exception {
+        try (Handler tsa = Handler.init(0, TSKS);) {
+            tsa.start();
+            int port = tsa.getPort();
 
-        Handler h = new Handler();
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
-        int port = server.getAddress().getPort();
-        HttpContext ctx = server.createContext("/", h);
-        server.start();
+            String cmd;
+            // Use -J-Djava.security.egd=file:/dev/./urandom to speed up
+            // nonce generation in timestamping request. Not avaibale on
+            // Windows and defaults to thread seed generator, not too bad.
+            if (System.getProperty("java.home").endsWith("jre")) {
+                cmd = System.getProperty("java.home") + "/../bin/jarsigner";
+            } else {
+                cmd = System.getProperty("java.home") + "/bin/jarsigner";
+            }
 
-        String cmd = null;
-        // Use -J-Djava.security.egd=file:/dev/./urandom to speed up
-        // nonce generation in timestamping request. Not avaibale on
-        // Windows and defaults to thread seed generator, not too bad.
-        if (System.getProperty("java.home").endsWith("jre")) {
-            cmd = System.getProperty("java.home") + "/../bin/jarsigner";
-        } else {
-            cmd = System.getProperty("java.home") + "/bin/jarsigner";
-        }
+            cmd += System.getProperty("test.tool.vm.opts")
+                    + " -J-Djava.security.egd=file:/dev/./urandom"
+                    + " -debug -keystore " + TSKS + " -storepass changeit"
+                    + " -tsa http://localhost:" + port + "/%d"
+                    + " -signedjar new_%d.jar " + JAR + " old";
 
-        cmd +=  " " + System.getProperty("test.tool.vm.opts") +
-                " -J-Djava.security.egd=file:/dev/./urandom" +
-                " -debug -keystore " + TSKS + " -storepass changeit" +
-                " -tsa http://localhost:" + port + "/%d" +
-                " -signedjar new_%d.jar " + JAR + " old";
-
-        try {
             if (args.length == 0) {         // Run this test
                 jarsigner(cmd, 0, true);    // Success, normal call
                 jarsigner(cmd, 1, false);   // These 4 should fail
@@ -287,8 +335,6 @@ public class TimestampCheck {
                 System.err.println("Press Enter to quit server");
                 System.in.read();
             }
-        } finally {
-            server.stop(0);
         }
     }
 
