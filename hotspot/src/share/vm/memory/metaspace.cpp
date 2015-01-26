@@ -3036,7 +3036,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
     metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                              _reserve_alignment,
                                              large_pages,
-                                             requested_addr, 0);
+                                             requested_addr);
   }
 
   if (! metaspace_rs.is_reserved()) {
@@ -3055,7 +3055,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
         metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                      _reserve_alignment,
                                      large_pages,
-                                     requested_addr, 0);
+                                     requested_addr);
         break;
       }
 #endif
@@ -3063,7 +3063,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
       metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                    _reserve_alignment,
                                    large_pages,
-                                   a, 0);
+                                   a);
       if (metaspace_rs.is_reserved())
         break;
     }
