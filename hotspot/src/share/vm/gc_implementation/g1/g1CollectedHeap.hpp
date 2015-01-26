@@ -645,23 +645,21 @@ public:
   // is considered a candidate for eager reclamation.
   bool humongous_region_is_candidate(uint index);
   // Register the given region to be part of the collection set.
-  inline void register_humongous_region_with_in_cset_fast_test(uint index);
+  inline void register_humongous_region_with_cset(uint index);
   // Register regions with humongous objects (actually on the start region) in
   // the in_cset_fast_test table.
-  void register_humongous_regions_with_in_cset_fast_test();
+  void register_humongous_regions_with_cset();
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
-  void register_young_region_with_in_cset_fast_test(HeapRegion* r) {
+  void register_young_region_with_cset(HeapRegion* r) {
     _in_cset_fast_test.set_in_young(r->hrm_index());
   }
-  void register_old_region_with_in_cset_fast_test(HeapRegion* r) {
+  void register_old_region_with_cset(HeapRegion* r) {
     _in_cset_fast_test.set_in_old(r->hrm_index());
   }
-
-  // This is a fast test on whether a reference points into the
-  // collection set or not. Assume that the reference
-  // points into the heap.
-  inline bool in_cset_fast_test(oop obj);
+  void clear_in_cset(const HeapRegion* hr) {
+    _in_cset_fast_test.clear(hr);
+  }
 
   void clear_cset_fast_test() {
     _in_cset_fast_test.clear();
@@ -1246,6 +1244,7 @@ public:
   // set. Slow implementation.
   inline bool obj_in_cs(oop obj);
 
+  inline bool is_in_cset(const HeapRegion *hr);
   inline bool is_in_cset(oop obj);
 
   inline bool is_in_cset_or_humongous(const oop obj);
