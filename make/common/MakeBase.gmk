@@ -392,11 +392,9 @@ define EvalDebugWrapper
 endef
 
 # Make directory without forking mkdir if not needed
-define MakeDir
-  ifneq ($$(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),$$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9))
-    $$(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)
-  endif
-endef
+MakeDir = \
+    $(strip $(if $(subst $(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),,$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9)),\
+      $(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)))
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
   # On Solaris, if the target is a symlink and exists, cp won't overwrite.
@@ -445,6 +443,9 @@ not-containing = $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$
 
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.
 uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
+# String equals
+equals = $(and $(findstring $(1),$(2)),$(findstring $(2),$(1)))
 
 ifneq ($(DISABLE_CACHE_FIND), true)
   ################################################################################
@@ -541,6 +542,80 @@ define SetupCopyFiles
       $$($1_DEST)/$$(if $$($1_FLATTEN),$$(notdir $$f),$$f), $1, $$($1_MACRO))))
 
 endef
+
+################################################################################
+# ShellQuote
+#
+# Quotes a string with single quotes and replaces single quotes with '\'' so 
+# that the contents survives being given to the shell.
+
+ShellQuote = \
+    $(SQUOTE)$(subst $(SQUOTE),$(SQUOTE)\$(SQUOTE)$(SQUOTE),$(strip $1))$(SQUOTE)
+
+################################################################################
+# Write to and read from file
+
+# Param 1 - File to read
+ReadFile = \
+    $(shell $(CAT) $1)
+
+# Param 1 - Text to write
+# Param 2 - File to write to
+# Use printf to get consistent behavior on all platforms.
+WriteFile = \
+    $(shell $(PRINTF) "%s" $(call ShellQuote, $1) > $2)
+
+################################################################################
+# DependOnVariable
+#
+# This macro takes a variable name and puts the value in a file only if the 
+# value has changed since last. The name of the file is returned. This can be 
+# used to create rule dependencies on make variable values. The following
+# example would get rebuilt if the value of SOME_VAR was changed:
+#
+# path/to/some-file: $(call DependOnVariable, SOME_VAR)
+#         echo $(SOME_VAR) > $@
+#
+# Note that leading and trailing white space in the value is ignored.
+#
+
+# Defines the sub directory structure to store variable value file in
+DependOnVariableDirName = \
+    $(strip $(subst $(SRC_ROOT)/,,\
+        $(if $(filter /%, $(firstword $(MAKEFILE_LIST))), \
+          $(firstword $(MAKEFILE_LIST)), \
+          $(CURDIR)/$(firstword $(MAKEFILE_LIST)))))
+
+# Defines the name of the file to store variable value in. Generates a name
+# unless parameter 2 is given.
+# Param 1 - Name of variable
+# Param 2 - (optional) name of file to store value in
+DependOnVariableFileName = \
+    $(strip $(if $(strip $2), $2, \
+      $(MAKESUPPORT_OUTPUTDIR)/vardeps/$(DependOnVariableDirName)/$(strip $1).vardeps))
+
+# Does the actual work with parameters stripped.
+# If the file exists AND the contents is the same as the variable, do nothing
+# else print a new file.
+# Always returns the name of the file where the value was printed.
+# Param 1 - Name of variable
+# Param 2 - (optional) name of file to store value in
+DependOnVariableHelper = \
+    $(strip $(if $(and $(wildcard $(call DependOnVariableFileName, $1, $2)),\
+        $(call equals, $(strip $($1)), \
+            $(call ReadFile, $(call DependOnVariableFileName, $1, $2)))),,\
+      $(call MakeDir, $(dir $(call DependOnVariableFileName, $1, $2))) \
+      $(if $(findstring $(LOG_LEVEL), trace), \
+          $(info Variable $1: $(strip $($1))) \
+          $(info File: $(call ReadFile, $(call DependOnVariableFileName, $1, $2)))) \
+      $(call WriteFile, $($1), $(call DependOnVariableFileName, $1, $2))) \
+    $(call DependOnVariableFileName, $1, $2))
+
+# Main macro
+# Param 1 - Name of variable
+# Param 2 - (optional) name of file to store value in
+DependOnVariable = \
+    $(call DependOnVariableHelper,$(strip $1),$(strip $2))
 
 ################################################################################
 
