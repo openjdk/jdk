@@ -31,7 +31,6 @@
 // collection set.
 
 class G1CollectedHeap;
-class CardTableModRefBarrierSet;
 class ConcurrentG1Refine;
 class G1ParPushHeapRSClosure;
 

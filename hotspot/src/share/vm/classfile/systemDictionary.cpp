@@ -1905,11 +1905,12 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   InstanceKlass::cast(WK_KLASS(Reference_klass))->set_reference_type(REF_OTHER);
   InstanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(Reference_klass));
 
-  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(PhantomReference_klass), scan, CHECK);
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Cleaner_klass), scan, CHECK);
   InstanceKlass::cast(WK_KLASS(SoftReference_klass))->set_reference_type(REF_SOFT);
   InstanceKlass::cast(WK_KLASS(WeakReference_klass))->set_reference_type(REF_WEAK);
   InstanceKlass::cast(WK_KLASS(FinalReference_klass))->set_reference_type(REF_FINAL);
   InstanceKlass::cast(WK_KLASS(PhantomReference_klass))->set_reference_type(REF_PHANTOM);
+  InstanceKlass::cast(WK_KLASS(Cleaner_klass))->set_reference_type(REF_CLEANER);
 
   // JSR 292 classes
   WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);

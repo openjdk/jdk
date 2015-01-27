@@ -320,7 +320,7 @@ int LinkResolver::vtable_index_of_interface_method(KlassHandle klass,
   // First check in default method array
   if (!resolved_method->is_abstract() &&
     (InstanceKlass::cast(klass())->default_methods() != NULL)) {
-    int index = InstanceKlass::find_method_index(InstanceKlass::cast(klass())->default_methods(), name, signature, false);
+    int index = InstanceKlass::find_method_index(InstanceKlass::cast(klass())->default_methods(), name, signature, false, false);
     if (index >= 0 ) {
       vtable_index = InstanceKlass::cast(klass())->default_vtable_indices()->at(index);
     }
