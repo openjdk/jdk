@@ -64,6 +64,9 @@ le_uint32 LigatureSubstitutionSubtable::process(const LETableReference &base, Gl
             LEReferenceTo<LigatureTable>   ligTable(ligSetTable, success, ligTableOffset);
             if(LE_FAILURE(success)) { return 0; }
             le_uint16 compCount = SWAPW(ligTable->compCount) - 1;
+            LEReferenceToArrayOf<TTGlyphID>
+                componentArrayRef(base, success, ligTable->componentArray, compCount);
+            if (LE_FAILURE(success)) { return 0; }
             le_int32 startPosition = glyphIterator->getCurrStreamPosition();
             TTGlyphID ligGlyph = SWAPW(ligTable->ligGlyph);
             le_uint16 comp;
