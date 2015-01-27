@@ -889,7 +889,9 @@ public class LambdaToMethod extends TreeTranslator {
                     convertArgs(tree.sym, args.toList(), tree.varargsElement)).
                     setType(tree.sym.erasure(types).getReturnType());
 
-            apply = transTypes.coerce(apply, localContext.generatedRefSig().getReturnType());
+            apply = transTypes.coerce(attrEnv, apply,
+                    types.erasure(localContext.tree.referentType.getReturnType()));
+
             setVarargsIfNeeded(apply, tree.varargsElement);
             return apply;
         }

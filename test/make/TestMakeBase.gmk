@@ -33,7 +33,14 @@ DEPS := $(THIS_FILE) \
     $(SRC_ROOT)/make/common/MakeBase.gmk \
     #
 
+# On macosx, file system timestamps only have 1 second resultion so must add
+# sleeps to properly test dependencies.
+ifeq ($(OPENJDK_BUILD_OS), macosx)
+  SLEEP_ON_MAC := sleep 1
+endif
+
 OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/make-base
+$(call MakeDir, $(OUTPUT_DIR))
 
 ################################################################################
 # Escape $
@@ -54,6 +61,111 @@ $(ESCAPE_DOLLAR_DIR)/_escape_dollar: $(DEPS)
 	$(TOUCH) $@
 
 TEST_TARGETS += $(ESCAPE_DOLLAR_DIR)/_escape_dollar
+
+################################################################################
+# Test ShellQuote
+
+SHELL_QUOTE_VALUE := foo '""' "''" bar
+SHELL_QUOTE_RESULT := $(shell $(ECHO) $(call ShellQuote, \
+    $(SHELL_QUOTE_VALUE)))
+
+ifneq ($(SHELL_QUOTE_VALUE), $(SHELL_QUOTE_RESULT))
+  $(error Expected: >$(SHELL_QUOTE_VALUE)< - Result: >$(SHELL_QUOTE_RESULT)<)
+endif
+
+################################################################################
+# Test read and write to file
+
+READ_WRITE_FILE := $(OUTPUT_DIR)/read-write
+READ_WRITE_VALUE := foo '""' "''" \t\n\\ bar
+$(call WriteFile, $(READ_WRITE_VALUE), $(READ_WRITE_FILE))
+READ_WRITE_RESULT := $(call ReadFile, $(READ_WRITE_FILE))
+
+ifneq ($(READ_WRITE_VALUE), $(READ_WRITE_RESULT))
+  $(error Expected: >$(READ_WRITE_VALUE)< - Result: >$(READ_WRITE_RESULT)<)
+endif
+
+################################################################################
+# Test creating dependencies on make variables
+
+VARDEP_DIR := $(OUTPUT_DIR)/vardep
+VARDEP_SRC_FILE := $(VARDEP_DIR)/src-file
+VARDEP_TARGET_FILE := $(VARDEP_DIR)/target-file
+VARDEP_FLAG_FILE := $(VARDEP_DIR)/flag-file
+
+$(VARDEP_DIR)/src-file:
+	$(MKDIR) -p $(@D)
+	$(ECHO) "some string XXX" > $@
+
+$(VARDEP_TARGET_FILE): $(VARDEP_DIR)/src-file \
+    $(call DependOnVariable, VARDEP_TEST_VAR)
+	$(MKDIR) -p $(@D)
+	$(SED) -e 's/XXX/$(VARDEP_TEST_VAR)/g' $< > $@
+	$(TOUCH) $(VARDEP_FLAG_FILE)
+
+test-vardep:
+	$(RM) $(VARDEP_SRC_FILE) $(VARDEP_TARGET_FILE) $(VARDEP_FLAG_FILE)
+        #
+        # Simply create the target file and verify that it has the correct value
+        #
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR=value1 $(VARDEP_TARGET_FILE)
+	$(PRINTF) "Expecting value1: %s\n" "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test "some string value1" = "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test -e $(VARDEP_FLAG_FILE)
+        #
+        # Make the target file again and verify that the value is updated with 
+        # the new value
+        #
+	$(SLEEP_ON_MAC)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR=value2 $(VARDEP_TARGET_FILE)
+	$(PRINTF) "Expecting value2: %s\n" "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test "some string value2" = "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test -e $(VARDEP_FLAG_FILE)
+        #
+        # Make the target again with the same value and verify that the recipe
+        # was never run by checking that the flag file was not recreated
+        #
+	$(SLEEP_ON_MAC)
+	$(RM) $(VARDEP_FLAG_FILE)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR=value2 $(VARDEP_TARGET_FILE)
+	$(PRINTF) "Expecting value2: %s\n" "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test "some string value2" = "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test ! -e $(VARDEP_FLAG_FILE)
+        #
+        # Test running with spaces at the end and the middle of the value
+        # and verify that the file isn't rewritten the second time
+        #
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR="value3  foo " $(VARDEP_TARGET_FILE)
+	$(RM) $(VARDEP_FLAG_FILE)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR="value3 foo" $(VARDEP_TARGET_FILE)
+	test ! -e $(VARDEP_FLAG_FILE)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR=" value3  foo" $(VARDEP_TARGET_FILE)
+	test ! -e $(VARDEP_FLAG_FILE)
+
+# Test specifying a specific value file to store variable in
+VARDEP_VALUE_FILE := $(VARDEP_DIR)/value-file
+VARDEP_TEST_VAR2 := value3
+
+VARDEP_RETURN_VALUE := $(call DependOnVariable, VARDEP_TEST_VAR2, $(VARDEP_VALUE_FILE))
+ifneq ($(VARDEP_VALUE_FILE), $(VARDEP_RETURN_VALUE))
+  $(error Expected: $(VARDEP_VALUE_FILE) - DependOnVariable: $(VARDEP_RETURN_VALUE))
+endif
+VARDEP_FILE_CONTENTS := $(shell $(CAT) $(VARDEP_VALUE_FILE))
+ifneq ($(VARDEP_TEST_VAR2), $(VARDEP_FILE_CONTENTS))
+  $(error Expected: $(VARDEP_TEST_VAR2) - DependOnVariable file contained: \
+      $(VARDEP_FILE_CONTENTS))
+endif
+
+# Test with a variable value containing some problematic characters
+VARDEP_TEST_VAR3 := foo '""' "''" bar
+VARDEP_VALUE_FILE := $(call DependOnVariable, VARDEP_TEST_VAR3)
+VARDEP_FILE_CONTENTS := $(shell $(CAT) $(VARDEP_VALUE_FILE))
+ifneq ($(VARDEP_TEST_VAR3), $(VARDEP_FILE_CONTENTS))
+  $(error Expected: >$(VARDEP_TEST_VAR3)< - DependOnVariable file contained: \
+      >$(VARDEP_FILE_CONTENTS)<)
+endif
+
+TEST_TARGETS += test-vardep
 
 ################################################################################
 

@@ -371,8 +371,8 @@ public final class NativePRNG extends SecureRandomSpi {
         // constructor, called only once from initIO()
         private RandomIO(File seedFile, File nextFile) throws IOException {
             this.seedFile = seedFile;
-            seedIn = new FileInputStream(seedFile);
-            nextIn = new FileInputStream(nextFile);
+            seedIn = FileInputStreamPool.getInputStream(seedFile);
+            nextIn = FileInputStreamPool.getInputStream(nextFile);
             nextBuffer = new byte[BUFFER_SIZE];
         }
 
