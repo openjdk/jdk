@@ -46,9 +46,6 @@ class ReferenceProcessor;
 class G1PrepareCompactClosure;
 
 class G1MarkSweep : AllStatic {
-  friend class VM_G1MarkSweep;
-  friend class Scavenge;
-
  public:
 
   static void invoke_at_safepoint(ReferenceProcessor* rp,

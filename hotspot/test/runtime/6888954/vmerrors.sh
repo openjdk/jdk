@@ -1,4 +1,4 @@
-# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,12 @@ bad_data_ptr_re='(SIGILL|SIGSEGV|EXCEPTION_ACCESS_VIOLATION).* at pc='
 # EXCEPTION_ACCESS_VIOLATION - Win-*
 # SIGBUS - Solaris SPARC-64
 # SIGSEGV - Linux-*, Solaris SPARC-32, Solaris X86-*
+# SIGILL - Aix
 #
 # Note: would like to use "pc=0x00*0f," in the pattern, but Solaris SPARC-*
 # gets its signal at a PC in test_error_handler().
 #
-bad_func_ptr_re='(SIGBUS|SIGSEGV|EXCEPTION_ACCESS_VIOLATION).* at pc='
+bad_func_ptr_re='(SIGBUS|SIGSEGV|SIGILL|EXCEPTION_ACCESS_VIOLATION).* at pc='
 guarantee_re='guarantee[(](str|num).*failed: *'
 fatal_re='fatal error: *'
 tail_1='.*expected null'

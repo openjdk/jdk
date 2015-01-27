@@ -149,19 +149,11 @@ public class KrbTgsReq {
         ctime = KerberosTime.now();
 
         // check if they are valid arguments. The optional fields
-        // should be  consistent with settings in KDCOptions.
-
-        // TODO: Is this necessary? If the TGT is not FORWARDABLE,
-        // you can still request for a FORWARDABLE ticket, just the
-        // KDC will give you a non-FORWARDABLE one. Even if you
-        // cannot use the ticket expected, it still contains info.
-        // This means there will be problem later. We already have
-        // flags check in KrbTgsRep. Of course, sometimes the KDC
-        // will not issue the ticket at all.
+        // should be consistent with settings in KDCOptions.
 
         if (options.get(KDCOptions.FORWARDABLE) &&
                 (!(asCreds.flags.get(Krb5.TKT_OPTS_FORWARDABLE)))) {
-            throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+            options.set(KDCOptions.FORWARDABLE, false);
         }
         if (options.get(KDCOptions.FORWARDED)) {
             if (!(asCreds.flags.get(KDCOptions.FORWARDABLE)))
