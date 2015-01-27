@@ -103,7 +103,7 @@ class Code {
         case HTTP_UNAVAILABLE: return " Service Unavailable";
         case HTTP_GATEWAY_TIMEOUT: return " Gateway Timeout";
         case HTTP_VERSION: return " HTTP Version Not Supported";
-        default: return "";
+        default: return " ";
       }
     }
 }

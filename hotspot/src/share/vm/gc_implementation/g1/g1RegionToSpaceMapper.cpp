@@ -67,9 +67,9 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   }
 
   virtual void commit_regions(uintptr_t start_idx, size_t num_regions) {
-    _storage.commit(start_idx * _pages_per_region, num_regions * _pages_per_region);
+    bool zero_filled = _storage.commit(start_idx * _pages_per_region, num_regions * _pages_per_region);
     _commit_map.set_range(start_idx, start_idx + num_regions);
-    fire_on_commit(start_idx, num_regions, true);
+    fire_on_commit(start_idx, num_regions, zero_filled);
   }
 
   virtual void uncommit_regions(uintptr_t start_idx, size_t num_regions) {
@@ -117,8 +117,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       uint old_refcount = _refcounts.get_by_index(idx);
       bool zero_filled = false;
       if (old_refcount == 0) {
-        _storage.commit(idx, 1);
-        zero_filled = true;
+        zero_filled = _storage.commit(idx, 1);
       }
       _refcounts.set_by_index(idx, old_refcount + 1);
       _commit_map.set_bit(i);

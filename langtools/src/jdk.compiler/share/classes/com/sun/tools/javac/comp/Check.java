@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -898,7 +898,7 @@ public class Check {
             Type argtype = owntype.getParameterTypes().last();
             if (!types.isReifiable(argtype) &&
                 (!allowSimplifiedVarargs ||
-                 sym.attribute(syms.trustMeType.tsym) == null ||
+                 sym.baseSymbol().attribute(syms.trustMeType.tsym) == null ||
                  !isTrustMeAllowedOnMethod(sym))) {
                 warnUnchecked(env.tree.pos(),
                                   "unchecked.generic.array.creation",

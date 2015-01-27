@@ -123,7 +123,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   FreeBlock* search_freelist(size_t length);
 
   // Iteration helpers
-  void*      next_free(HeapBlock* b) const;
+  void*      next_used(HeapBlock* b) const;
   HeapBlock* first_block() const;
   HeapBlock* next_block(HeapBlock* b) const;
   HeapBlock* block_start(void* p) const;
@@ -158,9 +158,9 @@ class CodeHeap : public CHeapObj<mtCode> {
   int    freelist_length()       const           { return _freelist_length; } // number of elements in the freelist
 
   // returns the first block or NULL
-  void* first() const       { return next_free(first_block()); }
+  void* first() const       { return next_used(first_block()); }
   // returns the next block given a block p or NULL
-  void* next(void* p) const { return next_free(next_block(block_start(p))); }
+  void* next(void* p) const { return next_used(next_block(block_start(p))); }
 
   // Statistics
   size_t capacity() const;
