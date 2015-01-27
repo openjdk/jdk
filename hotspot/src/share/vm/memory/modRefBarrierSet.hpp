@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ class Generation;
 class ModRefBarrierSet: public BarrierSet {
 public:
 
-  ModRefBarrierSet() { _kind = BarrierSet::ModRef; }
-
   bool is_a(BarrierSet::Name bsn) {
     return bsn == BarrierSet::ModRef;
   }
@@ -59,7 +57,12 @@ public:
 
   void read_ref_field(void* field) {}
   void read_prim_field(HeapWord* field, size_t bytes) {}
+
 protected:
+
+  ModRefBarrierSet(BarrierSet::Name kind) : BarrierSet(kind) { }
+  ~ModRefBarrierSet() { }
+
   virtual void write_ref_field_work(void* field, oop new_val, bool release = false) = 0;
 public:
   void write_prim_field(HeapWord* field, size_t bytes,
