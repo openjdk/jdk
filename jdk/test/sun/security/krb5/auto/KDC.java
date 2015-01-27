@@ -198,6 +198,10 @@ public class KDC {
          * Krb5.KDC_ERR_POLICY will be send for S4U2proxy request.
          */
         ALLOW_S4U2PROXY,
+        /**
+         * Sensitive accounts can never be delegated.
+         */
+        SENSITIVE_ACCOUNTS,
     };
 
     static {
@@ -643,7 +647,7 @@ public class KDC {
         try {
             System.out.println(realm + "> " + tgsReq.reqBody.cname +
                     " sends TGS-REQ for " +
-                    service);
+                    service + ", " + tgsReq.reqBody.kdcOptions);
             KDCReqBody body = tgsReq.reqBody;
             int[] eTypes = KDCReqBodyDotEType(body);
             int e2 = eTypes[0];     // etype for outgoing session key
@@ -719,7 +723,13 @@ public class KDC {
             boolean[] bFlags = new boolean[Krb5.TKT_OPTS_MAX+1];
             if (body.kdcOptions.get(KDCOptions.FORWARDABLE)
                     && allowForwardable) {
-                bFlags[Krb5.TKT_OPTS_FORWARDABLE] = true;
+                List<String> sensitives = (List<String>)
+                        options.get(Option.SENSITIVE_ACCOUNTS);
+                if (sensitives != null && sensitives.contains(cname.toString())) {
+                    // Cannot make FORWARDABLE
+                } else {
+                    bFlags[Krb5.TKT_OPTS_FORWARDABLE] = true;
+                }
             }
             if (body.kdcOptions.get(KDCOptions.FORWARDED) ||
                     etp.flags.get(Krb5.TKT_OPTS_FORWARDED)) {
@@ -824,7 +834,8 @@ public class KDC {
                     t,
                     edata);
             System.out.println("     Return " + tgsRep.cname
-                    + " ticket for " + tgsRep.ticket.sname);
+                    + " ticket for " + tgsRep.ticket.sname + ", flags "
+                    + tFlags);
 
             DerOutputStream out = new DerOutputStream();
             out.write(DerValue.createTag(DerValue.TAG_APPLICATION,
@@ -869,7 +880,7 @@ public class KDC {
         try {
             System.out.println(realm + "> " + asReq.reqBody.cname +
                     " sends AS-REQ for " +
-                    service);
+                    service + ", " + asReq.reqBody.kdcOptions);
 
             KDCReqBody body = asReq.reqBody;
 
@@ -926,7 +937,13 @@ public class KDC {
             //body.from
             boolean[] bFlags = new boolean[Krb5.TKT_OPTS_MAX+1];
             if (body.kdcOptions.get(KDCOptions.FORWARDABLE)) {
-                bFlags[Krb5.TKT_OPTS_FORWARDABLE] = true;
+                List<String> sensitives = (List<String>)
+                        options.get(Option.SENSITIVE_ACCOUNTS);
+                if (sensitives != null && sensitives.contains(body.cname.toString())) {
+                    // Cannot make FORWARDABLE
+                } else {
+                    bFlags[Krb5.TKT_OPTS_FORWARDABLE] = true;
+                }
             }
             if (body.kdcOptions.get(KDCOptions.RENEWABLE)) {
                 bFlags[Krb5.TKT_OPTS_RENEWABLE] = true;
@@ -1102,7 +1119,8 @@ public class KDC {
                     edata);
 
             System.out.println("     Return " + asRep.cname
-                    + " ticket for " + asRep.ticket.sname);
+                    + " ticket for " + asRep.ticket.sname + ", flags "
+                    + tFlags);
 
             DerOutputStream out = new DerOutputStream();
             out.write(DerValue.createTag(DerValue.TAG_APPLICATION,
