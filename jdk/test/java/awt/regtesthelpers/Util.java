@@ -76,12 +76,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class Util {
     private Util() {} // this is a helper class with static methods :)
 
+    private volatile static Robot robot;
+
     /*
      * @throws RuntimeException when creation failed
      */
     public static Robot createRobot() {
         try {
-            return new Robot();
+            if (robot == null) {
+                robot = new Robot();
+            }
+            return robot;
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
@@ -200,7 +205,10 @@ public final class Util {
         return false;
     }
 
-    public static void waitForIdle(final Robot robot) {
+    public static void waitForIdle(Robot robot) {
+        if (robot == null) {
+            robot = createRobot();
+        }
         robot.waitForIdle();
     }
 

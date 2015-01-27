@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,20 +68,24 @@ public class Platform {
         return dataModel.equals("64");
     }
 
-    public static boolean isSolaris() {
-        return isOs("sunos");
+    public static boolean isAix() {
+        return isOs("aix");
     }
 
-    public static boolean isWindows() {
-        return isOs("win");
+    public static boolean isLinux() {
+        return isOs("linux");
     }
 
     public static boolean isOSX() {
         return isOs("mac");
     }
 
-    public static boolean isLinux() {
-        return isOs("linux");
+    public static boolean isSolaris() {
+        return isOs("sunos");
+    }
+
+    public static boolean isWindows() {
+        return isOs("win");
     }
 
     private static boolean isOs(String osname) {
@@ -140,7 +144,9 @@ public class Platform {
      */
     public static boolean shouldSAAttach() throws Exception {
 
-        if (isLinux()) {
+        if (isAix()) {
+            return false;   // SA not implemented.
+        } else if (isLinux()) {
             return canPtraceAttachLinux();
         } else if (isOSX()) {
             return canAttachOSX();

@@ -89,8 +89,8 @@ class BCEscapeAnalyzer::StateInfo {
 public:
   ArgumentMap *_vars;
   ArgumentMap *_stack;
-  short _stack_height;
-  short _max_stack;
+  int _stack_height;
+  int _max_stack;
   bool _initialized;
   ArgumentMap empty_map;
 

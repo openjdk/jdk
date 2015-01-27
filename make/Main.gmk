@@ -402,6 +402,8 @@ else
 
   verify-modules: exploded-image
 
+  test-make: clean-test-make
+
 endif
 
 ################################################################################
@@ -477,7 +479,7 @@ ALL_TARGETS += default all
 # file.
 
 CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
-    images make-support
+    images make-support test-make
 CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
 CLEAN_PHASES := gensrc java native include
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1360,7 +1360,10 @@ public abstract class ClassLoader {
             return null;
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            checkClassLoaderPermission(this, Reflection.getCallerClass());
+            // Check access to the parent class loader
+            // If the caller's class loader is same as this class loader,
+            // permission check is performed.
+            checkClassLoaderPermission(parent, Reflection.getCallerClass());
         }
         return parent;
     }
@@ -1503,6 +1506,11 @@ public abstract class ClassLoader {
         return caller.getClassLoader0();
     }
 
+    /*
+     * Checks RuntimePermission("getClassLoader") permission
+     * if caller's class loader is not null and caller's class loader
+     * is not the same as or an ancestor of the given cl argument.
+     */
     static void checkClassLoaderPermission(ClassLoader cl, Class<?> caller) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -1747,35 +1755,54 @@ public abstract class ClassLoader {
     private static String usr_paths[];
     private static String sys_paths[];
 
-    private static String[] initializePath(String propname) {
-        String ldpath = System.getProperty(propname, "");
-        String ps = File.pathSeparator;
-        int ldlen = ldpath.length();
-        int i, j, n;
-        // Count the separators in the path
-        i = ldpath.indexOf(ps);
-        n = 0;
-        while (i >= 0) {
-            n++;
-            i = ldpath.indexOf(ps, i + 1);
-        }
+    private static String[] initializePath(String propName) {
+        String ldPath = System.getProperty(propName, "");
+        int ldLen = ldPath.length();
+        char ps = File.pathSeparatorChar;
+        int psCount = 0;
 
-        // allocate the array of paths - n :'s = n + 1 path elements
-        String[] paths = new String[n + 1];
-
-        // Fill the array with paths from the ldpath
-        n = i = 0;
-        j = ldpath.indexOf(ps);
-        while (j >= 0) {
-            if (j - i > 0) {
-                paths[n++] = ldpath.substring(i, j);
-            } else if (j - i == 0) {
-                paths[n++] = ".";
+        if (ClassLoaderHelper.allowsQuotedPathElements &&
+                ldPath.indexOf('\"') >= 0) {
+            // First, remove quotes put around quoted parts of paths.
+            // Second, use a quotation mark as a new path separator.
+            // This will preserve any quoted old path separators.
+            char[] buf = new char[ldLen];
+            int bufLen = 0;
+            for (int i = 0; i < ldLen; ++i) {
+                char ch = ldPath.charAt(i);
+                if (ch == '\"') {
+                    while (++i < ldLen &&
+                            (ch = ldPath.charAt(i)) != '\"') {
+                        buf[bufLen++] = ch;
+                    }
+                } else {
+                    if (ch == ps) {
+                        psCount++;
+                        ch = '\"';
+                    }
+                    buf[bufLen++] = ch;
+                }
             }
-            i = j + 1;
-            j = ldpath.indexOf(ps, i);
+            ldPath = new String(buf, 0, bufLen);
+            ldLen = bufLen;
+            ps = '\"';
+        } else {
+            for (int i = ldPath.indexOf(ps); i >= 0;
+                    i = ldPath.indexOf(ps, i + 1)) {
+                psCount++;
+            }
         }
-        paths[n] = ldpath.substring(i, ldlen);
+
+        String[] paths = new String[psCount + 1];
+        int pathStart = 0;
+        for (int j = 0; j < psCount; ++j) {
+            int pathEnd = ldPath.indexOf(ps, pathStart);
+            paths[j] = (pathStart < pathEnd) ?
+                    ldPath.substring(pathStart, pathEnd) : ".";
+            pathStart = pathEnd + 1;
+        }
+        paths[psCount] = (pathStart < ldLen) ?
+                ldPath.substring(pathStart, ldLen) : ".";
         return paths;
     }
 

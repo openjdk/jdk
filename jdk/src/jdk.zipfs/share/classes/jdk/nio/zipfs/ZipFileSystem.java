@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 201, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ import java.util.zip.Deflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipException;
-import java.util.zip.ZipError;
 import static java.lang.Boolean.*;
 import static jdk.nio.zipfs.ZipConstants.*;
 import static jdk.nio.zipfs.ZipUtils.*;
@@ -119,7 +118,16 @@ class ZipFileSystem extends FileSystem {
         this.zc = ZipCoder.get(nameEncoding);
         this.defaultdir = new ZipPath(this, getBytes(defaultDir));
         this.ch = Files.newByteChannel(zfpath, READ);
-        this.cen = initCEN();
+        try {
+            this.cen = initCEN();
+        } catch (IOException x) {
+            try {
+                this.ch.close();
+            } catch (IOException xx) {
+                x.addSuppressed(xx);
+            }
+            throw x;
+        }
     }
 
     @Override
@@ -1058,12 +1066,15 @@ class ZipFileSystem extends FileSystem {
             int nlen   = CENNAM(cen, pos);
             int elen   = CENEXT(cen, pos);
             int clen   = CENCOM(cen, pos);
-            if ((CENFLG(cen, pos) & 1) != 0)
+            if ((CENFLG(cen, pos) & 1) != 0) {
                 zerror("invalid CEN header (encrypted entry)");
-            if (method != METHOD_STORED && method != METHOD_DEFLATED)
+            }
+            if (method != METHOD_STORED && method != METHOD_DEFLATED) {
                 zerror("invalid CEN header (unsupported compression method: " + method + ")");
-            if (pos + CENHDR + nlen > limit)
+            }
+            if (pos + CENHDR + nlen > limit) {
                 zerror("invalid CEN header (bad header size)");
+            }
             byte[] name = Arrays.copyOfRange(cen, pos + CENHDR, pos + CENHDR + nlen);
             IndexNode inode = new IndexNode(name, pos);
             inodes.put(inode, inode);
@@ -1533,6 +1544,7 @@ class ZipFileSystem extends FileSystem {
         private CRC32 crc;
         private Entry e;
         private long written;
+        private boolean isClosed = false;
 
         EntryOutputStream(Entry e, OutputStream os)
             throws IOException
@@ -1545,9 +1557,14 @@ class ZipFileSystem extends FileSystem {
         }
 
         @Override
-        public void write(byte b[], int off, int len) throws IOException {
+        public synchronized void write(byte b[], int off, int len)
+            throws IOException
+        {
             if (e.type != Entry.FILECH)    // only from sync
                 ensureOpen();
+            if (isClosed) {
+                throw new IOException("Stream closed");
+            }
             if (off < 0 || len < 0 || off > b.length - len) {
                 throw new IndexOutOfBoundsException();
             } else if (len == 0) {
@@ -1568,7 +1585,11 @@ class ZipFileSystem extends FileSystem {
         }
 
         @Override
-        public void close() throws IOException {
+        public synchronized void close() throws IOException {
+            if (isClosed) {
+                return;
+            }
+            isClosed = true;
             // TBD ensureOpen();
             switch (e.method) {
             case METHOD_DEFLATED:
@@ -1599,8 +1620,8 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
-    static void zerror(String msg) {
-        throw new ZipError(msg);
+    static void zerror(String msg) throws ZipException {
+        throw new ZipException(msg);
     }
 
     // Maxmum number of de/inflater we cache
