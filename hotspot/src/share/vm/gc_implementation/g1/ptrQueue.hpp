@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +65,18 @@ protected:
   Mutex* _lock;
 
   PtrQueueSet* qset() { return _qset; }
+  bool is_permanent() const { return _perm; }
+
+  // Process queue entries and release resources, if not permanent.
+  void flush_impl();
 
 public:
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
   PtrQueue(PtrQueueSet* qset, bool perm = false, bool active = false);
-  // Release any contained resources.
-  virtual void flush();
-  // Calls flush() when destroyed.
-  ~PtrQueue() { flush(); }
+
+  // Requires queue flushed or permanent.
+  ~PtrQueue();
 
   // Associate a lock with a ptr queue.
   void set_lock(Mutex* lock) { _lock = lock; }
