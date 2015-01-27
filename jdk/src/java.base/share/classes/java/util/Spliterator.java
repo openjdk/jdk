@@ -125,7 +125,7 @@ import java.util.function.LongConsumer;
  * are encountered.
  *
  * @apiNote
- * <p>Spliterators, like {@code Iterators}s, are for traversing the elements of
+ * <p>Spliterators, like {@code Iterator}s, are for traversing the elements of
  * a source.  The {@code Spliterator} API was designed to support efficient
  * parallel traversal in addition to sequential traversal, by supporting
  * decomposition as well as single-element iteration.  In addition, the

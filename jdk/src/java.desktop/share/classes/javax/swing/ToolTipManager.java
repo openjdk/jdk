@@ -28,6 +28,7 @@ package javax.swing;
 
 import java.awt.event.*;
 import java.awt.*;
+import java.util.Objects;
 
 /**
  * Manages all the <code>ToolTips</code> in the system.
@@ -476,8 +477,8 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
                             preferredLocation.equals(newPreferredLocation) :
                             (newPreferredLocation == null);
 
-                if (!sameComponent || !toolTipText.equals(newToolTipText) ||
-                         !sameLoc) {
+                if (!sameComponent || !Objects.equals(toolTipText, newToolTipText)
+                        || !sameLoc) {
                     toolTipText = newToolTipText;
                     preferredLocation = newPreferredLocation;
                     showTipWindow();
