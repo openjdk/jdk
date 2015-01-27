@@ -2951,10 +2951,6 @@ class CommandLineFlags {
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
                                                                             \
-  notproduct(intx, AssertRepeat, 1,                                         \
-          "number of times to evaluate expression in assert "               \
-          "(to estimate overhead); only works with -DUSE_REPEATED_ASSERTS") \
-                                                                            \
   notproduct(ccstrlist, SuppressErrorAt, "",                                \
           "List of assertions (file:line) to muzzle")                       \
                                                                             \
