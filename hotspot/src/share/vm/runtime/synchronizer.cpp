@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,18 +275,6 @@ void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
   ObjectSynchronizer::inflate(THREAD, obj())->enter(THREAD);
   THREAD->set_current_pending_monitor_is_from_java(true);
 }
-
-// NOTE: must use heavy weight monitor to handle jni monitor enter
-bool ObjectSynchronizer::jni_try_enter(Handle obj, Thread* THREAD) {
-  if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
-    assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
-  }
-
-  ObjectMonitor* monitor = ObjectSynchronizer::inflate_helper(obj());
-  return monitor->try_enter(THREAD);
-}
-
 
 // NOTE: must use heavy weight monitor to handle jni monitor exit
 void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,15 +600,6 @@ class G1PostBarrierStub: public CodeStub {
  private:
   LIR_Opr _addr;
   LIR_Opr _new_val;
-
-  static jbyte* _byte_map_base;
-  static jbyte* byte_map_base_slow();
-  static jbyte* byte_map_base() {
-    if (_byte_map_base == NULL) {
-      _byte_map_base = byte_map_base_slow();
-    }
-    return _byte_map_base;
-  }
 
  public:
   // addr (the address of the object head) and new_val must be registers.

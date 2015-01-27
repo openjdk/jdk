@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 package org.xml.sax.ptests;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
@@ -45,42 +44,43 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /**
  * Class containing the test cases for SAXParser API
  */
-public class XMLReaderTest {
+public class XMLReaderTest extends JAXPFileReadOnlyBaseTest {
+
     /**
      * XML namespaces.
      */
-    private static final String NAMESPACES =
-                "http://xml.org/sax/features/namespaces";
+    private static final String NAMESPACES
+            = "http://xml.org/sax/features/namespaces";
 
     /**
      * XML namespaces prefixes.
      */
-    private static final String NAMESPACE_PREFIXES =
-                "http://xml.org/sax/features/namespace-prefixes";
+    private static final String NAMESPACE_PREFIXES
+            = "http://xml.org/sax/features/namespace-prefixes";
 
     /**
      * A string intern name.
      */
-    private static final String STRING_INTERNING =
-                "http://xml.org/sax/features/string-interning";
+    private static final String STRING_INTERNING
+            = "http://xml.org/sax/features/string-interning";
 
     /**
      * Validation name.
      */
-    private static final String VALIDATION =
-                "http://xml.org/sax/features/validation";
+    private static final String VALIDATION
+            = "http://xml.org/sax/features/validation";
 
     /**
      * A general external entities name
      */
-    private static final String EXTERNAL_G_ENTITIES =
-                "http://xml.org/sax/features/external-general-entities";
+    private static final String EXTERNAL_G_ENTITIES
+            = "http://xml.org/sax/features/external-general-entities";
 
     /**
      * A external parameter entities name
      */
-    private static final String EXTERNAL_P_ENTITIES =
-                "http://xml.org/sax/features/external-parameter-entities";
+    private static final String EXTERNAL_P_ENTITIES
+            = "http://xml.org/sax/features/external-parameter-entities";
 
     /**
      * XML DOM node name.
@@ -95,526 +95,444 @@ public class XMLReaderTest {
     /**
      * Declare handler name
      */
-    private static final String DECL_HANDLER =
-                        "http://xml.org/sax/properties/declaration-handler";
+    private static final String DECL_HANDLER
+            = "http://xml.org/sax/properties/declaration-handler";
 
     /**
      * Lexical handler name
      */
-    private static final String LEXICAL_HANDLER =
-                        "http://xml.org/sax/properties/lexical-handler";
+    private static final String LEXICAL_HANDLER
+            = "http://xml.org/sax/properties/lexical-handler";
 
     /**
      * According to the SAX2 specs, All XMLReaders are required to recognize the
-     * http://xml.org/sax/features/namespaces feature names.
-     * This test case is to test this.
+     * http://xml.org/sax/features/namespaces feature names. This test case is
+     * to test this.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureNS01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertFalse(xmlReader.getFeature(NAMESPACES));
-        } catch (ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void featureNS01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertFalse(xmlReader.getFeature(NAMESPACES));
     }
 
     /**
      * According to the SAX2 specs, All XMLReaders are required to recognize the
-     * http://xml.org/sax/features/namespaces feature names.
-     * This test case is to test this.
+     * http://xml.org/sax/features/namespaces feature names. This test case is
+     * to test this.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureNS02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertTrue(xmlReader.getFeature(NAMESPACES));
-        } catch (ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void featureNS02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertTrue(xmlReader.getFeature(NAMESPACES));
     }
 
     /**
      * Obtain http://xml.org/sax/features/namespaces feature name after it's
      * just set. Expect it's same as set value.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureNS03() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setFeature(NAMESPACES, true);
-            assertTrue(xmlReader.getFeature(NAMESPACES));
-            xmlReader.setFeature(NAMESPACES, false);
-            assertFalse(xmlReader.getFeature(NAMESPACES));
-        } catch (ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void featureNS03() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.setFeature(NAMESPACES, true);
+        assertTrue(xmlReader.getFeature(NAMESPACES));
+        xmlReader.setFeature(NAMESPACES, false);
+        assertFalse(xmlReader.getFeature(NAMESPACES));
     }
 
     /**
      * According to the SAX2 specs, All XMLReaders are required to recognize the
-     * http://xml.org/sax/features/namespace-prefixes feature names.
-     * This test case is to test this.
+     * http://xml.org/sax/features/namespace-prefixes feature names. This test
+     * case is to test this.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureNSP01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertTrue(xmlReader.getFeature(NAMESPACE_PREFIXES));
-
-        } catch (ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void featureNSP01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertTrue(xmlReader.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * According to the SAX2 specs, All XMLReaders are required to recognize the
-     * http://xml.org/sax/features/namespace-prefixes feature names.
-     * This test case is to test this.
+     * http://xml.org/sax/features/namespace-prefixes feature names. This test
+     * case is to test this.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureNSP02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertFalse(xmlReader.getFeature(NAMESPACE_PREFIXES));
-        } catch (ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void featureNSP02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertFalse(xmlReader.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * Obtain http://xml.org/sax/features/namespaces-prefixes feature name after
      * it's just set. Expect it's same as set value.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureNSP03() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setFeature(NAMESPACE_PREFIXES, true);
-            assertTrue(xmlReader.getFeature(NAMESPACE_PREFIXES));
-            xmlReader.setFeature(NAMESPACE_PREFIXES, false);
-            assertFalse(xmlReader.getFeature(NAMESPACE_PREFIXES));
-        } catch (ParserConfigurationException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void featureNSP03() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.setFeature(NAMESPACE_PREFIXES, true);
+        assertTrue(xmlReader.getFeature(NAMESPACE_PREFIXES));
+        xmlReader.setFeature(NAMESPACE_PREFIXES, false);
+        assertFalse(xmlReader.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * getFeature returns true if a feature has not been preset when namespace
      * awareness is set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureSI01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertTrue(xmlReader.getFeature(STRING_INTERNING));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void featureSI01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertTrue(xmlReader.getFeature(STRING_INTERNING));
     }
 
     /**
      * getFeature with validation feature name returns the value that
      * setValidation set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureV01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            assertFalse(spf.newSAXParser().getXMLReader().getFeature(VALIDATION));
-            spf.setValidating(true);
-            assertTrue(spf.newSAXParser().getXMLReader().getFeature(VALIDATION));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void featureV01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        assertFalse(spf.newSAXParser().getXMLReader().getFeature(VALIDATION));
+        spf.setValidating(true);
+        assertTrue(spf.newSAXParser().getXMLReader().getFeature(VALIDATION));
     }
 
     /**
-     * getFeature returns the value that a feature has been preset as  when
+     * getFeature returns the value that a feature has been preset as when
      * namespace awareness is set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureV02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
+    public void featureV02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
 
-            xmlReader.setFeature(VALIDATION, true);
-            assertTrue(xmlReader.getFeature(VALIDATION));
-
-            xmlReader.setFeature(VALIDATION, false);
-            assertFalse(xmlReader.getFeature(VALIDATION));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+        xmlReader.setFeature(VALIDATION, true);
+        assertTrue(xmlReader.getFeature(VALIDATION));
+        xmlReader.setFeature(VALIDATION, false);
+        assertFalse(xmlReader.getFeature(VALIDATION));
     }
 
     /**
      * getFeature returns true if a feature has not been preset when namespace
      * awareness is set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureEGE01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertTrue(xmlReader.getFeature(EXTERNAL_G_ENTITIES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void featureEGE01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertTrue(xmlReader.getFeature(EXTERNAL_G_ENTITIES));
     }
 
     /**
-     * getFeature returns false if a feature has been preset as false  when
+     * getFeature returns false if a feature has been preset as false when
      * namespace awareness is set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureEGE02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setFeature(EXTERNAL_G_ENTITIES, false);
-            assertFalse(xmlReader.getFeature(EXTERNAL_G_ENTITIES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void featureEGE02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.setFeature(EXTERNAL_G_ENTITIES, false);
+        assertFalse(xmlReader.getFeature(EXTERNAL_G_ENTITIES));
     }
 
     /**
      * getFeature returns true if a feature has not been preset when namespace
      * awareness is set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureEPE01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertTrue(xmlReader.getFeature(EXTERNAL_P_ENTITIES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void featureEPE01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertTrue(xmlReader.getFeature(EXTERNAL_P_ENTITIES));
     }
 
     /**
-     * getFeature returns false if a feature has been preset as false  when
+     * getFeature returns false if a feature has been preset as false when
      * namespace awareness is set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void featureEPE02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-            xmlReader.setFeature(EXTERNAL_P_ENTITIES, false);
-            assertFalse(xmlReader.getFeature(EXTERNAL_P_ENTITIES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void featureEPE02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.setFeature(EXTERNAL_P_ENTITIES, false);
+        assertFalse(xmlReader.getFeature(EXTERNAL_P_ENTITIES));
     }
 
     /**
      * getFeature with a unknown feature name throws SAXNotRecognizedException.
-     * @throws SAXNotRecognizedException If the feature value can't be assigned
-     *                                   or retrieved.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void featureNE01() throws SAXNotRecognizedException  {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            boolean noMeaningFeature = xmlReader.getFeature("no-meaning-feature");
-        } catch(SAXNotRecognizedException ex) {
-            throw ex;
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void featureNE01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        spf.newSAXParser().getXMLReader().getFeature("no-meaning-feature");
     }
 
     /**
      * No exception expected when set entity resolver as simple entity resolver.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void entity01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            XMLFilterImpl xmlFilter = new XMLFilterImpl();
-            xmlReader.setEntityResolver(xmlFilter);
-            assertNotNull(xmlReader.getEntityResolver());
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void entity01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+        xmlReader.setEntityResolver(xmlFilter);
+        assertEquals(xmlReader.getEntityResolver(), xmlFilter);
     }
 
     /**
      * No NPE expected when set entity resolver as null.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void entity02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setEntityResolver(null);
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void entity02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        spf.newSAXParser().getXMLReader().setEntityResolver(null);
     }
 
     /**
      * No exception expected when set DTD handler as simple DTD handler.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void dtdhandler01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            XMLFilterImpl xmlFilter = new XMLFilterImpl();
-            xmlReader.setDTDHandler(xmlFilter);
-            assertNotNull(xmlReader.getDTDHandler());
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void dtdhandler01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+        xmlReader.setDTDHandler(xmlFilter);
+        assertEquals(xmlReader.getDTDHandler(), xmlFilter);
     }
 
     /**
      * No NPE expected when set DTD handler as null.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void dtdhandler02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setDTDHandler(null);
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void dtdhandler02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        spf.newSAXParser().getXMLReader().setDTDHandler(null);
     }
 
     /**
      * No exception expected when set content handler as simple content handler.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void contenthandler01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            XMLFilterImpl xmlFilter = new XMLFilterImpl();
-            xmlReader.setContentHandler(xmlFilter);
-            assertNotNull(xmlReader.getContentHandler());
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void contenthandler01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+        xmlReader.setContentHandler(xmlFilter);
+        assertEquals(xmlReader.getContentHandler(), xmlFilter);
     }
 
     /**
      * No NPE expected when set content handler as null.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void contenthandler02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setContentHandler(null);
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void contenthandler02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        spf.newSAXParser().getXMLReader().setContentHandler(null);
     }
 
     /**
      * No exception expected when set content handler as simple error handler.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void errorhandler01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setErrorHandler(new XMLFilterImpl());
-            assertNotNull(xmlReader.getErrorHandler());
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void errorhandler01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.setErrorHandler(new XMLFilterImpl());
+        assertNotNull(xmlReader.getErrorHandler());
     }
 
     /**
      * No NPE expected when set error handler as null.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void errorhandler02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.setErrorHandler(null);
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void errorhandler02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.setErrorHandler(null);
     }
 
     /**
      * Parse a null input source throw NPE.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void parse01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.parse((InputSource)null);
-        } catch (SAXException | ParserConfigurationException | IOException ex) {
-            failUnexpected(ex);
-        }
+    public void parse01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        spf.newSAXParser().getXMLReader().parse((InputSource) null);
     }
 
     /**
      * Unit test for parse a error-formatted file. SAXException is expected.
-     * @throws org.xml.sax.SAXException parsing failed.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXException.class)
-    public void parse02() throws SAXException {
-        try (FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")){
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class)
+    public void parse02() throws Exception {
+        try (FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            InputSource is = new InputSource(fis);
-            xmlReader.parse(is);
-        } catch (ParserConfigurationException | IOException ex) {
-            failUnexpected(ex);
+            spf.newSAXParser().getXMLReader().parse(new InputSource(fis));
         }
     }
 
     /**
      * Unit test for parse a well-formatted file. No exception is expected.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void parse03(){
+    @Test(groups = {"readLocalFiles"})
+    public void parse03() throws Exception {
         try (FileInputStream fis = new FileInputStream(XML_DIR + "correct2.xml")) {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setNamespaceAware(true);
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            InputSource is = new InputSource(fis);
-            xmlReader.parse(is);
-        } catch (IOException | SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
+            spf.newSAXParser().getXMLReader().parse(new InputSource(fis));
         }
     }
 
     /**
-     * Modified by IBM
-     * Xerces does not support this feature and it is not mandatory
-     * @throws org.xml.sax.SAXNotSupportedException
+     * Modified by IBM Xerces does not support this feature and it is not
+     * mandatory.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = SAXNotSupportedException.class)
-    public void xrProperty01() throws SAXNotSupportedException  {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            xmlReader.getProperty(XML_STRING);
-        } catch(SAXNotSupportedException ex) {
-            throw ex;
-        } catch (SAXException | ParserConfigurationException ex){
-            failUnexpected(ex);
-        }
+    public void xrProperty01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.getProperty(XML_STRING);
     }
 
     /**
      * SAXNotSupportedException thrown if property name is known but no value
      * assigned to this property.
-     * @throws org.xml.sax.SAXNotSupportedException when XMLReader recognizes
-     * the property name but cannot determine its value at this time.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = SAXNotSupportedException.class)
-    public void xrProperty02() throws SAXNotSupportedException {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertNull(xmlReader.getProperty(DOM_NODE));
-        } catch (SAXNotSupportedException ex) {
-            throw ex;
-        } catch (SAXException | ParserConfigurationException ex){
-            failUnexpected(ex);
-        }
+    public void xrProperty02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertNull(xmlReader.getProperty(DOM_NODE));
     }
-
 
     /**
      * XMLReader.getProperty returns null if LEXICAL_HANDLER wasn't set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void xrProperty03() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertNull(xmlReader.getProperty(LEXICAL_HANDLER));
-        } catch (SAXException | ParserConfigurationException ex){
-            failUnexpected(ex);
-        }
+    public void xrProperty03() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertNull(xmlReader.getProperty(LEXICAL_HANDLER));
     }
 
     /**
      * XMLReader.getProperty returns null if DECL_HANDLER wasn't set.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void xrProperty04() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            assertNull(xmlReader.getProperty(DECL_HANDLER));
-        } catch (SAXException | ParserConfigurationException ex){
-            failUnexpected(ex);
-        }
+    public void xrProperty04() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        assertNull(xmlReader.getProperty(DECL_HANDLER));
     }
 
     /**
      * XMLReader.setProperty/getProperty for LEXICAL_HANDLER unit test.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void xrProperty05() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            MyLexicalHandler myLexicalHandler = new MyLexicalHandler();
-            xmlReader.setProperty(LEXICAL_HANDLER, myLexicalHandler);
-            assertNotNull(xmlReader.getProperty(LEXICAL_HANDLER));
-        } catch (SAXException | ParserConfigurationException ex){
-            failUnexpected(ex);
-        }
+    public void xrProperty05() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        MyLexicalHandler myLexicalHandler = new MyLexicalHandler();
+        xmlReader.setProperty(LEXICAL_HANDLER, myLexicalHandler);
+        assertNotNull(xmlReader.getProperty(LEXICAL_HANDLER));
     }
 
     /**
      * XMLReader.setProperty/getProperty for DECL_HANDLER unit test.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void xrProperty06() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            XMLReader xmlReader =  spf.newSAXParser().getXMLReader();
-            MyDeclHandler myDeclHandler = new MyDeclHandler();
-            xmlReader.setProperty(DECL_HANDLER, myDeclHandler);
-            assertNotNull(xmlReader.getProperty(DECL_HANDLER));
-        } catch (ParserConfigurationException | SAXException ex){
-            failUnexpected(ex);
-        }
+    public void xrProperty06() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        MyDeclHandler myDeclHandler = new MyDeclHandler();
+        xmlReader.setProperty(DECL_HANDLER, myDeclHandler);
+        assertNotNull(xmlReader.getProperty(DECL_HANDLER));
     }
 }
 
@@ -622,6 +540,7 @@ public class XMLReaderTest {
  * Simple LexicalHandler that skips every lexical event.
  */
 class MyLexicalHandler implements LexicalHandler {
+
     /**
      * Report an XML comment anywhere in the document.
      *
@@ -667,8 +586,10 @@ class MyLexicalHandler implements LexicalHandler {
      * Report the start of DTD declarations, if any.
      *
      * @param name The document type name.
-     * @param publicId The declared public identifier for the external DTD subset.
-     * @param systemId The declared system identifier for the external DTD subset.
+     * @param publicId The declared public identifier for the external DTD
+     * subset.
+     * @param systemId The declared system identifier for the external DTD
+     * subset.
      */
     @Override
     public void startDTD(String name, String publicId, String systemId) {
@@ -688,16 +609,17 @@ class MyLexicalHandler implements LexicalHandler {
  * Simple DeclHandler that skips every DTD declaration event.
  */
 class MyDeclHandler implements DeclHandler {
+
     /**
      * Report an attribute type declaration.
+     *
      * @param eName The name of the associated element.
      * @param aName The name of the attribute.
      * @param type A string representing the attribute type.
      * @param mode A string representing the attribute defaulting mode
-     *        ("#IMPLIED", "#REQUIRED", or "#FIXED") or null if
-     *        none of these applies.
-     * @param value A string representing the attribute's default value,
-     *        or null if there is none.
+     * ("#IMPLIED", "#REQUIRED", or "#FIXED") or null if none of these applies.
+     * @param value A string representing the attribute's default value, or null
+     * if there is none.
      */
     @Override
     public void attributeDecl(String eName, String aName, String type,
@@ -706,6 +628,7 @@ class MyDeclHandler implements DeclHandler {
 
     /**
      * Report an element type declaration.
+     *
      * @param name The element type name.
      * @param model The content model as a normalized string.
      */
@@ -715,10 +638,11 @@ class MyDeclHandler implements DeclHandler {
 
     /**
      * Report a parsed external entity declaration.
-     * @param name The name of the entity.  If it is a parameter
-     *        entity, the name will begin with '%'.
-     * @param publicId The entity's public identifier, or null if none
-     *        was given.
+     *
+     * @param name The name of the entity. If it is a parameter entity, the name
+     * will begin with '%'.
+     * @param publicId The entity's public identifier, or null if none was
+     * given.
      * @param systemId The entity's system identifier.
      */
     @Override
@@ -728,8 +652,9 @@ class MyDeclHandler implements DeclHandler {
 
     /**
      * Report an internal entity declaration.
-     * @param name The name of the entity.  If it is a parameter
-     *        entity, the name will begin with '%'.
+     *
+     * @param name The name of the entity. If it is a parameter entity, the name
+     * will begin with '%'.
      * @param value The replacement text of the entity.
      */
     @Override

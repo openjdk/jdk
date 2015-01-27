@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,16 @@ import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-import static org.xml.sax.ptests.SAXTestConst.CLASS_DIR;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
@@ -48,12 +43,14 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
  * Entity resolver should be invoked in XML parse. This test verifies parsing
  * process by checking the output with golden file.
  */
-public class ResolverTest {
+public class ResolverTest extends JAXPFileBaseTest {
     /**
      * Unit test for entityResolver setter.
+     *
+     * @throws Exception If any errors occur.
      */
-    public void testResolver() {
-        String outputFile = CLASS_DIR + "EntityResolver.out";
+    public void testResolver() throws Exception {
+        String outputFile = USER_DIR + "EntityResolver.out";
         String goldFile = GOLDEN_DIR + "EntityResolverGF.out";
         String xmlFile = XML_DIR + "publish.xml";
 
@@ -64,23 +61,8 @@ public class ResolverTest {
             xmlReader.setEntityResolver(eResolver);
             InputSource is = new InputSource(instream);
             xmlReader.parse(is);
-        } catch(IOException | SAXException | ParserConfigurationException ex ) {
-            failUnexpected(ex);
         }
-        // Need close the output file before we compare it with golden file.
-        try {
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (IOException ex) {
-            failUnexpected(ex);
-        } finally {
-            try {
-                Path outputPath = Paths.get(outputFile);
-                if(Files.exists(outputPath))
-                    Files.delete(outputPath);
-            } catch (IOException ex) {
-                failCleanup(ex, outputFile);
-            }
-        }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
 

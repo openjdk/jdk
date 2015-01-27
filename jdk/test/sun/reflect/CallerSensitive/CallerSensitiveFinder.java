@@ -26,20 +26,22 @@ import com.sun.tools.jdeps.ClassFileReader;
 import static com.sun.tools.classfile.ConstantPool.*;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Stream;
 
 /*
  * @test
@@ -52,8 +54,10 @@ import java.util.concurrent.FutureTask;
 public class CallerSensitiveFinder {
     private static int numThreads = 3;
     private static boolean verbose = false;
+    private final ExecutorService pool;
+
     public static void main(String[] args) throws Exception {
-        List<Path> classes = new ArrayList<>();
+        Stream<Path> classes = null;
         String testclasses = System.getProperty("test.classes", ".");
         int i = 0;
         while (i < args.length) {
@@ -65,25 +69,30 @@ public class CallerSensitiveFinder {
                 if (!p.toFile().exists()) {
                     throw new IllegalArgumentException(arg + " does not exist");
                 }
-                classes.add(p);
+                classes = Stream.of(p);
             }
         }
-        if (classes.isEmpty()) {
-            classes.addAll(PlatformClassPath.getJREClasses());
-        }
-        CallerSensitiveFinder csfinder = new CallerSensitiveFinder();
 
+        if (classes == null) {
+            classes = getPlatformClasses();
+        }
+
+        CallerSensitiveFinder csfinder = new CallerSensitiveFinder();
         List<String> errors = csfinder.run(classes);
+
         if (!errors.isEmpty()) {
             throw new RuntimeException(errors.size() +
                     " caller-sensitive methods are missing @CallerSensitive annotation");
         }
     }
 
-    private final List<String> csMethodsMissingAnnotation = new ArrayList<>();
+    private final List<String> csMethodsMissingAnnotation =
+            Collections.synchronizedList(new ArrayList<>());
     private final ReferenceFinder finder;
     public CallerSensitiveFinder() {
         this.finder = new ReferenceFinder(getFilter(), getVisitor());
+        pool = Executors.newFixedThreadPool(numThreads);
+
     }
 
     private ReferenceFinder.Filter getFilter() {
@@ -123,11 +132,17 @@ public class CallerSensitiveFinder {
         };
     }
 
-    public List<String> run(List<Path> classes) throws IOException, InterruptedException,
+    public List<String> run(Stream<Path> classes)throws IOException, InterruptedException,
             ExecutionException, ConstantPoolException
     {
-        ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-        for (Path path : classes) {
+        classes.forEach(this::processPath);
+        waitForCompletion();
+        pool.shutdown();
+        return csMethodsMissingAnnotation;
+    }
+
+    void processPath(Path path) {
+        try {
             ClassFileReader reader = ClassFileReader.newInstance(path);
             for (ClassFile cf : reader.getClassFiles()) {
                 String classFileName = cf.getName();
@@ -137,10 +152,11 @@ public class CallerSensitiveFinder {
                 //      - visit and find method references matching the given method name
                 pool.submit(getTask(cf));
             }
+        } catch (IOException x) {
+            throw new UncheckedIOException(x);
+        } catch (ConstantPoolException x) {
+            throw new RuntimeException(x);
         }
-        waitForCompletion();
-        pool.shutdown();
-        return csMethodsMissingAnnotation;
     }
 
     private static final String CALLER_SENSITIVE_ANNOTATION = "Lsun/reflect/CallerSensitive;";
@@ -178,61 +194,34 @@ public class CallerSensitiveFinder {
         for (FutureTask<Void> t : tasks) {
             t.get();
         }
+        if (tasks.isEmpty()) {
+            throw new RuntimeException("No classes found, or specified.");
+        }
         System.out.println("Parsed " + tasks.size() + " classfiles");
     }
 
-    static class PlatformClassPath {
-        static List<Path> getJREClasses() throws IOException {
-            List<Path> result = new ArrayList<Path>();
-            Path home = Paths.get(System.getProperty("java.home"));
+    static Stream<Path> getPlatformClasses() throws IOException {
+        Path home = Paths.get(System.getProperty("java.home"));
 
-            if (home.endsWith("jre")) {
-                // jar files in <javahome>/jre/lib
-                // skip <javahome>/lib
-                result.addAll(addJarFiles(home.resolve("lib")));
-            } else if (home.resolve("lib").toFile().exists()) {
-                // either a JRE or a jdk build image
-                File classes = home.resolve("classes").toFile();
-                if (classes.exists() && classes.isDirectory()) {
-                    // jdk build outputdir
-                    result.add(classes.toPath());
-                }
-                // add other JAR files
-                result.addAll(addJarFiles(home.resolve("lib")));
-            } else {
-                throw new RuntimeException("\"" + home + "\" not a JDK home");
-            }
-            return result;
+        // Either an exploded build or an image.
+        File classes = home.resolve("modules").toFile();
+        if (classes.isDirectory()) {
+            return Stream.of(classes.toPath());
+        } else {
+            return jrtPaths();
         }
+    }
 
-        static List<Path> addJarFiles(final Path root) throws IOException {
-            final List<Path> result = new ArrayList<Path>();
-            final Path ext = root.resolve("ext");
-            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                        throws IOException {
-                    if (dir.equals(root) || dir.equals(ext)) {
-                        return FileVisitResult.CONTINUE;
-                    } else {
-                        // skip other cobundled JAR files
-                        return FileVisitResult.SKIP_SUBTREE;
-                    }
-                }
+    static Stream<Path> jrtPaths() {
+        FileSystem jrt = FileSystems.getFileSystem(URI.create("jrt:/"));
+        Path root = jrt.getPath("/");
 
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    File f = file.toFile();
-                    String fn = f.getName();
-                    // parse alt-rt.jar as well
-                    if (fn.endsWith(".jar") && !fn.equals("jfxrt.jar")) {
-                        result.add(file);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-            return result;
+        try {
+            return Files.walk(root)
+                    .filter(p -> p.getNameCount() > 1)
+                    .filter(p -> p.toString().endsWith(".class"));
+        } catch (IOException x) {
+            throw new UncheckedIOException(x);
         }
     }
 }

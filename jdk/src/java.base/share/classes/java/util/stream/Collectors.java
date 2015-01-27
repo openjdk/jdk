@@ -990,7 +990,7 @@ public final class Collectors {
      * function.
      *
      * <p>There are no guarantees on the type, mutability, or serializability
-     * of the {@code Map} or {@code List} objects returned, or of the
+     * of the {@code ConcurrentMap} or {@code List} objects returned, or of the
      * thread-safety of the {@code List} objects returned.
      * @implSpec
      * This produces a result similar to:
@@ -1027,6 +1027,9 @@ public final class Collectors {
      * The downstream collector operates on elements of type {@code T} and
      * produces a result of type {@code D}. The resulting collector produces a
      * {@code Map<K, D>}.
+     *
+     * <p>There are no guarantees on the type, mutability, or serializability
+     * of the {@code ConcurrentMap} returned.
      *
      * <p>For example, to compute the set of last names of people in each city,
      * where the city names are sorted:
@@ -1143,7 +1146,8 @@ public final class Collectors {
      * {@code Map<Boolean, List<T>>}.
      *
      * There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code Map} returned.
+     * serializability, or thread-safety of the {@code Map} or {@code List}
+     * returned.
      *
      * @param <T> the type of the input elements
      * @param predicate a predicate used for classifying input elements
@@ -1212,6 +1216,9 @@ public final class Collectors {
      * may have duplicates, use {@link #toMap(Function, Function, BinaryOperator)}
      * instead.
      *
+     * <p>There are no guarantees on the type, mutability, serializability,
+     * or thread-safety of the {@code Map} returned.
+     *
      * @apiNote
      * It is common for either the key or the value to be the input elements.
      * In this case, the utility method
@@ -1270,6 +1277,9 @@ public final class Collectors {
      * keys contains duplicates (according to {@link Object#equals(Object)}),
      * the value mapping function is applied to each equal element, and the
      * results are merged using the provided merging function.
+     *
+     * <p>There are no guarantees on the type, mutability, serializability,
+     * or thread-safety of the {@code Map} returned.
      *
      * @apiNote
      * There are multiple ways to deal with collisions between multiple elements
@@ -1382,6 +1392,9 @@ public final class Collectors {
      * may have duplicates, use
      * {@link #toConcurrentMap(Function, Function, BinaryOperator)} instead.
      *
+     * <p>There are no guarantees on the type, mutability, or serializability
+     * of the {@code ConcurrentMap} returned.
+     *
      * @apiNote
      * It is common for either the key or the value to be the input elements.
      * In this case, the utility method
@@ -1435,6 +1448,9 @@ public final class Collectors {
      * <p>If the mapped keys contains duplicates (according to {@link Object#equals(Object)}),
      * the value mapping function is applied to each equal element, and the
      * results are merged using the provided merging function.
+     *
+     * <p>There are no guarantees on the type, mutability, or serializability
+     * of the {@code ConcurrentMap} returned.
      *
      * @apiNote
      * There are multiple ways to deal with collisions between multiple elements
