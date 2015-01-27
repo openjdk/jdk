@@ -147,19 +147,12 @@ public class ProviderImpl extends Provider {
     }
 
     public EndpointReference readEndpointReference(final Source eprInfoset) {
-        // EPR constructors are private, so we need privilege escalation.
-        // this unmarshalling can only access instances of a fixed, known set of classes,
-        // so doing that shouldn't introduce security vulnerability.
-        return AccessController.doPrivileged(new PrivilegedAction<EndpointReference>() {
-            public EndpointReference run() {
-                try {
-                    Unmarshaller unmarshaller = eprjc.get().createUnmarshaller();
-                    return (EndpointReference) unmarshaller.unmarshal(eprInfoset);
-                } catch (JAXBException e) {
-                    throw new WebServiceException("Error creating Marshaller or marshalling.", e);
-                }
-            }
-        });
+        try {
+            Unmarshaller unmarshaller = eprjc.get().createUnmarshaller();
+            return (EndpointReference) unmarshaller.unmarshal(eprInfoset);
+        } catch (JAXBException e) {
+            throw new WebServiceException("Error creating Marshaller or marshalling.", e);
+        }
     }
 
     public <T> T getPort(EndpointReference endpointReference, Class<T> clazz, WebServiceFeature... webServiceFeatures) {
