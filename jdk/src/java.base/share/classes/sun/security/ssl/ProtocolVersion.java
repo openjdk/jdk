@@ -25,6 +25,9 @@
 
 package sun.security.ssl;
 
+import java.util.*;
+import java.security.CryptoPrimitive;
+
 /**
  * Type safe enum for an SSL/TLS protocol version. Instances are obtained
  * using the static factory methods or by referencing the static members
@@ -86,6 +89,11 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     // Default version for hello messages (SSLv2Hello)
     final static ProtocolVersion DEFAULT_HELLO = FIPS ? TLS10 : SSL30;
 
+    // Available protocols
+    //
+    // Including all supported protocols except the disabled ones.
+    final static Set<ProtocolVersion> availableProtocols;
+
     // version in 16 bit MSB format as it appears in records and
     // messages, i.e. 0x0301 for TLS 1.0
     public final int v;
@@ -95,6 +103,25 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
 
     // name used in JSSE (e.g. TLSv1 for TLS 1.0)
     final String name;
+
+    // Initialize the available protocols.
+    static {
+        Set<ProtocolVersion> protocols = new HashSet<>(5);
+
+        ProtocolVersion[] pvs = new ProtocolVersion[] {
+                SSL20Hello, SSL30, TLS10, TLS11, TLS12};
+        EnumSet<CryptoPrimitive> cryptoPrimitives =
+            EnumSet.<CryptoPrimitive>of(CryptoPrimitive.KEY_AGREEMENT);
+        for (ProtocolVersion p : pvs) {
+            if (SSLAlgorithmConstraints.DEFAULT_SSL_ONLY.permits(
+                    cryptoPrimitives, p.name, null)) {
+                protocols.add(p);
+            }
+        }
+
+        availableProtocols =
+                Collections.<ProtocolVersion>unmodifiableSet(protocols);
+    }
 
     // private
     private ProtocolVersion(int v, String name) {

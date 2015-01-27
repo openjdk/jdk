@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.nio.channels.*;
 import java.util.*;
 import java.net.*;
 import javax.net.ssl.*;
+import java.security.Security;
 
 public class SSLSocketExplorer {
 
@@ -224,6 +225,10 @@ public class SSLSocketExplorer {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +
                 "/" + keyStoreFile;

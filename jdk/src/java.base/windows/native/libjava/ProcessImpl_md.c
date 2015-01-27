@@ -283,14 +283,10 @@ static jlong processCreate(
         FALSE, FALSE, FALSE,
         FALSE, FALSE, FALSE};
 
-    {
-        /* Extraction of current process standard IOE handles */
-        DWORD idsIOE[3] = {STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE};
-        int i;
-        for (i = 0; i < 3; ++i)
-            /* Should not be closed by CloseHandle! */
-            stdIOE[i] = GetStdHandle(idsIOE[i]);
-    }
+    /* These three should not be closed by CloseHandle! */
+    stdIOE[0] = GetStdHandle(STD_INPUT_HANDLE);
+    stdIOE[1] = GetStdHandle(STD_OUTPUT_HANDLE);
+    stdIOE[2] = GetStdHandle(STD_ERROR_HANDLE);
 
     prepareIOEHandleState(stdIOE, inherit);
     {
@@ -319,11 +315,16 @@ static jlong processCreate(
 
                 if (success) {
                     PROCESS_INFORMATION pi;
-                    DWORD processFlag = CREATE_UNICODE_ENVIRONMENT;
+                    DWORD processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
 
-                    /* Suppress popping-up of a console window for non-console applications */
-                    if (GetConsoleWindow() == NULL)
-                        processFlag |= CREATE_NO_WINDOW;
+                    /* If the standard I/O is inherited, CREATE_NO_WINDOW must not be used. */
+                    if (GetConsoleWindow() != NULL &&
+                        (si.hStdInput  == stdIOE[0] ||
+                         si.hStdOutput == stdIOE[1] ||
+                         si.hStdError  == (redirectErrorStream ? stdIOE[1] : stdIOE[2])))
+                    {
+                        processFlag &= ~CREATE_NO_WINDOW;
+                    }
 
                     si.dwFlags = STARTF_USESTDHANDLES;
                     if (!CreateProcessW(
