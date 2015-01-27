@@ -3184,7 +3184,24 @@ void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
     jmp(done);
   } else {
     // Stack: X Y
-    Label x_negative, y_odd;
+    Label x_negative, y_not_2;
+
+    static double two = 2.0;
+    ExternalAddress two_addr((address)&two);
+
+    // constant maybe too far on 64 bit
+    lea(tmp2, two_addr);
+    fld_d(Address(tmp2, 0));    // Stack: 2 X Y
+    fcmp(tmp, 2, true, false);  // Stack: X Y
+    jcc(Assembler::parity, y_not_2);
+    jcc(Assembler::notEqual, y_not_2);
+
+    fxch(); fpop();             // Stack: X
+    fmul(0);                    // Stack: X*X
+
+    jmp(done);
+
+    bind(y_not_2);
 
     fldz();                     // Stack: 0 X Y
     fcmp(tmp, 1, true, false);  // Stack: X Y
