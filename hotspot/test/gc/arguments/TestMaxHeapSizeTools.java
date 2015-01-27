@@ -112,7 +112,7 @@ class TestMaxHeapSizeTools {
   }
 
   private static void checkInvalidMinInitialHeapCombinations(String gcflag) throws Exception {
-    expectError(new String[] { gcflag, "-Xms8M", "-XX:InitialHeapSize=4M", "-version" });
+    expectError(new String[] { gcflag, "-Xms64M", "-XX:InitialHeapSize=32M", "-version" });
   }
 
   private static void checkValidMinInitialHeapCombinations(String gcflag) throws Exception {

@@ -243,6 +243,9 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 # 8062758
 java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 
+# 8026393
+sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      generic-all
+
 ############################################################################
 
 # jdk_sound

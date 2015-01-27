@@ -63,6 +63,8 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -84,12 +86,16 @@ public class XmlUtil {
 
     private static final Logger LOGGER = Logger.getLogger(XmlUtil.class.getName());
 
-    private static boolean XML_SECURITY_DISABLED;
+    private static final String DISABLE_XML_SECURITY = "com.sun.xml.internal.ws.disableXmlSecurity";
 
-    static {
-        String disableXmlSecurity = System.getProperty("com.sun.xml.internal.ws.disableXmlSecurity");
-        XML_SECURITY_DISABLED = disableXmlSecurity == null || !Boolean.valueOf(disableXmlSecurity);
-    }
+    private static boolean XML_SECURITY_DISABLED = AccessController.doPrivileged(
+            new PrivilegedAction<Boolean>() {
+                @Override
+                public Boolean run() {
+                    return Boolean.getBoolean(DISABLE_XML_SECURITY);
+                }
+            }
+    );
 
     public static String getPrefix(String s) {
         int i = s.indexOf(':');

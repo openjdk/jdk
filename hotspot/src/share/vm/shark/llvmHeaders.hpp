@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -87,30 +87,7 @@
   #undef assert
 #endif
 
-// from hotspot/src/share/vm/utilities/debug.hpp
-#ifdef ASSERT
-#ifndef USE_REPEATED_ASSERTS
-#define assert(p, msg)                                                       \
-do {                                                                         \
-  if (!(p)) {                                                                \
-    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", msg);       \
-    BREAKPOINT;                                                              \
-  }                                                                          \
-} while (0)
-#else // #ifndef USE_REPEATED_ASSERTS
-#define assert(p, msg)
-do {                                                                         \
-  for (int __i = 0; __i < AssertRepeat; __i++) {                             \
-    if (!(p)) {                                                              \
-      report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", msg);     \
-      BREAKPOINT;                                                            \
-    }                                                                        \
-  }                                                                          \
-} while (0)
-#endif // #ifndef USE_REPEATED_ASSERTS
-#else
-  #define assert(p, msg)
-#endif
+#define assert(p, msg) vmassert(p, msg)
 
 #ifdef DEBUG
   #undef DEBUG

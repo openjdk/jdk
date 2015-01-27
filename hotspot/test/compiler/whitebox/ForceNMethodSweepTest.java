@@ -34,6 +34,7 @@ import com.oracle.java.testlibrary.InfiniteLoop;
 /*
  * @test
  * @bug 8059624 8064669
+ * @ignore 8066998
  * @library /testlibrary /../../test/lib
  * @build ForceNMethodSweepTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
