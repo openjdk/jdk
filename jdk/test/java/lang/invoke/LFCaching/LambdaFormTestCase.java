@@ -23,9 +23,11 @@
 
 import com.oracle.testlibrary.jsr292.Helper;
 import com.sun.management.HotSpotDiagnosticMXBean;
-
+import java.lang.invoke.MethodHandle;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.ref.Reference;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -42,8 +44,6 @@ import jdk.testlibrary.TimeLimitedRunner;
  */
 public abstract class LambdaFormTestCase {
 
-    private final static String METHOD_HANDLE_CLASS_NAME = "java.lang.invoke.MethodHandle";
-    private final static String INTERNAL_FORM_METHOD_NAME = "internalForm";
     private static final double ITERATIONS_TO_CODE_CACHE_SIZE_RATIO
             = 45 / (128.0 * 1024 * 1024);
     private static final long TIMEOUT = Helper.IS_THOROUGH ? 0L : (long) (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.9);
@@ -53,6 +53,8 @@ public abstract class LambdaFormTestCase {
      * used to get a lambda form from a method handle.
      */
     protected final static Method INTERNAL_FORM;
+    protected final static Field DEBUG_NAME;
+    protected final static Field REF_FIELD;
     private static final List<GarbageCollectorMXBean> gcInfo;
 
     private static long gcCount() {
@@ -61,9 +63,14 @@ public abstract class LambdaFormTestCase {
 
     static {
         try {
-            Class mhClass = Class.forName(METHOD_HANDLE_CLASS_NAME);
-            INTERNAL_FORM = mhClass.getDeclaredMethod(INTERNAL_FORM_METHOD_NAME);
+            INTERNAL_FORM = MethodHandle.class.getDeclaredMethod("internalForm");
             INTERNAL_FORM.setAccessible(true);
+
+            DEBUG_NAME = Class.forName("java.lang.invoke.LambdaForm").getDeclaredField("debugName");
+            DEBUG_NAME.setAccessible(true);
+
+            REF_FIELD = Reference.class.getDeclaredField("referent");
+            REF_FIELD.setAccessible(true);
         } catch (Exception ex) {
             throw new Error("Unexpected exception: ", ex);
         }
@@ -138,6 +145,10 @@ public abstract class LambdaFormTestCase {
                             testCase.getTestMethod().name);
                     testCase.doTest();
                     System.err.println("PASSED");
+                } catch (OutOfMemoryError e) {
+                    // Don't swallow OOME so a heap dump can be created.
+                    System.err.println("FAILED");
+                    throw e;
                 } catch (Throwable t) {
                     t.printStackTrace();
                     System.err.printf("FAILED. Caused by %s%n", t.getMessage());
