@@ -349,7 +349,7 @@ define SetupLogging
     # (and causing a crash on Cygwin).
     # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
     # Only use time if it's GNU time which supports format and output file.
-    WRAPPER_SHELL:=$$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(BASH)
+    WRAPPER_SHELL:=$$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(SHELL)
     SHELL=$$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
   endif
   # Never remove warning messages; this is just for completeness
@@ -445,7 +445,9 @@ not-containing = $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$
 uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 
 # String equals
-equals = $(and $(findstring $(1),$(2)),$(findstring $(2),$(1)))
+equals = \
+    $(and $(findstring $(strip $1),$(strip $2)),\
+        $(findstring $(strip $2),$(strip $1)))
 
 ifneq ($(DISABLE_CACHE_FIND), true)
   ################################################################################
@@ -626,8 +628,8 @@ DependOnVariableHelper = \
             $(call ReadFile, $(call DependOnVariableFileName, $1, $2)))),,\
       $(call MakeDir, $(dir $(call DependOnVariableFileName, $1, $2))) \
       $(if $(findstring $(LOG_LEVEL), trace), \
-          $(info Variable $1: $(strip $($1))) \
-          $(info File: $(call ReadFile, $(call DependOnVariableFileName, $1, $2)))) \
+          $(info Variable $1: >$(strip $($1))<) \
+          $(info File: >$(call ReadFile, $(call DependOnVariableFileName, $1, $2))<)) \
       $(call WriteFile, $($1), $(call DependOnVariableFileName, $1, $2))) \
     $(call DependOnVariableFileName, $1, $2))
 
