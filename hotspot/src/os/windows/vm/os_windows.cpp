@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -839,6 +839,12 @@ jlong windows_to_java_time(FILETIME wt) {
   return (a - offset()) / 10000;
 }
 
+// Returns time ticks in (10th of micro seconds)
+jlong windows_to_time_ticks(FILETIME wt) {
+  jlong a = jlong_from(wt.dwHighDateTime, wt.dwLowDateTime);
+  return (a - offset());
+}
+
 FILETIME java_to_windows_time(jlong l) {
   jlong a = (l * 10000) + offset();
   FILETIME result;
@@ -872,6 +878,15 @@ jlong os::javaTimeMillis() {
     GetSystemTimeAsFileTime(&wt);
     return windows_to_java_time(wt);
   }
+}
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  FILETIME wt;
+  GetSystemTimeAsFileTime(&wt);
+  jlong ticks = windows_to_time_ticks(wt); // 10th of micros
+  jlong secs = jlong(ticks / 10000000); // 10000 * 1000
+  seconds = secs;
+  nanos = jlong(ticks - (secs*10000000)) * 100;
 }
 
 jlong os::javaTimeNanos() {
