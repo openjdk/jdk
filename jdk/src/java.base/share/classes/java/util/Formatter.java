@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
+import java.time.temporal.UnsupportedTemporalTypeException;
 
 import sun.misc.DoubleConsts;
 import sun.misc.FormattedFloatingDecimal;
@@ -4056,7 +4057,12 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.NANOSECOND:  { // 'N' (000000000 - 999999999)
-                    int i = t.get(ChronoField.MILLI_OF_SECOND) * 1000000;
+                    int i;
+                    try {
+                        i = t.get(ChronoField.NANO_OF_SECOND);
+                    } catch (UnsupportedTemporalTypeException u) {
+                        i = t.get(ChronoField.MILLI_OF_SECOND) * 1000000;
+                    }
                     Flags flags = Flags.ZERO_PAD;
                     sb.append(localizedMagnitude(null, i, flags, 9, l));
                     break;
