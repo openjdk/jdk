@@ -63,6 +63,20 @@ $(ESCAPE_DOLLAR_DIR)/_escape_dollar: $(DEPS)
 TEST_TARGETS += $(ESCAPE_DOLLAR_DIR)/_escape_dollar
 
 ################################################################################
+# Test Equals
+
+EQUALS_VALUE1 := value1$(SPACE)
+EQUALS_VALUE2 := value2
+
+ifneq ($(call equals, $(EQUALS_VALUE1), $(EQUALS_VALUE2)), )
+  $(error The strings >$(EQUALS_VALUE1)< and >$(EQUALS_VALUE2)< are equal)
+endif
+
+ifeq ($(call equals, $(EQUALS_VALUE1), $(EQUALS_VALUE1)), )
+  $(error The strings >$(EQUALS_VALUE1)< and >$(EQUALS_VALUE1)< are not equal)
+endif
+
+################################################################################
 # Test ShellQuote
 
 SHELL_QUOTE_VALUE := foo '""' "''" bar
