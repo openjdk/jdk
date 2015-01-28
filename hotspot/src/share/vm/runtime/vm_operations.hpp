@@ -100,6 +100,7 @@
   template(RotateGCLog)                           \
   template(WhiteBoxOperation)                     \
   template(ClassLoaderStatsOperation)             \
+  template(DumpHashtable)                         \
   template(MarkActiveNMethods)                    \
   template(PrintCompileQueue)                     \
   template(PrintCodeList)                         \

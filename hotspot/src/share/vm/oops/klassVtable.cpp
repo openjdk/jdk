@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,17 +100,21 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
     vtable_length = Universe::base_vtable_size();
   }
 
-  if (super == NULL && !Universe::is_bootstrapping() &&
-      vtable_length != Universe::base_vtable_size()) {
-    // Someone is attempting to redefine java.lang.Object incorrectly.  The
-    // only way this should happen is from
-    // SystemDictionary::resolve_from_stream(), which will detect this later
-    // and throw a security exception.  So don't assert here to let
-    // the exception occur.
-    vtable_length = Universe::base_vtable_size();
+  if (super == NULL && vtable_length != Universe::base_vtable_size()) {
+    if (Universe::is_bootstrapping()) {
+      // Someone is attempting to override java.lang.Object incorrectly on the
+      // bootclasspath.  The JVM cannot recover from this error including throwing
+      // an exception
+      vm_exit_during_initialization("Incompatible definition of java.lang.Object");
+    } else {
+      // Someone is attempting to redefine java.lang.Object incorrectly.  The
+      // only way this should happen is from
+      // SystemDictionary::resolve_from_stream(), which will detect this later
+      // and throw a security exception.  So don't assert here to let
+      // the exception occur.
+      vtable_length = Universe::base_vtable_size();
+    }
   }
-  assert(super != NULL || vtable_length == Universe::base_vtable_size(),
-         "bad vtable size for class Object");
   assert(vtable_length % vtableEntry::size() == 0, "bad vtable length");
   assert(vtable_length >= Universe::base_vtable_size(), "vtable too small");
 

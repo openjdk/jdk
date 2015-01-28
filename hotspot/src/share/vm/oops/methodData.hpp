@@ -254,6 +254,7 @@ public:
 
   // Redefinition support
   void clean_weak_method_links();
+  DEBUG_ONLY(void verify_clean_weak_method_links();)
 };
 
 
@@ -511,6 +512,7 @@ public:
 
   // Redefinition support
   virtual void clean_weak_method_links() {}
+  DEBUG_ONLY(virtual void verify_clean_weak_method_links() {})
 
   // CI translation: ProfileData can represent both MethodDataOop data
   // as well as CIMethodData data. This function is provided for translating
@@ -1971,6 +1973,7 @@ public:
   }
 
   void set_method(Method* m) {
+    assert(!m->is_old(), "cannot add old methods");
     set_intptr_at(speculative_trap_method, (intptr_t)m);
   }
 
@@ -2480,6 +2483,7 @@ public:
 
   void clean_method_data(BoolObjectClosure* is_alive);
   void clean_weak_method_links();
+  DEBUG_ONLY(void verify_clean_weak_method_links();)
   Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
 

@@ -32,11 +32,11 @@ import sun.hotspot.WhiteBox;
 
 public enum BlobType {
     // Execution level 1 and 4 (non-profiled) nmethods (including native nmethods)
-    MethodNonProfiled(0, "CodeHeap 'non-profiled nmethods'"),
+    MethodNonProfiled(0, "CodeHeap 'non-profiled nmethods'", "NonProfiledCodeHeapSize"),
     // Execution level 2 and 3 (profiled) nmethods
-    MethodProfiled(1, "CodeHeap 'profiled nmethods'"),
+    MethodProfiled(1, "CodeHeap 'profiled nmethods'", "ProfiledCodeHeapSize"),
     // Non-nmethods like Buffers, Adapters and Runtime Stubs
-    NonNMethod(2, "CodeHeap 'non-nmethods'") {
+    NonNMethod(2, "CodeHeap 'non-nmethods'", "NonNMethodCodeHeapSize") {
         @Override
         public boolean allowTypeWhenOverflow(BlobType type) {
             return super.allowTypeWhenOverflow(type)
@@ -44,14 +44,16 @@ public enum BlobType {
         }
     },
     // All types (No code cache segmentation)
-    All(3, "CodeCache");
+    All(3, "CodeCache", "ReservedCodeCacheSize");
 
     public final int id;
-    private final String beanName;
+    public final String sizeOptionName;
+    public final String beanName;
 
-    private BlobType(int id, String beanName) {
+    private BlobType(int id, String beanName, String sizeOptionName) {
         this.id = id;
         this.beanName = beanName;
+        this.sizeOptionName = sizeOptionName;
     }
 
     public MemoryPoolMXBean getMemoryPool() {
@@ -86,5 +88,9 @@ public enum BlobType {
             result.remove(MethodProfiled);
         }
         return result;
+    }
+
+    public long getSize() {
+        return WhiteBox.getWhiteBox().getUintxVMFlag(sizeOptionName);
     }
 }

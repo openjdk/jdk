@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.api.Formattable.LocalizedString;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -40,6 +39,7 @@ import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.Template;
+import com.sun.tools.javac.comp.Resolve.ReferenceLookupResult.StaticKind;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.*;
@@ -65,6 +65,7 @@ import javax.lang.model.element.ElementVisitor;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
+import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
@@ -105,15 +106,10 @@ public class Resolve {
         context.put(resolveKey, this);
         syms = Symtab.instance(context);
 
-        varNotFound = new
-            SymbolNotFoundError(ABSENT_VAR);
-        methodNotFound = new
-            SymbolNotFoundError(ABSENT_MTH);
-        methodWithCorrectStaticnessNotFound = new
-            SymbolNotFoundError(WRONG_STATICNESS,
-                "method found has incorrect staticness");
-        typeNotFound = new
-            SymbolNotFoundError(ABSENT_TYP);
+        varNotFound = new SymbolNotFoundError(ABSENT_VAR);
+        methodNotFound = new SymbolNotFoundError(ABSENT_MTH);
+        typeNotFound = new SymbolNotFoundError(ABSENT_TYP);
+        referenceNotFound = new ReferenceLookupResult(methodNotFound, null);
 
         names = Names.instance(context);
         log = Log.instance(context);
@@ -145,8 +141,10 @@ public class Resolve {
      */
     private final SymbolNotFoundError varNotFound;
     private final SymbolNotFoundError methodNotFound;
-    private final SymbolNotFoundError methodWithCorrectStaticnessNotFound;
     private final SymbolNotFoundError typeNotFound;
+
+    /** empty reference lookup result */
+    private final ReferenceLookupResult referenceNotFound;
 
     public static Resolve instance(Context context) {
         Resolve instance = context.get(resolveKey);
@@ -2680,69 +2678,16 @@ public class Resolve {
                                   List<Type> argtypes,
                                   List<Type> typeargtypes,
                                   MethodResolutionPhase maxPhase) {
-        ReferenceLookupHelper result;
         if (!name.equals(names.init)) {
             //method reference
-            result =
-                    new MethodReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase);
+            return new MethodReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase);
+        } else if (site.hasTag(ARRAY)) {
+            //array constructor reference
+            return new ArrayConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase);
         } else {
-            if (site.hasTag(ARRAY)) {
-                //array constructor reference
-                result =
-                        new ArrayConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase);
-            } else {
-                //class constructor reference
-                result =
-                        new ConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase);
-            }
+            //class constructor reference
+            return new ConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase);
         }
-        return result;
-    }
-
-    Symbol resolveMemberReferenceByArity(Env<AttrContext> env,
-                                  JCMemberReference referenceTree,
-                                  Type site,
-                                  Name name,
-                                  List<Type> argtypes,
-                                  InferenceContext inferenceContext) {
-
-        boolean isStaticSelector = TreeInfo.isStaticSelector(referenceTree.expr, names);
-        site = types.capture(site);
-
-        ReferenceLookupHelper boundLookupHelper = makeReferenceLookupHelper(
-                referenceTree, site, name, argtypes, null, VARARITY);
-        //step 1 - bound lookup
-        Env<AttrContext> boundEnv = env.dup(env.tree, env.info.dup());
-        Symbol boundSym = lookupMethod(boundEnv, env.tree.pos(), site.tsym,
-                arityMethodCheck, boundLookupHelper);
-        if (isStaticSelector &&
-            !name.equals(names.init) &&
-            !boundSym.isStatic() &&
-            !boundSym.kind.isOverloadError()) {
-            boundSym = methodNotFound;
-        }
-
-        //step 2 - unbound lookup
-        Symbol unboundSym = methodNotFound;
-        ReferenceLookupHelper unboundLookupHelper = null;
-        Env<AttrContext> unboundEnv = env.dup(env.tree, env.info.dup());
-        if (isStaticSelector) {
-            unboundLookupHelper = boundLookupHelper.unboundLookup(inferenceContext);
-            unboundSym = lookupMethod(unboundEnv, env.tree.pos(), site.tsym,
-                    arityMethodCheck, unboundLookupHelper);
-            if (unboundSym.isStatic() &&
-                !unboundSym.kind.isOverloadError()) {
-                unboundSym = methodNotFound;
-            }
-        }
-
-        //merge results
-        Symbol bestSym = choose(boundSym, unboundSym);
-        env.info.pendingResolutionPhase = bestSym == unboundSym ?
-                unboundEnv.info.pendingResolutionPhase :
-                boundEnv.info.pendingResolutionPhase;
-
-        return bestSym;
     }
 
     /**
@@ -2763,8 +2708,8 @@ public class Resolve {
      * the receiver argument type is used to infer an instantiation for the raw
      * qualifier type.
      *
-     * When a multi-step resolution process is exploited, it is an error
-     * if two candidates are found (ambiguity).
+     * When a multi-step resolution process is exploited, the process of picking
+     * the resulting symbol is delegated to an helper class {@link com.sun.tools.javac.comp.Resolve.ReferenceChooser}.
      *
      * This routine returns a pair (T,S), where S is the member reference symbol,
      * and T is the type of the class in which S is defined. This is necessary as
@@ -2779,7 +2724,7 @@ public class Resolve {
                                   List<Type> typeargtypes,
                                   MethodCheck methodCheck,
                                   InferenceContext inferenceContext,
-                                  AttrMode mode) {
+                                  ReferenceChooser referenceChooser) {
 
         site = types.capture(site);
         ReferenceLookupHelper boundLookupHelper = makeReferenceLookupHelper(
@@ -2787,102 +2732,29 @@ public class Resolve {
 
         //step 1 - bound lookup
         Env<AttrContext> boundEnv = env.dup(env.tree, env.info.dup());
-        Symbol origBoundSym;
-        boolean staticErrorForBound = false;
         MethodResolutionContext boundSearchResolveContext = new MethodResolutionContext();
         boundSearchResolveContext.methodCheck = methodCheck;
-        Symbol boundSym = origBoundSym = lookupMethod(boundEnv, env.tree.pos(),
+        Symbol boundSym = lookupMethod(boundEnv, env.tree.pos(),
                 site.tsym, boundSearchResolveContext, boundLookupHelper);
-        SearchResultKind boundSearchResultKind = SearchResultKind.NOT_APPLICABLE_MATCH;
-        boolean isStaticSelector = TreeInfo.isStaticSelector(referenceTree.expr, names);
-        boolean shouldCheckForStaticness = isStaticSelector &&
-                referenceTree.getMode() == ReferenceMode.INVOKE;
-        if (boundSym.kind != WRONG_MTHS && boundSym.kind != WRONG_MTH) {
-            if (shouldCheckForStaticness) {
-                if (!boundSym.isStatic()) {
-                    staticErrorForBound = true;
-                    if (hasAnotherApplicableMethod(
-                            boundSearchResolveContext, boundSym, true)) {
-                        boundSearchResultKind = SearchResultKind.BAD_MATCH_MORE_SPECIFIC;
-                    } else {
-                        boundSearchResultKind = SearchResultKind.BAD_MATCH;
-                        if (!boundSym.kind.isOverloadError()) {
-                            boundSym = methodWithCorrectStaticnessNotFound;
-                        }
-                    }
-                } else if (!boundSym.kind.isOverloadError()) {
-                    boundSearchResultKind = SearchResultKind.GOOD_MATCH;
-                }
-            }
-        }
+        ReferenceLookupResult boundRes = new ReferenceLookupResult(boundSym, boundSearchResolveContext);
 
         //step 2 - unbound lookup
-        Symbol origUnboundSym = null;
         Symbol unboundSym = methodNotFound;
-        ReferenceLookupHelper unboundLookupHelper = null;
         Env<AttrContext> unboundEnv = env.dup(env.tree, env.info.dup());
-        SearchResultKind unboundSearchResultKind = SearchResultKind.NOT_APPLICABLE_MATCH;
-        boolean staticErrorForUnbound = false;
-        if (isStaticSelector) {
-            unboundLookupHelper = boundLookupHelper.unboundLookup(inferenceContext);
+        ReferenceLookupHelper unboundLookupHelper = boundLookupHelper.unboundLookup(inferenceContext);
+        ReferenceLookupResult unboundRes = referenceNotFound;
+        if (unboundLookupHelper != null) {
             MethodResolutionContext unboundSearchResolveContext =
                     new MethodResolutionContext();
             unboundSearchResolveContext.methodCheck = methodCheck;
-            unboundSym = origUnboundSym = lookupMethod(unboundEnv, env.tree.pos(),
+            unboundSym = lookupMethod(unboundEnv, env.tree.pos(),
                     site.tsym, unboundSearchResolveContext, unboundLookupHelper);
-
-            if (unboundSym.kind != WRONG_MTH && unboundSym.kind != WRONG_MTHS) {
-                if (shouldCheckForStaticness) {
-                    if (unboundSym.isStatic()) {
-                        staticErrorForUnbound = true;
-                        if (hasAnotherApplicableMethod(
-                                unboundSearchResolveContext, unboundSym, false)) {
-                            unboundSearchResultKind = SearchResultKind.BAD_MATCH_MORE_SPECIFIC;
-                        } else {
-                            unboundSearchResultKind = SearchResultKind.BAD_MATCH;
-                            if (!unboundSym.kind.isOverloadError()) {
-                                unboundSym = methodWithCorrectStaticnessNotFound;
-                            }
-                        }
-                    } else if (!unboundSym.kind.isOverloadError()) {
-                        unboundSearchResultKind = SearchResultKind.GOOD_MATCH;
-                    }
-                }
-            }
+            unboundRes = new ReferenceLookupResult(unboundSym, unboundSearchResolveContext);
         }
 
         //merge results
         Pair<Symbol, ReferenceLookupHelper> res;
-        Symbol bestSym = choose(boundSym, unboundSym);
-        if (!bestSym.kind.isOverloadError() &&
-            (staticErrorForBound || staticErrorForUnbound)) {
-            if (staticErrorForBound) {
-                boundSym = methodWithCorrectStaticnessNotFound;
-            }
-            if (staticErrorForUnbound) {
-                unboundSym = methodWithCorrectStaticnessNotFound;
-            }
-            bestSym = choose(boundSym, unboundSym);
-        }
-        if (bestSym == methodWithCorrectStaticnessNotFound && mode == AttrMode.CHECK) {
-            Symbol symToPrint = origBoundSym;
-            String errorFragmentToPrint = "non-static.cant.be.ref";
-            if (staticErrorForBound && staticErrorForUnbound) {
-                if (unboundSearchResultKind == SearchResultKind.BAD_MATCH_MORE_SPECIFIC) {
-                    symToPrint = origUnboundSym;
-                    errorFragmentToPrint = "static.method.in.unbound.lookup";
-                }
-            } else {
-                if (!staticErrorForBound) {
-                    symToPrint = origUnboundSym;
-                    errorFragmentToPrint = "static.method.in.unbound.lookup";
-                }
-            }
-            log.error(referenceTree.expr.pos(), "invalid.mref",
-                Kinds.kindName(referenceTree.getMode()),
-                diags.fragment(errorFragmentToPrint,
-                Kinds.kindName(symToPrint), symToPrint));
-        }
+        Symbol bestSym = referenceChooser.result(boundRes, unboundRes);
         res = new Pair<>(bestSym,
                 bestSym == unboundSym ? unboundLookupHelper : boundLookupHelper);
         env.info.pendingResolutionPhase = bestSym == unboundSym ?
@@ -2892,67 +2764,213 @@ public class Resolve {
         return res;
     }
 
-    enum SearchResultKind {
-        GOOD_MATCH,                 //type I
-        BAD_MATCH_MORE_SPECIFIC,    //type II
-        BAD_MATCH,                  //type III
-        NOT_APPLICABLE_MATCH        //type IV
-    }
+    /**
+     * This class is used to represent a method reference lookup result. It keeps track of two
+     * things: (i) the symbol found during a method reference lookup and (ii) the static kind
+     * of the lookup (see {@link com.sun.tools.javac.comp.Resolve.ReferenceLookupResult.StaticKind}).
+     */
+    static class ReferenceLookupResult {
 
-    boolean hasAnotherApplicableMethod(MethodResolutionContext resolutionContext,
-            Symbol bestSoFar, boolean staticMth) {
-        for (Candidate c : resolutionContext.candidates) {
-            if (resolutionContext.step != c.step ||
-                !c.isApplicable() ||
-                c.sym == bestSoFar) {
-                continue;
-            } else {
-                if (c.sym.isStatic() == staticMth) {
-                    return true;
+        /**
+         * Static kind associated with a method reference lookup. Erroneous lookups end up with
+         * the UNDEFINED kind; successful lookups will end up with either STATIC, NON_STATIC,
+         * depending on whether all applicable candidates are static or non-static methods,
+         * respectively. If a successful lookup has both static and non-static applicable methods,
+         * its kind is set to BOTH.
+         */
+        enum StaticKind {
+            STATIC,
+            NON_STATIC,
+            BOTH,
+            UNDEFINED;
+
+            /**
+             * Retrieve the static kind associated with a given (method) symbol.
+             */
+            static StaticKind from(Symbol s) {
+                return s.isStatic() ?
+                        STATIC : NON_STATIC;
+            }
+
+            /**
+             * Merge two static kinds together.
+             */
+            static StaticKind reduce(StaticKind sk1, StaticKind sk2) {
+                if (sk1 == UNDEFINED) {
+                    return sk2;
+                } else if (sk2 == UNDEFINED) {
+                    return sk1;
+                } else {
+                    return sk1 == sk2 ? sk1 : BOTH;
                 }
             }
         }
-        return false;
-    }
 
-    //where
-        private Symbol choose(Symbol boundSym, Symbol unboundSym) {
-            if (lookupSuccess(boundSym) && lookupSuccess(unboundSym)) {
-                return ambiguityError(boundSym, unboundSym);
-            } else if (lookupSuccess(boundSym) ||
-                    (canIgnore(unboundSym) && !canIgnore(boundSym))) {
-                return boundSym;
-            } else if (lookupSuccess(unboundSym) ||
-                    (canIgnore(boundSym) && !canIgnore(unboundSym))) {
-                return unboundSym;
-            } else {
-                return boundSym;
+        /** The static kind. */
+        StaticKind staticKind;
+
+        /** The lookup result. */
+        Symbol sym;
+
+        ReferenceLookupResult(Symbol sym, MethodResolutionContext resolutionContext) {
+            this.staticKind = staticKind(sym, resolutionContext);
+            this.sym = sym;
+        }
+
+        private StaticKind staticKind(Symbol sym, MethodResolutionContext resolutionContext) {
+            switch (sym.kind) {
+                case MTH:
+                case AMBIGUOUS:
+                    return resolutionContext.candidates.stream()
+                            .filter(c -> c.isApplicable() && c.step == resolutionContext.step)
+                            .map(c -> StaticKind.from(c.sym))
+                            .reduce(StaticKind::reduce)
+                            .orElse(StaticKind.UNDEFINED);
+                case HIDDEN:
+                    return StaticKind.from(((AccessError)sym).sym);
+                default:
+                    return StaticKind.UNDEFINED;
             }
         }
 
-        private boolean lookupSuccess(Symbol s) {
-            return s.kind == MTH || s.kind == AMBIGUOUS;
+        /**
+         * Does this result corresponds to a successful lookup (i.e. one where a method has been found?)
+         */
+        boolean isSuccess() {
+            return staticKind != StaticKind.UNDEFINED;
         }
 
-        private boolean canIgnore(Symbol s) {
-            switch (s.kind) {
+        /**
+         * Does this result have given static kind?
+         */
+        boolean hasKind(StaticKind sk) {
+            return this.staticKind == sk;
+        }
+
+        /**
+         * Error recovery helper: can this lookup result be ignored (for the purpose of returning
+         * some 'better' result) ?
+         */
+        boolean canIgnore() {
+            switch (sym.kind) {
                 case ABSENT_MTH:
                     return true;
                 case WRONG_MTH:
                     InapplicableSymbolError errSym =
-                            (InapplicableSymbolError)s.baseSymbol();
+                            (InapplicableSymbolError)sym.baseSymbol();
                     return new Template(MethodCheckDiag.ARITY_MISMATCH.regex())
                             .matches(errSym.errCandidate().snd);
                 case WRONG_MTHS:
                     InapplicableSymbolsError errSyms =
-                            (InapplicableSymbolsError)s.baseSymbol();
+                            (InapplicableSymbolsError)sym.baseSymbol();
                     return errSyms.filterCandidates(errSyms.mapCandidates()).isEmpty();
-                case WRONG_STATICNESS:
-                    return false;
                 default:
                     return false;
             }
         }
+    }
+
+    /**
+     * This abstract class embodies the logic that converts one (bound lookup) or two (unbound lookup)
+     * {@code ReferenceLookupResult} objects into a (@code Symbol), which is then regarded as the
+     * result of method reference resolution.
+     */
+    abstract class ReferenceChooser {
+        /**
+         * Generate a result from a pair of lookup result objects. This method delegates to the
+         * appropriate result generation routine.
+         */
+        Symbol result(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
+            return unboundRes != referenceNotFound ?
+                    unboundResult(boundRes, unboundRes) :
+                    boundResult(boundRes);
+        }
+
+        /**
+         * Generate a symbol from a given bound lookup result.
+         */
+        abstract Symbol boundResult(ReferenceLookupResult boundRes);
+
+        /**
+         * Generate a symbol from a pair of bound/unbound lookup results.
+         */
+        abstract Symbol unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes);
+    }
+
+    /**
+     * This chooser implements the selection strategy used during a full lookup; this logic
+     * is described in JLS SE 8 (15.3.2).
+     */
+    ReferenceChooser basicReferenceChooser = new ReferenceChooser() {
+
+        @Override
+        Symbol boundResult(ReferenceLookupResult boundRes) {
+            return !boundRes.isSuccess() || boundRes.hasKind(StaticKind.NON_STATIC) ?
+                    boundRes.sym : //the search produces a non-static method
+                    new BadMethodReferenceError(boundRes.sym, false);
+        }
+
+        @Override
+        Symbol unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
+            if (boundRes.hasKind(StaticKind.STATIC) &&
+                    (!unboundRes.isSuccess() || unboundRes.hasKind(StaticKind.STATIC))) {
+                //the first search produces a static method and no non-static method is applicable
+                //during the second search
+                return boundRes.sym;
+            } else if (unboundRes.hasKind(StaticKind.NON_STATIC) &&
+                    (!boundRes.isSuccess() || boundRes.hasKind(StaticKind.NON_STATIC))) {
+                //the second search produces a non-static method and no static method is applicable
+                //during the first search
+                return unboundRes.sym;
+            } else if (boundRes.isSuccess() && unboundRes.isSuccess()) {
+                //both searches produce some result; ambiguity (error recovery)
+                return ambiguityError(boundRes.sym, unboundRes.sym);
+            } else if (boundRes.isSuccess() || unboundRes.isSuccess()) {
+                //Both searches failed to produce a result with correct staticness (i.e. first search
+                //produces an non-static method). Alternatively, a given search produced a result
+                //with the right staticness, but the other search has applicable methods with wrong
+                //staticness (error recovery)
+                return new BadMethodReferenceError(boundRes.isSuccess() ? boundRes.sym : unboundRes.sym, true);
+            } else {
+                //both searches fail to produce a result - pick 'better' error using heuristics (error recovery)
+                return (boundRes.canIgnore() && !unboundRes.canIgnore()) ?
+                        unboundRes.sym : boundRes.sym;
+            }
+        }
+    };
+
+    /**
+     * This chooser implements the selection strategy used during an arity-based lookup; this logic
+     * is described in JLS SE 8 (15.12.2.1).
+     */
+    ReferenceChooser structuralReferenceChooser = new ReferenceChooser() {
+
+        @Override
+        Symbol boundResult(ReferenceLookupResult boundRes) {
+            return (!boundRes.isSuccess() || !boundRes.hasKind(StaticKind.STATIC)) ?
+                    boundRes.sym : //the search has at least one applicable non-static method
+                    new BadMethodReferenceError(boundRes.sym, false);
+        }
+
+        @Override
+        Symbol unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
+            if (boundRes.isSuccess() && !boundRes.hasKind(StaticKind.NON_STATIC)) {
+                //the first serach has at least one applicable static method
+                return boundRes.sym;
+            } else if (unboundRes.isSuccess() && !unboundRes.hasKind(StaticKind.STATIC)) {
+                //the second search has at least one applicable non-static method
+                return unboundRes.sym;
+            } else if (boundRes.isSuccess() || unboundRes.isSuccess()) {
+                //either the first search produces a non-static method, or second search produces
+                //a non-static method (error recovery)
+                return new BadMethodReferenceError(boundRes.isSuccess() ? boundRes.sym : unboundRes.sym, true);
+            } else {
+                //both searches fail to produce a result - pick 'better' error using heuristics (error recovery)
+                return (boundRes.canIgnore() && !unboundRes.canIgnore()) ?
+                        unboundRes.sym : boundRes.sym;
+            }
+        }
+    };
 
     /**
      * Helper for defining custom method-like lookup logic; a lookup helper
@@ -3070,22 +3088,7 @@ public class Resolve {
          * method returns an dummy lookup helper.
          */
         ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
-            //dummy loopkup helper that always return 'methodNotFound'
-            return new ReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase) {
-                @Override
-                ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
-                    return this;
-                }
-                @Override
-                Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
-                    return methodNotFound;
-                }
-                @Override
-                ReferenceKind referenceKind(Symbol sym) {
-                    Assert.error();
-                    return null;
-                }
-            };
+            return null;
         }
 
         /**
@@ -3124,12 +3127,31 @@ public class Resolve {
 
         @Override
         ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
-            if (TreeInfo.isStaticSelector(referenceTree.expr, names) &&
-                    argtypes.nonEmpty() &&
-                    (argtypes.head.hasTag(NONE) ||
-                    types.isSubtypeUnchecked(inferenceContext.asUndetVar(argtypes.head), site))) {
-                return new UnboundMethodReferenceLookupHelper(referenceTree, name,
-                        site, argtypes, typeargtypes, maxPhase);
+            if (TreeInfo.isStaticSelector(referenceTree.expr, names)) {
+                if (argtypes.nonEmpty() &&
+                        (argtypes.head.hasTag(NONE) ||
+                        types.isSubtypeUnchecked(inferenceContext.asUndetVar(argtypes.head), site))) {
+                    return new UnboundMethodReferenceLookupHelper(referenceTree, name,
+                            site, argtypes, typeargtypes, maxPhase);
+                } else {
+                    return new ReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase) {
+                        @Override
+                        ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
+                            return this;
+                        }
+
+                        @Override
+                        Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                            return methodNotFound;
+                        }
+
+                        @Override
+                        ReferenceKind referenceKind(Symbol sym) {
+                            Assert.error();
+                            return null;
+                        }
+                    };
+                }
             } else {
                 return super.unboundLookup(inferenceContext);
             }
@@ -3231,16 +3253,10 @@ public class Resolve {
                 findDiamond(env, site, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
                 findMethod(env, site, name, argtypes, typeargtypes,
                         phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
-            return sym.kind != MTH ||
-                          site.getEnclosingType().hasTag(NONE) ||
-                          hasEnclosingInstance(env, site) ?
-                          sym : new InvalidSymbolError(MISSING_ENCL, sym, null) {
-                    @Override
-                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-                       return diags.create(dkind, log.currentSource(), pos,
-                            "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
-                    }
-                };
+            return (sym.kind != MTH ||
+                    site.getEnclosingType().hasTag(NONE) ||
+                    hasEnclosingInstance(env, site)) ?
+                    sym : new BadConstructorReferenceError(sym);
         }
 
         @Override
@@ -3613,8 +3629,7 @@ public class Resolve {
                 hasLocation = !location.name.equals(names._this) &&
                         !location.name.equals(names._super);
             }
-            boolean isConstructor = (kind == ABSENT_MTH || kind == WRONG_STATICNESS) &&
-                    name == names.init;
+            boolean isConstructor = name == names.init;
             KindName kindname = isConstructor ? KindName.CONSTRUCTOR : kind.absentKind();
             Name idname = isConstructor ? site.tsym.name : name;
             String errKey = getErrorKey(kindname, typeargtypes.nonEmpty(), hasLocation);
@@ -4019,13 +4034,13 @@ public class Resolve {
             Name sname = s1.name;
             if (sname == names.init) sname = s1.owner.name;
             return diags.create(dkind, log.currentSource(),
-                      pos, "ref.ambiguous", sname,
-                      kindName(s1),
-                      s1,
-                      s1.location(site, types),
-                      kindName(s2),
-                      s2,
-                      s2.location(site, types));
+                    pos, "ref.ambiguous", sname,
+                    kindName(s1),
+                    s1,
+                    s1.location(site, types),
+                    kindName(s2),
+                    s2,
+                    s2.location(site, types));
         }
 
         /**
@@ -4104,6 +4119,52 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
             return delegatedError.getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes);
+        }
+    }
+
+    /**
+     * BadMethodReferenceError error class indicating that a method reference symbol has been found,
+     * but with the wrong staticness.
+     */
+    class BadMethodReferenceError extends StaticError {
+
+        boolean unboundLookup;
+
+        public BadMethodReferenceError(Symbol sym, boolean unboundLookup) {
+            super(sym);
+            this.unboundLookup = unboundLookup;
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+            final String key;
+            if (!unboundLookup) {
+                key = "bad.static.method.in.bound.lookup";
+            } else if (sym.isStatic()) {
+                key = "bad.static.method.in.unbound.lookup";
+            } else {
+                key = "bad.instance.method.in.unbound.lookup";
+            }
+            return sym.kind.isOverloadError() ?
+                    ((ResolveError)sym).getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes) :
+                    diags.create(dkind, log.currentSource(), pos, key, Kinds.kindName(sym), sym);
+        }
+    }
+
+    /**
+     * BadConstructorReferenceError error class indicating that a constructor reference symbol has been found,
+     * but pointing to a class for which an enclosing instance is not available.
+     */
+    class BadConstructorReferenceError extends InvalidSymbolError {
+
+        public BadConstructorReferenceError(Symbol sym) {
+            super(MISSING_ENCL, sym, "BadConstructorReferenceError");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+           return diags.create(dkind, log.currentSource(), pos,
+                "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
         }
     }
 

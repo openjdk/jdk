@@ -1137,10 +1137,10 @@ public class Hashtable<K,V>
         Entry<Object, Object> entryStack = null;
 
         synchronized (this) {
-            // Write out the length, threshold, loadfactor
+            // Write out the threshold and loadFactor
             s.defaultWriteObject();
 
-            // Write out length, count of elements
+            // Write out the length and count of elements
             s.writeInt(table.length);
             s.writeInt(count);
 
@@ -1169,22 +1169,33 @@ public class Hashtable<K,V>
     private void readObject(java.io.ObjectInputStream s)
          throws IOException, ClassNotFoundException
     {
-        // Read in the length, threshold, and loadfactor
+        // Read in the threshold and loadFactor
         s.defaultReadObject();
+
+        // Validate loadFactor (ignore threshold - it will be re-computed)
+        if (loadFactor <= 0 || Float.isNaN(loadFactor))
+            throw new StreamCorruptedException("Illegal Load: " + loadFactor);
 
         // Read the original length of the array and number of elements
         int origlength = s.readInt();
         int elements = s.readInt();
 
-        // Compute new size with a bit of room 5% to grow but
-        // no larger than the original size.  Make the length
+        // Validate # of elements
+        if (elements < 0)
+            throw new StreamCorruptedException("Illegal # of Elements: " + elements);
+
+        // Clamp original length to be more than elements / loadFactor
+        // (this is the invariant enforced with auto-growth)
+        origlength = Math.max(origlength, (int)(elements / loadFactor) + 1);
+
+        // Compute new length with a bit of room 5% + 3 to grow but
+        // no larger than the clamped original length.  Make the length
         // odd if it's large enough, this helps distribute the entries.
         // Guard against the length ending up zero, that's not valid.
-        int length = (int)(elements * loadFactor) + (elements / 20) + 3;
+        int length = (int)((elements + elements / 20) / loadFactor) + 3;
         if (length > elements && (length & 1) == 0)
             length--;
-        if (origlength > 0 && length > origlength)
-            length = origlength;
+        length = Math.min(length, origlength);
         table = new Entry<?,?>[length];
         threshold = (int)Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
         count = 0;
@@ -1195,7 +1206,7 @@ public class Hashtable<K,V>
                 K key = (K)s.readObject();
             @SuppressWarnings("unchecked")
                 V value = (V)s.readObject();
-            // synch could be eliminated for performance
+            // sync is eliminated for performance
             reconstitutionPut(table, key, value);
         }
     }
@@ -1207,9 +1218,9 @@ public class Hashtable<K,V>
      *
      * <p>This differs from the regular put method in several ways. No
      * checking for rehashing is necessary since the number of elements
-     * initially in the table is known. The modCount is not incremented
-     * because we are creating a new instance. Also, no return value
-     * is needed.
+     * initially in the table is known. The modCount is not incremented and
+     * there's no synchronization because we are creating a new instance.
+     * Also, no return value is needed.
      */
     private void reconstitutionPut(Entry<?,?>[] tab, K key, V value)
         throws StreamCorruptedException

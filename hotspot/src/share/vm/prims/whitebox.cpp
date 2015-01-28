@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,11 +176,11 @@ WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(100 * granularity, granularity, false, NULL);
+  ReservedHeapSpace rhs(100 * granularity, granularity, false);
   VirtualSpace vs;
   vs.initialize(rhs, 50 * granularity);
 
-  //Check if constraints are complied
+  // Check if constraints are complied
   if (!( UseCompressedOops && rhs.base() != NULL &&
          Universe::narrow_oop_base() != NULL &&
          Universe::narrow_oop_use_implicit_null_checks() )) {
@@ -203,7 +203,7 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false, NULL);
+  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false);
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
@@ -1123,6 +1123,16 @@ WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean 
                    attemptedNoSafepointValue == JNI_TRUE);
 WB_END
 
+WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
+  oop obj_oop = JNIHandles::resolve(obj);
+  return (jboolean) obj_oop->mark()->has_monitor();
+WB_END
+
+WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
+  VM_ForceSafepoint force_safepoint_op;
+  VMThread::execute(&force_safepoint_op);
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -1321,6 +1331,8 @@ static JNINativeMethod methods[] = {
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
+  {CC"isMonitorInflated",  CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
+  {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
 };
 
 #undef CC

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -1245,7 +1246,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject 
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
-    Universe::flush_dependents_on(call_site, target);
+    CodeCache::flush_dependents_on(call_site, target);
     java_lang_invoke_CallSite::set_target(call_site(), target());
   }
 }
@@ -1257,7 +1258,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
-    Universe::flush_dependents_on(call_site, target);
+    CodeCache::flush_dependents_on(call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
   }
 }

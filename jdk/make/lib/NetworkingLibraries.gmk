@@ -23,39 +23,16 @@
 # questions.
 #
 
-LIBNET_SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/native/libnet \
-    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnet
-LIBNET_CFLAGS += -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-    $(LIBJAVA_HEADER_FLAGS)
-
-LIBNET_CFLAGS += $(foreach dir, $(LIBNET_SRC_DIRS), -I$(dir))
-
-LIBNET_EXCLUDE_FILES :=
-ifneq ($(OPENJDK_TARGET_OS), solaris)
-  LIBNET_EXCLUDE_FILES += solaris_close.c
-endif
-
-ifneq ($(OPENJDK_TARGET_OS), linux)
-  LIBNET_EXCLUDE_FILES += linux_close.c
-endif
-
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  LIBNET_EXCLUDE_FILES += bsd_close.c
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  LIBNET_SRC_DIRS += $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnet/java/net/
-endif
+LIBNET_SRC_DIRS := $(call FindSrcDirsForLib, java.base, net)
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
     LIBRARY := net, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBNET_SRC_DIRS), \
-    EXCLUDE_FILES := $(LIBNET_EXCLUDE_FILES), \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        $(LIBNET_CFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
+        $(LIBJAVA_HEADER_FLAGS) $(addprefix -I, $(LIBNET_SRC_DIRS)), \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnet/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
