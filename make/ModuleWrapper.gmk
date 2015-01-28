@@ -26,7 +26,7 @@
 ################################################################################
 # This makefile is called from Main.gmk, through a macro in MakeHelpers.gmk
 # and wraps calls to makefiles for specific modules and build phases. Having
-# this wrapper reduces the need for boilerplate code. It also provides 
+# this wrapper reduces the need for boilerplate code. It also provides
 # opportunity for automatic copying of files to an interim exploded runnable
 # image.
 

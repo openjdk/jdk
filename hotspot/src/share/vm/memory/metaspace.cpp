@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,7 +422,7 @@ VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(
     bool large_pages = false; // No large pages when dumping the CDS archive.
     char* shared_base = (char*)align_ptr_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
 
-    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base, 0);
+    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base);
     if (_rs.is_reserved()) {
       assert(shared_base == 0 || _rs.base() == shared_base, "should match");
     } else {
@@ -3025,7 +3025,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   ReservedSpace metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                              _reserve_alignment,
                                              large_pages,
-                                             requested_addr, 0);
+                                             requested_addr);
   if (!metaspace_rs.is_reserved()) {
 #if INCLUDE_CDS
     if (UseSharedSpaces) {
@@ -3039,7 +3039,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
              can_use_cds_with_metaspace_addr(addr + increment, cds_base)) {
         addr = addr + increment;
         metaspace_rs = ReservedSpace(compressed_class_space_size(),
-                                     _reserve_alignment, large_pages, addr, 0);
+                                     _reserve_alignment, large_pages, addr);
       }
     }
 #endif
@@ -3170,7 +3170,9 @@ void Metaspace::global_initialize() {
     }
 
     // the min_misc_data_size and min_misc_code_size estimates are based on
-    // MetaspaceShared::generate_vtable_methods()
+    // MetaspaceShared::generate_vtable_methods().
+    // The minimum size only accounts for the vtable methods. Any size less than the
+    // minimum required size would cause vm crash when allocating the vtable methods.
     uint min_misc_data_size = align_size_up(
       MetaspaceShared::num_virtuals * MetaspaceShared::vtbl_list_size * sizeof(void*), max_alignment);
 
@@ -3336,6 +3338,10 @@ void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
   Metachunk* new_chunk = get_initialization_chunk(NonClassType,
                                                   word_size,
                                                   vsm()->medium_chunk_bunch());
+  // For dumping shared archive, report error if allocation has failed.
+  if (DumpSharedSpaces && new_chunk == NULL) {
+    report_insufficient_metaspace(MetaspaceAux::committed_bytes() + word_size * BytesPerWord);
+  }
   assert(!DumpSharedSpaces || new_chunk != NULL, "should have enough space for both chunks");
   if (new_chunk != NULL) {
     // Add to this manager's list of chunks in use and current_chunk().
@@ -3349,6 +3355,11 @@ void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
                                                       class_vsm()->medium_chunk_bunch());
     if (class_chunk != NULL) {
       class_vsm()->add_chunk(class_chunk, true);
+    } else {
+      // For dumping shared archive, report error if allocation has failed.
+      if (DumpSharedSpaces) {
+        report_insufficient_metaspace(MetaspaceAux::committed_bytes() + class_word_size * BytesPerWord);
+      }
     }
   }
 
@@ -3829,11 +3840,13 @@ class TestVirtualSpaceNodeTest {
       assert(cm.sum_free_chunks() == 2*MediumChunk, "sizes should add up");
     }
 
-    { // 4 pages of VSN is committed, some is used by chunks
+    const size_t page_chunks = 4 * (size_t)os::vm_page_size() / BytesPerWord;
+    // This doesn't work for systems with vm_page_size >= 16K.
+    if (page_chunks < MediumChunk) {
+      // 4 pages of VSN is committed, some is used by chunks
       ChunkManager cm(SpecializedChunk, SmallChunk, MediumChunk);
       VirtualSpaceNode vsn(vsn_test_size_bytes);
-      const size_t page_chunks = 4 * (size_t)os::vm_page_size() / BytesPerWord;
-      assert(page_chunks < MediumChunk, "Test expects medium chunks to be at least 4*page_size");
+
       vsn.initialize();
       vsn.expand_by(page_chunks, page_chunks);
       vsn.get_chunk_vs(SmallChunk);

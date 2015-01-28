@@ -34,6 +34,7 @@
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
+  static void print_tip();
 
  public:
 

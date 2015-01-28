@@ -64,12 +64,16 @@ private:
 
   ciConstantPoolCache*   _field_cache;  // cached map index->field
   GrowableArray<ciField*>* _nonstatic_fields;
+  int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
   //   NULL: no implementor.
   //   A ciInstanceKlass that's not itself: one implementor.
   //   Itsef: more than one implementors.
   ciInstanceKlass*       _implementor;
+
+  bool compute_injected_fields();
+  void compute_injected_fields_helper();
 
 protected:
   ciInstanceKlass(KlassHandle h_k);
@@ -186,6 +190,14 @@ public:
     else
       return _nonstatic_fields->length();
   }
+
+  bool has_injected_fields() {
+    if (_has_injected_fields == -1) {
+      return compute_injected_fields();
+    }
+    return _has_injected_fields > 0 ? true : false;
+  }
+
   // nth nonstatic field (presented by ascending address)
   ciField* nonstatic_field_at(int i) {
     assert(_nonstatic_fields != NULL, "");

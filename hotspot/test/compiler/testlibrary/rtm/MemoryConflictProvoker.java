@@ -69,11 +69,6 @@ class MemoryConflictProvoker extends AbortProvoker {
      * Accesses and modifies memory region from within the transaction.
      */
     public void transactionalRegion() {
-        try {
-            barrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            throw new RuntimeException(e);
-        }
         for (int i = 0; i < MemoryConflictProvoker.INNER_ITERATIONS; i++) {
             synchronized(monitor) {
                 MemoryConflictProvoker.field--;
@@ -86,6 +81,11 @@ class MemoryConflictProvoker extends AbortProvoker {
         try {
             Thread t = new Thread(conflictingThread);
             t.start();
+            try {
+                barrier.await();
+            } catch (InterruptedException | BrokenBarrierException e) {
+                throw new RuntimeException(e);
+            }
             transactionalRegion();
             t.join();
         } catch (Exception e) {

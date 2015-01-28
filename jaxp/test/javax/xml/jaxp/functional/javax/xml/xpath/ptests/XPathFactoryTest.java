@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@ package javax.xml.xpath.ptests;
 import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPBaseTest;
 import static org.testng.AssertJUnit.assertNotNull;
 import org.testng.annotations.Test;
 
 /**
  * Class containing the test cases for XPathFactory API.
  */
-public class XPathFactoryTest {
+public class XPathFactoryTest extends JAXPBaseTest {
     /**
      * Valid URL for creating a XPath factory.
      */
@@ -54,21 +54,21 @@ public class XPathFactoryTest {
 
     /**
      * XPathFactory.newInstance(String uri) throws NPE if uri is null.
+     *
+     * @throws XPathFactoryConfigurationException If the specified object model
+    *          is unavailable, or if there is a configuration error.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    private void testCheckXPathFactory02() {
-        try {
-            XPathFactory.newInstance(null);
-        } catch (XPathFactoryConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPathFactory02() throws XPathFactoryConfigurationException {
+        XPathFactory.newInstance(null);
     }
 
     /**
      * XPathFactory.newInstance(String uri) throws XPFCE if uri is just a blank
      * string.
      *
-     * @throws XPathFactoryConfigurationException
+     * @throws XPathFactoryConfigurationException If the specified object model
+    *          is unavailable, or if there is a configuration error.
      */
     @Test(expectedExceptions = XPathFactoryConfigurationException.class)
     public void testCheckXPathFactory03() throws XPathFactoryConfigurationException {
@@ -78,21 +78,21 @@ public class XPathFactoryTest {
     /**
      * Test for constructor - XPathFactory.newInstance(String uri) with valid
      * url - "http://java.sun.com/jaxp/xpath/dom".
+     *
+     * @throws XPathFactoryConfigurationException If the specified object model
+    *          is unavailable, or if there is a configuration error.
      */
     @Test
-    public void testCheckXPathFactory04() {
-        try {
-            assertNotNull(XPathFactory.newInstance(VALID_URL));
-        } catch (XPathFactoryConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPathFactory04() throws XPathFactoryConfigurationException {
+        assertNotNull(XPathFactory.newInstance(VALID_URL));
     }
 
     /**
      * Test for constructor - XPathFactory.newInstance(String uri) with invalid
      * url - "http://java.sun.com/jaxp/xpath/dom1".
      *
-     * @throws XPathFactoryConfigurationException
+     * @throws XPathFactoryConfigurationException If the specified object model
+    *          is unavailable, or if there is a configuration error.
      */
     @Test(expectedExceptions = XPathFactoryConfigurationException.class)
     public void testCheckXPathFactory05() throws XPathFactoryConfigurationException {
@@ -112,26 +112,24 @@ public class XPathFactoryTest {
      * Test for constructor - XPathFactory.newInstance(String uri) with valid
      * url - "http://java.sun.com/jaxp/xpath/dom" and creating XPath with
      * newXPath().
+     *
+     * @throws XPathFactoryConfigurationException If the specified object model
+    *          is unavailable, or if there is a configuration error.
      */
     @Test
-    public void testCheckXPathFactory07() {
-        try {
-            assertNotNull(XPathFactory.newInstance(VALID_URL).newXPath());
-        } catch (XPathFactoryConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPathFactory07() throws XPathFactoryConfigurationException {
+        assertNotNull(XPathFactory.newInstance(VALID_URL).newXPath());
     }
 
     /**
      * Test for constructor - XPathFactory.newInstance(String uri) with valid
      * uri - DOM_OBJECT_MODEL.toString().
+     *
+     * @throws XPathFactoryConfigurationException If the specified object model
+    *          is unavailable, or if there is a configuration error.
      */
     @Test
-    public void testCheckXPathFactory08() {
-        try {
-            assertNotNull(XPathFactory.newInstance(DOM_OBJECT_MODEL));
-        } catch (XPathFactoryConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPathFactory08() throws XPathFactoryConfigurationException {
+        assertNotNull(XPathFactory.newInstance(DOM_OBJECT_MODEL));
     }
 }

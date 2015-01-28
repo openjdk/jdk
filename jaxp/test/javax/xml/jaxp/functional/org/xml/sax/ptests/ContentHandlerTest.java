@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,18 @@ import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-import static org.xml.sax.ptests.SAXTestConst.CLASS_DIR;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
@@ -52,43 +46,34 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
  * transverses XML and print all visited node  when XMLreader parses XML. Test
  * verifies output is same as the golden file.
  */
-public class ContentHandlerTest {
+public class ContentHandlerTest extends JAXPFileBaseTest {
     /**
      * Content event handler visit all nodes to print to output file.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testcase01() {
-        String outputFile = CLASS_DIR + "Content.out";
+    public void testcase01() throws Exception {
+        String outputFile = USER_DIR + "Content.out";
         String goldFile = GOLDEN_DIR + "ContentGF.out";
         String xmlFile = XML_DIR + "namespace1.xml";
 
-        try(FileInputStream instream = new FileInputStream(xmlFile)) {
+        try(FileInputStream instream = new FileInputStream(xmlFile);
+                MyContentHandler cHandler = new MyContentHandler(outputFile)) {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setNamespaceAware(true);
             XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-            ContentHandler cHandler = new MyContentHandler(outputFile);
             xmlReader.setContentHandler(cHandler);
-            InputSource is = new InputSource(instream);
-            xmlReader.parse(is);
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch( IOException | SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        } finally {
-            try {
-                Path outputPath = Paths.get(outputFile);
-                if(Files.exists(outputPath))
-                    Files.delete(outputPath);
-            } catch (IOException ex) {
-                failCleanup(ex, outputFile);
-            }
+            xmlReader.parse(new InputSource(instream));
         }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
 
 /**
  * A content write out handler.
  */
-class MyContentHandler extends XMLFilterImpl {
+class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Prefix to every exception.
      */
@@ -257,5 +242,15 @@ class MyContentHandler extends XMLFilterImpl {
         } catch (IOException ex) {
             throw new SAXException(WRITE_ERROR, ex);
         }
+    }
+
+    /**
+     * Close the writer if it's initiated.
+     * @throws IOException if any IO error when close buffered writer.
+     */
+    @Override
+    public void close() throws IOException {
+        if (bWriter != null)
+            bWriter.close();
     }
 }

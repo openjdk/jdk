@@ -147,6 +147,7 @@ class ClassFileVisitor extends Tester.Visitor {
         public int mAttrs;
         public int mNumParams;
         public boolean mSynthetic;
+        public boolean mIsLambda;
         public boolean mIsConstructor;
         public boolean mIsClinit;
         public boolean mIsBridge;
@@ -165,6 +166,7 @@ class ClassFileVisitor extends Tester.Visitor {
             mIsClinit = mName.equals("<clinit>");
             prefix = cname + "." + mName + "() - ";
             mIsBridge = method.access_flags.is(AccessFlags.ACC_BRIDGE);
+            mIsLambda = mSynthetic && mName.startsWith("lambda$");
 
             if (mIsClinit) {
                 sb = new StringBuilder(); // Discard output
@@ -225,7 +227,7 @@ class ClassFileVisitor extends Tester.Visitor {
 
             // IMPL: Whether MethodParameters attributes will be generated
             // for some synthetics is unresolved. For now, assume no.
-            if (mSynthetic) {
+            if (mSynthetic && !mIsLambda) {
                 warn(prefix + "synthetic has MethodParameter attribute");
             }
 
@@ -349,10 +351,12 @@ class ClassFileVisitor extends Tester.Visitor {
             } else if (isEnum && mNumParams == 1 && index == 0 && mName.equals("valueOf")) {
                 expect = "name";
                 allowMandated = true;
-            } else if (mIsBridge) {
+            } else if (mIsBridge || mIsLambda) {
                 allowSynthetic = true;
                 /*  you can't expect an special name for bridges' parameters.
-                 *  The name of the original parameters are now copied.
+                 *  The name of the original parameters are now copied. Likewise
+                 *  for a method encoding the lambda expression, names are derived
+                 *  from source lambda's parameters and captured enclosing locals.
                  */
                 expect = null;
             }

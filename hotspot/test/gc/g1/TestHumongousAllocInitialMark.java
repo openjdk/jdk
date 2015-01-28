@@ -31,7 +31,9 @@
 import com.oracle.java.testlibrary.*;
 
 public class TestHumongousAllocInitialMark {
-    private static final int heapSize                       = 200; // MB
+    // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
+    // fulfill alignment constraints.
+    private static final int heapSize                       = 224; // MB
     private static final int heapRegionSize                 = 1;   // MB
     private static final int initiatingHeapOccupancyPercent = 50;  // %
 

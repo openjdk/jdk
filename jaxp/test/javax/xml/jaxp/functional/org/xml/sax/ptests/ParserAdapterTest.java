@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,8 @@
 package org.xml.sax.ptests;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -35,7 +33,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.ParserAdapter;
 import org.xml.sax.helpers.XMLFilterImpl;
@@ -47,7 +44,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
  * Unit test cases for ParserAdapter API. By default the only features recognized
  * are namespaces and namespace-prefixes.
  */
-public class ParserAdapterTest {
+public class ParserAdapterTest extends JAXPFileReadOnlyBaseTest {
     /**
      * namespaces feature name.
      */
@@ -67,10 +64,9 @@ public class ParserAdapterTest {
 
     /**
      * Initiate ParserAdapter.
-     * @throws ParserConfigurationException
-     * @throws SAXException
+     * @throws Exception If any errors occur.
      */
-    ParserAdapterTest() throws ParserConfigurationException, SAXException {
+    ParserAdapterTest() throws Exception {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         XMLReaderAdapter xmlReaderAdapter = new XMLReaderAdapter(xmlReader);
@@ -151,129 +147,111 @@ public class ParserAdapterTest {
 
     /**
      * parserAdapter.getFeature(NAMESPACES) returns true be default.
+     *
+     * @exception Exception If any errors occur.
      */
     @Test
-    public void getFeature01() {
-        try {
-           assertTrue(parserAdapter.getFeature(NAMESPACES));
-        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
-            failUnexpected(ex);
-        }
+    public void getFeature01() throws Exception {
+        assertTrue(parserAdapter.getFeature(NAMESPACES));
     }
 
     /**
      * parserAdapter.getFeature(NAMESPACE_PREFIXES) returns true be default.
+     *
+     * @exception Exception If any errors occur.
      */
     @Test
-    public void getFeature02() {
-        try {
-           assertFalse(parserAdapter.getFeature(NAMESPACE_PREFIXES));
-        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
-            failUnexpected(ex);
-        }
+    public void getFeature02() throws Exception {
+        assertFalse(parserAdapter.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * SAXNotRecognizedException thrown when feature name is not known one.
-     * @throws org.xml.sax.SAXNotRecognizedException expected Exception
+     *
+     * @exception Exception If any errors occur.
      */
     @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void getFeature03() throws SAXNotRecognizedException {
-        try {
-            parserAdapter.getFeature("no-meaning-feature");
-        } catch (SAXNotSupportedException ex) {
-            failUnexpected(ex);
-        }
+    public void getFeature03() throws Exception {
+        parserAdapter.getFeature("no-meaning-feature");
     }
 
     /**
      * Obtain getFeature after it's set returns set value.
+     *
+     * @exception Exception If any errors occur.
      */
     @Test
-    public void setFeature01() {
-        try {
-           parserAdapter.setFeature(NAMESPACES, false);
-           assertFalse(parserAdapter.getFeature(NAMESPACES));
-        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
-            failUnexpected(ex);
-        }
+    public void setFeature01() throws Exception {
+        parserAdapter.setFeature(NAMESPACES, false);
+        assertFalse(parserAdapter.getFeature(NAMESPACES));
     }
 
     /**
      * Obtain getFeature after it's set returns set value.
+     *
+     * @exception Exception If any errors occur.
      */
     @Test
-    public void setFeature02() {
-        try {
-           parserAdapter.setFeature(NAMESPACE_PREFIXES, false);
-           assertFalse(parserAdapter.getFeature(NAMESPACE_PREFIXES));
-        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
-            failUnexpected(ex);
-        }
+    public void setFeature02() throws Exception {
+        parserAdapter.setFeature(NAMESPACE_PREFIXES, false);
+        assertFalse(parserAdapter.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * Obtain getFeature after it's set returns set value.
+     *
+     * @exception Exception If any errors occur.
      */
     @Test
-    public void setFeature03() {
-        try {
-           parserAdapter.setFeature(NAMESPACES, true);
-           assertTrue(parserAdapter.getFeature(NAMESPACES));
-        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
-            failUnexpected(ex);
-        }
+    public void setFeature03() throws Exception {
+        parserAdapter.setFeature(NAMESPACES, true);
+        assertTrue(parserAdapter.getFeature(NAMESPACES));
     }
 
     /**
      * Obtain getFeature after it's set returns set value.
+     *
+     * @exception Exception If any errors occur.
      */
     @Test
-    public void setFeature04() {
-        try {
-           parserAdapter.setFeature(NAMESPACE_PREFIXES, true);
-           assertTrue(parserAdapter.getFeature(NAMESPACE_PREFIXES));
-        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
-            failUnexpected(ex);
-        }
+    public void setFeature04() throws Exception {
+        parserAdapter.setFeature(NAMESPACE_PREFIXES, true);
+        assertTrue(parserAdapter.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * NPE expected when parsing a null object by ParserAdapter.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void parse01() {
-        try {
-            parserAdapter.parse((InputSource)null);
-        } catch (IOException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void parse01() throws Exception {
+        parserAdapter.parse((InputSource)null);
     }
 
     /**
      * SAXException expected when parsing a wrong-formatter XML with ParserAdapter.
-     * @throws org.xml.sax.SAXException
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXException.class)
-    public void parse02() throws SAXException {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class)
+    public void parse02() throws Exception {
         try(FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
             InputSource is = new InputSource(fis);
             parserAdapter.parse(is);
-        } catch (IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * Parse a well-formatter XML with ParserAdapter.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void parse03() {
+    @Test(groups = {"readLocalFiles"})
+    public void parse03() throws Exception {
         try(FileInputStream fis = new FileInputStream(XML_DIR + "correct.xml")) {
             InputSource is = new InputSource(fis);
             parserAdapter.parse(is);
-        } catch (IOException | SAXException ex) {
-            failUnexpected(ex);
         }
     }
 }

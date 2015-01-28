@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ public class Platform {
     private static final String osArch      = System.getProperty("os.arch");
     private static final String vmName      = System.getProperty("java.vm.name");
     private static final String userName    = System.getProperty("user.name");
+    private static final String compiler    = System.getProperty("sun.management.compiler");
 
     public static boolean isClient() {
         return vmName.endsWith(" Client VM");
@@ -55,6 +56,10 @@ public class Platform {
         return vmName.contains("Embedded");
     }
 
+    public static boolean isTieredSupported() {
+        return compiler.contains("Tiered Compilers");
+    }
+
     public static boolean is32bit() {
         return dataModel.equals("32");
     }
@@ -63,20 +68,24 @@ public class Platform {
         return dataModel.equals("64");
     }
 
-    public static boolean isSolaris() {
-        return isOs("sunos");
+    public static boolean isAix() {
+        return isOs("aix");
     }
 
-    public static boolean isWindows() {
-        return isOs("win");
+    public static boolean isLinux() {
+        return isOs("linux");
     }
 
     public static boolean isOSX() {
         return isOs("mac");
     }
 
-    public static boolean isLinux() {
-        return isOs("linux");
+    public static boolean isSolaris() {
+        return isOs("sunos");
+    }
+
+    public static boolean isWindows() {
+        return isOs("win");
     }
 
     private static boolean isOs(String osname) {
@@ -135,7 +144,9 @@ public class Platform {
      */
     public static boolean shouldSAAttach() throws Exception {
 
-        if (isLinux()) {
+        if (isAix()) {
+            return false;   // SA not implemented.
+        } else if (isLinux()) {
             return canPtraceAttachLinux();
         } else if (isOSX()) {
             return canAttachOSX();

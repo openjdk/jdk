@@ -77,7 +77,7 @@ public class BusyLock implements CompilableTest, Runnable {
         }
     }
 
-    public void test() {
+    public void syncAndTest() {
         try {
             barrier.await();
             // wait until monitor is locked by a ::run method
@@ -85,6 +85,10 @@ public class BusyLock implements CompilableTest, Runnable {
         } catch (InterruptedException | BrokenBarrierException e) {
             throw new RuntimeException("Synchronization error happened.", e);
         }
+        test();
+    }
+
+    public void test() {
         synchronized(monitor) {
             BusyLock.field++;
         }
@@ -130,7 +134,7 @@ public class BusyLock implements CompilableTest, Runnable {
 
         Thread t = new Thread(busyLock);
         t.start();
-        busyLock.test();
+        busyLock.syncAndTest();
         t.join();
     }
 }

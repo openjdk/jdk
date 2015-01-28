@@ -124,7 +124,7 @@ STATIC_STDCXX = -Wl,-lC_r
 # MAPFLAG = -Xlinker --version-script=FILENAME
 
 # Build shared library
-SHARED_FLAG = -q64 -b64 -bexpall -G -bnoentry -qmkshrobj -brtl -bnolibpath
+SHARED_FLAG = -q64 -b64 -bexpall -G -bnoentry -qmkshrobj -brtl -bnolibpath -bernotok
 
 #------------------------------------------------------------------------
 # Debug flags
