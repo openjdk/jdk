@@ -611,6 +611,9 @@ class JdepsTask {
                             deque.add(cn);
                         }
                         a.addClass(d.getOrigin(), d.getTarget());
+                    } else {
+                        // ensure that the parsed class is added the archive
+                        a.addClass(d.getOrigin());
                     }
                 }
                 for (String name : a.reader().skippedEntries()) {
@@ -643,6 +646,7 @@ class JdepsTask {
                             // if name is a fully-qualified class name specified
                             // from command-line, this class might already be parsed
                             doneClasses.add(classFileName);
+
                             for (Dependency d : finder.findDependencies(cf)) {
                                 if (depth == 0) {
                                     // ignore the dependency
@@ -654,6 +658,9 @@ class JdepsTask {
                                     if (!doneClasses.contains(cn) && !deque.contains(cn)) {
                                         deque.add(cn);
                                     }
+                                } else {
+                                    // ensure that the parsed class is added the archive
+                                    a.addClass(d.getOrigin());
                                 }
                             }
                         }
@@ -809,34 +816,51 @@ class JdepsTask {
         }
     }
 
-    private List<Archive> getClassPathArchives(String paths) throws IOException {
+    /*
+     * Returns the list of Archive specified in cpaths and not included
+     * initialArchives
+     */
+    private List<Archive> getClassPathArchives(String cpaths)
+            throws IOException
+    {
         List<Archive> result = new ArrayList<>();
-        if (paths.isEmpty()) {
+        if (cpaths.isEmpty()) {
             return result;
         }
-        for (String p : paths.split(File.pathSeparator)) {
+        List<Path> paths = new ArrayList<>();
+        for (String p : cpaths.split(File.pathSeparator)) {
             if (p.length() > 0) {
-                List<Path> files = new ArrayList<>();
                 // wildcard to parse all JAR files e.g. -classpath dir/*
                 int i = p.lastIndexOf(".*");
                 if (i > 0) {
                     Path dir = Paths.get(p.substring(0, i));
                     try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.jar")) {
                         for (Path entry : stream) {
-                            files.add(entry);
+                            paths.add(entry);
                         }
                     }
                 } else {
-                    files.add(Paths.get(p));
-                }
-                for (Path f : files) {
-                    if (Files.exists(f)) {
-                        result.add(Archive.getInstance(f));
-                    }
+                    paths.add(Paths.get(p));
                 }
             }
         }
+        for (Path path : paths) {
+            boolean found = initialArchives.stream()
+                                           .map(Archive::path)
+                                           .anyMatch(p -> isSameFile(path, p));
+            if (!found && Files.exists(path)) {
+                result.add(Archive.getInstance(path));
+            }
+        }
         return result;
+    }
+
+    private boolean isSameFile(Path p1, Path p2) {
+        try {
+            return Files.isSameFile(p1, p2);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     class RawOutputFormatter implements Analyzer.Visitor {
