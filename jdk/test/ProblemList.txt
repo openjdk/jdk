@@ -301,6 +301,9 @@ com/sun/jdi/CatchPatternTest.sh                                 generic-all
 # 8069402
 com/sun/jdi/ConnectedVMs.java					generic-all
 
+# 8067354
+com/sun/jdi/GetLocalVariables4Test.sh				windows-all
+
 ############################################################################
 
 # jdk_util
