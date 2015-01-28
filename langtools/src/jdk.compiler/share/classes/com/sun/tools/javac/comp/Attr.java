@@ -2640,8 +2640,7 @@ public class Attr extends JCTree.Visitor {
             try {
                 refResult = rs.resolveMemberReference(localEnv, that, that.expr.type,
                         that.name, argtypes, typeargtypes, referenceCheck,
-                        resultInfo.checkContext.inferenceContext(),
-                        resultInfo.checkContext.deferredAttrContext().mode);
+                        resultInfo.checkContext.inferenceContext(), rs.basicReferenceChooser);
             } finally {
                 resultInfo.checkContext.inferenceContext().rollback(saved_undet);
             }
@@ -2659,9 +2658,8 @@ public class Attr extends JCTree.Visitor {
                     case WRONG_MTHS:
                     case AMBIGUOUS:
                     case HIDDEN:
-                    case STATICERR:
                     case MISSING_ENCL:
-                    case WRONG_STATICNESS:
+                    case STATICERR:
                         targetError = true;
                         break;
                     default:
@@ -2718,15 +2716,6 @@ public class Attr extends JCTree.Visitor {
                     //static ref with class type-args
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
                             diags.fragment("static.mref.with.targs"));
-                    result = that.type = types.createErrorType(currentTarget);
-                    return;
-                }
-
-                if (that.sym.isStatic() && !TreeInfo.isStaticSelector(that.expr, names) &&
-                        !that.kind.isUnbound()) {
-                    //no static bound mrefs
-                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
-                            diags.fragment("static.bound.mref"));
                     result = that.type = types.createErrorType(currentTarget);
                     return;
                 }
@@ -2794,7 +2783,8 @@ public class Attr extends JCTree.Visitor {
 
     @SuppressWarnings("fallthrough")
     void checkReferenceCompatible(JCMemberReference tree, Type descriptor, Type refType, CheckContext checkContext, boolean speculativeAttr) {
-        Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
+        InferenceContext inferenceContext = checkContext.inferenceContext();
+        Type returnType = inferenceContext.asUndetVar(descriptor.getReturnType());
 
         Type resType;
         switch (tree.getMode()) {
@@ -2823,10 +2813,20 @@ public class Attr extends JCTree.Visitor {
         if (incompatibleReturnType != null) {
             checkContext.report(tree, diags.fragment("incompatible.ret.type.in.mref",
                     diags.fragment("inconvertible.types", resType, descriptor.getReturnType())));
+        } else {
+            if (inferenceContext.free(refType)) {
+                // we need to wait for inference to finish and then replace inference vars in the referent type
+                inferenceContext.addFreeTypeListener(List.of(refType),
+                        instantiatedContext -> {
+                            tree.referentType = instantiatedContext.asInstType(refType);
+                        });
+            } else {
+                tree.referentType = refType;
+            }
         }
 
         if (!speculativeAttr) {
-            List<Type> thrownTypes = checkContext.inferenceContext().asUndetVars(descriptor.getThrownTypes());
+            List<Type> thrownTypes = inferenceContext.asUndetVars(descriptor.getThrownTypes());
             if (chk.unhandled(refType.getThrownTypes(), thrownTypes).nonEmpty()) {
                 log.error(tree, "incompatible.thrown.types.in.mref", refType.getThrownTypes());
             }
@@ -4198,6 +4198,8 @@ public class Attr extends JCTree.Visitor {
             chk.validate(tree.extending, env);
             chk.validate(tree.implementing, env);
         }
+
+        c.markAbstractIfNeeded(types);
 
         // If this is a non-abstract class, check that it has no abstract
         // methods or unimplemented methods of an implemented interface.

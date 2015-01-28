@@ -52,7 +52,9 @@ public class ThresholdNotificationsTest implements NotificationListener {
 
     public static void main(String[] args) {
         for (BlobType bt : BlobType.getAvailable()) {
-            new ThresholdNotificationsTest(bt).runTest();
+            if (CodeCacheUtils.isCodeHeapPredictable(bt)) {
+                new ThresholdNotificationsTest(bt).runTest();
+            }
         }
     }
 

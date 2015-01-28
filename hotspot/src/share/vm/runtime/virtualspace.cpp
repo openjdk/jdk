@@ -38,7 +38,8 @@ ReservedSpace::ReservedSpace() : _base(NULL), _size(0), _noaccess_prefix(0),
 }
 
 ReservedSpace::ReservedSpace(size_t size) {
-  size_t page_size = os::page_size_for_region(size, 1);
+  // Want to use large pages where possible and pad with small pages.
+  size_t page_size = os::page_size_for_region_unaligned(size, 1);
   bool large_pages = page_size != (size_t)os::vm_page_size();
   // Don't force the alignment to be large page aligned,
   // since that will waste memory.
@@ -617,7 +618,7 @@ VirtualSpace::VirtualSpace() {
 
 
 bool VirtualSpace::initialize(ReservedSpace rs, size_t committed_size) {
-  const size_t max_commit_granularity = os::page_size_for_region(rs.size(), 1);
+  const size_t max_commit_granularity = os::page_size_for_region_unaligned(rs.size(), 1);
   return initialize_with_granularity(rs, committed_size, max_commit_granularity);
 }
 
@@ -1239,7 +1240,7 @@ class TestVirtualSpace : AllStatic {
     case Disable:
       return vs.initialize_with_granularity(rs, 0, os::vm_page_size());
     case Commit:
-      return vs.initialize_with_granularity(rs, 0, os::page_size_for_region(rs.size(), 1));
+      return vs.initialize_with_granularity(rs, 0, os::page_size_for_region_unaligned(rs.size(), 1));
     }
   }
 

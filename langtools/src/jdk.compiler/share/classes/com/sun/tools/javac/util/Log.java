@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
@@ -190,10 +191,6 @@ public class Log extends AbstractLog {
     /** Print stack trace on errors?
      */
     public boolean dumpOnError;
-
-    /** Print multiple errors for same source locations.
-     */
-    public boolean multipleErrors;
 
     /**
      * Diagnostic listener, if provided through programmatic
@@ -417,7 +414,7 @@ public class Log extends AbstractLog {
      * source name and pos.
      */
     protected boolean shouldReport(JavaFileObject file, int pos) {
-        if (multipleErrors || file == null)
+        if (file == null)
             return true;
 
         Pair<JavaFileObject,Integer> coords = new Pair<>(file, pos);
@@ -580,8 +577,9 @@ public class Log extends AbstractLog {
                 break;
 
             case ERROR:
-                if (nerrors < MaxErrors
-                    && shouldReport(diagnostic.getSource(), diagnostic.getIntPosition())) {
+                if (nerrors < MaxErrors &&
+                    (diagnostic.isFlagSet(DiagnosticFlag.MULTIPLE) ||
+                     shouldReport(diagnostic.getSource(), diagnostic.getIntPosition()))) {
                     writeDiagnostic(diagnostic);
                     nerrors++;
                 }
