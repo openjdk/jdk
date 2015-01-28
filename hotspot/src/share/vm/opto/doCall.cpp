@@ -94,7 +94,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (log != NULL) {
     int rid = (receiver_count >= 0)? log->identify(profile.receiver(0)): -1;
     int r2id = (rid != -1 && profile.has_receiver(1))? log->identify(profile.receiver(1)):-1;
-    log->begin_elem("call method='%d' count='%d' prof_factor='%g'",
+    log->begin_elem("call method='%d' count='%d' prof_factor='%f'",
                     log->identify(callee), site_count, prof_factor);
     if (call_does_dispatch)  log->print(" virtual='1'");
     if (allow_inline)     log->print(" inline='1'");

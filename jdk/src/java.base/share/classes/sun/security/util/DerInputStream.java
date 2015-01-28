@@ -577,6 +577,10 @@ public class DerInputStream {
                 value <<= 8;
                 value += 0x0ff & in.read();
             }
+            if (value < 0) {
+                throw new IOException("DerInputStream.getLength(): "
+                        + "Invalid length bytes");
+            }
         }
         return value;
     }

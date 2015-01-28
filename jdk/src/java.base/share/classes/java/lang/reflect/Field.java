@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1139,21 +1139,28 @@ class Field extends AccessibleObject implements Member {
         return AnnotationParser.toArray(declaredAnnotations());
     }
 
-    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+    private transient volatile Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
-        if (declaredAnnotations == null) {
-            Field root = this.root;
-            if (root != null) {
-                declaredAnnotations = root.declaredAnnotations();
-            } else {
-                declaredAnnotations = AnnotationParser.parseAnnotations(
-                        annotations,
-                        sun.misc.SharedSecrets.getJavaLangAccess().getConstantPool(getDeclaringClass()),
-                        getDeclaringClass());
+    private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
+        Map<Class<? extends Annotation>, Annotation> declAnnos;
+        if ((declAnnos = declaredAnnotations) == null) {
+            synchronized (this) {
+                if ((declAnnos = declaredAnnotations) == null) {
+                    Field root = this.root;
+                    if (root != null) {
+                        declAnnos = root.declaredAnnotations();
+                    } else {
+                        declAnnos = AnnotationParser.parseAnnotations(
+                                annotations,
+                                sun.misc.SharedSecrets.getJavaLangAccess()
+                                        .getConstantPool(getDeclaringClass()),
+                                getDeclaringClass());
+                    }
+                    declaredAnnotations = declAnnos;
+                }
             }
         }
-        return declaredAnnotations;
+        return declAnnos;
     }
 
     private native byte[] getTypeAnnotationBytes0();

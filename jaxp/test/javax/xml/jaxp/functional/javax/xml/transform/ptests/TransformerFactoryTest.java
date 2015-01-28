@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,35 @@ package javax.xml.transform.ptests;
 
 import java.io.*;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
-import static javax.xml.transform.ptests.TransformerTestConst.CLASS_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.stream.*;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
 import org.w3c.dom.*;
-import org.xml.sax.SAXException;
 
 /**
  * Class containing the test cases for TransformerFactory API's
  * getAssociatedStyleSheet method.
  */
-public class TransformerFactoryTest {
+public class TransformerFactoryTest extends JAXPFileBaseTest {
     /**
      * This test case checks for the getAssociatedStylesheet method
      * of TransformerFactory.
      * The style sheet returned is then copied to an tfactory01.out
-     * It will then be verified to see if it matches the golden files
+     * It will then be verified to see if it matches the golden files.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void tfactory01() {
-        String outputFile = CLASS_DIR + "tfactory01.out";
+    public void tfactory01() throws Exception {
+        String outputFile = USER_DIR + "tfactory01.out";
         String goldFile = GOLDEN_DIR + "tfactory01GF.out";
         String xmlFile = XML_DIR + "TransformerFactoryTest.xml";
         String xmlURI = "file:///" + XML_DIR;
@@ -76,10 +72,7 @@ public class TransformerFactoryTest {
                                            "Modern", null);
             Transformer t = tFactory.newTransformer();
             t.transform(s, streamResult);
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (IOException | ParserConfigurationException
-                | TransformerException | SAXException ex) {
-            failUnexpected(ex);
         }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }

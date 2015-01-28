@@ -28,7 +28,6 @@ import javax.swing.plaf.synth.*;
 import java.awt.*;
 import java.util.*;
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.plaf.*;
 
 /**
@@ -44,7 +43,8 @@ import javax.swing.plaf.*;
  * @author Scott Violet
  */
 public class DefaultSynthStyle extends SynthStyle implements Cloneable {
-    private static final String PENDING = "Pending";
+
+    private static final Object PENDING = new Object();
 
     /**
      * Should the component be opaque?
