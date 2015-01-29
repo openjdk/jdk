@@ -1666,4 +1666,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         assert(elemType.isPrimitive());
         return Lazy.MH_copyAsPrimitiveArray.bindTo(Wrapper.forPrimitiveType(elemType));
     }
+
+    /*non-public*/ static void assertSame(Object mh1, Object mh2) {
+        if (mh1 != mh2) {
+            String msg = String.format("mh1 != mh2: mh1 = %s (form: %s); mh2 = %s (form: %s)",
+                    mh1, ((MethodHandle)mh1).form,
+                    mh2, ((MethodHandle)mh2).form);
+            throw newInternalError(msg);
+        }
+    }
 }
