@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,37 +25,35 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.util.Objects;
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
 /**
- * IR representation for {@code break} statements.
+ * IR representation for synthetic jump into an inlined finally statement.
  */
 @Immutable
-public final class BreakNode extends JumpStatement {
+public final class JumpToInlinedFinally extends JumpStatement {
     private static final long serialVersionUID = 1L;
 
     /**
      * Constructor
      *
-     * @param lineNumber line number
-     * @param token      token
-     * @param finish     finish
-     * @param labelName  label name for break or null if none
+     * @param labelName  label name for inlined finally block
      */
-    public BreakNode(final int lineNumber, final long token, final int finish, final String labelName) {
-        super(lineNumber, token, finish, labelName);
+    public JumpToInlinedFinally(final String labelName) {
+        super(NO_LINE_NUMBER, NO_TOKEN, NO_FINISH, Objects.requireNonNull(labelName));
     }
 
-    private BreakNode(final BreakNode breakNode, final LocalVariableConversion conversion) {
+    private JumpToInlinedFinally(final JumpToInlinedFinally breakNode, final LocalVariableConversion conversion) {
         super(breakNode, conversion);
     }
 
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
-        if (visitor.enterBreakNode(this)) {
-            return visitor.leaveBreakNode(this);
+        if (visitor.enterJumpToInlinedFinally(this)) {
+            return visitor.leaveJumpToInlinedFinally(this);
         }
 
         return this;
@@ -63,21 +61,30 @@ public final class BreakNode extends JumpStatement {
 
     @Override
     JumpStatement createNewJumpStatement(final LocalVariableConversion conversion) {
-        return new BreakNode(this, conversion);
+        return new JumpToInlinedFinally(this, conversion);
     }
 
     @Override
     String getStatementName() {
-        return "break";
+        return ":jumpToInlinedFinally";
     }
 
     @Override
-    public BreakableNode getTarget(final LexicalContext lc) {
-        return lc.getBreakable(getLabelName());
+    public Block getTarget(final LexicalContext lc) {
+        return lc.getInlinedFinally(getLabelName());
+    }
+
+    @Override
+    public TryNode getPopScopeLimit(final LexicalContext lc) {
+        // Returns the try node to which this jump's target belongs. This will make scope popping also pop the scope
+        // for the body of the try block, if it needs scope.
+        return lc.getTryNodeForInlinedFinally(getLabelName());
     }
 
     @Override
     Label getTargetLabel(final BreakableNode target) {
-        return target.getBreakLabel();
+        assert target != null;
+        // We're jumping to the entry of the inlined finally block
+        return ((Block)target).getEntryLabel();
     }
 }
