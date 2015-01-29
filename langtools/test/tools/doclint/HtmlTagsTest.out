@@ -13,6 +13,9 @@ HtmlTagsTest.java:23: error: self-closing element not allowed
 HtmlTagsTest.java:28: error: element not allowed in documentation comments: <html>
      * <html>
        ^
+HtmlTagsTest.java:28: error: element not closed: html
+     * <html>
+       ^
 HtmlTagsTest.java:33: error: block element not allowed within inline element <span>: p
      * <span> <p> </span>
               ^
@@ -40,5 +43,5 @@ HtmlTagsTest.java:59: error: text not allowed in <ul> element
 HtmlTagsTest.java:64: error: tag not allowed here: <b>
      * <ul> <b>text</b> <li> ... </li> </ul>
             ^
-13 errors
+14 errors
 1 warning

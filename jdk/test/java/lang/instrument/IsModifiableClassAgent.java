@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @ignore JDK-8068162
  * @bug 6331574
  * @summary test isModifiableClass
  * @author Robert Field, Sun Microsystems

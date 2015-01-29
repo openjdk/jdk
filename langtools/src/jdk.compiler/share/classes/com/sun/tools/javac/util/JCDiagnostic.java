@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic error(
                 DiagnosticFlag flag, DiagnosticSource source, DiagnosticPosition pos, Error errorKey) {
-            JCDiagnostic diag = create(null, defaultErrorFlags, source, pos, errorKey);
+            JCDiagnostic diag = create(null, EnumSet.copyOf(defaultErrorFlags), source, pos, errorKey);
             if (flag != null) {
                 diag.setFlag(flag);
             }
@@ -432,7 +432,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         SYNTAX,
         RECOVERABLE,
         NON_DEFERRABLE,
-        COMPRESSED
+        COMPRESSED,
+        /** Print multiple errors for same source locations.
+         */
+        MULTIPLE;
     }
 
     private final DiagnosticSource source;
