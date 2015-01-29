@@ -428,9 +428,9 @@ static unsigned __stdcall java_start(Thread* thread) {
   }
 
   // Diagnostic code to investigate JDK-6573254
-  int res = 50115;  // non-java thread
+  int res = 30115;  // non-java thread
   if (thread->is_Java_thread()) {
-    res = 40115;    // java thread
+    res = 20115;    // java thread
   }
 
   // Install a win32 structured exception handler around every thread created
@@ -3791,6 +3791,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
 
     static INIT_ONCE init_once_crit_sect = INIT_ONCE_STATIC_INIT;
     static CRITICAL_SECTION crit_sect;
+    static volatile jint process_exiting = 0;
     int i, j;
     DWORD res;
     HANDLE hproc, hthr;
@@ -3798,10 +3799,10 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     // The first thread that reached this point, initializes the critical section.
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else {
+    } else if (OrderAccess::load_acquire(&process_exiting) == 0) {
       EnterCriticalSection(&crit_sect);
 
-      if (what == EPT_THREAD) {
+      if (what == EPT_THREAD && OrderAccess::load_acquire(&process_exiting) == 0) {
         // Remove from the array those handles of the threads that have completed exiting.
         for (i = 0, j = 0; i < handle_count; ++i) {
           res = WaitForSingleObject(handles[i], 0 /* don't wait */);
@@ -3856,7 +3857,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
         // The current exiting thread has stored its handle in the array, and now
         // should leave the critical section before calling _endthreadex().
 
-      } else { // what != EPT_THREAD
+      } else if (what != EPT_THREAD) {
         if (handle_count > 0) {
           // Before ending the process, make sure all the threads that had called
           // _endthreadex() completed.
@@ -3882,24 +3883,28 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
           handle_count = 0;
         }
 
-        // End the process, not leaving critical section.
-        // This makes sure no other thread executes exit-related code at the same
-        // time, thus a race is avoided.
-        if (what == EPT_PROCESS) {
-          ::exit(exit_code);
-        } else {
-          _exit(exit_code);
-        }
+        OrderAccess::release_store(&process_exiting, 1);
       }
 
       LeaveCriticalSection(&crit_sect);
+    }
+
+    if (what == EPT_THREAD) {
+      while (OrderAccess::load_acquire(&process_exiting) != 0) {
+        // Some other thread is about to call exit(), so we
+        // don't let the current thread proceed to _endthreadex()
+        SuspendThread(GetCurrentThread());
+        // Avoid busy-wait loop, if SuspendThread() failed.
+        Sleep(EXIT_TIMEOUT);
+      }
     }
   }
 
   // We are here if either
   // - there's no 'race at exit' bug on this OS release;
   // - initialization of the critical section failed (unlikely);
-  // - the current thread has stored its handle and left the critical section.
+  // - the current thread has stored its handle and left the critical section;
+  // - the process-exiting thread has raised the flag and left the critical section.
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
