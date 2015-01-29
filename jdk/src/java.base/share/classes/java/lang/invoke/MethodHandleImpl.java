@@ -753,7 +753,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static
     MethodHandle profile(MethodHandle target) {
         if (DONT_INLINE_THRESHOLD >= 0) {
-            return makeBlockInlningWrapper(target);
+            return makeBlockInliningWrapper(target);
         } else {
             return target;
         }
@@ -764,8 +764,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      * Corresponding LambdaForm has @DontInline when compiled into bytecode.
      */
     static
-    MethodHandle makeBlockInlningWrapper(MethodHandle target) {
-        LambdaForm lform = PRODUCE_BLOCK_INLINING_FORM.apply(target);
+    MethodHandle makeBlockInliningWrapper(MethodHandle target) {
+        LambdaForm lform;
+        if (DONT_INLINE_THRESHOLD > 0) {
+            lform = PRODUCE_BLOCK_INLINING_FORM.apply(target);
+        } else {
+            lform = PRODUCE_REINVOKER_FORM.apply(target);
+        }
         return new CountingWrapper(target, lform,
                 PRODUCE_BLOCK_INLINING_FORM, PRODUCE_REINVOKER_FORM,
                                    DONT_INLINE_THRESHOLD);
@@ -836,7 +841,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         boolean countDown() {
-            if (count <= 0) {
+            int c = count;
+            if (c <= 1) {
                 // Try to limit number of updates. MethodHandle.updateForm() doesn't guarantee LF update visibility.
                 if (isCounting) {
                     isCounting = false;
@@ -845,7 +851,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     return false;
                 }
             } else {
-                --count;
+                count = c - 1;
                 return false;
             }
         }
