@@ -832,7 +832,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle wrapper;
             if (isCounting) {
                 LambdaForm lform;
-                lform = countingFormProducer.apply(target);
+                lform = countingFormProducer.apply(newTarget);
                 wrapper = new CountingWrapper(newTarget, lform, countingFormProducer, nonCountingFormProducer, DONT_INLINE_THRESHOLD);
             } else {
                 wrapper = newTarget; // no need for a counting wrapper anymore
