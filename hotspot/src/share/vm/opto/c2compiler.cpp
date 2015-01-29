@@ -39,6 +39,9 @@ const char* C2Compiler::retry_no_subsuming_loads() {
 const char* C2Compiler::retry_no_escape_analysis() {
   return "retry without escape analysis";
 }
+const char* C2Compiler::retry_class_loading_during_parsing() {
+  return "retry class loading during parsing";
+}
 bool C2Compiler::init_c2_runtime() {
 
   // Check assumptions used while running ADLC
@@ -104,6 +107,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
+      if (C.failure_reason_is(retry_class_loading_during_parsing())) {
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
       if (C.failure_reason_is(retry_no_subsuming_loads())) {
         assert(subsume_loads, "must make progress");
         subsume_loads = false;

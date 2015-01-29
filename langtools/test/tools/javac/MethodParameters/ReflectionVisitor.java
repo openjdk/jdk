@@ -277,7 +277,7 @@ public class ReflectionVisitor extends Tester.Visitor {
                     param = "final " + param;
                 }
                 sb.append(sep).append(param);
-                if (!m.isBridge() && !expect.equals(param)) {
+                if (!m.isBridge() && !m.getName().startsWith("lambda$") && !expect.equals(param)) {
                     error(prefix + "param[" + i + "]='"
                           + param + "' expected '" + expect + "'");
                     break;

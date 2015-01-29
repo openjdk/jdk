@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,14 @@
 package org.xml.sax.ptests;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
@@ -42,7 +38,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /**
  * Unit test for XMLFilter.
  */
-public class XMLFilterTest {
+public class XMLFilterTest extends JAXPFileReadOnlyBaseTest {
     /**
      * name spaces constant.
      */
@@ -129,139 +125,114 @@ public class XMLFilterTest {
 
     /**
      * By default true is expected get namespaces feature.
-     * @throws SAXException
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void getFeature01() throws SAXException {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+    public void getFeature01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
 
-            XMLFilterImpl xmlFilter = new XMLFilterImpl();
-            xmlFilter.setParent(xmlReader);
-            assertTrue(xmlFilter.getFeature(NAMESPACES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+        xmlFilter.setParent(xmlReader);
+        assertTrue(xmlFilter.getFeature(NAMESPACES));
     }
 
     /**
      * By default false is expected get namespaces-prefix feature.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void getFeature02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-
-            XMLFilterImpl xmlFilter = new XMLFilterImpl();
-            xmlFilter.setParent(xmlReader);
-            assertFalse(xmlFilter.getFeature(NAMESPACE_PREFIXES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+    public void getFeature02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+        xmlFilter.setParent(spf.newSAXParser().getXMLReader());
+        assertFalse(xmlFilter.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * SAXNotRecognizedException is expected when get a feature by an invalid
      * feature name.
-     * @throws org.xml.sax.SAXNotRecognizedException If the feature
-     *            value can't be assigned or retrieved from the parent.
-     * @throws org.xml.sax.SAXNotSupportedException When the
-     *            parent recognizes the feature name but
-     *            cannot determine its value at this time.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void getFeature03() throws SAXNotRecognizedException,
-           SAXNotSupportedException {
+    public void getFeature03() throws Exception {
         new XMLFilterImpl().getFeature("no-meaning-feature");
     }
 
     /**
      * Set namespaces feature to a value to XMLFilter. it's expected same when
      * obtain it again.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void setFeature01() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+    public void setFeature01() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
 
-            XMLFilterImpl xmlFilter = new XMLFilterImpl();
-            xmlFilter.setParent(xmlReader);
-            xmlFilter.setFeature(NAMESPACES, false);
-            assertFalse(xmlFilter.getFeature(NAMESPACES));
-            xmlFilter.setFeature(NAMESPACES, true);
-            assertTrue(xmlFilter.getFeature(NAMESPACES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+        xmlFilter.setParent(spf.newSAXParser().getXMLReader());
+        xmlFilter.setFeature(NAMESPACES, false);
+        assertFalse(xmlFilter.getFeature(NAMESPACES));
+        xmlFilter.setFeature(NAMESPACES, true);
+        assertTrue(xmlFilter.getFeature(NAMESPACES));
     }
 
     /**
      * Set namespaces-prefix feature to a value to XMLFilter. it's expected same
      * when obtain it again.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void setFeature02() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+    public void setFeature02() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
 
-            XMLFilterImpl xmlFilter = new XMLFilterImpl();
-            xmlFilter.setParent(xmlReader);
-            xmlFilter.setFeature(NAMESPACE_PREFIXES, false);
-            assertFalse(xmlFilter.getFeature(NAMESPACE_PREFIXES));
-            xmlFilter.setFeature(NAMESPACE_PREFIXES, true);
-            assertTrue(xmlFilter.getFeature(NAMESPACE_PREFIXES));
-        } catch (SAXException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        }
+        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+        xmlFilter.setParent(spf.newSAXParser().getXMLReader());
+        xmlFilter.setFeature(NAMESPACE_PREFIXES, false);
+        assertFalse(xmlFilter.getFeature(NAMESPACE_PREFIXES));
+        xmlFilter.setFeature(NAMESPACE_PREFIXES, true);
+        assertTrue(xmlFilter.getFeature(NAMESPACE_PREFIXES));
     }
 
     /**
      * NullPointerException is expected when parse a null InputSource.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void parse01() {
-        try {
-            new XMLFilterImpl().parse((InputSource)null);
-        } catch (IOException | SAXException ex) {
-            failUnexpected(ex);
-        }
+    public void parse01() throws Exception {
+        new XMLFilterImpl().parse((InputSource)null);
     }
 
     /**
      * SAXException is expected when parsing a invalid formatted XML file.
-     * @throws org.xml.sax.SAXException when parse a incorrect formatted XML
-     * file.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void parse02() throws SAXException {
-        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    public void parse02() throws Exception {
         try(FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
-            InputSource is = new InputSource(fis);
-            xmlFilter.parse(is);
-        } catch (IOException ex) {
-            failUnexpected(ex);
+            new XMLFilterImpl().parse(new InputSource(fis));
         }
     }
 
     /**
      * No exception when parse a normal XML file.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void parse03() {
-        XMLFilterImpl xmlFilter = new XMLFilterImpl();
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    public void parse03() throws Exception {
         try(FileInputStream fis = new FileInputStream(XML_DIR + "correct2.xml")) {
-            InputSource is = new InputSource(fis);
-            xmlFilter.parse(is);
-        } catch (IOException | SAXException ex) {
-            failUnexpected(ex);
+            new XMLFilterImpl().parse(new InputSource(fis));
         }
     }
 }

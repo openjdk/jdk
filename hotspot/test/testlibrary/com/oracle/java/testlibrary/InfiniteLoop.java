@@ -54,7 +54,9 @@ public class InfiniteLoop implements Runnable {
         try {
             while (true) {
                 target.run();
-                Thread.sleep(mills);
+                if (mills > 0) {
+                    Thread.sleep(mills);
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

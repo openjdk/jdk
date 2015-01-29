@@ -37,6 +37,7 @@ import java.security.SecureClassLoader;
 public class ByteCodeLoader extends SecureClassLoader {
     private final String className;
     private final byte[] byteCode;
+    private volatile Class<?> holder;
 
     /**
      * Creates a new {@code ByteCodeLoader} ready to load a class with the
@@ -48,6 +49,21 @@ public class ByteCodeLoader extends SecureClassLoader {
     public ByteCodeLoader(String className, byte[] byteCode) {
         this.className = className;
         this.byteCode = byteCode;
+    }
+
+    @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        if (!name.equals(className)) {
+            return super.loadClass(name);
+        }
+        if (holder == null) {
+            synchronized(this) {
+                if (holder == null) {
+                    holder = findClass(name);
+                }
+            }
+        }
+        return holder;
     }
 
     @Override
