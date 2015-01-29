@@ -224,6 +224,7 @@ needs_g1gc = \
   gc/arguments/TestAlignmentToUseLargePages.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/arguments/TestG1HeapSizeFlags.java \
+  gc/arguments/TestG1PercentageOptions.java \
   gc/arguments/TestMaxHeapSizeTools.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestParallelGCThreads.java \
