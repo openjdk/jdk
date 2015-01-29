@@ -116,7 +116,14 @@ public class TestHumongousCodeCacheRoots {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldHaveExitValue(0);
+    try {
+        output.shouldHaveExitValue(0);
+    } catch (RuntimeException e) {
+        // It's ok if there is no client vm in the jdk.
+        if (output.firstMatch("Unrecognized option: -client") == null) {
+            throw e;
+        }
+    }
 
     return output;
   }
