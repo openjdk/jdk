@@ -296,6 +296,8 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_accept0
         return -1;
     }
 
+    SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
+
     ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
     (*env)->SetObjectArrayElement(env, isaa, 0, isa);
