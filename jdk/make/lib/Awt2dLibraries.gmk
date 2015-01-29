@@ -562,10 +562,6 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   BUILD_LIBFONTMANAGER_ExtensionSubtables.cpp_CXXFLAGS := -fno-strict-aliasing
 endif
 
-# Libfontmanager doesn't actually need X_LIBS to link, but if building
-# on a Solaris machine without X installed, using a devkit, linking
-# to libawt_xawt will fail without the -L parameters from X_LIBS. Filter
-# out the -R parameters since they aren't needed.
 $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     LIBRARY := fontmanager, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -583,9 +579,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_SUFFIX := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LDFLAGS_SUFFIX_linux := -lawt $(LIBM) $(LIBCXX) -ljava -ljvm -lc, \
-    LDFLAGS_SUFFIX_solaris := $(filter-out -R%, $(X_LIBS)) \
-        -lawt -lawt_xawt -lc $(LIBM) $(LIBCXX) -ljava -ljvm, \
-    LDFLAGS_SUFFIX_aix := -lawt -lawt_xawt $(LIBM) $(LIBCXX) -ljava -ljvm,\
+    LDFLAGS_SUFFIX_solaris := -lawt -lawt_headless -lc $(LIBM) $(LIBCXX) -ljava -ljvm, \
+    LDFLAGS_SUFFIX_aix := -lawt -lawt_headless $(LIBM) $(LIBCXX) -ljava -ljvm,\
     LDFLAGS_SUFFIX_macosx := -lawt $(LIBM) $(LIBCXX) -undefined dynamic_lookup \
         -ljava -ljvm, \
     LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
@@ -601,7 +596,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
 
 ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
-  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_XAWT)
+  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_HEADLESS)
 endif
 
 TARGETS += $(BUILD_LIBFONTMANAGER)
