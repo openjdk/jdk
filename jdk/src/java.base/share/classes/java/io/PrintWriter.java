@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,6 @@ public class PrintWriter extends Writer {
     private PrintStream psOut = null;
 
     /**
-     * Line separator string.  This is the value of the line.separator
-     * property at the moment that the stream was created.
-     */
-    private final String lineSeparator;
-
-    /**
      * Returns a charset object for the given charset name.
      * @throws NullPointerException          is csn is null
      * @throws UnsupportedEncodingException  if the charset is not supported
@@ -113,8 +107,6 @@ public class PrintWriter extends Writer {
         super(out);
         this.out = out;
         this.autoFlush = autoFlush;
-        lineSeparator = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("line.separator"));
     }
 
     /**
@@ -477,7 +469,7 @@ public class PrintWriter extends Writer {
         try {
             synchronized (lock) {
                 ensureOpen();
-                out.write(lineSeparator);
+                out.write(System.lineSeparator());
                 if (autoFlush)
                     out.flush();
             }

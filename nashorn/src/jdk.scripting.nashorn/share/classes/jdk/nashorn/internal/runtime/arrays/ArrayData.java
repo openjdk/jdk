@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
@@ -758,39 +759,6 @@ public abstract class ArrayData {
      */
     public ArrayData push(final boolean strict, final Object item) {
         return push(strict, new Object[] { item });
-    }
-
-    /**
-     * Push an array of items to the end of the array
-     *
-     * @param strict are we in strict mode
-     * @param item   the item
-     * @return new array data (or same)
-     */
-    public ArrayData push(final boolean strict, final double item) {
-        return push(strict, item);
-    }
-
-    /**
-     * Push an array of items to the end of the array
-     *
-     * @param strict are we in strict mode
-     * @param item   the item
-     * @return new array data (or same)
-     */
-    public ArrayData push(final boolean strict, final long item) {
-        return push(strict, item);
-    }
-
-    /**
-     * Push an array of items to the end of the array
-     *
-     * @param strict are we in strict mode
-     * @param item   the item
-     * @return new array data (or same)
-     */
-    public ArrayData push(final boolean strict, final int item) {
-        return push(strict, item);
     }
 
     /**

@@ -27,6 +27,9 @@ package com.sun.tools.javac.comp;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.comp.Resolve.ResolveError;
+import com.sun.tools.javac.resources.CompilerProperties;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -37,6 +40,7 @@ import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import java.util.ArrayList;
@@ -786,16 +790,22 @@ public class DeferredAttr extends JCTree.Visitor {
                     JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
                     mref2.expr = exprTree;
                     Symbol lookupSym =
-                            rs.resolveMemberReferenceByArity(localEnv, mref2, exprTree.type,
-                                tree.name, argtypes.toList(), inferenceContext);
+                            rs.resolveMemberReference(localEnv, mref2, exprTree.type,
+                                    tree.name, argtypes.toList(), List.nil(), rs.arityMethodCheck,
+                                    inferenceContext, rs.structuralReferenceChooser).fst;
                     switch (lookupSym.kind) {
-                        //note: as argtypes are erroneous types, type-errors must
-                        //have been caused by arity mismatch
-                        case ABSENT_MTH:
                         case WRONG_MTH:
                         case WRONG_MTHS:
-                        case WRONG_STATICNESS:
-                           checkContext.report(tree, diags.fragment("incompatible.arg.types.in.mref"));
+                            //note: as argtypes are erroneous types, type-errors must
+                            //have been caused by arity mismatch
+                            checkContext.report(tree, diags.fragment(Fragments.IncompatibleArgTypesInMref));
+                            break;
+                        case ABSENT_MTH:
+                        case STATICERR:
+                            //if no method found, or method found with wrong staticness, report better message
+                            checkContext.report(tree, ((ResolveError)lookupSym).getDiagnostic(DiagnosticType.FRAGMENT,
+                                    tree, exprTree.type.tsym, exprTree.type, tree.name, argtypes.toList(), List.nil()));
+                            break;
                     }
                 }
             }

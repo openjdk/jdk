@@ -28,6 +28,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -189,11 +192,11 @@ public final class JpsHelper {
      */
     public static void verifyOutputAgainstFile(OutputAnalyzer output) throws IOException {
         String testSrc = System.getProperty("test.src", "?");
-        File file = new File(testSrc, "usage.out");
-        List<String> fileOutput = Utils.fileAsList(file);
+        Path path = Paths.get(testSrc, "usage.out");
+        List<String> fileOutput = Files.readAllLines(path);
         List<String> outputAsLines = output.asLines();
         assertTrue(outputAsLines.containsAll(fileOutput),
-                "The ouput should contain all content of " + file.getAbsolutePath());
+                "The ouput should contain all content of " + path.toAbsolutePath());
     }
 
     private static File getManifest(String className) throws IOException {
