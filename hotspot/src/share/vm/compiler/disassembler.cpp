@@ -345,21 +345,6 @@ void decode_env::print_address(address adr) {
       if (WizardMode) st->print(" " INTPTR_FORMAT, (intptr_t)adr);
       return;
     }
-
-    oop obj;
-    if (_nm != NULL
-        && (obj = _nm->embeddedOop_at(cur_insn())) != NULL
-        && (address) obj == adr
-        && Universe::heap()->is_in(obj)
-        && Universe::heap()->is_in(obj->klass())) {
-      julong c = st->count();
-      obj->print_value_on(st);
-      if (st->count() == c) {
-        // No output.  (Can happen in product builds.)
-        st->print("(a %s)", obj->klass()->external_name());
-      }
-      return;
-    }
   }
 
   // Fall through to a simple (hexadecimal) numeral.
