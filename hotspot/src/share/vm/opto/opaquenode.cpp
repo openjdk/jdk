@@ -60,4 +60,27 @@ uint Opaque2Node::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
+//=============================================================================
 
+uint ProfileBooleanNode::hash() const { return NO_HASH; }
+uint ProfileBooleanNode::cmp( const Node &n ) const {
+  return (&n == this);
+}
+
+Node *ProfileBooleanNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (can_reshape && _delay_removal) {
+    _delay_removal = false;
+    return this;
+  } else {
+    return NULL;
+  }
+}
+
+Node *ProfileBooleanNode::Identity( PhaseTransform *phase ) {
+  if (_delay_removal) {
+    return this;
+  } else {
+    assert(_consumed, "profile should be consumed before elimination");
+    return in(1);
+  }
+}
