@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -214,10 +214,10 @@ SUNWprivate_1.1 {
 		Java_java_lang_Throwable_fillInStackTrace;
                 Java_java_lang_Throwable_getStackTraceDepth;
                 Java_java_lang_Throwable_getStackTraceElement;
-		Java_java_lang_UNIXProcess_init;
-		Java_java_lang_UNIXProcess_waitForProcessExit;
-		Java_java_lang_UNIXProcess_forkAndExec;
-		Java_java_lang_UNIXProcess_destroyProcess;
+		Java_java_lang_ProcessImpl_init;
+		Java_java_lang_ProcessImpl_waitForProcessExit;
+		Java_java_lang_ProcessImpl_forkAndExec;
+		Java_java_lang_ProcessImpl_destroyProcess;
                 Java_java_nio_Bits_copyFromShortArray;
                 Java_java_nio_Bits_copyToShortArray;
                 Java_java_nio_Bits_copyFromIntArray;
