@@ -139,6 +139,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _survivor_cset_region_length(0),
   _old_cset_region_length(0),
 
+  _sigma(G1ConfidencePercent / 100.0),
+
   _collection_set(NULL),
   _collection_set_bytes_used_before(0),
 
@@ -161,17 +163,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _gc_overhead_perc(0.0) {
 
-  uintx confidence_perc = G1ConfidencePercent;
-  // Put an artificial ceiling on this so that it's not set to a silly value.
-  if (confidence_perc > 100) {
-    confidence_perc = 100;
-    warning("G1ConfidencePercent is set to a value that is too large, "
-            "it's been updated to %u", confidence_perc);
-  }
-  // '_sigma' must be initialized before the SurvRateGroups below because they
-  // indirecty access '_sigma' trough the 'this' pointer in their constructor.
-  _sigma = (double) confidence_perc / 100.0;
-
+  // SurvRateGroups below must be initialized after '_sigma' because they
+  // indirectly access '_sigma' through this object passed to their constructor.
   _short_lived_surv_rate_group =
     new SurvRateGroup(this, "Short Lived", G1YoungSurvRateNumRegionsSummary);
   _survivor_surv_rate_group =

@@ -2316,6 +2316,7 @@ bool Arguments::check_vm_args_consistency() {
     status = status && verify_percentage(G1MaxNewSizePercent, "G1MaxNewSizePercent");
     status = status && verify_interval(G1NewSizePercent, 0, G1MaxNewSizePercent, "G1NewSizePercent");
 
+    status = status && verify_percentage(G1ConfidencePercent, "G1ConfidencePercent");
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
     status = status && verify_min_value(G1RefProcDrainInterval, 1,
