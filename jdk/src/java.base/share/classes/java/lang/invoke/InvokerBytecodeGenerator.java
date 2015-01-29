@@ -635,7 +635,6 @@ class InvokerBytecodeGenerator {
             mv.visitAnnotation("Ljava/lang/invoke/DontInline;", true);
         }
 
-
         // iterate over the form's names, generating bytecode instructions for each
         // start iterating at the first name following the arguments
         Name onStack = null;

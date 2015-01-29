@@ -244,7 +244,7 @@ class LambdaForm {
 
     LambdaForm(String debugName,
                int arity, Name[] names, int result) {
-        this(debugName, arity, names, result, true);
+        this(debugName, arity, names, result, /*forceInline=*/true);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, int result, boolean forceInline) {
@@ -263,7 +263,7 @@ class LambdaForm {
     }
     LambdaForm(String debugName,
                int arity, Name[] names) {
-        this(debugName, arity, names, LAST_RESULT, true);
+        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, boolean forceInline) {
@@ -272,7 +272,7 @@ class LambdaForm {
     LambdaForm(String debugName,
                Name[] formals, Name[] temps, Name result) {
         this(debugName,
-             formals.length, buildNames(formals, temps, result), LAST_RESULT, true);
+             formals.length, buildNames(formals, temps, result), LAST_RESULT, /*forceInline=*/true);
     }
     LambdaForm(String debugName,
                Name[] formals, Name[] temps, Name result, boolean forceInline) {
@@ -291,10 +291,6 @@ class LambdaForm {
     }
 
     private LambdaForm(String sig) {
-        this(sig, true);
-    }
-
-    private LambdaForm(String sig, boolean forceInline) {
         // Make a blank lambda form, which returns a constant zero or null.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
         // Called only from getPreparedForm.
@@ -303,7 +299,7 @@ class LambdaForm {
         this.result = (signatureReturn(sig) == V_TYPE ? -1 : arity);
         this.names = buildEmptyNames(arity, sig);
         this.debugName = "LF.zero";
-        this.forceInline = forceInline;
+        this.forceInline = true;
         assert(nameRefsAreLegal());
         assert(isEmpty());
         assert(sig.equals(basicTypeSignature())) : sig + " != " + basicTypeSignature();
