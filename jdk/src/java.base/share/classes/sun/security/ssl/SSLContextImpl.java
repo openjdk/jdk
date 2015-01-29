@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private X509ExtendedKeyManager keyManager;
     private X509TrustManager trustManager;
     private SecureRandom secureRandom;
-
-    // The default algrithm constraints
-    private AlgorithmConstraints defaultAlgorithmConstraints =
-                                 new SSLAlgorithmConstraints(null);
 
     // supported and default protocols
     private ProtocolList defaultServerProtocolList;
@@ -350,7 +346,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 if (suite.isAvailable() &&
                         suite.obsoleted > protocols.min.v &&
                         suite.supported <= protocols.max.v) {
-                    if (defaultAlgorithmConstraints.permits(
+                    if (SSLAlgorithmConstraints.DEFAULT.permits(
                             EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                             suite.name, null)) {
                         suites.add(suite);
@@ -431,11 +427,16 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      */
     private abstract static class AbstractSSLContext extends SSLContextImpl {
         // parameters
-        private final static SSLParameters defaultServerSSLParams;
-        private final static SSLParameters supportedSSLParams;
+        private static final SSLParameters defaultServerSSLParams;
+        private static final SSLParameters supportedSSLParams;
 
         static {
+            // supported SSL parameters
             supportedSSLParams = new SSLParameters();
+
+            // candidates for available protocols
+            ProtocolVersion[] candidates;
+
             if (SunJSSE.isFIPS()) {
                 supportedSSLParams.setProtocols(new String[] {
                     ProtocolVersion.TLS10.name,
@@ -443,7 +444,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     ProtocolVersion.TLS12.name
                 });
 
-                defaultServerSSLParams = supportedSSLParams;
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.TLS10,
+                    ProtocolVersion.TLS11,
+                    ProtocolVersion.TLS12
+                };
             } else {
                 supportedSSLParams.setProtocols(new String[] {
                     ProtocolVersion.SSL20Hello.name,
@@ -453,8 +458,18 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     ProtocolVersion.TLS12.name
                 });
 
-                defaultServerSSLParams = supportedSSLParams;
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.SSL20Hello,
+                    ProtocolVersion.SSL30,
+                    ProtocolVersion.TLS10,
+                    ProtocolVersion.TLS11,
+                    ProtocolVersion.TLS12
+                };
             }
+
+            defaultServerSSLParams = new SSLParameters();
+            defaultServerSSLParams.setProtocols(
+                    getAvailableProtocols(candidates));
         }
 
         @Override
@@ -466,6 +481,22 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         SSLParameters getSupportedSSLParams() {
             return supportedSSLParams;
         }
+
+        static String[] getAvailableProtocols(
+                ProtocolVersion[] protocolCandidates) {
+
+            List<String> availableProtocols = Collections.<String>emptyList();
+            if (protocolCandidates !=  null && protocolCandidates.length != 0) {
+                availableProtocols = new ArrayList<>(protocolCandidates.length);
+                for (ProtocolVersion p : protocolCandidates) {
+                    if (ProtocolVersion.availableProtocols.contains(p)) {
+                        availableProtocols.add(p.name);
+                    }
+                }
+            }
+
+            return availableProtocols.toArray(new String[0]);
+        }
     }
 
     /*
@@ -474,21 +505,25 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     public static final class TLS10Context extends AbstractSSLContext {
-        private final static SSLParameters defaultClientSSLParams;
+        private static final SSLParameters defaultClientSSLParams;
 
         static {
-            defaultClientSSLParams = new SSLParameters();
+            // candidates for available protocols
+            ProtocolVersion[] candidates;
             if (SunJSSE.isFIPS()) {
-                defaultClientSSLParams.setProtocols(new String[] {
-                    ProtocolVersion.TLS10.name
-                });
-
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.TLS10
+                };
             } else {
-                defaultClientSSLParams.setProtocols(new String[] {
-                    ProtocolVersion.SSL30.name,
-                    ProtocolVersion.TLS10.name
-                });
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.SSL30,
+                    ProtocolVersion.TLS10
+                };
             }
+
+            defaultClientSSLParams = new SSLParameters();
+            defaultClientSSLParams.setProtocols(
+                    getAvailableProtocols(candidates));
         }
 
         @Override
@@ -503,23 +538,27 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     public static final class TLS11Context extends AbstractSSLContext {
-        private final static SSLParameters defaultClientSSLParams;
+        private static final SSLParameters defaultClientSSLParams;
 
         static {
-            defaultClientSSLParams = new SSLParameters();
+            // candidates for available protocols
+            ProtocolVersion[] candidates;
             if (SunJSSE.isFIPS()) {
-                defaultClientSSLParams.setProtocols(new String[] {
-                    ProtocolVersion.TLS10.name,
-                    ProtocolVersion.TLS11.name
-                });
-
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.TLS10,
+                    ProtocolVersion.TLS11
+                };
             } else {
-                defaultClientSSLParams.setProtocols(new String[] {
-                    ProtocolVersion.SSL30.name,
-                    ProtocolVersion.TLS10.name,
-                    ProtocolVersion.TLS11.name
-                });
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.SSL30,
+                    ProtocolVersion.TLS10,
+                    ProtocolVersion.TLS11
+                };
             }
+
+            defaultClientSSLParams = new SSLParameters();
+            defaultClientSSLParams.setProtocols(
+                    getAvailableProtocols(candidates));
         }
 
         @Override
@@ -534,25 +573,29 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     public static final class TLS12Context extends AbstractSSLContext {
-        private final static SSLParameters defaultClientSSLParams;
+        private static final SSLParameters defaultClientSSLParams;
 
         static {
-            defaultClientSSLParams = new SSLParameters();
+            // candidates for available protocols
+            ProtocolVersion[] candidates;
             if (SunJSSE.isFIPS()) {
-                defaultClientSSLParams.setProtocols(new String[] {
-                    ProtocolVersion.TLS10.name,
-                    ProtocolVersion.TLS11.name,
-                    ProtocolVersion.TLS12.name
-                });
-
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.TLS10,
+                    ProtocolVersion.TLS11,
+                    ProtocolVersion.TLS12
+                };
             } else {
-                defaultClientSSLParams.setProtocols(new String[] {
-                    ProtocolVersion.SSL30.name,
-                    ProtocolVersion.TLS10.name,
-                    ProtocolVersion.TLS11.name,
-                    ProtocolVersion.TLS12.name
-                });
+                candidates = new ProtocolVersion[] {
+                    ProtocolVersion.SSL30,
+                    ProtocolVersion.TLS10,
+                    ProtocolVersion.TLS11,
+                    ProtocolVersion.TLS12
+                };
             }
+
+            defaultClientSSLParams = new SSLParameters();
+            defaultClientSSLParams.setProtocols(
+                    getAvailableProtocols(candidates));
         }
 
         @Override
@@ -567,8 +610,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     private static class CustomizedSSLContext extends AbstractSSLContext {
-        private final static String PROPERTY_NAME = "jdk.tls.client.protocols";
-        private final static SSLParameters defaultClientSSLParams;
+        private static final String PROPERTY_NAME = "jdk.tls.client.protocols";
+        private static final SSLParameters defaultClientSSLParams;
         private static IllegalArgumentException reservedException = null;
 
         // Don't want a java.lang.LinkageError for illegal system property.
@@ -578,60 +621,74 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         // the provider service. Instead, let's handle the initialization
         // exception in constructor.
         static {
+            // candidates for available protocols
+            ProtocolVersion[] candidates;
+
             String property = AccessController.doPrivileged(
                     new GetPropertyAction(PROPERTY_NAME));
-            defaultClientSSLParams = new SSLParameters();
             if (property == null || property.length() == 0) {
                 // the default enabled client TLS protocols
                 if (SunJSSE.isFIPS()) {
-                    defaultClientSSLParams.setProtocols(new String[] {
-                        ProtocolVersion.TLS10.name,
-                        ProtocolVersion.TLS11.name,
-                        ProtocolVersion.TLS12.name
-                    });
-
+                    candidates = new ProtocolVersion[] {
+                        ProtocolVersion.TLS10,
+                        ProtocolVersion.TLS11,
+                        ProtocolVersion.TLS12
+                    };
                 } else {
-                    defaultClientSSLParams.setProtocols(new String[] {
-                        ProtocolVersion.SSL30.name,
-                        ProtocolVersion.TLS10.name,
-                        ProtocolVersion.TLS11.name,
-                        ProtocolVersion.TLS12.name
-                    });
+                    candidates = new ProtocolVersion[] {
+                        ProtocolVersion.SSL30,
+                        ProtocolVersion.TLS10,
+                        ProtocolVersion.TLS11,
+                        ProtocolVersion.TLS12
+                    };
                 }
             } else {
                 // remove double quote marks from beginning/end of the property
-                if (property.charAt(0) == '"' &&
+                if (property.length() > 1 && property.charAt(0) == '"' &&
                         property.charAt(property.length() - 1) == '"') {
                     property = property.substring(1, property.length() - 1);
                 }
 
-                String[] protocols = property.split(",");
+                String[] protocols = null;
+                if (property != null && property.length() != 0) {
+                    protocols = property.split(",");
+                } else {
+                    reservedException = new IllegalArgumentException(
+                        "No protocol specified in " +
+                        PROPERTY_NAME + " system property");
+                    protocols = new String[0];
+                }
+
+                candidates = new ProtocolVersion[protocols.length];
                 for (int i = 0; i < protocols.length; i++) {
                     protocols[i] = protocols[i].trim();
                     // Is it a supported protocol name?
                     try {
-                        ProtocolVersion.valueOf(protocols[i]);
+                        candidates[i] = ProtocolVersion.valueOf(protocols[i]);
                     } catch (IllegalArgumentException iae) {
                         reservedException = new IllegalArgumentException(
-                                PROPERTY_NAME + ": " + protocols[i] +
-                                " is not a standard SSL protocol name", iae);
+                            PROPERTY_NAME + ": " + protocols[i] +
+                            " is not a standard SSL/TLS protocol name", iae);
+                        break;
                     }
                 }
 
                 if ((reservedException == null) && SunJSSE.isFIPS()) {
-                    for (String protocol : protocols) {
-                        if (ProtocolVersion.SSL20Hello.name.equals(protocol) ||
-                                ProtocolVersion.SSL30.name.equals(protocol)) {
+                    for (ProtocolVersion protocolVersion : candidates) {
+                        if (ProtocolVersion.SSL20Hello.v == protocolVersion.v ||
+                                ProtocolVersion.SSL30.v == protocolVersion.v) {
                             reservedException = new IllegalArgumentException(
-                                    PROPERTY_NAME + ": " + protocol +
+                                    PROPERTY_NAME + ": " + protocolVersion +
                                     " is not FIPS compliant");
                         }
                     }
                 }
+            }
 
-                if (reservedException == null) {
-                    defaultClientSSLParams.setProtocols(protocols);
-               }
+            defaultClientSSLParams = new SSLParameters();
+            if (reservedException == null) {
+                defaultClientSSLParams.setProtocols(
+                        getAvailableProtocols(candidates));
             }
         }
 

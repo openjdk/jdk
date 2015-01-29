@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,14 @@
 package org.xml.sax.ptests;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-import static org.xml.sax.ptests.SAXTestConst.CLASS_DIR;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
@@ -41,7 +38,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
   * Namespace Table defined at
   * http://www.megginson.com/SAX/Java/namespaces.html
   */
-public class XMLReaderNSTableTest {
+public class XMLReaderNSTableTest extends JAXPFileBaseTest {
     /**
      * XML file that used to be parsed.
      */
@@ -55,71 +52,70 @@ public class XMLReaderNSTableTest {
     /**
      * namespace processing is enabled. namespace-prefix is also is enabled.
      * So it is a True-True combination.
-     * The test is to test XMLReader with these conditions
+     * The test is to test XMLReader with these conditions.
+     *
+     * @throws Exception If any errors occur.
      */
-    public void testWithTrueTrue() {
-        String outputFile = CLASS_DIR + "XRNSTableTT.out";
+    public void testWithTrueTrue() throws Exception {
+        String outputFile = USER_DIR + "XRNSTableTT.out";
         String goldFile = GOLDEN_DIR + "NSTableTTGF.out";
 
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            SAXParser saxParser = spf.newSAXParser();
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        xmlReader.setFeature(NAMESPACE_PREFIXES, true);
 
-            XMLReader xmlReader = saxParser.getXMLReader();
-            xmlReader.setFeature(NAMESPACE_PREFIXES, true);
-
-            xmlReader.setContentHandler(new MyNSContentHandler(outputFile));
-            xmlReader.parse(new InputSource(new FileInputStream(xmlFile)));
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (ParserConfigurationException | SAXException | IOException ex) {
-            failUnexpected(ex);
+        try (FileInputStream fis = new FileInputStream(xmlFile);
+            MyNSContentHandler handler = new MyNSContentHandler(outputFile);) {
+            xmlReader.setContentHandler(handler);
+            xmlReader.parse(new InputSource(fis));
         }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 
     /**
      * Namespace processing is enabled. Hence namespace-prefix is
-     * expected to be automaically off. So it is a True-False combination.
-     * The test is to test XMLReader with these conditions
+     * expected to be automatically off. So it is a True-False combination.
+     * The test is to test XMLReader with these conditions.
+     *
+     * @throws Exception If any errors occur.
      */
-    public void testWithTrueFalse() {
-        String outputFile = CLASS_DIR + "XRNSTableTF.out";
+    public void testWithTrueFalse() throws Exception {
+        String outputFile = USER_DIR + "XRNSTableTF.out";
         String goldFile = GOLDEN_DIR + "NSTableTFGF.out";
 
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            SAXParser saxParser = spf.newSAXParser();
-            XMLReader xmlReader = saxParser.getXMLReader();
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        SAXParser saxParser = spf.newSAXParser();
+        XMLReader xmlReader = saxParser.getXMLReader();
 
-            xmlReader.setContentHandler(new MyNSContentHandler(outputFile));
-            xmlReader.parse(new InputSource(new FileInputStream(xmlFile)));
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (ParserConfigurationException | SAXException | IOException ex) {
-            failUnexpected(ex);
+        try (FileInputStream fis = new FileInputStream(xmlFile);
+            MyNSContentHandler handler = new MyNSContentHandler(outputFile)) {
+            xmlReader.setContentHandler(handler);
+            xmlReader.parse(new InputSource(fis));
         }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 
     /**
      * namespace processing is not enabled. Hence namespace-prefix is
      * expected to be automaically on. So it is a False-True combination.
-     * The test is to test XMLReader with these conditions
+     * The test is to test XMLReader with these conditions.
+     *
+     * @throws Exception If any errors occur.
      */
-    public void testWithFalseTrue() {
-        String outputFile = CLASS_DIR + "XRNSTableFT.out";
+    public void testWithFalseTrue()throws Exception {
+        String outputFile = USER_DIR + "XRNSTableFT.out";
         String goldFile = GOLDEN_DIR + "NSTableFTGF.out";
 
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            SAXParser saxParser = spf.newSAXParser();
-            XMLReader xmlReader = saxParser.getXMLReader();
-
-            xmlReader.setContentHandler(new MyNSContentHandler(outputFile));
-            xmlReader.parse(new InputSource(new FileInputStream(xmlFile)));
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (ParserConfigurationException | SAXException | IOException ex) {
-            failUnexpected(ex);
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        try (FileInputStream fis = new FileInputStream(xmlFile);
+            MyNSContentHandler handler = new MyNSContentHandler(outputFile)) {
+            xmlReader.setContentHandler(handler);
+            xmlReader.parse(new InputSource(fis));
         }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }

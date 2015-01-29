@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -379,8 +380,36 @@ void StringTable::verify() {
   }
 }
 
-void StringTable::dump(outputStream* st) {
-  the_table()->dump_table(st, "StringTable");
+void StringTable::dump(outputStream* st, bool verbose) {
+  if (!verbose) {
+    the_table()->dump_table(st, "StringTable");
+  } else {
+    Thread* THREAD = Thread::current();
+    st->print_cr("VERSION: 1.1");
+    for (int i = 0; i < the_table()->table_size(); ++i) {
+      HashtableEntry<oop, mtSymbol>* p = the_table()->bucket(i);
+      for ( ; p != NULL; p = p->next()) {
+        oop s = p->literal();
+        typeArrayOop value  = java_lang_String::value(s);
+        int          offset = java_lang_String::offset(s);
+        int          length = java_lang_String::length(s);
+
+        if (length <= 0) {
+          st->print("%d: ", length);
+        } else {
+          ResourceMark rm(THREAD);
+          jchar* chars = (jchar*)value->char_at_addr(offset);
+          int utf8_length = UNICODE::utf8_length(chars, length);
+          char* utf8_string = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
+          UNICODE::convert_to_utf8(chars, length, utf8_string);
+
+          st->print("%d: ", utf8_length);
+          HashtableTextDump::put_utf8(st, utf8_string, utf8_length);
+        }
+        st->cr();
+      }
+    }
+  }
 }
 
 StringTable::VerifyRetTypes StringTable::compare_entries(
@@ -557,4 +586,29 @@ void StringTable::rehash_table() {
   // Then rehash with a new global seed.
   _needs_rehashing = false;
   _the_table = new_table;
+}
+
+// Utility for dumping strings
+StringtableDCmd::StringtableDCmd(outputStream* output, bool heap) :
+                                 DCmdWithParser(output, heap),
+  _verbose("-verbose", "Dump the content of each string in the table",
+           "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_verbose);
+}
+
+void StringtableDCmd::execute(DCmdSource source, TRAPS) {
+  VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpStrings,
+                         _verbose.value());
+  VMThread::execute(&dumper);
+}
+
+int StringtableDCmd::num_arguments() {
+  ResourceMark rm;
+  StringtableDCmd* dcmd = new StringtableDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
 }

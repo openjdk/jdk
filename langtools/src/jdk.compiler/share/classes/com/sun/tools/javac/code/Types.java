@@ -48,6 +48,7 @@ import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
 import static com.sun.tools.javac.code.TypeTag.*;
@@ -82,6 +83,7 @@ public class Types {
     final JavacMessages messages;
     final Names names;
     final boolean allowObjectToPrimitiveCast;
+    final boolean allowDefaultMethods;
     final Check chk;
     final Enter enter;
     JCDiagnostic.Factory diags;
@@ -105,6 +107,7 @@ public class Types {
         names = Names.instance(context);
         Source source = Source.instance(context);
         allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
+        allowDefaultMethods = source.allowDefaultMethods();
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
@@ -805,13 +808,13 @@ public class Types {
             return true;
         }
 
-        // Generally, if 's' is a type variable, recur on lower bound; but
+        // Generally, if 's' is a lower-bounded type variable, recur on lower bound; but
         // for inference variables and intersections, we need to keep 's'
         // (see JLS 4.10.2 for intersections and 18.2.3 for inference vars)
         if (!t.hasTag(UNDETVAR) && !t.isCompound()) {
             // TODO: JDK-8039198, bounds checking sometimes passes in a wildcard as s
             Type lower = cvarLowerBound(wildLowerBound(s));
-            if (s != lower)
+            if (s != lower && !lower.hasTag(BOT))
                 return isSubtype(capture ? capture(t) : t, lower, false);
         }
 
@@ -2773,6 +2776,58 @@ public class Types {
         return membersCache.visit(site, skipInterface);
     }
     // </editor-fold>
+
+
+    /** Return first abstract member of class `sym'.
+     */
+    public MethodSymbol firstUnimplementedAbstract(ClassSymbol sym) {
+        try {
+            return firstUnimplementedAbstractImpl(sym, sym);
+        } catch (CompletionFailure ex) {
+            chk.completionError(enter.getEnv(sym).tree.pos(), ex);
+            return null;
+        }
+    }
+        //where:
+        private MethodSymbol firstUnimplementedAbstractImpl(ClassSymbol impl, ClassSymbol c) {
+            MethodSymbol undef = null;
+            // Do not bother to search in classes that are not abstract,
+            // since they cannot have abstract members.
+            if (c == impl || (c.flags() & (ABSTRACT | INTERFACE)) != 0) {
+                Scope s = c.members();
+                for (Symbol sym : s.getSymbols(NON_RECURSIVE)) {
+                    if (sym.kind == MTH &&
+                        (sym.flags() & (ABSTRACT|IPROXY|DEFAULT)) == ABSTRACT) {
+                        MethodSymbol absmeth = (MethodSymbol)sym;
+                        MethodSymbol implmeth = absmeth.implementation(impl, this, true);
+                        if (implmeth == null || implmeth == absmeth) {
+                            //look for default implementations
+                            if (allowDefaultMethods) {
+                                MethodSymbol prov = interfaceCandidates(impl.type, absmeth).head;
+                                if (prov != null && prov.overrides(absmeth, impl, this, true)) {
+                                    implmeth = prov;
+                                }
+                            }
+                        }
+                        if (implmeth == null || implmeth == absmeth) {
+                            undef = absmeth;
+                            break;
+                        }
+                    }
+                }
+                if (undef == null) {
+                    Type st = supertype(c.type);
+                    if (st.hasTag(CLASS))
+                        undef = firstUnimplementedAbstractImpl(impl, (ClassSymbol)st.tsym);
+                }
+                for (List<Type> l = interfaces(c.type);
+                     undef == null && l.nonEmpty();
+                     l = l.tail) {
+                    undef = firstUnimplementedAbstractImpl(impl, (ClassSymbol)l.head.tsym);
+                }
+            }
+            return undef;
+        }
 
 
     //where

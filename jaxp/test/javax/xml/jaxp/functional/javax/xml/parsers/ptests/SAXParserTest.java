@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,14 @@
 
 package javax.xml.parsers.ptests;
 
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
-
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilePermission;
 import java.io.IOException;
-
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.HandlerBase;
@@ -43,16 +41,15 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * Class contains the test cases for SAXParser API
  */
-public class SAXParserTest {
-
+public class SAXParserTest extends JAXPFileReadOnlyBaseTest {
     /**
      * Provide SAXParser.
      *
-     * @throws SAXException
-     * @throws ParserConfigurationException
+     * @return a data provider contains a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
     @DataProvider(name = "parser-provider")
-    public Object[][] getParser() throws ParserConfigurationException, SAXException {
+    public Object[][] getParser() throws Exception {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         SAXParser saxparser = spf.newSAXParser();
         return new Object[][] { { saxparser } };
@@ -62,498 +59,454 @@ public class SAXParserTest {
      * Test case with FileInputStream null, parsing should fail and throw
      * IllegalArgumentException.
      *
-     * @throws IllegalArgumentException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse01(SAXParser saxparser) throws IllegalArgumentException {
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse01(SAXParser saxparser) throws Exception {
+        FileInputStream instream = null;
+        saxparser.parse(instream, new HandlerBase());
+    }
+
+    /**
+     * Test with by setting URI as null, parsing should fail and throw
+     * IllegalArgumentException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse02(SAXParser saxparser) throws Exception {
+        String uri = null;
+        saxparser.parse(uri, new HandlerBase());
+    }
+
+    /**
+     * Test with non-existence URI, parsing should fail and throw IOException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(expectedExceptions = { SAXException.class },
+            dataProvider = "parser-provider")
+    public void testParse03(SAXParser saxparser) throws Exception {
+        String workingDir = getSystemProperty("user.dir");
+        setPermissions(new FilePermission(workingDir, "read"));
         try {
-            FileInputStream instream = null;
-            HandlerBase handler = new HandlerBase();
-            saxparser.parse(instream, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
+            saxparser.parse("", new HandlerBase());
+        } finally {
+            setPermissions();
         }
     }
 
     /**
-     * Testcase with an error in xml file, parsing should fail and throw
+     * Test with File null, parsing should fail and throw
+     * IllegalArgumentException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse04(SAXParser saxparser) throws Exception {
+        File file = null;
+        saxparser.parse(file, new HandlerBase());
+    }
+
+    /**
+     * Test with empty string as File, parsing should fail and throw
      * SAXException.
      *
-     * @throws SAXException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
     @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse02(SAXParser saxparser) throws SAXException {
+    public void testParse05(SAXParser saxparser) throws Exception {
+        String workingDir = getSystemProperty("user.dir");
+        setPermissions(new FilePermission(workingDir, "read"));
         try {
-            HandlerBase handler = new HandlerBase();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "invalid.xml"));
-            saxparser.parse(instream, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
+            saxparser.parse(new File(""), new HandlerBase());
+        } finally {
+            setPermissions();
         }
     }
 
     /**
-     * Testcase with a valid in xml file, parser should parse the xml document.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse03(SAXParser saxparser) {
-        try {
-            HandlerBase handler = new HandlerBase();
-            saxparser.parse(new File(TestUtils.XML_DIR, "parsertest.xml"), handler);
-        } catch (IOException | SAXException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with valid input stream, parser should parse the xml document
-     * successfully.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse04(SAXParser saxparser) {
-        try {
-            HandlerBase handler = new HandlerBase();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "correct.xml"));
-            saxparser.parse(instream, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with valid input source, parser should parse the xml document
-     * successfully.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse05(SAXParser saxparser) {
-        try {
-            HandlerBase handler = new HandlerBase();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "parsertest.xml"));
-            saxparser.parse(instream, handler, new File(TestUtils.XML_DIR).toURI().toASCIIString());
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with uri null, parsing should fail and throw
+     * Test with input source null, parsing should fail and throw
      * IllegalArgumentException.
      *
-     * @throws IllegalArgumentException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse07(SAXParser saxparser) throws IllegalArgumentException {
-        try {
-            String uri = null;
-            HandlerBase handler = new HandlerBase();
-            saxparser.parse(uri, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse06(SAXParser saxparser) throws Exception {
+        InputSource is = null;
+        saxparser.parse(is, new HandlerBase());
     }
 
     /**
-     * Testcase with non-existant uri, parsing should fail and throw
-     * IOException.
-     *
-     * @throws SAXException
-     * @throws IOException
-     */
-    @Test(expectedExceptions = { SAXException.class, IOException.class }, dataProvider = "parser-provider")
-    public void testParse08(SAXParser saxparser) throws SAXException, IOException {
-        String uri = " ";
-
-        HandlerBase handler = new HandlerBase();
-        saxparser.parse(uri, handler);
-
-    }
-
-    /**
-     * Testcase with proper uri, parser should parse successfully.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse09(SAXParser saxparser) {
-        try {
-            File file = new File(TestUtils.XML_DIR, "correct.xml");
-            HandlerBase handler = new HandlerBase();
-            saxparser.parse(file.toURI().toASCIIString(), handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with File null, parsing should fail and throw
+     * Test with FileInputStream null, parsing should fail and throw
      * IllegalArgumentException.
      *
-     * @throws IllegalArgumentException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse10(SAXParser saxparser) throws IllegalArgumentException {
-        try {
-            File file = null;
-            HandlerBase handler = new HandlerBase();
-            saxparser.parse(file, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse07(SAXParser saxparser) throws Exception {
+        FileInputStream instream = null;
+        saxparser.parse(instream, new DefaultHandler());
     }
 
     /**
-     * Testcase with empty string as File, parsing should fail and throw
-     * SAXException.
-     *
-     * @throws SAXException
-     */
-    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse11(SAXParser saxparser) throws SAXException {
-        try {
-            HandlerBase handler = new HandlerBase();
-            File file = new File("");
-            saxparser.parse(file, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with xml file that has errors parsing should fail and throw
-     * SAXException.
-     *
-     * @throws SAXException
-     */
-    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse12(SAXParser saxparser) throws SAXException {
-        try {
-            HandlerBase handler = new HandlerBase();
-            File file = new File(TestUtils.XML_DIR, "valid.xml");
-            saxparser.parse(file, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with xml file that has no errors Parser should successfully
-     * parse the xml document.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse13(SAXParser saxparser) {
-        try {
-            HandlerBase handler = new HandlerBase();
-            File file = new File(TestUtils.XML_DIR, "correct.xml");
-            saxparser.parse(file, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-
-    }
-
-    /**
-     * Testcase with input source null, parsing should fail and throw
+     * Test with URI null, parsing should fail and throw
      * IllegalArgumentException.
      *
-     * @throws IllegalArgumentException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse14(SAXParser saxparser) throws IllegalArgumentException {
-        try {
-            InputSource is = null;
-            HandlerBase handler = new HandlerBase();
-            saxparser.parse(is, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse08(SAXParser saxparser) throws Exception {
+        String uri = null;
+        saxparser.parse(uri, new DefaultHandler());
     }
 
     /**
-     * Testcase with input source attached an invaild xml, parsing should fail
-     * and throw SAXException.
-     *
-     * @throws SAXException
-     */
-    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse15(SAXParser saxparser) throws SAXException {
-        try {
-            HandlerBase handler = new HandlerBase();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "invalid.xml"));
-            InputSource is = new InputSource(instream);
-            saxparser.parse(is, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with input source attached an vaild xml, parser should
-     * successfully parse the xml document.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse16(SAXParser saxparser) {
-        try {
-            HandlerBase handler = new HandlerBase();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "correct.xml"));
-            InputSource is = new InputSource(instream);
-            saxparser.parse(is, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with FileInputStream null, parsing should fail and throw
-     * IllegalArgumentException.
-     *
-     * @throws IllegalArgumentException
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse17(SAXParser saxparser) throws IllegalArgumentException {
-        try {
-            FileInputStream instream = null;
-            DefaultHandler handler = new DefaultHandler();
-            saxparser.parse(instream, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with an error in xml file, parsing should fail and throw
-     * SAXException.
-     *
-     * @throws SAXException
-     */
-    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse18(SAXParser saxparser) throws SAXException {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "invalid.xml"));
-            saxparser.parse(instream, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with valid input stream, parser should parse the xml document
-     * successfully.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse19(SAXParser saxparser) {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            saxparser.parse(new File(TestUtils.XML_DIR, "parsertest.xml"), handler);
-        } catch (IOException | SAXException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with valid input stream, parser should parse the xml document
-     * successfully.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse20(SAXParser saxparser) {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "correct.xml"));
-            saxparser.parse(instream, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with valid input source, parser should parse the xml document
-     * successfully.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse21(SAXParser saxparser) {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "parsertest.xml"));
-            saxparser.parse(instream, handler, new File(TestUtils.XML_DIR).toURI().toASCIIString());
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-
-    }
-
-    /**
-     * Testcase with uri null, parsing should fail and throw
-     * IllegalArgumentException.
-     *
-     * @throws IllegalArgumentException
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse23(SAXParser saxparser) throws IllegalArgumentException {
-        try {
-            String uri = null;
-            DefaultHandler handler = new DefaultHandler();
-            saxparser.parse(uri, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with non-existant uri, parsing should fail and throw
+     * Test with non-existence URI, parsing should fail and throw
      * SAXException or IOException.
      *
-     * @throws SAXException
-     * @throws IOException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = { SAXException.class, IOException.class }, dataProvider = "parser-provider")
-    public void testParse24(SAXParser saxparser) throws SAXException, IOException {
+    @Test(expectedExceptions = { SAXException.class, IOException.class },
+            dataProvider = "parser-provider")
+    public void testParse09(SAXParser saxparser) throws Exception {
+        String workingDir = getSystemProperty("user.dir");
+        setPermissions(new FilePermission(workingDir + "/../-", "read"));
         String uri = " ";
+        try {
+            saxparser.parse(uri, new DefaultHandler());
+        } finally {
+            setPermissions();
+        }
+    }
+
+    /**
+     * Test with empty string as File, parsing should fail and throw
+     * SAXException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
+    public void testParse10(SAXParser saxparser) throws Exception {
+        String workingDir = getSystemProperty("user.dir");
+        setPermissions(new FilePermission(workingDir, "read"));
+        File file = new File("");
+        try {
+            saxparser.parse(file, new DefaultHandler());
+        } finally {
+            setPermissions();
+        }
+    }
+
+    /**
+     * Test with File null, parsing should fail and throw
+     * IllegalArgumentException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse11(SAXParser saxparser) throws Exception {
+        saxparser.parse((File) null, new DefaultHandler());
+    }
+
+    /**
+     * Test with input source null, parsing should fail and throw
+     * IllegalArgumentException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            dataProvider = "parser-provider")
+    public void testParse12(SAXParser saxparser) throws Exception {
+        InputSource is = null;
+        saxparser.parse(is, new DefaultHandler());
+    }
+
+    /**
+     * Test with an error in XML file, parsing should fail and throw
+     * SAXException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class,
+            dataProvider = "parser-provider")
+    public void testParse13(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(new File(
+                XML_DIR, "invalid.xml"))) {
+            saxparser.parse(instream, new HandlerBase());
+        }
+    }
+
+    /**
+     * Test with a valid in XML file, parser should parse the XML document.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse14(SAXParser saxparser) throws Exception {
+        saxparser.parse(new File(XML_DIR, "parsertest.xml"),
+                new HandlerBase());
+    }
+
+    /**
+     * Test with valid input stream, parser should parse the XML document
+     * successfully.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse15(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(new File(XML_DIR,
+                "correct.xml"))) {
+            saxparser.parse(instream, new HandlerBase());
+        }
+    }
+
+    /**
+     * Test with valid input source, parser should parse the XML document
+     * successfully.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse16(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(
+                new File(XML_DIR, "parsertest.xml"))) {
+            saxparser.parse(instream, new HandlerBase(),
+                    new File(XML_DIR).toURI().toASCIIString());
+        }
+    }
+
+    /**
+     * Test with proper URI, parser should parse successfully.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse17(SAXParser saxparser) throws Exception {
+        File file = new File(XML_DIR, "correct.xml");
+        saxparser.parse(file.toURI().toASCIIString(), new HandlerBase());
+    }
+
+    /**
+     * Test with XML file that has errors parsing should fail and throw
+     * SAXException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class,
+            dataProvider = "parser-provider")
+    public void testParse18(SAXParser saxparser) throws Exception {
+        saxparser.parse(new File(XML_DIR, "valid.xml"), new HandlerBase());
+    }
+
+    /**
+     * Test with XML file that has no errors Parser should successfully
+     * parse the XML document.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse19(SAXParser saxparser) throws Exception {
+        saxparser.parse(new File(XML_DIR, "correct.xml"), new HandlerBase());
+    }
+
+    /**
+     * Test with input source attached an invalid XML, parsing should fail
+     * and throw SAXException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class,
+            dataProvider = "parser-provider")
+    public void testParse20(SAXParser saxparser) throws Exception {
+        try(FileInputStream instream = new FileInputStream(new File(XML_DIR,
+                "invalid.xml"))) {
+            saxparser.parse(new InputSource(instream), new HandlerBase());
+        }
+    }
+
+    /**
+     * Test with input source attached an valid XML, parser should
+     * successfully parse the XML document.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse21(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(new File(XML_DIR,
+                "correct.xml"))) {
+            saxparser.parse(new InputSource(instream), new HandlerBase());
+        }
+    }
+
+    /**
+     * Test with an error in xml file, parsing should fail and throw
+     * SAXException.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class,
+            dataProvider = "parser-provider")
+    public void testParse22(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(
+                new File(XML_DIR, "invalid.xml"))) {
+            saxparser.parse(instream, new DefaultHandler());
+        }
+    }
+
+    /**
+     * Test with valid input stream, parser should parse the XML document
+     * successfully.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse23(SAXParser saxparser) throws Exception {
         DefaultHandler handler = new DefaultHandler();
-        saxparser.parse(uri, handler);
-
+        saxparser.parse(new File(XML_DIR, "parsertest.xml"), handler);
     }
 
     /**
-     * Testcase with proper uri, parser should parse successfully.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse25(SAXParser saxparser) {
-        try {
-            File file = new File(TestUtils.XML_DIR, "correct.xml");
-
-            DefaultHandler handler = new DefaultHandler();
-            saxparser.parse(file.toURI().toASCIIString(), handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with File null, parsing should fail and throw
-     * IllegalArgumentException.
+     * Test with valid input stream, parser should parse the XML document
+     * successfully.
      *
-     * @throws IllegalArgumentException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse26(SAXParser saxparser) throws IllegalArgumentException {
-        try {
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse24(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(new File(XML_DIR,
+                "correct.xml"))) {
             DefaultHandler handler = new DefaultHandler();
-            saxparser.parse((File) null, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
+            saxparser.parse(instream, handler);
         }
     }
 
     /**
-     * Testcase with empty string as File, parsing should fail and throw
+     * Test with valid input source, parser should parse the XML document
+     * successfully.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse25(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(
+                new File(XML_DIR, "parsertest.xml"))) {
+            saxparser.parse(instream, new DefaultHandler(),
+                new File(XML_DIR).toURI().toASCIIString());
+        }
+    }
+
+    /**
+     * Test with proper URI, parser should parse successfully.
+     *
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse26(SAXParser saxparser) throws Exception {
+        File file = new File(XML_DIR, "correct.xml");
+        saxparser.parse(file.toURI().toASCIIString(), new DefaultHandler());
+    }
+
+    /**
+     * Test with XML file that has errors, parsing should fail and throw
      * SAXException.
      *
-     * @throws SAXException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse27(SAXParser saxparser) throws SAXException {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            File file = new File("");
-            saxparser.parse(file, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
-        }
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class,
+            dataProvider = "parser-provider")
+    public void testParse27(SAXParser saxparser) throws Exception {
+        saxparser.parse(new File(XML_DIR, "valid.xml"), new DefaultHandler());
     }
 
     /**
-     * Testcase with xml file that has errors, parsing should fail and throw
-     * SAXException.
+     * Test with XML file that has no errors, parser should successfully
+     * parse the XML document.
      *
-     * @throws SAXException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse28(SAXParser saxparser) throws SAXException {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            File file = new File(TestUtils.XML_DIR, "valid.xml");
-            saxparser.parse(file, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
-        }
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse28(SAXParser saxparser) throws Exception {
+        saxparser.parse(new File(XML_DIR, "correct.xml"), new DefaultHandler());
     }
 
     /**
-     * Testcase with xml file that has no errors, parser should successfully
-     * parse the xml document.
-     */
-    @Test(dataProvider = "parser-provider")
-    public void testParse29(SAXParser saxparser) {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            File file = new File(TestUtils.XML_DIR, "correct.xml");
-            saxparser.parse(file, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase with input source null, parsing should fail and throw
-     * IllegalArgumentException.
+     * Test with an invalid XML file, parser should throw SAXException.
      *
-     * @throws IllegalArgumentException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "parser-provider")
-    public void testParse30(SAXParser saxparser) throws IllegalArgumentException {
-        try {
-            InputSource is = null;
-            DefaultHandler handler = new DefaultHandler();
-            saxparser.parse(is, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = SAXException.class,
+            dataProvider = "parser-provider")
+    public void testParse29(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(
+                new File(XML_DIR, "invalid.xml"))) {
+            saxparser.parse(new InputSource(instream), new DefaultHandler());
         }
     }
 
     /**
-     * Testcase with an invalid xml file, parser should throw SAXException.
+     * Test case to parse an XML file that not use namespaces.
      *
-     * @throws SAXException
+     * @param saxparser a SAXParser instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXException.class, dataProvider = "parser-provider")
-    public void testParse31(SAXParser saxparser) throws SAXException {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "invalid.xml"));
-            InputSource is = new InputSource(instream);
-            saxparser.parse(is, handler);
-        } catch (IOException e) {
-            failUnexpected(e);
+    @Test(groups = {"readLocalFiles"}, dataProvider = "parser-provider")
+    public void testParse30(SAXParser saxparser) throws Exception {
+        try (FileInputStream instream = new FileInputStream(
+                new File(XML_DIR, "correct.xml"))) {
+            saxparser.parse(new InputSource(instream), new DefaultHandler());
         }
     }
 
     /**
-     * Test case to parse an xml file that not use namespaces.
+     * Test case to parse an XML file that uses namespaces.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "parser-provider")
-    public void testParse32(SAXParser saxparser) {
-        try {
-            DefaultHandler handler = new DefaultHandler();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "correct.xml"));
-            InputSource is = new InputSource(instream);
-            saxparser.parse(is, handler);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Test case to parse an xml file that uses namespaces.
-     */
-    @Test
-    public void testParse33() {
-        try {
+    @Test(groups = {"readLocalFiles"})
+    public void testParse31() throws Exception {
+        try (FileInputStream instream = new FileInputStream(
+                new File(XML_DIR, "ns4.xml"))) {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setNamespaceAware(true);
-            SAXParser saxparser = spf.newSAXParser();
-            HandlerBase handler = new HandlerBase();
-            FileInputStream instream = new FileInputStream(new File(TestUtils.XML_DIR, "ns4.xml"));
-            saxparser.parse(instream, handler);
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            failUnexpected(e);
+            spf.newSAXParser().parse(instream, new HandlerBase());
         }
     }
 }

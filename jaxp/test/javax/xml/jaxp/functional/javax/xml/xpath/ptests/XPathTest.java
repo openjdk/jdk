@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package javax.xml.xpath.ptests;
 
-import java.io.IOException;
+import java.io.FilePermission;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +33,6 @@ import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import static javax.xml.xpath.XPathConstants.BOOLEAN;
 import static javax.xml.xpath.XPathConstants.NODE;
@@ -43,7 +42,7 @@ import static javax.xml.xpath.XPathConstants.STRING;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import static javax.xml.xpath.ptests.XPathTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNotNull;
 import static org.testng.AssertJUnit.assertNull;
@@ -53,12 +52,11 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Class containing the test cases for XPath API.
  */
-public class XPathTest {
+public class XPathTest extends JAXPFileReadOnlyBaseTest {
     /**
      * Document object for testing XML file.
      */
@@ -91,13 +89,11 @@ public class XPathTest {
 
     /**
      * Create Document object and XPath object for every time
-     * @throws ParserConfigurationException If the factory class cannot be
-     *                                      loaded, instantiated
-     * @throws SAXException If any parse errors occur.
-     * @throws IOException If operation on xml file failed.
+     * @throws Exception If any errors occur.
      */
     @BeforeTest
-    public void setup() throws ParserConfigurationException, SAXException, IOException {
+    public void setup() throws Exception {
+        setPermissions(new FilePermission(XML_DIR + "-", "read"));
         document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(XML_PATH.toFile());
         xpath = XPathFactory.newInstance().newXPath();
     }
@@ -105,62 +101,54 @@ public class XPathTest {
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
      * item, QName returnType) which return type is String.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath01() {
-        try {
-            assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document, STRING), "6");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath01() throws XPathExpressionException {
+        assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document, STRING), "6");
     }
 
 
     /**
      * Test for XPath.compile(java.lang.String expression) and then
      * evaluate(java.lang.Object item, QName returnType).
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath02() {
-        try {
-            assertEquals(xpath.compile(EXPRESSION_NAME_A).evaluate(document, STRING), "6");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath02() throws XPathExpressionException {
+        assertEquals(xpath.compile(EXPRESSION_NAME_A).evaluate(document, STRING), "6");
     }
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
      * item) when the third argument is left off of the XPath.evaluate method,
      * all expressions are evaluated to a String value.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath03() {
-        try {
-            assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document), "6");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath03() throws XPathExpressionException {
+        assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document), "6");
     }
 
     /**
      * Test for XPath.compile(java.lang.String expression). If expression is
      * null, should throw NPE.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath04() {
-        try {
-            xpath.compile(null);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath04() throws XPathExpressionException {
+        xpath.compile(null);
     }
 
     /**
      * Test for XPath.compile(java.lang.String expression). If expression cannot
      * be compiled junk characters, should throw XPathExpressionException.
      *
-     * @throws XPathExpressionException
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = XPathExpressionException.class)
     public void testCheckXPath05() throws XPathExpressionException {
@@ -171,7 +159,7 @@ public class XPathTest {
      * Test for XPath.compile(java.lang.String expression). If expression is
      * blank, should throw XPathExpressionException
      *
-     * @throws XPathExpressionException
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = XPathExpressionException.class)
     public void testCheckXPath06() throws XPathExpressionException {
@@ -181,55 +169,46 @@ public class XPathTest {
     /**
      * Test for XPath.compile(java.lang.String expression). The expression
      * cannot be evaluated as this does not exist.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath07() {
-        try {
-            assertEquals(xpath.compile(EXPRESSION_NAME_B).evaluate(document, STRING), "");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
-
+    public void testCheckXPath07() throws XPathExpressionException {
+        assertEquals(xpath.compile(EXPRESSION_NAME_B).evaluate(document, STRING), "");
     }
 
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
-     * item, QName returnType). If String expression is null, should throw NPE
+     * item, QName returnType). If String expression is null, should throw NPE.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath08() {
-        try {
-            xpath.evaluate(null, document, STRING);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath08() throws XPathExpressionException {
+        xpath.evaluate(null, document, STRING);
     }
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
      * item, QName returnType). If item is null, should throw NPE.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath09() {
-        try {
-            xpath.evaluate(EXPRESSION_NAME_A, null, STRING);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath09() throws XPathExpressionException {
+        xpath.evaluate(EXPRESSION_NAME_A, null, STRING);
     }
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
      * item, QName returnType). If returnType is null, should throw NPE.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath10() {
-        try {
-            xpath.evaluate(EXPRESSION_NAME_A, document, null);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath10() throws XPathExpressionException {
+        xpath.evaluate(EXPRESSION_NAME_A, document, null);
     }
 
     /**
@@ -237,23 +216,20 @@ public class XPathTest {
      * item, QName returnType). If a request is made to evaluate the expression
      * in the absence of a context item, simple expressions, such as "1+1", can
      * be evaluated.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath11() {
-        try {
-            assertEquals(xpath.evaluate("1+1", document, STRING), "2");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath11() throws XPathExpressionException {
+        assertEquals(xpath.evaluate("1+1", document, STRING), "2");
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, java.lang.Object item, QName
      * returnType) throws XPathExpressionException if expression is a empty
      * string "".
-     * .
      *
-     * @throws XPathExpressionException
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = XPathExpressionException.class)
     public void testCheckXPath12() throws XPathExpressionException {
@@ -264,161 +240,141 @@ public class XPathTest {
      * XPath.evaluate(java.lang.String expression, java.lang.Object item, QName
      * returnType) throws IllegalArgumentException if returnType is not one of
      * the types defined in XPathConstants.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testCheckXPath13() {
-        try {
-            xpath.evaluate(EXPRESSION_NAME_A, document, TEST_QNAME);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath13() throws XPathExpressionException {
+        xpath.evaluate(EXPRESSION_NAME_A, document, TEST_QNAME);
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, java.lang.Object item, QName
      * returnType) returns correct boolean value if returnType is Boolean.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath14() {
-        try {
-            assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document, BOOLEAN), true);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath14() throws XPathExpressionException {
+        assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document, BOOLEAN), true);
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, java.lang.Object item, QName
      * returnType) returns false as  expression is not successful in evaluating
      * to any result if returnType is Boolean.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath15() {
-        try {
-            assertEquals(xpath.evaluate(EXPRESSION_NAME_B, document, BOOLEAN), false);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath15() throws XPathExpressionException {
+        assertEquals(xpath.evaluate(EXPRESSION_NAME_B, document, BOOLEAN), false);
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, java.lang.Object item, QName
      * returnType) returns correct number value if return type is Number.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath16() {
-        try {
-            assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document, NUMBER), 6d);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath16() throws XPathExpressionException {
+        assertEquals(xpath.evaluate(EXPRESSION_NAME_A, document, NUMBER), 6d);
     }
 
 
     /**
      * XPath.evaluate(java.lang.String expression, java.lang.Object item, QName
      * returnType) returns correct string value if return type is Node.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath17() {
-        try {
-            assertEquals(((Attr)xpath.evaluate(EXPRESSION_NAME_A, document, NODE)).getValue(), "6");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath17() throws XPathExpressionException {
+        assertEquals(((Attr)xpath.evaluate(EXPRESSION_NAME_A, document, NODE)).getValue(), "6");
     }
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
      * item, QName returnType). If return type is NodeList,the evaluated value
      * equals to "6" as expected.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath18() {
-        try {
-            NodeList nodeList = (NodeList)xpath.evaluate(EXPRESSION_NAME_A, document, NODESET);
-            assertEquals(((Attr) nodeList.item(0)).getValue(), "6");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath18() throws XPathExpressionException {
+        NodeList nodeList = (NodeList)xpath.evaluate(EXPRESSION_NAME_A, document, NODESET);
+        assertEquals(((Attr) nodeList.item(0)).getValue(), "6");
     }
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
      * item). If expression is null, should throw NPE.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath19() {
-        try {
-            xpath.evaluate(null, document);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath19() throws XPathExpressionException {
+        xpath.evaluate(null, document);
     }
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, java.lang.Object
      * item). If a request is made to evaluate the expression in the absence of
      * a context item, simple expressions, such as "1+1", can be evaluated.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test
-    public void testCheckXPath20() {
-        try {
-            assertEquals(xpath.evaluate("1+1", document), "2");
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath20() throws XPathExpressionException {
+        assertEquals(xpath.evaluate("1+1", document), "2");
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, java.lang.Object item) throws
      * NPE if InputSource is null.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath21() {
-        try {
-            xpath.evaluate(EXPRESSION_NAME_A, null);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath21() throws XPathExpressionException {
+        xpath.evaluate(EXPRESSION_NAME_A, null);
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source) return
      * correct value by looking for Node.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath22() {
+    @Test (groups = {"readLocalFiles"})
+    public void testCheckXPath22() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.evaluate(EXPRESSION_NAME_A, new InputSource(is)), "6");
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source) throws
      * NPE if InputSource is null.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath23() {
-        try {
-            xpath.evaluate(EXPRESSION_NAME_A, null);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath23() throws XPathExpressionException {
+        xpath.evaluate(EXPRESSION_NAME_A, null);
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source) throws
      * NPE if String expression is null.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath24() {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    public void testCheckXPath24() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate(null, new InputSource(is));
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
@@ -427,14 +383,12 @@ public class XPathTest {
      * If expression is junk characters, expression cannot be evaluated, should
      * throw XPathExpressionException.
      *
-     * @throws XPathExpressionException
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = XPathExpressionException.class)
-    public void testCheckXPath25() throws XPathExpressionException {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    public void testCheckXPath25() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate("-*&", new InputSource(is));
-        } catch (IOException ex) {
-            failUnexpected(ex);
         }
     }
 
@@ -442,66 +396,62 @@ public class XPathTest {
      * XPath.evaluate(java.lang.String expression, InputSource source) throws
      * XPathExpressionException if expression is blank " ".
      *
-     * @throws XPathExpressionException
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = XPathExpressionException.class)
-    public void testCheckXPath26() throws XPathExpressionException {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    public void testCheckXPath26() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate(" ", new InputSource(is));
-        } catch (IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source, QName
      * returnType) returns correct string value which return type is String.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath27() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath27() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.evaluate(EXPRESSION_NAME_A, new InputSource(is), STRING), "6");
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source, QName
      * returnType) throws NPE if source is null.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath28() {
-        try {
-            xpath.evaluate(EXPRESSION_NAME_A, null, STRING);
-        } catch (XPathExpressionException ex) {
-            failUnexpected(ex);
-        }
+    public void testCheckXPath28() throws XPathExpressionException {
+        xpath.evaluate(EXPRESSION_NAME_A, null, STRING);
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source, QName
      * returnType) throws NPE if expression is null.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath29() {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    public void testCheckXPath29() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate(null, new InputSource(is), STRING);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source,
-     * QName returnType) throws NPE if returnType is null .
+     * QName returnType) throws NPE if returnType is null.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPath30() {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    public void testCheckXPath30() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate(EXPRESSION_NAME_A, new InputSource(is), null);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
@@ -509,14 +459,12 @@ public class XPathTest {
      * XPath.evaluate(java.lang.String expression, InputSource source, QName
      * returnType) throws XPathExpressionException if expression is junk characters.
      *
-     * @throws XPathExpressionException
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = XPathExpressionException.class)
-    public void testCheckXPath31() throws XPathExpressionException {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    public void testCheckXPath31() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate("-*&", new InputSource(is), STRING);
-        } catch (IOException ex) {
-            failUnexpected(ex);
         }
     }
 
@@ -524,14 +472,12 @@ public class XPathTest {
      * XPath.evaluate(java.lang.String expression, InputSource source, QName
      * returnType) throws XPathExpressionException if expression is blank " ".
      *
-     * @throws XPathExpressionException
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = XPathExpressionException.class)
-    public void testCheckXPath32() throws XPathExpressionException {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    public void testCheckXPath32() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate(" ", new InputSource(is), STRING);
-        } catch (IOException ex) {
-            failUnexpected(ex);
         }
     }
 
@@ -539,84 +485,84 @@ public class XPathTest {
      * XPath.evaluate(java.lang.String expression, InputSource source,
      * QName returnType) throws IllegalArgumentException if returnType is not
      * one of the types defined in XPathConstants.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testCheckXPath33() {
+    @Test(groups = {"readLocalFiles"}, expectedExceptions = IllegalArgumentException.class)
+    public void testCheckXPath33() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.evaluate(EXPRESSION_NAME_A, new InputSource(is), TEST_QNAME);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source,
      * QName returnType) return correct boolean value if return type is Boolean.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath34() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath34() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.evaluate(EXPRESSION_NAME_A, new InputSource(is),
                 BOOLEAN), true);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source,
      * QName returnType) return correct boolean value if return type is Boolean.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath35() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath35() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.evaluate(EXPRESSION_NAME_B, new InputSource(is),
                 BOOLEAN), false);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source,
      * QName returnType) return correct number value if return type is Number.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath36() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath36() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.evaluate(EXPRESSION_NAME_A, new InputSource(is),
                 NUMBER), 6d);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource source,
      * QName returnType) return correct string value if return type is Node.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath37() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath37() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(((Attr)xpath.evaluate(EXPRESSION_NAME_A,
                 new InputSource(is), NODE)).getValue(), "6");
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * Test for XPath.evaluate(java.lang.String expression, InputSource source,
      * QName returnType) which return type is NodeList.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath38() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath38() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             NodeList nodeList = (NodeList)xpath.evaluate(EXPRESSION_NAME_A,
                 new InputSource(is), NODESET);
             assertEquals(((Attr) nodeList.item(0)).getValue(), "6");
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
@@ -624,57 +570,57 @@ public class XPathTest {
      * Test for XPath.evaluate(java.lang.String expression, InputSource iSource,
      * QName returnType). If return type is Boolean, should return false as
      * expression is not successful in evaluating to any result.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath52() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath52() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.evaluate(EXPRESSION_NAME_B, new InputSource(is),
                 BOOLEAN), false);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource iSource, QName
      * returnType) returns correct number value which return type is Number.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath53() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath53() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.evaluate(EXPRESSION_NAME_A, new InputSource(is),
                 NUMBER), 6d);
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource iSource, QName
      * returnType) returns a node value if returnType is Node.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath54() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath54() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(((Attr)xpath.evaluate(EXPRESSION_NAME_A,
                 new InputSource(is), NODE)).getValue(), "6");
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 
     /**
      * XPath.evaluate(java.lang.String expression, InputSource iSource, QName
      * returnType) returns a node list if returnType is NodeList.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckXPath55() {
+    @Test(groups = {"readLocalFiles"})
+    public void testCheckXPath55() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             NodeList nodeList = (NodeList)xpath.evaluate(EXPRESSION_NAME_A,
                 new InputSource(is), NODESET);
             assertEquals(((Attr) nodeList.item(0)).getValue(), "6");
-        } catch (XPathExpressionException | IOException ex) {
-            failUnexpected(ex);
         }
     }
 

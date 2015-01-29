@@ -35,6 +35,7 @@
  *                   -XX:+WhiteBoxAPI TestRTMTotalCountIncrRate
  */
 
+import sun.misc.Unsafe;
 import java.util.List;
 
 import com.oracle.java.testlibrary.*;
@@ -97,14 +98,12 @@ public class TestRTMTotalCountIncrRate extends CommandLineOptionTest {
             Asserts.assertEQ(lock.getTotalLocks(), Test.TOTAL_ITERATIONS,
                     "Total locks should be exactly the same as amount of "
                     + "iterations.");
-        } else {
-            Asserts.assertGT(lock.getTotalLocks(), 0L, "RTM statistics "
-                    + "should contain information for at least on lock.");
         }
     }
 
     public static class Test implements CompilableTest {
         private static final long TOTAL_ITERATIONS = 10000L;
+        private static final Unsafe UNSAFE = Utils.getUnsafe();
         private final Object monitor = new Object();
         // Following field have to be static in order to avoid escape analysis.
         @SuppressWarnings("UnsuedDeclaration")
@@ -117,13 +116,20 @@ public class TestRTMTotalCountIncrRate extends CommandLineOptionTest {
 
         @Override
         public String[] getMethodsToCompileNames() {
-            return new String[] {
-                getMethodWithLockName()
-            };
+            return new String[] { getMethodWithLockName() };
         }
 
-        public void lock() {
+        public void lock(booleab forceAbort) {
             synchronized(monitor) {
+                if (forceAbort) {
+                    // We're calling native method in order to force
+                    // abort. It's done by explicit xabort call emitted
+                    // in SharedRuntime::generate_native_wrapper.
+                    // If an actuall JNI call will be replaced by
+                    // intrinsic - we'll be in trouble, since xabort
+                    // will be no longer called and test may fail.
+                    UNSAFE.addressSize();
+                }
                 Test.field++;
             }
         }
@@ -135,12 +141,18 @@ public class TestRTMTotalCountIncrRate extends CommandLineOptionTest {
         public static void main(String args[]) throws Throwable {
             Asserts.assertGTE(args.length, 1, "One argument required.");
             Test test = new Test();
-
-            if (Boolean.valueOf(args[0])) {
+            boolean shouldBeInflated = Boolean.valueOf(args[0]);
+            if (shouldBeInflated) {
                 AbortProvoker.inflateMonitor(test.monitor);
             }
             for (long i = 0L; i < Test.TOTAL_ITERATIONS; i++) {
-                test.lock();
+                AbortProvoker.verifyMonitorState(test.monitor,
+                        shouldBeInflated);
+                // Force abort on first iteration to avoid rare case when
+                // there were no aborts and locks count was not incremented
+                // with RTMTotalCountIncrRate > 1 (in such case JVM won't
+                // print JVM locking statistics).
+                test.lock(i == 0);
             }
         }
     }

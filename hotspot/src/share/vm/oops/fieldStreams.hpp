@@ -51,7 +51,7 @@ class FieldStreamBase : public StackObj {
 
   int init_generic_signature_start_slot() {
     int length = _fields->length();
-    int num_fields = 0;
+    int num_fields = _index;
     int skipped_generic_signature_slots = 0;
     FieldInfo* fi;
     AccessFlags flags;

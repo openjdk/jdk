@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
  * @bug 6304912
  * @summary unit test for Log
  */
+import java.lang.reflect.Field;
 import java.io.InputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.Set;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -41,23 +42,34 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+import com.sun.tools.javac.util.JCDiagnostic.Factory;
 import com.sun.tools.javac.util.Options;
 
 public class TestLog
 {
-    public static void main(String... args) throws IOException {
+    public static void main(String... args) throws Exception {
         test(false);
         test(true);
     }
 
-    static void test(boolean genEndPos) throws IOException {
+    static void test(boolean genEndPos) throws Exception {
         Context context = new Context();
 
         Options options = Options.instance(context);
         options.put("diags", "%b:%s/%o/%e:%_%t%m|%p%m");
 
         Log log = Log.instance(context);
-        log.multipleErrors = true;
+        Factory diagnosticFactory = JCDiagnostic.Factory.instance(context);
+        Field defaultErrorFlagsField =
+                JCDiagnostic.Factory.class.getDeclaredField("defaultErrorFlags");
+
+        defaultErrorFlagsField.setAccessible(true);
+
+        Set<DiagnosticFlag> defaultErrorFlags =
+                (Set<DiagnosticFlag>) defaultErrorFlagsField.get(diagnosticFactory);
+
+        defaultErrorFlags.add(DiagnosticFlag.MULTIPLE);
 
         JavacFileManager.preRegister(context);
         ParserFactory pfac = ParserFactory.instance(context);

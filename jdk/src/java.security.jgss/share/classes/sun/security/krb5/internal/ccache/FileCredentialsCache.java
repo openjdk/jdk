@@ -150,43 +150,43 @@ public class FileCredentialsCache extends CredentialsCache
     synchronized void init(PrincipalName principal, String name)
         throws IOException, KrbException {
         primaryPrincipal = principal;
-        CCacheOutputStream cos =
-            new CCacheOutputStream(new FileOutputStream(name));
-        version = KRB5_FCC_FVNO_3;
-        cos.writeHeader(primaryPrincipal, version);
-        cos.close();
+        try (FileOutputStream fos = new FileOutputStream(name);
+             CCacheOutputStream cos = new CCacheOutputStream(fos)) {
+            version = KRB5_FCC_FVNO_3;
+            cos.writeHeader(primaryPrincipal, version);
+        }
         load(name);
     }
 
     synchronized void load(String name) throws IOException, KrbException {
         PrincipalName p;
-        CCacheInputStream cis =
-            new CCacheInputStream(new FileInputStream(name));
-        version = cis.readVersion();
-        if (version == KRB5_FCC_FVNO_4) {
-            tag = cis.readTag();
-        } else {
-            tag = null;
-            if (version == KRB5_FCC_FVNO_1 || version == KRB5_FCC_FVNO_2) {
-                cis.setNativeByteOrder();
+        try (FileInputStream fis = new FileInputStream(name);
+             CCacheInputStream cis = new CCacheInputStream(fis)) {
+            version = cis.readVersion();
+            if (version == KRB5_FCC_FVNO_4) {
+                tag = cis.readTag();
+            } else {
+                tag = null;
+                if (version == KRB5_FCC_FVNO_1 || version == KRB5_FCC_FVNO_2) {
+                    cis.setNativeByteOrder();
+                }
             }
-        }
-        p = cis.readPrincipal(version);
+            p = cis.readPrincipal(version);
 
-        if (primaryPrincipal != null) {
-            if (!(primaryPrincipal.match(p))) {
-                throw new IOException("Primary principals don't match.");
-            }
-        } else
-            primaryPrincipal = p;
-        credentialsList = new Vector<Credentials> ();
-        while (cis.available() > 0) {
-            Credentials cred = cis.readCred(version);
-            if (cred != null) {
-                credentialsList.addElement(cred);
+            if (primaryPrincipal != null) {
+                if (!(primaryPrincipal.match(p))) {
+                    throw new IOException("Primary principals don't match.");
+                }
+            } else
+                primaryPrincipal = p;
+            credentialsList = new Vector<Credentials>();
+            while (cis.available() > 0) {
+                Credentials cred = cis.readCred(version);
+                if (cred != null) {
+                    credentialsList.addElement(cred);
+                }
             }
         }
-        cis.close();
     }
 
 
@@ -245,16 +245,16 @@ public class FileCredentialsCache extends CredentialsCache
      * Saves the credentials cache file to the disk.
      */
     public synchronized void save() throws IOException, Asn1Exception {
-        CCacheOutputStream cos
-            = new CCacheOutputStream(new FileOutputStream(cacheName));
-        cos.writeHeader(primaryPrincipal, version);
-        Credentials[] tmp = null;
-        if ((tmp = getCredsList()) != null) {
-            for (int i = 0; i < tmp.length; i++) {
-                cos.addCreds(tmp[i]);
+        try (FileOutputStream fos = new FileOutputStream(cacheName);
+             CCacheOutputStream cos = new CCacheOutputStream(fos)) {
+            cos.writeHeader(primaryPrincipal, version);
+            Credentials[] tmp = null;
+            if ((tmp = getCredsList()) != null) {
+                for (int i = 0; i < tmp.length; i++) {
+                    cos.addCreds(tmp[i]);
+                }
             }
         }
-        cos.close();
     }
 
     boolean match(String[] s1, String[] s2) {

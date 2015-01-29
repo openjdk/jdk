@@ -240,7 +240,8 @@ public class RTMTestBase {
         Collections.addAll(finalVMOpts, "-Xcomp", "-server",
                 "-XX:-TieredCompilation", "-XX:+UseRTMLocking",
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
-                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS);
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-Xbootclasspath/a:.", "-XX:+WhiteBoxAPI");
 
         if (test != null) {
             for (String method : test.getMethodsToCompileNames()) {
