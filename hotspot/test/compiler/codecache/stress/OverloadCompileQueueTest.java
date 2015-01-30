@@ -77,7 +77,7 @@ public class OverloadCompileQueueTest implements Runnable {
     }
 
     public OverloadCompileQueueTest() {
-        Helper.startInfiniteLoopThread(this::lockUnlock);
+        Helper.startInfiniteLoopThread(this::lockUnlock, 100L);
     }
 
     @Override
@@ -99,8 +99,9 @@ public class OverloadCompileQueueTest implements Runnable {
 
     private void lockUnlock() {
         try {
+            int sleep = Helper.RNG.nextInt(MAX_SLEEP);
             Helper.WHITE_BOX.lockCompilation();
-            Thread.sleep(Helper.RNG.nextInt(MAX_SLEEP));
+            Thread.sleep(sleep);
         } catch (InterruptedException e) {
             throw new Error("TESTBUG: lockUnlocker thread was unexpectedly interrupted", e);
         } finally {
