@@ -97,7 +97,7 @@ needs_jdk = \
   runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java \
   serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java \
-  serviceability/dcmd/DynLibDcmdTest.java
+  serviceability/dcmd/vm/DynLibsTest.java
 
 
 # JRE adds further tests to compact3
