@@ -30,6 +30,7 @@ import com.oracle.java.testlibrary.Platform;
 /*
  * @test OverloadCompileQueueTest
  * @library /testlibrary /../../test/lib
+ * @ignore 8071905
  * @build OverloadCompileQueueTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
