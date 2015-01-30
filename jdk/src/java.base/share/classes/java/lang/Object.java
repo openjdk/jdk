@@ -42,6 +42,11 @@ public class Object {
     }
 
     /**
+     * Constructs a new object.
+     */
+    public Object() {}
+
+    /**
      * Returns the runtime class of this {@code Object}. The returned
      * {@code Class} object is the object that is locked by {@code
      * static synchronized} methods of the represented class.
