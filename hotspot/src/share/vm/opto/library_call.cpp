@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -287,6 +288,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
   bool inline_multiplyToLen();
+
+  bool inline_profileBoolean();
 };
 
 
@@ -899,6 +902,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_updateBytesCRC32();
   case vmIntrinsics::_updateByteBufferCRC32:
     return inline_updateByteBufferCRC32();
+
+  case vmIntrinsics::_profileBoolean:
+    return inline_profileBoolean();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -5866,4 +5872,48 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
 
   return instof_false;  // even if it is NULL
+}
+
+bool LibraryCallKit::inline_profileBoolean() {
+  Node* counts = argument(1);
+  const TypeAryPtr* ary = NULL;
+  ciArray* aobj = NULL;
+  if (counts->is_Con()
+      && (ary = counts->bottom_type()->isa_aryptr()) != NULL
+      && (aobj = ary->const_oop()->as_array()) != NULL
+      && (aobj->length() == 2)) {
+    // Profile is int[2] where [0] and [1] correspond to false and true value occurrences respectively.
+    jint false_cnt = aobj->element_value(0).as_int();
+    jint  true_cnt = aobj->element_value(1).as_int();
+
+    method()->set_injected_profile(true);
+
+    if (C->log() != NULL) {
+      C->log()->elem("observe source='profileBoolean' false='%d' true='%d'",
+                     false_cnt, true_cnt);
+    }
+
+    if (false_cnt + true_cnt == 0) {
+      // According to profile, never executed.
+      uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                          Deoptimization::Action_reinterpret);
+      return true;
+    }
+    // Stop profiling.
+    // MethodHandleImpl::profileBoolean() has profiling logic in it's bytecode.
+    // By replacing method's body with profile data (represented as ProfileBooleanNode
+    // on IR level) we effectively disable profiling.
+    // It enables full speed execution once optimized code is generated.
+    Node* profile = _gvn.transform(new ProfileBooleanNode(argument(0), false_cnt, true_cnt));
+    C->record_for_igvn(profile);
+    set_result(profile);
+    return true;
+  } else {
+    // Continue profiling.
+    // Profile data isn't available at the moment. So, execute method's bytecode version.
+    // Usually, when GWT LambdaForms are profiled it means that a stand-alone nmethod
+    // is compiled and counters aren't available since corresponding MethodHandle
+    // isn't a compile-time constant.
+    return false;
+  }
 }
