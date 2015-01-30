@@ -24,14 +24,21 @@
 /*
  * @test CodelistTest
  * @bug 8054889
- * @library ..
- * @build DcmdUtil MethodIdentifierParser CodelistTest
- * @run main CodelistTest
+ * @library /testlibrary
+ * @build com.oracle.java.testlibrary.*
+ * @build com.oracle.java.testlibrary.dcmd.*
+ * @build MethodIdentifierParser
+ * @run testng CodelistTest
  * @summary Test of diagnostic command Compiler.codelist
  */
 
-import java.io.BufferedReader;
-import java.io.StringReader;
+import org.testng.annotations.Test;
+import org.testng.Assert;
+
+import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.oracle.java.testlibrary.dcmd.CommandExecutor;
+import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+
 import java.lang.reflect.Method;
 
 public class CodelistTest {
@@ -51,19 +58,17 @@ public class CodelistTest {
      *
      */
 
-    public static void main(String arg[]) throws Exception {
+    public void run(CommandExecutor executor) {
         int ok   = 0;
         int fail = 0;
 
         // Get output from dcmd (diagnostic command)
-        String result = DcmdUtil.executeDcmd("Compiler.codelist");
-        BufferedReader r = new BufferedReader(new StringReader(result));
+        OutputAnalyzer output = executor.execute("Compiler.codelist");
 
         // Grab a method name from the output
-        String line;
         int count = 0;
 
-        while((line = r.readLine()) != null) {
+        for (String line : output.asLines()) {
             count++;
 
             String[] parts = line.split(" ");
@@ -83,19 +88,26 @@ public class CodelistTest {
             }
 
             MethodIdentifierParser mf = new MethodIdentifierParser(methodPrintedInLogFormat);
-            Method m;
+            Method m = null;
             try {
                 m = mf.getMethod();
             } catch (NoSuchMethodException e) {
                 m = null;
+            } catch (ClassNotFoundException e) {
+                Assert.fail("Test error: Caught unexpected exception", e);
             }
             if (m == null) {
-                throw new Exception("Test failed on: " + methodPrintedInLogFormat);
+                Assert.fail("Test failed on: " + methodPrintedInLogFormat);
             }
             if (count > 10) {
                 // Testing 10 entries is enough. Lets not waste time.
                 break;
             }
         }
+    }
+
+    @Test
+    public void jmx() {
+        run(new JMXExecutor());
     }
 }
