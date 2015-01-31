@@ -376,19 +376,16 @@ public final class System {
      * the difference between two such values, obtained within the same
      * instance of a Java virtual machine, is computed.
      *
-     * <p> For example, to measure how long some code takes to execute:
-     *  <pre> {@code
+     * <p>For example, to measure how long some code takes to execute:
+     * <pre> {@code
      * long startTime = System.nanoTime();
      * // ... the code being measured ...
-     * long estimatedTime = System.nanoTime() - startTime;}</pre>
+     * long elapsedNanos = System.nanoTime() - startTime;}</pre>
      *
-     * <p>To compare two nanoTime values
-     *  <pre> {@code
-     * long t0 = System.nanoTime();
-     * ...
-     * long t1 = System.nanoTime();}</pre>
-     *
-     * one should use {@code t1 - t0 < 0}, not {@code t1 < t0},
+     * <p>To compare elapsed time against a timeout, use <pre> {@code
+     * if (System.nanoTime() - startTime >= timeoutNanos) ...}</pre>
+     * instead of <pre> {@code
+     * if (System.nanoTime() >= startTime + timeoutNanos) ...}</pre>
      * because of the possibility of numerical overflow.
      *
      * @return the current value of the running Java Virtual Machine's

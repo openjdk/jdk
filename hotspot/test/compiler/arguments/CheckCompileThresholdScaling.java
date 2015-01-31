@@ -54,7 +54,7 @@ public class CheckCompileThresholdScaling {
     //
     // Tier0InvokeNotifyFreqLog, Tier0BackedgeNotifyFreqLog,
     // Tier3InvocationThreshold, Tier3MinInvocationThreshold,
-    // Tier3CompileThreshold, and Tier3BackEdgeThreshold,
+    // Tier3CompileThreshold, Tier3BackEdgeThreshold,
     // Tier2InvokeNotifyFreqLog, Tier2BackedgeNotifyFreqLog,
     // Tier3InvokeNotifyFreqLog, Tier3BackedgeNotifyFreqLog,
     // Tier23InlineeNotifyFreqLog, Tier4InvocationThreshold,

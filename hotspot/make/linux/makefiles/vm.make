@@ -334,10 +334,8 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
             if [ \"$(CROSS_COMPILE_ARCH)\" = \"\" ] ; then                    \
 	      if [ -x /usr/sbin/selinuxenabled ] ; then                 \
-	        /usr/sbin/selinuxenabled;                               \
-                if [ $$? = 0 ] ; then					\
-		  /usr/bin/chcon -t textrel_shlib_t $@;                 \
-		  if [ $$? != 0 ]; then                                 \
+                if /usr/sbin/selinuxenabled; then			\
+		  if ! /usr/bin/chcon -t textrel_shlib_t $@; then       \
 		    echo "ERROR: Cannot chcon $@";			\
 		  fi							\
 	        fi							\

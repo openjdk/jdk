@@ -123,7 +123,6 @@
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-
 ############################################################################
 
 # jdk_instrument
@@ -138,6 +137,9 @@ java/lang/instrument/RetransformBigClass.sh                     generic-all
 
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
+
+# 8069286
+java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
 
 ############################################################################
 
@@ -290,14 +292,17 @@ com/sun/jdi/JdbMethodExitTest.sh                                generic-all
 # 8043571
 com/sun/jdi/RepStep.java                                        generic-all
 
-# 8044419
-com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
-
 # 8058616
 com/sun/jdi/RedefinePop.sh                                      generic-all
 
 # 8068645
 com/sun/jdi/CatchPatternTest.sh                                 generic-all
+
+# 8069402
+com/sun/jdi/ConnectedVMs.java					generic-all
+
+# 8067354
+com/sun/jdi/GetLocalVariables4Test.sh				windows-all
 
 ############################################################################
 
