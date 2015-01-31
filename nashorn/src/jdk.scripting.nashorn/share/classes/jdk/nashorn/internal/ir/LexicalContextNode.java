@@ -54,8 +54,8 @@ public interface LexicalContextNode {
         static Node accept(final LexicalContextNode node, final NodeVisitor<? extends LexicalContext> visitor) {
             final LexicalContext lc = visitor.getLexicalContext();
             lc.push(node);
-            final LexicalContextNode newNode = (LexicalContextNode)node.accept(lc, visitor);
-            return (Node)lc.pop(newNode);
+            final Node newNode = node.accept(lc, visitor);
+            return lc.pop(newNode);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,13 @@ Klass* ArrayKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) co
   return super()->find_field(name, sig, fd);
 }
 
-Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const {
+Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const {
   // There are no methods in an array klass but the super class (Object) has some
   assert(super(), "super klass must be present");
-  return super()->uncached_lookup_method(name, signature, mode);
+  // Always ignore overpass methods in superclasses, although technically the
+  // super klass of an array, (j.l.Object) should not have
+  // any overpass methods present.
+  return super()->uncached_lookup_method(name, signature, Klass::skip_overpass);
 }
 
 ArrayKlass::ArrayKlass(Symbol* name) {

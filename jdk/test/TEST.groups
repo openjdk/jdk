@@ -628,7 +628,6 @@ needs_compact2 = \
   sun/net/www/protocol/http \
   java/io/BufferedReader/Lines.java  \
   java/lang/reflect/DefaultStaticTest/DefaultStaticInvokeTest.java \
-  java/lang/CharSequence/DefaultTest.java  \
   java/lang/IntegralPrimitiveToString.java  \
   java/lang/PrimitiveSumMinMaxTest.java  \
   java/lang/String/StringJoinTest.java  \
