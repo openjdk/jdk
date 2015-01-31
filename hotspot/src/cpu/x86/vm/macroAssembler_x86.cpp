@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6194,7 +6194,7 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
   ShortBranchVerifier sbv(this);
   assert(UseSSE42Intrinsics, "SSE4.2 is required");
 
-  // This method uses pcmpestri inxtruction with bound registers
+  // This method uses pcmpestri instruction with bound registers
   //   inputs:
   //     xmm - substring
   //     rax - substring length (elements count)
@@ -6355,7 +6355,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
   //
   assert(int_cnt2 == -1 || (0 < int_cnt2 && int_cnt2 < 8), "should be != 0");
 
-  // This method uses pcmpestri inxtruction with bound registers
+  // This method uses pcmpestri instruction with bound registers
   //   inputs:
   //     xmm - substring
   //     rax - substring length (elements count)
@@ -6644,7 +6644,6 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     // start from first character again because it has aligned address.
     int stride2 = 16;
     int adr_stride  = stride  << scale;
-    int adr_stride2 = stride2 << scale;
 
     assert(result == rax && cnt2 == rdx && cnt1 == rcx, "pcmpestri");
     // rax and rdx are used by pcmpestri as elements counters
@@ -6743,7 +6742,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     //   inputs:
     //     vec1- substring
     //     rax - negative string length (elements count)
-    //     mem - scaned string
+    //     mem - scanned string
     //     rdx - string length (elements count)
     //     pcmpmask - cmp mode: 11000 (string compare with negated result)
     //               + 00 (unsigned bytes) or  + 01 (unsigned shorts)

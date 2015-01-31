@@ -115,6 +115,7 @@ oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodCache* Universe::_loader_addClass_cache    = NULL;
 LatestMethodCache* Universe::_pd_implies_cache         = NULL;
+LatestMethodCache* Universe::_throw_illegal_access_error_cache = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
 oop Universe::_out_of_memory_error_metaspace          = NULL;
 oop Universe::_out_of_memory_error_class_metaspace    = NULL;
@@ -130,7 +131,6 @@ oop Universe::_virtual_machine_error_instance         = NULL;
 oop Universe::_vm_exception                           = NULL;
 oop Universe::_allocation_context_notification_obj    = NULL;
 
-Method* Universe::_throw_illegal_access_error         = NULL;
 Array<int>* Universe::_the_empty_int_array            = NULL;
 Array<u2>* Universe::_the_empty_short_array           = NULL;
 Array<Klass*>* Universe::_the_empty_klass_array     = NULL;
@@ -236,6 +236,7 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
   _finalizer_register_cache->serialize(f);
   _loader_addClass_cache->serialize(f);
   _pd_implies_cache->serialize(f);
+  _throw_illegal_access_error_cache->serialize(f);
 }
 
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
@@ -664,6 +665,7 @@ jint universe_init() {
   Universe::_finalizer_register_cache = new LatestMethodCache();
   Universe::_loader_addClass_cache    = new LatestMethodCache();
   Universe::_pd_implies_cache         = new LatestMethodCache();
+  Universe::_throw_illegal_access_error_cache = new LatestMethodCache();
 
   if (UseSharedSpaces) {
     // Read the data structures supporting the shared spaces (shared
@@ -1016,7 +1018,8 @@ bool universe_post_init() {
     tty->print_cr("Unable to link/verify Unsafe.throwIllegalAccessError method");
     return false; // initialization failed (cannot throw exception yet)
   }
-  Universe::_throw_illegal_access_error = m;
+  Universe::_throw_illegal_access_error_cache->init(
+    SystemDictionary::misc_Unsafe_klass(), m);
 
   // Setup method for registering loaded classes in class loader vector
   InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);
@@ -1042,7 +1045,7 @@ bool universe_post_init() {
       return false; // initialization failed
     }
     Universe::_pd_implies_cache->init(
-      SystemDictionary::ProtectionDomain_klass(), m);;
+      SystemDictionary::ProtectionDomain_klass(), m);
   }
 
   // This needs to be done before the first scavenge/gc, since
