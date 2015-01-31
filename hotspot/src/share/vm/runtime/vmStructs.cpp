@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "ci/ciField.hpp"
@@ -243,6 +244,7 @@ typedef TwoOopHashtable<Klass*, mtClass>      KlassTwoOopHashtable;
 typedef Hashtable<Klass*, mtClass>            KlassHashtable;
 typedef HashtableEntry<Klass*, mtClass>       KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
+typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -624,12 +626,23 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /***************/                                                                                                                  \
                                                                                                                                      \
      static_field(SymbolTable,                  _the_table,                                   SymbolTable*)                          \
+     static_field(SymbolTable,                  _shared_table,                                SymbolCompactHashTable)                \
                                                                                                                                      \
   /***************/                                                                                                                  \
   /* StringTable */                                                                                                                  \
   /***************/                                                                                                                  \
                                                                                                                                      \
      static_field(StringTable,                  _the_table,                                   StringTable*)                          \
+                                                                                                                                     \
+  /********************/                                                                                                             \
+  /* CompactHashTable */                                                                                                             \
+  /********************/                                                                                                             \
+                                                                                                                                     \
+  nonstatic_field(SymbolCompactHashTable, _base_address, uintx)                                                                      \
+  nonstatic_field(SymbolCompactHashTable, _entry_count, juint)                                                                       \
+  nonstatic_field(SymbolCompactHashTable, _bucket_count, juint)                                                                      \
+  nonstatic_field(SymbolCompactHashTable, _table_end_offset, juint)                                                                  \
+  nonstatic_field(SymbolCompactHashTable, _buckets, juint*)                                                                          \
                                                                                                                                      \
   /********************/                                                                                                             \
   /* SystemDictionary */                                                                                                             \
@@ -1579,6 +1592,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(Arena)                                            \
     declare_type(ResourceArea, Arena)                                     \
   declare_toplevel_type(Chunk)                                            \
+                                                                          \
+  declare_toplevel_type(SymbolCompactHashTable)                           \
                                                                           \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
