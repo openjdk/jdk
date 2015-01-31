@@ -75,20 +75,11 @@ public class Archive {
     }
 
     public void addClass(Location origin) {
-        Set<Location> set = deps.get(origin);
-        if (set == null) {
-            set = new HashSet<>();
-            deps.put(origin, set);
-        }
+        deps.computeIfAbsent(origin, _k -> new HashSet<>());
     }
 
     public void addClass(Location origin, Location target) {
-        Set<Location> set = deps.get(origin);
-        if (set == null) {
-            set = new HashSet<>();
-            deps.put(origin, set);
-        }
-        set.add(target);
+        deps.computeIfAbsent(origin, _k -> new HashSet<>()).add(target);
     }
 
     public Set<Location> getClasses() {
@@ -113,6 +104,10 @@ public class Archive {
 
     public String toString() {
         return filename;
+    }
+
+    public Path path() {
+        return path;
     }
 
     interface Visitor {
