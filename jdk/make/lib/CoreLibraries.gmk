@@ -74,8 +74,6 @@ endif
 
 ##########################################################################################
 
-BUILD_LIBVERIFY_SRC := check_code.c check_format.c
-
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifneq ($(OPENJDK_TARGET_CPU), x86_64)
     BUILD_LIBVERIFY_REORDER := $(JDK_TOPDIR)/make/mapfiles/libverify/reorder-$(OPENJDK_TARGET_CPU)
@@ -116,10 +114,6 @@ TARGETS += $(BUILD_LIBVERIFY)
 
 LIBJAVA_SRC_DIRS := $(call FindSrcDirsForLib, java.base, java)
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  LIBJAVA_EXCLUDE_FILES += $(JDK_TOPDIR)/src/java.base/unix/native/libjava/HostLocaleProviderAdapter_md.c
-endif
-
 LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libfdlibm \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
@@ -134,9 +128,7 @@ ifneq (, $(JDK_UPDATE_VERSION))
   LIBJAVA_CFLAGS += -DJDK_UPDATE_VERSION='"$(JDK_UPDATE_VERSION)"'
 endif
 
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  LIBJAVA_EXCLUDE_FILES += java_props_macosx.c
-else
+ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
   BUILD_LIBJAVA_java_props_macosx.c_CFLAGS := -x objective-c
 endif
@@ -151,8 +143,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBRARY := java, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVA_SRC_DIRS), \
-    EXCLUDES := fdlibm/src zip prefs, \
-    EXCLUDE_FILES := $(LIBJAVA_EXCLUDE_FILES), \
     LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
@@ -247,18 +237,9 @@ TARGETS += $(BUILD_LIBZIP)
 
 ##########################################################################################
 
-BUILD_LIBJLI_SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/native/libjli \
-    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli
+LIBJLI_SRC_DIRS := $(call FindSrcDirsForLib, java.base, jli)
 
 LIBJLI_CFLAGS := $(CFLAGS_JDKLIB)
-
-BUILD_LIBJLI_FILES := \
-    java.c \
-    splashscreen_stubs.c \
-    parse_manifest.c \
-    version_comp.c \
-    wildcard.c \
-    jli_util.c
 
 ifeq ($(JVM_VARIANT_ZERO), true)
   ERGO_FAMILY := zero
@@ -269,68 +250,55 @@ else
     ERGO_FAMILY := $(OPENJDK_TARGET_CPU_ARCH)
   endif
 endif
+LIBJLI_ALL_ERGO := $(wildcard $(addsuffix /ergo_*.c, $(LIBJLI_SRC_DIRS)))
+LIBJLI_EXCLUDE_ERGO := $(filter-out %/ergo_$(ERGO_FAMILY).c, $(LIBJLI_ALL_ERGO))
+# If all specialized ergo files are excluded, use generic ergo
+ifeq ($(LIBJLI_ALL_ERGO), $(LIBJLI_EXCLUDE_ERGO))
+  LIBJLI_CFLAGS += -DUSE_GENERIC_ERGO
+endif
+LIBJLI_EXCLUDE_FILES += $(notdir $(LIBJLI_EXCLUDE_ERGO))
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  BUILD_LIBJLI_SRC_DIRS += $(JDK_TOPDIR)/src/java.base/macosx/native/libjli
-  BUILD_LIBJLI_FILES += java_md_common.c java_md_macosx.c
+  LIBJLI_EXCLUDE_FILES += java_md_solinux.c ergo.c
 
   BUILD_LIBJLI_java_md_macosx.c_CFLAGS := -x objective-c
   BUILD_LIBJLI_STATIC_java_md_macosx.c_CFLAGS := -x objective-c
-endif
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  BUILD_LIBJLI_FILES += java_md.c \
-      cmdtoargs.c
-  # Staticically link with c runtime on windows.
-  LIBJLI_CFLAGS := $(filter-out -MD, $(LIBJLI_CFLAGS))
-else ifneq ($(OPENJDK_TARGET_OS), macosx)
-
-  BUILD_LIBJLI_FILES += java_md_common.c
-  BUILD_LIBJLI_FILES += java_md_solinux.c ergo.c
-
-  ERGO_ARCH_FILE = ergo_$(ERGO_FAMILY).c
-
-  # if the architecture specific ergo file exists then
-  # use it, else use the generic definitions from ergo.c
-  ifneq ($(wildcard $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli/$(ERGO_ARCH_FILE)), )
-    BUILD_LIBJLI_FILES += $(ERGO_ARCH_FILE)
-  else # !ERGO_ARCH_FILE
-    LIBJLI_CFLAGS += -DUSE_GENERIC_ERGO
-  endif # ERGO_ARCH_FILE
-endif #WINDOWS
-
-LIBJLI_CFLAGS += $(foreach dir, $(BUILD_LIBJLI_SRC_DIRS), -I$(dir))
-
-# Append defines depending on target platform
-LIBJLI_CFLAGS += $(OPENJDK_TARGET_CPU_JLI_CFLAGS)
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBJLI_CFLAGS += -DPACKAGE_PATH=\"$(PACKAGE_PATH)\"
 endif
 
-ifneq ($(USE_EXTERNAL_LIBZ), true)
-  BUILD_LIBJLI_SRC_DIRS += $(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8
-  LIBJLI_CFLAGS += $(ZLIB_CPPFLAGS)
-  BUILD_LIBJLI_FILES += \
-      inflate.c \
-      inftrees.c \
-      inffast.c \
-      zadler32.c \
-      zcrc32.c \
-      zutil.c
-endif
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
+  # Staticically link with c runtime on windows.
+  LIBJLI_CFLAGS := $(filter-out -MD, $(LIBJLI_CFLAGS))
   LIBJLI_OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE)
 else
   LIBJLI_OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE)/jli
 endif
 
+LIBJLI_CFLAGS += $(addprefix -I, $(LIBJLI_SRC_DIRS))
+
+# Append defines depending on target platform
+LIBJLI_CFLAGS += $(OPENJDK_TARGET_CPU_JLI_CFLAGS)
+
+ifneq ($(USE_EXTERNAL_LIBZ), true)
+  LIBJLI_CFLAGS += $(ZLIB_CPPFLAGS)
+  LIBJLI_EXTRA_FILES += \
+      $(addprefix $(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8/, \
+          inflate.c \
+          inftrees.c \
+          inffast.c \
+          zadler32.c \
+          zcrc32.c \
+          zutil.c \
+      )
+endif
+
 $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     LIBRARY := jli, \
     OUTPUT_DIR := $(LIBJLI_OUTPUT_DIR), \
-    SRC := $(BUILD_LIBJLI_SRC_DIRS), \
-    INCLUDE_FILES := $(BUILD_LIBJLI_FILES), \
+    SRC := $(LIBJLI_SRC_DIRS), \
+    EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
+    EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
     LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS), \
@@ -376,8 +344,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC, \
       STATIC_LIBRARY := jli_static, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
-      SRC := $(BUILD_LIBJLI_SRC_DIRS), \
-      INCLUDE_FILES := $(BUILD_LIBJLI_FILES), \
+      SRC := $(LIBJLI_SRC_DIRS), \
+      EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
+      EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
       LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS), \
@@ -395,8 +364,9 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
   $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC, \
       LIBRARY := jli_static, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
-      SRC := $(BUILD_LIBJLI_SRC_DIRS), \
-      INCLUDE_FILES := $(BUILD_LIBJLI_FILES), \
+      SRC := $(LIBJLI_SRC_DIRS), \
+      EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
+      EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
       LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
@@ -411,16 +381,17 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
 
 else ifeq ($(OPENJDK_TARGET_OS), aix)
   # AIX also requires a static libjli because the compiler doesn't support '-rpath'
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC,\
-      STATIC_LIBRARY:=jli_static,\
-      OUTPUT_DIR:=$(SUPPORT_OUTPUTDIR)/native/$(MODULE),\
-      SRC:=$(BUILD_LIBJLI_SRC_DIRS),\
-      INCLUDE_FILES:=$(BUILD_LIBJLI_FILES),\
-      LANG:=C,\
-      OPTIMIZATION:=HIGH, \
-      CFLAGS:=$(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS),\
-      ARFLAGS:=$(ARFLAGS),\
-      OBJECT_DIR:=$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static))
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC, \
+      STATIC_LIBRARY := jli_static, \
+      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
+      SRC := $(LIBJLI_SRC_DIRS), \
+      EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
+      EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
+      LANG := C, \
+      OPTIMIZATION := HIGH, \
+      CFLAGS := $(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS), \
+      ARFLAGS := $(ARFLAGS), \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static))
 
   TARGETS += $(BUILD_LIBJLI_STATIC)
 

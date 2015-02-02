@@ -34,7 +34,7 @@ endif
 # param 3 = the target base directory
 # param 4 = the target file name (possibly with a partial path)
 define SetupSingleTextFileForProcessing
-  $(strip $3)/$(strip $4): $2
+  $(strip $3)/$(strip $4): $2 $$($1_VARDEPS_FILE)
 	$(ECHO) $(LOG_INFO) "Processing $(strip $4)"
 	$(MKDIR) -p '$$(@D)'
 	$(RM) '$$@' '$$@.includes.tmp' '$$@.replacements.tmp'
@@ -192,6 +192,9 @@ define SetupTextFileProcessingInner
     # We don't have any includes, just pipe the file through cat.
     $1_INCLUDES_COMMAND_LINE := $(CAT)
   endif
+
+  $1_VARDEPS := $$($1_INCLUDES_COMMAND_LINE) $$($1_REPLACEMENTS_COMMAND_LINE)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS)
 
   # Reset target list before populating it
   $1 :=
