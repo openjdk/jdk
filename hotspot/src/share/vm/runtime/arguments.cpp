@@ -1127,7 +1127,7 @@ static void no_shared_spaces(const char* message) {
 #endif
 
 intx Arguments::scaled_compile_threshold(intx threshold, double scale) {
-  if (scale == 1.0 || scale < 0.0) {
+  if (scale == 1.0 || scale <= 0.0) {
     return threshold;
   } else {
     return (intx)(threshold * scale);
@@ -1143,7 +1143,7 @@ intx Arguments::scaled_freq_log(intx freq_log, double scale) {
 
   // Check value to avoid calculating log2 of 0.
   if (scale == 0.0) {
-    return 1;
+    return freq_log;
   }
 
   intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
@@ -3480,8 +3480,10 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     set_mode_flags(_int);
   }
 
-  if ((TieredCompilation && CompileThresholdScaling == 0)
-      || (!TieredCompilation && scaled_compile_threshold(CompileThreshold) == 0)) {
+  // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),
+  // but like -Xint, leave compilation thresholds unaffected.
+  // With tiered compilation disabled, setting CompileThreshold to 0 disables compilation as well.
+  if ((CompileThresholdScaling == 0.0) || (!TieredCompilation && CompileThreshold == 0)) {
     set_mode_flags(_int);
   }
 

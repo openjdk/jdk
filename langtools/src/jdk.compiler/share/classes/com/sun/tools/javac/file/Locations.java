@@ -783,45 +783,4 @@ public class Locations {
                 && (n.endsWith(".jar") || n.endsWith(".zip"));
     }
 
-    /**
-     * Utility method for converting a search path string to an array of directory and JAR file
-     * URLs.
-     *
-     * Note that this method is called by the DocletInvoker.
-     *
-     * @param path the search path string
-     * @return the resulting array of directory and JAR file URLs
-     */
-    public static URL[] pathToURLs(String path) {
-        java.util.List<URL> urls = new ArrayList<>();
-        for (String s: path.split(Pattern.quote(File.pathSeparator))) {
-            if (!s.isEmpty()) {
-                URL url = fileToURL(Paths.get(s));
-                if (url != null) {
-                    urls.add(url);
-                }
-            }
-        }
-        return urls.toArray(new URL[urls.size()]);
-    }
-
-    /**
-     * Returns the directory or JAR file URL corresponding to the specified local file name.
-     *
-     * @param file the Path object
-     * @return the resulting directory or JAR file URL, or null if unknown
-     */
-    private static URL fileToURL(Path file) {
-        Path p;
-        try {
-            p = file.toRealPath();
-        } catch (IOException e) {
-            p = file.toAbsolutePath();
-        }
-        try {
-            return p.normalize().toUri().toURL();
-        } catch (MalformedURLException e) {
-            return null;
-        }
-    }
 }
