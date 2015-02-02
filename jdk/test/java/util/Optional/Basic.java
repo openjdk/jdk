@@ -29,6 +29,7 @@
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
@@ -54,8 +55,8 @@ public class Basic {
         assertSame(null, empty.orElse(null));
         RuntimeException orElse = new RuntimeException() { };
         assertSame(Boolean.FALSE, empty.orElse(Boolean.FALSE));
-        assertSame(null, empty.orElseGet(()-> null));
-        assertSame(Boolean.FALSE, empty.orElseGet(()-> Boolean.FALSE));
+        assertSame(null, empty.orElseGet(() -> null));
+        assertSame(Boolean.FALSE, empty.orElseGet(() -> Boolean.FALSE));
     }
 
     @Test(expectedExceptions=NoSuchElementException.class)
@@ -104,15 +105,15 @@ public class Basic {
         try {
             present.ifPresent(v -> { throw new ObscureException(); });
             fail();
-        } catch(ObscureException expected) {
+        } catch (ObscureException expected) {
 
         }
         assertSame(Boolean.TRUE, present.orElse(null));
         assertSame(Boolean.TRUE, present.orElse(Boolean.FALSE));
         assertSame(Boolean.TRUE, present.orElseGet(null));
-        assertSame(Boolean.TRUE, present.orElseGet(()-> null));
-        assertSame(Boolean.TRUE, present.orElseGet(()-> Boolean.FALSE));
-        assertSame(Boolean.TRUE, present.<RuntimeException>orElseThrow( null));
+        assertSame(Boolean.TRUE, present.orElseGet(() -> null));
+        assertSame(Boolean.TRUE, present.orElseGet(() -> Boolean.FALSE));
+        assertSame(Boolean.TRUE, present.<RuntimeException>orElseThrow(null));
         assertSame(Boolean.TRUE, present.<RuntimeException>orElseThrow(ObscureException::new));
     }
 
@@ -224,6 +225,26 @@ public class Basic {
         // Verify same instance
         l = duke.flatMap(s -> fixture);
         assertSame(l, fixture);
+    }
+
+    @Test(groups = "unit")
+    public void testStream() {
+        {
+            Stream<String> s = Optional.<String>empty().stream();
+            assertFalse(s.isParallel());
+
+            Object[] es = s.toArray();
+            assertEquals(es.length, 0);
+        }
+
+        {
+            Stream<String> s = Optional.of("Duke").stream();
+            assertFalse(s.isParallel());
+
+            String[] es = s.toArray(String[]::new);
+            assertEquals(es.length, 1);
+            assertEquals(es[0], "Duke");
+        }
     }
 
     private static class ObscureException extends RuntimeException {

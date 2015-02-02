@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import java.util.stream.LongStream;
 
 /**
  * A container object which may or may not contain a {@code long} value.
@@ -138,8 +139,32 @@ public final class OptionalLong {
      * null
      */
     public void ifPresent(LongConsumer consumer) {
-        if (isPresent)
+        if (isPresent) {
             consumer.accept(value);
+        }
+    }
+
+    /**
+     * If a value is present return a sequential {@link LongStream} containing
+     * only that value, otherwise return an empty {@code LongStream}.
+     *
+     * @apiNote This method can be used to transform a {@code Stream} of
+     * optional longs to a {@code LongStream} of present longs:
+     *
+     * <pre>{@code
+     *     Stream<OptionalLong> os = ..
+     *     LongStream s = os.flatMapToLong(OptionalLong::stream)
+     * }</pre>
+     *
+     * @return the optional value as a {@code LongStream}
+     * @since 1.9
+     */
+    public LongStream stream() {
+        if (isPresent) {
+            return LongStream.of(value);
+        } else {
+            return LongStream.empty();
+        }
     }
 
     /**
