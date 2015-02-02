@@ -4636,7 +4636,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
             // drag has an associated drop target. MOUSE_ENTERED comes when the
             // mouse is in the native container already. To propagate this event
             // properly we should null out targetLastEntered.
-            targetLastEnteredDT = null;
+            targetLastEnteredDT.clear();
         } else if (id == MouseEvent.MOUSE_ENTERED) {
             isMouseDTInNativeContainer = true;
         } else if (id == MouseEvent.MOUSE_EXITED) {
