@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import java.util.stream.DoubleStream;
 
 /**
  * A container object which may or may not contain a {@code double} value.
@@ -138,8 +139,32 @@ public final class OptionalDouble {
      * null
      */
     public void ifPresent(DoubleConsumer consumer) {
-        if (isPresent)
+        if (isPresent) {
             consumer.accept(value);
+        }
+    }
+
+    /**
+     * If a value is present return a sequential {@link DoubleStream} containing
+     * only that value, otherwise return an empty {@code DoubleStream}.
+     *
+     * @apiNote This method can be used to transform a {@code Stream} of
+     * optional doubles to a {@code DoubleStream} of present doubles:
+     *
+     * <pre>{@code
+     *     Stream<OptionalDouble> os = ..
+     *     DoubleStream s = os.flatMapToDouble(OptionalDouble::stream)
+     * }</pre>
+     *
+     * @return the optional value as a {@code DoubleStream}
+     * @since 1.9
+     */
+    public DoubleStream stream() {
+        if (isPresent) {
+            return DoubleStream.of(value);
+        } else {
+            return DoubleStream.empty();
+        }
     }
 
     /**
