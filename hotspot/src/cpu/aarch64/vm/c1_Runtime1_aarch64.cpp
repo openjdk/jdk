@@ -376,7 +376,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   case handle_exception_nofpu_id:
   case handle_exception_id:
     // At this point all registers MAY be live.
-    oop_map = save_live_registers(sasm, id == handle_exception_nofpu_id);
+    oop_map = save_live_registers(sasm, id != handle_exception_nofpu_id);
     break;
   case handle_exception_from_callee_id: {
     // At this point all registers except exception oop (r0) and
@@ -440,7 +440,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   case handle_exception_nofpu_id:
   case handle_exception_id:
     // Restore the registers that were saved at the beginning.
-    restore_live_registers(sasm, id == handle_exception_nofpu_id);
+    restore_live_registers(sasm, id != handle_exception_nofpu_id);
     break;
   case handle_exception_from_callee_id:
     // Pop the return address since we are possibly changing SP (restoring from BP).
