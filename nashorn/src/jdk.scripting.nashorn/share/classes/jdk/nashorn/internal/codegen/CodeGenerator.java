@@ -85,7 +85,6 @@ import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.BlockStatement;
 import jdk.nashorn.internal.ir.BreakNode;
-import jdk.nashorn.internal.ir.BreakableNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
@@ -102,6 +101,7 @@ import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.JumpStatement;
+import jdk.nashorn.internal.ir.JumpToInlinedFinally;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
@@ -1110,7 +1110,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterBlock(final Block block) {
-        method.label(block.getEntryLabel());
+        final Label entryLabel = block.getEntryLabel();
+        if (entryLabel.isBreakTarget()) {
+            // Entry label is a break target only for an inlined finally block.
+            assert !method.isReachable();
+            method.breakLabel(entryLabel, lc.getUsedSlotCount());
+        } else {
+            method.label(entryLabel);
+        }
         if(!method.isReachable()) {
             return false;
         }
@@ -1240,6 +1247,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return enterJumpStatement(breakNode);
     }
 
+    @Override
+    public boolean enterJumpToInlinedFinally(final JumpToInlinedFinally jumpToInlinedFinally) {
+        return enterJumpStatement(jumpToInlinedFinally);
+    }
+
     private boolean enterJumpStatement(final JumpStatement jump) {
         if(!method.isReachable()) {
             return false;
@@ -1247,9 +1259,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         enterStatement(jump);
 
         method.beforeJoinPoint(jump);
-        final BreakableNode target = jump.getTarget(lc);
-        popScopesUntil(target);
-        final Label targetLabel = jump.getTargetLabel(target);
+        popScopesUntil(jump.getPopScopeLimit(lc));
+        final Label targetLabel = jump.getTargetLabel(lc);
         targetLabel.markAsBreakTarget();
         method._goto(targetLabel);
 
@@ -3053,6 +3064,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         if (method.isReachable()) {
             method._goto(skip);
         }
+
+        for (final Block inlinedFinally : tryNode.getInlinedFinallies()) {
+            TryNode.getLabelledInlinedFinallyBlock(inlinedFinally).accept(this);
+            // All inlined finallies end with a jump or a return
+            assert !method.isReachable();
+        }
+
+
         method._catch(recovery);
         method.store(vmException, EXCEPTION_TYPE);
 
@@ -3112,15 +3131,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             catchBody.accept(this);
             leaveBlock(catchBlock);
             lc.pop(catchBlock);
-            if(method.isReachable()) {
-                method._goto(afterCatch);
-            }
             if(nextCatch != null) {
+                if(method.isReachable()) {
+                    method._goto(afterCatch);
+                }
                 method.breakLabel(nextCatch, lc.getUsedSlotCount());
             }
         }
 
-        assert !method.isReachable();
         // afterCatch could be the same as skip, except that we need to establish that the vmException is dead.
         method.label(afterCatch);
         if(method.isReachable()) {
@@ -3129,6 +3147,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.label(skip);
 
         // Finally body is always inlined elsewhere so it doesn't need to be emitted
+        assert tryNode.getFinallyBody() == null;
+
         return false;
     }
 

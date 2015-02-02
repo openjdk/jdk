@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1114,6 +1114,15 @@ jlong os::javaTimeMillis() {
   assert(status != -1, "aix error at gettimeofday()");
   return jlong(time.tv_sec) * 1000 + jlong(time.tv_usec / 1000);
 }
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  timeval time;
+  int status = gettimeofday(&time, NULL);
+  assert(status != -1, "aix error at gettimeofday()");
+  seconds = jlong(time.tv_sec);
+  nanos = jlong(time.tv_usec) * 1000;
+}
+
 
 // We need to manually declare mread_real_time,
 // because IBM didn't provide a prototype in time.h.
