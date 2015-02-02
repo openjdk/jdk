@@ -182,7 +182,7 @@ public final class OptionalInt {
      * @throws NullPointerException if no value is present and
      * {@code exceptionSupplier} is null
      */
-    public<X extends Throwable> int orElseThrow(Supplier<X> exceptionSupplier) throws X {
+    public<X extends Throwable> int orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {
