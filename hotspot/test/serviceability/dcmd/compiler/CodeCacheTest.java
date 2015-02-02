@@ -24,17 +24,23 @@
 /*
  * @test CodeCacheTest
  * @bug 8054889
- * @library ..
- * @build DcmdUtil CodeCacheTest
- * @run main/othervm -XX:+SegmentedCodeCache CodeCacheTest
- * @run main/othervm -XX:-SegmentedCodeCache CodeCacheTest
- * @run main/othervm -Xint -XX:+SegmentedCodeCache CodeCacheTest
+ * @library /testlibrary
+ * @build com.oracle.java.testlibrary.*
+ * @build com.oracle.java.testlibrary.dcmd.*
+ * @run testng/othervm -XX:+SegmentedCodeCache CodeCacheTest
+ * @run testng/othervm -XX:-SegmentedCodeCache CodeCacheTest
+ * @run testng/othervm -Xint -XX:+SegmentedCodeCache CodeCacheTest
  * @summary Test of diagnostic command Compiler.codecache
  */
 
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.lang.reflect.Method;
+import org.testng.annotations.Test;
+import org.testng.Assert;
+
+import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.oracle.java.testlibrary.dcmd.CommandExecutor;
+import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -72,7 +78,7 @@ public class CodeCacheTest {
     private static boolean getFlagBool(String flag, String where) {
       Matcher m = Pattern.compile(flag + "\\s+:?= (true|false)").matcher(where);
       if (!m.find()) {
-        throw new RuntimeException("Could not find value for flag " + flag + " in output string");
+        Assert.fail("Could not find value for flag " + flag + " in output string");
       }
       return m.group(1).equals("true");
     }
@@ -80,16 +86,16 @@ public class CodeCacheTest {
     private static int getFlagInt(String flag, String where) {
       Matcher m = Pattern.compile(flag + "\\s+:?=\\s+\\d+").matcher(where);
       if (!m.find()) {
-        throw new RuntimeException("Could not find value for flag " + flag + " in output string");
+        Assert.fail("Could not find value for flag " + flag + " in output string");
       }
       String match = m.group();
       return Integer.parseInt(match.substring(match.lastIndexOf(" ") + 1, match.length()));
     }
 
-    public static void main(String arg[]) throws Exception {
+    public void run(CommandExecutor executor) {
         // Get number of code cache segments
         int segmentsCount = 0;
-        String flags = DcmdUtil.executeDcmd("VM.flags", "-all");
+        String flags = executor.execute("VM.flags -all").getOutput();
         if (!getFlagBool("SegmentedCodeCache", flags) || !getFlagBool("UseCompiler", flags)) {
           // No segmentation
           segmentsCount = 1;
@@ -102,29 +108,29 @@ public class CodeCacheTest {
         }
 
         // Get output from dcmd (diagnostic command)
-        String result = DcmdUtil.executeDcmd("Compiler.codecache");
-        BufferedReader r = new BufferedReader(new StringReader(result));
+        OutputAnalyzer output = executor.execute("Compiler.codecache");
+        Iterator<String> lines = output.asLines().iterator();
 
         // Validate code cache segments
         String line;
         Matcher m;
         for (int s = 0; s < segmentsCount; ++s) {
           // Validate first line
-          line = r.readLine();
+          line = lines.next();
           m = line1.matcher(line);
           if (m.matches()) {
               for (int i = 2; i <= 5; i++) {
                   int val = Integer.parseInt(m.group(i));
                   if (val < 0) {
-                      throw new Exception("Failed parsing dcmd codecache output");
+                      Assert.fail("Failed parsing dcmd codecache output");
                   }
               }
           } else {
-              throw new Exception("Regexp 1 failed");
+              Assert.fail("Regexp 1 failed to match line: " + line);
           }
 
           // Validate second line
-          line = r.readLine();
+          line = lines.next();
           m = line2.matcher(line);
           if (m.matches()) {
               String start = m.group(1);
@@ -133,44 +139,49 @@ public class CodeCacheTest {
 
               // Lexical compare of hex numbers to check that they look sane.
               if (start.compareTo(mark) > 1) {
-                  throw new Exception("Failed parsing dcmd codecache output");
+                  Assert.fail("Failed parsing dcmd codecache output");
               }
               if (mark.compareTo(top) > 1) {
-                  throw new Exception("Failed parsing dcmd codecache output");
+                  Assert.fail("Failed parsing dcmd codecache output");
               }
           } else {
-              throw new Exception("Regexp 2 failed line: " + line);
+              Assert.fail("Regexp 2 failed to match line: " + line);
           }
         }
 
         // Validate third line
-        line = r.readLine();
+        line = lines.next();
         m = line3.matcher(line);
         if (m.matches()) {
             int blobs = Integer.parseInt(m.group(1));
             if (blobs <= 0) {
-                throw new Exception("Failed parsing dcmd codecache output");
+                Assert.fail("Failed parsing dcmd codecache output");
             }
             int nmethods = Integer.parseInt(m.group(2));
             if (nmethods < 0) {
-                throw new Exception("Failed parsing dcmd codecache output");
+                Assert.fail("Failed parsing dcmd codecache output");
             }
             int adapters = Integer.parseInt(m.group(3));
             if (adapters <= 0) {
-                throw new Exception("Failed parsing dcmd codecache output");
+                Assert.fail("Failed parsing dcmd codecache output");
             }
             if (blobs < (nmethods + adapters)) {
-                throw new Exception("Failed parsing dcmd codecache output");
+                Assert.fail("Failed parsing dcmd codecache output");
             }
         } else {
-            throw new Exception("Regexp 3 failed");
+            Assert.fail("Regexp 3 failed to match line: " + line);
         }
 
         // Validate fourth line
-        line = r.readLine();
+        line = lines.next();
         m = line4.matcher(line);
         if (!m.matches()) {
-            throw new Exception("Regexp 4 failed");
+            Assert.fail("Regexp 4 failed to match line: " + line);
         }
+    }
+
+    @Test
+    public void jmx() {
+        run(new JMXExecutor());
     }
 }
