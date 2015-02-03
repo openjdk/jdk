@@ -77,7 +77,7 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         ZeroMemory(info, sizeof(ThreadGraphicsInfo));
         TlsSetValue(threadInfoIndex, (LPVOID)info);
         J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "  current batch limit for for thread 0x%x is %d",
+                    "  current batch limit for thread 0x%x is %d",
                      GetCurrentThreadId(), ::GdiGetBatchLimit());
         J2dTraceLn(J2D_TRACE_VERBOSE, "  setting to the limit to 1");
         // Fix for bug 4374079

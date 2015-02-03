@@ -1243,6 +1243,7 @@ public class LWWindowPeer
         changeFocusedWindow(activate, null);
     }
 
+    @SuppressWarnings("deprecation")
     private boolean isOneOfOwnersOf(LWWindowPeer peer) {
         Window owner = (peer != null ? peer.getTarget().getOwner() : null);
         while (owner != null) {

@@ -265,24 +265,41 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     // Constructors
 
     /**
-     * Translates a byte array containing the two's-complement binary
-     * representation of a BigInteger into a BigInteger.  The input array is
+     * Translates a byte sub-array containing the two's-complement binary
+     * representation of a BigInteger into a BigInteger.  The sub-array is
+     * specified via an offset into the array and a length.  The sub-array is
      * assumed to be in <i>big-endian</i> byte-order: the most significant
-     * byte is in the zeroth element.
+     * byte is the element at index {@code off}.  The {@code val} array is
+     * assumed to be unchanged for the duration of the constructor call.
      *
-     * @param  val big-endian two's-complement binary representation of
-     *         BigInteger.
+     * An {@code IndexOutOfBoundsException} is thrown if the length of the array
+     * {@code val} is non-zero and either {@code off} is negative, {@code len}
+     * is negative, or {@code off+len} is greater than the length of
+     * {@code val}.
+     *
+     * @param  val byte array containing a sub-array which is the big-endian
+     *         two's-complement binary representation of a BigInteger.
+     * @param  off the start offset of the binary representation.
+     * @param  len the number of bytes to use.
      * @throws NumberFormatException {@code val} is zero bytes long.
+     * @throws IndexOutOfBoundsException if the provided array offset and
+     *         length would cause an index into the byte array to be
+     *         negative or greater than or equal to the array length.
+     * @since 1.9
      */
-    public BigInteger(byte[] val) {
-        if (val.length == 0)
+    public BigInteger(byte[] val, int off, int len) {
+        if (val.length == 0) {
             throw new NumberFormatException("Zero length BigInteger");
+        } else if ((off < 0) || (off >= val.length) || (len < 0) ||
+                   (len > val.length - off)) { // 0 <= off < val.length
+            throw new IndexOutOfBoundsException();
+        }
 
-        if (val[0] < 0) {
-            mag = makePositive(val);
+        if (val[off] < 0) {
+            mag = makePositive(val, off, len);
             signum = -1;
         } else {
-            mag = stripLeadingZeroBytes(val);
+            mag = stripLeadingZeroBytes(val, off, len);
             signum = (mag.length == 0 ? 0 : 1);
         }
         if (mag.length >= MAX_MAG_LENGTH) {
@@ -291,10 +308,27 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Translates a byte array containing the two's-complement binary
+     * representation of a BigInteger into a BigInteger.  The input array is
+     * assumed to be in <i>big-endian</i> byte-order: the most significant
+     * byte is in the zeroth element.  The {@code val} array is assumed to be
+     * unchanged for the duration of the constructor call.
+     *
+     * @param  val big-endian two's-complement binary representation of a
+     *         BigInteger.
+     * @throws NumberFormatException {@code val} is zero bytes long.
+     */
+    public BigInteger(byte[] val) {
+        this(val, 0, val.length);
+    }
+
+    /**
      * This private constructor translates an int array containing the
      * two's-complement binary representation of a BigInteger into a
      * BigInteger. The input array is assumed to be in <i>big-endian</i>
-     * int-order: the most significant int is in the zeroth element.
+     * int-order: the most significant int is in the zeroth element.  The
+     * {@code val} array is assumed to be unchanged for the duration of
+     * the constructor call.
      */
     private BigInteger(int[] val) {
         if (val.length == 0)
@@ -315,24 +349,44 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Translates the sign-magnitude representation of a BigInteger into a
      * BigInteger.  The sign is represented as an integer signum value: -1 for
-     * negative, 0 for zero, or 1 for positive.  The magnitude is a byte array
-     * in <i>big-endian</i> byte-order: the most significant byte is in the
-     * zeroth element.  A zero-length magnitude array is permissible, and will
-     * result in a BigInteger value of 0, whether signum is -1, 0 or 1.
+     * negative, 0 for zero, or 1 for positive.  The magnitude is a sub-array of
+     * a byte array in <i>big-endian</i> byte-order: the most significant byte
+     * is the element at index {@code off}.  A zero value of the length
+     * {@code len} is permissible, and will result in a BigInteger value of 0,
+     * whether signum is -1, 0 or 1.  The {@code magnitude} array is assumed to
+     * be unchanged for the duration of the constructor call.
+     *
+     * An {@code IndexOutOfBoundsException} is thrown if the length of the array
+     * {@code magnitude} is non-zero and either {@code off} is negative,
+     * {@code len} is negative, or {@code off+len} is greater than the length of
+     * {@code magnitude}.
      *
      * @param  signum signum of the number (-1 for negative, 0 for zero, 1
      *         for positive).
      * @param  magnitude big-endian binary representation of the magnitude of
      *         the number.
+     * @param  off the start offset of the binary representation.
+     * @param  len the number of bytes to use.
      * @throws NumberFormatException {@code signum} is not one of the three
      *         legal values (-1, 0, and 1), or {@code signum} is 0 and
      *         {@code magnitude} contains one or more non-zero bytes.
+     * @throws IndexOutOfBoundsException if the provided array offset and
+     *         length would cause an index into the byte array to be
+     *         negative or greater than or equal to the array length.
+     * @since 1.9
      */
-    public BigInteger(int signum, byte[] magnitude) {
-        this.mag = stripLeadingZeroBytes(magnitude);
-
-        if (signum < -1 || signum > 1)
+    public BigInteger(int signum, byte[] magnitude, int off, int len) {
+        if (signum < -1 || signum > 1) {
             throw(new NumberFormatException("Invalid signum value"));
+        } else if ((off < 0) || (len < 0) ||
+            (len > 0 &&
+                ((off >= magnitude.length) ||
+                 (len > magnitude.length - off)))) { // 0 <= off < magnitude.length
+            throw new IndexOutOfBoundsException();
+        }
+
+        // stripLeadingZeroBytes() returns a zero length array if len == 0
+        this.mag = stripLeadingZeroBytes(magnitude, off, len);
 
         if (this.mag.length == 0) {
             this.signum = 0;
@@ -347,10 +401,33 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Translates the sign-magnitude representation of a BigInteger into a
+     * BigInteger.  The sign is represented as an integer signum value: -1 for
+     * negative, 0 for zero, or 1 for positive.  The magnitude is a byte array
+     * in <i>big-endian</i> byte-order: the most significant byte is the
+     * zeroth element.  A zero-length magnitude array is permissible, and will
+     * result in a BigInteger value of 0, whether signum is -1, 0 or 1.  The
+     * {@code magnitude} array is assumed to be unchanged for the duration of
+     * the constructor call.
+     *
+     * @param  signum signum of the number (-1 for negative, 0 for zero, 1
+     *         for positive).
+     * @param  magnitude big-endian binary representation of the magnitude of
+     *         the number.
+     * @throws NumberFormatException {@code signum} is not one of the three
+     *         legal values (-1, 0, and 1), or {@code signum} is 0 and
+     *         {@code magnitude} contains one or more non-zero bytes.
+     */
+    public BigInteger(int signum, byte[] magnitude) {
+         this(signum, magnitude, 0, magnitude.length);
+    }
+
+    /**
      * A constructor for internal use that translates the sign-magnitude
      * representation of a BigInteger into a BigInteger. It checks the
      * arguments and copies the magnitude so this constructor would be
-     * safe for external use.
+     * safe for external use.  The {@code magnitude} array is assumed to be
+     * unchanged for the duration of the constructor call.
      */
     private BigInteger(int signum, int[] magnitude) {
         this.mag = stripLeadingZeroInts(magnitude);
@@ -467,7 +544,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /*
      * Constructs a new BigInteger using a char array with radix=10.
-     * Sign is precalculated outside and not allowed in the val.
+     * Sign is precalculated outside and not allowed in the val. The {@code val}
+     * array is assumed to be unchanged for the duration of the constructor
+     * call.
      */
     BigInteger(char[] val, int sign, int len) {
         int cursor = 0, numDigits;
@@ -1035,11 +1114,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * This private constructor is for internal use and assumes that its
-     * arguments are correct.
+     * arguments are correct.  The {@code magnitude} array is assumed to be
+     * unchanged for the duration of the constructor call.
      */
     private BigInteger(byte[] magnitude, int signum) {
         this.signum = (magnitude.length == 0 ? 0 : signum);
-        this.mag = stripLeadingZeroBytes(magnitude);
+        this.mag = stripLeadingZeroBytes(magnitude, 0, magnitude.length);
         if (mag.length >= MAX_MAG_LENGTH) {
             checkRange();
         }
@@ -3977,18 +4057,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a copy of the input array stripped of any leading zero bytes.
      */
-    private static int[] stripLeadingZeroBytes(byte a[]) {
-        int byteLength = a.length;
+    private static int[] stripLeadingZeroBytes(byte a[], int off, int len) {
+        int indexBound = off + len;
         int keep;
 
         // Find first nonzero byte
-        for (keep = 0; keep < byteLength && a[keep] == 0; keep++)
+        for (keep = off; keep < indexBound && a[keep] == 0; keep++)
             ;
 
         // Allocate new array and copy relevant part of input array
-        int intLength = ((byteLength - keep) + 3) >>> 2;
+        int intLength = ((indexBound - keep) + 3) >>> 2;
         int[] result = new int[intLength];
-        int b = byteLength - 1;
+        int b = indexBound - 1;
         for (int i = intLength-1; i >= 0; i--) {
             result[i] = a[b--] & 0xff;
             int bytesRemaining = b - keep + 1;
@@ -4003,27 +4083,27 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Takes an array a representing a negative 2's-complement number and
      * returns the minimal (no leading zero bytes) unsigned whose value is -a.
      */
-    private static int[] makePositive(byte a[]) {
+    private static int[] makePositive(byte a[], int off, int len) {
         int keep, k;
-        int byteLength = a.length;
+        int indexBound = off + len;
 
         // Find first non-sign (0xff) byte of input
-        for (keep=0; keep < byteLength && a[keep] == -1; keep++)
+        for (keep=off; keep < indexBound && a[keep] == -1; keep++)
             ;
 
 
         /* Allocate output array.  If all non-sign bytes are 0x00, we must
          * allocate space for one extra output byte. */
-        for (k=keep; k < byteLength && a[k] == 0; k++)
+        for (k=keep; k < indexBound && a[k] == 0; k++)
             ;
 
-        int extraByte = (k == byteLength) ? 1 : 0;
-        int intLength = ((byteLength - keep + extraByte) + 3) >>> 2;
+        int extraByte = (k == indexBound) ? 1 : 0;
+        int intLength = ((indexBound - keep + extraByte) + 3) >>> 2;
         int result[] = new int[intLength];
 
         /* Copy one's complement of input into output, leaving extra
          * byte (if it exists) == 0x00 */
-        int b = byteLength - 1;
+        int b = indexBound - 1;
         for (int i = intLength-1; i >= 0; i--) {
             result[i] = a[b--] & 0xff;
             int numBytesToTransfer = Math.min(3, b-keep+1);
@@ -4248,7 +4328,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 message = "BigInteger: Signum not present in stream";
             throw new java.io.StreamCorruptedException(message);
         }
-        int[] mag = stripLeadingZeroBytes(magnitude);
+        int[] mag = stripLeadingZeroBytes(magnitude, 0, magnitude.length);
         if ((mag.length == 0) != (sign == 0)) {
             String message = "BigInteger: signum-magnitude mismatch";
             if (fields.defaulted("magnitude"))

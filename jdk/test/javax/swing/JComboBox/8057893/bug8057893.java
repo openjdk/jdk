@@ -30,7 +30,6 @@ import java.awt.event.KeyEvent;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -47,7 +46,6 @@ public class bug8057893 {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         EventQueue.invokeAndWait(() -> {
             JFrame frame = new JFrame();
@@ -69,13 +67,13 @@ public class bug8057893 {
             comboBox.requestFocusInWindow();
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if(!isComboBoxEdited){
             throw new RuntimeException("ComboBoxEdited event is not fired!");

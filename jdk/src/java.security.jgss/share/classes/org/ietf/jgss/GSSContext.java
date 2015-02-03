@@ -558,7 +558,7 @@ public interface GSSContext {
      * @param msgProp instance of MessageProp that is used by the
      * application to set the desired QOP and privacy state. Set the
      * desired QOP to 0 to request the default QOP. Upon return from this
-     * method, this object will contain the the actual privacy state that
+     * method, this object will contain the actual privacy state that
      * was applied to the message by the underlying mechanism.
      * @return a byte[] containing the token to be sent to the peer.
      *
@@ -605,7 +605,7 @@ public interface GSSContext {
      * @param msgProp instance of MessageProp that is used by the
      * application to set the desired QOP and privacy state. Set the
      * desired QOP to 0 to request the default QOP. Upon return from this
-     * method, this object will contain the the actual privacy state that
+     * method, this object will contain the actual privacy state that
      * was applied to the message by the underlying mechanism.
      *
      * @throws GSSException containing the following

@@ -26,17 +26,23 @@
 package jdk.nashorn.internal.runtime.linker;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
+
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.GlobalConstants;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.UserAccessorProperty;
 
 /**
@@ -45,6 +51,11 @@ import jdk.nashorn.internal.runtime.UserAccessorProperty;
  * package.
  */
 public final class PrimitiveLookup {
+
+    /** Method handle to link setters on primitive base. See ES5 8.7.2. */
+    private static final MethodHandle PRIMITIVE_SETTER = findOwnMH("primitiveSetter",
+            MH.type(void.class, ScriptObject.class, Object.class, Object.class, boolean.class, Object.class));
+
 
     private PrimitiveLookup() {
     }
@@ -87,40 +98,58 @@ public final class PrimitiveLookup {
                                                     final ScriptObject wrappedReceiver, final MethodHandle wrapFilter,
                                                     final MethodHandle protoFilter) {
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+        final String name;
+        final FindProperty find;
 
-        //checks whether the property name is hard-coded in the call-site (i.e. a getProp vs a getElem, or setProp vs setElem)
-        //if it is we can make assumptions on the property: that if it is not defined on primitive wrapper itself it never will be.
-        //so in that case we can skip creation of primitive wrapper and start our search with the prototype.
         if (desc.getNameTokenCount() > 2) {
-            final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-            final FindProperty find = wrappedReceiver.findProperty(name, true);
+            name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+            find = wrappedReceiver.findProperty(name, true);
+        } else {
+            name = null;
+            find = null;
+        }
 
-            if (find == null) {
-                // Give up early, give chance to BeanLinker and NashornBottomLinker to deal with it.
-                return null;
-            }
+        final String firstOp = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
 
-            final SwitchPoint sp = find.getProperty().getBuiltinSwitchPoint(); //can use this instead of proto filter
-            if (sp instanceof Context.BuiltinSwitchPoint && !sp.hasBeenInvalidated()) {
-                return new GuardedInvocation(GlobalConstants.staticConstantGetter(find.getObjectValue()), guard, sp, null);
-            }
+        switch (firstOp) {
+        case "getProp":
+        case "getElem":
+        case "getMethod":
+            //checks whether the property name is hard-coded in the call-site (i.e. a getProp vs a getElem, or setProp vs setElem)
+            //if it is we can make assumptions on the property: that if it is not defined on primitive wrapper itself it never will be.
+            //so in that case we can skip creation of primitive wrapper and start our search with the prototype.
+            if (name != null) {
+                if (find == null) {
+                    // Give up early, give chance to BeanLinker and NashornBottomLinker to deal with it.
+                    return null;
+                }
 
-            if (find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
-                // If property is found in the prototype object bind the method handle directly to
-                // the proto filter instead of going through wrapper instantiation below.
-                final ScriptObject proto = wrappedReceiver.getProto();
-                final GuardedInvocation link = proto.lookup(desc, request);
+                final SwitchPoint sp = find.getProperty().getBuiltinSwitchPoint(); //can use this instead of proto filter
+                if (sp instanceof Context.BuiltinSwitchPoint && !sp.hasBeenInvalidated()) {
+                    return new GuardedInvocation(GlobalConstants.staticConstantGetter(find.getObjectValue()), guard, sp, null);
+                }
 
-                if (link != null) {
-                    final MethodHandle invocation = link.getInvocation(); //this contains the builtin switchpoint
+                if (find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
+                    // If property is found in the prototype object bind the method handle directly to
+                    // the proto filter instead of going through wrapper instantiation below.
+                    final ScriptObject proto = wrappedReceiver.getProto();
+                    final GuardedInvocation link = proto.lookup(desc, request);
 
-                    final MethodHandle adaptedInvocation = MH.asType(invocation, invocation.type().changeParameterType(0, Object.class));
-                    final MethodHandle method = MH.filterArguments(adaptedInvocation, 0, protoFilter);
-                    final MethodHandle protoGuard = MH.filterArguments(link.getGuard(), 0, protoFilter);
-
-                    return new GuardedInvocation(method, NashornGuards.combineGuards(guard, protoGuard));
+                    if (link != null) {
+                        final MethodHandle invocation = link.getInvocation(); //this contains the builtin switchpoint
+                        final MethodHandle adaptedInvocation = MH.asType(invocation, invocation.type().changeParameterType(0, Object.class));
+                        final MethodHandle method = MH.filterArguments(adaptedInvocation, 0, protoFilter);
+                        final MethodHandle protoGuard = MH.filterArguments(link.getGuard(), 0, protoFilter);
+                        return new GuardedInvocation(method, NashornGuards.combineGuards(guard, protoGuard));
+                    }
                 }
             }
+            break;
+        case "setProp":
+        case "setElem":
+            return getPrimitiveSetter(name, guard, wrapFilter, NashornCallSiteDescriptor.isStrict(desc));
+        default:
+            break;
         }
 
         final GuardedInvocation link = wrappedReceiver.lookup(desc, request);
@@ -137,5 +166,42 @@ public final class PrimitiveLookup {
         }
 
         return null;
+    }
+
+    private static GuardedInvocation getPrimitiveSetter(final String name, final MethodHandle guard,
+                                                        final MethodHandle wrapFilter, final boolean isStrict) {
+        MethodHandle filter = MH.asType(wrapFilter, wrapFilter.type().changeReturnType(ScriptObject.class));
+        final MethodHandle target;
+
+        if (name == null) {
+            filter = MH.dropArguments(filter, 1, Object.class, Object.class);
+            target = MH.insertArguments(PRIMITIVE_SETTER, 3, isStrict);
+        } else {
+            filter = MH.dropArguments(filter, 1, Object.class);
+            target = MH.insertArguments(PRIMITIVE_SETTER, 2, name, isStrict);
+        }
+
+        return new GuardedInvocation(MH.foldArguments(target, filter), guard);
+    }
+
+
+    @SuppressWarnings("unused")
+    private static void primitiveSetter(final ScriptObject wrappedSelf, final Object self, final Object key,
+                                        final boolean strict, final Object value) {
+        // See ES5.1 8.7.2 PutValue (V, W)
+        final String name = JSType.toString(key);
+        final FindProperty find = wrappedSelf.findProperty(name, true);
+        if (find == null || !(find.getProperty() instanceof UserAccessorProperty) || !find.getProperty().isWritable()) {
+            if (strict) {
+                throw typeError("property.not.writable", name, ScriptRuntime.safeToString(self));
+            }
+            return;
+        }
+        // property found and is a UserAccessorProperty
+        find.setValue(value, strict);
+    }
+
+    private static MethodHandle findOwnMH(final String name, final MethodType type) {
+        return MH.findStatic(MethodHandles.lookup(), PrimitiveLookup.class, name, type);
     }
 }

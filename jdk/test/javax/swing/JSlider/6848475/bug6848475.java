@@ -28,8 +28,6 @@
  * @run main bug6848475
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.SliderUI;
 import javax.swing.plaf.basic.BasicSliderUI;
@@ -47,7 +45,6 @@ public class bug6848475 {
     private static int thumbRectX;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         robot = new Robot();
         robot.setAutoDelay(100);
@@ -70,7 +67,7 @@ public class bug6848475 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -80,7 +77,7 @@ public class bug6848475 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -95,7 +92,7 @@ public class bug6848475 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

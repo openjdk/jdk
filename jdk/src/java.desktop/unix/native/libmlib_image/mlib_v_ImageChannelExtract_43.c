@@ -252,7 +252,7 @@ void mlib_v_ImageChannelExtract_U8_43R_A8D2X8(const mlib_u8 *src,
 /***************************************************************/
 /*
  * Either source or destination data are not 8-byte aligned.
- * And dsize is is in pixels.
+ * And dsize is in pixels.
  */
 
 void mlib_v_ImageChannelExtract_U8_43R_D1(const mlib_u8 *src,
@@ -1182,7 +1182,7 @@ void mlib_v_ImageChannelExtract_S16_43L_A8D2X4(const mlib_s16 *src,
 /***************************************************************/
 /*
  * Either source or destination data are not 8-byte aligned.
- * And size is is in pixels.
+ * And size is in pixels.
  */
 
 void mlib_v_ImageChannelExtract_S16_43L_D1(const mlib_s16 *src,

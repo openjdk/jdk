@@ -3993,7 +3993,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the <code>DatabaseMetaData</code> associated with
-     * the connection handle associated this this
+     * the connection handle associated with this
      * <code>JdbcRowSet</code> object.
      *
      * @return the <code>DatabaseMetadata</code> associated
@@ -4007,7 +4007,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the <code>ParameterMetaData</code> associated with
-     * the connection handle associated this this
+     * the connection handle associated with this
      * <code>JdbcRowSet</code> object.
      *
      * @return the <code>ParameterMetadata</code> associated
@@ -4325,7 +4325,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * the connection is created using a JDBC technology-enabled driver
      * ("JDBC driver") and the <code>DriverManager</code>.
      * The correct JDBC URL for the specific driver to be used can be found
-     * in the driver documentation.  Although there are guidelines for for how
+     * in the driver documentation.  Although there are guidelines for how
      * a JDBC URL is formed,
      * a driver vendor can specify any <code>String</code> object except
      * one with a length of <code>0</code> (an empty string).

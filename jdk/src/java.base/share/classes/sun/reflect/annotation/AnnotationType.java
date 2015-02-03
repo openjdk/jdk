@@ -55,7 +55,7 @@ public class AnnotationType {
     private final Map<String, Object> memberDefaults;
 
     /**
-     * Member name -> Method object mapping. This (and its assoicated
+     * Member name -> Method object mapping. This (and its associated
      * accessor) are used only to generate AnnotationTypeMismatchExceptions.
      */
     private final Map<String, Method> members;
@@ -117,7 +117,7 @@ public class AnnotationType {
         memberDefaults = new HashMap<String, Object>(0);
         members = new HashMap<String, Method>(methods.length+1, 1.0f);
 
-        for (Method method :  methods) {
+        for (Method method : methods) {
             if (method.getParameterTypes().length != 0)
                 throw new IllegalArgumentException(method + " has params");
             String name = method.getName();
@@ -213,7 +213,7 @@ public class AnnotationType {
     }
 
     /**
-     * Returns true if this this annotation type is inherited.
+     * Returns true if this annotation type is inherited.
      */
     public boolean isInherited() {
         return inherited;

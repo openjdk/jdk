@@ -26,6 +26,7 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
 import sun.misc.SharedSecrets;
 import sun.misc.JavaIOFileDescriptorAccess;
 import sun.nio.ch.FileChannelImpl;
@@ -68,7 +69,7 @@ class FileOutputStream extends OutputStream
     /**
      * The associated channel, initialized lazily.
      */
-    private FileChannel channel;
+    private volatile FileChannel channel;
 
     /**
      * The path of the referenced file
@@ -76,8 +77,7 @@ class FileOutputStream extends OutputStream
      */
     private final String path;
 
-    private final Object closeLock = new Object();
-    private volatile boolean closed = false;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Creates a file output stream to write to the file with the
@@ -341,15 +341,14 @@ class FileOutputStream extends OutputStream
      * @spec JSR-51
      */
     public void close() throws IOException {
-        synchronized (closeLock) {
-            if (closed) {
-                return;
-            }
-            closed = true;
+        if (!closed.compareAndSet(false, true)) {
+            // if compareAndSet() returns false closed was already true
+            return;
         }
 
-        if (channel != null) {
-            channel.close();
+        FileChannel fc = channel;
+        if (fc != null) {
+           fc.close();
         }
 
         fd.closeAll(new Closeable() {
@@ -394,12 +393,23 @@ class FileOutputStream extends OutputStream
      * @spec JSR-51
      */
     public FileChannel getChannel() {
-        synchronized (this) {
-            if (channel == null) {
-                channel = FileChannelImpl.open(fd, path, false, true, this);
+        FileChannel fc = this.channel;
+        if (fc == null) {
+            synchronized (this) {
+                fc = this.channel;
+                if (fc == null) {
+                    this.channel = fc = FileChannelImpl.open(fd, path, false, true, this);
+                    if (closed.get()) {
+                        try {
+                            fc.close();
+                        } catch (IOException ioe) {
+                            throw new InternalError(ioe); // should not happen
+                        }
+                    }
+                }
             }
-            return channel;
         }
+        return fc;
     }
 
     /**

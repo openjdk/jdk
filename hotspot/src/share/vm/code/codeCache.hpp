@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,12 +98,13 @@ class CodeCache : AllStatic {
   // CodeHeap management
   static void initialize_heaps();                             // Initializes the CodeHeaps
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
-  static void add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type);
+  static void add_heap(ReservedSpace rs, const char* name, int code_blob_type);
   static CodeHeap* get_code_heap(const CodeBlob* cb);         // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(int code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(int code_blob_type);
   static bool heap_available(int code_blob_type);             // Returns true if an own CodeHeap for the given CodeBlobType is available
+  static size_t heap_alignment();                             // Returns the alignment of the CodeHeaps in bytes
   static ReservedCodeSpace reserve_heap_memory(size_t size);  // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
@@ -209,15 +210,27 @@ class CodeCache : AllStatic {
   static void verify_icholder_relocations();
 
   // Deoptimization
+ private:
   static int  mark_for_deoptimization(DepChange& changes);
 #ifdef HOTSWAP
   static int  mark_for_evol_deoptimization(instanceKlassHandle dependee);
 #endif // HOTSWAP
 
+ public:
   static void mark_all_nmethods_for_deoptimization();
   static int  mark_for_deoptimization(Method* dependee);
   static void make_marked_nmethods_zombies();
   static void make_marked_nmethods_not_entrant();
+
+  // Flushing and deoptimization
+  static void flush_dependents_on(instanceKlassHandle dependee);
+  static void flush_dependents_on(Handle call_site, Handle method_handle);
+#ifdef HOTSWAP
+  // Flushing and deoptimization in case of evolution
+  static void flush_evol_dependents_on(instanceKlassHandle dependee);
+#endif // HOTSWAP
+  // Support for fullspeed debugging
+  static void flush_dependents_on_method(methodHandle dependee);
 
   // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();

@@ -56,7 +56,7 @@ public abstract class AbstractRepository<T extends Tree> {
     /**
      * Returns a <tt>Reifier</tt> used to convert parts of the
      * AST into reflective objects.
-     * @return  a <tt>Reifier</tt> used to convert parts of the
+     * @return a <tt>Reifier</tt> used to convert parts of the
      * AST into reflective objects
      */
     protected Reifier getReifier(){return Reifier.make(getFactory());}
@@ -76,7 +76,7 @@ public abstract class AbstractRepository<T extends Tree> {
     }
 
     /**
-     * Returns the AST for the genric type info of this entity.
+     * Returns the AST for the generic type info of this entity.
      * @param s - a string representing the generic signature of this
      * entity
      * @return the AST for the generic type info of this entity.

@@ -1355,6 +1355,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     /**
      * @param index visual index of the file to be edited
      */
+    @SuppressWarnings("deprecation")
     private void editFileName(int index) {
         JFileChooser chooser = getFileChooser();
         File currentDirectory = chooser.getCurrentDirectory();
@@ -1521,6 +1522,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
 
+    @SuppressWarnings("deprecation")
     void setFileSelected() {
         if (getFileChooser().isMultiSelectionEnabled() && !isDirectorySelected()) {
             File[] files = getFileChooser().getSelectedFiles(); // Should be selected
@@ -1991,20 +1993,24 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             return false;
         }
 
-        if (f instanceof ShellFolder) {
-            return f.canWrite();
-        } else {
-            if (usesShellFolder(getFileChooser())) {
-                try {
-                    return ShellFolder.getShellFolder(f).canWrite();
-                } catch (FileNotFoundException ex) {
-                    // File doesn't exist
-                    return false;
-                }
-            } else {
-                // Ordinary file
+        try {
+            if (f instanceof ShellFolder) {
                 return f.canWrite();
+            } else {
+                if (usesShellFolder(getFileChooser())) {
+                    try {
+                        return ShellFolder.getShellFolder(f).canWrite();
+                    } catch (FileNotFoundException ex) {
+                        // File doesn't exist
+                        return false;
+                    }
+                } else {
+                    // Ordinary file
+                    return f.canWrite();
+                }
             }
+        } catch (SecurityException e) {
+            return false;
         }
     }
 

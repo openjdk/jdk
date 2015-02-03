@@ -68,6 +68,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         updateImage();
     }
 
+    @SuppressWarnings("deprecation")
     private CPopupMenu checkAndCreatePopupPeer() {
         CPopupMenu menuPeer = null;
         if (popup != null) {

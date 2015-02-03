@@ -496,9 +496,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     // This is somewhat messy.  The difference here from BasicComboBoxUI.EnterAction is that
     // arrow up or down does not automatically select the
     @SuppressWarnings("serial") // anonymous class
-    private static final Action triggerSelectionAction = new AbstractAction() {
+    private final Action triggerSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
             triggerSelectionEvent((JComboBox)e.getSource(), e);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return comboBox.isPopupVisible() && super.isEnabled();
         }
     };
 

@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -47,7 +46,7 @@ public final class GetSplitState extends Expression {
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
+    public Type getType() {
         return Type.INT;
     }
 

@@ -829,6 +829,7 @@ public class JViewport extends JComponent implements Accessible
      *
      * @see JComponent#reshape(int, int, int, int)
      */
+    @SuppressWarnings("deprecation")
     public void reshape(int x, int y, int w, int h) {
         boolean sizeChanged = (getWidth() != w) || (getHeight() != h);
         if (sizeChanged) {
@@ -1447,6 +1448,7 @@ public class JViewport extends JComponent implements Accessible
      * Returns true if the component needs to be completely repainted after
      * a blit and a paint is received.
      */
+    @SuppressWarnings("deprecation")
     private boolean needsRepaintAfterBlit() {
         // Find the first heavy weight ancestor. isObscured and
         // canDetermineObscurity are only appropriate for heavy weights.

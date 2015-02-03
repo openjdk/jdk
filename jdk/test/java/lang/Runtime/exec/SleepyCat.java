@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4843136 4763384
+   @bug 4843136 4763384 8044841
    @summary Various race conditions caused exec'ed processes to have
    extra unused file descriptors, which caused hard-to-reproduce hangs.
    @author Martin Buchholz
@@ -50,12 +50,45 @@ public class SleepyCat {
         }
 
         public void run() {
+            dumpState(deathRow);        // before killing the processes dump all the state
+
             timedOut = true;
             destroy(deathRow);
         }
 
         public boolean timedOut() {
             return timedOut;
+        }
+    }
+
+    /**
+     * Temporary debugging code for intermittent failures.
+     * @param pids the processes to dump status for
+     */
+    static void dumpState(Process... pids) {
+        if (!System.getProperty("os.name").contains("SunOS")) {
+            return;
+        }
+        try {
+            String[] psArgs = {"ps", "-elf"};
+            Process ps = new ProcessBuilder(psArgs).inheritIO().start();
+            ps.waitFor();
+            String[] sfiles = {"pfiles", "self"};
+            Process fds = new ProcessBuilder(sfiles).inheritIO().start();
+            fds.waitFor();
+
+            for (Process p : pids) {
+                if (p == null)
+                    continue;
+                String[] pfiles = {"pfiles", Long.toString(p.getPid())};
+                fds = new ProcessBuilder(pfiles).inheritIO().start();
+                fds.waitFor();
+                String[] pstack = {"pstack", Long.toString(p.getPid())};
+                fds = new ProcessBuilder(pstack).inheritIO().start();
+                fds.waitFor();
+            }
+        } catch (IOException | InterruptedException i) {
+            i.printStackTrace();
         }
     }
 

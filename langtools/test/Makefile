@@ -21,7 +21,6 @@ OSNAME = $(shell uname -s)
 ifeq ($(OSNAME), SunOS)
   SLASH_JAVA = /java
   PLATFORM = solaris
-  JT_PLATFORM = solaris
   ARCH = $(shell uname -p)
   ifeq ($(ARCH), i386)
     ARCH=i586
@@ -30,7 +29,6 @@ endif
 ifeq ($(OSNAME), Linux)
   SLASH_JAVA = /java
   PLATFORM = linux
-  JT_PLATFORM = linux
   ARCH = $(shell uname -m)
   ifeq ($(ARCH), i386)
     ARCH=i586
@@ -38,7 +36,6 @@ ifeq ($(OSNAME), Linux)
 endif
 ifeq ($(OSNAME), Darwin)
   PLATFORM = bsd
-  JT_PLATFORM = linux
   ARCH = $(shell uname -m)
   ifeq ($(ARCH), i386)
     ARCH=i586
@@ -55,7 +52,6 @@ endif
 
 ifeq ($(PLATFORM), windows)
   SLASH_JAVA = J:
-  JT_PLATFORM = win32
   ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),ia64)
     ARCH=ia64
   else
@@ -93,8 +89,8 @@ ifdef JPRT_JTREG_HOME
 else
   JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.1/promoted/latest/binaries/jtreg
 endif
-JTREG = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtreg
-JTDIFF = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtdiff
+JTREG = $(JTREG_HOME)/bin/jtreg
+JTDIFF = $(JTREG_HOME)/bin/jtdiff
 
 # Default JCK to run
 ifdef JPRT_JCK_HOME
@@ -105,21 +101,19 @@ endif
 
 # Default JDK for JTREG and JCK
 #
-# JT_JAVA is the version of java used to run jtreg/JCK. Since it is now
-# standard to execute tests in sameVM mode, it should normally be set the
-# same as TESTJAVA (although not necessarily so.)
+# JT_JAVA is the version of java used to run jtreg/JCK. 
 #
 ifdef JPRT_JAVA_HOME
   JT_JAVA = $(JPRT_JAVA_HOME)
 else
-  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.7.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
+  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.9.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # Default JDK to test
 ifdef JPRT_IMPORT_PRODUCT_HOME
   TESTJAVA = $(JPRT_IMPORT_PRODUCT_HOME)
 else
-  TESTJAVA = $(SLASH_JAVA)/re/jdk/1.7.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
+  TESTJAVA = $(SLASH_JAVA)/re/jdk/1.9.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # PRODUCT_HOME is a JPRT variable pointing to a directory containing the output from
@@ -152,7 +146,7 @@ endif
 ifdef CONCURRENCY
   JTREG_OPTIONS += -agentvm -concurrency:$(CONCURRENCY)
 else
-  JTREG_OPTIONS += -samevm
+  JTREG_OPTIONS += -agentvm
 endif
 
 ifdef JCK_CONCURRENCY

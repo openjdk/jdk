@@ -79,7 +79,7 @@ public abstract class CachedPainter {
     }
 
     /**
-     * Renders the cached image to the the passed in <code>Graphic</code>.
+     * Renders the cached image to the passed in <code>Graphic</code>.
      * If there is no cached image <code>paintToImage</code> will be invoked.
      * <code>paintImage</code> is invoked to paint the cached image.
      *

@@ -149,6 +149,7 @@ public class ServiceUI {
      * or attributes is null, or the initial PrintService is not in the
      * list of browsable services.
      */
+    @SuppressWarnings("deprecation")
     public static PrintService printDialog(GraphicsConfiguration gc,
                                            int x, int y,
                                            PrintService[] services,

@@ -126,6 +126,14 @@ class Rule {
             });
         rules.clear();
         for (int i = 0; i < n; i++) {
+            if (i != 0 && recs[i -1].getSave() == recs[i].getSave()) {
+                // we have two recs back to back with same saving for the same year.
+                if (recs[i].isLastRule()) {
+                    continue;
+                } else if (recs[i - 1].isLastRule()) {
+                    rules.remove(rules.size() - 1);
+                }
+            }
             rules.add(recs[i]);
         }
         return rules;

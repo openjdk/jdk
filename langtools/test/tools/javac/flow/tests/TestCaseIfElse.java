@@ -60,4 +60,19 @@ public class TestCaseIfElse {
         }
         return null;
     }
+
+    @AliveRange(varName="i", bytecodeStart=6, bytecodeLength=2)
+    int m4(boolean flag) {
+        int i;
+        label:
+        {
+            if (flag) {
+                i = 1;
+            } else {
+                break label;
+            }
+            return i;
+        }
+        return -1;
+    }
 }

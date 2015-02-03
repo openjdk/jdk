@@ -832,7 +832,7 @@ public final class TextAttribute extends Attribute {
     /**
      * Attribute key for the embedding level of the text.  Values are
      * instances of <b><code>Integer</code></b>.  The default value is
-     * <code>null</code>, indicating that the the Bidirectional
+     * <code>null</code>, indicating that the Bidirectional
      * algorithm should run without explicit embeddings.
      *
      * <p>Positive values 1 through 61 are <em>embedding</em> levels,

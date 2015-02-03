@@ -106,12 +106,15 @@ if [ ${vflag} = "true" ] ; then
   echo "# Mercurial command: ${command}" > ${status_output}
 fi
 
-
-# capture command options and arguments (if any)
-command_args="${@:-}"
+# At this point all command options and args are in "$@".
+# Always use "$@" (within double quotes) to avoid breaking
+# args with spaces into separate args.
 
 if [ ${vflag} = "true" ] ; then
-  echo "# Mercurial command arguments: ${command_args}" > ${status_output}
+  echo "# Mercurial command argument count: $#" > ${status_output}
+  for cmdarg in "$@" ; do
+    echo "# Mercurial command argument: ${cmdarg}" > ${status_output}
+  done
 fi
 
 # Clean out the temporary directory that stores the pid files.
@@ -205,13 +208,14 @@ if [ "${command}" = "clone" -o "${command}" = "fclone" -o "${command}" = "tclone
 
   pull_default_tail=`echo ${pull_default} | sed -e 's@^.*://[^/]*/\(.*\)@\1@'`
 
-  if [ -n "${command_args}" ] ; then
+  if [ $# -gt 0 ] ; then
     # if there is an "extra sources" path then reparent "extra" repos to that path
     if [ "x${pull_default}" = "x${pull_default_tail}" ] ; then
       echo "ERROR: Need initial clone from non-local source" > ${status_output}
       exit 1
     fi
-    pull_extra="${command_args}/${pull_default_tail}"
+    # assume that "extra sources" path is the first arg
+    pull_extra="${1}/${pull_default_tail}"
 
     # determine which extra subrepos need to be cloned.
     for i in ${subrepos_extra} ; do
@@ -356,8 +360,8 @@ else
           (PYTHONUNBUFFERED=true hg${global_opts} clone ${clone_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
         else
           # run the command.
-          echo "cd ${i} && hg${global_opts} ${command} ${command_args}" > ${status_output}
-          cd ${i} && (PYTHONUNBUFFERED=true hg${global_opts} ${command} ${command_args}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
+          echo "cd ${i} && hg${global_opts} ${command} ${@}" > ${status_output}
+          cd ${i} && (PYTHONUNBUFFERED=true hg${global_opts} ${command} "${@}"; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
         fi
 
         echo $! > ${tmp}/${repopidfile}.pid

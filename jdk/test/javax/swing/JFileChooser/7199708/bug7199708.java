@@ -37,7 +37,6 @@ import java.nio.file.Files;
 import javax.swing.AbstractButton;
 import javax.swing.JTable;
 import javax.swing.UIManager;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -56,7 +55,6 @@ public class bug7199708 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -70,7 +68,7 @@ public class bug7199708 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -108,14 +106,14 @@ public class bug7199708 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         int d = 25;
         for (int i = 0; i < width / d; i++) {
             robot.mouseMove(locationX + i * d, locationY + 5);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            toolkit.realSync();
+            robot.waitForIdle();
         }
 
         robot.keyPress(KeyEvent.VK_ESCAPE);

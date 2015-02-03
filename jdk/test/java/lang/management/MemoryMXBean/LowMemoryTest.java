@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,11 @@
  *
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
+ * @requires vm.opt.ExplicitGCInvokesConcurrent == "false" | vm.opt.ExplicitGCInvokesConcurrent == "null"
  * @run main/timeout=600 LowMemoryTest
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
+ * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
+ * @requires vm.opt.DisableExplicitGC != "true"
  */
 
 import java.lang.management.*;
@@ -94,9 +98,15 @@ public class LowMemoryTest {
     }
 
     static class TestListener implements NotificationListener {
+        private boolean isRelaxed = false;
         private int triggers = 0;
         private final long[] count = new long[NUM_TRIGGERS * 2];
         private final long[] usedMemory = new long[NUM_TRIGGERS * 2];
+
+        public TestListener() {
+            isRelaxed = ManagementFactory.getRuntimeMXBean().getInputArguments().contains("-XX:+UseConcMarkSweepGC");
+        }
+
         @Override
         public void handleNotification(Notification notif, Object handback) {
             MemoryNotificationInfo minfo = MemoryNotificationInfo.
@@ -106,7 +116,8 @@ public class LowMemoryTest {
             triggers++;
         }
         public void checkResult() throws Exception {
-            if (triggers != NUM_TRIGGERS) {
+            if ((!isRelaxed && triggers != NUM_TRIGGERS) ||
+                (isRelaxed && triggers < NUM_TRIGGERS)) {
                 throw new RuntimeException("Unexpected number of triggers = " +
                     triggers + " but expected to be " + NUM_TRIGGERS);
             }

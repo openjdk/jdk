@@ -67,17 +67,9 @@ class nmethod;
 // sets.
 
 class HeapRegionDCTOC : public DirtyCardToOopClosure {
-public:
-  // Specification of possible DirtyCardToOopClosure filtering.
-  enum FilterKind {
-    NoFilterKind,
-    IntoCSFilterKind,
-    OutOfRegionFilterKind
-  };
-
-protected:
+private:
   HeapRegion* _hr;
-  FilterKind _fk;
+  G1ParPushHeapRSClosure* _rs_scan;
   G1CollectedHeap* _g1;
 
   // Walk the given memory region from bottom to (actual) top
@@ -90,9 +82,9 @@ protected:
 
 public:
   HeapRegionDCTOC(G1CollectedHeap* g1,
-                  HeapRegion* hr, ExtendedOopClosure* cl,
-                  CardTableModRefBS::PrecisionStyle precision,
-                  FilterKind fk);
+                  HeapRegion* hr,
+                  G1ParPushHeapRSClosure* cl,
+                  CardTableModRefBS::PrecisionStyle precision);
 };
 
 // The complicating factor is that BlockOffsetTable diverged

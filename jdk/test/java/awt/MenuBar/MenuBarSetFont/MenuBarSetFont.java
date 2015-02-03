@@ -21,8 +21,6 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.Button;
 import java.awt.CardLayout;
 import java.awt.Font;
@@ -31,16 +29,19 @@ import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+
+import jdk.testlibrary.OSInfo;
 
 /**
  * @test
  * @bug 6263470
  * @summary Tries to change font of MenuBar. Test passes if the font has changed
  * fails otherwise.
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @author Vyacheslav.Baranov: area=menu
  * @run main MenuBarSetFont
  */
@@ -66,7 +67,7 @@ public final class MenuBarSetFont {
 
     public static void main(final String[] args) throws Exception {
 
-        if (sun.awt.OSInfo.getOSType() == sun.awt.OSInfo.OSType.MACOSX) {
+        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
             System.err.println("This test is not for OS X. Menu.setFont() is not supported on OS X.");
             return;
         }
@@ -75,13 +76,16 @@ public final class MenuBarSetFont {
         frame.setMenuBar(mb);
         mb.setFont(new Font("Helvetica", Font.ITALIC, 5));
 
+        final Robot r = new Robot();
+        r.setAutoDelay(200);
+
         final Button button = new Button("Click Me");
         button.addActionListener(new Listener());
         frame.setLayout(new CardLayout());
         frame.add(button, "First");
         frame.setSize(400, 400);
         frame.setVisible(true);
-        sleep();
+        sleep(r);
 
         final int fInsets = frame.getInsets().top;  //Frame insets without menu.
         addMenu();
@@ -96,24 +100,23 @@ public final class MenuBarSetFont {
 
         mb.remove(0);
         frame.validate();
-        sleep();
+        sleep(r);
 
         // Test execution.
         // On XToolkit, menubar font should be changed to 60.
         // On WToolkit, menubar font should be changed to default and menubar
         // should be splitted in 2 rows.
         mb.setFont(new Font("Helvetica", Font.ITALIC, 60));
-        sleep();
 
-        final Robot r = new Robot();
-        r.setAutoDelay(200);
+        sleep(r);
+
         final Point pt = frame.getLocation();
         r.mouseMove(pt.x + frame.getWidth() / 2,
                     pt.y + fMenuInsets + menuBarHeight / 2);
         r.mousePress(InputEvent.BUTTON1_MASK);
         r.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        sleep();
+        sleep(r);
         frame.dispose();
 
         if (clicked) {
@@ -121,8 +124,8 @@ public final class MenuBarSetFont {
         }
     }
 
-    private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+    private static void sleep(Robot robot) {
+        robot.waitForIdle();
         try {
             Thread.sleep(500L);
         } catch (InterruptedException ignored) {

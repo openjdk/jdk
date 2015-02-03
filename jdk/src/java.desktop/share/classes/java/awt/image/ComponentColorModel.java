@@ -92,7 +92,7 @@ import java.awt.color.ICC_ColorSpace;
  * <p>
  * For instances with unsigned sample values,
  * the unnormalized color/alpha component representation is only
- * supported if two conditions hold.  First, sample value value 0 must
+ * supported if two conditions hold.  First, sample value 0 must
  * map to normalized component value 0.0 and sample value 2<sup>n</sup> - 1
  * to 1.0.  Second the min/max range of all color components of the
  * <code>ColorSpace</code> must be 0.0 to 1.0.  In this case, the

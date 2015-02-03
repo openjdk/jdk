@@ -32,7 +32,6 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.util.*;
-import sun.awt.SunToolkit;
 
 public class bug6462008 {
 
@@ -41,11 +40,9 @@ public class bug6462008 {
     private static boolean isAquaLAF;
     private static int controlKey;
     private static JList list;
-    private static SunToolkit toolkit;
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(100);
 
@@ -60,15 +57,15 @@ public class bug6462008 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         setAnchorLead(-1);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         testListSelection();
 
         setAnchorLead(100);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         testListSelection();
     }
@@ -79,10 +76,10 @@ public class bug6462008 {
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelection();
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Control + Space
         robot.keyPress(KeyEvent.VK_CONTROL);
@@ -90,10 +87,10 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_CONTROL);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelection();
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Shift + Space
         robot.keyPress(KeyEvent.VK_SHIFT);
@@ -101,10 +98,10 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SHIFT);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelection();
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Control + Shift + Space
         robot.keyPress(KeyEvent.VK_CONTROL);
@@ -114,10 +111,10 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_SHIFT);
         robot.keyRelease(KeyEvent.VK_CONTROL);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelection();
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
 
         // Control + A  Multiple Selection
@@ -127,11 +124,11 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_A);
         robot.keyRelease(controlKey);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(-1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
         resetList();
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Control + A Single Selection
         robot.keyPress(controlKey);
@@ -139,12 +136,12 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_A);
         robot.keyRelease(controlKey);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(0, 0, 0);
         resetList();
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setSelectionInterval(5, 5);
-        toolkit.realSync();
+        robot.waitForIdle();
 
 
         // Control + A Selection interval (5, 5)
@@ -153,10 +150,10 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_A);
         robot.keyRelease(controlKey);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelection(5);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Page Down
         // Not applicable for the Aqua L&F
@@ -164,10 +161,10 @@ public class bug6462008 {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
             robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
 
-            toolkit.realSync();
+            robot.waitForIdle();
             checkSelection(9, 9, 9);
             resetList();
-            toolkit.realSync();
+            robot.waitForIdle();
         }
 
         // Shift + Page Down
@@ -184,28 +181,28 @@ public class bug6462008 {
 
         scrollDownExtendSelection();
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelection(0, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Down
         robot.keyPress(KeyEvent.VK_DOWN);
         robot.keyRelease(KeyEvent.VK_DOWN);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(0, 0, 0);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // L
         robot.keyPress(KeyEvent.VK_L);
         robot.keyRelease(KeyEvent.VK_L);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(0, 0, 0);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Click item 4
         Point p = clickItem4();
@@ -214,10 +211,10 @@ public class bug6462008 {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(4, 4, 4);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
 
         // Control + Click item 4
@@ -229,10 +226,10 @@ public class bug6462008 {
         robot.keyRelease(controlKey);
 
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(4, 4, 4);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Shift + Click item 4
         robot.keyPress(KeyEvent.VK_SHIFT);
@@ -243,10 +240,10 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_SHIFT);
 
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(0, 4, 0, 1, 2, 3, 4);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
 
 
         // Control + Shift + Click item 4
@@ -259,10 +256,10 @@ public class bug6462008 {
         robot.keyRelease(KeyEvent.VK_SHIFT);
         robot.keyRelease(controlKey);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectionAL(0, 4);
         resetList();
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 
     private static DefaultListModel getModel() {

@@ -700,6 +700,7 @@ class XPStyle {
             setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         }
 
+        @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
         }

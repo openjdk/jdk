@@ -27,8 +27,6 @@
     @author mcherkas
     @run main InternalFrameIsNotCollectedTest
  */
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyVetoException;
@@ -40,12 +38,6 @@ public class InternalFrameIsNotCollectedTest {
     public static final int waitTime = 5000;
     private static Robot robot;
     private static CustomInternalFrame iFrame;
-
-    public static void sync() {
-
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
-    }
 
     public static void main(String[] args) throws Exception {
         initRobot();
@@ -60,7 +52,7 @@ public class InternalFrameIsNotCollectedTest {
                 }
             }
         });
-        sync();
+        robot.waitForIdle();
         invokeGC();
         System.runFinalization();
         Thread.sleep(1000); // it's better to wait 1 sec now then 10 sec later

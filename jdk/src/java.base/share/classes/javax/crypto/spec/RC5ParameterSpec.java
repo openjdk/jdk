@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the parameters used with the
- * <a href="http://www.ietf.org/rfc/rfc2040.txt"><i>RC5</i></a>
+ * <a href="http://tools.ietf.org/html/rfc2040"><i>RC5</i></a>
  * algorithm.
  *
  * <p> The parameters consist of a version number, a rounds count, a word
@@ -37,7 +37,7 @@ import java.security.spec.AlgorithmParameterSpec;
  *
  * <p> This class can be used to initialize a <code>Cipher</code> object that
  * implements the <i>RC5</i> algorithm as supplied by
- * <a href="http://www.rsasecurity.com">RSA Security Inc.</a>,
+ * <a href="http://www.rsa.com">RSA Security LLC</a>,
  * or any parties authorized by RSA Security.
  *
  * @author Jan Luehe

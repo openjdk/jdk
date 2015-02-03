@@ -32,8 +32,6 @@
  * @run main bug8014863
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.text.GlyphView;
 import javax.swing.text.View;
@@ -49,7 +47,6 @@ public class bug8014863 {
     private static JEditorPane editorPane;
     private static JFrame frame;
     private static Robot robot;
-    private static SunToolkit toolkit;
 
     private static String text1 = "<p>one two qqqq <em>this is a test sentence</em> qqqq <em>pp</em> qqqq <em>pp</em> " +
             "qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq</p>";
@@ -59,14 +56,13 @@ public class bug8014863 {
     private static ArrayList<GlyphView> glyphViews;
 
     public static void main(String[] args) throws Exception {
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
         glyphViews = new ArrayList<GlyphView>();
 
         createAndShowGUI(text1);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -80,10 +76,10 @@ public class bug8014863 {
 
         createAndShowGUI(text2);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_HOME);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_O);
         Util.hitKeys(robot, KeyEvent.VK_N);
@@ -94,7 +90,7 @@ public class bug8014863 {
         Util.hitKeys(robot, KeyEvent.VK_O);
         Util.hitKeys(robot, KeyEvent.VK_SPACE);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

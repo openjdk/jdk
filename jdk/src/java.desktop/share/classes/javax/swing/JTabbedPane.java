@@ -333,6 +333,7 @@ public class JTabbedPane extends JComponent
      * @see #addChangeListener
      * @see EventListenerList
      */
+    @SuppressWarnings("deprecation")
     protected void fireStateChanged() {
         /* --- Begin code to deal with visibility --- */
 
@@ -949,6 +950,7 @@ public class JTabbedPane extends JComponent
      * @see #addTab
      * @see #insertTab
      */
+    @SuppressWarnings("deprecation")
     public void removeTabAt(int index) {
         checkIndex(index);
 
@@ -1557,6 +1559,7 @@ public class JTabbedPane extends JComponent
      *    attribute: visualUpdate true
      *  description: The component at the specified tab index.
      */
+    @SuppressWarnings("deprecation")
     public void setComponentAt(int index, Component component) {
         Page page = pages.get(index);
         if (component != page.component) {

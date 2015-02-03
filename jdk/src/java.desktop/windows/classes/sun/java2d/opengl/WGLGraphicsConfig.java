@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public class WGLGraphicsConfig
         wglAvailable = initWGL();
     }
 
+    @SuppressWarnings("deprecation")
     protected WGLGraphicsConfig(Win32GraphicsDevice device, int visualnum,
                                 long configInfo, ContextCapabilities oglCaps)
     {

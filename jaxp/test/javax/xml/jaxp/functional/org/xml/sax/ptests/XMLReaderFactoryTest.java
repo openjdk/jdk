@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package org.xml.sax.ptests;
 
+import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertNotNull;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
@@ -30,7 +31,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /**
  * Unit test for XMLReaderFactory.createXMLReader API.
  */
-public class XMLReaderFactoryTest {
+public class XMLReaderFactoryTest extends JAXPBaseTest {
     /**
      * No exception expected when create XMLReader by default.
      * @throws org.xml.sax.SAXException when xml reader creation failed.
@@ -48,12 +49,7 @@ public class XMLReaderFactoryTest {
      */
     @Test
     public void createReader02() throws SAXException {
-        //Disable this test because this is only work for apache implementation.
-        /*System.setProperty("org.xml.sax.driver",
-            "org.apache.xerces.parsers.SAXParser");
-        assertNotNull(XMLReaderFactory.
-            createXMLReader("org.apache.xerces.parsers.SAXParser"));*/
-        System.setProperty("org.xml.sax.driver",
+        setSystemProperty("org.xml.sax.driver",
             "com.sun.org.apache.xerces.internal.parsers.SAXParser");
         assertNotNull(XMLReaderFactory.
             createXMLReader("com.sun.org.apache.xerces.internal.parsers.SAXParser"));

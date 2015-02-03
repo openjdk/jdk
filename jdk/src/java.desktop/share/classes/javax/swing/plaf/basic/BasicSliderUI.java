@@ -1449,7 +1449,7 @@ public class BasicSliderUI extends SliderUI{
 
     /**
      * Returns the value at the y position. If {@code yPos} is beyond the
-     * track at the the bottom or the top, this method sets the value to either
+     * track at the bottom or the top, this method sets the value to either
      * the minimum or maximum value of the slider, depending on if the slider
      * is inverted or not.
      *
@@ -1927,7 +1927,7 @@ public class BasicSliderUI extends SliderUI{
      * The recommended approach to creating bindings is to use a
      * combination of an <code>ActionMap</code>, to contain the action,
      * and an <code>InputMap</code> to contain the mapping from KeyStroke
-     * to action description. The InputMap is is usually described in the
+     * to action description. The InputMap is usually described in the
      * LookAndFeel tables.
      * <p>
      * Please refer to the key bindings specification for further details.

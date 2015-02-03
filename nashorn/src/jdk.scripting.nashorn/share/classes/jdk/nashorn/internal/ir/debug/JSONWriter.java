@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir.debug;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -553,8 +552,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
             type("ArrayExpression");
             comma();
 
-            final Node[] value = literalNode.getArray();
-            array("elements", Arrays.asList(value));
+            array("elements", ((LiteralNode.ArrayLiteralNode)literalNode).getElementExpressions());
         } else {
             type("Literal");
             comma();

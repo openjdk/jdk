@@ -130,7 +130,7 @@ public class X500Principal implements Principal, java.io.Serializable {
      * @param o Object to be compared for equality with this
      *          <code>X500Principal</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>X500Principal</code>.
      */
     public boolean equals(Object o) {

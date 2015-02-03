@@ -124,6 +124,7 @@ public final class Main {
 
     private Set<Pair <String, String>> providers = null;
     private String storetype = null;
+    private boolean hasStoretypeOption = false;
     private String srcProviderName = null;
     private String providerName = null;
     private String pathlist = null;
@@ -483,11 +484,13 @@ public final class Main {
             } else if (collator.compare(flags, "-storetype") == 0 ||
                     collator.compare(flags, "-deststoretype") == 0) {
                 storetype = args[++i];
+                hasStoretypeOption = true;
             } else if (collator.compare(flags, "-srcstorepass") == 0) {
                 srcstorePass = getPass(modifier, args[++i]);
                 passwords.add(srcstorePass);
             } else if (collator.compare(flags, "-srcstoretype") == 0) {
                 srcstoretype = args[++i];
+                hasStoretypeOption = true;
             } else if (collator.compare(flags, "-srckeypass") == 0) {
                 srckeyPass = getPass(modifier, args[++i]);
                 passwords.add(srckeyPass);
@@ -809,36 +812,42 @@ public final class Main {
         }
 
         // Create new keystore
-        if (providerName == null) {
-            keyStore = KeyStore.getInstance(storetype);
+        // Probe for keystore type when filename is available
+        if (ksfile != null && ksStream != null && providerName == null &&
+            hasStoretypeOption == false) {
+            keyStore = KeyStore.getInstance(ksfile, storePass);
         } else {
-            keyStore = KeyStore.getInstance(storetype, providerName);
-        }
+            if (providerName == null) {
+                keyStore = KeyStore.getInstance(storetype);
+            } else {
+                keyStore = KeyStore.getInstance(storetype, providerName);
+            }
 
-        /*
-         * Load the keystore data.
-         *
-         * At this point, it's OK if no keystore password has been provided.
-         * We want to make sure that we can load the keystore data, i.e.,
-         * the keystore data has the right format. If we cannot load the
-         * keystore, why bother asking the user for his or her password?
-         * Only if we were able to load the keystore, and no keystore
-         * password has been provided, will we prompt the user for the
-         * keystore password to verify the keystore integrity.
-         * This means that the keystore is loaded twice: first load operation
-         * checks the keystore format, second load operation verifies the
-         * keystore integrity.
-         *
-         * If the keystore password has already been provided (at the
-         * command line), however, the keystore is loaded only once, and the
-         * keystore format and integrity are checked "at the same time".
-         *
-         * Null stream keystores are loaded later.
-         */
-        if (!nullStream) {
-            keyStore.load(ksStream, storePass);
-            if (ksStream != null) {
-                ksStream.close();
+            /*
+             * Load the keystore data.
+             *
+             * At this point, it's OK if no keystore password has been provided.
+             * We want to make sure that we can load the keystore data, i.e.,
+             * the keystore data has the right format. If we cannot load the
+             * keystore, why bother asking the user for his or her password?
+             * Only if we were able to load the keystore, and no keystore
+             * password has been provided, will we prompt the user for the
+             * keystore password to verify the keystore integrity.
+             * This means that the keystore is loaded twice: first load operation
+             * checks the keystore format, second load operation verifies the
+             * keystore integrity.
+             *
+             * If the keystore password has already been provided (at the
+             * command line), however, the keystore is loaded only once, and the
+             * keystore format and integrity are checked "at the same time".
+             *
+             * Null stream keystores are loaded later.
+             */
+            if (!nullStream) {
+                keyStore.load(ksStream, storePass);
+                if (ksStream != null) {
+                    ksStream.close();
+                }
             }
         }
 
@@ -1881,6 +1890,7 @@ public final class Main {
         boolean isPkcs11 = false;
 
         InputStream is = null;
+        File srcksfile = null;
 
         if (P11KEYSTORE.equalsIgnoreCase(srcstoretype) ||
                 KeyStoreUtil.isWindowsKeyStore(srcstoretype)) {
@@ -1893,7 +1903,7 @@ public final class Main {
             isPkcs11 = true;
         } else {
             if (srcksfname != null) {
-                File srcksfile = new File(srcksfname);
+                srcksfile = new File(srcksfname);
                     if (srcksfile.exists() && srcksfile.length() == 0) {
                         throw new Exception(rb.getString
                                 ("Source.keystore.file.exists.but.is.empty.") +
@@ -1908,10 +1918,16 @@ public final class Main {
 
         KeyStore store;
         try {
-            if (srcProviderName == null) {
-                store = KeyStore.getInstance(srcstoretype);
+            // Probe for keystore type when filename is available
+            if (srcksfile != null && is != null && srcProviderName == null &&
+                hasStoretypeOption == false) {
+                store = KeyStore.getInstance(srcksfile, srcstorePass);
             } else {
-                store = KeyStore.getInstance(srcstoretype, srcProviderName);
+                if (srcProviderName == null) {
+                    store = KeyStore.getInstance(srcstoretype);
+                } else {
+                    store = KeyStore.getInstance(srcstoretype, srcProviderName);
+                }
             }
 
             if (srcstorePass == null

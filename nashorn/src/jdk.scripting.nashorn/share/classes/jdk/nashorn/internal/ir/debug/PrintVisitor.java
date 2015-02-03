@@ -391,6 +391,9 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
             finallyBody.accept(this);
         }
 
+        for (final Block inlinedFinally : tryNode.getInlinedFinallies()) {
+            inlinedFinally.accept(this);
+        }
         return false;
     }
 

@@ -223,6 +223,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     /**
      * Implementation of ComboPopup.show().
      */
+    @SuppressWarnings("deprecation")
     public void show() {
         comboBox.firePopupMenuWillBecomeVisible();
         setListSelection(comboBox.getSelectedIndex());
@@ -234,6 +235,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     /**
      * Implementation of ComboPopup.hide().
      */
+    @SuppressWarnings("deprecation")
     public void hide() {
         MenuSelectionManager manager = MenuSelectionManager.defaultManager();
         MenuElement [] selection = manager.getSelectedPath();
@@ -1032,6 +1034,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     /**
      * Overridden to unconditionally return false.
      */
+    @SuppressWarnings("deprecation")
     public boolean isFocusTraversable() {
         return false;
     }
@@ -1141,7 +1144,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
 
 
     /**
-     * This is is a utility method that helps event handlers figure out where to
+     * This is a utility method that helps event handlers figure out where to
      * send the focus when the popup is brought up.  The standard implementation
      * delegates the focus to the editor (if the combo box is editable) or to
      * the JComboBox if it is not editable.

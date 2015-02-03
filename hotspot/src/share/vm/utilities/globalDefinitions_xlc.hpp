@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -172,21 +172,21 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
 
 // Some constant sizes used throughout the AIX port
-#define SIZE_1K   ((uint64_t)         0x400ULL)
-#define SIZE_4K   ((uint64_t)        0x1000ULL)
-#define SIZE_64K  ((uint64_t)       0x10000ULL)
-#define SIZE_1M   ((uint64_t)      0x100000ULL)
-#define SIZE_4M   ((uint64_t)      0x400000ULL)
-#define SIZE_8M   ((uint64_t)      0x800000ULL)
-#define SIZE_16M  ((uint64_t)     0x1000000ULL)
-#define SIZE_256M ((uint64_t)    0x10000000ULL)
-#define SIZE_1G   ((uint64_t)    0x40000000ULL)
-#define SIZE_2G   ((uint64_t)    0x80000000ULL)
-#define SIZE_4G   ((uint64_t)   0x100000000ULL)
-#define SIZE_16G  ((uint64_t)   0x400000000ULL)
-#define SIZE_32G  ((uint64_t)   0x800000000ULL)
-#define SIZE_64G  ((uint64_t)  0x1000000000ULL)
-#define SIZE_1T   ((uint64_t) 0x10000000000ULL)
+#define SIZE_1K   ((uint64_t) UCONST64(        0x400))
+#define SIZE_4K   ((uint64_t) UCONST64(       0x1000))
+#define SIZE_64K  ((uint64_t) UCONST64(      0x10000))
+#define SIZE_1M   ((uint64_t) UCONST64(     0x100000))
+#define SIZE_4M   ((uint64_t) UCONST64(     0x400000))
+#define SIZE_8M   ((uint64_t) UCONST64(     0x800000))
+#define SIZE_16M  ((uint64_t) UCONST64(    0x1000000))
+#define SIZE_256M ((uint64_t) UCONST64(   0x10000000))
+#define SIZE_1G   ((uint64_t) UCONST64(   0x40000000))
+#define SIZE_2G   ((uint64_t) UCONST64(   0x80000000))
+#define SIZE_4G   ((uint64_t) UCONST64(  0x100000000))
+#define SIZE_16G  ((uint64_t) UCONST64(  0x400000000))
+#define SIZE_32G  ((uint64_t) UCONST64(  0x800000000))
+#define SIZE_64G  ((uint64_t) UCONST64( 0x1000000000))
+#define SIZE_1T   ((uint64_t) UCONST64(0x10000000000))
 
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP

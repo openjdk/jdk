@@ -25,7 +25,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 7015589
+ * @bug 7015589 8054565
  * @summary Test that buffering streams are considered closed even when the
  *    close or flush from the underlying stream fails.
  */
@@ -165,7 +165,7 @@ public class FailingFlushAndClose {
         }
     }
 
-    static void testFailingClose(InputStream in) throws IOException {
+    static InputStream testFailingClose(InputStream in) throws IOException {
         System.out.println(in.getClass());
         in.read(new byte[100]);
         try {
@@ -176,9 +176,10 @@ public class FailingFlushAndClose {
             in.read(new byte[100]);
             fail("read did not fail");
         } catch (IOException expected) { }
+        return in;
     }
 
-    static void testFailingClose(OutputStream out) throws IOException {
+    static OutputStream testFailingClose(OutputStream out) throws IOException {
         System.out.println(out.getClass());
         out.write(1);
         try {
@@ -190,9 +191,10 @@ public class FailingFlushAndClose {
             if (!(out instanceof BufferedOutputStream))
                 fail("write did not fail");
         } catch (IOException expected) { }
+        return out;
     }
 
-    static void testFailingFlush(OutputStream out) throws IOException {
+    static OutputStream testFailingFlush(OutputStream out) throws IOException {
         System.out.println(out.getClass());
         out.write(1);
         try {
@@ -206,9 +208,27 @@ public class FailingFlushAndClose {
                 fail("close did not fail");
             } catch (IOException expected) { }
         }
+        return out;
     }
 
-    static void testFailingClose(Reader r) throws IOException {
+    static void closeAgain(InputStream in) throws IOException {
+        // assert the given stream should already be closed.
+        try {
+            in.close();
+        } catch (IOException expected) {
+            fail("unexpected IOException from subsequent close");
+        }
+    }
+    static void closeAgain(OutputStream out) throws IOException {
+        // assert the given stream should already be closed.
+        try {
+            out.close();
+        } catch (IOException expected) {
+            fail("unexpected IOException from subsequent close");
+        }
+    }
+
+    static Reader testFailingClose(Reader r) throws IOException {
         System.out.println(r.getClass());
         r.read(new char[100]);
         try {
@@ -219,9 +239,10 @@ public class FailingFlushAndClose {
             r.read(new char[100]);
             fail("read did not fail");
         } catch (IOException expected) { }
+        return r;
     }
 
-    static void testFailingClose(Writer w) throws IOException {
+    static Writer testFailingClose(Writer w) throws IOException {
         System.out.println(w.getClass());
         w.write("message");
         try {
@@ -232,9 +253,10 @@ public class FailingFlushAndClose {
             w.write("another message");
             fail("write did not fail");
         } catch (IOException expected) { }
+        return w;
     }
 
-    static void testFailingFlush(Writer w) throws IOException {
+    static Writer testFailingFlush(Writer w) throws IOException {
         System.out.println(w.getClass());
         w.write("message");
         try {
@@ -249,18 +271,38 @@ public class FailingFlushAndClose {
                 fail("close did not fail");
             } catch (IOException expected) { }
         }
+        return w;
+    }
+
+    static Reader closeAgain(Reader r) throws IOException {
+        // assert the given stream should already be closed.
+        try {
+            r.close();
+        } catch (IOException expected) {
+            fail("unexpected IOException from subsequent close");
+        }
+        return r;
+    }
+    static Writer closeAgain(Writer w) throws IOException {
+        // assert the given stream should already be closed.
+        try {
+            w.close();
+        } catch (IOException expected) {
+            fail("unexpected IOException from subsequent close");
+        }
+        return w;
     }
 
     public static void main(String[] args) throws IOException {
 
-        testFailingClose(new BufferedInputStream(new FailingCloseInputStream()));
-        testFailingClose(new BufferedOutputStream(new FailingCloseOutputStream()));
+        closeAgain(testFailingClose(new BufferedInputStream(new FailingCloseInputStream())));
+        closeAgain(testFailingClose(new BufferedOutputStream(new FailingCloseOutputStream())));
 
-        testFailingClose(new BufferedReader(new FailingCloseReader()));
-        testFailingClose(new BufferedWriter(new FailingCloseWriter()));
+        closeAgain(testFailingClose(new BufferedReader(new FailingCloseReader())));
+        closeAgain(testFailingClose(new BufferedWriter(new FailingCloseWriter())));
 
-        testFailingFlush(new BufferedOutputStream(new FailingFlushOutputStream()));
-        testFailingFlush(new BufferedWriter(new FailingFlushWriter()));
+        closeAgain(testFailingFlush(new BufferedOutputStream(new FailingFlushOutputStream())));
+        closeAgain(testFailingFlush(new BufferedWriter(new FailingFlushWriter())));
 
         if (failed > 0)
             throw new RuntimeException(failed + " test(s) failed - see log for details");

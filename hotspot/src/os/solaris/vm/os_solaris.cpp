@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1474,6 +1474,16 @@ jlong os::javaTimeMillis() {
   }
   return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
 }
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  timeval t;
+  if (gettimeofday(&t, NULL) == -1) {
+    fatal(err_msg("os::javaTimeSystemUTC: gettimeofday (%s)", strerror(errno)));
+  }
+  seconds = jlong(t.tv_sec);
+  nanos = jlong(t.tv_usec) * 1000;
+}
+
 
 jlong os::javaTimeNanos() {
   return (jlong)getTimeNanos();

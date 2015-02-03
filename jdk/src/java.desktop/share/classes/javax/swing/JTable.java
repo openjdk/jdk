@@ -5810,6 +5810,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                where 0 is the first column
      * @return the <code>Component</code> being edited
      */
+    @SuppressWarnings("deprecation")
     public Component prepareEditor(TableCellEditor editor, int row, int column) {
         Object value = getValueAt(row, column);
         boolean isSelected = isCellSelected(row, column);
@@ -8788,6 +8789,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 }
             }
 
+            @SuppressWarnings("deprecation")
             public boolean isFocusTraversable() {
                 AccessibleContext ac = getCurrentAccessibleContext();
                 if (ac instanceof AccessibleComponent) {
@@ -9640,6 +9642,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
              * @see AccessibleState#FOCUSED
              * @see AccessibleStateSet
              */
+            @SuppressWarnings("deprecation")
             public boolean isFocusTraversable() {
                 AccessibleContext ac = getCurrentAccessibleContext();
                 if (ac instanceof AccessibleComponent) {

@@ -303,6 +303,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
             }
         }
 
+        @SuppressWarnings("deprecation")
         public void hide() {
             final Container parent = getParent();
             final Rectangle r = this.getBounds();

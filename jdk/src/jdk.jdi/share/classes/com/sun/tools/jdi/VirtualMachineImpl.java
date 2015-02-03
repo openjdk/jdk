@@ -1250,7 +1250,7 @@ class VirtualMachineImpl extends MirrorImpl
         Long key = id;
 
         /*
-         * Attempt to retrieve an existing object object reference
+         * Attempt to retrieve an existing object reference
          */
         SoftObjectReference ref = objectsByID.get(key);
         if (ref != null) {

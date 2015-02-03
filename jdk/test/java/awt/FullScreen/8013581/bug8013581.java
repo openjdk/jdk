@@ -29,7 +29,6 @@
  * @run main bug8013581
  */
 
-import sun.awt.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -42,12 +41,11 @@ public class bug8013581 {
                 .getLocalGraphicsEnvironment();
         final GraphicsDevice[] devices = ge.getScreenDevices();
 
-        final SunToolkit toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
         final Robot robot = new Robot();
         robot.setAutoDelay(50);
 
         createAndShowGUI();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Exception error = null;
         for (final GraphicsDevice device : devices) {
@@ -56,14 +54,14 @@ public class bug8013581 {
             }
 
             device.setFullScreenWindow(frame);
-            sleep();
+            sleep(robot);
 
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             device.setFullScreenWindow(null);
-            sleep();
+            sleep(robot);
 
             if (listenerCallCounter != 2) {
                 error = new Exception("Test failed: KeyListener called " + listenerCallCounter + " times instead of 2!");
@@ -98,8 +96,8 @@ public class bug8013581 {
         frame.setVisible(true);
     }
 
-    private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+    private static void sleep(Robot robot) {
+        robot.waitForIdle();
         try {
             Thread.sleep(2000);
         } catch (InterruptedException ignored) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,16 @@ package javax.tools;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.Path;
+import java.util.Arrays;
+
+import static javax.tools.FileManagerUtils.*;
 
 /**
- * File manager based on {@linkplain File java.io.File}.  A common way
- * to obtain an instance of this class is using {@linkplain
- * JavaCompiler#getStandardFileManager
- * getStandardFileManager}, for example:
+ * File manager based on {@linkplain File java.io.File} and {@linkplain Path java.nio.file.Path}.
+ *
+ * A common way to obtain an instance of this class is using
+ * {@linkplain JavaCompiler#getStandardFileManager getStandardFileManager}, for example:
  *
  * <pre>
  *   JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -110,7 +113,7 @@ import java.util.*;
  *     <code>file:///C:/Documents%20and%20Settings/UncleBob/BobsApp/Test.java</code>
  *   </li>
  *   <li>
- *     <code>jar:///C:/Documents%20and%20Settings/UncleBob/lib/vendorA.jar!com/vendora/LibraryClass.class</code>
+ *     <code>jar:///C:/Documents%20and%20Settings/UncleBob/lib/vendorA.jar!/com/vendora/LibraryClass.class</code>
  *   </li>
  * </ul>
  * Whereas these are not (reason in parentheses):
@@ -120,7 +123,7 @@ import java.util.*;
  *     and depend on the current directory)
  *   </li>
  *   <li>
- *     <code>jar:lib/vendorA.jar!com/vendora/LibraryClass.class</code>
+ *     <code>jar:lib/vendorA.jar!/com/vendora/LibraryClass.class</code>
  *     (the first half of the path depends on the current directory,
  *     whereas the component after ! is legal)
  *   </li>
@@ -133,6 +136,10 @@ import java.util.*;
  *     (the path is not normalized)
  *   </li>
  * </ul>
+ *
+ * <p>All implementations of this interface must support Path objects representing
+ * files in the {@linkplain java.nio.file.FileSystems#getDefault() default file system.}
+ * It is recommended that implementations should support Path objects from any filesystem.</p>
  *
  * @author Peter von der Ah&eacute;
  * @since 1.6
@@ -147,11 +154,12 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @param a a file object
      * @param b a file object
      * @return true if the given file objects represent the same
-     * canonical file or zip file entry; false otherwise
+     * canonical file, zip file entry or path; false otherwise
      *
      * @throws IllegalArgumentException if either of the arguments
      * were created with another file manager implementation
      */
+    @Override
     boolean isSameFile(FileObject a, FileObject b);
 
     /**
@@ -164,6 +172,27 @@ public interface StandardJavaFileManager extends JavaFileManager {
      */
     Iterable<? extends JavaFileObject> getJavaFileObjectsFromFiles(
         Iterable<? extends File> files);
+
+    /**
+     * Returns file objects representing the given paths.
+     *
+     * <p>The default implementation converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
+     * IllegalArgumentException will be thrown if any of the paths
+     * cannot be converted to a file.
+     *
+     * @param paths a list of paths
+     * @return a list of file objects
+     * @throws IllegalArgumentException if the list of paths includes
+     * a directory or if this file manager does not support any of the
+     * given paths.
+     *
+     * @since 1.9
+     */
+    default Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(
+            Iterable<? extends Path> paths) {
+        return getJavaFileObjectsFromFiles(asFiles(paths));
+    }
 
     /**
      * Returns file objects representing the given files.
@@ -181,6 +210,27 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * elements
      */
     Iterable<? extends JavaFileObject> getJavaFileObjects(File... files);
+
+    /**
+     * Returns file objects representing the given paths.
+     * Convenience method equivalent to:
+     *
+     * <pre>
+     *     getJavaFileObjectsFromPaths({@linkplain java.util.Arrays#asList Arrays.asList}(paths))
+     * </pre>
+     *
+     * @param paths an array of paths
+     * @return a list of file objects
+     * @throws IllegalArgumentException if the array of files includes
+     * a directory
+     * @throws NullPointerException if the given array contains null
+     * elements
+     *
+     * @since 1.9
+     */
+    default Iterable<? extends JavaFileObject> getJavaFileObjects(Path... paths) {
+        return getJavaFileObjectsFromPaths(Arrays.asList(paths));
+    }
 
     /**
      * Returns file objects representing the given file names.
@@ -211,29 +261,94 @@ public interface StandardJavaFileManager extends JavaFileManager {
     Iterable<? extends JavaFileObject> getJavaFileObjects(String... names);
 
     /**
-     * Associates the given path with the given location.  Any
+     * Associates the given search path with the given location.  Any
      * previous value will be discarded.
      *
      * @param location a location
-     * @param path a list of files, if {@code null} use the default
-     * path for this location
+     * @param files a list of files, if {@code null} use the default
+     * search path for this location
      * @see #getLocation
-     * @throws IllegalArgumentException if location is an output
-     * location and path does not contain exactly one element
-     * @throws IOException if location is an output location and path
+     * @throws IllegalArgumentException if {@code location} is an output
+     * location and {@code files} does not contain exactly one element
+     * @throws IOException if {@code location} is an output location and
      * does not represent an existing directory
      */
-    void setLocation(Location location, Iterable<? extends File> path)
+    void setLocation(Location location, Iterable<? extends File> files)
         throws IOException;
 
     /**
-     * Returns the path associated with the given location.
+     * Associates the given search path with the given location.  Any
+     * previous value will be discarded.
+     *
+     * <p>The default implementation converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
+     * IllegalArgumentException will be thrown if any of the paths
+     * cannot be converted to a file.</p>
+     *
+     * @param location a location
+     * @param paths a list of paths, if {@code null} use the default
+     * search path for this location
+     * @see #getLocation
+     * @throws IllegalArgumentException if {@code location} is an output
+     * location and {@code paths} does not contain exactly one element
+     * or if this file manager does not support any of the given paths
+     * @throws IOException if {@code location} is an output location and
+     * {@code paths} does not represent an existing directory
+     *
+     * @since 1.9
+     */
+    default void setLocationFromPaths(Location location, Iterable<? extends Path> paths)
+        throws IOException {
+        setLocation(location, asFiles(paths));
+    }
+
+    /**
+     * Returns the search path associated with the given location.
      *
      * @param location a location
      * @return a list of files or {@code null} if this location has no
-     * associated path
+     * associated search path
+     * @throws IllegalStateException if any element of the search path
+     * cannot be converted to a {@linkplain File}.
+     *
      * @see #setLocation
+     * @see Path#toFile
      */
     Iterable<? extends File> getLocation(Location location);
+
+    /**
+     * Returns the search path associated with the given location.
+     *
+     * @param location a location
+     * @return a list of paths or {@code null} if this location has no
+     * associated search path
+     *
+     * @see #setLocationFromPaths
+     * @since 1.9
+     */
+    default Iterable<? extends Path> getLocationAsPaths(Location location) {
+        return asPaths(getLocation(location));
+    }
+
+    /**
+     * Returns the path, if any, underlying this file object (optional operation).
+     * File objects derived from a {@link java.nio.file.FileSystem FileSystem},
+     * including the default file system, typically have a corresponding underlying
+     * {@link java.nio.file.Path Path} object. In such cases, this method may be
+     * used to access that object.
+     *
+     * <p>The default implementation throws {@link UnsupportedOperationException}
+     * for all files.</p>
+     *
+     * @param file a file object
+     * @return a path representing the same underlying file system artifact
+     * @throws IllegalArgumentException if the file object does not have an underlying path
+     * @throws UnsupportedOperationException if the operation is not supported by this file manager
+     *
+     * @since 1.9
+     */
+    default Path asPath(FileObject file) {
+        throw new UnsupportedOperationException();
+    }
 
 }

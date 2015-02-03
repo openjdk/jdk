@@ -55,27 +55,14 @@ if [ -z "${TESTJAVA}" ]; then
   exit 1
 fi
 
-# See if TESTJAVA points to JRE or JDK
-if [ -d "${TESTJAVA}${FILESEP}jre" ]; then
-    JRE_EXT_DIR=${TESTJAVA}${FILESEP}jre${FILESEP}lib${FILESEP}ext
-else
-    JRE_EXT_DIR=${TESTJAVA}${FILESEP}lib${FILESEP}ext
-fi
-
-if [ -d "${JRE_EXT_DIR}" ]; then
-    NEW_EXT_DIR="${JRE_EXT_DIR}${PATHSEP}${TESTSRC}"
-else
-    NEW_EXT_DIR=${TESTSRC}
-fi
-
 echo "TESTJAVA=${TESTJAVA}"
 echo "TESTSRC=${TESTSRC}"
 echo "TESTCLASSES=${TESTCLASSES}"
 echo "NEW_EXT_DIR=${NEW_EXT_DIR}"
 
 cd ${TESTSRC}
-
-${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTCLASSES} -Djava.ext.dirs=${NEW_EXT_DIR} Bug6299235Test
+echo 
+${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}awtres.jar Bug6299235Test
 
 if [ $? -ne 0 ]
     then

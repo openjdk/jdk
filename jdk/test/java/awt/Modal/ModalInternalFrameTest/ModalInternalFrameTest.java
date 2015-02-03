@@ -34,11 +34,10 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-import sun.awt.*;
-
 public class ModalInternalFrameTest
 {
     private boolean passed = true;
+    private static Robot r;
 
     private JDesktopPane pane1;
     private JDesktopPane pane2;
@@ -139,13 +138,12 @@ public class ModalInternalFrameTest
         r.mouseMove(p.x, p.y);
         r.mousePress(InputEvent.BUTTON1_MASK);
         r.mouseRelease(InputEvent.BUTTON1_MASK);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        r.waitForIdle();
     }
 
     private void start()
         throws Exception
     {
-        Robot r = new Robot();
         r.setAutoDelay(200);
 
         unblocked1 = false;
@@ -193,6 +191,7 @@ public class ModalInternalFrameTest
     public static void main(String[] args)
         throws Exception
     {
+        r = new Robot();
         test = new ModalInternalFrameTest();
         SwingUtilities.invokeAndWait(new Runnable()
         {
@@ -201,7 +200,7 @@ public class ModalInternalFrameTest
                 test.init();
             }
         });
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        r.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable()
         {
             public void run()

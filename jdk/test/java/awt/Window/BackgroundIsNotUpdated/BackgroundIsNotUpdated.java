@@ -27,16 +27,16 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.Window;
-
-import sun.awt.SunToolkit;
 
 /**
  * @test
  * @bug 8001472
  * @summary Background of the window should not depend from the paint()/update()
  * @author Sergey Bylokhov
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main BackgroundIsNotUpdated
  */
 public final class BackgroundIsNotUpdated extends Window {
 
@@ -59,11 +59,12 @@ public final class BackgroundIsNotUpdated extends Window {
         window.setSize(300, 300);
         window.setLocationRelativeTo(null);
         window.setVisible(true);
-        sleep();
-        window.setBackground(Color.GREEN);
-        sleep();
-        final Robot robot = new Robot();
+        window.requestFocus();
+        final ExtendedRobot robot = new ExtendedRobot();
         robot.setAutoDelay(200);
+        robot.waitForIdle(1000);
+        window.setBackground(Color.GREEN);
+        robot.waitForIdle(1000);
         Point point = window.getLocationOnScreen();
         Color color = robot.getPixelColor(point.x + window.getWidth() / 2,
                                           point.y + window.getHeight() / 2);
@@ -71,14 +72,6 @@ public final class BackgroundIsNotUpdated extends Window {
         if (!color.equals(Color.GREEN)) {
             throw new RuntimeException(
                     "Expected: " + Color.GREEN + " , Actual: " + color);
-        }
-    }
-
-    private static void sleep() {
-        try {
-            ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-            Thread.sleep(1000);
-        } catch (InterruptedException ignored) {
         }
     }
 }

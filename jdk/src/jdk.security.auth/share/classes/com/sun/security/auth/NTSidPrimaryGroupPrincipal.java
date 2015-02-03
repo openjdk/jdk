@@ -89,7 +89,7 @@ public class NTSidPrimaryGroupPrincipal extends NTSid {
      * @param o Object to be compared for equality with this
      *          <code>NTSidPrimaryGroupPrincipal</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>NTSidPrimaryGroupPrincipal</code>.
      */
     public boolean equals(Object o) {

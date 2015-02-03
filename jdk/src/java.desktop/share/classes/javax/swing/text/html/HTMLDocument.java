@@ -1345,7 +1345,7 @@ public class HTMLDocument extends DefaultStyledDocument {
     }
 
     /**
-     * Inserts the HTML specified as a string after the the end of the
+     * Inserts the HTML specified as a string after the end of the
      * given element.
      *
      * <p>Consider the following structure (the <code>elem</code>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,6 +57,7 @@ public abstract class Destinations extends Option.Enable {
     public static Group.EnableSet destroot;
     public static Group bufimgdestroot;
     public static Group compatimgdestroot;
+    public static Group volimgdestroot;
 
     public static void init() {
         destroot = new Group.EnableSet(TestEnvironment.globaloptroot,
@@ -79,7 +80,16 @@ public abstract class Destinations extends Option.Enable {
             }
 
             if (ImageTests.hasVolatileImage) {
+                volimgdestroot = new Group.EnableSet(destroot, "volimg",
+                        "Output to Volatile Image");
+
+                volimgdestroot.setHorizontal();
                 new VolatileImg();
+                if (ImageTests.hasTransparentVolatileImage) {
+                    new VolatileImg(Transparency.OPAQUE);
+                    new VolatileImg(Transparency.BITMASK);
+                    new VolatileImg(Transparency.TRANSLUCENT);
+                }
             }
 
             bufimgdestroot = new Group.EnableSet(destroot, "bufimg",
@@ -91,6 +101,8 @@ public abstract class Destinations extends Option.Enable {
             new BufImg(BufferedImage.TYPE_3BYTE_BGR);
             new BufImg(BufferedImage.TYPE_BYTE_INDEXED);
             new BufImg(BufferedImage.TYPE_BYTE_GRAY);
+            new BufImg(BufferedImage.TYPE_4BYTE_ABGR);
+            new BufImg(BufferedImage.TYPE_4BYTE_ABGR_PRE);
             new CustomImg();
         }
     }
@@ -206,18 +218,62 @@ public abstract class Destinations extends Option.Enable {
     }
 
     public static class VolatileImg extends Destinations {
+        private final int transparency;
+
+        public static final String[] ShortNames = {
+                "volimg",
+                "opqvolimg",
+                "bmvolimg",
+                "transvolimg",
+        };
+
+        public static final String[] ShortDescriptions = {
+                "Default",
+                "Opaque",
+                "Bitmask",
+                "Translucent",
+        };
+
+        public static final String[] LongDescriptions = {
+                "Default VolatileImg Image",
+                "Opaque VolatileImg Image",
+                "Bitmask VolatileImg Image",
+                "Translucent VolatileImg Image",
+        };
+
+        public static final String[] ModifierNames = {
+                "VolatileImg()",
+                "VolatileImg(Opaque)",
+                "VolatileImg(Bitmask)",
+                "VolatileImg(Translucent)",
+        };
+
         public VolatileImg() {
-            super(destroot, "volimg", "Output to Volatile Image", false);
+            this(0);
         }
 
-        public String getModifierValueName(Object val) {
-            return "VolatileImg";
+        public VolatileImg(final int transparency) {
+            super(volimgdestroot,
+                  ShortNames[transparency],
+                  ShortDescriptions[transparency],
+                  false);
+            this.transparency = transparency;
         }
 
-        public void setDestination(TestEnvironment env) {
+        public String getModifierValueName(final Object val) {
+            return ModifierNames[transparency];
+        }
+
+        public void setDestination(final TestEnvironment env) {
             Component c = env.getCanvas();
-            env.setTestImage(c.createVolatileImage(env.getWidth(),
-                                                   env.getHeight()));
+            GraphicsConfiguration gc = c.getGraphicsConfiguration();
+            int w = env.getWidth();
+            int h = env.getHeight();
+            if (transparency == 0) {
+                env.setTestImage(gc.createCompatibleVolatileImage(w, h));
+            } else {
+                env.setTestImage(gc.createCompatibleVolatileImage(w, h, transparency));
+            }
         }
     }
 

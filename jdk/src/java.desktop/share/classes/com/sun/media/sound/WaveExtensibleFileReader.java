@@ -167,9 +167,9 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
         for (int i = 0; i < allchannelnames.length; i++) {
             if ((channelmask & m) != 0L) {
                 if (i < channelnames.length) {
-                    sb.append(channelnames[i] + " ");
+                    sb.append(channelnames[i]).append(' ');
                 } else {
-                    sb.append(allchannelnames[i] + " ");
+                    sb.append(allchannelnames[i]).append(' ');
                 }
             }
             m *= 2L;

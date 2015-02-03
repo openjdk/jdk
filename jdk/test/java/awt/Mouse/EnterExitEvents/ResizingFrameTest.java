@@ -28,15 +28,10 @@
  * @author  alexandr.scherbatiy area=awt.event
  * @run main ResizingFrameTest
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class ResizingFrameTest {
 
@@ -46,10 +41,10 @@ public class ResizingFrameTest {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         robot.mouseMove(100, 100);
+        robot.delay(200);
 
         // create a frame under the mouse cursor
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -61,7 +56,8 @@ public class ResizingFrameTest {
         });
 
 
-        toolkit.realSync();
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (mouseEnteredCount != 1 || mouseExitedCount != 0) {
             throw new RuntimeException("No Mouse Entered/Exited events!");
@@ -76,11 +72,11 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
-        robot.delay(200);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (mouseEnteredCount != 1 || mouseExitedCount != 1) {
-            throw new RuntimeException("No Mouse Entered/Exited events!");
+            throw new RuntimeException("No Mouse Entered/Exited events! "+mouseEnteredCount+", "+mouseExitedCount);
         }
 
         // deiconify frame
@@ -92,8 +88,8 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
-        robot.delay(200);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (mouseEnteredCount != 2 || mouseExitedCount != 1) {
             throw new RuntimeException("No Mouse Entered/Exited events!");
@@ -101,8 +97,8 @@ public class ResizingFrameTest {
 
         // move the mouse out of the frame
         robot.mouseMove(500, 500);
-        toolkit.realSync();
-        robot.delay(200);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (mouseEnteredCount != 2 || mouseExitedCount != 2) {
             throw new RuntimeException("No Mouse Entered/Exited events!");
@@ -117,8 +113,8 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
-        robot.delay(200);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (mouseEnteredCount != 3 || mouseExitedCount != 2) {
             throw new RuntimeException("No Mouse Entered/Exited events!");
@@ -134,8 +130,8 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
-        robot.delay(200);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (mouseEnteredCount != 3 || mouseExitedCount != 3) {
             throw new RuntimeException("No Mouse Entered/Exited events!");
@@ -151,8 +147,8 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
-        robot.delay(200);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (mouseEnteredCount != 4 || mouseExitedCount != 3) {
             throw new RuntimeException("No Mouse Entered/Exited events!");
@@ -167,7 +163,7 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         robot.delay(400);
 
         if (mouseEnteredCount != 4 || mouseExitedCount != 4) {
@@ -183,7 +179,7 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         robot.delay(200);
 
         if (mouseEnteredCount != 5 || mouseExitedCount != 4) {
@@ -199,7 +195,7 @@ public class ResizingFrameTest {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         robot.delay(400);
 
 

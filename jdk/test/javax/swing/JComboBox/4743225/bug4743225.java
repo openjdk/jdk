@@ -27,8 +27,6 @@
  * @author Alexander Potochkin
  */
 
-import sun.awt.SunToolkit;
-
 import javax.accessibility.AccessibleContext;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -39,7 +37,6 @@ import javax.swing.plaf.basic.BasicComboPopup;
 import java.awt.FlowLayout;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 
 public class bug4743225 extends JFrame {
@@ -80,21 +77,20 @@ public class bug4743225 extends JFrame {
 
         Robot robot = new Robot();
         robot.setAutoDelay(20);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 new bug4743225().setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // calling this method from main thread is ok
         Point point = cb.getLocationOnScreen();
         robot.mouseMove(point.x + 10, point.y + 10);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 4052440 7200341
+# @bug 4052440 7200341 8062588
 # @summary DateFormatSymbolsProvider tests
-# @run shell ExecTest.sh foo DateFormatSymbolsProviderTest true
+# @run shell ExecTest.sh foo DateFormatSymbolsProviderTest

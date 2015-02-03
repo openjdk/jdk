@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -57,9 +56,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     private final int programPoint;
 
     private final Type type;
-
     private transient Type cachedType;
-    private transient Object cachedTypeFunction;
 
     @Ignore
     private static final Set<TokenType> CAN_OVERFLOW =
@@ -143,24 +140,6 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         }
     }
 
-    private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
-        @Override
-        public Type apply(final Symbol t) {
-            return null;
-        }
-    };
-
-    /**
-     * Return the widest possible type for this operation. This is used for compile time
-     * static type inference
-     *
-     * @return Type
-     */
-    @Override
-    public Type getWidestOperationType() {
-        return getWidestOperationType(UNKNOWN_LOCALS);
-    }
-
     /**
      * Return the widest possible operand type for this operation.
      *
@@ -181,14 +160,15 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         }
     }
 
-    private Type getWidestOperationType(final Function<Symbol, Type> localVariableTypes) {
+    @Override
+    public Type getWidestOperationType() {
         switch (tokenType()) {
         case ADD:
         case ASSIGN_ADD: {
             // Compare this logic to decideType(Type, Type); it's similar, but it handles the optimistic type
             // calculation case while this handles the conservative case.
-            final Type lhsType = lhs.getType(localVariableTypes);
-            final Type rhsType = rhs.getType(localVariableTypes);
+            final Type lhsType = lhs.getType();
+            final Type rhsType = rhs.getType();
             if(lhsType == Type.BOOLEAN && rhsType == Type.BOOLEAN) {
                 // Will always fit in an int, as the value range is [0, 1, 2]. If we didn't treat them specially here,
                 // they'd end up being treated as generic INT operands and their sum would be conservatively considered
@@ -238,8 +218,8 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         case SUB:
         case ASSIGN_MUL:
         case ASSIGN_SUB: {
-            final Type lhsType = lhs.getType(localVariableTypes);
-            final Type rhsType = rhs.getType(localVariableTypes);
+            final Type lhsType = lhs.getType();
+            final Type rhsType = rhs.getType();
             if(lhsType == Type.BOOLEAN && rhsType == Type.BOOLEAN) {
                 return Type.INT;
             }
@@ -253,20 +233,20 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
             return Type.UNDEFINED;
         }
         case ASSIGN: {
-            return rhs.getType(localVariableTypes);
+            return rhs.getType();
         }
         case INSTANCEOF: {
             return Type.BOOLEAN;
         }
         case COMMALEFT: {
-            return lhs.getType(localVariableTypes);
+            return lhs.getType();
         }
         case COMMARIGHT: {
-            return rhs.getType(localVariableTypes);
+            return rhs.getType();
         }
         case AND:
         case OR:{
-            return Type.widestReturnType(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes));
+            return Type.widestReturnType(lhs.getType(), rhs.getType());
         }
         default:
             if (isComparison()) {
@@ -487,11 +467,24 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
 
     /**
      * Set the right hand side expression for this node
-     * @param rhs new left hand side expression
+     * @param rhs new right hand side expression
      * @return a node equivalent to this one except for the requested change.
      */
     public BinaryNode setRHS(final Expression rhs) {
         if (this.rhs == rhs) {
+            return this;
+        }
+        return new BinaryNode(this, lhs, rhs, type, programPoint);
+    }
+
+    /**
+     * Set both the left and the right hand side expression for this node
+     * @param lhs new left hand side expression
+     * @param rhs new left hand side expression
+     * @return a node equivalent to this one except for the requested change.
+     */
+    public BinaryNode setOperands(final Expression lhs, final Expression rhs) {
+        if (this.lhs == lhs && this.rhs == rhs) {
             return this;
         }
         return new BinaryNode(this, lhs, rhs, type, programPoint);
@@ -541,24 +534,22 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
-        if(localVariableTypes == cachedTypeFunction) {
-            return cachedType;
+    public Type getType() {
+        if (cachedType == null) {
+            cachedType = getTypeUncached();
         }
-        cachedType = getTypeUncached(localVariableTypes);
-        cachedTypeFunction = localVariableTypes;
         return cachedType;
     }
 
-    private Type getTypeUncached(final Function<Symbol, Type> localVariableTypes) {
+    private Type getTypeUncached() {
         if(type == OPTIMISTIC_UNDECIDED_TYPE) {
-            return decideType(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes));
+            return decideType(lhs.getType(), rhs.getType());
         }
-        final Type widest = getWidestOperationType(localVariableTypes);
+        final Type widest = getWidestOperationType();
         if(type == null) {
             return widest;
         }
-        return Type.narrowest(widest, Type.widest(type, Type.widest(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes))));
+        return Type.narrowest(widest, Type.widest(type, Type.widest(lhs.getType(), rhs.getType())));
     }
 
     private static Type decideType(final Type lhsType, final Type rhsType) {

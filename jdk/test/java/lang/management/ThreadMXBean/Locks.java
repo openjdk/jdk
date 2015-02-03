@@ -29,17 +29,21 @@
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main/othervm Locks
  */
 
 import java.lang.management.*;
 import java.util.concurrent.Phaser;
+import jdk.testlibrary.LockFreeLogManager;
 
 public class Locks {
     private static final Object objA = new Object();
     private static final Object objB = new Object();
     private static final Object objC = new Object();
     private static final ThreadMXBean tm = ManagementFactory.getThreadMXBean();
+    private static final LockFreeLogManager logger = new LockFreeLogManager();
 
     private static boolean testFailed = false;
 
@@ -126,14 +130,14 @@ public class Locks {
         public void run() {
             synchronized(objA) {
                 // stop here  for LockBThread to hold objB
-                System.out.println("LockAThread about to block on objB");
+                log("LockAThread about to block on objB");
                 p.arriveAndAwaitAdvance(); // Phase 1 (blocking)
                 synchronized(objB) {
                     dummyCounter++;
                 };
             }
             p.arriveAndAwaitAdvance(); // Phase 2 (blocking)
-            System.out.println("LockAThread about to exit");
+            log("LockAThread about to exit");
             // Make sure the current thread is not holding any lock
             assertNoLock(this);
         }
@@ -147,7 +151,7 @@ public class Locks {
         }
         public void run() {
             synchronized(objB) {
-                System.out.println("LockBThread about to block on objC");
+                log("LockBThread about to block on objC");
                 p.arriveAndAwaitAdvance(); // Phase 1 (blocking)
                 // Signal main thread about to block on objC
                 synchronized(objC) {
@@ -155,14 +159,14 @@ public class Locks {
                 };
             }
             p.arriveAndAwaitAdvance(); // Phase 2 (blocking)
-            System.out.println("LockBThread about to exit");
+            log("LockBThread about to exit");
             // Make sure the current thread is not holding any lock
             assertNoLock(this);
         }
     }
 
     private static WaitingThread waiter;
-    private static Object ready = new Object();
+    private static final Object ready = new Object();
     private static CheckerThread checker;
     static class WaitingThread extends Thread {
         private final Phaser p;
@@ -173,9 +177,10 @@ public class Locks {
             super("WaitingThread");
             this.p = p;
         }
+        @Override
         public void run() {
             synchronized(objC) {
-                System.out.println("WaitingThread about to wait on objC");
+                log("WaitingThread about to wait on objC");
                 try {
                     // Signal checker thread, about to wait on objC.
                     waiting = false;
@@ -188,13 +193,13 @@ public class Locks {
                 }
 
                 // block until CheckerThread finishes checking
-                System.out.println("WaitingThread about to block on ready");
+                log("WaitingThread about to block on ready");
                 // signal checker thread that it is about acquire
                 // object ready.
                 p.arriveAndAwaitAdvance(); // Phase 2 (waiting)
                 synchronized(ready) {
                     dummyCounter++;
-                };
+                }
             }
             synchronized(objC) {
                 try {
@@ -208,7 +213,7 @@ public class Locks {
                     testFailed = true;
                 }
             }
-            System.out.println("WaitingThread about to exit waiting on objC 2");
+            log("WaitingThread about to exit waiting on objC 2");
         }
 
         public void waitForWaiting() {
@@ -321,10 +326,10 @@ public class Locks {
     private static ThreadInfo findOwnerInfo(ThreadInfo[] infos, String lock)
             throws Exception {
         ThreadInfo ownerInfo = null;
-        for (int i = 0; i < infos.length; i++) {
-            String blockedLock = infos[i].getLockName();
+        for (ThreadInfo info : infos) {
+            String blockedLock = info.getLockName();
             if (lock.equals(blockedLock)) {
-                long threadId = infos[i].getLockOwnerId();
+                long threadId = info.getLockOwnerId();
                 if (threadId == -1) {
                     throw new RuntimeException("TEST FAILED: " +
                             lock + " expected to have owner");
@@ -355,13 +360,16 @@ public class Locks {
             throws Exception {
         ThreadInfo ownerInfo = null;
         // Find the thread who is blocking on lock
-        for (int i = 0; i < infos.length;  i++) {
-            String blockedLock = infos[i].getLockName();
+        for (ThreadInfo info : infos) {
+            String blockedLock = info.getLockName();
             if (lock.equals(blockedLock)) {
-                System.out.print(infos[i].getThreadName() +
-                        " blocked on " + blockedLock);
-                ownerInfo = infos[i];
+                log("%s blocked on %s", info.getThreadName(), blockedLock);
+                ownerInfo = info;
             }
+        }
+        if (ownerInfo == null) {
+            throw new RuntimeException("TEST FAILED: " +
+                    "Can't retrieve ThreadInfo for the blocked thread");
         }
 
         long[] threads = new long[10];
@@ -370,14 +378,18 @@ public class Locks {
         while (ownerInfo != null && ownerInfo.getThreadState() == Thread.State.BLOCKED) {
             ownerInfo = findOwnerInfo(infos, lock);
             threads[count++] = ownerInfo.getThreadId();
-            System.out.println(" Owner = " + ownerInfo.getThreadName() +
-                    " id = " + ownerInfo.getThreadId());
+            log(" Owner = %s  id = %d",
+                    ownerInfo.getThreadName(),
+                    ownerInfo.getThreadId()
+            );
             lock = ownerInfo.getLockName();
-            System.out.print(ownerInfo.getThreadName() + " Id = " +
-                    ownerInfo.getThreadId() +
-                    " blocked on " + lock);
+            log("%s Id = %d  blocked on %s",
+                    ownerInfo.getThreadName(),
+                    ownerInfo.getThreadId(),
+                    lock
+            );
         }
-        System.out.println();
+        log("");
 
         if (count != expectedThreads.length) {
             throw new RuntimeException("TEST FAILED: " +
@@ -385,10 +397,15 @@ public class Locks {
         }
         for (int i = 0; i < count; i++) {
             if (threads[i] != expectedThreads[i]) {
-                System.out.println("TEST FAILED: " +
-                        "Unexpected thread in the chain " + threads[i] +
-                        " expected to be " + expectedThreads[i]);
+                log("TEST FAILED: Unexpected thread in the chain %s expected to be %s",
+                    threads[i],
+                    expectedThreads[i]
+                );
             }
         }
+    }
+
+    private static void log(String format, Object ... args) {
+        logger.log(format + "%n", args);
     }
 }

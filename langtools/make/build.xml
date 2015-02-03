@@ -527,7 +527,8 @@
                 <build-module-classes module.name="java.compiler"
                                       compilation.kind="@{compilation.kind}" />
                 <build-module-classes module.name="jdk.compiler"
-                                      compilation.kind="@{compilation.kind}" />
+                                      compilation.kind="@{compilation.kind}"
+                                      resource.includes="${javac.resource.includes}" />
                 <build-module-classes module.name="jdk.javadoc"
                                       compilation.kind="@{compilation.kind}" />
                 <build-module-classes module.name="jdk.dev"
@@ -536,10 +537,11 @@
         </macrodef>
     </target>
 
-    <target name="-def-build-module-classes" depends="-def-pcompile">
+    <target name="-def-build-module-classes" depends="-def-pcompile,-def-pparse">
         <macrodef name="build-module-classes">
             <attribute name="module.name"/>
             <attribute name="compilation.kind" default=""/>
+            <attribute name="resource.includes" default="nonExistent" />
             <attribute name="dependencies" default="${@{module.name}.dependencies}"/>
             <attribute name="includes" default="${@{compilation.kind}javac.includes}"/>
             <attribute name="javac.lint.opts" default="${@{compilation.kind}javac.lint.opts}"/>
@@ -583,6 +585,12 @@
                         <path location="${src.dir}"/>
                     </src>
                 </pcompile>
+                <pparse destdir="@{gensrc.dir}"
+                        includes="@{resource.includes}">
+                    <src>
+                        <path location="${src.dir}"/>
+                    </src>
+                </pparse>
                 <copy todir="@{gensrc.dir}">
                     <fileset dir="${src.dir}" includes="@{includes}" />
                     <globmapper from="*.properties-template" to="*.properties"/>
@@ -642,6 +650,28 @@
                 </copy>
             </sequential>
         </macrodef>
+    </target>
+
+    <target name="-def-pparse">
+        <mkdir dir="${build.toolclasses.dir}"/>
+        <copy todir="${build.toolclasses.dir}/propertiesparser" >
+            <fileset dir="make/tools/propertiesparser" includes="**/resources/**"/>
+        </copy>
+        <javac fork="true"
+               source="${boot.javac.source}"
+               target="${boot.javac.target}"
+               executable="${boot.java.home}/bin/javac"
+               srcdir="${make.tools.dir}"
+               includes="propertiesparser/* anttasks/PropertiesParser* anttasks/PathFileSet*"
+               destdir="${build.toolclasses.dir}/"
+               classpath="${ant.core.lib}"
+               bootclasspath="${boot.java.home}/jre/lib/rt.jar"
+               includeantruntime="false">
+            <compilerarg line="${javac.lint.opts}"/>
+        </javac>
+        <taskdef name="pparse"
+                 classname="anttasks.PropertiesParserTask"
+                 classpath="${build.toolclasses.dir}/"/>
     </target>
 
     <target name="-do-depend" if="do.depend">

@@ -68,6 +68,8 @@ public final class Bootstrap {
 
     private static final MethodHandleFunctionality MH = MethodHandleFactory.getFunctionality();
 
+    private static final MethodHandle VOID_TO_OBJECT = MH.constant(Object.class, ScriptRuntime.UNDEFINED);
+
     /**
      * The default dynalink relink threshold for megamorphisism is 8. In the case
      * of object fields only, it is fine. However, with dual fields, in order to get
@@ -189,7 +191,7 @@ public final class Bootstrap {
      * @return true if the obj is an instance of @FunctionalInterface interface
      */
     public static boolean isFunctionalInterfaceObject(final Object obj) {
-        return !JSType.isPrimitive(obj) && (NashornBottomLinker.getFunctionalInterfaceMethod(obj.getClass()) != null);
+        return !JSType.isPrimitive(obj) && (NashornBeansLinker.getFunctionalInterfaceMethod(obj.getClass()) != null);
     }
 
     /**
@@ -481,14 +483,16 @@ public final class Bootstrap {
     private static MethodHandle unboxReturnType(final MethodHandle target, final MethodType newType) {
         final MethodType targetType = target.type();
         final Class<?> oldReturnType = targetType.returnType();
+        final Class<?> newReturnType = newType.returnType();
         if (TypeUtilities.isWrapperType(oldReturnType)) {
-            final Class<?> newReturnType = newType.returnType();
             if (newReturnType.isPrimitive()) {
                 // The contract of setAutoConversionStrategy is such that the difference between newType and targetType
                 // can only be JLS method invocation conversions.
                 assert TypeUtilities.isMethodInvocationConvertible(oldReturnType, newReturnType);
                 return MethodHandles.explicitCastArguments(target, targetType.changeReturnType(newReturnType));
             }
+        } else if (oldReturnType == void.class && newReturnType == Object.class) {
+            return MethodHandles.filterReturnValue(target, VOID_TO_OBJECT);
         }
         return target;
     }

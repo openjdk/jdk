@@ -260,6 +260,7 @@ public class ProgressMonitor implements Accessible
      * @see #setMaximum
      * @see #close
      */
+    @SuppressWarnings("deprecation")
     public void setProgress(int nv) {
         if (nv >= max) {
             close();

@@ -33,13 +33,11 @@ import java.lang.reflect.InvocationTargetException;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
-import sun.awt.SunToolkit;
 
 public class bug4506788 extends JApplet {
 
     private volatile boolean passed = false;
     private JEditorPane jep;
-    private SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
     @Override
     public void init() {
@@ -65,7 +63,7 @@ public class bug4506788 extends JApplet {
             throw new RuntimeException("Robot could not be created");
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point p;
         try {
@@ -78,6 +76,8 @@ public class bug4506788 extends JApplet {
         robot.mouseMove(p.x, p.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.keyPress(KeyEvent.VK_HOME);
+        robot.keyRelease(KeyEvent.VK_HOME);
         robot.keyPress(KeyEvent.VK_RIGHT);
         robot.keyRelease(KeyEvent.VK_RIGHT);
         robot.keyPress(KeyEvent.VK_X);
@@ -85,7 +85,7 @@ public class bug4506788 extends JApplet {
         robot.keyPress(KeyEvent.VK_RIGHT);
         robot.keyRelease(KeyEvent.VK_RIGHT);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!passed) {
             throw new RuntimeException("Test failed.");

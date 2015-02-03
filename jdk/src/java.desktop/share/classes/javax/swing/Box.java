@@ -82,7 +82,7 @@ public class Box extends JComponent implements Accessible {
 
     /**
      * Creates a <code>Box</code> that displays its components
-     * along the the specified axis.
+     * along the specified axis.
      *
      * @param axis  can be {@link BoxLayout#X_AXIS},
      *              {@link BoxLayout#Y_AXIS},

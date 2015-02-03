@@ -478,29 +478,34 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
             <compilation-unit>
                 <package-root>${root}/src/java.base/share/classes</package-root>
+                <package-root>${root}/build/bootstrap/java.base/gensrc</package-root>
                 <built-to>${root}/build/java.base/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/java.compiler/share/classes</package-root>
+                <package-root>${root}/build/bootstrap/java.compiler/gensrc</package-root>
                 <classpath mode="compile">${root}/build/java.base/classes</classpath>
                 <built-to>${root}/build/java.compiler/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/jdk.compiler/share/classes</package-root>
+                <package-root>${root}/build/bootstrap/jdk.compiler/gensrc</package-root>
                 <classpath mode="compile">${root}/build/java.base/classes:${root}/build/java.compiler/classes</classpath>
                 <built-to>${root}/build/jdk.compiler/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/jdk.dev/share/classes</package-root>
+                <package-root>${root}/build/bootstrap/jdk.dev/gensrc</package-root>
                 <classpath mode="compile">${root}/build/java.base/classes:${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes</classpath>
                 <built-to>${root}/build/jdk.dev/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/jdk.javadoc/share/classes</package-root>
+                <package-root>${root}/build/bootstrap/jdk.javadoc/gensrc</package-root>
                 <classpath mode="compile">${root}/build/java.base/classes:${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes</classpath>
                 <built-to>${root}/build/jdk.javadoc/classes</built-to>
                 <source-level>1.8</source-level>

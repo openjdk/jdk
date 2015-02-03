@@ -1929,6 +1929,7 @@ public class SwingUtilities implements SwingConstants
         public void windowDeactivated(WindowEvent e) {
         }
 
+        @SuppressWarnings("deprecation")
         public void show() {
             // This frame can never be shown
         }

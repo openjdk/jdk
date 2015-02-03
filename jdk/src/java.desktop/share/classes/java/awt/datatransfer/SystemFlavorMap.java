@@ -624,6 +624,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         return new ArrayList<>(returnValue);
     }
 
+    @SuppressWarnings("deprecation")
     private static Set<DataFlavor> convertMimeTypeToDataFlavors(
         final String baseType) {
 

@@ -48,93 +48,55 @@ size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
 
 HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
-                                 HeapRegion* hr, ExtendedOopClosure* cl,
-                                 CardTableModRefBS::PrecisionStyle precision,
-                                 FilterKind fk) :
+                                 HeapRegion* hr,
+                                 G1ParPushHeapRSClosure* cl,
+                                 CardTableModRefBS::PrecisionStyle precision) :
   DirtyCardToOopClosure(hr, cl, precision, NULL),
-  _hr(hr), _fk(fk), _g1(g1) { }
+  _hr(hr), _rs_scan(cl), _g1(g1) { }
 
 FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
                                                    OopClosure* oc) :
   _r_bottom(r->bottom()), _r_end(r->end()), _oc(oc) { }
-
-template<class ClosureType>
-HeapWord* walk_mem_region_loop(ClosureType* cl, G1CollectedHeap* g1h,
-                               HeapRegion* hr,
-                               HeapWord* cur, HeapWord* top) {
-  oop cur_oop = oop(cur);
-  size_t oop_size = hr->block_size(cur);
-  HeapWord* next_obj = cur + oop_size;
-  while (next_obj < top) {
-    // Keep filtering the remembered set.
-    if (!g1h->is_obj_dead(cur_oop, hr)) {
-      // Bottom lies entirely below top, so we can call the
-      // non-memRegion version of oop_iterate below.
-      cur_oop->oop_iterate(cl);
-    }
-    cur = next_obj;
-    cur_oop = oop(cur);
-    oop_size = hr->block_size(cur);
-    next_obj = cur + oop_size;
-  }
-  return cur;
-}
 
 void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
                                       HeapWord* bottom,
                                       HeapWord* top) {
   G1CollectedHeap* g1h = _g1;
   size_t oop_size;
-  ExtendedOopClosure* cl2 = NULL;
-
-  FilterIntoCSClosure intoCSFilt(this, g1h, _cl);
-  FilterOutOfRegionClosure outOfRegionFilt(_hr, _cl);
-
-  switch (_fk) {
-  case NoFilterKind:          cl2 = _cl; break;
-  case IntoCSFilterKind:      cl2 = &intoCSFilt; break;
-  case OutOfRegionFilterKind: cl2 = &outOfRegionFilt; break;
-  default:                    ShouldNotReachHere();
-  }
+  HeapWord* cur = bottom;
 
   // Start filtering what we add to the remembered set. If the object is
   // not considered dead, either because it is marked (in the mark bitmap)
   // or it was allocated after marking finished, then we add it. Otherwise
   // we can safely ignore the object.
-  if (!g1h->is_obj_dead(oop(bottom), _hr)) {
-    oop_size = oop(bottom)->oop_iterate(cl2, mr);
+  if (!g1h->is_obj_dead(oop(cur), _hr)) {
+    oop_size = oop(cur)->oop_iterate(_rs_scan, mr);
   } else {
-    oop_size = _hr->block_size(bottom);
+    oop_size = _hr->block_size(cur);
   }
 
-  bottom += oop_size;
+  cur += oop_size;
 
-  if (bottom < top) {
-    // We replicate the loop below for several kinds of possible filters.
-    switch (_fk) {
-    case NoFilterKind:
-      bottom = walk_mem_region_loop(_cl, g1h, _hr, bottom, top);
-      break;
-
-    case IntoCSFilterKind: {
-      FilterIntoCSClosure filt(this, g1h, _cl);
-      bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
-      break;
-    }
-
-    case OutOfRegionFilterKind: {
-      FilterOutOfRegionClosure filt(_hr, _cl);
-      bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
-      break;
-    }
-
-    default:
-      ShouldNotReachHere();
+  if (cur < top) {
+    oop cur_oop = oop(cur);
+    oop_size = _hr->block_size(cur);
+    HeapWord* next_obj = cur + oop_size;
+    while (next_obj < top) {
+      // Keep filtering the remembered set.
+      if (!g1h->is_obj_dead(cur_oop, _hr)) {
+        // Bottom lies entirely below top, so we can call the
+        // non-memRegion version of oop_iterate below.
+        cur_oop->oop_iterate(_rs_scan);
+      }
+      cur = next_obj;
+      cur_oop = oop(cur);
+      oop_size = _hr->block_size(cur);
+      next_obj = cur + oop_size;
     }
 
     // Last object. Need to do dead-obj filtering here too.
-    if (!g1h->is_obj_dead(oop(bottom), _hr)) {
-      oop(bottom)->oop_iterate(cl2, mr);
+    if (!g1h->is_obj_dead(oop(cur), _hr)) {
+      oop(cur)->oop_iterate(_rs_scan, mr);
     }
   }
 }
@@ -200,8 +162,8 @@ void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
          "we should have already filtered out humongous regions");
   assert(_end == orig_end(),
          "we should have already filtered out humongous regions");
-
-  _in_collection_set = false;
+  assert(!_in_collection_set,
+         err_msg("Should not clear heap region %u in the collection set", hrm_index()));
 
   set_allocation_context(AllocationContext::system());
   set_young_index_in_cset(-1);

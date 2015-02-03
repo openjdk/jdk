@@ -86,7 +86,7 @@ public interface CodeInstaller<T> {
      * @param source the script source
      * @param mainClassName the main class name
      * @param classBytes map of class names to class bytes
-     * @param initializers compilation id -> FunctionInitializer map
+     * @param initializers compilation id -&gt; FunctionInitializer map
      * @param constants constants array
      * @param compilationId compilation id
      */

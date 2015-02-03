@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "runtime/thread.inline.hpp"
 
 G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap) :
-    CardTableModRefBSForCTRS(whole_heap)
+    CardTableModRefBS(whole_heap)
 {
   _kind = G1SATBCT;
 }

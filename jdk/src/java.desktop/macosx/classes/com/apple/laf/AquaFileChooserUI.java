@@ -1300,12 +1300,12 @@ public class AquaFileChooserUI extends FileChooserUI {
                 filters = (FileFilter[]) e.getNewValue();
                 fireContentsChanged(this, -1, -1);
             } else if (prop == JFileChooser.FILE_FILTER_CHANGED_PROPERTY) {
-                fireContentsChanged(this, -1, -1);
+                setSelectedItem(e.getNewValue());
             }
         }
 
         public void setSelectedItem(Object filter) {
-            if(filter != null) {
+            if (filter != null && !containsFileFilter(filter)) {
                 getFileChooser().setFileFilter((FileFilter) filter);
                 fireContentsChanged(this, -1, -1);
             }
@@ -1353,6 +1353,10 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
     }
 
+    private boolean containsFileFilter(Object fileFilter) {
+        return Objects.equals(fileFilter, getFileChooser().getFileFilter());
+    }
+
     /**
      * Acts when FilterComboBox has changed the selected item.
      */
@@ -1363,7 +1367,10 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         public void actionPerformed(final ActionEvent e) {
-            getFileChooser().setFileFilter((FileFilter) filterComboBox.getSelectedItem());
+            Object selectedFilter = filterComboBox.getSelectedItem();
+            if (!containsFileFilter(selectedFilter)) {
+                getFileChooser().setFileFilter((FileFilter) selectedFilter);
+            }
         }
     }
 

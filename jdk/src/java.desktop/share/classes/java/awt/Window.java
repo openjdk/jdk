@@ -755,6 +755,7 @@ public class Window extends Container implements Accessible {
      * @see Container#removeNotify
      * @since 1.0
      */
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
             Container parent = this.parent;
@@ -798,6 +799,7 @@ public class Window extends Container implements Accessible {
      * @see Component#isDisplayable
      * @see #setMinimumSize
      */
+    @SuppressWarnings("deprecation")
     public void pack() {
         Container parent = this.parent;
         if (parent != null && parent.getPeer() == null) {
@@ -1070,6 +1072,7 @@ public class Window extends Container implements Accessible {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static void updateChildFocusableWindowState(Window w) {
         if (w.getPeer() != null && w.isShowing()) {
             ((WindowPeer)w.getPeer()).updateFocusableWindowState();
@@ -1157,6 +1160,7 @@ public class Window extends Container implements Accessible {
      * as reported in javadoc. So we need to implement this functionality even if a
      * child overrides dispose() in a wrong way without calling super.dispose().
      */
+    @SuppressWarnings("deprecation")
     void disposeImpl() {
         dispose();
         if (getPeer() != null) {
@@ -3623,6 +3627,7 @@ public class Window extends Container implements Accessible {
      *
      * @since 1.7
      */
+    @SuppressWarnings("deprecation")
     public void setOpacity(float opacity) {
         synchronized (getTreeLock()) {
             if (opacity < 0.0f || opacity > 1.0f) {
@@ -3721,6 +3726,7 @@ public class Window extends Container implements Accessible {
      *
      * @since 1.7
      */
+    @SuppressWarnings("deprecation")
     public void setShape(Shape shape) {
         synchronized (getTreeLock()) {
             if (shape != null) {
@@ -3838,6 +3844,7 @@ public class Window extends Container implements Accessible {
      * @see GraphicsConfiguration#isTranslucencyCapable()
      */
     @Override
+    @SuppressWarnings("deprecation")
     public void setBackground(Color bgColor) {
         Color oldBg = getBackground();
         super.setBackground(bgColor);
@@ -3890,6 +3897,7 @@ public class Window extends Container implements Accessible {
         return bg != null ? bg.getAlpha() == 255 : true;
     }
 
+    @SuppressWarnings("deprecation")
     private void updateWindow() {
         synchronized (getTreeLock()) {
             WindowPeer peer = (WindowPeer)getPeer();
@@ -4080,6 +4088,7 @@ public class Window extends Container implements Accessible {
                 window.securityWarningHeight = height;
             }
 
+            @SuppressWarnings("deprecation")
             public void setSecurityWarningPosition(Window window,
                     Point2D point, float alignmentX, float alignmentY)
             {

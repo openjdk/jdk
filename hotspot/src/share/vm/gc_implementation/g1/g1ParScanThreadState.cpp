@@ -38,6 +38,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
     _g1_rem(g1h->g1_rem_set()),
     _hash_seed(17), _queue_num(queue_num),
     _term_attempts(0),
+    _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
     _age_table(false), _scanner(g1h, rp),
     _strong_roots_time(0), _term_time(0) {
   _scanner.set_par_scan_thread_state(this);
@@ -58,6 +59,12 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
   memset(_surviving_young_words, 0, (size_t) real_length * sizeof(size_t));
 
   _g1_par_allocator = G1ParGCAllocator::create_allocator(_g1h);
+
+  _dest[InCSetState::NotInCSet]    = InCSetState::NotInCSet;
+  // The dest for Young is used when the objects are aged enough to
+  // need to be moved to the next space.
+  _dest[InCSetState::Young]        = InCSetState::Old;
+  _dest[InCSetState::Old]          = InCSetState::Old;
 
   _start = os::elapsedTime();
 }
@@ -150,52 +157,94 @@ void G1ParScanThreadState::trim_queue() {
   } while (!_refs->is_empty());
 }
 
-oop G1ParScanThreadState::copy_to_survivor_space(oop const old,
+HeapWord* G1ParScanThreadState::allocate_in_next_plab(InCSetState const state,
+                                                      InCSetState* dest,
+                                                      size_t word_sz,
+                                                      AllocationContext_t const context) {
+  assert(state.is_in_cset_or_humongous(), err_msg("Unexpected state: " CSETSTATE_FORMAT, state.value()));
+  assert(dest->is_in_cset_or_humongous(), err_msg("Unexpected dest: " CSETSTATE_FORMAT, dest->value()));
+
+  // Right now we only have two types of regions (young / old) so
+  // let's keep the logic here simple. We can generalize it when necessary.
+  if (dest->is_young()) {
+    HeapWord* const obj_ptr = _g1_par_allocator->allocate(InCSetState::Old,
+                                                          word_sz, context);
+    if (obj_ptr == NULL) {
+      return NULL;
+    }
+    // Make sure that we won't attempt to copy any other objects out
+    // of a survivor region (given that apparently we cannot allocate
+    // any new ones) to avoid coming into this slow path.
+    _tenuring_threshold = 0;
+    dest->set_old();
+    return obj_ptr;
+  } else {
+    assert(dest->is_old(), err_msg("Unexpected dest: " CSETSTATE_FORMAT, dest->value()));
+    // no other space to try.
+    return NULL;
+  }
+}
+
+InCSetState G1ParScanThreadState::next_state(InCSetState const state, markOop const m, uint& age) {
+  if (state.is_young()) {
+    age = !m->has_displaced_mark_helper() ? m->age()
+                                          : m->displaced_mark_helper()->age();
+    if (age < _tenuring_threshold) {
+      return state;
+    }
+  }
+  return dest(state);
+}
+
+oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
+                                                 oop const old,
                                                  markOop const old_mark) {
-  size_t word_sz = old->size();
-  HeapRegion* from_region = _g1h->heap_region_containing_raw(old);
+  const size_t word_sz = old->size();
+  HeapRegion* const from_region = _g1h->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
-  int       young_index = from_region->young_index_in_cset()+1;
+  const int young_index = from_region->young_index_in_cset()+1;
   assert( (from_region->is_young() && young_index >  0) ||
          (!from_region->is_young() && young_index == 0), "invariant" );
-  G1CollectorPolicy* g1p = _g1h->g1_policy();
-  uint age = old_mark->has_displaced_mark_helper() ? old_mark->displaced_mark_helper()->age()
-                                                   : old_mark->age();
-  GCAllocPurpose alloc_purpose = g1p->evacuation_destination(from_region, age,
-                                                             word_sz);
-  AllocationContext_t context = from_region->allocation_context();
-  HeapWord* obj_ptr = _g1_par_allocator->allocate(alloc_purpose, word_sz, context);
+  const AllocationContext_t context = from_region->allocation_context();
+
+  uint age = 0;
+  InCSetState dest_state = next_state(state, old_mark, age);
+  HeapWord* obj_ptr = _g1_par_allocator->plab_allocate(dest_state, word_sz, context);
+
+  // PLAB allocations should succeed most of the time, so we'll
+  // normally check against NULL once and that's it.
+  if (obj_ptr == NULL) {
+    obj_ptr = _g1_par_allocator->allocate_direct_or_new_plab(dest_state, word_sz, context);
+    if (obj_ptr == NULL) {
+      obj_ptr = allocate_in_next_plab(state, &dest_state, word_sz, context);
+      if (obj_ptr == NULL) {
+        // This will either forward-to-self, or detect that someone else has
+        // installed a forwarding pointer.
+        return _g1h->handle_evacuation_failure_par(this, old);
+      }
+    }
+  }
+
+  assert(obj_ptr != NULL, "when we get here, allocation should have succeeded");
 #ifndef PRODUCT
   // Should this evacuation fail?
   if (_g1h->evacuation_should_fail()) {
-    if (obj_ptr != NULL) {
-      _g1_par_allocator->undo_allocation(alloc_purpose, obj_ptr, word_sz, context);
-      obj_ptr = NULL;
-    }
-  }
-#endif // !PRODUCT
-
-  if (obj_ptr == NULL) {
-    // This will either forward-to-self, or detect that someone else has
-    // installed a forwarding pointer.
+    // Doing this after all the allocation attempts also tests the
+    // undo_allocation() method too.
+    _g1_par_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
     return _g1h->handle_evacuation_failure_par(this, old);
   }
-
-  oop obj = oop(obj_ptr);
+#endif // !PRODUCT
 
   // We're going to allocate linearly, so might as well prefetch ahead.
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
 
-  oop forward_ptr = old->forward_to_atomic(obj);
+  const oop obj = oop(obj_ptr);
+  const oop forward_ptr = old->forward_to_atomic(obj);
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
 
-    // alloc_purpose is just a hint to allocate() above, recheck the type of region
-    // we actually allocated from and update alloc_purpose accordingly
-    HeapRegion* to_region = _g1h->heap_region_containing_raw(obj_ptr);
-    alloc_purpose = to_region->is_young() ? GCAllocForSurvived : GCAllocForTenured;
-
-    if (g1p->track_object_age(alloc_purpose)) {
+    if (dest_state.is_young()) {
       if (age < markOopDesc::max_age) {
         age++;
       }
@@ -215,13 +264,19 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old,
     }
 
     if (G1StringDedup::is_enabled()) {
-      G1StringDedup::enqueue_from_evacuation(from_region->is_young(),
-                                             to_region->is_young(),
+      const bool is_from_young = state.is_young();
+      const bool is_to_young = dest_state.is_young();
+      assert(is_from_young == _g1h->heap_region_containing_raw(old)->is_young(),
+             "sanity");
+      assert(is_to_young == _g1h->heap_region_containing_raw(obj)->is_young(),
+             "sanity");
+      G1StringDedup::enqueue_from_evacuation(is_from_young,
+                                             is_to_young,
                                              queue_num(),
                                              obj);
     }
 
-    size_t* surv_young_words = surviving_young_words();
+    size_t* const surv_young_words = surviving_young_words();
     surv_young_words[young_index] += word_sz;
 
     if (obj->is_objArray() && arrayOop(obj)->length() >= ParGCArrayScanChunk) {
@@ -232,14 +287,13 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old,
       oop* old_p = set_partial_array_mask(old);
       push_on_queue(old_p);
     } else {
-      // No point in using the slower heap_region_containing() method,
-      // given that we know obj is in the heap.
-      _scanner.set_region(_g1h->heap_region_containing_raw(obj));
+      HeapRegion* const to_region = _g1h->heap_region_containing_raw(obj_ptr);
+      _scanner.set_region(to_region);
       obj->oop_iterate_backwards(&_scanner);
     }
+    return obj;
   } else {
-    _g1_par_allocator->undo_allocation(alloc_purpose, obj_ptr, word_sz, context);
-    obj = forward_ptr;
+    _g1_par_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
+    return forward_ptr;
   }
-  return obj;
 }

@@ -33,24 +33,13 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/concurrentMark.hpp"
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :
   GenRemSet(),
   _cur_youngergen_card_val(youngergenP1_card)
 {
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-      _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap);
-  } else {
-    _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
-  }
-#else
+  guarantee(Universe::heap()->kind() == CollectedHeap::GenCollectedHeap, "sanity");
   _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
-#endif
   _ct_bs->initialize();
   set_bs(_ct_bs);
   _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(jbyte, GenCollectedHeap::max_gens + 1,

@@ -247,7 +247,7 @@ public abstract class UCharacterIterator
 
     //// for StringPrep
     /**
-     * Convenience method for returning the underlying text storage as as string
+     * Convenience method for returning the underlying text storage as a string
      * @return the underlying text storage in the iterator as a string
      * @stable ICU 2.4
      */

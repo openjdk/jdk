@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,15 +199,10 @@ void CodeCache::initialize_heaps() {
   }
   guarantee(NonProfiledCodeHeapSize + ProfiledCodeHeapSize + NonNMethodCodeHeapSize <= ReservedCodeCacheSize, "Size check");
 
-  // Align reserved sizes of CodeHeaps
-  size_t non_method_size   = ReservedCodeSpace::allocation_align_size_up(NonNMethodCodeHeapSize);
-  size_t profiled_size     = ReservedCodeSpace::allocation_align_size_up(ProfiledCodeHeapSize);
-  size_t non_profiled_size = ReservedCodeSpace::allocation_align_size_up(NonProfiledCodeHeapSize);
-
-  // Compute initial sizes of CodeHeaps
-  size_t init_non_method_size   = MIN2(InitialCodeCacheSize, non_method_size);
-  size_t init_profiled_size     = MIN2(InitialCodeCacheSize, profiled_size);
-  size_t init_non_profiled_size = MIN2(InitialCodeCacheSize, non_profiled_size);
+  // Align CodeHeaps
+  size_t alignment = heap_alignment();
+  size_t non_method_size = align_size_up(NonNMethodCodeHeapSize, alignment);
+  size_t profiled_size   = align_size_down(ProfiledCodeHeapSize, alignment);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -216,25 +211,34 @@ void CodeCache::initialize_heaps() {
   //      Profiled nmethods
   //         Non-nmethods
   // ---------- low ------------
-  ReservedCodeSpace rs = reserve_heap_memory(non_profiled_size + profiled_size + non_method_size);
+  ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
   ReservedSpace non_method_space    = rs.first_part(non_method_size);
   ReservedSpace rest                = rs.last_part(non_method_size);
   ReservedSpace profiled_space      = rest.first_part(profiled_size);
   ReservedSpace non_profiled_space  = rest.last_part(profiled_size);
 
   // Non-nmethods (stubs, adapters, ...)
-  add_heap(non_method_space, "CodeHeap 'non-nmethods'", init_non_method_size, CodeBlobType::NonNMethod);
+  add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
   // Tier 2 and tier 3 (profiled) methods
-  add_heap(profiled_space, "CodeHeap 'profiled nmethods'", init_profiled_size, CodeBlobType::MethodProfiled);
+  add_heap(profiled_space, "CodeHeap 'profiled nmethods'", CodeBlobType::MethodProfiled);
   // Tier 1 and tier 4 (non-profiled) methods and native methods
-  add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", init_non_profiled_size, CodeBlobType::MethodNonProfiled);
+  add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
+}
+
+size_t CodeCache::heap_alignment() {
+  // If large page support is enabled, align code heaps according to large
+  // page size to make sure that code cache is covered by large pages.
+  const size_t page_size = os::can_execute_large_page_memory() ?
+             os::page_size_for_region_unaligned(ReservedCodeCacheSize, 8) :
+             os::vm_page_size();
+  return MAX2(page_size, (size_t) os::vm_allocation_granularity());
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   // Determine alignment
   const size_t page_size = os::can_execute_large_page_memory() ?
-          MIN2(os::page_size_for_region(InitialCodeCacheSize, 8),
-               os::page_size_for_region(size, 8)) :
+          MIN2(os::page_size_for_region_aligned(InitialCodeCacheSize, 8),
+               os::page_size_for_region_aligned(size, 8)) :
           os::vm_page_size();
   const size_t granularity = os::vm_allocation_granularity();
   const size_t r_align = MAX2(page_size, granularity);
@@ -284,7 +288,7 @@ const char* CodeCache::get_code_heap_flag_name(int code_blob_type) {
   return NULL;
 }
 
-void CodeCache::add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type) {
+void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type) {
   // Check if heap is needed
   if (!heap_available(code_blob_type)) {
     return;
@@ -295,8 +299,8 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, size_t size_initial
   _heaps->append(heap);
 
   // Reserve Space
+  size_t size_initial = MIN2(InitialCodeCacheSize, rs.size());
   size_initial = round_to(size_initial, os::vm_page_size());
-
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization("Could not reserve enough space for code cache");
   }
@@ -840,7 +844,7 @@ void CodeCache::initialize() {
   } else {
     // Use a single code heap
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
-    add_heap(rs, "CodeCache", InitialCodeCacheSize, CodeBlobType::All);
+    add_heap(rs, "CodeCache", CodeBlobType::All);
   }
 
   // Initialize ICache flush mechanism
@@ -1002,6 +1006,117 @@ void CodeCache::make_marked_nmethods_not_entrant() {
     if (nm->is_marked_for_deoptimization()) {
       nm->make_not_entrant();
     }
+  }
+}
+
+// Flushes compiled methods dependent on dependee.
+void CodeCache::flush_dependents_on(instanceKlassHandle dependee) {
+  assert_lock_strong(Compile_lock);
+
+  if (number_of_nmethods_with_dependencies() == 0) return;
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  KlassDepChange changes(dependee);
+
+  // Compute the dependent nmethods
+  if (mark_for_deoptimization(changes) > 0) {
+    // At least one nmethod has been marked for deoptimization
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+}
+
+// Flushes compiled methods dependent on a particular CallSite
+// instance when its target is different than the given MethodHandle.
+void CodeCache::flush_dependents_on(Handle call_site, Handle method_handle) {
+  assert_lock_strong(Compile_lock);
+
+  if (number_of_nmethods_with_dependencies() == 0) return;
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  CallSiteDepChange changes(call_site(), method_handle());
+
+  // Compute the dependent nmethods that have a reference to a
+  // CallSite object.  We use InstanceKlass::mark_dependent_nmethod
+  // directly instead of CodeCache::mark_for_deoptimization because we
+  // want dependents on the call site class only not all classes in
+  // the ContextStream.
+  int marked = 0;
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    InstanceKlass* call_site_klass = InstanceKlass::cast(call_site->klass());
+    marked = call_site_klass->mark_dependent_nmethods(changes);
+  }
+  if (marked > 0) {
+    // At least one nmethod has been marked for deoptimization
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+}
+
+#ifdef HOTSWAP
+// Flushes compiled methods dependent on dependee in the evolutionary sense
+void CodeCache::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
+  // --- Compile_lock is not held. However we are at a safepoint.
+  assert_locked_or_safepoint(Compile_lock);
+  if (number_of_nmethods_with_dependencies() == 0) return;
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  // Compute the dependent nmethods
+  if (mark_for_evol_deoptimization(ev_k_h) > 0) {
+    // At least one nmethod has been marked for deoptimization
+
+    // All this already happens inside a VM_Operation, so we'll do all the work here.
+    // Stuff copied from VM_Deoptimize and modified slightly.
+
+    // We do not want any GCs to happen while we are in the middle of this VM operation
+    ResourceMark rm;
+    DeoptimizationMarker dm;
+
+    // Deoptimize all activations depending on marked nmethods
+    Deoptimization::deoptimize_dependents();
+
+    // Make the dependent methods not entrant (in VM_Deoptimize they are made zombies)
+    make_marked_nmethods_not_entrant();
+  }
+}
+#endif // HOTSWAP
+
+
+// Flushes compiled methods dependent on dependee
+void CodeCache::flush_dependents_on_method(methodHandle m_h) {
+  // --- Compile_lock is not held. However we are at a safepoint.
+  assert_locked_or_safepoint(Compile_lock);
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped dring the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  // Compute the dependent nmethods
+  if (mark_for_deoptimization(m_h()) > 0) {
+    // At least one nmethod has been marked for deoptimization
+
+    // All this already happens inside a VM_Operation, so we'll do all the work here.
+    // Stuff copied from VM_Deoptimize and modified slightly.
+
+    // We do not want any GCs to happen while we are in the middle of this VM operation
+    ResourceMark rm;
+    DeoptimizationMarker dm;
+
+    // Deoptimize all activations depending on marked nmethods
+    Deoptimization::deoptimize_dependents();
+
+    // Make the dependent methods not entrant (in VM_Deoptimize they are made zombies)
+    make_marked_nmethods_not_entrant();
   }
 }
 

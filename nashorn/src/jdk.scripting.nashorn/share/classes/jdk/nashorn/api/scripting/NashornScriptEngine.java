@@ -65,8 +65,10 @@ import jdk.nashorn.internal.runtime.options.Options;
  * {@link NashornScriptEngineFactory#getScriptEngine()}. Note that this engine implements the {@link Compilable} and
  * {@link Invocable} interfaces, allowing for efficient precompilation and repeated execution of scripts.
  * @see NashornScriptEngineFactory
+ *
+ * @since 1.8u40
  */
-
+@jdk.Exported
 public final class NashornScriptEngine extends AbstractScriptEngine implements Compilable, Invocable {
     /**
      * Key used to associate Nashorn global object mirror with arbitrary Bindings instance.

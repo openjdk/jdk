@@ -553,7 +553,7 @@ public:
         bool Terminate(bool wrongThread);
         bool InvokeAndTerminate(void(_cdecl *fn)(void *), void *param);
 
-        // waits for the the thread completion;
+        // waits for the thread completion;
         // use the method after Terminate() only if Terminate() returned true
         INLINE void Wait4Finish() {
             ::WaitForSingleObject(hFinished, INFINITE);

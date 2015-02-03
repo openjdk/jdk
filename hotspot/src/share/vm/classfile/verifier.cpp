@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1546,23 +1546,28 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = true; break;
         case Bytecodes::_getstatic :
         case Bytecodes::_putstatic :
+          // pass TRUE, operand can be an array type for getstatic/putstatic.
+          verify_field_instructions(
+            &bcs, &current_frame, cp, true, CHECK_VERIFY(this));
+          no_control_flow = false; break;
         case Bytecodes::_getfield :
         case Bytecodes::_putfield :
+          // pass FALSE, operand can't be an array type for getfield/putfield.
           verify_field_instructions(
-            &bcs, &current_frame, cp, CHECK_VERIFY(this));
+            &bcs, &current_frame, cp, false, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_invokevirtual :
         case Bytecodes::_invokespecial :
         case Bytecodes::_invokestatic :
           verify_invoke_instructions(
-            &bcs, code_length, &current_frame,
-            &this_uninit, return_type, cp, CHECK_VERIFY(this));
+            &bcs, code_length, &current_frame, (bci >= ex_min && bci < ex_max),
+            &this_uninit, return_type, cp, &stackmap_table, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_invokeinterface :
         case Bytecodes::_invokedynamic :
           verify_invoke_instructions(
-            &bcs, code_length, &current_frame,
-            &this_uninit, return_type, cp, CHECK_VERIFY(this));
+            &bcs, code_length, &current_frame, (bci >= ex_min && bci < ex_max),
+            &this_uninit, return_type, cp, &stackmap_table, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_new :
         {
@@ -1945,7 +1950,7 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
   InstanceKlass* target_instance = InstanceKlass::cast(target_class);
   fieldDescriptor fd;
   if (is_method) {
-    Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::normal);
+    Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::find_overpass);
     if (m != NULL && m->is_protected()) {
       if (!this_class->is_same_class_package(m->method_holder())) {
         return true;
@@ -2107,6 +2112,7 @@ bool ClassVerifier::name_in_supers(
 void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
                                               StackMapFrame* current_frame,
                                               constantPoolHandle cp,
+                                              bool allow_arrays,
                                               TRAPS) {
   u2 index = bcs->get_index_u2();
   verify_cp_type(bcs->bci(), index, cp,
@@ -2126,8 +2132,8 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   // Get referenced class type
   VerificationType ref_class_type = cp_ref_index_to_type(
     index, cp, CHECK_VERIFY(this));
-  if (!ref_class_type.is_object()) {
-    /* Unreachable?  Class file parser verifies Fieldref contents */
+  if (!ref_class_type.is_object() &&
+    (!allow_arrays || !ref_class_type.is_array())) {
     verify_error(ErrorContext::bad_type(bcs->bci(),
         TypeOrigin::cp(index, ref_class_type)),
         "Expecting reference to class in class %s at constant pool index %d",
@@ -2406,8 +2412,9 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
 
 void ClassVerifier::verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_class_index, VerificationType ref_class_type,
-    StackMapFrame* current_frame, u4 code_length, bool *this_uninit,
-    constantPoolHandle cp, TRAPS) {
+    StackMapFrame* current_frame, u4 code_length, bool in_try_block,
+    bool *this_uninit, constantPoolHandle cp, StackMapTable* stackmap_table,
+    TRAPS) {
   u2 bci = bcs->bci();
   VerificationType type = current_frame->pop_stack(
     VerificationType::reference_check(), CHECK_VERIFY(this));
@@ -2423,28 +2430,36 @@ void ClassVerifier::verify_invoke_init(
       return;
     }
 
-    // Check if this call is done from inside of a TRY block.  If so, make
-    // sure that all catch clause paths end in a throw.  Otherwise, this
-    // can result in returning an incomplete object.
-    ExceptionTable exhandlers(_method());
-    int exlength = exhandlers.length();
-    for(int i = 0; i < exlength; i++) {
-      u2 start_pc = exhandlers.start_pc(i);
-      u2 end_pc = exhandlers.end_pc(i);
+    // If this invokespecial call is done from inside of a TRY block then make
+    // sure that all catch clause paths end in a throw.  Otherwise, this can
+    // result in returning an incomplete object.
+    if (in_try_block) {
+      ExceptionTable exhandlers(_method());
+      int exlength = exhandlers.length();
+      for(int i = 0; i < exlength; i++) {
+        u2 start_pc = exhandlers.start_pc(i);
+        u2 end_pc = exhandlers.end_pc(i);
 
-      if (bci >= start_pc && bci < end_pc) {
-        if (!ends_in_athrow(exhandlers.handler_pc(i))) {
-          verify_error(ErrorContext::bad_code(bci),
-            "Bad <init> method call from after the start of a try block");
-          return;
-        } else if (VerboseVerification) {
-          ResourceMark rm;
-          tty->print_cr(
-            "Survived call to ends_in_athrow(): %s",
-                        current_class()->name()->as_C_string());
+        if (bci >= start_pc && bci < end_pc) {
+          if (!ends_in_athrow(exhandlers.handler_pc(i))) {
+            verify_error(ErrorContext::bad_code(bci),
+              "Bad <init> method call from after the start of a try block");
+            return;
+          } else if (VerboseVerification) {
+            ResourceMark rm;
+            tty->print_cr(
+              "Survived call to ends_in_athrow(): %s",
+              current_class()->name()->as_C_string());
+          }
         }
       }
-    }
+
+      // Check the exception handler target stackmaps with the locals from the
+      // incoming stackmap (before initialize_object() changes them to outgoing
+      // state).
+      verify_exception_handler_targets(bci, true, current_frame,
+                                       stackmap_table, CHECK_VERIFY(this));
+    } // in_try_block
 
     current_frame->initialize_object(type, current_type());
     *this_uninit = true;
@@ -2477,12 +2492,11 @@ void ClassVerifier::verify_invoke_init(
     // of the current class.
     VerificationType objectref_type = new_class_type;
     if (name_in_supers(ref_class_type.name(), current_class())) {
-      Klass* ref_klass = load_class(
-        ref_class_type.name(), CHECK_VERIFY(this));
+      Klass* ref_klass = load_class(ref_class_type.name(), CHECK);
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
         cp->signature_ref_at(bcs->get_index_u2()),
-        Klass::normal);
+        Klass::find_overpass);
       // Do nothing if method is not found.  Let resolution detect the error.
       if (m != NULL) {
         instanceKlassHandle mh(THREAD, m->method_holder());
@@ -2498,6 +2512,13 @@ void ClassVerifier::verify_invoke_init(
           }
         }
       }
+    }
+    // Check the exception handler target stackmaps with the locals from the
+    // incoming stackmap (before initialize_object() changes them to outgoing
+    // state).
+    if (in_try_block) {
+      verify_exception_handler_targets(bci, *this_uninit, current_frame,
+                                       stackmap_table, CHECK_VERIFY(this));
     }
     current_frame->initialize_object(type, new_class_type);
   } else {
@@ -2527,8 +2548,8 @@ bool ClassVerifier::is_same_or_direct_interface(
 
 void ClassVerifier::verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool *this_uninit, VerificationType return_type,
-    constantPoolHandle cp, TRAPS) {
+    bool in_try_block, bool *this_uninit, VerificationType return_type,
+    constantPoolHandle cp, StackMapTable* stackmap_table, TRAPS) {
   // Make sure the constant pool item is the right type
   u2 index = bcs->get_index_u2();
   Bytecodes::Code opcode = bcs->raw_code();
@@ -2694,7 +2715,8 @@ void ClassVerifier::verify_invoke_instructions(
       opcode != Bytecodes::_invokedynamic) {
     if (method_name == vmSymbols::object_initializer_name()) {  // <init> method
       verify_invoke_init(bcs, index, ref_class_type, current_frame,
-        code_length, this_uninit, cp, CHECK_VERIFY(this));
+        code_length, in_try_block, this_uninit, cp, stackmap_table,
+        CHECK_VERIFY(this));
     } else {   // other methods
       // Ensures that target class is assignable to method class.
       if (opcode == Bytecodes::_invokespecial) {

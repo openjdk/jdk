@@ -772,7 +772,7 @@ public class AnnotationParser {
     }
 
     /**
-     * Return an appropriate exception proxy for a mismatching array
+     * Returns an appropriate exception proxy for a mismatching array
      * annotation where the erroneous array has the specified tag.
      */
     private static ExceptionProxy exceptionProxy(int tag) {

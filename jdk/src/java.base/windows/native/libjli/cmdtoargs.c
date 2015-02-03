@@ -26,7 +26,7 @@
 
 /*
  * Converts a single string command line to the traditional argc, argv.
- * There are rules which govern the breaking of the the arguments, and
+ * There are rules which govern the breaking of the arguments, and
  * these rules are embodied in the regression tests below, and duplicated
  * in the jdk regression tests.
  */

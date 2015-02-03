@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -925,8 +925,8 @@ bool Arguments::process_argument(const char* arg,
                     "Warning: support for %s was removed in %s\n",
                     fuzzy_matched->_name,
                     version);
-      }
     }
+  }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
@@ -1126,16 +1126,35 @@ static void no_shared_spaces(const char* message) {
 }
 #endif
 
-// Returns threshold scaled with CompileThresholdScaling
-intx Arguments::get_scaled_compile_threshold(intx threshold) {
-  return (intx)(threshold * CompileThresholdScaling);
+intx Arguments::scaled_compile_threshold(intx threshold, double scale) {
+  if (scale == 1.0 || scale <= 0.0) {
+    return threshold;
+  } else {
+    return (intx)(threshold * scale);
+  }
 }
 
 // Returns freq_log scaled with CompileThresholdScaling
-intx Arguments::get_scaled_freq_log(intx freq_log) {
-  intx scaled_freq = get_scaled_compile_threshold((intx)1 << freq_log);
-  if (scaled_freq == 0) {
-    return 0;
+intx Arguments::scaled_freq_log(intx freq_log, double scale) {
+  // Check if scaling is necessary or negative value was specified.
+  if (scale == 1.0 || scale < 0.0) {
+    return freq_log;
+  }
+
+  // Check value to avoid calculating log2 of 0.
+  if (scale == 0.0) {
+    return freq_log;
+  }
+
+  intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
+  // Determine the maximum notification frequency value currently supported.
+  // The largest mask value that the interpreter/C1 can handle is
+  // of length InvocationCounter::number_of_count_bits. Mask values are always
+  // one bit shorter then the value of the notification frequency. Set
+  // max_freq_bits accordingly.
+  intx max_freq_bits = InvocationCounter::number_of_count_bits + 1;
+  if (scaled_freq > nth_bit(max_freq_bits)) {
+    return max_freq_bits;
   } else {
     return log2_intptr(scaled_freq);
   }
@@ -1180,31 +1199,36 @@ void Arguments::set_tiered_flags() {
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
   }
+
+  if (CompileThresholdScaling < 0) {
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
+  }
+
   // Scale tiered compilation thresholds
   if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
-    FLAG_SET_ERGO(intx, Tier0InvokeNotifyFreqLog, get_scaled_freq_log(Tier0InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(intx, Tier0BackedgeNotifyFreqLog, get_scaled_freq_log(Tier0BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier0InvokeNotifyFreqLog, scaled_freq_log(Tier0InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier0BackedgeNotifyFreqLog, scaled_freq_log(Tier0BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier3InvocationThreshold, get_scaled_compile_threshold(Tier3InvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier3MinInvocationThreshold, get_scaled_compile_threshold(Tier3MinInvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier3CompileThreshold, get_scaled_compile_threshold(Tier3CompileThreshold));
-    FLAG_SET_ERGO(intx, Tier3BackEdgeThreshold, get_scaled_compile_threshold(Tier3BackEdgeThreshold));
+    FLAG_SET_ERGO(intx, Tier3InvocationThreshold, scaled_compile_threshold(Tier3InvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier3MinInvocationThreshold, scaled_compile_threshold(Tier3MinInvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier3CompileThreshold, scaled_compile_threshold(Tier3CompileThreshold));
+    FLAG_SET_ERGO(intx, Tier3BackEdgeThreshold, scaled_compile_threshold(Tier3BackEdgeThreshold));
 
     // Tier2{Invocation,MinInvocation,Compile,Backedge}Threshold should be scaled here
     // once these thresholds become supported.
 
-    FLAG_SET_ERGO(intx, Tier2InvokeNotifyFreqLog, get_scaled_freq_log(Tier2InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(intx, Tier2BackedgeNotifyFreqLog, get_scaled_freq_log(Tier2BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier2InvokeNotifyFreqLog, scaled_freq_log(Tier2InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier2BackedgeNotifyFreqLog, scaled_freq_log(Tier2BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier3InvokeNotifyFreqLog, get_scaled_freq_log(Tier3InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(intx, Tier3BackedgeNotifyFreqLog, get_scaled_freq_log(Tier3BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier3InvokeNotifyFreqLog, scaled_freq_log(Tier3InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier3BackedgeNotifyFreqLog, scaled_freq_log(Tier3BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier23InlineeNotifyFreqLog, get_scaled_freq_log(Tier23InlineeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier23InlineeNotifyFreqLog, scaled_freq_log(Tier23InlineeNotifyFreqLog));
 
-    FLAG_SET_ERGO(intx, Tier4InvocationThreshold, get_scaled_compile_threshold(Tier4InvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier4MinInvocationThreshold, get_scaled_compile_threshold(Tier4MinInvocationThreshold));
-    FLAG_SET_ERGO(intx, Tier4CompileThreshold, get_scaled_compile_threshold(Tier4CompileThreshold));
-    FLAG_SET_ERGO(intx, Tier4BackEdgeThreshold, get_scaled_compile_threshold(Tier4BackEdgeThreshold));
+    FLAG_SET_ERGO(intx, Tier4InvocationThreshold, scaled_compile_threshold(Tier4InvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier4MinInvocationThreshold, scaled_compile_threshold(Tier4MinInvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier4CompileThreshold, scaled_compile_threshold(Tier4CompileThreshold));
+    FLAG_SET_ERGO(intx, Tier4BackEdgeThreshold, scaled_compile_threshold(Tier4BackEdgeThreshold));
   }
 }
 
@@ -1382,41 +1406,24 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   if (FLAG_IS_DEFAULT(SurvivorRatio) && MaxTenuringThreshold == 0) {
     FLAG_SET_ERGO(uintx, SurvivorRatio, MAX2((uintx)1024, SurvivorRatio));
   }
-  // If OldPLABSize is set and CMSParPromoteBlocksToClaim is not,
-  // set CMSParPromoteBlocksToClaim equal to OldPLABSize.
-  // This is done in order to make ParNew+CMS configuration to work
-  // with YoungPLABSize and OldPLABSize options.
-  // See CR 6362902.
-  if (!FLAG_IS_DEFAULT(OldPLABSize)) {
-    if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
-      // OldPLABSize is not the default value but CMSParPromoteBlocksToClaim
-      // is.  In this situation let CMSParPromoteBlocksToClaim follow
-      // the value (either from the command line or ergonomics) of
-      // OldPLABSize.  Following OldPLABSize is an ergonomics decision.
-      FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, OldPLABSize);
+
+  // OldPLABSize is interpreted in CMS as not the size of the PLAB in words,
+  // but rather the number of free blocks of a given size that are used when
+  // replenishing the local per-worker free list caches.
+  if (FLAG_IS_DEFAULT(OldPLABSize)) {
+    if (!FLAG_IS_DEFAULT(ResizeOldPLAB) && !ResizeOldPLAB) {
+      // OldPLAB sizing manually turned off: Use a larger default setting,
+      // unless it was manually specified. This is because a too-low value
+      // will slow down scavenges.
+      FLAG_SET_ERGO(uintx, OldPLABSize, CFLS_LAB::_default_static_old_plab_size); // default value before 6631166
     } else {
-      // OldPLABSize and CMSParPromoteBlocksToClaim are both set.
-      // CMSParPromoteBlocksToClaim is a collector-specific flag, so
-      // we'll let it to take precedence.
-      jio_fprintf(defaultStream::error_stream(),
-                  "Both OldPLABSize and CMSParPromoteBlocksToClaim"
-                  " options are specified for the CMS collector."
-                  " CMSParPromoteBlocksToClaim will take precedence.\n");
+      FLAG_SET_DEFAULT(OldPLABSize, CFLS_LAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
     }
   }
-  if (!FLAG_IS_DEFAULT(ResizeOldPLAB) && !ResizeOldPLAB) {
-    // OldPLAB sizing manually turned off: Use a larger default setting,
-    // unless it was manually specified. This is because a too-low value
-    // will slow down scavenges.
-    if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
-      FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, 50); // default value before 6631166
-    }
-  }
-  // Overwrite OldPLABSize which is the variable we will internally use everywhere.
-  FLAG_SET_ERGO(uintx, OldPLABSize, CMSParPromoteBlocksToClaim);
+
   // If either of the static initialization defaults have changed, note this
   // modification.
-  if (!FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
+  if (!FLAG_IS_DEFAULT(OldPLABSize) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
     CFLS_LAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
   if (PrintGCDetails && Verbose) {
@@ -1539,15 +1546,6 @@ void Arguments::set_use_compressed_oops() {
       FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
 #endif
-#ifdef _WIN64
-    if (UseLargePages && UseCompressedOops) {
-      // Cannot allocate guard pages for implicit checks in indexed addressing
-      // mode, when large pages are specified on windows.
-      // This flag could be switched ON if narrow oop base address is set to 0,
-      // see code in Universe::initialize_heap().
-      Universe::set_narrow_oop_use_implicit_null_checks(false);
-    }
-#endif //  _WIN64
   } else {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
@@ -2433,6 +2431,7 @@ bool Arguments::check_vm_args_consistency() {
 #ifdef COMPILER1
   status = status && verify_min_value(ValueMapInitialSize, 1, "ValueMapInitialSize");
 #endif
+  status = status && verify_min_value(HeapSearchSteps, 1, "HeapSearchSteps");
 
   if (PrintNMTStatistics) {
 #if INCLUDE_NMT
@@ -3225,52 +3224,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         FLAG_SET_CMDLINE(bool, NeverTenure, false);
         FLAG_SET_CMDLINE(bool, AlwaysTenure, false);
       }
-    } else if (match_option(option, "-XX:+CMSPermGenSweepingEnabled") ||
-               match_option(option, "-XX:-CMSPermGenSweepingEnabled")) {
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use CMSClassUnloadingEnabled in place of "
-        "CMSPermGenSweepingEnabled in the future\n");
-    } else if (match_option(option, "-XX:+UseGCTimeLimit")) {
-      FLAG_SET_CMDLINE(bool, UseGCOverheadLimit, true);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:+UseGCOverheadLimit in place of "
-        "-XX:+UseGCTimeLimit in the future\n");
-    } else if (match_option(option, "-XX:-UseGCTimeLimit")) {
-      FLAG_SET_CMDLINE(bool, UseGCOverheadLimit, false);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:-UseGCOverheadLimit in place of "
-        "-XX:-UseGCTimeLimit in the future\n");
-    // The TLE options are for compatibility with 1.3 and will be
-    // removed without notice in a future release.  These options
-    // are not to be documented.
-    } else if (match_option(option, "-XX:MaxTLERatio=", &tail)) {
-      // No longer used.
-    } else if (match_option(option, "-XX:+ResizeTLE")) {
-      FLAG_SET_CMDLINE(bool, ResizeTLAB, true);
-    } else if (match_option(option, "-XX:-ResizeTLE")) {
-      FLAG_SET_CMDLINE(bool, ResizeTLAB, false);
-    } else if (match_option(option, "-XX:+PrintTLE")) {
-      FLAG_SET_CMDLINE(bool, PrintTLAB, true);
-    } else if (match_option(option, "-XX:-PrintTLE")) {
-      FLAG_SET_CMDLINE(bool, PrintTLAB, false);
-    } else if (match_option(option, "-XX:TLEFragmentationRatio=", &tail)) {
-      // No longer used.
-    } else if (match_option(option, "-XX:TLESize=", &tail)) {
-      julong long_tlab_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_tlab_size, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid TLAB size: %s\n", option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
-      }
-      FLAG_SET_CMDLINE(uintx, TLABSize, long_tlab_size);
-    } else if (match_option(option, "-XX:TLEThreadRatio=", &tail)) {
-      // No longer used.
-    } else if (match_option(option, "-XX:+UseTLE")) {
-      FLAG_SET_CMDLINE(bool, UseTLAB, true);
-    } else if (match_option(option, "-XX:-UseTLE")) {
-      FLAG_SET_CMDLINE(bool, UseTLAB, false);
     } else if (match_option(option, "-XX:+DisplayVMOutputToStderr")) {
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStdout, false);
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStderr, true);
@@ -3294,44 +3247,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // disable scavenge before parallel mark-compact
       FLAG_SET_CMDLINE(bool, ScavengeBeforeFullGC, false);
 #endif
-    } else if (match_option(option, "-XX:CMSParPromoteBlocksToClaim=", &tail)) {
-      julong cms_blocks_to_claim = (julong)atol(tail);
-      FLAG_SET_CMDLINE(uintx, CMSParPromoteBlocksToClaim, cms_blocks_to_claim);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:OldPLABSize in place of "
-        "-XX:CMSParPromoteBlocksToClaim in the future\n");
-    } else if (match_option(option, "-XX:ParCMSPromoteBlocksToClaim=", &tail)) {
-      julong cms_blocks_to_claim = (julong)atol(tail);
-      FLAG_SET_CMDLINE(uintx, CMSParPromoteBlocksToClaim, cms_blocks_to_claim);
-      jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:OldPLABSize in place of "
-        "-XX:ParCMSPromoteBlocksToClaim in the future\n");
-    } else if (match_option(option, "-XX:ParallelGCOldGenAllocBufferSize=", &tail)) {
-      julong old_plab_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &old_plab_size, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid old PLAB size: %s\n", option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
-      }
-      FLAG_SET_CMDLINE(uintx, OldPLABSize, old_plab_size);
-      jio_fprintf(defaultStream::error_stream(),
-                  "Please use -XX:OldPLABSize in place of "
-                  "-XX:ParallelGCOldGenAllocBufferSize in the future\n");
-    } else if (match_option(option, "-XX:ParallelGCToSpaceAllocBufferSize=", &tail)) {
-      julong young_plab_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &young_plab_size, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid young PLAB size: %s\n", option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
-      }
-      FLAG_SET_CMDLINE(uintx, YoungPLABSize, young_plab_size);
-      jio_fprintf(defaultStream::error_stream(),
-                  "Please use -XX:YoungPLABSize in place of "
-                  "-XX:ParallelGCToSpaceAllocBufferSize in the future\n");
     } else if (match_option(option, "-XX:CMSMarkStackSize=", &tail) ||
                match_option(option, "-XX:G1MarkStackSize=", &tail)) {
       julong stack_size = 0;
@@ -3342,6 +3257,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
+      jio_fprintf(defaultStream::error_stream(),
+        "Please use -XX:MarkStackSize in place of "
+        "-XX:CMSMarkStackSize or -XX:G1MarkStackSize in the future\n");
       FLAG_SET_CMDLINE(uintx, MarkStackSize, stack_size);
     } else if (match_option(option, "-XX:CMSMarkStackSizeMax=", &tail)) {
       julong max_stack_size = 0;
@@ -3353,6 +3271,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
+      jio_fprintf(defaultStream::error_stream(),
+         "Please use -XX:MarkStackSizeMax in place of "
+         "-XX:CMSMarkStackSizeMax in the future\n");
       FLAG_SET_CMDLINE(uintx, MarkStackSizeMax, max_stack_size);
     } else if (match_option(option, "-XX:ParallelMarkingThreads=", &tail) ||
                match_option(option, "-XX:ParallelCMSThreads=", &tail)) {
@@ -3362,6 +3283,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                     "Invalid concurrent threads: %s\n", option->optionString);
         return JNI_EINVAL;
       }
+      jio_fprintf(defaultStream::error_stream(),
+        "Please use -XX:ConcGCThreads in place of "
+        "-XX:ParallelMarkingThreads or -XX:ParallelCMSThreads in the future\n");
       FLAG_SET_CMDLINE(uintx, ConcGCThreads, conc_threads);
     } else if (match_option(option, "-XX:MaxDirectMemorySize=", &tail)) {
       julong max_direct_memory_size = 0;
@@ -3555,8 +3479,10 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     set_mode_flags(_int);
   }
 
-  if ((TieredCompilation && CompileThresholdScaling == 0)
-      || (!TieredCompilation && get_scaled_compile_threshold(CompileThreshold) == 0)) {
+  // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),
+  // but like -Xint, leave compilation thresholds unaffected.
+  // With tiered compilation disabled, setting CompileThreshold to 0 disables compilation as well.
+  if ((CompileThresholdScaling == 0.0) || (!TieredCompilation && CompileThreshold == 0)) {
     set_mode_flags(_int);
   }
 
@@ -3996,7 +3922,7 @@ jint Arguments::apply_ergo() {
     }
     // Scale CompileThreshold
     if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
-      FLAG_SET_ERGO(intx, CompileThreshold, get_scaled_compile_threshold(CompileThreshold));
+      FLAG_SET_ERGO(intx, CompileThreshold, scaled_compile_threshold(CompileThreshold));
     }
   }
 
@@ -4192,6 +4118,10 @@ void Arguments::PropertyList_add(SystemProperty** plist, const char* k, char* v)
 
   SystemProperty* new_p = new SystemProperty(k, v, true);
   PropertyList_add(plist, new_p);
+}
+
+void Arguments::PropertyList_add(SystemProperty *element) {
+  PropertyList_add(&_system_properties, element);
 }
 
 // This add maintains unique property key in the list.

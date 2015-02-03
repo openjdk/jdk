@@ -919,8 +919,8 @@ OGLContext_GetExtensionInfo(JNIEnv *env, jint *caps)
             vcap = OGLC_VENDOR_ATI;
         } else if (strncmp(vendor, "NVIDIA", 6) == 0) {
             vcap = OGLC_VENDOR_NVIDIA;
-        } else if (strncmp(vendor, "Sun", 3) == 0) {
-            vcap = OGLC_VENDOR_SUN;
+        } else if (strncmp(vendor, "Intel", 5) == 0) {
+            vcap = OGLC_VENDOR_INTEL;
         }
         // REMIND: new in 7 - check if needs fixing
         *caps |= ((vcap & OGLC_VCAP_MASK) << OGLC_VCAP_OFFSET);

@@ -196,7 +196,7 @@ void mlib_ImageCopy_bit_al(const mlib_u8 *sa,
 /***************************************************************/
 /*
  * Either source or destination data are not 8-byte aligned.
- * And size is is in bytes.
+ * And size is in bytes.
  */
 
 void mlib_ImageCopy_na(const mlib_u8 *sa,

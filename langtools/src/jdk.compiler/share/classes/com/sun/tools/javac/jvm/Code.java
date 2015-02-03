@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,8 +182,6 @@ public class Code {
 
     final MethodSymbol meth;
 
-    final LVTRanges lvtRanges;
-
     /** Construct a code object, given the settings of the fatcode,
      *  debugging info switches and the CharacterRangeTable.
      */
@@ -196,8 +194,7 @@ public class Code {
                 CRTable crt,
                 Symtab syms,
                 Types types,
-                Pool pool,
-                LVTRanges lvtRanges) {
+                Pool pool) {
         this.meth = meth;
         this.fatcode = fatcode;
         this.lineMap = lineMap;
@@ -219,7 +216,6 @@ public class Code {
         state = new State();
         lvar = new LocalVar[20];
         this.pool = pool;
-        this.lvtRanges = lvtRanges;
     }
 
 
@@ -1193,7 +1189,9 @@ public class Code {
     public int entryPoint(State state) {
         int pc = curCP();
         alive = true;
-        this.state = state.dup();
+        State newState = state.dup();
+        setDefined(newState.defined);
+        this.state = newState;
         Assert.check(state.stacksize <= max_stack);
         if (debugCode) System.err.println("entry point " + state);
         pendingStackMap = needStackMap;
@@ -1206,7 +1204,9 @@ public class Code {
     public int entryPoint(State state, Type pushed) {
         int pc = curCP();
         alive = true;
-        this.state = state.dup();
+        State newState = state.dup();
+        setDefined(newState.defined);
+        this.state = newState;
         Assert.check(state.stacksize <= max_stack);
         this.state.push(pushed);
         if (debugCode) System.err.println("entry point " + state);
@@ -2006,27 +2006,6 @@ public class Code {
         }
         lvar[adr] = new LocalVar(v);
         state.defined.excl(adr);
-    }
-
-
-    public void closeAliveRanges(JCTree tree) {
-        closeAliveRanges(tree, cp);
-    }
-
-    public void closeAliveRanges(JCTree tree, int closingCP) {
-        List<VarSymbol> locals = lvtRanges.getVars(meth, tree);
-        for (LocalVar localVar: lvar) {
-            for (VarSymbol aliveLocal : locals) {
-                if (localVar != null) {
-                    if (localVar.sym == aliveLocal && localVar.lastRange() != null) {
-                        char length = (char)(closingCP - localVar.lastRange().start_pc);
-                        if (length < Character.MAX_VALUE) {
-                            localVar.closeRange(length);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     void adjustAliveRanges(int oldCP, int delta) {

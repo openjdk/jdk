@@ -74,7 +74,7 @@ public class DefaultSigalg {
         KeyStore ks = KeyStore.getInstance("JKS");
         try (FileInputStream jks = new FileInputStream("jks");
                 JarFile jf = new JarFile("a.jar")) {
-            ks.load(jks, null);
+            ks.load(jks, "changeit".toCharArray());
             for (int i = 0; i<keyalgs.length; i++) {
                 String keyalg = keyalgs[i];
                 // keytool

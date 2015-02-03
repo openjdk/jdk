@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,64 +23,59 @@
 
 package javax.xml.parsers.ptests;
 
-import static jaxp.library.JAXPTestUtilities.FILE_SEP;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
-
 import java.io.File;
-import java.io.IOException;
-
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
+import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
-
+import jaxp.library.JAXPFileBaseTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * This tests DocumentBuilderFactory for namespace processing and no-namespace
  * processing.
  */
-public class DBFNamespaceTest {
+public class DBFNamespaceTest extends JAXPFileBaseTest {
 
     /**
      * Provide input for the cases that supporting namespace or not.
+     * @return a two-dimensional array contains factory, output file name and
+     *         golden validate file name.
      */
     @DataProvider(name = "input-provider")
     public Object[][] getInput() {
         DocumentBuilderFactory dbf1 = DocumentBuilderFactory.newInstance();
-        String outputfile1 = USER_DIR + FILE_SEP + "dbfnstest01.out";
-        String goldfile1 = TestUtils.GOLDEN_DIR + FILE_SEP + "dbfnstest01GF.out";
+        String outputfile1 = USER_DIR + "dbfnstest01.out";
+        String goldfile1 = GOLDEN_DIR + "dbfnstest01GF.out";
 
         DocumentBuilderFactory dbf2 = DocumentBuilderFactory.newInstance();
         dbf2.setNamespaceAware(true);
-        String outputfile2 = USER_DIR + FILE_SEP + "dbfnstest02.out";
-        String goldfile2 = TestUtils.GOLDEN_DIR + FILE_SEP + "dbfnstest02GF.out";
+        String outputfile2 = USER_DIR + "dbfnstest02.out";
+        String goldfile2 = GOLDEN_DIR + "dbfnstest02GF.out";
         return new Object[][] { { dbf1, outputfile1, goldfile1 }, { dbf2, outputfile2, goldfile2 } };
     }
 
     /**
      * Test to parse and transform a document without supporting namespace and
      * with supporting namespace.
+     * @param dbf a Document Builder factory for creating document object.
+     * @param outputfile output file name.
+     * @param goldfile golden validate file name.
+     * @throws Exception If any errors occur.
      */
     @Test(dataProvider = "input-provider")
-    public void testNamespaceTest(DocumentBuilderFactory dbf, String outputfile, String goldfile) {
-        try {
-            Document doc = dbf.newDocumentBuilder().parse(new File(TestUtils.XML_DIR, "namespace1.xml"));
-            dummyTransform(doc, outputfile);
-            assertTrue(compareWithGold(goldfile, outputfile));
-        } catch (SAXException | IOException | ParserConfigurationException | TransformerFactoryConfigurationError | TransformerException e) {
-            failUnexpected(e);
-        }
+    public void testNamespaceTest(DocumentBuilderFactory dbf, String outputfile,
+            String goldfile) throws Exception {
+        Document doc = dbf.newDocumentBuilder().parse(new File(XML_DIR, "namespace1.xml"));
+        dummyTransform(doc, outputfile);
+        assertTrue(compareWithGold(goldfile, outputfile));
     }
 
     /**
@@ -89,16 +84,14 @@ public class DBFNamespaceTest {
      * not chosen, namespaceURI in callbacks should be an empty string otherwise
      * it should be namespaceURI.
      *
-     * @throws TransformerFactoryConfigurationError
-     * @throws TransformerException
-     * @throws IOException
+     * @throws Exception If any errors occur.
      */
-    private void dummyTransform(Document document, String fileName) throws TransformerFactoryConfigurationError, TransformerException, IOException {
+    private void dummyTransform(Document document, String fileName)
+            throws Exception {
         DOMSource domSource = new DOMSource(document);
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        File file = new File(fileName);
-        System.out.println("The fileName is " + file.getAbsolutePath());
-        transformer.transform(domSource, new SAXResult(MyCHandler.newInstance(file)));
+        try(MyCHandler chandler = MyCHandler.newInstance(new File(fileName))) {
+            TransformerFactory.newInstance().newTransformer().
+                transform(domSource, new SAXResult(chandler));
+        }
     }
-
 }

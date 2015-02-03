@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
  *            a. if LD_LIBRARY_PATH64 is set it will override LD_LIBRARY_PATH
  *            b. LD_LIBRARY_PATH32 is ignored if set
  *   5. no extra symlink exists on Solaris ie.
- *      jre/lib/$arch/libjvm.so -> client/libjvm.so
+ *      lib/$arch/libjvm.so -> client/libjvm.so
  * TODO:
  *      a. perhaps we need to add a test to audit all environment variables are
  *         in pristine condition after the launch, there may be a few that the
@@ -267,7 +267,7 @@ public class ExecutionEnvironment extends TestHelper {
         }
 
         File symLink = null;
-        String libPathPrefix = isSDK ? "jre/lib" : "/lib";
+        String libPathPrefix = "/lib";
         symLink = new File(JAVAHOME, libPathPrefix +
                 getJreArch() + "/" + LIBJVM);
         if (symLink.exists()) {

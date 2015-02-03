@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6365854
+ * @bug     6365854 8068639
  * @summary javac crashes when compiling against an annotated class
  * @compile TestAnnotation.java TestCore.java
  * @clean test.annotation.TestAnnotation
@@ -33,11 +33,11 @@
  *
  * @compile TestAnnotation.java TestCore.java
  * @clean test.annotation.TestAnnotation
- * @compile/ref=test1.out -XDrawDiagnostics T6365854.java
+ * @compile/ref=test1.out -XDrawDiagnostics -Xlint:classfile T6365854.java
  * @run main T6365854
- * @compile/ref=test2.out -XDrawDiagnostics evolve/TestAnnotation.java T6365854.java
+ * @compile/ref=test2.out -XDrawDiagnostics -Xlint:classfile evolve/TestAnnotation.java T6365854.java
  * @run main T6365854
- * @compile/ref=test2.out -XDrawDiagnostics T6365854.java
+ * @compile/ref=test2.out -XDrawDiagnostics -Xlint:classfile T6365854.java
  * @run main T6365854
  */
 

@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179
  * @summary Ensure that the PrintGCDetails output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -54,6 +54,7 @@ public class TestGCLogMessages {
     output.shouldNotContain("[String Dedup Fixup");
     output.shouldNotContain("[Young Free CSet");
     output.shouldNotContain("[Non-Young Free CSet");
+    output.shouldNotContain("[Humongous Register");
     output.shouldNotContain("[Humongous Reclaim");
     output.shouldHaveExitValue(0);
 
@@ -72,9 +73,10 @@ public class TestGCLogMessages {
     output.shouldContain("[String Dedup Fixup");
     output.shouldNotContain("[Young Free CSet");
     output.shouldNotContain("[Non-Young Free CSet");
-    output.shouldContain("[Humongous Reclaim");
+    output.shouldContain("[Humongous Register");
     output.shouldNotContain("[Humongous Total");
     output.shouldNotContain("[Humongous Candidate");
+    output.shouldContain("[Humongous Reclaim");
     output.shouldNotContain("[Humongous Reclaimed");
     output.shouldHaveExitValue(0);
 
@@ -95,17 +97,18 @@ public class TestGCLogMessages {
     output.shouldContain("[String Dedup Fixup");
     output.shouldContain("[Young Free CSet");
     output.shouldContain("[Non-Young Free CSet");
-    output.shouldContain("[Humongous Reclaim");
+    output.shouldContain("[Humongous Register");
     output.shouldContain("[Humongous Total");
     output.shouldContain("[Humongous Candidate");
+    output.shouldContain("[Humongous Reclaim");
     output.shouldContain("[Humongous Reclaimed");
     output.shouldHaveExitValue(0);
   }
 
   private static void testWithToSpaceExhaustionLogs() throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xmx10M",
-                                               "-Xmn5M",
+                                               "-Xmx32M",
+                                               "-Xmn16M",
                                                "-XX:+PrintGCDetails",
                                                GCTestWithToSpaceExhaustion.class.getName());
 
@@ -117,8 +120,8 @@ public class TestGCLogMessages {
     output.shouldHaveExitValue(0);
 
     pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xmx10M",
-                                               "-Xmn5M",
+                                               "-Xmx32M",
+                                               "-Xmn16M",
                                                "-XX:+PrintGCDetails",
                                                "-XX:+UnlockExperimentalVMOptions",
                                                "-XX:G1LogLevel=finest",
@@ -148,7 +151,7 @@ public class TestGCLogMessages {
     private static byte[] garbage;
     private static byte[] largeObject;
     public static void main(String [] args) {
-      largeObject = new byte[5*1024*1024];
+      largeObject = new byte[16*1024*1024];
       System.out.println("Creating garbage");
       // create 128MB of garbage. This should result in at least one GC,
       // some of them with to-space exhaustion.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003,2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,7 @@ import java.util.Enumeration;
 
 public class ReadP12Test {
 
-    private final static String IN_KETYSTORE_TYPE = "pkcs12";
-    private final static String IN_KEYSTORE_PRV = "SunJSSE";
+    private final static String IN_KEYSTORE_TYPE = "pkcs12";
     private final static String IN_STORE_PASS = "pass";
 
     public static void main(String args[]) throws Exception {
@@ -124,8 +123,7 @@ public class ReadP12Test {
         String dir = System.getProperty("test.src", ".");
         String keystorePath = dir + File.separator + "certs" + File.separator
                 + "readP12";
-        inputKeyStore = KeyStore
-                .getInstance(IN_KETYSTORE_TYPE, IN_KEYSTORE_PRV);
+        inputKeyStore = KeyStore.getInstance(IN_KEYSTORE_TYPE);
         // KeyStore have encoded by Base64.getMimeEncoder().encode(),need decode
         // first.
         byte[] input = Files.readAllBytes(Paths.get(keystorePath, inKeyStore));

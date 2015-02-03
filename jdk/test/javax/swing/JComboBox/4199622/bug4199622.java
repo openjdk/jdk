@@ -25,12 +25,13 @@
    @bug 4199622
    @summary RFE: JComboBox shouldn't send ActionEvents for keyboard navigation
    @author Vladislav Karnaukhov
+   @library ../../../../lib/testlibrary
+   @build jdk.testlibrary.OSInfo
    @run main bug4199622
 */
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+import jdk.testlibrary.OSInfo;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalLookAndFeel;
@@ -74,7 +75,6 @@ public class bug4199622 extends JFrame implements ActionListener {
     }
 
     static Robot robot = null;
-    static SunToolkit toolkit = null;
 
     static void doTest() {
         if (robot == null) {
@@ -86,11 +86,7 @@ public class bug4199622 extends JFrame implements ActionListener {
             }
         }
 
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        if (toolkit == null) {
-            throw new RuntimeException("Can't get the toolkit. Test failed");
-        }
-        toolkit.realSync();
+        robot.waitForIdle();
 
         doActualTest();
 
@@ -109,7 +105,7 @@ public class bug4199622 extends JFrame implements ActionListener {
             throw new RuntimeException("Test failed", e);
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
         doActualTest();
     }
 
@@ -144,12 +140,14 @@ public class bug4199622 extends JFrame implements ActionListener {
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Test failed", e);
         }
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_END);
-        toolkit.realSync();
+        robot.keyRelease(KeyEvent.VK_END);
+        robot.waitForIdle();
         robot.keyPress(KeyEvent.VK_HOME);
-        toolkit.realSync();
+        robot.keyRelease(KeyEvent.VK_HOME);
+        robot.waitForIdle();
     }
 
     static void doTestUpDown() {
@@ -166,16 +164,18 @@ public class bug4199622 extends JFrame implements ActionListener {
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Test failed", e);
         }
-        toolkit.realSync();
+        robot.waitForIdle();
 
         for (int i = 0; i < nElems; i++) {
             robot.keyPress(KeyEvent.VK_DOWN);
-            toolkit.realSync();
+            robot.keyRelease(KeyEvent.VK_DOWN);
+            robot.waitForIdle();
         }
 
         for (int i = 0; i < nElems; i++) {
             robot.keyPress(KeyEvent.VK_UP);
-            toolkit.realSync();
+            robot.keyRelease(KeyEvent.VK_UP);
+            robot.waitForIdle();
         }
     }
 
@@ -193,17 +193,19 @@ public class bug4199622 extends JFrame implements ActionListener {
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Test failed", e);
         }
-        toolkit.realSync();
+        robot.waitForIdle();
 
         int listHeight = cb.getMaximumRowCount();
         for (int i = 0; i < nElems; i += listHeight) {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
-            toolkit.realSync();
+            robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
+            robot.waitForIdle();
         }
 
         for (int i = 0; i < nElems; i += listHeight) {
             robot.keyPress(KeyEvent.VK_PAGE_UP);
-            toolkit.realSync();
+            robot.keyRelease(KeyEvent.VK_PAGE_UP);
+            robot.waitForIdle();
         }
     }
 

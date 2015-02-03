@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
+ *      8046724
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -45,6 +46,13 @@ import java.security.cert.X509CRL;
 import java.security.spec.KeySpec;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.EllipticCurve;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
@@ -81,9 +89,10 @@ public class GenerationTests {
     private static DocumentBuilder db;
     private static CanonicalizationMethod withoutComments;
     private static SignatureMethod dsaSha1, dsaSha256, rsaSha1,
-                                   rsaSha256, rsaSha384, rsaSha512;
+                                   rsaSha256, rsaSha384, rsaSha512,
+                                   ecdsaSha1;
     private static DigestMethod sha1, sha256, sha384, sha512;
-    private static KeyInfo dsa1024, dsa2048, rsa, rsa1024;
+    private static KeyInfo dsa1024, dsa2048, rsa, rsa1024, p256ki;
     private static KeySelector kvks = new KeySelectors.KeyValueKeySelector();
     private static KeySelector sks;
     private static Key signingKey;
@@ -121,6 +130,7 @@ public class GenerationTests {
         test_create_signature_enveloping_hmac_sha384();
         test_create_signature_enveloping_hmac_sha512();
         test_create_signature_enveloping_rsa();
+        test_create_signature_enveloping_p256_sha1();
         test_create_signature_external_b64_dsa();
         test_create_signature_external_dsa();
         test_create_signature_keyname();
@@ -175,6 +185,8 @@ public class GenerationTests {
             (kifac.newKeyValue(getPublicKey("RSA", 512))));
         rsa1024 = kifac.newKeyInfo(Collections.singletonList
             (kifac.newKeyValue(getPublicKey("RSA", 1024))));
+        p256ki = kifac.newKeyInfo(Collections.singletonList
+            (kifac.newKeyValue(getECPublicKey())));
         rsaSha1 = fac.newSignatureMethod(SignatureMethod.RSA_SHA1, null);
         rsaSha256 = fac.newSignatureMethod
             ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", null);
@@ -182,6 +194,8 @@ public class GenerationTests {
             ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", null);
         rsaSha512 = fac.newSignatureMethod
             ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha512", null);
+        ecdsaSha1 = fac.newSignatureMethod
+            ("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", null);
         sks = new KeySelectors.SecretKeySelector("secret".getBytes("ASCII"));
 
         httpUd = new HttpURIDereferencer();
@@ -339,6 +353,13 @@ public class GenerationTests {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha512.xml");
         test_create_signature_enveloping(sha512, rsaSha512, rsa1024,
             getPrivateKey("RSA", 1024), kvks, false);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_p256_sha1() throws Exception {
+        System.out.println("* Generating signature-enveloping-p256-sha1.xml");
+        test_create_signature_enveloping(sha1, ecdsaSha1, p256ki,
+            getECPrivateKey(), kvks, false);
         System.out.println();
     }
 
@@ -1168,7 +1189,42 @@ public class GenerationTests {
         "237008997971129772408397621801631622129297063463868593083106979716" +
         "204903524890556839550490384015324575598723478554854070823335021842" +
         "210112348400928769";
+    private static final String EC_X =
+        "335863644451761614592446380116804721648611739647823420286081723541" +
+        "6166183710";
+    private static final String EC_Y =
+        "951559601159729477487064127150143688502130342917782252098602422796" +
+        "95457910701";
+    private static final String EC_S =
+        "425976209773168452211813225517384419928639977904006759709292218082" +
+        "7440083936";
+    private static final ECParameterSpec EC_PARAMS;
 
+    static {
+        final String ec_sfield, ec_a, ec_b, ec_gx, ec_gy, ec_n;
+        ec_sfield =
+            "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF";
+        ec_a =
+            "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC";
+        ec_b =
+            "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B";
+        ec_gx =
+            "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296";
+        ec_gy =
+            "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5";
+        ec_n =
+            "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551";
+        final int ec_h = 1;
+        final ECField ec_field = new ECFieldFp(bigInt(ec_sfield));
+        final EllipticCurve ec_curve = new EllipticCurve(ec_field,
+                                                bigInt(ec_a), bigInt(ec_b));
+        final ECPoint ec_g = new ECPoint(bigInt(ec_gx), bigInt(ec_gy));
+        EC_PARAMS = new ECParameterSpec(ec_curve, ec_g, bigInt(ec_n), ec_h);
+    }
+
+    private static BigInteger bigInt(String s) {
+        return new BigInteger(s, 16);
+    }
     private static PublicKey getPublicKey(String algo, int keysize)
         throws Exception {
         KeyFactory kf = KeyFactory.getInstance(algo);
@@ -1197,6 +1253,14 @@ public class GenerationTests {
         return kf.generatePublic(kspec);
     }
 
+    private static PublicKey getECPublicKey() throws Exception {
+        KeyFactory kf = KeyFactory.getInstance("EC");
+        KeySpec kspec = new ECPublicKeySpec(new ECPoint(new BigInteger(EC_X),
+                                                        new BigInteger(EC_Y)),
+                                            EC_PARAMS);
+        return kf.generatePublic(kspec);
+    }
+
     private static PrivateKey getPrivateKey(String algo, int keysize)
         throws Exception {
         KeyFactory kf = KeyFactory.getInstance(algo);
@@ -1220,6 +1284,12 @@ public class GenerationTests {
                                               new BigInteger(RSA_1024_PRIV));
             }
         } else throw new RuntimeException("Unsupported key algorithm " + algo);
+        return kf.generatePrivate(kspec);
+    }
+
+    private static PrivateKey getECPrivateKey() throws Exception {
+        KeyFactory kf = KeyFactory.getInstance("EC");
+        KeySpec kspec = new ECPrivateKeySpec(new BigInteger(EC_S), EC_PARAMS);
         return kf.generatePrivate(kspec);
     }
 

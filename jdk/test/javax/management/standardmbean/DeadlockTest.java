@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6331746
- * @summary Deadlock on synchronization problem
+ * @summary Test a deadlock and will be blocked forever if the deadlock is present.
  * @author Shanliang JIANG
  * @run main DeadlockTest
  */
@@ -55,19 +55,10 @@ public class DeadlockTest extends StandardMBean {
         BadBoy bb = new BadBoy(dt);
         bb.start();
 
-        final long timeout = 2000;
-        long stopTime = System.currentTimeMillis() + timeout;
-        long timeToWait = timeout;
         synchronized(bb) {
-            while(!bb.gotLock || timeToWait > 0) {
-                bb.wait(timeToWait);
-
-                timeToWait = stopTime - System.currentTimeMillis();
+            while(!bb.gotLock) {
+                bb.wait(); // if blocked here, means failing to get lock, impossible.
             }
-        }
-
-        if (!bb.gotLock) {
-            throw new RuntimeException("Failed to get lock, impossible!");
         }
 
         System.out.println("main: The BadBay is holding the lock forever.");
@@ -75,21 +66,12 @@ public class DeadlockTest extends StandardMBean {
         System.out.println("main: Create a WorkingBoy to see blocking ...");
         WorkingBoy wb = new WorkingBoy(dt);
 
-        stopTime = System.currentTimeMillis() + timeout;
-        timeToWait = timeout;
-
         synchronized(wb) {
             wb.start();
 
-            while(!wb.done || timeToWait > 0) {
-                wb.wait(timeToWait);
-
-                timeToWait = stopTime - System.currentTimeMillis();
+            while(!wb.done) {
+                wb.wait(); // if blocked here, the deadlock happends
             }
-        }
-
-        if (!wb.done) {
-            throw new RuntimeException("It is blocked!");
         }
 
         System.out.println("main: OK, bye bye.");

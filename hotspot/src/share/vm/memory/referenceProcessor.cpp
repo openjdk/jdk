@@ -68,10 +68,10 @@ void ReferenceProcessor::init_statics() {
   _pending_list_uses_discovered_field = JDK_Version::current().pending_list_uses_discovered_field();
 }
 
-void ReferenceProcessor::enable_discovery(bool verify_disabled, bool check_no_refs) {
+void ReferenceProcessor::enable_discovery(bool check_no_refs) {
 #ifdef ASSERT
   // Verify that we're not currently discovering refs
-  assert(!verify_disabled || !_discovering_refs, "nested call?");
+  assert(!_discovering_refs, "nested call?");
 
   if (check_no_refs) {
     // Verify that the discovered lists are empty
@@ -118,6 +118,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discoveredWeakRefs    = &_discoveredSoftRefs[_max_num_q];
   _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_q];
   _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_q];
+  _discoveredCleanerRefs = &_discoveredPhantomRefs[_max_num_q];
 
   // Initialize all entries to NULL
   for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
@@ -245,6 +246,13 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
     GCTraceTime tt("PhantomReference", trace_time, false, gc_timer, gc_id);
     phantom_count =
       process_discovered_reflist(_discoveredPhantomRefs, NULL, false,
+                                 is_alive, keep_alive, complete_gc, task_executor);
+
+    // Process cleaners, but include them in phantom statistics.  We expect
+    // Cleaner references to be temporary, and don't want to deal with
+    // possible incompatibilities arising from making it more visible.
+    phantom_count +=
+      process_discovered_reflist(_discoveredCleanerRefs, NULL, false,
                                  is_alive, keep_alive, complete_gc, task_executor);
   }
 
@@ -885,6 +893,7 @@ void ReferenceProcessor::balance_all_queues() {
   balance_queues(_discoveredWeakRefs);
   balance_queues(_discoveredFinalRefs);
   balance_queues(_discoveredPhantomRefs);
+  balance_queues(_discoveredCleanerRefs);
 }
 
 size_t
@@ -963,52 +972,6 @@ ReferenceProcessor::process_discovered_reflist(
   return total_list_count;
 }
 
-void ReferenceProcessor::clean_up_discovered_references() {
-  // loop over the lists
-  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-    if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
-      gclog_or_tty->print_cr(
-        "\nScrubbing %s discovered list of Null referents",
-        list_name(i));
-    }
-    clean_up_discovered_reflist(_discovered_refs[i]);
-  }
-}
-
-void ReferenceProcessor::clean_up_discovered_reflist(DiscoveredList& refs_list) {
-  assert(!discovery_is_atomic(), "Else why call this method?");
-  DiscoveredListIterator iter(refs_list, NULL, NULL);
-  while (iter.has_next()) {
-    iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
-    oop next = java_lang_ref_Reference::next(iter.obj());
-    assert(next->is_oop_or_null(), err_msg("Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next)));
-    // If referent has been cleared or Reference is not active,
-    // drop it.
-    if (iter.referent() == NULL || next != NULL) {
-      debug_only(
-        if (PrintGCDetails && TraceReferenceGC) {
-          gclog_or_tty->print_cr("clean_up_discovered_list: Dropping Reference: "
-            INTPTR_FORMAT " with next field: " INTPTR_FORMAT
-            " and referent: " INTPTR_FORMAT,
-            (void *)iter.obj(), (void *)next, (void *)iter.referent());
-        }
-      )
-      // Remove Reference object from list
-      iter.remove();
-      iter.move_to_next();
-    } else {
-      iter.next();
-    }
-  }
-  NOT_PRODUCT(
-    if (PrintGCDetails && TraceReferenceGC) {
-      gclog_or_tty->print(
-        " Removed %d Refs with NULL referents out of %d discovered Refs",
-        iter.removed(), iter.processed());
-    }
-  )
-}
-
 inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt) {
   uint id = 0;
   // Determine the queue index to use for this object.
@@ -1043,6 +1006,9 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       break;
     case REF_PHANTOM:
       list = &_discoveredPhantomRefs[id];
+      break;
+    case REF_CLEANER:
+      list = &_discoveredCleanerRefs[id];
       break;
     case REF_NONE:
       // we should not reach here if we are an InstanceRefKlass
@@ -1309,6 +1275,17 @@ void ReferenceProcessor::preclean_discovered_references(
       preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
                                   keep_alive, complete_gc, yield);
     }
+
+    // Cleaner references.  Included in timing for phantom references.  We
+    // expect Cleaner references to be temporary, and don't want to deal with
+    // possible incompatibilities arising from making it more visible.
+    for (uint i = 0; i < _max_num_q; i++) {
+      if (yield->should_return()) {
+        return;
+      }
+      preclean_discovered_reflist(_discoveredCleanerRefs[i], is_alive,
+                                  keep_alive, complete_gc, yield);
+    }
   }
 }
 
@@ -1377,6 +1354,7 @@ const char* ReferenceProcessor::list_name(uint i) {
      case 1: return "WeakRef";
      case 2: return "FinalRef";
      case 3: return "PhantomRef";
+     case 4: return "CleanerRef";
    }
    ShouldNotReachHere();
    return NULL;

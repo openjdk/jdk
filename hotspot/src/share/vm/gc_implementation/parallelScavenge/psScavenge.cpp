@@ -362,7 +362,7 @@ bool PSScavenge::invoke_no_policy() {
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
-    reference_processor()->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
+    reference_processor()->enable_discovery();
     reference_processor()->setup_policy(false);
 
     // We track how much was promoted to the next generation for

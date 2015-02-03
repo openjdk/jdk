@@ -358,6 +358,7 @@ public class SwingUtilities2 {
      * @param c Graphics Graphics
      * @param font Font to get FontMetrics for
      */
+    @SuppressWarnings("deprecation")
     public static FontMetrics getFontMetrics(JComponent c, Graphics g,
                                              Font font) {
         if (c != null) {
@@ -1706,6 +1707,7 @@ public class SwingUtilities2 {
      * This is not a general-purpose method and is here only to permit
      * sharing code.
      */
+    @SuppressWarnings("deprecation")
     public static boolean tabbedPaneChangeFocusTo(Component comp) {
         if (comp != null) {
             if (comp.isFocusTraversable()) {

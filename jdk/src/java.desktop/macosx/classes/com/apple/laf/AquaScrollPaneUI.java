@@ -41,7 +41,7 @@ public class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
 
     // This is a grody hack to trick BasicScrollPaneUI into scrolling horizontally
     // when we notice that the shift key is down. This should be removed when AWT/Swing
-    // becomes aware of of multi-axis scroll wheels.
+    // becomes aware of multi-axis scroll wheels.
     protected class XYMouseWheelHandler extends javax.swing.plaf.basic.BasicScrollPaneUI.MouseWheelHandler {
         public void mouseWheelMoved(final MouseWheelEvent e) {
             JScrollBar vScrollBar = null;

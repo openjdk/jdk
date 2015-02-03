@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.regex.*;
  */
 public class AliasFileParser {
     private static final String ALIAS = "alias";
-    private static final boolean DEBUG = false;
+    // 8028357 removed old, inefficient debug logging
 
     // other variables
     private URL inputfile;
@@ -64,21 +64,12 @@ public class AliasFileParser {
         }
     }
 
-    private void logln(String s) {
-        if (DEBUG) {
-            System.err.println(s);
-        }
-    }
-
     /**
      * method to get the next token as a Token type
      */
     private void nextToken() throws IOException {
         st.nextToken();
         currentToken = new Token(st.ttype, st.sval);
-
-        logln("Read token: type = " + currentToken.ttype
-              + " string = " + currentToken.sval);
     }
 
     /**
@@ -90,8 +81,6 @@ public class AliasFileParser {
 
         if ((currentToken.ttype == ttype)
                 && (currentToken.sval.compareTo(token) == 0)) {
-            logln("matched type: " + ttype + " and token = "
-                  + currentToken.sval);
             nextToken();
         } else {
             throw new SyntaxException(st.lineno());
@@ -105,7 +94,6 @@ public class AliasFileParser {
      */
     private void match(int ttype) throws IOException, SyntaxException {
         if (currentToken.ttype == ttype) {
-            logln("matched type: " + ttype + ", token = " + currentToken.sval);
             nextToken();
         } else {
             throw new SyntaxException(st.lineno());
@@ -156,8 +144,6 @@ public class AliasFileParser {
 
             } while ((currentToken.ttype != StreamTokenizer.TT_EOF)
                      && (currentToken.sval.compareTo(ALIAS) != 0));
-
-            logln("adding map entry for " + name + " values = " + aliases);
 
             map.put(name, aliases);
         }

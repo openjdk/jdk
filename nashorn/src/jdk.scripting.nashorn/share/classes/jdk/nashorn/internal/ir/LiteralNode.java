@@ -29,7 +29,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -109,7 +108,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
+    public Type getType() {
         return Type.typeFor(value.getClass());
     }
 
@@ -161,16 +160,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
      */
     public double getNumber() {
         return JSType.toNumber(value);
-    }
-
-    /**
-     * Get the array value of the node
-     *
-     * @return the array value
-     */
-    public Node[] getArray() {
-        assert false : "not an array node";
-        return null;
     }
 
     /**
@@ -325,7 +314,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType(final Function<Symbol, Type> localVariableTypes) {
+        public Type getType() {
             return Type.BOOLEAN;
         }
 
@@ -389,7 +378,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType(final Function<Symbol, Type> localVariableTypes) {
+        public Type getType() {
             return type;
         }
 
@@ -519,7 +508,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType(final Function<Symbol, Type> localVariableTypes) {
+        public Type getType() {
             return Type.OBJECT;
         }
 
@@ -589,7 +578,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType(final Function<Symbol, Type> localVariableTypes) {
+        public Type getType() {
             return Type.OBJECT;
         }
 
@@ -840,9 +829,13 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             this.units       = units;
         }
 
-        @Override
-        public Node[] getArray() {
-            return value;
+        /**
+         * Returns a list of array element expressions. Note that empty array elements manifest themselves as
+         * null.
+         * @return a list of array element expressions.
+         */
+        public List<Expression> getElementExpressions() {
+            return Collections.unmodifiableList(Arrays.asList(value));
         }
 
         /**
@@ -879,7 +872,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType(final Function<Symbol, Type> localVariableTypes) {
+        public Type getType() {
             return Type.typeFor(NativeArray.class);
         }
 

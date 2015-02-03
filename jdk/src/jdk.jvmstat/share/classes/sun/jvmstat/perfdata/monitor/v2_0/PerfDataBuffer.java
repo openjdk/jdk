@@ -62,7 +62,8 @@ import java.nio.*;
  */
 public class PerfDataBuffer extends PerfDataBufferImpl {
 
-    private static final boolean DEBUG = false;
+    // 8028357 removed old, inefficient debug logging
+
     private static final int syncWaitMs =
             Integer.getInteger("sun.jvmstat.perdata.syncWaitMs", 5000);
     private static final ArrayList<Monitor> EMPTY_LIST = new ArrayList<>(0);
@@ -264,20 +265,15 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         long timeLimit = System.currentTimeMillis() + syncWaitMs;
 
         // loop waiting for the accessible indicater to be non-zero
-        log("synchWithTarget: " + lvmid + " ");
         while (!prologue.isAccessible()) {
-
-            log(".");
 
             // give the target jvm a chance to complete initializatoin
             try { Thread.sleep(20); } catch (InterruptedException e) { }
 
             if (System.currentTimeMillis() > timeLimit) {
-                logln("failed: " + lvmid);
                 throw new MonitorException("Could not synchronize with target");
             }
         }
-        logln("success: " + lvmid);
     }
 
     /**
@@ -306,8 +302,6 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
 
         // check for end of the buffer
         if (nextEntry == buffer.limit()) {
-            logln("getNextMonitorEntry():"
-                  + " nextEntry == buffer.limit(): returning");
             return null;
         }
 
@@ -345,9 +339,6 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         byte unitsByte = buffer.get();
         byte varByte = buffer.get();
         int dataOffset = buffer.getInt();
-
-        dump_entry_fixed(entryStart, nameOffset, vectorLength, typeCodeByte,
-                         flags, unitsByte, varByte, dataOffset);
 
         // convert common attributes to their object types
         Units units = Units.toUnits(unitsByte);
@@ -439,8 +430,6 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         // set the position to the start of the data item
         buffer.position(entryStart + dataOffset);
 
-        dump_entry_variable(name, buffer, dataSize);
-
         if (vectorLength == 0) {
             // create a scalar Monitor object
             if (typeCode == TypeCode.LONG) {
@@ -513,104 +502,5 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         // setup index to next entry for next iteration of the loop.
         nextEntry = entryStart + entryLength;
         return monitor;
-    }
-
-    /**
-     * Method to dump debugging information
-     */
-    private void dumpAll(Map<String, Monitor> map, int lvmid) {
-        if (DEBUG) {
-            Set<String> keys = map.keySet();
-
-            System.err.println("Dump for " + lvmid);
-            int j = 0;
-            for (Iterator<String> i = keys.iterator(); i.hasNext(); j++) {
-                Monitor monitor = map.get(i.next());
-                System.err.println(j + "\t" + monitor.getName()
-                                   + "=" + monitor.getValue());
-            }
-            System.err.println("nextEntry = " + nextEntry);
-            System.err.println("Buffer info:");
-            System.err.println("buffer = " + buffer);
-        }
-    }
-
-    /**
-     * Method to dump the fixed portion of an entry.
-     */
-    private void dump_entry_fixed(int entry_start, int nameOffset,
-                                  int vectorLength, byte typeCodeByte,
-                                  byte flags, byte unitsByte, byte varByte,
-                                  int dataOffset) {
-        if (DEBUG) {
-            System.err.println("Entry at offset: 0x"
-                               + Integer.toHexString(entry_start));
-            System.err.println("\tname_offset = 0x"
-                               + Integer.toHexString(nameOffset));
-            System.err.println("\tvector_length = 0x"
-                               + Integer.toHexString(vectorLength));
-            System.err.println("\tdata_type = 0x"
-                               + Integer.toHexString(typeCodeByte));
-            System.err.println("\tflags = 0x"
-                               + Integer.toHexString(flags));
-            System.err.println("\tdata_units = 0x"
-                               + Integer.toHexString(unitsByte));
-            System.err.println("\tdata_variability = 0x"
-                               + Integer.toHexString(varByte));
-            System.err.println("\tdata_offset = 0x"
-                               + Integer.toHexString(dataOffset));
-        }
-    }
-
-    private void dump_entry_variable(String name, ByteBuffer bb, int size) {
-        if (DEBUG) {
-            char[] toHex = new char[] { '0', '1', '2', '3',
-                                        '4', '5', '6', '7',
-                                        '8', '9', 'a', 'b',
-                                        'c', 'd', 'e', 'f' };
-
-            ByteBuffer data = bb.slice();
-            data.limit(size);
-
-            System.err.println("\tname = " + name);
-            System.err.println("\tdata = ");
-
-            int count=0;
-            while (data.hasRemaining()) {
-                byte b = data.get();
-                byte high = (byte)((b >> 8) & 0x0f);
-                byte low = (byte)(b & 0x0f);
-
-                if (count % 16 == 0) {
-                    System.err.print("\t\t" + Integer.toHexString(count / 16)
-                                     + ": ");
-                }
-
-                System.err.print(String.valueOf(toHex[high])
-                                 + String.valueOf(toHex[low]));
-
-                count++;
-                if (count % 16 == 0) {
-                    System.err.println();
-                } else {
-                    System.err.print(" ");
-                }
-            }
-            if (count % 16 != 0) {
-                System.err.println();
-            }
-        }
-    }
-
-    private void logln(String s) {
-        if (DEBUG) {
-            System.err.println(s);
-        }
-    }
-
-    private void log(String s) {
-        if (DEBUG) {
-            System.err.print(s);
-        }
     }
 }

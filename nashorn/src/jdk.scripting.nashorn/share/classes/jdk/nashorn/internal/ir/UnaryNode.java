@@ -33,7 +33,6 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -123,23 +122,11 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         return isAssignment();
     }
 
-    private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
-        @Override
-        public Type apply(final Symbol t) {
-            return null;
-        }
-    };
-
-
     @Override
     public Type getWidestOperationType() {
-        return getWidestOperationType(UNKNOWN_LOCALS);
-    }
-
-    private Type getWidestOperationType(final Function<Symbol, Type> localVariableTypes) {
         switch (tokenType()) {
         case ADD:
-            final Type operandType = getExpression().getType(localVariableTypes);
+            final Type operandType = getExpression().getType();
             if(operandType == Type.BOOLEAN) {
                 return Type.INT;
             } else if(operandType.isObject()) {
@@ -326,12 +313,12 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
-        final Type widest = getWidestOperationType(localVariableTypes);
+    public Type getType() {
+        final Type widest = getWidestOperationType();
         if(type == null) {
             return widest;
         }
-        return Type.narrowest(widest, Type.widest(type, expression.getType(localVariableTypes)));
+        return Type.narrowest(widest, Type.widest(type, expression.getType()));
     }
 
     @Override

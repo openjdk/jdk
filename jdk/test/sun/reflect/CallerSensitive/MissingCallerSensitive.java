@@ -34,11 +34,13 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
+
 public class MissingCallerSensitive {
     public static void main(String[] args) throws Exception {
         String testclasses = System.getProperty("test.classes", ".");
-        List<Path> classes = new ArrayList<>();
-        classes.add(Paths.get(testclasses, "MissingCallerSensitive.class"));
+
+        Stream<Path> classes = Stream.of(Paths.get(testclasses, "MissingCallerSensitive.class"));
 
         CallerSensitiveFinder csfinder = new CallerSensitiveFinder();
         List<String> errors = csfinder.run(classes);

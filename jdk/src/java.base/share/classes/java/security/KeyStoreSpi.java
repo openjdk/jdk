@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,6 +588,29 @@ public abstract class KeyStoreSpi {
             return engineIsKeyEntry(alias) &&
                         engineGetCertificate(alias) == null;
         }
+        return false;
+    }
+
+    /**
+     * Probes the specified input stream to determine whether it contains a
+     * keystore that is supported by this implementation, or not.
+     *
+     * <p>
+     * @implSpec
+     * This method returns false by default. Keystore implementations should
+     * override this method to peek at the data stream directly or to use other
+     * content detection mechanisms.
+     *
+     * @param  stream the keystore data to be probed
+     *
+     * @return true if the keystore data is supported, otherwise false
+     *
+     * @throws IOException if there is an I/O problem with the keystore data.
+     * @throws NullPointerException if stream is {@code null}.
+     *
+     * @since 1.9
+     */
+    public boolean engineProbe(InputStream stream) throws IOException {
         return false;
     }
 }

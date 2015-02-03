@@ -503,7 +503,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      * @param width the width dimensions
      * @param height the height dimensions
      * @param rowStart the beginning of the row
-     * @param rowEnd the the ending of the row
+     * @param rowEnd the ending of the row
      * @param useBaseline Whether or not to align on baseline.
      * @param ascent Ascent for the components. This is only valid if
      *               useBaseline is true.

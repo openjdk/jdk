@@ -53,24 +53,21 @@ endif
 # Find the default set of src dirs for a native library.
 # Param 1 - module name
 # Param 2 - library name
-define FindSrcDirsForLib 
+FindSrcDirsForLib = \
   $(call uniq, $(wildcard \
       $(JDK_TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native/lib$(strip $2) \
       $(JDK_TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native/lib$(strip $2) \
       $(JDK_TOPDIR)/src/$(strip $1)/share/native/lib$(strip $2)))
-endef
 
 ################################################################################
 # Find lib dir for module
 # Param 1 - module name
 ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
-  define FindLibDirForModule
-    $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)$(OPENJDK_TARGET_CPU_LIBDIR)
-  endef
+  FindLibDirForModule = \
+      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)$(OPENJDK_TARGET_CPU_LIBDIR)
 else
-  define FindLibDirForModule
-    $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
-  endef
+  FindLibDirForModule = \
+      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
 endif
 
 ################################################################################
@@ -78,11 +75,10 @@ endif
 # Param 1 - module name
 # Param 2 - library name
 # Param 3 - subdir for library
-define FindLib
-$(strip \
-  $(call FindLibDirForModule, $(strip $1))$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(SHARED_LIBRARY_SUFFIX) \
-)
-endef
+FindLib = \
+    $(call FindLibDirForModule, \
+        $(strip $1))$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(SHARED_LIBRARY_SUFFIX)
+
 
 ################################################################################
 # Define the header include flags needed to compile against it.

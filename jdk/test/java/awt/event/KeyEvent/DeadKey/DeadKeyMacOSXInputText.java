@@ -26,18 +26,19 @@
  * @bug 7199180
  * @summary [macosx] Dead keys handling for input methods
  * @author alexandr.scherbatiy area=awt.event
+ * @library ../../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main DeadKeyMacOSXInputText
  */
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.event.KeyEvent;
 import javax.swing.JTextField;
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+
+import jdk.testlibrary.OSInfo;
 
 public class DeadKeyMacOSXInputText {
 
-    private static SunToolkit toolkit;
     private static volatile int state = 0;
 
     public static void main(String[] args) throws Exception {
@@ -46,11 +47,10 @@ public class DeadKeyMacOSXInputText {
             return;
         }
 
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
-        createAndShowGUI();
+        createAndShowGUI(robot);
 
         // Pressed keys: Alt + E + A
         // Results:  ALT + VK_DEAD_ACUTE + a with accute accent
@@ -61,14 +61,14 @@ public class DeadKeyMacOSXInputText {
 
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (state != 3) {
             throw new RuntimeException("Wrong number of key events.");
         }
     }
 
-    static void createAndShowGUI() {
+    static void createAndShowGUI(Robot robot) {
         Frame frame = new Frame();
         frame.setSize(300, 300);
         Panel panel = new Panel(new BorderLayout());
@@ -77,10 +77,10 @@ public class DeadKeyMacOSXInputText {
         panel.add(textField, BorderLayout.CENTER);
         frame.add(panel);
         frame.setVisible(true);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         textField.requestFocusInWindow();
-        toolkit.realSync();
+        robot.waitForIdle();
 
     }
 

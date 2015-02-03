@@ -91,7 +91,7 @@ public abstract class AbstractPerfDataBuffer {
      *
      * @param name the name of the Instrumentation object to find.
      * @return Monitor - the {@link Monitor} object that can be used to
-     *                   monitor the the named instrumentation object, or
+     *                   monitor the named instrumentation object, or
      *                   <tt>null</tt> if the named object doesn't exist.
      * @throws MonitorException Thrown if an error occurs while communicating
      *                          with the target Java Virtual Machine.

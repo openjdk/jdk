@@ -104,8 +104,8 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   size_t page_size = os::vm_page_size();
   if (os::can_execute_large_page_memory()) {
     const size_t min_pages = 8;
-    page_size = MIN2(os::page_size_for_region(committed_size, min_pages),
-                     os::page_size_for_region(rs.size(), min_pages));
+    page_size = MIN2(os::page_size_for_region_aligned(committed_size, min_pages),
+                     os::page_size_for_region_aligned(rs.size(), min_pages));
   }
 
   const size_t granularity = os::vm_allocation_granularity();
@@ -279,10 +279,12 @@ size_t CodeHeap::alignment_offset() const {
   return sizeof(HeapBlock) & (_segment_size - 1);
 }
 
-// Finds the next free heapblock. If the current one is free, that it returned
-void* CodeHeap::next_free(HeapBlock* b) const {
-  // Since free blocks are merged, there is max. on free block
-  // between two used ones
+// Returns the current block if available and used.
+// If not, it returns the subsequent block (if available), NULL otherwise.
+// Free blocks are merged, therefore there is at most one free block
+// between two used ones. As a result, the subsequent block (if available) is
+// guaranteed to be used.
+void* CodeHeap::next_used(HeapBlock* b) const {
   if (b != NULL && b->free()) b = next_block(b);
   assert(b == NULL || !b->free(), "must be in use or at end of heap");
   return (b == NULL) ? NULL : b->allocated_space();

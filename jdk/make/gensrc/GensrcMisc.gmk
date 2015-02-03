@@ -28,6 +28,13 @@
 # string and the runtime name into the Version.java file.
 # To be printed by java -version
 
+# These dependencies should ideally be added to prerequesites for Version.java
+# but skip for now until we have better incremental build for java.
+#    $(call DependOnVariable, LAUNCHER_NAME) \
+#    $(call DependOnVariable, RELEASE) \
+#    $(call DependOnVariable, FULL_VERSION) \
+#    $(call DependOnVariable, RUNTIME_VERSION)
+
 $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/misc/Version.java.template
 	$(MKDIR) -p $(@D)

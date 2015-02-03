@@ -59,7 +59,7 @@ import java.util.Vector;
   * objects.
   * <p>
   * If an exception was recorded while processing a chain of
-  * <tt>LdapReferralException</tt> objects then is is throw once
+  * <tt>LdapReferralException</tt> objects then it is throw once
   * processing has completed.
   *
   * @author Vincent Ryan

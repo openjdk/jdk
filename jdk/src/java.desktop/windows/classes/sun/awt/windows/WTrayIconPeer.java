@@ -82,6 +82,7 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
 
         SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
                 @Override
+                @SuppressWarnings("deprecation")
                 public void run() {
                     PopupMenu newPopup = ((TrayIcon)target).getPopupMenu();
                     if (popup != newPopup) {

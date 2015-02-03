@@ -29,8 +29,6 @@
  * @run main Test6256140
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -46,14 +44,13 @@ public class Test6256140 {
 
         Robot robot = new Robot();
         robot.setAutoDelay(10);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 createAndShowGUI();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = ft.getLocationOnScreen();
         robot.mouseMove(point.x, point.y);
@@ -61,7 +58,7 @@ public class Test6256140 {
 
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!isTooltipShowning()) {
             throw new RuntimeException("Tooltip is not shown");
@@ -69,7 +66,7 @@ public class Test6256140 {
 
         robot.keyPress(KeyEvent.VK_ESCAPE);
         robot.keyRelease(KeyEvent.VK_ESCAPE);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (isTooltipShowning()) {
             throw new RuntimeException("Tooltip must be hidden now");
@@ -81,7 +78,7 @@ public class Test6256140 {
 
         robot.keyPress(KeyEvent.VK_ESCAPE);
         robot.keyRelease(KeyEvent.VK_ESCAPE);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!isTextEqual()) {
             throw new RuntimeException("FormattedTextField must cancel the updated value");

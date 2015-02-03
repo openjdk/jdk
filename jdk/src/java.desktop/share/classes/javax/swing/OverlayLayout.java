@@ -97,7 +97,7 @@ public class OverlayLayout implements LayoutManager2,Serializable {
      * this class to know when to invalidate layout.
      *
      * @param name the name of the component
-     * @param comp the the component to be added
+     * @param comp the component to be added
      */
     public void addLayoutComponent(String name, Component comp) {
         invalidateLayout(comp.getParent());

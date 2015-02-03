@@ -32,7 +32,6 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.event.*;
-import sun.awt.SunToolkit;
 
 public class bug4171437 {
     static volatile boolean closeActivated = false;
@@ -45,16 +44,14 @@ public class bug4171437 {
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
-
         Robot robot = new Robot();
         robot.setAutoDelay(50);
+        robot.waitForIdle();
 
         Util.hitMnemonics(robot, KeyEvent.VK_F);
         Util.hitKeys(robot, KeyEvent.VK_C);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000);
 
         if (!closeActivated || customActivated) {

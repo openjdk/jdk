@@ -32,14 +32,11 @@
 import java.awt.*;
 import javax.swing.*;
 
-import sun.awt.SunToolkit;
-
 public class bug4251579 {
 
     private static JLabel htmlComponent;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         final Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -51,7 +48,7 @@ public class bug4251579 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 

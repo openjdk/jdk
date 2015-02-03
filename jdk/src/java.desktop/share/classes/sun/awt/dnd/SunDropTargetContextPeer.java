@@ -239,13 +239,6 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
         if (localTransferable != null) {
             return localTransferable.getTransferData(df);
-        } else if (df.isMimeTypeEqual(DataFlavor.javaJVMLocalObjectMimeType)) {
-            // Workaround to JDK-8024061: Exception thrown when drag and drop
-            //      between two components is executed quickly.
-            // It is expected localTransferable is not null if javaJVMLocalObjectMimeType
-            // is used. Executing further results in ClassCastException, so null is
-            // returned here as no transfer data is available in this case.
-            return null;
         }
 
         if (dropStatus != STATUS_ACCEPT || dropComplete) {

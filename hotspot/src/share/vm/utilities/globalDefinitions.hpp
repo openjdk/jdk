@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,6 @@ extern int LogBitsPerHeapOop;
 extern int BytesPerHeapOop;
 extern int BitsPerHeapOop;
 
-// Oop encoding heap max
-extern uint64_t OopEncodingHeapMax;
-
 const int BitsPerJavaInteger = 32;
 const int BitsPerJavaLong    = 64;
 const int BitsPerSize_t      = size_tSize * BitsPerByte;
@@ -194,7 +191,6 @@ const int LogHeapWordsPerLong = LogBytesPerLong - LogHeapWordSize;
 inline size_t heap_word_size(size_t byte_size) {
   return (byte_size + (HeapWordSize-1)) >> LogHeapWordSize;
 }
-
 
 const size_t K                  = 1024;
 const size_t M                  = K*K;
@@ -397,8 +393,17 @@ const int LogKlassAlignment        = LogKlassAlignmentInBytes - LogHeapWordSize;
 const int KlassAlignmentInBytes    = 1 << LogKlassAlignmentInBytes;
 const int KlassAlignment           = KlassAlignmentInBytes / HeapWordSize;
 
-// Klass encoding metaspace max size
-const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
+// Maximal size of heap where unscaled compression can be used. Also upper bound
+// for heap placement: 4GB.
+const  uint64_t UnscaledOopHeapMax = (uint64_t(max_juint) + 1);
+// Maximal size of heap where compressed oops can be used. Also upper bound for heap
+// placement for zero based compression algorithm: UnscaledOopHeapMax << LogMinObjAlignmentInBytes.
+extern uint64_t OopEncodingHeapMax;
+
+// Maximal size of compressed class space. Above this limit compression is not possible.
+// Also upper bound for placement of zero based class space. (Class space is further limited
+// to be < 3G, see arguments.cpp.)
+const  uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
 
 // Machine dependent stuff
 
@@ -1137,17 +1142,18 @@ inline bool is_power_of_2_long(jlong x) {
   return ((x != NoLongBits) && (mask_long_bits(x, x - 1) == NoLongBits));
 }
 
-//* largest i such that 2^i <= x
-//  A negative value of 'x' will return '31'
+// Returns largest i such that 2^i <= x.
+// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
+// If x == 0, the function returns -1.
 inline int log2_intptr(intptr_t x) {
   int i = -1;
-  uintptr_t p =  1;
+  uintptr_t p = 1;
   while (p != 0 && p <= (uintptr_t)x) {
     // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
     i++; p *= 2;
   }
   // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // (if p = 0 then overflow occurred and i = 31)
+  // If p = 0, overflow has occurred and i = 31 or i = 63 (depending on the machine word size).
   return i;
 }
 

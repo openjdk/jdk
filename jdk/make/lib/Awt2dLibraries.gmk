@@ -300,7 +300,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
 
     LIBAWT_XAWT_DIRS := \
         $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libawt_xawt \
-        $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libjawt \
         $(JDK_TOPDIR)/src/java.desktop/share/native/common/awt/debug \
         $(JDK_TOPDIR)/src/java.desktop/share/native/common/awt/utility \
         $(JDK_TOPDIR)/src/java.desktop/share/native/common/font \

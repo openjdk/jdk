@@ -151,7 +151,7 @@ public class SolarisNumericUserPrincipal implements
      * @param o Object to be compared for equality with this
      *          <code>SolarisNumericUserPrincipal</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>SolarisNumericUserPrincipal</code>.
      */
     public boolean equals(Object o) {

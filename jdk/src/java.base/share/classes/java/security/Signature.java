@@ -776,7 +776,7 @@ public abstract class Signature extends SignatureSpi {
     /**
      * Updates the data to be signed or verified using the specified
      * ByteBuffer. Processes the {@code data.remaining()} bytes
-     * starting at at {@code data.position()}.
+     * starting at {@code data.position()}.
      * Upon return, the buffer's position will be equal to its limit;
      * its limit will not have changed.
      *

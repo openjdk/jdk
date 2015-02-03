@@ -95,7 +95,7 @@ class Coding implements Comparable<Coding>, CodingMethod, Histogram.BitMetric {
       If S>0, the unsigned value of a byte sequence is regarded as a binary
       integer.  If any of the S low-order bits are zero, the corresponding
       signed value will be non-negative.  If all of the S low-order bits
-      (S>0) are one, the the corresponding signed value will be negative.
+      (S>0) are one, the corresponding signed value will be negative.
 
       The non-negative signed values are compact and monotonically increasing
       (from 0) in the ordering of the corresponding unsigned values.

@@ -36,7 +36,6 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.Callable;
-import sun.awt.SunToolkit;
 
 public class bug4908142 {
 
@@ -44,7 +43,6 @@ public class bug4908142 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -55,7 +53,7 @@ public class bug4908142 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -65,7 +63,7 @@ public class bug4908142 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
 
         robot.keyPress(KeyEvent.VK_A);
@@ -74,7 +72,7 @@ public class bug4908142 {
         robot.keyRelease(KeyEvent.VK_A);
         robot.keyPress(KeyEvent.VK_D);
         robot.keyRelease(KeyEvent.VK_D);
-        toolkit.realSync();
+        robot.waitForIdle();
 
 
         String sel = Util.invokeOnEDT(new Callable<String>() {

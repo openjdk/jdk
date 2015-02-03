@@ -47,7 +47,7 @@ public interface BufferedMonitoredVm extends MonitoredVm {
     byte[] getBytes();
 
     /**
-     * Interface to get the the size of the instrumentation buffer
+     * Interface to get the size of the instrumentation buffer
      * for the target Java Virtual Machine.
      *
      * @return int - the size of the instrumentation buffer for the

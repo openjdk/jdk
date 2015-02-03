@@ -1418,7 +1418,7 @@ public class ProcessPath {
                                               */
                                  );
         } else {
-            /* Clamping starting from first vertex of the the processed
+            /* Clamping starting from first vertex of the processed
              * segment
              *
              * CLIPCLAMP(xMin, xMax, x1, y1, x2, y2, x3, y3, res);
@@ -1438,7 +1438,7 @@ public class ProcessPath {
                 return;
             }
 
-            /* Clamping starting from last vertex of the the processed
+            /* Clamping starting from last vertex of the processed
              * segment
              *
              * CLIPCLAMP(xMin, xMax, x2, y2, x1, y1, x3, y3, res);
@@ -2062,7 +2062,7 @@ public class ProcessPath {
                 if (res == CRES_INVISIBLE) return;
                 lastClipped = IS_CLIPPED(res);
 
-                /* Clamping starting from first vertex of the the processed
+                /* Clamping starting from first vertex of the processed
                  * segment
                  *
                  * CLIPCLAMP(outXMin, outXMax, x1, y1, x2, y2, x3, y3, res);
@@ -2078,7 +2078,7 @@ public class ProcessPath {
                     return;
                 }
 
-                /* Clamping starting from last vertex of the the processed
+                /* Clamping starting from last vertex of the processed
                  * segment
                  *
                  * CLIPCLAMP(outXMin, outXMax, x2, y2, x1, y1, x3, y3, res);

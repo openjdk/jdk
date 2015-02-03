@@ -33,7 +33,6 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
-import sun.awt.*;
 
 public class bug4927934 implements TreeSelectionListener, TreeExpansionListener, FocusListener {
 
@@ -73,8 +72,7 @@ public class bug4927934 implements TreeSelectionListener, TreeExpansionListener,
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000);
 
         SwingUtilities.invokeLater(new Runnable() {
@@ -97,35 +95,35 @@ public class bug4927934 implements TreeSelectionListener, TreeExpansionListener,
         // GO TO RIGHT
         selectionChanged = false;
         hitKey(KeyEvent.VK_RIGHT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!checkSelectionChanged(tree, 0)) {
             throw new RuntimeException("Root should be selected");
         }
 
         selectionChanged = false;
         hitKey(KeyEvent.VK_RIGHT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!checkSelectionChanged(tree, 1)) {
             throw new RuntimeException("Node should be selected");
         }
 
         treeExpanded = false;
         hitKey(KeyEvent.VK_RIGHT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!isTreeExpanded()) {
             throw new RuntimeException("Node should be expanded");
         }
 
         selectionChanged = false;
         hitKey(KeyEvent.VK_RIGHT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!checkSelectionChanged(tree, 2)) {
             throw new RuntimeException("Leaf1 should be selected");
         }
 
         selectionChanged = false;
         hitKey(KeyEvent.VK_RIGHT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!checkSelectionChanged(tree, 2)) {
             throw new RuntimeException("Leaf1 should be selected");
         }
@@ -133,7 +131,7 @@ public class bug4927934 implements TreeSelectionListener, TreeExpansionListener,
         // GO TO LEFT
         selectionChanged = false;
         hitKey(KeyEvent.VK_LEFT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!checkSelectionChanged(tree, 1)) {
             throw new RuntimeException("Node should be selected");
         }
@@ -146,14 +144,14 @@ public class bug4927934 implements TreeSelectionListener, TreeExpansionListener,
 
         selectionChanged = false;
         hitKey(KeyEvent.VK_LEFT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!checkSelectionChanged(tree, 0)) {
             throw new RuntimeException("Root should be selected");
         }
 
         treeCollapsed = false;
         hitKey(KeyEvent.VK_LEFT);
-        toolkit.realSync();
+        robot.waitForIdle();
         if (!isTreeCollapsed()) {
             throw new RuntimeException("Root should be collapsed");
         }

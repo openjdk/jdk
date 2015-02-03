@@ -214,7 +214,7 @@ public abstract class SctpServerChannel
      *         bind the socket to an automatically assigned socket address
      *
      * @param  backlog
-     *         The maximum number number of pending associations
+     *         The maximum number of pending associations
      *
      * @return  This channel
      *

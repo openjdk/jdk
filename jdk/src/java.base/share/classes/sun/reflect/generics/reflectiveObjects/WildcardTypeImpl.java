@@ -39,25 +39,26 @@ import java.util.Arrays;
  */
 public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
     implements WildcardType {
-    // upper bounds - evaluated lazily
-    private Type[] upperBounds;
-    // lower bounds - evaluated lazily
-    private Type[] lowerBounds;
-    // The ASTs for the bounds. We are required to evaluate the bounds
-    // lazily, so we store these at least until we are first asked
-    // for the bounds. This also neatly solves the
-    // problem with F-bounds - you can't reify them before the formal
-    // is defined.
-    private FieldTypeSignature[] upperBoundASTs;
-    private FieldTypeSignature[] lowerBoundASTs;
+
+    /*
+     * We are required to evaluate the bounds lazily, so we store them as ASTs
+     * until we are first asked for them.  This also neatly solves the problem
+     * with F-bounds - you can't reify them before the formal is defined.
+     */
+
+    /** The upper bounds.  Lazily converted from FieldTypeSignature[] to Type[]. */
+    private volatile Object[] upperBounds;
+
+    /** The lower bounds.  Lazily converted from FieldTypeSignature[] to Type[]. */
+    private volatile Object[] lowerBounds;
 
     // constructor is private to enforce access through static factory
     private WildcardTypeImpl(FieldTypeSignature[] ubs,
                              FieldTypeSignature[] lbs,
                              GenericsFactory f) {
         super(f);
-        upperBoundASTs = ubs;
-        lowerBoundASTs = lbs;
+        upperBounds = ubs;
+        lowerBounds = lbs;
     }
 
     /**
@@ -76,27 +77,8 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
         return new WildcardTypeImpl(ubs, lbs, f);
     }
 
-    // Accessors
-
-    // accessor for ASTs for upper bounds. Must not be called after upper
-    // bounds have been evaluated, because we might throw the ASTs
-    // away (but that is not thread-safe, is it?)
-    private FieldTypeSignature[] getUpperBoundASTs() {
-        // check that upper bounds were not evaluated yet
-        assert(upperBounds == null);
-        return upperBoundASTs;
-    }
-    // accessor for ASTs for lower bounds. Must not be called after lower
-    // bounds have been evaluated, because we might throw the ASTs
-    // away (but that is not thread-safe, is it?)
-    private FieldTypeSignature[] getLowerBoundASTs() {
-        // check that lower bounds were not evaluated yet
-        assert(lowerBounds == null);
-        return lowerBoundASTs;
-    }
-
     /**
-     * Returns an array of <tt>Type</tt> objects representing the  upper
+     * Returns an array of <tt>Type</tt> objects representing the upper
      * bound(s) of this type variable.  Note that if no upper bound is
      * explicitly declared, the upper bound is <tt>Object</tt>.
      *
@@ -117,24 +99,12 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      *     for any reason
      */
     public Type[] getUpperBounds() {
-        // lazily initialize bounds if necessary
-        if (upperBounds == null) {
-            FieldTypeSignature[] fts = getUpperBoundASTs(); // get AST
-
-            // allocate result array; note that
-            // keeping ts and bounds separate helps with threads
-            Type[] ts = new Type[fts.length];
-            // iterate over bound trees, reifying each in turn
-            for ( int j = 0; j  < fts.length; j++) {
-                Reifier r = getReifier();
-                fts[j].accept(r);
-                ts[j] = r.getResult();
-            }
-            // cache result
-            upperBounds = ts;
-            // could throw away upper bound ASTs here; thread safety?
+        Object[] value = upperBounds;
+        if (value instanceof FieldTypeSignature[]) {
+            value = reifyBounds((FieldTypeSignature[])value);
+            upperBounds = value;
         }
-        return upperBounds.clone(); // return cached bounds
+        return (Type[])value.clone();
     }
 
     /**
@@ -160,23 +130,12 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      *     for any reason
      */
     public Type[] getLowerBounds() {
-        // lazily initialize bounds if necessary
-        if (lowerBounds == null) {
-            FieldTypeSignature[] fts = getLowerBoundASTs(); // get AST
-            // allocate result array; note that
-            // keeping ts and bounds separate helps with threads
-            Type[] ts = new Type[fts.length];
-            // iterate over bound trees, reifying each in turn
-            for ( int j = 0; j  < fts.length; j++) {
-                Reifier r = getReifier();
-                fts[j].accept(r);
-                ts[j] = r.getResult();
-            }
-            // cache result
-            lowerBounds = ts;
-            // could throw away lower bound ASTs here; thread safety?
+        Object[] value = lowerBounds;
+        if (value instanceof FieldTypeSignature[]) {
+            value = reifyBounds((FieldTypeSignature[])value);
+            lowerBounds = value;
         }
-        return lowerBounds.clone(); // return cached bounds
+        return (Type[])value.clone();
     }
 
     public String toString() {

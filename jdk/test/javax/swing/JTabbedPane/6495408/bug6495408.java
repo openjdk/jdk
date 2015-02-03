@@ -23,7 +23,6 @@
 
 import javax.swing.*;
 import java.awt.*;
-import sun.awt.SunToolkit;
 /*
  * @test
  * @bug 6495408
@@ -37,7 +36,6 @@ public class bug6495408 {
     static JTabbedPane tabbedPane;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         final Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -56,7 +54,7 @@ public class bug6495408 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         final Rectangle d = new Rectangle();
         final Point p = new Point();

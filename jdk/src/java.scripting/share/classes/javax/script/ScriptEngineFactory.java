@@ -85,7 +85,7 @@ public interface ScriptEngineFactory {
     public List<String> getNames();
 
     /**
-     * Returns the name of the scripting langauge supported by this
+     * Returns the name of the scripting language supported by this
      * <code>ScriptEngine</code>.
      * @return The name of the supported language.
      */
@@ -104,14 +104,15 @@ public interface ScriptEngineFactory {
      * <ul>
      * <li>ScriptEngine.ENGINE</li>
      * <li>ScriptEngine.ENGINE_VERSION</li>
-     * <li>ScriptEngine.NAME</li>
      * <li>ScriptEngine.LANGUAGE</li>
      * <li>ScriptEngine.LANGUAGE_VERSION</li>
+     * <li>ScriptEngine.NAME</li>
      * </ul>
      * <p>
      * The values for these keys are the Strings returned by <code>getEngineName</code>,
-     * <code>getEngineVersion</code>, <code>getName</code>, <code>getLanguageName</code> and
-     * <code>getLanguageVersion</code> respectively.<br><br>
+     * <code>getEngineVersion</code>, <code>getLanguageName</code>,
+     * <code>getLanguageVersion</code> for the first four keys respectively. For NAME, one of the Strings
+     * returned by <code>getNames</code> is returned.<br><br>
      * A reserved key, <code><b>THREADING</b></code>, whose value describes the behavior of the engine
      * with respect to concurrent execution of scripts and maintenance of state is also defined.
      * These values for the <code><b>THREADING</b></code> key are:<br><br>

@@ -113,7 +113,7 @@ AwtPalette::AwtPalette(AwtWin32GraphicsDevice *device)
 }
 
 /**
- * Retrieves system palette entries. Includes a workaround for for some
+ * Retrieves system palette entries. Includes a workaround for some
  * video drivers which may not support the GSPE call but may return
  * valid values from this procedure.
  */

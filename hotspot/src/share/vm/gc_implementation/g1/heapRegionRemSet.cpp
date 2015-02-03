@@ -681,6 +681,18 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
   clear_fcc();
 }
 
+bool OtherRegionsTable::occupancy_less_or_equal_than(size_t limit) const {
+  if (limit <= (size_t)G1RSetSparseRegionEntries) {
+    return occ_coarse() == 0 && _first_all_fine_prts == NULL && occ_sparse() <= limit;
+  } else {
+    // Current uses of this method may only use values less than G1RSetSparseRegionEntries
+    // for the limit. The solution, comparing against occupied() would be too slow
+    // at this time.
+    Unimplemented();
+    return false;
+  }
+}
+
 bool OtherRegionsTable::is_empty() const {
   return occ_sparse() == 0 && occ_coarse() == 0 && _first_all_fine_prts == NULL;
 }

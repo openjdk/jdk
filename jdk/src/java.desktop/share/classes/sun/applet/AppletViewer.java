@@ -48,6 +48,7 @@ final class TextFrame extends Frame {
     /**
      * Create the tag frame.
      */
+    @SuppressWarnings("deprecation")
     TextFrame(int x, int y, String title, String text) {
         setTitle(title);
         TextArea txt = new TextArea(20, 60);
@@ -156,6 +157,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Create the applet viewer.
      */
+    @SuppressWarnings("deprecation")
     public AppletViewer(int x, int y, URL doc, Hashtable<String, String> atts,
                         PrintStream statusMsgStream, AppletViewerFactory factory) {
         this.factory = factory;
@@ -228,6 +230,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
             }
 
             @Override
+            @SuppressWarnings("deprecation")
             public void appletStateChanged(AppletEvent evt)
             {
                 AppletPanel src = (AppletPanel)evt.getSource();
@@ -594,6 +597,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Make sure the atrributes are uptodate.
      */
+    @SuppressWarnings("deprecation")
     public void updateAtts() {
         Dimension d = panel.size();
         Insets in = panel.insets();
@@ -648,6 +652,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Save the applet to a well known file (for now) as a serialized object
      */
+    @SuppressWarnings("deprecation")
     void appletSave() {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
 
@@ -699,6 +704,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Clone the viewer and the applet.
      */
+    @SuppressWarnings("deprecation")
     void appletClone() {
         Point p = location();
         updateAtts();
@@ -711,6 +717,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Show the applet tag.
      */
+    @SuppressWarnings("deprecation")
     void appletTag() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         updateAtts();
@@ -724,6 +731,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Show the applet info.
      */
+    @SuppressWarnings("deprecation")
     void appletInfo() {
         String str = panel.applet.getAppletInfo();
         if (str == null) {

@@ -76,11 +76,11 @@ public class CoreReflectionFactory implements GenericsFactory {
      * kind. Classes produced will be those that would be loaded by the
      * defining class loader of the declaration <tt>d</tt> (if <tt>d</tt>
      * is a type declaration, or by the defining loader of the declaring
-     * class of <tt>d</tt>  otherwise.
+     * class of <tt>d</tt> otherwise.
      * <p> Type variables will be created or lookup as necessary in the
      * scope <tt> s</tt>.
      * @param d - the generic declaration (class, interface, method or
-     * constructor) that thsi factory services
+     * constructor) that this factory services
      * @param s  the scope in which the factory will allocate and search for
      * type variables
      * @return an instance of <tt>CoreReflectionFactory</tt>

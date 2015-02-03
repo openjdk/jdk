@@ -35,7 +35,6 @@ import java.awt.Toolkit;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
-import sun.awt.SunToolkit;
 
 public class bug5074573 {
 
@@ -60,10 +59,10 @@ public class bug5074573 {
     }
 
     static boolean test(final Class<? extends JTextComponent> textComponentClass) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(50);
+
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -73,7 +72,7 @@ public class bug5074573 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Remove selection from JTextField components for the Aqua Look & Feel
         if (textComponent instanceof JTextField && "Aqua".equals(UIManager.getLookAndFeel().getID())) {
@@ -87,14 +86,14 @@ public class bug5074573 {
                 }
             });
 
-            toolkit.realSync();
+            robot.waitForIdle();
         }
 
         robot.keyPress(getCtrlKey());
         robot.keyPress(KeyEvent.VK_BACK_SPACE);
         robot.keyRelease(KeyEvent.VK_BACK_SPACE);
         robot.keyRelease(getCtrlKey());
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -104,13 +103,13 @@ public class bug5074573 {
                 caret.setDot(0);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.keyPress(getCtrlKey());
         robot.keyPress(KeyEvent.VK_DELETE);
         robot.keyRelease(KeyEvent.VK_DELETE);
         robot.keyRelease(getCtrlKey());
-        toolkit.realSync();
+        robot.waitForIdle();
 
         return resultString.equals(getText());
     }

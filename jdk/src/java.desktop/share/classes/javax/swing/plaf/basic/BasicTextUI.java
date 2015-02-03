@@ -137,7 +137,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     /**
      * Fetches the name of the keymap that will be installed/used
      * by default for this UI. This is implemented to create a
-     * name based upon the classname.  The name is the the name
+     * name based upon the classname.  The name is the name
      * of the class with the package prefix removed.
      *
      * @return the name
@@ -2644,6 +2644,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             /**
              * The only richer format supported is the file list flavor
              */
+            @SuppressWarnings("deprecation")
             protected Object getRicherData(DataFlavor flavor) throws UnsupportedFlavorException {
                 if (richText == null) {
                     return null;

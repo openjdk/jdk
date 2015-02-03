@@ -243,6 +243,7 @@ public class JApplet extends Applet implements Accessible,
     *      hidden: true
     * description: The menubar for accessing pulldown menus from this applet.
     */
+    @SuppressWarnings("deprecation")
     public void setJMenuBar(JMenuBar menuBar) {
         getRootPane().setMenuBar(menuBar);
     }
@@ -253,6 +254,7 @@ public class JApplet extends Applet implements Accessible,
     * @return the menubar set on this applet
     * @see #setJMenuBar
     */
+    @SuppressWarnings("deprecation")
     public JMenuBar getJMenuBar() {
         return getRootPane().getMenuBar();
     }

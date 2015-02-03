@@ -403,7 +403,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * This is implemented to try and locate a <code>TabSet</code>
      * in the paragraph element's attribute set.  If one can be
      * found, its settings will be used, otherwise a default expansion
-     * will be provided.  The base location for for tab expansion
+     * will be provided.  The base location for tab expansion
      * is the left inset from the paragraphs most recent allocation
      * (which is what the layout of the children is based upon).
      *

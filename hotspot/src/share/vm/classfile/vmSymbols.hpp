@@ -79,6 +79,7 @@
   template(java_lang_ref_WeakReference,               "java/lang/ref/WeakReference")              \
   template(java_lang_ref_FinalReference,              "java/lang/ref/FinalReference")             \
   template(java_lang_ref_PhantomReference,            "java/lang/ref/PhantomReference")           \
+  template(sun_misc_Cleaner,                          "sun/misc/Cleaner")                         \
   template(java_lang_ref_Finalizer,                   "java/lang/ref/Finalizer")                  \
   template(java_lang_reflect_AccessibleObject,        "java/lang/reflect/AccessibleObject")       \
   template(java_lang_reflect_Method,                  "java/lang/reflect/Method")                 \
@@ -242,7 +243,6 @@
   template(returnType_name,                           "returnType")                               \
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
-  template(selectAlternative_name,                    "selectAlternative")                        \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
@@ -294,8 +294,7 @@
   template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
-  template(selectAlternative_signature, "(ZLjava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;") \
-                                                                      \
+                                                                                                  \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
   template(class_initializer_name,                    "<clinit>")                                 \
@@ -866,6 +865,12 @@
   do_intrinsic(_fullFence,                sun_misc_Unsafe,        fullFence_name, fullFence_signature,           F_RN)  \
    do_name(     fullFence_name,                                  "fullFence")                                           \
    do_alias(    fullFence_signature,                              void_method_signature)                                \
+                                                                                                                        \
+  /* Custom branch frequencies profiling support for JSR292 */                                                          \
+  do_class(java_lang_invoke_MethodHandleImpl,               "java/lang/invoke/MethodHandleImpl")                        \
+  do_intrinsic(_profileBoolean, java_lang_invoke_MethodHandleImpl, profileBoolean_name, profileBoolean_signature,    F_S)  \
+   do_name(     profileBoolean_name,                               "profileBoolean")                                     \
+   do_signature(profileBoolean_signature,                           "(Z[I)Z")                                            \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getObject_signature,       "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 201313, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
+
 
 /**
  * This class represents ciphers in counter (CTR) mode.
@@ -136,14 +137,6 @@ final class CounterMode extends FeedbackCipher {
      * The result is stored in <code>cipher</code>, starting at
      * <code>cipherOffset</code>.
      *
-     * <p>It is the application's responsibility to make sure that
-     * <code>plainLen</code> is a multiple of the embedded cipher's block size,
-     * as any excess bytes are ignored.
-     *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
-     *
      * @param in the buffer with the input data to be encrypted
      * @param inOffset the offset in <code>plain</code>
      * @param len the length of the input data
@@ -155,30 +148,7 @@ final class CounterMode extends FeedbackCipher {
         return crypt(in, inOff, len, out, outOff);
     }
 
-    /**
-     * Performs decryption operation.
-     *
-     * <p>The input cipher text <code>cipher</code>, starting at
-     * <code>cipherOffset</code> and ending at
-     * <code>(cipherOffset + len - 1)</code>, is decrypted.
-     * The result is stored in <code>plain</code>, starting at
-     * <code>plainOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>cipherLen</code> is a multiple of the embedded cipher's block
-     * size, as any excess bytes are ignored.
-     *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
-     *
-     * @param in the buffer with the input data to be decrypted
-     * @param inOff the offset in <code>cipherOffset</code>
-     * @param len the length of the input data
-     * @param out the buffer for the result
-     * @param outOff the offset in <code>plain</code>
-     * @return the length of the decrypted data
-     */
+    // CTR encrypt and decrypt are identical
     int decrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
         return crypt(in, inOff, len, out, outOff);
     }

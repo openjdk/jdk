@@ -2395,6 +2395,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             return total;
         }
 
+        @SuppressWarnings("deprecation")
         public void layoutContainer(Container parent) {
             /* Some of the code in this method deals with changing the
             * visibility of components to hide and show the contents for the
@@ -2903,6 +2904,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             return calculateMaxTabWidth(tabPlacement);
         }
 
+        @SuppressWarnings("deprecation")
         public void layoutContainer(Container parent) {
             /* Some of the code in this method deals with changing the
              * visibility of components to hide and show the contents for the

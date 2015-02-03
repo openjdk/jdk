@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,10 @@ void VM_RedefineClasses::doit() {
     _scratch_classes[i] = NULL;
   }
 
+  // Clean out MethodData pointing to old Method*
+  MethodDataCleaner clean_weak_method_links;
+  ClassLoaderDataGraph::classes_do(&clean_weak_method_links);
+
   // Disable any dependent concurrent compilations
   SystemDictionary::notice_modification();
 
@@ -155,8 +159,8 @@ void VM_RedefineClasses::doit() {
   // See jvmtiExport.hpp for detailed explanation.
   JvmtiExport::set_has_redefined_a_class();
 
-// check_class() is optionally called for product bits, but is
-// always called for non-product bits.
+  // check_class() is optionally called for product bits, but is
+  // always called for non-product bits.
 #ifdef PRODUCT
   if (RC_TRACE_ENABLED(0x00004000)) {
 #endif
@@ -3372,7 +3376,9 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // not yet in the vtable, because the vtable setup is in progress.
     // This must be done after we adjust the default_methods and
     // default_vtable_indices for methods already in the vtable.
+    // If redefining Unsafe, walk all the vtables looking for entries.
     if (ik->vtable_length() > 0 && (_the_class_oop->is_interface()
+        || _the_class_oop == SystemDictionary::misc_Unsafe_klass()
         || ik->is_subtype_of(_the_class_oop))) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
@@ -3392,7 +3398,9 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // interface, then we have to call adjust_method_entries() for
     // every InstanceKlass that has an itable since there isn't a
     // subclass relationship between an interface and an InstanceKlass.
+    // If redefining Unsafe, walk all the itables looking for entries.
     if (ik->itable_length() > 0 && (_the_class_oop->is_interface()
+        || _the_class_oop == SystemDictionary::misc_Unsafe_klass()
         || ik->is_subclass_of(_the_class_oop))) {
       // ik->itable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
@@ -3440,6 +3448,22 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
                                         _matching_new_methods,
                                         _matching_methods_length,
                                         &trace_name_printed);
+      }
+    }
+  }
+}
+
+// Clean method data for this class
+void VM_RedefineClasses::MethodDataCleaner::do_klass(Klass* k) {
+  if (k->oop_is_instance()) {
+    InstanceKlass *ik = InstanceKlass::cast(k);
+    // Clean MethodData of this class's methods so they don't refer to
+    // old methods that are no longer running.
+    Array<Method*>* methods = ik->methods();
+    int num_methods = methods->length();
+    for (int index = 0; index < num_methods; ++index) {
+      if (methods->at(index)->method_data() != NULL) {
+        methods->at(index)->method_data()->clean_weak_method_links();
       }
     }
   }
@@ -3746,7 +3770,7 @@ void VM_RedefineClasses::flush_dependent_code(instanceKlassHandle k_h, TRAPS) {
   // All dependencies have been recorded from startup or this is a second or
   // subsequent use of RedefineClasses
   if (JvmtiExport::all_dependencies_are_recorded()) {
-    Universe::flush_evol_dependents_on(k_h);
+    CodeCache::flush_evol_dependents_on(k_h);
   } else {
     CodeCache::mark_all_nmethods_for_deoptimization();
 

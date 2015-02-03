@@ -253,6 +253,7 @@ public class Popup {
             paint(g);
         }
 
+        @SuppressWarnings("deprecation")
         public void show() {
             this.pack();
             if (getWidth() > 0 && getHeight() > 0) {

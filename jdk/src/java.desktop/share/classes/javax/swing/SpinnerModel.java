@@ -53,7 +53,7 @@ import javax.swing.event.*;
  *   <dd>The preceding element or null if <code>value</code> is the
  *     first element of the sequence.
  * </dl>
- * When the the <code>value</code> property changes,
+ * When the <code>value</code> property changes,
  * <code>ChangeListeners</code> are notified.  <code>SpinnerModel</code> may
  * choose to notify the <code>ChangeListeners</code> under other circumstances.
  *
