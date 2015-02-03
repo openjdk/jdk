@@ -26,17 +26,16 @@
  * @bug 8003400
  * @summary Tests that JTree shows the last row
  * @author Sergey Malenkov
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
  * @run main/othervm Test8003400
  * @run main/othervm Test8003400 reverse
  * @run main/othervm Test8003400 system
  * @run main/othervm Test8003400 system reverse
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,10 +84,12 @@ public class Test8003400 {
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync(500);
-        new Robot().keyPress(KeyEvent.VK_END);
-        toolkit.realSync(500);
+        ExtendedRobot robot = new ExtendedRobot();
+        robot.waitForIdle(500);
+        robot.keyPress(KeyEvent.VK_END);
+        robot.waitForIdle(500);
+        robot.keyRelease(KeyEvent.VK_END);
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

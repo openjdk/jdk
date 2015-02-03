@@ -843,6 +843,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#drawChars
      * @see         java.awt.Graphics#drawString
      */
+    @SuppressWarnings("deprecation")
     public void drawBytes(byte data[], int offset, int length, int x, int y) {
         drawString(new String(data, 0, offset, length), x, y);
     }

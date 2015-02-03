@@ -275,7 +275,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         final PropertyDescriptor newLenDesc = desc;
 
         // Step 3c and 3d - get new length and convert to long
-        final long newLen = NativeArray.validLength(newLenDesc.getValue(), true);
+        final long newLen = NativeArray.validLength(newLenDesc.getValue());
 
         // Step 3e
         newLenDesc.setValue(newLen);
@@ -348,8 +348,8 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         final PropertyDescriptor oldLenDesc = (PropertyDescriptor) super.getOwnPropertyDescriptor("length");
 
         // Step 2
-        // get old length and convert to long
-        final long oldLen = NativeArray.validLength(oldLenDesc.getValue(), true);
+        // get old length and convert to long. Always a Long/Uint32 but we take the safe road.
+        final long oldLen = JSType.toUint32(oldLenDesc.getValue());
 
         // Step 3
         if ("length".equals(key)) {
@@ -471,7 +471,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     @Setter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public static void length(final Object self, final Object length) {
         if (isArray(self)) {
-            ((ScriptObject)self).setLength(validLength(length, true));
+            ((ScriptObject)self).setLength(validLength(length));
         }
     }
 
@@ -495,18 +495,13 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         length(self, length);  // Same as instance setter but we can't make nasgen use the same method for prototype
     }
 
-    static long validLength(final Object length, final boolean reject) {
+    static long validLength(final Object length) {
+        // ES5 15.4.5.1, steps 3.c and 3.d require two ToNumber conversions here
         final double doubleLength = JSType.toNumber(length);
-        if (!Double.isNaN(doubleLength) && JSType.isRepresentableAsLong(doubleLength)) {
-            final long len = (long) doubleLength;
-            if (len >= 0 && len <= JSType.MAX_UINT) {
-                return len;
-            }
-        }
-        if (reject) {
+        if (doubleLength != JSType.toUint32(length)) {
             throw rangeError("inappropriate.array.length", ScriptRuntime.safeToString(length));
         }
-        return -1;
+        return (long) doubleLength;
     }
 
     /**

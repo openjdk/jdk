@@ -33,7 +33,6 @@
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class bug6827786 {
 
@@ -41,7 +40,6 @@ public class bug6827786 {
     private static Component focusable;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -52,7 +50,7 @@ public class bug6827786 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -61,7 +59,7 @@ public class bug6827786 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         checkfocus();
 
         // select menu
@@ -72,17 +70,17 @@ public class bug6827786 {
         }
         // select submenu
         Util.hitKeys(robot, KeyEvent.VK_S);
-        toolkit.realSync();
+        robot.waitForIdle();
         // verify submenu is selected
         verify(1);
 
         Util.hitKeys(robot, KeyEvent.VK_S);
-        toolkit.realSync();
+        robot.waitForIdle();
         // verify last item is selected
         verify(2);
 
         Util.hitKeys(robot, KeyEvent.VK_S);
-        toolkit.realSync();
+        robot.waitForIdle();
         // selection should wrap to first item
         verify(0);
 

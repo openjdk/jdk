@@ -57,6 +57,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
     }
 
     ScreenMenuPropertyListener fPropertyListener;
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         super.addNotify();
 
@@ -154,6 +155,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
         setVisible(false);
     }
 
+    @SuppressWarnings("deprecation")
     public void setToolTipText(final String text) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;
@@ -161,6 +163,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
         ((CMenuItem)peer).setToolTipText(text);
     }
 
+    @SuppressWarnings("deprecation")
     public void setIcon(final Icon i) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;
@@ -205,6 +208,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
             }
         }
 
+    @SuppressWarnings("deprecation")
     public void setIndeterminate(final boolean indeterminate) {
         final MenuComponentPeer peer = getPeer();
         if (peer instanceof CCheckboxMenuItem) {

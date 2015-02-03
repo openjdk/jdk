@@ -1,0 +1,104 @@
+set(1)
+Setting accessor on 1 to 1
+
+set(str)
+Setting accessor on str to 1
+
+set(true)
+Setting accessor on true to 1
+
+set([object Object])
+Setting accessor on [object Object] to 1
+
+set()
+Setting accessor on  to 1
+
+setStrict(1)
+TypeError: "foo" is not a writable property of 1
+TypeError: "constructor" is not a writable property of 1
+Setting accessor on 1 to 1
+TypeError: Cannot set property "getterOnly" of [object Object] that has only a getter
+
+setStrict(str)
+TypeError: "foo" is not a writable property of str
+TypeError: "constructor" is not a writable property of str
+Setting accessor on str to 1
+TypeError: Cannot set property "getterOnly" of [object Object] that has only a getter
+
+setStrict(true)
+TypeError: "foo" is not a writable property of true
+TypeError: "constructor" is not a writable property of true
+Setting accessor on true to 1
+TypeError: Cannot set property "getterOnly" of [object Object] that has only a getter
+
+setStrict([object Object])
+Setting accessor on [object Object] to 1
+TypeError: Cannot set property "getterOnly" of [object Object] that has only a getter
+
+setStrict()
+Setting accessor on  to 1
+TypeError: Cannot set property "getterOnly" of [object Array] that has only a getter
+
+setAttr(1, foo)
+
+setAttr(1, constructor)
+
+setAttr(1, accessor)
+Setting accessor on 1 to 1
+
+setAttr(1, getterOnly)
+
+setAttr(str, foo)
+
+setAttr(str, constructor)
+
+setAttr(str, accessor)
+Setting accessor on str to 1
+
+setAttr(str, getterOnly)
+
+setAttr(true, foo)
+
+setAttr(true, constructor)
+
+setAttr(true, accessor)
+Setting accessor on true to 1
+
+setAttr(true, getterOnly)
+
+setAttrStrict(1, foo)
+TypeError: "foo" is not a writable property of 1
+
+setAttrStrict(1, constructor)
+TypeError: "constructor" is not a writable property of 1
+
+setAttrStrict(1, accessor)
+Setting accessor on 1 to 1
+
+setAttrStrict(1, getterOnly)
+TypeError: Cannot set property "getterOnly" of [object Object] that has only a getter
+
+setAttrStrict(str, foo)
+TypeError: "foo" is not a writable property of str
+
+setAttrStrict(str, constructor)
+TypeError: "constructor" is not a writable property of str
+
+setAttrStrict(str, accessor)
+Setting accessor on str to 1
+
+setAttrStrict(str, getterOnly)
+TypeError: Cannot set property "getterOnly" of [object Object] that has only a getter
+
+setAttrStrict(true, foo)
+TypeError: "foo" is not a writable property of true
+
+setAttrStrict(true, constructor)
+TypeError: "constructor" is not a writable property of true
+
+setAttrStrict(true, accessor)
+Setting accessor on true to 1
+
+setAttrStrict(true, getterOnly)
+TypeError: Cannot set property "getterOnly" of [object Object] that has only a getter
+

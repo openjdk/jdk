@@ -35,13 +35,11 @@ import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.plaf.synth.*;
-import sun.awt.SunToolkit;
 
 public class bug6276188 extends JFrame {
 
     private static JButton button;
     private static Point p;
-    private static final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
     public static void main(String[] args) throws Throwable {
         SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
@@ -67,7 +65,7 @@ public class bug6276188 extends JFrame {
 
         robot.mouseMove(p.x , p.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
         robot.delay(1000);
 
         Color color = robot.getPixelColor(p.x, p.y);

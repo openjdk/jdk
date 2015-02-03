@@ -28,8 +28,6 @@
    @run main bug7171812
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.dnd.*;
 import java.awt.event.InputEvent;
@@ -45,7 +43,6 @@ public class bug7171812 {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception{
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -53,10 +50,10 @@ public class bug7171812 {
                 setupGUI();
             }
         });
-        toolkit.realSync();
 
         Robot robot = new Robot();
         robot.setAutoDelay(10);
+        robot.waitForIdle();
         robot.mouseMove(scrollPane.getLocationOnScreen().x + 5, scrollPane.getLocationOnScreen().y + 5);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         for(int offset = 5; offset < scrollPane.getHeight()-20; offset++) {

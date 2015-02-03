@@ -46,6 +46,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         show();
     }
 
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         if (getPeer() == null) {
             LWCToolkit toolkit = (LWCToolkit)Toolkit.getDefaultToolkit();
@@ -60,6 +61,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
 
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 
+    @SuppressWarnings("deprecation")
     protected long getLayerPtr() {
         LWWindowPeer peer = (LWWindowPeer)getPeer();
         return peer.getLayerPtr();

@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 4052440
+# @bug 4052440 8062588
 # @summary Generic tests for the pluggable locales feature
-# @run shell ExecTest.sh foobar GenericTest true
+# @run shell ExecTest.sh foobar GenericTest

@@ -40,7 +40,7 @@ public final class Sun extends Provider {
 
     private static final String INFO = "SUN " +
     "(DSA key/parameter generation; DSA signing; SHA-1, MD5 digests; " +
-    "SecureRandom; X.509 certificates; JKS & DKS keystores; " +
+    "SecureRandom; X.509 certificates; PKCS12, JKS & DKS keystores; " +
     "PKIX CertPathValidator; " +
     "PKIX CertPathBuilder; LDAP, Collection CertStores, JavaPolicy Policy; " +
     "JavaLoginConfig Configuration)";

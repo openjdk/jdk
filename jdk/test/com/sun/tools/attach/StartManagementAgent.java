@@ -41,7 +41,7 @@ import jdk.testlibrary.Utils;
  * @summary Test for VirtualMachine.startManagementAgent and VirtualMachine.startLocalManagementAgent
  * @library /lib/testlibrary
  * @run build Application SimpleProvider jdk.testlibrary.*
- * @run main StartManagementAgent
+ * @run main/timeout=300 StartManagementAgent
  */
 
 /*

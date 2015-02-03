@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private final Set<JavaFileObject.Kind> sourceOrClass =
         EnumSet.of(JavaFileObject.Kind.SOURCE, JavaFileObject.Kind.CLASS);
 
-    protected boolean mmappedIO;
     protected boolean symbolFileEnabled;
 
     protected enum SortFiles implements Comparator<Path> {
@@ -157,7 +156,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         if (contextUseOptimizedZip)
             zipFileIndexCache = ZipFileIndexCache.getSharedInstance();
 
-        mmappedIO = options.isSet("mmappedIO");
         symbolFileEnabled = !options.isSet("ignore.symbol.file");
 
         String sf = options.get("sortFiles");
@@ -177,10 +175,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return symbolFileEnabled;
     }
 
+    // used by tests
     public JavaFileObject getFileForInput(String name) {
         return getRegularFile(Paths.get(name));
     }
 
+    // used by tests
     public JavaFileObject getRegularFile(Path file) {
         return new RegularFileObject(this, file);
     }
@@ -195,10 +195,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
-        ListBuffer<File> files = new ListBuffer<>();
+        ListBuffer<Path> paths = new ListBuffer<>();
         for (String name : names)
-            files.append(new File(nullCheck(name)));
-        return getJavaFileObjectsFromFiles(files.toList());
+            paths.append(Paths.get(nullCheck(name)));
+        return getJavaFileObjectsFromPaths(paths.toList());
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -873,8 +873,27 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     @Override @DefinedBy(Api.COMPILER)
+    public Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(
+        Iterable<? extends Path> paths)
+    {
+        ArrayList<RegularFileObject> result;
+        if (paths instanceof Collection<?>)
+            result = new ArrayList<>(((Collection<?>)paths).size());
+        else
+            result = new ArrayList<>();
+        for (Path p: paths)
+            result.add(new RegularFileObject(this, nullCheck(p)));
+        return result;
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
     public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
         return getJavaFileObjectsFromFiles(Arrays.asList(nullCheck(files)));
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public Iterable<? extends JavaFileObject> getJavaFileObjects(Path... paths) {
+        return getJavaFileObjectsFromPaths(Arrays.asList(nullCheck(paths)));
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -887,12 +906,22 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     @Override @DefinedBy(Api.COMPILER)
+    public void setLocationFromPaths(Location location,
+                            Iterable<? extends Path> searchpath)
+        throws IOException
+    {
+        nullCheck(location);
+        locations.setLocation(location, nullCheck(searchpath));
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
     public Iterable<? extends File> getLocation(Location location) {
         nullCheck(location);
         return asFiles(locations.getLocation(location));
     }
 
-    private Iterable<? extends Path> getLocationAsPaths(Location location) {
+    @Override @DefinedBy(Api.COMPILER)
+    public Iterable<? extends Path> getLocationAsPaths(Location location) {
         nullCheck(location);
         return locations.getLocation(location);
     }
@@ -903,6 +932,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     private Path getSourceOutDir() {
         return locations.getOutputLocation(SOURCE_OUTPUT);
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public Path asPath(FileObject file) {
+        if (file instanceof RegularFileObject) {
+            return ((RegularFileObject) file).file;
+        } else
+            throw new IllegalArgumentException(file.getName());
     }
 
     /**
@@ -1010,12 +1047,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
             @Override
             public File next() {
-                return iter.next().toFile();
+                try {
+                    return iter.next().toFile();
+                } catch (UnsupportedOperationException e) {
+                    throw new IllegalStateException(e);
+                }
             }
         };
-    }
-
-    private static File asFile(Path path) {
-        return path == null ? null : path.toFile();
     }
 }

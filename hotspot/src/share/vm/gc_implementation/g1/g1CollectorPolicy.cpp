@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,14 +153,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _inc_cset_predicted_elapsed_time_ms(0.0),
   _inc_cset_predicted_elapsed_time_ms_diffs(0.0),
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
-  _short_lived_surv_rate_group(new SurvRateGroup(this, "Short Lived",
-                                                 G1YoungSurvRateNumRegionsSummary)),
-  _survivor_surv_rate_group(new SurvRateGroup(this, "Survivor",
-                                              G1YoungSurvRateNumRegionsSummary)),
   // add here any more surv rate groups
   _recorded_survivor_regions(0),
   _recorded_survivor_head(NULL),
@@ -168,6 +160,22 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _survivors_age_table(true),
 
   _gc_overhead_perc(0.0) {
+
+  uintx confidence_perc = G1ConfidencePercent;
+  // Put an artificial ceiling on this so that it's not set to a silly value.
+  if (confidence_perc > 100) {
+    confidence_perc = 100;
+    warning("G1ConfidencePercent is set to a value that is too large, "
+            "it's been updated to %u", confidence_perc);
+  }
+  // '_sigma' must be initialized before the SurvRateGroups below because they
+  // indirecty access '_sigma' trough the 'this' pointer in their constructor.
+  _sigma = (double) confidence_perc / 100.0;
+
+  _short_lived_surv_rate_group =
+    new SurvRateGroup(this, "Short Lived", G1YoungSurvRateNumRegionsSummary);
+  _survivor_surv_rate_group =
+    new SurvRateGroup(this, "Survivor", G1YoungSurvRateNumRegionsSummary);
 
   // Set up the region size and associated fields. Given that the
   // policy is created before the heap, we have to set this up here,
@@ -282,15 +290,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
   double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
   _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
-
-  uintx confidence_perc = G1ConfidencePercent;
-  // Put an artificial ceiling on this so that it's not set to a silly value.
-  if (confidence_perc > 100) {
-    confidence_perc = 100;
-    warning("G1ConfidencePercent is set to a value that is too large, "
-            "it's been updated to %u", confidence_perc);
-  }
-  _sigma = (double) confidence_perc / 100.0;
 
   // start conservatively (around 50ms is about right)
   _concurrent_mark_remark_times_ms->add(0.05);
@@ -1437,18 +1436,6 @@ bool G1CollectorPolicy::can_expand_young_list() {
   return young_list_length < young_list_max_length;
 }
 
-uint G1CollectorPolicy::max_regions(int purpose) {
-  switch (purpose) {
-    case GCAllocForSurvived:
-      return _max_survivor_regions;
-    case GCAllocForTenured:
-      return REGIONS_UNLIMITED;
-    default:
-      ShouldNotReachHere();
-      return REGIONS_UNLIMITED;
-  };
-}
-
 void G1CollectorPolicy::update_max_gc_locker_expansion() {
   uint expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
@@ -1634,7 +1621,7 @@ void G1CollectorPolicy::add_old_region_to_cset(HeapRegion* hr) {
   hr->set_next_in_collection_set(_collection_set);
   _collection_set = hr;
   _collection_set_bytes_used_before += hr->used();
-  _g1->register_region_with_in_cset_fast_test(hr);
+  _g1->register_old_region_with_in_cset_fast_test(hr);
   size_t rs_length = hr->rem_set()->occupied();
   _recorded_rs_lengths += rs_length;
   _old_cset_region_length += 1;
@@ -1767,7 +1754,7 @@ void G1CollectorPolicy::add_region_to_incremental_cset_common(HeapRegion* hr) {
   hr->set_in_collection_set(true);
   assert( hr->next_in_collection_set() == NULL, "invariant");
 
-  _g1->register_region_with_in_cset_fast_test(hr);
+  _g1->register_young_region_with_in_cset_fast_test(hr);
 }
 
 // Add the region at the RHS of the incremental cset

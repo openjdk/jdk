@@ -29,8 +29,6 @@
  * @author Mikhail Lapshin
 */
 
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.event.InputEvent;
 import javax.swing.*;
@@ -42,13 +40,16 @@ public class bug6348946 {
     private static JFrame frame;
 
     private static JPanel panel;
+    private static Robot robot;
 
     private static volatile boolean passed = false;
 
     public static void main(String[] args) throws Exception {
+        robot = new Robot();
+        robot.setAutoDelay(10);
+
         String lf = "javax.swing.plaf.metal.MetalLookAndFeel";
         UIManager.setLookAndFeel(lf);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -56,9 +57,9 @@ public class bug6348946 {
                     setupUI();
                 }
             });
-            toolkit.realSync();
+            robot.waitForIdle();
             clickOnSlider();
-            toolkit.realSync();
+            robot.waitForIdle();
             checkResult();
         } finally {
             stopEDT();
@@ -79,9 +80,6 @@ public class bug6348946 {
     }
 
     private static void clickOnSlider() throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(10);
-
         Rectangle rect = getPanelRectangle();
 
         double clickX = rect.getX() + rect.getWidth() / 4;

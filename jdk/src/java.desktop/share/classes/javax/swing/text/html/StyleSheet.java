@@ -2562,6 +2562,7 @@ public class StyleSheet extends StyleContext {
             }
         }
 
+        @SuppressWarnings("deprecation")
         void paint(Graphics g, float x, float y, float w, float h, View v) {
             Rectangle clip = g.getClipRect();
             if (clip != null) {

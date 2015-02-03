@@ -805,6 +805,7 @@ public class Container extends Component {
      * to new heavyweight parent.
      * @since 1.5
      */
+    @SuppressWarnings("deprecation")
     private void reparentTraverse(ContainerPeer parentPeer, Container child) {
         checkTreeLock();
 
@@ -828,6 +829,7 @@ public class Container extends Component {
      * Container must be heavyweight.
      * @since 1.5
      */
+    @SuppressWarnings("deprecation")
     private void reparentChild(Component comp) {
         checkTreeLock();
         if (comp == null) {
@@ -3193,7 +3195,7 @@ public class Container extends Component {
      *        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
      *        KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS, or
      *        KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS
-     * @return <code>true</code> if the the Set of focus traversal keys for the
+     * @return <code>true</code> if the Set of focus traversal keys for the
      *         given focus traversal operation has been explicitly defined for
      *         this Component; <code>false</code> otherwise.
      * @throws IllegalArgumentException if id is not one of
@@ -4189,6 +4191,7 @@ public class Container extends Component {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void recursiveShowHeavyweightChildren() {
         if (!hasHeavyweightDescendants() || !isVisible()) {
             return;
@@ -4210,6 +4213,7 @@ public class Container extends Component {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void recursiveHideHeavyweightChildren() {
         if (!hasHeavyweightDescendants()) {
             return;
@@ -4231,6 +4235,7 @@ public class Container extends Component {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void recursiveRelocateHeavyweightChildren(Point origin) {
         for (int index = 0; index < getComponentCount(); index++) {
             Component comp = getComponent(index);

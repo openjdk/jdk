@@ -43,9 +43,8 @@ import java.util.Locale;
  * supported by the Java runtime environment itself.
  *
  * <h3>Packaging of Locale Sensitive Service Provider Implementations</h3>
- * Implementations of these locale sensitive services are packaged using the
- * <a href="../../../../technotes/guides/extensions/index.html">Java Extension Mechanism</a>
- * as installed extensions.  A provider identifies itself with a
+ * Implementations of these locale sensitive services can be made available
+ * by adding them to the application's class path. A provider identifies itself with a
  * provider-configuration file in the resource directory META-INF/services,
  * using the fully qualified provider interface class name as the file name.
  * The file should contain a list of fully-qualified concrete provider class names,

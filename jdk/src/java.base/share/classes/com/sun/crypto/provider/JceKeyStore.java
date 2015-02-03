@@ -898,4 +898,20 @@ public final class JceKeyStore extends KeyStoreSpi {
         md.update("Mighty Aphrodite".getBytes("UTF8"));
         return md;
     }
+
+    /**
+     * Probe the first few bytes of the keystore data stream for a valid
+     * JCEKS keystore encoding.
+     */
+    @Override
+    public boolean engineProbe(InputStream stream) throws IOException {
+        DataInputStream dataStream;
+        if (stream instanceof DataInputStream) {
+            dataStream = (DataInputStream)stream;
+        } else {
+            dataStream = new DataInputStream(stream);
+        }
+
+        return JCEKS_MAGIC == dataStream.readInt();
+    }
 }

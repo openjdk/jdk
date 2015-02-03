@@ -32,21 +32,19 @@
 
 import java.awt.*;
 import javax.swing.*;
-import sun.awt.*;
 
 public class bug5066752
 {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit tk = (SunToolkit)Toolkit.getDefaultToolkit();
         Robot r = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 createAndShowGUI();
             }
         });
-        tk.realSync();
+        r.waitForIdle();
 
         r.delay(600);
 

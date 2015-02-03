@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,19 @@ import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-import static org.xml.sax.ptests.SAXTestConst.CLASS_DIR;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
@@ -50,14 +46,16 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
  * ErrorHandler unit test. Set a ErrorHandle to XMLReader. Capture fatal error
  * events in ErrorHandler.
  */
-public class EHFatalTest {
+public class EHFatalTest extends JAXPFileBaseTest {
     /**
      * Error Handler to capture all error events to output file. Verifies the
      * output file is same as golden file.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testEHFatal() {
-        String outputFile = CLASS_DIR + "EHFatal.out";
+    public void testEHFatal() throws Exception {
+        String outputFile = USER_DIR + "EHFatal.out";
         String goldFile = GOLDEN_DIR + "EHFatalGF.out";
         String xmlFile = XML_DIR + "invalid.xml";
 
@@ -68,25 +66,12 @@ public class EHFatalTest {
             xmlReader.setErrorHandler(eHandler);
             InputSource is = new InputSource(instream);
             xmlReader.parse(is);
-        } catch (IOException | ParserConfigurationException ex) {
-            failUnexpected(ex);
-        } catch (SAXException ex) {
-            System.out.println("This is expected:" + ex);
+            fail("Parse should throw SAXException");
+        } catch (SAXException expected) {
+            // This is expected.
         }
         // Need close the output file before we compare it with golden file.
-        try {
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (IOException ex) {
-            failUnexpected(ex);
-        } finally {
-            try {
-                Path outputPath = Paths.get(outputFile);
-                if(Files.exists(outputPath))
-                    Files.delete(outputPath);
-            } catch (IOException ex) {
-                failCleanup(ex, outputFile);
-            }
-        }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
 

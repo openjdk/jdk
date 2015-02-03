@@ -41,7 +41,8 @@ import sun.reflect.generics.visitor.Reifier;
  */
 public class FieldRepository extends AbstractRepository<TypeSignature> {
 
-    private Type genericType; // caches the generic type info
+    /** The generic type info.  Lazily initialized. */
+    private volatile Type genericType;
 
  // protected, to enforce use of static factory yet allow subclassing
     protected FieldRepository(String rawSig, GenericsFactory f) {
@@ -61,12 +62,9 @@ public class FieldRepository extends AbstractRepository<TypeSignature> {
      * @return a <tt>FieldRepository</tt> that manages the generic type
      * information represented in the signature <tt>rawSig</tt>
      */
-    public static FieldRepository make(String rawSig,
-                                             GenericsFactory f) {
+    public static FieldRepository make(String rawSig, GenericsFactory f) {
         return new FieldRepository(rawSig, f);
     }
-
-    // public API
 
  /*
  * When queried for a particular piece of type information, the
@@ -74,18 +72,22 @@ public class FieldRepository extends AbstractRepository<TypeSignature> {
  * If the corresponding field is non-null, it is returned.
  * If not, it is created lazily. This is done by selecting the appropriate
  * part of the tree and transforming it into a reflective object
- * using a visitor.
- * a visitor, which is created by feeding it the factory
+ * using a visitor, which is created by feeding it the factory
  * with which the repository was created.
  */
 
-    public Type getGenericType(){
-        if (genericType == null) { // lazily initialize generic type
-            Reifier r = getReifier(); // obtain visitor
-            getTree().accept(r); // reify subtree
-            // extract result from visitor and cache it
-            genericType = r.getResult();
+    public Type getGenericType() {
+        Type value = genericType;
+        if (value == null) {
+            value = computeGenericType();
+            genericType = value;
         }
-        return genericType; // return cached result
+        return value;
+    }
+
+    private Type computeGenericType() {
+        Reifier r = getReifier();       // obtain visitor
+        getTree().accept(r);            // reify subtree
+        return r.getResult();           // extract result from visitor
     }
 }

@@ -29,8 +29,6 @@
  * @library ../regtesthelpers
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.event.*;
 
@@ -49,7 +47,6 @@ public class Test6827032 {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -57,7 +54,7 @@ public class Test6827032 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

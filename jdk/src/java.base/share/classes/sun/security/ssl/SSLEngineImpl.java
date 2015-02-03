@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ import javax.net.ssl.SSLEngineResult.*;
  *      All data is routed through
  *      EngineInputRecord/EngineOutputRecord.  However, all handshake
  *      data (ct_alert/ct_change_cipher_spec/ct_handshake) are passed
- *      through to the the underlying InputRecord/OutputRecord, and
+ *      through to the underlying InputRecord/OutputRecord, and
  *      the data uses the internal buffers.
  *
  *      Application data is handled slightly different, we copy the data
@@ -158,7 +158,7 @@ final public class SSLEngineImpl extends SSLEngine {
      *                v                                     |
      *               ERROR>------>----->CLOSED<--------<----+
      *
-     * ALSO, note that the the purpose of handshaking (renegotiation is
+     * ALSO, note that the purpose of handshaking (renegotiation is
      * included) is to assign a different, and perhaps new, session to
      * the connection.  The SSLv3 spec is a bit confusing on that new
      * protocol feature.
@@ -210,6 +210,11 @@ final public class SSLEngineImpl extends SSLEngine {
     static final byte           clauth_none = 0;
     static final byte           clauth_requested = 1;
     static final byte           clauth_required = 2;
+
+    /*
+     * Flag indicating that the engine has received a ChangeCipherSpec message.
+     */
+    private boolean             receivedCCS;
 
     /*
      * Flag indicating if the next record we receive MUST be a Finished
@@ -372,6 +377,7 @@ final public class SSLEngineImpl extends SSLEngine {
          */
         roleIsServer = true;
         connectionState = cs_START;
+        receivedCCS = false;
 
         // default server name indication
         serverNames =
@@ -1021,6 +1027,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
                     if (handshaker.invalidated) {
                         handshaker = null;
+                        receivedCCS = false;
                         // if state is cs_RENEGOTIATE, revert it to cs_DATA
                         if (connectionState == cs_RENEGOTIATE) {
                             connectionState = cs_DATA;
@@ -1039,6 +1046,7 @@ final public class SSLEngineImpl extends SSLEngine {
                         }
                         handshaker = null;
                         connectionState = cs_DATA;
+                        receivedCCS = false;
 
                         // No handshakeListeners here.  That's a
                         // SSLSocket thing.
@@ -1078,12 +1086,24 @@ final public class SSLEngineImpl extends SSLEngine {
                 case Record.ct_change_cipher_spec:
                     if ((connectionState != cs_HANDSHAKE
                                 && connectionState != cs_RENEGOTIATE)
-                            || inputRecord.available() != 1
-                            || inputRecord.read() != 1) {
+                            || !handshaker.sessionKeysCalculated()
+                            || receivedCCS) {
+                        // For the CCS message arriving in the wrong state
                         fatal(Alerts.alert_unexpected_message,
-                            "illegal change cipher spec msg, state = "
-                            + connectionState);
+                                "illegal change cipher spec msg, conn state = "
+                                + connectionState + ", handshake state = "
+                                + handshaker.state);
+                    } else if (inputRecord.available() != 1
+                            || inputRecord.read() != 1) {
+                        // For structural/content issues with the CCS
+                        fatal(Alerts.alert_unexpected_message,
+                                "Malformed change cipher spec msg");
                     }
+
+                    // Once we've received CCS, update the flag.
+                    // If the remote endpoint sends it again in this handshake
+                    // we won't process it.
+                    receivedCCS = true;
 
                     //
                     // The first message after a change_cipher_spec
@@ -2118,6 +2138,14 @@ final public class SSLEngineImpl extends SSLEngine {
                 handshaker.setSNIServerNames(serverNames);
             }
         }
+    }
+
+    /**
+     * Returns a boolean indicating whether the ChangeCipherSpec message
+     * has been received for this handshake.
+     */
+    boolean receivedChangeCipherSpec() {
+        return receivedCCS;
     }
 
     /**

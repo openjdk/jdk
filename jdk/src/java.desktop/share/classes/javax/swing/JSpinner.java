@@ -447,7 +447,7 @@ public class JSpinner extends JComponent implements Accessible
      * Sends a <code>ChangeEvent</code>, whose source is this
      * <code>JSpinner</code>, to each <code>ChangeListener</code>.
      * When a <code>ChangeListener</code> has been added
-     * to the spinner, this method method is called each time
+     * to the spinner, this method is called each time
      * a <code>ChangeEvent</code> is received from the model.
      *
      * @see #addChangeListener
@@ -1798,7 +1798,7 @@ public class JSpinner extends JComponent implements Accessible
                 Rectangle editorRect = at.getCharacterBounds(i);
                 if (editorRect != null &&
                     sameWindowAncestor(JSpinner.this, editor)) {
-                    // return rectangle in the the JSpinner bounds
+                    // return rectangle in the JSpinner bounds
                     return SwingUtilities.convertRectangle(editor,
                                                            editorRect,
                                                            JSpinner.this);

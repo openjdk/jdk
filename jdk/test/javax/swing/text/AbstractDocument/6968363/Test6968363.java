@@ -20,8 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import sun.awt.SunToolkit;
-
 import java.awt.Robot;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -47,17 +45,22 @@ import static javax.swing.SwingUtilities.invokeAndWait;
  * @bug 6968363
  * @summary Ensures that a custom document may not extend AbstractDocument
  * @author Sergey Malenkov
+ * @library ../../../../../lib/testlibrary/
+ * @build ExtendedRobot
+ * @run main Test6968363
  */
 public class Test6968363 implements Runnable, Thread.UncaughtExceptionHandler {
     private JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) getDefaultToolkit();
         Runnable task = new Test6968363();
         invokeAndWait(task);
-        toolkit.realSync(100);
-        new Robot().keyPress(VK_LEFT);
-        toolkit.realSync(100);
+        ExtendedRobot robot = new ExtendedRobot();
+        robot.waitForIdle(100);
+        robot.keyPress(VK_LEFT);
+        robot.waitForIdle(100);
+        robot.keyRelease(VK_LEFT);
+        robot.waitForIdle(100);
         invokeAndWait(task);
     }
 

@@ -421,8 +421,7 @@ needs_jdk = \
   java/util/Collections/EmptyIterator.java \
   java/util/concurrent/locks/Lock/TimedAcquireLeak.java \
   java/util/jar/JarInputStream/ExtraFileInMetaInf.java \
-  java/util/logging/AnonLoggerWeakRefLeak.sh \
-  java/util/logging/LoggerWeakRefLeak.sh \
+  java/util/logging/TestLoggerWeakRefLeak.java \
   java/util/zip/3GBZipFiles.sh \
   jdk/lambda/FDTest.java \
   jdk/lambda/separate/Compiler.java \
@@ -629,7 +628,6 @@ needs_compact2 = \
   sun/net/www/protocol/http \
   java/io/BufferedReader/Lines.java  \
   java/lang/reflect/DefaultStaticTest/DefaultStaticInvokeTest.java \
-  java/lang/CharSequence/DefaultTest.java  \
   java/lang/IntegralPrimitiveToString.java  \
   java/lang/PrimitiveSumMinMaxTest.java  \
   java/lang/String/StringJoinTest.java  \

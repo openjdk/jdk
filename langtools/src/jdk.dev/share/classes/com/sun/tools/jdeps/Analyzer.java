@@ -218,7 +218,7 @@ public class Analyzer {
             Archive targetArchive = findArchive(t);
             if (filter.accepts(o, archive, t, targetArchive)) {
                 addDep(o, t);
-                if (!requires.contains(targetArchive)) {
+                if (archive != targetArchive && !requires.contains(targetArchive)) {
                     requires.add(targetArchive);
                 }
             }

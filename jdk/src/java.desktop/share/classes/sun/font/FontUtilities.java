@@ -214,7 +214,7 @@ public final class FontUtilities {
      * char which means it may include undecoded surrogate pairs.
      * The distinction is made so that code which needs to identify all
      * cases in which we do not have a simple mapping from
-     * char->unicode character->glyph can be be identified.
+     * char->unicode character->glyph can be identified.
      * For example measurement cannot simply sum advances of 'chars',
      * the caret in editable text cannot advance one 'char' at a time, etc.
      * These callers really are asking for more than whether 'layout'

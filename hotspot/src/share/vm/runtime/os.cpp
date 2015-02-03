@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,20 +547,16 @@ static void verify_memory(void* ptr) {
 // This function supports testing of the malloc out of memory
 // condition without really running the system out of memory.
 //
-static u_char* testMalloc(size_t alloc_size) {
-  assert(MallocMaxTestWords > 0, "sanity check");
+static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
+  if (MallocMaxTestWords > 0) {
+    jint words = (jint)(alloc_size / BytesPerWord);
 
-  if ((cur_malloc_words + (alloc_size / BytesPerWord)) > MallocMaxTestWords) {
-    return NULL;
+    if ((cur_malloc_words + words) > MallocMaxTestWords) {
+      return true;
+    }
+    Atomic::add(words, (volatile jint *)&cur_malloc_words);
   }
-
-  u_char* ptr = (u_char*)::malloc(alloc_size);
-
-  if (ptr != NULL) {
-    Atomic::add(((jint) (alloc_size / BytesPerWord)),
-                (volatile jint *) &cur_malloc_words);
-  }
-  return ptr;
+  return false;
 }
 
 void* os::malloc(size_t size, MEMFLAGS flags) {
@@ -608,12 +604,13 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
 
-  u_char* ptr;
-  if (MallocMaxTestWords > 0) {
-    ptr = testMalloc(alloc_size);
-  } else {
-    ptr = (u_char*)::malloc(alloc_size);
+  // For the test flag -XX:MallocMaxTestWords
+  if (has_reached_max_malloc_test_peak(size)) {
+    return NULL;
   }
+
+  u_char* ptr;
+  ptr = (u_char*)::malloc(alloc_size);
 
 #ifdef ASSERT
   if (ptr == NULL) {
@@ -641,6 +638,11 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+
+  // For the test flag -XX:MallocMaxTestWords
+  if (has_reached_max_malloc_test_peak(size)) {
+    return NULL;
+  }
 
 #ifndef ASSERT
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
@@ -1399,20 +1401,30 @@ bool os::stack_shadow_pages_available(Thread *thread, methodHandle method) {
   return (sp > (stack_limit + reserved_area));
 }
 
-size_t os::page_size_for_region(size_t region_size, size_t min_pages) {
+size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned) {
   assert(min_pages > 0, "sanity");
   if (UseLargePages) {
     const size_t max_page_size = region_size / min_pages;
 
     for (size_t i = 0; _page_sizes[i] != 0; ++i) {
       const size_t page_size = _page_sizes[i];
-      if (page_size <= max_page_size && is_size_aligned(region_size, page_size)) {
-        return page_size;
+      if (page_size <= max_page_size) {
+        if (!must_be_aligned || is_size_aligned(region_size, page_size)) {
+          return page_size;
+        }
       }
     }
   }
 
   return vm_page_size();
+}
+
+size_t os::page_size_for_region_aligned(size_t region_size, size_t min_pages) {
+  return page_size_for_region(region_size, min_pages, true);
+}
+
+size_t os::page_size_for_region_unaligned(size_t region_size, size_t min_pages) {
+  return page_size_for_region(region_size, min_pages, false);
 }
 
 #ifndef PRODUCT
@@ -1588,6 +1600,11 @@ bool os::release_memory(char* addr, size_t bytes) {
   return res;
 }
 
+void os::pretouch_memory(char* start, char* end) {
+  for (volatile char *p = start; p < end; p += os::vm_page_size()) {
+    *p = 0;
+  }
+}
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
@@ -1658,17 +1675,17 @@ class TestOS : AllStatic {
 
   static size_t large_page_size() {
     const size_t large_page_size_example = 4 * M;
-    return os::page_size_for_region(large_page_size_example, 1);
+    return os::page_size_for_region_aligned(large_page_size_example, 1);
   }
 
-  static void test_page_size_for_region() {
+  static void test_page_size_for_region_aligned() {
     if (UseLargePages) {
       const size_t small_page = small_page_size();
       const size_t large_page = large_page_size();
 
       if (large_page > small_page) {
         size_t num_small_pages_in_large = large_page / small_page;
-        size_t page = os::page_size_for_region(large_page, num_small_pages_in_large);
+        size_t page = os::page_size_for_region_aligned(large_page, num_small_pages_in_large);
 
         assert_eq(page, small_page);
       }
@@ -1681,21 +1698,53 @@ class TestOS : AllStatic {
       const size_t large_page = large_page_size();
       if (large_page > small_page) {
         const size_t unaligned_region = large_page + 17;
-        size_t page = os::page_size_for_region(unaligned_region, 1);
+        size_t page = os::page_size_for_region_aligned(unaligned_region, 1);
         assert_eq(page, small_page);
 
         const size_t num_pages = 5;
         const size_t aligned_region = large_page * num_pages;
-        page = os::page_size_for_region(aligned_region, num_pages);
+        page = os::page_size_for_region_aligned(aligned_region, num_pages);
         assert_eq(page, large_page);
       }
     }
   }
 
+  static void test_page_size_for_region_unaligned() {
+    if (UseLargePages) {
+      // Given exact page size, should return that page size.
+      for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
+        size_t expected = os::_page_sizes[i];
+        size_t actual = os::page_size_for_region_unaligned(expected, 1);
+        assert_eq(expected, actual);
+      }
+
+      // Given slightly larger size than a page size, return the page size.
+      for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
+        size_t expected = os::_page_sizes[i];
+        size_t actual = os::page_size_for_region_unaligned(expected + 17, 1);
+        assert_eq(expected, actual);
+      }
+
+      // Given a slightly smaller size than a page size,
+      // return the next smaller page size.
+      if (os::_page_sizes[1] > os::_page_sizes[0]) {
+        size_t expected = os::_page_sizes[0];
+        size_t actual = os::page_size_for_region_unaligned(os::_page_sizes[1] - 17, 1);
+        assert_eq(actual, expected);
+      }
+
+      // Return small page size for values less than a small page.
+      size_t small_page = small_page_size();
+      size_t actual = os::page_size_for_region_unaligned(small_page - 17, 1);
+      assert_eq(small_page, actual);
+    }
+  }
+
  public:
   static void run_tests() {
-    test_page_size_for_region();
+    test_page_size_for_region_aligned();
     test_page_size_for_region_alignment();
+    test_page_size_for_region_unaligned();
   }
 };
 

@@ -27,8 +27,6 @@
    @author Alexander Potochkin
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicTableHeaderUI;
 import javax.swing.table.JTableHeader;
@@ -37,7 +35,6 @@ import java.awt.*;
 public class bug6889007 {
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(20);
 
@@ -59,7 +56,7 @@ public class bug6889007 {
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         Point point = frame.getLocationOnScreen();
         int shift = 10;
         int x = point.x;
@@ -67,7 +64,7 @@ public class bug6889007 {
         for(int i = -shift; i < frame.getWidth() + 2*shift; i++) {
             robot.mouseMove(x++, y);
         }
-        toolkit.realSync();
+        robot.waitForIdle();
         // 9 is a magic test number
         if (MyTableHeaderUI.getTestValue() != 9) {
             throw new RuntimeException("Unexpected test number "

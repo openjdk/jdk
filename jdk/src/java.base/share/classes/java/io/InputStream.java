@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.util.Objects;
+
 /**
  * This abstract class is the superclass of all classes representing
  * an input stream of bytes.
@@ -47,6 +49,8 @@ public abstract class InputStream implements Closeable {
     // MAX_SKIP_BUFFER_SIZE is used to determine the maximum buffer size to
     // use when skipping.
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
+
+    private static final int TRANSFER_BUFFER_SIZE = 8192;
 
     /**
      * Reads the next byte of data from the input stream. The value byte is
@@ -364,4 +368,40 @@ public abstract class InputStream implements Closeable {
         return false;
     }
 
+    /**
+     * Reads all bytes from this input stream and writes the bytes to the
+     * given output stream in the order that they are read. On return, this
+     * input stream will be at end of stream. This method does not close either
+     * stream.
+     * <p>
+     * This method may block indefinitely reading from the input stream, or
+     * writing to the output stream. The behavior for the case where the input
+     * and/or output stream is <i>asynchronously closed</i>, or the thread
+     * interrupted during the transfer, is highly input and output stream
+     * specific, and therefore not specified.
+     * <p>
+     * If an I/O error occurs reading from the input stream or writing to the
+     * output stream, then it may do so after some bytes have been read or
+     * written. Consequently the input stream may not be at end of stream and
+     * one, or both, streams may be in an inconsistent state. It is strongly
+     * recommended that both streams be promptly closed if an I/O error occurs.
+     *
+     * @param  out the output stream, non-null
+     * @return the number of bytes transferred
+     * @throws IOException if an I/O error occurs when reading or writing
+     * @throws NullPointerException if {@code out} is {@code null}
+     *
+     * @since 1.9
+     */
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        long transferred = 0;
+        byte[] buffer = new byte[TRANSFER_BUFFER_SIZE];
+        int read;
+        while ((read = this.read(buffer, 0, TRANSFER_BUFFER_SIZE)) >= 0) {
+            out.write(buffer, 0, read);
+            transferred += read;
+        }
+        return transferred;
+    }
 }

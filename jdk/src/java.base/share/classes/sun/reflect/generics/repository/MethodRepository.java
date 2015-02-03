@@ -39,7 +39,8 @@ import sun.reflect.generics.visitor.Reifier;
  */
 public class MethodRepository extends ConstructorRepository {
 
-    private Type returnType; // caches the generic return type info
+    /** The generic return type info.  Lazily initialized. */
+    private volatile Type returnType;
 
  // private, to enforce use of static factory
     private MethodRepository(String rawSig, GenericsFactory f) {
@@ -59,18 +60,21 @@ public class MethodRepository extends ConstructorRepository {
         return new MethodRepository(rawSig, f);
     }
 
-    // public API
-
     public Type getReturnType() {
-        if (returnType == null) { // lazily initialize return type
-            Reifier r = getReifier(); // obtain visitor
-            // Extract return type subtree from AST and reify
-            getTree().getReturnType().accept(r);
-            // extract result from visitor and cache it
-            returnType = r.getResult();
-            }
-        return returnType; // return cached result
+        Type value = returnType;
+        if (value == null) {
+            value = computeReturnType();
+            returnType = value;
+        }
+        return value;
     }
 
+    private Type computeReturnType() {
+        Reifier r = getReifier(); // obtain visitor
+        // Extract return type subtree from AST and reify
+        getTree().getReturnType().accept(r);
+        // extract result from visitor and cache it
+        return r.getResult();
+    }
 
 }

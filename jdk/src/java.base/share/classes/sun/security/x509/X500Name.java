@@ -336,7 +336,7 @@ public class X500Name implements GeneralNameInterface, Principal {
     }
 
     /**
-     * Return an immutable List of the the AVAs contained in all the
+     * Return an immutable List of the AVAs contained in all the
      * RDNs of this X500Name.
      */
     public List<AVA> allAvas() {

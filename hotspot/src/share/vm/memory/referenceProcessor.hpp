@@ -264,9 +264,10 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   DiscoveredList* _discoveredWeakRefs;
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
+  DiscoveredList* _discoveredCleanerRefs;
 
  public:
-  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
+  static int number_of_subclasses_of_ref() { return (REF_CLEANER - REF_OTHER); }
 
   uint num_q()                             { return _num_q; }
   uint max_num_q()                         { return _max_num_q; }
@@ -353,19 +354,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                                       GCTimer*           gc_timer,
                                       GCId               gc_id);
 
-  // Delete entries in the discovered lists that have
-  // either a null referent or are not active. Such
-  // Reference objects can result from the clearing
-  // or enqueueing of Reference objects concurrent
-  // with their discovery by a (concurrent) collector.
-  // For a definition of "active" see java.lang.ref.Reference;
-  // Refs are born active, become inactive when enqueued,
-  // and never become active again. The state of being
-  // active is encoded as follows: A Ref is active
-  // if and only if its "next" field is NULL.
-  void clean_up_discovered_references();
-  void clean_up_discovered_reflist(DiscoveredList& refs_list);
-
   // Returns the name of the discovered reference list
   // occupying the i / _num_q slot.
   const char* list_name(uint i);
@@ -439,7 +427,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   void      set_span(MemRegion span) { _span = span; }
 
   // start and stop weak ref discovery
-  void enable_discovery(bool verify_disabled, bool check_no_refs);
+  void enable_discovery(bool check_no_refs = true);
   void disable_discovery()  { _discovering_refs = false; }
   bool discovery_enabled()  { return _discovering_refs;  }
 
@@ -517,7 +505,7 @@ class NoRefDiscovery: StackObj {
 
   ~NoRefDiscovery() {
     if (_was_discovering_refs) {
-      _rp->enable_discovery(true /*verify_disabled*/, false /*check_no_refs*/);
+      _rp->enable_discovery(false /*check_no_refs*/);
     }
   }
 };

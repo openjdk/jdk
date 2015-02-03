@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,9 +328,6 @@ class Arguments : AllStatic {
   static bool _ClipInlining;
   static bool _CIDynamicCompilePriority;
 
-  // Scale compile thresholds
-  static intx get_scaled_compile_threshold(intx threshold);
-  static intx get_scaled_freq_log(intx freq_log);
   // Tiered
   static void set_tiered_flags();
   static int  get_min_number_of_compiler_threads();
@@ -452,6 +449,18 @@ class Arguments : AllStatic {
   static char*  SharedArchivePath;
 
  public:
+  // Scale compile thresholds
+  // Returns threshold scaled with CompileThresholdScaling
+  static intx scaled_compile_threshold(intx threshold, double scale);
+  static intx scaled_compile_threshold(intx threshold) {
+    return scaled_compile_threshold(threshold, CompileThresholdScaling);
+  }
+  // Returns freq_log scaled with CompileThresholdScaling
+  static intx scaled_freq_log(intx freq_log, double scale);
+  static intx scaled_freq_log(intx freq_log) {
+    return scaled_freq_log(freq_log, CompileThresholdScaling);
+  }
+
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
   // Apply ergonomics
@@ -572,6 +581,7 @@ class Arguments : AllStatic {
   static void init_version_specific_system_properties();
 
   // Property List manipulation
+  static void PropertyList_add(SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, const char* k, char* v);
   static void PropertyList_unique_add(SystemProperty** plist, const char* k, char* v) {

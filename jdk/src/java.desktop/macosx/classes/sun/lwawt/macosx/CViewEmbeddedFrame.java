@@ -78,6 +78,7 @@ public class CViewEmbeddedFrame extends EmbeddedFrame {
      * Synthetic event delivery for focus management
      */
     @Override
+    @SuppressWarnings("deprecation")
     public void synthesizeWindowActivation(boolean activated) {
         if (isActive != activated) {
             isActive = activated;

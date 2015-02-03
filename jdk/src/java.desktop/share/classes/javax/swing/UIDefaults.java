@@ -44,9 +44,7 @@ import java.awt.Font;
 import java.awt.Color;
 import java.awt.Insets;
 import java.awt.Dimension;
-import java.lang.reflect.Method;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
@@ -76,7 +74,7 @@ import sun.util.CoreResourceBundleControl;
 @SuppressWarnings("serial") // Same-version serialization only
 public class UIDefaults extends Hashtable<Object,Object>
 {
-    private static final Object PENDING = "Pending";
+    private static final Object PENDING = new Object();
 
     private SwingPropertyChangeSupport changeSupport;
 
@@ -167,10 +165,10 @@ public class UIDefaults extends Hashtable<Object,Object>
     }
 
     /**
-     * Looks up up the given key in our Hashtable and resolves LazyValues
+     * Looks up the given key in our Hashtable and resolves LazyValues
      * or ActiveValues.
      */
-    private Object getFromHashtable(Object key) {
+    private Object getFromHashtable(final Object key) {
         /* Quickly handle the common case, without grabbing
          * a lock.
          */
@@ -1181,7 +1179,7 @@ public class UIDefaults extends Hashtable<Object,Object>
     /**
      * <code>LazyInputMap</code> will create a <code>InputMap</code>
      * in its <code>createValue</code>
-     * method. The bindings are passed in in the constructor.
+     * method. The bindings are passed in the constructor.
      * The bindings are an array with
      * the even number entries being string <code>KeyStrokes</code>
      * (eg "alt SPACE") and

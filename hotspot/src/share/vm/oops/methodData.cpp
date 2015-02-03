@@ -31,6 +31,7 @@
 #include "memory/heapInspection.hpp"
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1131,6 +1132,13 @@ void MethodData::init() {
   _backedge_counter.init();
   _invocation_counter_start = 0;
   _backedge_counter_start = 0;
+
+  // Set per-method invoke- and backedge mask.
+  double scale = 1.0;
+  CompilerOracle::has_option_value(_method, "CompileThresholdScaling", scale);
+  _invoke_mask = right_n_bits(Arguments::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _backedge_mask = right_n_bits(Arguments::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+
   _tenure_traps = 0;
   _num_loops = 0;
   _num_blocks = 0;
@@ -1282,6 +1290,11 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   assert(2*DataLayout::compute_size_in_bytes(BitData::static_cell_count()) ==
          DataLayout::compute_size_in_bytes(SpeculativeTrapData::static_cell_count()),
          "code needs to be adjusted");
+
+  // Do not create one of these if method has been redefined.
+  if (m != NULL && m->is_old()) {
+    return NULL;
+  }
 
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
@@ -1554,9 +1567,7 @@ public:
 class CleanExtraDataMethodClosure : public CleanExtraDataClosure {
 public:
   CleanExtraDataMethodClosure() {}
-  bool is_live(Method* m) {
-    return !m->is_old() || m->on_stack();
-  }
+  bool is_live(Method* m) { return !m->is_old(); }
 };
 
 
@@ -1658,3 +1669,16 @@ void MethodData::clean_weak_method_links() {
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
+
+#ifdef ASSERT
+void MethodData::verify_clean_weak_method_links() {
+  for (ProfileData* data = first_data();
+       is_valid(data);
+       data = next_data(data)) {
+    data->verify_clean_weak_method_links();
+  }
+
+  CleanExtraDataMethodClosure cl;
+  verify_extra_data_clean(&cl);
+}
+#endif // ASSERT

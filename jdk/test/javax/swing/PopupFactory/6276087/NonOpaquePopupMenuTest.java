@@ -31,7 +31,6 @@ import java.awt.*;
 import java.awt.event.*;
 
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class NonOpaquePopupMenuTest extends JFrame {
 
@@ -53,7 +52,6 @@ public class NonOpaquePopupMenuTest extends JFrame {
     }
 
     public static void main(String[] args) throws Throwable {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(250);
 
@@ -65,14 +63,14 @@ public class NonOpaquePopupMenuTest extends JFrame {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point p = getMenuClickPoint();
         robot.mouseMove(p.x, p.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (isParentOpaque()) {
             throw new RuntimeException("Popup menu parent is opaque");

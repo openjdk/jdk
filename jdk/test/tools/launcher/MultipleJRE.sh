@@ -1,15 +1,14 @@
 #!/bin/sh
 # @test MultipleJRE.sh
-# @bug 4811102 4953711 4955505 4956301 4991229 4998210 5018605 6387069 6733959
+# @bug 4811102 4953711 4955505 4956301 4991229 4998210 5018605 6387069 6733959 8058407 8067421
 # @build PrintVersion
 # @build UglyPrintVersion
 # @build ZipMeUp
 # @run shell MultipleJRE.sh
 # @summary Verify Multiple JRE version support has been removed
 # @author Joseph E. Kowalski
-
 #
-# Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -432,32 +431,4 @@ if [ -x /usr/bin/zipnote ]; then
 	LaunchVM "" "${RELEASE}"
 fi
 
-#
-# Now test specification of mJRE
-#
-#   In some cases this should result in failure of the command,
-#   in some cases, a warning messages, with the command succeeding.
-#
-
-	# Commandline use of "-version:" should fail
-	#   with a message containing "no longer supported"
-	LaunchVM "-version:1.10+" "Error: Specifying an alternate JDK/JRE"
-	LaunchVM "-version:prettymuchanything" "Error: Specifying an alternate JDK/JRE"
-
-	# Commandline use of "-jre-restrict-search" should now fail
-	LaunchVM "-jre-restrict-search" "\-jre\-no\-restrict\-search are also no longer valid"
-	# Commandline use of "-jre-no-restrict-search" should now fail
-	LaunchVM "-jre-no-restrict-search" "\-jre\-no\-restrict\-search are also no longer valid"
-
-
-	# mJRE directives to use a specific version should be flagged
-	#   with a warning, but the jar should be executed with the
-	#   current jre
-	CreateFullJar "junk request" ""
-	LaunchVM "" "${RELEASE}"
-        # Going to silently ignore JRE-Version setting in jar file manifest
-	#LaunchVM "" "warning: The jarfile JRE-Version"
-	
-
 exit 0
-

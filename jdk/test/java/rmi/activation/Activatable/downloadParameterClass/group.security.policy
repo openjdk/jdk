@@ -1,14 +1,15 @@
 /*
- * security policy used exec'ed activation groups
+ * security policy used by activation groups
  */
 
 grant {
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
+  permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+  permission java.util.PropertyPermission "test.*", "read";
+
   // need to load custom security manager and activation group from a new codebase
   permission java.io.FilePermission ".${/}codebase1", "read,write,delete";
   permission java.io.FilePermission ".${/}codebase1${/}-", "read,write";
   permission java.io.FilePermission ".${/}codebase2", "read,write,delete";
   permission java.io.FilePermission ".${/}codebase2${/}-", "read,write,delete";
-
-  // allow remote objects to be exported on arbitrary ports.
-  permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
 };

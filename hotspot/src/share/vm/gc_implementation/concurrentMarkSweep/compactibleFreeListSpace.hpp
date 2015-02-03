@@ -690,6 +690,9 @@ class CFLS_LAB : public CHeapObj<mtGC> {
   void get_from_global_pool(size_t word_sz, AdaptiveFreeList<FreeChunk>* fl);
 
 public:
+  static const int _default_dynamic_old_plab_size = 16;
+  static const int _default_static_old_plab_size  = 50;
+
   CFLS_LAB(CompactibleFreeListSpace* cfls);
 
   // Allocate and return a block of the given size, or else return NULL.

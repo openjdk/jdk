@@ -73,6 +73,8 @@ class TempNewSymbol : public StackObj {
   operator Symbol*()                             { return _temp; }
 };
 
+template <class T, class N> class CompactHashtable;
+
 class SymbolTable : public RehashableHashtable<Symbol*, mtSymbol> {
   friend class VMStructs;
   friend class ClassFileParser;
@@ -83,10 +85,14 @@ private:
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static bool _needs_rehashing;
+  static bool _lookup_shared_first;
 
   // For statistics
   static int _symbols_removed;
   static int _symbols_counted;
+
+  // shared symbol table.
+  static CompactHashtable<Symbol*, char> _shared_table;
 
   Symbol* allocate_symbol(const u1* name, int len, bool c_heap, TRAPS); // Assumes no characters larger than 0x7F
 
@@ -106,6 +112,8 @@ private:
     add(loader_data, cp, names_count, name, lengths, cp_indices, hashValues, THREAD);
   }
 
+  static Symbol* lookup_shared(const char* name, int len, unsigned int hash);
+  Symbol* lookup_dynamic(int index, const char* name, int len, unsigned int hash);
   Symbol* lookup(int index, const char* name, int len, unsigned int hash);
 
   SymbolTable()
@@ -142,20 +150,6 @@ public:
     assert(_the_table == NULL, "One symbol table allowed.");
     _the_table = new SymbolTable();
     initialize_symbols(symbol_alloc_arena_size);
-  }
-
-  static void create_table(HashtableBucket<mtSymbol>* t, int length,
-                           int number_of_entries) {
-    assert(_the_table == NULL, "One symbol table allowed.");
-
-    // If CDS archive used a different symbol table size, use that size instead
-    // which is better than giving an error.
-    SymbolTableSize = length/bucket_size();
-
-    _the_table = new SymbolTable(t, number_of_entries);
-    // if CDS give symbol table a default arena size since most symbols
-    // are already allocated in the shared misc section.
-    initialize_symbols();
   }
 
   static unsigned int hash_symbol(const char* s, int len);
@@ -230,18 +224,12 @@ public:
 
   // Debugging
   static void verify();
-  static void dump(outputStream* st);
+  static void dump(outputStream* st, bool verbose=false);
+  static void read(const char* filename, TRAPS);
 
   // Sharing
-  static void copy_buckets(char** top, char*end) {
-    the_table()->Hashtable<Symbol*, mtSymbol>::copy_buckets(top, end);
-  }
-  static void copy_table(char** top, char*end) {
-    the_table()->Hashtable<Symbol*, mtSymbol>::copy_table(top, end);
-  }
-  static void reverse(void* boundary = NULL) {
-    the_table()->Hashtable<Symbol*, mtSymbol>::reverse(boundary);
-  }
+  static bool copy_compact_table(char** top, char* end);
+  static const char* init_shared_table(const char* buffer);
 
   // Rehash the symbol table if it gets out of balance
   static void rehash_table();

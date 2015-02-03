@@ -326,6 +326,7 @@ abstract public class XBaseMenuWindow extends XWindow {
      * check for adding duplicate items
      * @param item item to add
      */
+    @SuppressWarnings("deprecation")
     public void addItem(MenuItem item) {
         XMenuItemPeer mp = (XMenuItemPeer)item.getPeer();
         if (mp != null) {

@@ -270,10 +270,14 @@
   product(uintx, G1MixedGCCountTarget, 8,                                   \
           "The target number of mixed GCs after a marking cycle.")          \
                                                                             \
-  experimental(bool, G1ReclaimDeadHumongousObjectsAtYoungGC, true,          \
+  experimental(bool, G1EagerReclaimHumongousObjects, true,                  \
           "Try to reclaim dead large objects at every young GC.")           \
                                                                             \
-  experimental(bool, G1TraceReclaimDeadHumongousObjectsAtYoungGC, false,    \
+  experimental(bool, G1EagerReclaimHumongousObjectsWithStaleRefs, true,     \
+          "Try to reclaim dead large objects that have a few stale "        \
+          "references at every young GC.")                                  \
+                                                                            \
+  experimental(bool, G1TraceEagerReclaimHumongousObjects, false,            \
           "Print some information about large object liveness "             \
           "at every young GC.")                                             \
                                                                             \

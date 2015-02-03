@@ -646,9 +646,9 @@ public final class NormalizerBase implements Cloneable {
 
     /**
      * Compose a string.
-     * The string will be composed to according the the specified mode.
+     * The string will be composed according to the specified mode.
      * @param str        The string to compose.
-     * @param compat     If true the string will be composed accoding to
+     * @param compat     If true the string will be composed according to
      *                    NFKC rules and if false will be composed according to
      *                    NFC rules.
      * @param options    The only recognized option is UNICODE_3_2
@@ -694,9 +694,9 @@ public final class NormalizerBase implements Cloneable {
 
     /**
      * Decompose a string.
-     * The string will be decomposed to according the the specified mode.
+     * The string will be decomposed according to the specified mode.
      * @param str       The string to decompose.
-     * @param compat    If true the string will be decomposed accoding to NFKD
+     * @param compat    If true the string will be decomposed according to NFKD
      *                   rules and if false will be decomposed according to NFD
      *                   rules.
      * @return String   The decomposed string
@@ -708,9 +708,9 @@ public final class NormalizerBase implements Cloneable {
 
     /**
      * Decompose a string.
-     * The string will be decomposed to according the the specified mode.
+     * The string will be decomposed according to the specified mode.
      * @param str     The string to decompose.
-     * @param compat  If true the string will be decomposed accoding to NFKD
+     * @param compat  If true the string will be decomposed according to NFKD
      *                 rules and if false will be decomposed according to NFD
      *                 rules.
      * @param options The normalization options, ORed together (0 for no options).
@@ -756,7 +756,7 @@ public final class NormalizerBase implements Cloneable {
 
     /**
      * Normalize a string.
-     * The string will be normalized according the the specified normalization
+     * The string will be normalized according to the specified normalization
      * mode and options.
      * @param src       The char array to compose.
      * @param srcStart  Start index of the source

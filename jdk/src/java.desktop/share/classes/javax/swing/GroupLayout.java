@@ -1213,15 +1213,15 @@ public class GroupLayout implements LayoutManager2 {
             registerComponents(horizontalGroup, HORIZONTAL);
             registerComponents(verticalGroup, VERTICAL);
         }
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("HORIZONTAL\n");
-        createSpringDescription(buffer, horizontalGroup, "  ", HORIZONTAL);
-        buffer.append("\nVERTICAL\n");
-        createSpringDescription(buffer, verticalGroup, "  ", VERTICAL);
-        return buffer.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append("HORIZONTAL\n");
+        createSpringDescription(sb, horizontalGroup, "  ", HORIZONTAL);
+        sb.append("\nVERTICAL\n");
+        createSpringDescription(sb, verticalGroup, "  ", VERTICAL);
+        return sb.toString();
     }
 
-    private void createSpringDescription(StringBuffer buffer, Spring spring,
+    private void createSpringDescription(StringBuilder sb, Spring spring,
             String indent, int axis) {
         String origin = "";
         String padding = "";
@@ -1239,20 +1239,19 @@ public class GroupLayout implements LayoutManager2 {
             padding = ", userCreated=" + paddingSpring.getUserCreated() +
                     ", matches=" + paddingSpring.getMatchDescription();
         }
-        buffer.append(indent + spring.getClass().getName() + " " +
-                Integer.toHexString(spring.hashCode()) + " " +
-                origin +
-                ", size=" + spring.getSize() +
-                ", alignment=" + spring.getAlignment() +
-                " prefs=[" + spring.getMinimumSize(axis) +
-                " " + spring.getPreferredSize(axis) +
-                " " + spring.getMaximumSize(axis) +
-                padding + "]\n");
+        sb.append(indent).append(spring.getClass().getName()).append(' ')
+                .append(Integer.toHexString(spring.hashCode())).append(' ')
+                .append(origin).append(", size=").append(spring.getSize())
+                .append(", alignment=").append(spring.getAlignment())
+                .append(" prefs=[").append(spring.getMinimumSize(axis))
+                .append(' ').append(spring.getPreferredSize(axis)).append(' ')
+                .append(spring.getMaximumSize(axis)).append(padding)
+                .append("]\n");
         if (spring instanceof Group) {
             List<Spring> springs = ((Group)spring).springs;
             indent += "  ";
             for (int counter = 0; counter < springs.size(); counter++) {
-                createSpringDescription(buffer, springs.get(counter), indent,
+                createSpringDescription(sb, springs.get(counter), indent,
                         axis);
             }
         }
@@ -2397,7 +2396,7 @@ public class GroupLayout implements LayoutManager2 {
      * {@code CONSTANT_DESCENT}; otherwise the baseline is anchored to the top
      * of the group.
      * <p>
-     * Elements aligned to the baseline are resizable if they have have
+     * Elements aligned to the baseline are resizable if they have
      * a baseline resize behavior of {@code CONSTANT_ASCENT} or
      * {@code CONSTANT_DESCENT}. Elements with a baseline resize
      * behavior of {@code OTHER} or {@code CENTER_OFFSET} are not resizable.

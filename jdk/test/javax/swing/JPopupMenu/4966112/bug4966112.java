@@ -35,7 +35,6 @@ import javax.swing.event.PopupMenuListener;
 import javax.swing.event.PopupMenuEvent;
 import java.awt.*;
 import java.awt.event.*;
-import sun.awt.SunToolkit;
 
 public class bug4966112 {
 
@@ -50,19 +49,18 @@ public class bug4966112 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(100);
 
         createAndShowButton();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         setClickPoint(testButton);
         clickMouse(InputEvent.BUTTON1_MASK);
         clickMouse(InputEvent.BUTTON2_MASK);
         clickMouse(InputEvent.BUTTON3_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         closeFrame();
 
         if (popupButton == NO_MOUSE_BUTTON) {
@@ -74,10 +72,10 @@ public class bug4966112 {
 
         // Test Split Pane
         createAndShowSplitPane();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickMouse(jsp);
-        toolkit.realSync();
+        robot.waitForIdle();
         closeFrame();
 
         if (!shown) {
@@ -86,10 +84,10 @@ public class bug4966112 {
 
         // Test Spinner
         createAndShowSpinner();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickMouse(spin);
-        toolkit.realSync();
+        robot.waitForIdle();
         closeFrame();
 
         if (!shown) {
@@ -98,16 +96,16 @@ public class bug4966112 {
 
         // Test File Chooser
         createAndShowFileChooser();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickMouse(filec);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_ESCAPE);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_ESCAPE);
-        toolkit.realSync();
+        robot.waitForIdle();
         closeFrame();
 
         if (!shown) {

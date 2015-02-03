@@ -105,7 +105,7 @@ public class Decoration {
     }
 
     /**
-     * Return a Decoration appropriate for the the given Map.
+     * Return a Decoration appropriate for the given Map.
      * @param attributes the Map used to determine the Decoration
      */
     public static Decoration getDecoration(Map<? extends Attribute, ?> attributes) {

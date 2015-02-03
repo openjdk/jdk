@@ -58,7 +58,6 @@ enum SH_process_roots_tasks {
 SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   CollectedHeap(),
   _collector_policy(policy_),
-  _rem_set(NULL),
   _strong_roots_scope(NULL),
   _strong_roots_parity(0),
   _process_strong_tasks(new SubTasksDone(SH_PS_NumElements)),

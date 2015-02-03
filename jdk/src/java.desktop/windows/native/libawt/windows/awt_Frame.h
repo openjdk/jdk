@@ -215,7 +215,7 @@ private:
      * Hashtable<Thread, BlockedThreadStruct> - a table that contains all the
      * information about non-toolkit threads with modal blocked embedded
      * frames. This information includes: number of blocked embedded frames
-     * created on the the thread, and mouse and modal hooks installed for
+     * created on the thread, and mouse and modal hooks installed for
      * that thread. For every thread each hook is installed only once
      */
     static Hashtable sm_BlockedThreads;

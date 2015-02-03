@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -845,22 +845,6 @@ public final class Unsafe {
     public native Object allocateInstance(Class<?> cls)
         throws InstantiationException;
 
-    /** Lock the object.  It must get unlocked via {@link #monitorExit}. */
-    public native void monitorEnter(Object o);
-
-    /**
-     * Unlock the object.  It must have been locked via {@link
-     * #monitorEnter}.
-     */
-    public native void monitorExit(Object o);
-
-    /**
-     * Tries to lock the object.  Returns true or false to indicate
-     * whether the lock succeeded.  If it did, the object must be
-     * unlocked via {@link #monitorExit}.
-     */
-    public native boolean tryMonitorEnter(Object o);
-
     /** Throw the exception without telling the verifier. */
     public native void throwException(Throwable ee);
 
@@ -958,6 +942,8 @@ public final class Unsafe {
      * other threads. This method is generally only useful if the
      * underlying field is a Java volatile (or if an array cell, one
      * that is otherwise only accessed using volatile accesses).
+     *
+     * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
      */
     public native void    putOrderedObject(Object o, long offset, Object x);
 
@@ -1111,22 +1097,40 @@ public final class Unsafe {
 
 
     /**
-     * Ensures lack of reordering of loads before the fence
-     * with loads or stores after the fence.
+     * Ensures that loads before the fence will not be reordered with loads and
+     * stores after the fence; a "LoadLoad plus LoadStore barrier".
+     *
+     * Corresponds to C11 atomic_thread_fence(memory_order_acquire)
+     * (an "acquire fence").
+     *
+     * A pure LoadLoad fence is not provided, since the addition of LoadStore
+     * is almost always desired, and most current hardware instructions that
+     * provide a LoadLoad barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
     public native void loadFence();
 
     /**
-     * Ensures lack of reordering of stores before the fence
-     * with loads or stores after the fence.
+     * Ensures that loads and stores before the fence will not be reordered with
+     * stores after the fence; a "StoreStore plus LoadStore barrier".
+     *
+     * Corresponds to C11 atomic_thread_fence(memory_order_release)
+     * (a "release fence").
+     *
+     * A pure StoreStore fence is not provided, since the addition of LoadStore
+     * is almost always desired, and most current hardware instructions that
+     * provide a StoreStore barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
     public native void storeFence();
 
     /**
-     * Ensures lack of reordering of loads or stores before the fence
-     * with loads or stores after the fence.
+     * Ensures that loads and stores before the fence will not be reordered
+     * with loads and stores after the fence.  Implies the effects of both
+     * loadFence() and storeFence(), and in addition, the effect of a StoreLoad
+     * barrier.
+     *
+     * Corresponds to C11 atomic_thread_fence(memory_order_seq_cst).
      * @since 1.8
      */
     public native void fullFence();

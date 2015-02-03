@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.swing.text.*;
  * Component decorator that implements the view interface
  * for form elements, &lt;input&gt;, &lt;textarea&gt;,
  * and &lt;select&gt;.  The model for the component is stored
- * as an attribute of the the element (using StyleConstants.ModelAttribute),
+ * as an attribute of the element (using StyleConstants.ModelAttribute),
  * and is used to build the component of the view.  The type
  * of the model is assumed to of the type that would be set by
  * <code>HTMLDocument.HTMLReader.FormAction</code>.  If there are
@@ -599,6 +599,7 @@ public class FormView extends ComponentView implements ActionListener {
      * @param point associated with the mouse click.
      * @return the image data.
      */
+    @SuppressWarnings("deprecation")
     private String getImageData(Point point) {
 
         String mouseCoords = point.x + ":" + point.y;
@@ -816,6 +817,7 @@ public class FormView extends ComponentView implements ActionListener {
      * URLEncoder.encode() method before being added to the
      * buffer.
      */
+    @SuppressWarnings("deprecation")
     private void appendBuffer(StringBuilder buffer, String name, String value) {
         if (buffer.length() > 0) {
             buffer.append('&');

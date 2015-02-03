@@ -76,7 +76,7 @@ import sun.security.util.Debug;
  * </pre>
  *
  * The CodeBase and Signedby components of the triplet name/value pairs
- * are optional.  If they are not present, then any any codebase will match,
+ * are optional.  If they are not present, then any codebase will match,
  * and any signer (including unsigned code) will match.
  * For Example,
  *

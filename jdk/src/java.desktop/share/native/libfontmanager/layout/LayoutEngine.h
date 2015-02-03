@@ -297,7 +297,7 @@ protected:
      * This method does character to glyph mapping. The default implementation
      * uses the font instance to do the mapping. It will allocate the glyph and
      * character index arrays if they're not already allocated. If it allocates the
-     * character index array, it will fill it it.
+     * character index array, it will fill it.
      *
      * This method supports right to left
      * text with the ability to store the glyphs in reverse order, and by supporting
@@ -537,4 +537,3 @@ public:
 
 U_NAMESPACE_END
 #endif
-

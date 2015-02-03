@@ -123,7 +123,7 @@ class FileDispatcherImpl extends FileDispatcher {
             new PrivilegedAction<String>() {
                 @Override
                 public String run() {
-                    return System.getProperty("jdk.net.enableFastFileTransfer");
+                    return System.getProperty("jdk.nio.enableFastFileTransfer");
                 }
             });
         boolean enable;

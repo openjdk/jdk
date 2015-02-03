@@ -69,6 +69,8 @@ import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs.ContentInfo;
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
+import sun.security.provider.JavaKeyStore.JKS;
+import sun.security.util.KeyStoreDelegator;
 
 
 /**
@@ -128,6 +130,13 @@ import sun.security.pkcs.EncryptedPrivateKeyInfo;
  *
  */
 public final class PKCS12KeyStore extends KeyStoreSpi {
+
+    // special PKCS12 keystore that supports PKCS12 and JKS file formats
+    public static final class DualFormatPKCS12 extends KeyStoreDelegator {
+        public DualFormatPKCS12() {
+            super("PKCS12", PKCS12KeyStore.class, "JKS", JKS.class);
+        }
+    }
 
     public static final int VERSION_3 = 3;
 
@@ -1053,6 +1062,39 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /**
+     * Determines if the keystore {@code Entry} for the specified
+     * {@code alias} is an instance or subclass of the specified
+     * {@code entryClass}.
+     *
+     * @param alias the alias name
+     * @param entryClass the entry class
+     *
+     * @return true if the keystore {@code Entry} for the specified
+     *          {@code alias} is an instance or subclass of the
+     *          specified {@code entryClass}, false otherwise
+     *
+     * @since 1.5
+     */
+    @Override
+    public boolean
+        engineEntryInstanceOf(String alias,
+                              Class<? extends KeyStore.Entry> entryClass)
+    {
+        if (entryClass == KeyStore.TrustedCertificateEntry.class) {
+            return engineIsCertificateEntry(alias);
+        }
+
+        Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        if (entryClass == KeyStore.PrivateKeyEntry.class) {
+            return (entry != null && entry instanceof PrivateKeyEntry);
+        }
+        if (entryClass == KeyStore.SecretKeyEntry.class) {
+            return (entry != null && entry instanceof SecretKeyEntry);
+        }
+        return false;
+    }
+
+    /**
      * Returns the (alias) name of the first keystore entry whose certificate
      * matches the given certificate.
      *
@@ -1084,7 +1126,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             } else {
                 continue;
             }
-            if (certElem.equals(cert)) {
+            if (certElem != null && certElem.equals(cert)) {
                 return alias;
             }
         }
@@ -1923,7 +1965,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 safeContentsData = safeContents.getData();
             } else if (contentType.equals((Object)ContentInfo.ENCRYPTED_DATA_OID)) {
                 if (password == null) {
-                   continue;
+
+                    if (debug != null) {
+                        debug.println("Warning: skipping PKCS#7 encryptedData" +
+                            " content-type - no password was supplied");
+                    }
+                    continue;
                 }
 
                 if (debug != null) {
@@ -1965,8 +2012,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                             password = new char[1];
                             continue;
                         }
-                        throw new IOException(
-                            "failed to decrypt safe contents entry: " + e, e);
+                        throw new IOException("keystore password was incorrect",
+                            new UnrecoverableKeyException(
+                                "failed to decrypt safe contents entry: " + e));
                     }
                 }
             } else {
@@ -2283,5 +2331,74 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private String getUnfriendlyName() {
         counter++;
         return (String.valueOf(counter));
+    }
+
+    /*
+     * PKCS12 permitted first 24 bytes:
+     *
+     * 30 82 -- -- 02 01 03 30 82 -- -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 8-
+     * 30 -- 02 01 03 30 -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 -- 04 -- -- --
+     * 30 81 -- 02 01 03 30 81 -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 81 -- 04
+     * 30 82 -- -- 02 01 03 30 81 -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 81 --
+     * 30 83 -- -- -- 02 01 03 30 82 -- -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0
+     * 30 83 -- -- -- 02 01 03 30 83 -- -- -- 06 09 2A 86 48 86 F7 0D 01 07 01
+     * 30 84 -- -- -- -- 02 01 03 30 83 -- -- -- 06 09 2A 86 48 86 F7 0D 01 07
+     * 30 84 -- -- -- -- 02 01 03 30 84 -- -- -- -- 06 09 2A 86 48 86 F7 0D 01
+     */
+
+    private static final long[][] PKCS12_HEADER_PATTERNS = {
+        { 0x3082000002010330L, 0x82000006092A8648L, 0x86F70D010701A080L },
+        { 0x3000020103300006L, 0x092A864886F70D01L, 0x0701A00004000000L },
+        { 0x3081000201033081L, 0x0006092A864886F7L, 0x0D010701A0810004L },
+        { 0x3082000002010330L, 0x810006092A864886L, 0xF70D010701A08100L },
+        { 0x3083000000020103L, 0x3082000006092A86L, 0x4886F70D010701A0L },
+        { 0x3083000000020103L, 0x308200000006092AL, 0x864886F70D010701L },
+        { 0x3084000000000201L, 0x0330820000000609L, 0x2A864886F70D0107L },
+        { 0x3084000000000201L, 0x0330820000000006L, 0x092A864886F70D01L }
+    };
+
+    private static final long[][] PKCS12_HEADER_MASKS = {
+        { 0xFFFF0000FFFFFFFFL, 0xFF0000FFFFFFFFFFL, 0xFFFFFFFFFFFFFFF0L },
+        { 0xFF00FFFFFFFF00FFL, 0xFFFFFFFFFFFFFFFFL, 0xFFFFFF00FF000000L },
+        { 0xFFFF00FFFFFFFFFFL, 0x00FFFFFFFFFFFFFFL, 0xFFFFFFFFFFFF00FFL },
+        { 0xFFFF0000FFFFFFFFL, 0xFF00FFFFFFFFFFFFL, 0xFFFFFFFFFFFFFF00L },
+        { 0xFFFF000000FFFFFFL, 0xFFFF0000FFFFFFFFL, 0xFFFFFFFFFFFFFFFFL },
+        { 0xFFFF000000FFFFFFL, 0xFFFF000000FFFFFFL, 0xFFFFFFFFFFFFFFFFL },
+        { 0xFFFF00000000FFFFL, 0xFFFFFF000000FFFFL, 0xFFFFFFFFFFFFFFFFL },
+        { 0xFFFF00000000FFFFL, 0xFFFFFF00000000FFL, 0xFFFFFFFFFFFFFFFFL }
+    };
+
+    /**
+     * Probe the first few bytes of the keystore data stream for a valid
+     * PKCS12 keystore encoding.
+     */
+    @Override
+    public boolean engineProbe(InputStream stream) throws IOException {
+
+        DataInputStream dataStream;
+        if (stream instanceof DataInputStream) {
+            dataStream = (DataInputStream)stream;
+        } else {
+            dataStream = new DataInputStream(stream);
+        }
+
+        long firstPeek = dataStream.readLong();
+        long nextPeek = dataStream.readLong();
+        long finalPeek = dataStream.readLong();
+        boolean result = false;
+
+        for (int i = 0; i < PKCS12_HEADER_PATTERNS.length; i++) {
+            if (PKCS12_HEADER_PATTERNS[i][0] ==
+                    (firstPeek & PKCS12_HEADER_MASKS[i][0]) &&
+                (PKCS12_HEADER_PATTERNS[i][1] ==
+                    (nextPeek & PKCS12_HEADER_MASKS[i][1])) &&
+                (PKCS12_HEADER_PATTERNS[i][2] ==
+                    (finalPeek & PKCS12_HEADER_MASKS[i][2]))) {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
     }
 }

@@ -72,7 +72,7 @@ static pthread_mutex_t gColorCacheLock = PTHREAD_MUTEX_INITIALIZER;
 
 // given a UInt32 color, it tries to find that find the corresponding CGColorRef in the hash cache. If the CGColorRef
 // doesn't exist or there is a collision, it creates a new one CGColorRef and put's in the cache. Then,
-// it sets with current fill/stroke color for the the CGContext passed in (qsdo->cgRef).
+// it sets with current fill/stroke color for the CGContext passed in (qsdo->cgRef).
 void setCachedColor(QuartzSDOps *qsdo, UInt32 color)
 {
     static const CGFloat kColorConversionMultiplier = 1.0f/255.0f;

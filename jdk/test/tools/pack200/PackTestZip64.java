@@ -52,7 +52,7 @@ public class PackTestZip64 {
         // make a copy of the test specimen to local directory
         File testFile = new File("tools_java.jar");
         // Add a large number of small files to the golden jar
-        generateLargeJar(testFile, Utils.locateJar("golden.jar"));
+        generateLargeJar(testFile, Utils.getGoldenJar());
 
         List<String> cmdsList = new ArrayList<>();
 

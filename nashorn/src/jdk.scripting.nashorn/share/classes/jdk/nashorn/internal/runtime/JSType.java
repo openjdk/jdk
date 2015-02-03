@@ -180,10 +180,10 @@ public enum JSType {
     /** Div exact wrapper for potentially integer division that turns into float point */
     public static final Call DIV_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "divExact", long.class, long.class, long.class, int.class);
 
-    /** Div zero wrapper for long division that handles (0/0) >>> 0 == 0 */
+    /** Div zero wrapper for long division that handles (0/0) &gt;&gt;&gt; 0 == 0 */
     public static final Call DIV_ZERO_LONG        = staticCall(JSTYPE_LOOKUP, JSType.class, "divZero", long.class, long.class, long.class);
 
-    /** Mod zero wrapper for long division that handles (0%0) >>> 0 == 0 */
+    /** Mod zero wrapper for long division that handles (0%0) &gt;&gt;&gt; 0 == 0 */
     public static final Call REM_ZERO_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "remZero", long.class, long.class, long.class);
 
     /** Mod exact wrapper for potentially integer remainders that turns into float point */

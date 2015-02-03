@@ -497,7 +497,7 @@ class ClassReader {
                     code.max_locals  >= TOO_BIG ||
                     code.getLength() >= TOO_BIG ||
                     name.endsWith("X")) {
-                    // No, we don't really know what to do this this one.
+                    // No, we don't really know what to do with this one.
                     // Do not compress the rare and strange "u4" and "X" cases.
                     a = null;
                 }

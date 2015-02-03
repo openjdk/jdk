@@ -77,7 +77,8 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
                 public P run() {
                     P delegate = null;
 
-                    for (LocaleServiceProvider provider : ServiceLoader.loadInstalled(c)) {
+                    for (LocaleServiceProvider provider :
+                             ServiceLoader.load(c, ClassLoader.getSystemClassLoader())) {
                         if (delegate == null) {
                             try {
                                 delegate =

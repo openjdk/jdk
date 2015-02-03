@@ -41,7 +41,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * indicates to encoders derived from {@link Encoder}
  * that this feature should be ignored.
  * <p>
- * The {@code Transient} annotation may be be used
+ * The {@code Transient} annotation may be used
  * in any of the methods that are involved
  * in a {@link FeatureDescriptor} subclass
  * to identify the transient feature in the annotated class and its subclasses.

@@ -341,7 +341,7 @@ public abstract class GlyphVector implements Cloneable {
     /**
      * Returns the position of the specified glyph relative to the
      * origin of this <code>GlyphVector</code>.
-     * If <code>glyphIndex</code> equals the number of of glyphs in
+     * If <code>glyphIndex</code> equals the number of glyphs in
      * this <code>GlyphVector</code>, this method returns the position after
      * the last glyph. This position is used to define the advance of
      * the entire <code>GlyphVector</code>.
@@ -358,7 +358,7 @@ public abstract class GlyphVector implements Cloneable {
     /**
      * Sets the position of the specified glyph within this
      * <code>GlyphVector</code>.
-     * If <code>glyphIndex</code> equals the number of of glyphs in
+     * If <code>glyphIndex</code> equals the number of glyphs in
      * this <code>GlyphVector</code>, this method sets the position after
      * the last glyph. This position is used to define the advance of
      * the entire <code>GlyphVector</code>.
@@ -477,7 +477,7 @@ public abstract class GlyphVector implements Cloneable {
      * coordinates of the glyph numbered <code>beginGlyphIndex + position/2</code>.
      * Odd numbered array entries beginning with position one are the Y
      * coordinates of the glyph numbered <code>beginGlyphIndex + (position-1)/2</code>.
-     * If <code>beginGlyphIndex</code> equals the number of of glyphs in
+     * If <code>beginGlyphIndex</code> equals the number of glyphs in
      * this <code>GlyphVector</code>, this method gets the position after
      * the last glyph and this position is used to define the advance of
      * the entire <code>GlyphVector</code>.

@@ -219,7 +219,7 @@ public abstract class SctpMultiChannel
      *         bind the socket to an automatically assigned socket address
      *
      * @param  backlog
-     *         The maximum number number of pending connections
+     *         The maximum number of pending connections
      *
      * @return  This channel
      *
@@ -706,7 +706,7 @@ public abstract class SctpMultiChannel
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it does not permit
-     *          new associations to be setup with the the messages's address
+     *          new associations to be setup with the messages's address
      *
      * @throws  IOException
      *          If some other I/O error occurs

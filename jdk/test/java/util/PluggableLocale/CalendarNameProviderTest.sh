@@ -22,6 +22,6 @@
 #
 
 # @test
-# @bug 8000986
+# @bug 8000986 8062588
 # @summary CalendarNameProvider tests
-# @run shell ExecTest.sh bar CalendarNameProviderTest true
+# @run shell ExecTest.sh bar CalendarNameProviderTest

@@ -195,6 +195,7 @@ public class SortingFocusTraversalPolicy
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     private void enumerateCycle(Container container, List<Component> cycle) {
         if (!(container.isVisible() && container.isDisplayable())) {
             return;

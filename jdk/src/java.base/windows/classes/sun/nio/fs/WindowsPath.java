@@ -41,7 +41,7 @@ import static sun.nio.fs.WindowsConstants.*;
  * Windows implementation of Path
  */
 
-class WindowsPath extends AbstractPath {
+class WindowsPath implements Path {
 
     // The maximum path that does not require long path prefix. On Windows
     // the maximum path is 260 minus 1 (NUL) but for directories it is 260

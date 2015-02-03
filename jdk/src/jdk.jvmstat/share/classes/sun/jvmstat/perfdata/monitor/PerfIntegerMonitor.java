@@ -63,7 +63,7 @@ public class PerfIntegerMonitor extends AbstractMonitor
      * The object returned contains an Integer object containing the
      * current value of the IntegerInstrument.
      *
-     * @return Object - the current value of the the IntegerInstrument. The
+     * @return Object - the current value of the IntegerInstrument. The
      *                   return type is guaranteed to be of type Integer.
      */
     public Object getValue() {

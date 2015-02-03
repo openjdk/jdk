@@ -28,8 +28,6 @@
    @run main bug6777378
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
@@ -43,7 +41,6 @@ public class bug6777378 {
     private static JTableHeader header;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(20);
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -78,7 +75,7 @@ public class bug6777378 {
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         Point point = header.getLocationOnScreen();
         robot.mouseMove(point.x + 20, point.y + 50);
         robot.mouseMove(point.x + 30, point.y + 50);

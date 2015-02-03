@@ -22,8 +22,9 @@
  */
 /* @test
    @bug 4202954
+   @library ../../../../lib/testlibrary
    @library ../../regtesthelpers
-   @build Util
+   @build Util jdk.testlibrary.OSInfo
    @author Michael C. Albers
    @run main bug4202954
 */
@@ -31,11 +32,10 @@
 import java.awt.*;
 import java.awt.event.InputEvent;
 import javax.swing.*;
-import sun.awt.*;
+import jdk.testlibrary.OSInfo;
 
 public class bug4202954 {
     static JScrollPane buttonScrollPane;
-    private static final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
     static Robot robot;
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
@@ -138,13 +138,17 @@ public class bug4202954 {
             }
         };
         Integer oldHValue = Util.invokeOnEDT(horizontalValue);
+        robot.waitForIdle();
         Integer oldVValue = Util.invokeOnEDT(verticalValue);
+        robot.waitForIdle();
 
         clickMouseOnComponent(scrollButton, buttons);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         int newHValue = Util.invokeOnEDT(horizontalValue);
+        robot.waitForIdle();
         int newVValue = Util.invokeOnEDT(verticalValue);
+        robot.waitForIdle();
 
         return (oldHValue != newHValue || oldVValue != newVValue) == expectScroll;
     }

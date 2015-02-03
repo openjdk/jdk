@@ -1474,7 +1474,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * area.  If you wish to have a transparent button, such as
      * an icon only button, for example, then you should set
      * this to <code>false</code>. Do not call <code>setOpaque(false)</code>.
-     * The default value for the the <code>contentAreaFilled</code>
+     * The default value for the <code>contentAreaFilled</code>
      * property is <code>true</code>.
      * <p>
      * This function may cause the component's opaque property to change.
@@ -1538,7 +1538,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     }
 
     /**
-     * Returns the keyboard mnemonic from the the current model.
+     * Returns the keyboard mnemonic from the current model.
      * @return the keyboard mnemonic from the model
      */
     public int getMnemonic() {
@@ -2562,7 +2562,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          * Perform the specified Action on the object
          *
          * @param i zero-based index of actions
-         * @return true if the the action was performed; else false.
+         * @return true if the action was performed; else false.
          */
         public boolean doAccessibleAction(int i) {
             if (i == 0) {

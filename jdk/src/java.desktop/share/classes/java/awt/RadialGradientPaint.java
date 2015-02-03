@@ -94,7 +94,7 @@ import java.beans.ConstructorProperties;
  * Note that some minor variations in distances may occur due to sampling at
  * the granularity of a pixel.
  * If no cycle method is specified, {@code NO_CYCLE} will be chosen by
- * default, which means the the last keyframe color will be used to fill the
+ * default, which means the last keyframe color will be used to fill the
  * remaining area.
  * <p>
  * The colorSpace parameter allows the user to specify in which colorspace

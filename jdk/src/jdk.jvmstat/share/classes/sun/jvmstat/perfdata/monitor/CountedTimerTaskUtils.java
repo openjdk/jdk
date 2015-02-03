@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.*;
  */
 public class CountedTimerTaskUtils {
 
-    private static final boolean DEBUG = false;
+    // 8028357 removed old, inefficient debug logging
 
     /**
      * Reschedule a CountedTimeTask at a different interval. Probably not
@@ -58,14 +58,6 @@ public class CountedTimerTaskUtils {
         long lastRun = oldTask.scheduledExecutionTime();
         long expired = now - lastRun;
 
-        if (DEBUG) {
-            System.err.println("computing timer delay: "
-                               + " oldInterval = " + oldInterval
-                               + " newInterval = " + newInterval
-                               + " samples = " + oldTask.executionCount()
-                               + " expired = " + expired);
-        }
-
         /*
          * check if original task ever ran - if not, then lastRun is
          * undefined and we simply set the delay to 0.
@@ -74,12 +66,6 @@ public class CountedTimerTaskUtils {
         if (oldTask.executionCount() > 0) {
             long remainder = newInterval - expired;
             delay = remainder >= 0 ? remainder : 0;
-        }
-
-        if (DEBUG) {
-            System.err.println("rescheduling sampler task: interval = "
-                               + newInterval
-                               + " delay = " + delay);
         }
 
         timer.schedule(newTask, delay, newInterval);

@@ -49,7 +49,7 @@ final class PlainClient implements SaslClient {
      *  for which authorization is being granted; if null, same as
      *  authenticationID
      * @param authenticationID A non-null string representing the principal
-     * being authenticated. pw is associated with with this principal.
+     * being authenticated. pw is associated with this principal.
      * @param pw A non-null byte[] containing the password.
      */
     PlainClient(String authorizationID, String authenticationID, byte[] pw)

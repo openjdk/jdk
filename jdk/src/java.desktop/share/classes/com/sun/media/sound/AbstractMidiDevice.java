@@ -87,7 +87,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * @param info the description of the device
      */
     /*
-     * The initial mode and and only supported mode default to OMNI_ON_POLY.
+     * The initial mode and only supported mode default to OMNI_ON_POLY.
      */
     protected AbstractMidiDevice(MidiDevice.Info info) {
 
@@ -108,7 +108,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
 
     /** Open the device from an application program.
      * Setting the open reference count to -1 here prevents Transmitters and Receivers that
-     * opened the the device implicitly from closing it. The only way to close the device after
+     * opened the device implicitly from closing it. The only way to close the device after
      * this call is a call to close().
      */
     public final void open() throws MidiUnavailableException {

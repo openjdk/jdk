@@ -114,7 +114,7 @@ public class GifImageDecoder extends ImageDecoder {
     /**
      * produce an image from the stream.
      */
-    @SuppressWarnings("fallthrough")
+    @SuppressWarnings({"fallthrough", "deprecation"})
     public void produceImage() throws IOException, ImageFormatException {
         try {
             readHeader();

@@ -745,6 +745,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * return a PageFormat corresponding to the updated attributes,
      * or null if the user cancelled the dialog.
      */
+    @SuppressWarnings("deprecation")
     public PageFormat pageDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {

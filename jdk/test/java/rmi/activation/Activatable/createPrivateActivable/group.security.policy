@@ -1,13 +1,9 @@
 /*
- * security policy used activation groups
+ * security policy used by activation groups
  */
 
 grant {
   permission java.io.FilePermission "..${/}..${/}test.props", "read";
-
-  // test needs to communicate with the activation system
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
-
-  // allow exporting object with non-public remote interface
-  permission java.rmi.RMIPermission "exportRemoteInterface.ActivateMe";
+  permission java.util.PropertyPermission "test.*", "read";
 };

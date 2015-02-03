@@ -100,7 +100,7 @@ public class EmbeddedProfileTests extends ColorConversionTests {
         String[] descr = new String[num];
 
         for (int i = 0; i < num; i++) {
-            names[i] = images[i].toString();
+            names[i] = images[i].abbrev;
             abbrev[i] = images[i].abbrev;
             descr[i] = images[i].description;
         }
@@ -153,7 +153,7 @@ public class EmbeddedProfileTests extends ColorConversionTests {
                 iis = ImageIO.createImageInputStream(url.openStream());
                 reader = (ImageReader) ImageIO.getImageReaders(iis).next();
             } catch (IOException e) {
-                throw new RuntimeException("Unable to run the becnhmark", e);
+                throw new RuntimeException("Unable to run the benchmark", e);
             }
 
             do {

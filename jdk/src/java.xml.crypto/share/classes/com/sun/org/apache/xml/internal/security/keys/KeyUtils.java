@@ -32,7 +32,7 @@ import com.sun.org.apache.xml.internal.security.keys.content.MgmtData;
 import com.sun.org.apache.xml.internal.security.keys.content.X509Data;
 
 /**
- * Utility class for for <CODE>com.sun.org.apache.xml.internal.security.keys</CODE> package.
+ * Utility class for the <CODE>com.sun.org.apache.xml.internal.security.keys</CODE> package.
  *
  * @author $Author: coheigea $
  */

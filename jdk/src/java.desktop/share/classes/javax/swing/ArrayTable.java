@@ -51,7 +51,7 @@ class ArrayTable implements Cloneable {
     /**
      * Writes the passed in ArrayTable to the passed in ObjectOutputStream.
      * The data is saved as an integer indicating how many key/value
-     * pairs are being archived, followed by the the key/value pairs. If
+     * pairs are being archived, followed by the key/value pairs. If
      * <code>table</code> is null, 0 will be written to <code>s</code>.
      * <p>
      * This is a convenience method that ActionMap/InputMap and

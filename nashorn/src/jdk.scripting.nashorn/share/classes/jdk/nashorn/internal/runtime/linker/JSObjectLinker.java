@@ -42,6 +42,7 @@ import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
+import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
 
 /**
@@ -185,11 +186,11 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
             if (index > -1) {
                 return ((JSObject)jsobj).getSlot(index);
             }
-        } else if (key instanceof String) {
-            final String name = (String)key;
+        } else if (key instanceof String || key instanceof ConsString) {
+            final String name = key.toString();
             // get with method name and signature. delegate it to beans linker!
             if (name.indexOf('(') != -1) {
-                return fallback.invokeExact(jsobj, key);
+                return fallback.invokeExact(jsobj, (Object) name);
             }
             return ((JSObject)jsobj).getMember(name);
         }
@@ -202,8 +203,8 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
             ((JSObject)jsobj).setSlot((Integer)key, value);
         } else if (key instanceof Number) {
             ((JSObject)jsobj).setSlot(getIndex((Number)key), value);
-        } else if (key instanceof String) {
-            ((JSObject)jsobj).setMember((String)key, value);
+        } else if (key instanceof String || key instanceof ConsString) {
+            ((JSObject)jsobj).setMember(key.toString(), value);
         }
     }
 

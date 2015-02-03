@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,10 @@ public class ToolProvider {
     /**
      * Returns the Java&trade; programming language compiler provided
      * with this platform.
+     * <p>The file manager returned by calling
+     * {@link JavaCompiler#getStandardFileManager getStandardFileManager}
+     * on this compiler supports paths provided by any
+     * {@linkplain java.nio.file.FileSystem filesystem}.</p>
      * @return the compiler provided with this platform or
      * {@code null} if no compiler is provided
      */
@@ -105,6 +109,10 @@ public class ToolProvider {
     /**
      * Returns the Java&trade; programming language documentation tool provided
      * with this platform.
+     * <p>The file manager returned by calling
+     * {@link DocumentationTool#getStandardFileManager getStandardFileManager}
+     * on this tool supports paths provided by any
+     * {@linkplain java.nio.file.FileSystem filesystem}.</p>
      * @return the documentation tool provided with this platform or
      * {@code null} if no documentation tool is provided
      */

@@ -67,10 +67,7 @@ public class TestHelper {
 
     static final String JAVAHOME = System.getProperty("java.home");
     static final String JAVA_BIN;
-    static final String JAVA_JRE_BIN;
     static final String JAVA_LIB;
-    static final String JAVA_JRE_LIB;
-    static final boolean isSDK = JAVAHOME.endsWith("jre");
     static final String javaCmd;
     static final String javawCmd;
     static final String javacCmd;
@@ -135,17 +132,10 @@ public class TestHelper {
         }
         compiler = ToolProvider.getSystemJavaCompiler();
 
-        File binDir = (isSDK)
-                ? new File((new File(JAVAHOME)).getParentFile(), "bin")
-                : new File(JAVAHOME, "bin");
+        File binDir = new File(JAVAHOME, "bin");
         JAVA_BIN = binDir.getAbsolutePath();
-        JAVA_JRE_BIN = new File(JAVAHOME, "bin").getAbsolutePath();
-
-        File libDir = (isSDK)
-                ? new File((new File(JAVAHOME)).getParentFile(), "lib")
-                : new File(JAVAHOME, "lib");
+        File libDir = new File(JAVAHOME, "lib");
         JAVA_LIB = libDir.getAbsolutePath();
-        JAVA_JRE_LIB = new File(JAVAHOME, "lib").getAbsolutePath();
 
         File javaCmdFile = (isWindows)
                 ? new File(binDir, "java.exe")
@@ -191,11 +181,11 @@ public class TestHelper {
     }
     private static boolean haveVmVariant(String type) {
         if (isWindows) {
-            File vmDir = new File(JAVA_JRE_BIN, type);
+            File vmDir = new File(JAVA_BIN, type);
             File jvmFile = new File(vmDir, LIBJVM);
             return jvmFile.exists();
         } else {
-            File vmDir = new File(JAVA_JRE_LIB, type);
+            File vmDir = new File(JAVA_LIB, type);
             File vmArchDir = new File(vmDir, getJreArch());
             File jvmFile = new File(vmArchDir, LIBJVM);
             return jvmFile.exists();

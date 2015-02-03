@@ -176,6 +176,7 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
                                                                  long hwnd);
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void enterFullScreenExclusive(final int screen, WindowPeer wp)
     {
         final WWindowPeer wpeer = (WWindowPeer)realFSWindow.getPeer();
@@ -246,6 +247,7 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void addFSWindowListener(Window w) {
         // if the window is not a toplevel (has an owner) we have to use the
         // real toplevel to enter the full-screen mode with (4933099).
@@ -273,6 +275,7 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void removeFSWindowListener(Window w) {
         realFSWindow.removeWindowListener(fsWindowListener);
         fsWindowListener = null;
@@ -337,6 +340,7 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
                                                        int bitDepth,
                                                        int refreshRate);
     @Override
+    @SuppressWarnings("deprecation")
     protected void configDisplayMode(final int screen, final WindowPeer w,
                                      final int width, final int height,
                                      final int bitDepth, final int refreshRate)

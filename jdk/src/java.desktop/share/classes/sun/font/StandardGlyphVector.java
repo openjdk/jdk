@@ -1894,9 +1894,9 @@ public class StandardGlyphVector extends GlyphVector {
             }
         }
         catch(Exception e) {
-            buf.append(" " + e.getMessage());
+            buf.append(' ').append(e.getMessage());
         }
-        buf.append("}");
+        buf.append('}');
 
         return buf;
     }

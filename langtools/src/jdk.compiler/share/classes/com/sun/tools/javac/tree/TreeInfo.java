@@ -313,6 +313,14 @@ public class TreeInfo {
         }
     }
 
+    /** Return true if the tree corresponds to a statement */
+    public static boolean isStatement(JCTree tree) {
+        return (tree instanceof JCStatement) &&
+                !tree.hasTag(CLASSDEF) &&
+                !tree.hasTag(Tag.BLOCK) &&
+                !tree.hasTag(METHODDEF);
+    }
+
     /**
      * Return true if the AST corresponds to a static select of the kind A.B
      */

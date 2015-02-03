@@ -30,7 +30,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.__FILE__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__LINE__;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -118,14 +117,13 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
+    public Type getType() {
         if(type != null) {
             return type;
         } else if(symbol != null && symbol.isScope()) {
             return Type.OBJECT;
         }
-        final Type symbolType = localVariableTypes.apply(symbol);
-        return symbolType == null ? Type.UNDEFINED : symbolType;
+        return Type.UNDEFINED;
     }
 
     /**

@@ -27,7 +27,7 @@
   @summary   Tests that EmbeddedFrame can be focused.
   @author    anton.tarasov: area=awt-focus
   @library   ../../regtesthelpers
-  @build     Util
+  @build     Util UtilInternal
   @run       main FocusEmbeddedFrameTest
 */
 
@@ -37,6 +37,7 @@ import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
+import test.java.awt.regtesthelpers.UtilInternal;
 
 public class FocusEmbeddedFrameTest extends Applet {
     static Frame embedder = new Frame("Embedder");
@@ -71,7 +72,7 @@ public class FocusEmbeddedFrameTest extends Applet {
         embedder.addNotify();
 
         try {
-            ef = Util.createEmbeddedFrame(embedder);
+            ef = UtilInternal.createEmbeddedFrame(embedder);
         } catch (Throwable t) {
             t.printStackTrace();
             throw new Error("Test error: couldn't create an EmbeddedFrame!");

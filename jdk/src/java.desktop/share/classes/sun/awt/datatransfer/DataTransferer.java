@@ -717,6 +717,7 @@ search:
      * Primary translation function for translating a Transferable into
      * a byte array, given a source DataFlavor and target format.
      */
+    @SuppressWarnings("deprecation")
     public byte[] translateTransferable(Transferable contents,
                                         DataFlavor flavor,
                                         long format) throws IOException
@@ -926,6 +927,15 @@ search:
         // bytes and dump them into a byte array. For text flavors, decode back
         // to a String and recur to reencode according to the requested format.
         } else if (flavor.isRepresentationClassInputStream()) {
+
+            // Workaround to JDK-8024061: Exception thrown when drag and drop
+            //      between two components is executed quickly.
+            // and JDK-8065098:  JColorChooser no longer supports drag and drop
+            //      between two JVM instances
+            if (!(obj instanceof InputStream)) {
+                return new byte[0];
+            }
+
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                 try (InputStream is = (InputStream)obj) {
                     boolean eof = false;
@@ -1278,6 +1288,7 @@ search:
      * an InputStream into an Object, given a source format and a target
      * DataFlavor.
      */
+    @SuppressWarnings("deprecation")
     public Object translateStream(InputStream str, DataFlavor flavor,
                                   long format, Transferable localeTransferable)
         throws IOException

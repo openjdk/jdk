@@ -1418,7 +1418,7 @@ static void ProcessLine(ProcessHandler* hnd,
                                             */
                                );
     } else {
-        /* Clamping starting from first vertex of the the processed segment
+        /* Clamping starting from first vertex of the processed segment
          */
         CLIPCLAMP(xMin, xMax, x1, y1, x2, y2, x3, y3, jfloat, res);
         X1 = (jint)(x1*MDP_MULT);
@@ -1435,7 +1435,7 @@ static void ProcessLine(ProcessHandler* hnd,
             return;
         }
 
-        /* Clamping starting from last vertex of the the processed segment
+        /* Clamping starting from last vertex of the processed segment
          */
         CLIPCLAMP(xMin, xMax, x2, y2, x1, y1, x3, y3, jfloat, res);
 
@@ -2121,7 +2121,7 @@ void  StoreFixedLine(ProcessHandler* hnd,jint x1,jint y1,jint x2,jint y2,
         if (res == CRES_INVISIBLE) return;
         lastClipped = IS_CLIPPED(res);
 
-        /* Clamping starting from first vertex of the the processed segment */
+        /* Clamping starting from first vertex of the processed segment */
         CLIPCLAMP(outXMin, outXMax, x1, y1, x2, y2, x3, y3, jint, res);
 
         /* Clamping only by left boundary */
@@ -2133,7 +2133,7 @@ void  StoreFixedLine(ProcessHandler* hnd,jint x1,jint y1,jint x2,jint y2,
             return;
         }
 
-        /* Clamping starting from last vertex of the the processed segment */
+        /* Clamping starting from last vertex of the processed segment */
         CLIPCLAMP(outXMin, outXMax, x2, y2, x1, y1, x3, y3, jint, res);
 
         /* Checking if there was a clip by right boundary */

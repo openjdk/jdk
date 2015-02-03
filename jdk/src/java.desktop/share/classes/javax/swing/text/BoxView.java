@@ -1128,7 +1128,7 @@ public class BoxView extends CompositeView {
      * indicating the <code>View</code>s are layed out in ascending order.
      * <p>
      * If the receiver is laying its <code>View</code>s along the
-     * <code>Y_AXIS</code>, this will will return the value from
+     * <code>Y_AXIS</code>, this will return the value from
      * invoking the same method on the <code>View</code>
      * responsible for rendering <code>position</code> and
      * <code>bias</code>. Otherwise this will return false.

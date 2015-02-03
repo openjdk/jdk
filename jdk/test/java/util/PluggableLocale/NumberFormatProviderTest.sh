@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 4052440 7003643
+# @bug 4052440 7003643 8062588
 # @summary NumberFormatProvider tests
-# @run shell ExecTest.sh foo NumberFormatProviderTest true
+# @run shell ExecTest.sh foo NumberFormatProviderTest

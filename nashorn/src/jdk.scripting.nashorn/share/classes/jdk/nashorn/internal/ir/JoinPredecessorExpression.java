@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -71,8 +70,8 @@ public class JoinPredecessorExpression extends Expression implements JoinPredece
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
-        return expression.getType(localVariableTypes);
+    public Type getType() {
+        return expression.getType();
     }
 
     @Override

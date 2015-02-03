@@ -81,4 +81,26 @@ public class TestCaseSwitch {
         o = "finish";
     }
 
+    @AliveRange(varName="oCache", bytecodeStart=30, bytecodeLength=6)
+    @AliveRange(varName="cache", bytecodeStart=41, bytecodeLength=3)
+    @AliveRange(varName="cache", bytecodeStart=54, bytecodeLength=2)
+    @AliveRange(varName="service", bytecodeStart=39, bytecodeLength=5)
+    Object m4(int i) {
+        Object cache;
+        switch (i) {
+            case 0:
+                Object oCache = null;
+                if (oCache != null) {
+                    return oCache;
+                }
+            case 1:
+                Object service = null;
+                cache = null;
+                break;
+            default:
+                throw new AssertionError("");
+            }
+        return cache;
+    }
+
 }

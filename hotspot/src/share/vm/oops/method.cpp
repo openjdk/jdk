@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -411,15 +412,14 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
   }
 
   methodHandle mh(m);
-  ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  MethodCounters* counters = MethodCounters::allocate(loader_data, THREAD);
+  MethodCounters* counters = MethodCounters::allocate(mh, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CompileBroker::log_metaspace_failure();
     ClassLoaderDataGraph::set_metaspace_oom(true);
     return NULL;   // return the exception (which is cleared)
   }
   if (!mh->init_method_counters(counters)) {
-    MetadataFactory::free_metadata(loader_data, counters);
+    MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
   }
   return mh->method_counters();
 }
@@ -1727,7 +1727,7 @@ void BreakpointInfo::set(Method* method) {
     // Deoptimize all dependents on this method
     HandleMark hm(thread);
     methodHandle mh(thread, method);
-    Universe::flush_dependents_on_method(mh);
+    CodeCache::flush_dependents_on_method(mh);
   }
 }
 

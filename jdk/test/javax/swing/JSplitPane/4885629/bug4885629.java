@@ -28,8 +28,6 @@
  * @author Andrey Pikalev
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -91,9 +89,8 @@ public class bug4885629 {
             }
         });
 
-        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
-
         final Robot robot = new Robot();
+        robot.waitForIdle();
         robot.delay(1000);
 
         SwingUtilities.invokeAndWait(new Runnable() {

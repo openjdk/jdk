@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,10 +114,6 @@ protected:
   // set the static pointer "_sh" to that instance.
   static SharedHeap* _sh;
 
-  // and the Gen Remembered Set, at least one good enough to scan the perm
-  // gen.
-  GenRemSet* _rem_set;
-
   // A gc policy, controls global gc resource issues
   CollectorPolicy *_collector_policy;
 
@@ -151,10 +147,6 @@ public:
 
   // Initialization of ("weak") reference processing support
   virtual void ref_processing_init();
-
-  // This function returns the "GenRemSet" object that allows us to scan
-  // generations in a fully generational heap.
-  GenRemSet* rem_set() { return _rem_set; }
 
   // Iteration functions.
   void oop_iterate(ExtendedOopClosure* cl) = 0;

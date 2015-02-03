@@ -401,6 +401,7 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
+    @SuppressWarnings("deprecation")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */

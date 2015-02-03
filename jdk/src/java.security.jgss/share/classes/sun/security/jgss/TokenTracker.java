@@ -368,7 +368,7 @@ public class TokenTracker {
 
         /**
          * Returns -1 if this interval represented by this entry precedes
-         * the number, 0 if the the number is contained in the interval,
+         * the number, 0 if the number is contained in the interval,
          * and -1 if the interval occurs after the number.
          */
         final int compareTo(int number) {

@@ -190,7 +190,7 @@ public class LexicalContext {
      * @return the node that was popped
      */
     @SuppressWarnings("unchecked")
-    public <T extends LexicalContextNode> T pop(final T node) {
+    public <T extends Node> T pop(final T node) {
         --sp;
         final LexicalContextNode popped = stack[sp];
         stack[sp] = null;
@@ -469,7 +469,7 @@ public class LexicalContext {
      * scopes that need to be explicitly popped in order to perform a break or continue jump within the current bytecode
      * method. For this reason, the method returns 0 if it encounters a {@code SplitNode} between the current location
      * and the break/continue target.
-     * @param until node to stop counting at. Must be within the current  function
+     * @param until node to stop counting at. Must be within the current function
      * @return number of with scopes encountered in the context
      */
     public int getScopeNestingLevelTo(final LexicalContextNode until) {
@@ -565,11 +565,41 @@ public class LexicalContext {
     }
 
     /**
+     * Find the inlined finally block node corresponding to this label.
+     * @param labelName label name to search for. Must not be null.
+     * @return closest inlined finally block with the given label
+     */
+    public Block getInlinedFinally(final String labelName) {
+        for (final NodeIterator<TryNode> iter = new NodeIterator<>(TryNode.class); iter.hasNext(); ) {
+            final Block inlinedFinally = iter.next().getInlinedFinally(labelName);
+            if (inlinedFinally != null) {
+                return inlinedFinally;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Find the try node for an inlined finally block corresponding to this label.
+     * @param labelName label name to search for. Must not be null.
+     * @return the try node to which the labelled inlined finally block belongs.
+     */
+    public TryNode getTryNodeForInlinedFinally(final String labelName) {
+        for (final NodeIterator<TryNode> iter = new NodeIterator<>(TryNode.class); iter.hasNext(); ) {
+            final TryNode tryNode = iter.next();
+            if (tryNode.getInlinedFinally(labelName) != null) {
+                return tryNode;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Check the lexical context for a given label node by name
      * @param name name of the label
      * @return LabelNode if found, null otherwise
      */
-    public LabelNode findLabel(final String name) {
+    private LabelNode findLabel(final String name) {
         for (final Iterator<LabelNode> iter = new NodeIterator<>(LabelNode.class, getCurrentFunction()); iter.hasNext(); ) {
             final LabelNode next = iter.next();
             if (next.getLabelName().equals(name)) {
@@ -592,6 +622,12 @@ public class LexicalContext {
                 return true;
             } else if (next == target) {
                 return false;
+            } else if (next instanceof TryNode) {
+                for(final Block inlinedFinally: ((TryNode)next).getInlinedFinallies()) {
+                    if (TryNode.getLabelledInlinedFinallyBlock(inlinedFinally) == target) {
+                        return false;
+                    }
+                }
             }
         }
         throw new AssertionError(target + " was expected in lexical context " + LexicalContext.this + " but wasn't");

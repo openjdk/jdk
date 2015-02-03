@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,17 +100,21 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
     vtable_length = Universe::base_vtable_size();
   }
 
-  if (super == NULL && !Universe::is_bootstrapping() &&
-      vtable_length != Universe::base_vtable_size()) {
-    // Someone is attempting to redefine java.lang.Object incorrectly.  The
-    // only way this should happen is from
-    // SystemDictionary::resolve_from_stream(), which will detect this later
-    // and throw a security exception.  So don't assert here to let
-    // the exception occur.
-    vtable_length = Universe::base_vtable_size();
+  if (super == NULL && vtable_length != Universe::base_vtable_size()) {
+    if (Universe::is_bootstrapping()) {
+      // Someone is attempting to override java.lang.Object incorrectly on the
+      // bootclasspath.  The JVM cannot recover from this error including throwing
+      // an exception
+      vm_exit_during_initialization("Incompatible definition of java.lang.Object");
+    } else {
+      // Someone is attempting to redefine java.lang.Object incorrectly.  The
+      // only way this should happen is from
+      // SystemDictionary::resolve_from_stream(), which will detect this later
+      // and throw a security exception.  So don't assert here to let
+      // the exception occur.
+      vtable_length = Universe::base_vtable_size();
+    }
   }
-  assert(super != NULL || vtable_length == Universe::base_vtable_size(),
-         "bad vtable size for class Object");
   assert(vtable_length % vtableEntry::size() == 0, "bad vtable length");
   assert(vtable_length >= Universe::base_vtable_size(), "vtable too small");
 
@@ -645,7 +649,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   // this check for all access permissions.
   InstanceKlass *sk = InstanceKlass::cast(super);
   if (sk->has_miranda_methods()) {
-    if (sk->lookup_method_in_all_interfaces(name, signature, Klass::normal) != NULL) {
+    if (sk->lookup_method_in_all_interfaces(name, signature, Klass::find_defaults) != NULL) {
       return false;  // found a matching miranda; we do not need a new entry
     }
   }
@@ -721,7 +725,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
              && mo->method_holder() != NULL
              && mo->method_holder()->super() != NULL)
       {
-         mo = mo->method_holder()->super()->uncached_lookup_method(name, signature, Klass::normal);
+         mo = mo->method_holder()->super()->uncached_lookup_method(name, signature, Klass::find_overpass);
       }
       if (mo == NULL || mo->access_flags().is_private() ) {
         // super class hierarchy does not implement it or protection is different
@@ -766,7 +770,7 @@ void klassVtable::add_new_mirandas_to_lists(
       if (is_miranda(im, class_methods, default_methods, super)) { // is it a miranda at all?
         InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
-        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::normal) == NULL) {
+        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::find_defaults) == NULL) {
           new_mirandas->append(im);
         }
         if (all_mirandas != NULL) {

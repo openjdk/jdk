@@ -971,7 +971,7 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = g1h->ref_processor_cm();
   // enable ("weak") refs discovery
-  rp->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
+  rp->enable_discovery();
   rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
@@ -1910,7 +1910,6 @@ public:
   }
 
   void work(uint worker_id) {
-    double start = os::elapsedTime();
     FreeRegionList local_cleanup_list("Local Cleanup List");
     HRRSCleanupTask hrrs_cleanup_task;
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h, &local_cleanup_list,

@@ -85,7 +85,7 @@ public class JavacParser implements Parser {
     private Names names;
 
     /** End position mappings container */
-    private final AbstractEndPosTable endPosTable;
+    protected final AbstractEndPosTable endPosTable;
 
     // Because of javac's limited lookahead, some contexts are ambiguous in
     // the presence of type annotations even though they are not ambiguous
@@ -251,19 +251,19 @@ public class JavacParser implements Parser {
      *     mode = NOPARAMS    : no parameters allowed for type
      *     mode = TYPEARG     : type argument
      */
-    static final int EXPR = 0x1;
-    static final int TYPE = 0x2;
-    static final int NOPARAMS = 0x4;
-    static final int TYPEARG = 0x8;
-    static final int DIAMOND = 0x10;
+    protected static final int EXPR = 0x1;
+    protected static final int TYPE = 0x2;
+    protected static final int NOPARAMS = 0x4;
+    protected static final int TYPEARG = 0x8;
+    protected static final int DIAMOND = 0x10;
 
     /** The current mode.
      */
-    private int mode = 0;
+    protected int mode = 0;
 
     /** The mode of the term that was parsed last.
      */
-    private int lastmode = 0;
+    protected int lastmode = 0;
 
     /* ---------- token management -------------- */
 
@@ -326,7 +326,7 @@ public class JavacParser implements Parser {
 
     /** Skip forward until a suitable stop token is found.
      */
-    private void skip(boolean stopAtImport, boolean stopAtMemberDecl, boolean stopAtIdentifier, boolean stopAtStatement) {
+    protected void skip(boolean stopAtImport, boolean stopAtMemberDecl, boolean stopAtIdentifier, boolean stopAtStatement) {
          while (true) {
              switch (token.kind) {
                 case SEMI:
@@ -403,11 +403,11 @@ public class JavacParser implements Parser {
         }
     }
 
-    private JCErroneous syntaxError(int pos, String key, TokenKind... args) {
+    protected JCErroneous syntaxError(int pos, String key, TokenKind... args) {
         return syntaxError(pos, List.<JCTree>nil(), key, args);
     }
 
-    private JCErroneous syntaxError(int pos, List<JCTree> errs, String key, TokenKind... args) {
+    protected JCErroneous syntaxError(int pos, List<JCTree> errs, String key, TokenKind... args) {
         setErrorEndPos(pos);
         JCErroneous err = F.at(pos).Erroneous(errs);
         reportSyntaxError(err, key, (Object[])args);
@@ -427,7 +427,7 @@ public class JavacParser implements Parser {
      * Report a syntax using the given the position parameter and arguments,
      * unless one was already reported at the same position.
      */
-    private void reportSyntaxError(int pos, String key, Object... args) {
+    protected void reportSyntaxError(int pos, String key, Object... args) {
         JCDiagnostic.DiagnosticPosition diag = new JCDiagnostic.SimpleDiagnosticPosition(pos);
         reportSyntaxError(diag, key, args);
     }
@@ -436,7 +436,7 @@ public class JavacParser implements Parser {
      * Report a syntax error using the given DiagnosticPosition object and
      * arguments, unless one was already reported at the same position.
      */
-    private void reportSyntaxError(JCDiagnostic.DiagnosticPosition diagPos, String key, Object... args) {
+    protected void reportSyntaxError(JCDiagnostic.DiagnosticPosition diagPos, String key, Object... args) {
         int pos = diagPos.getPreferredPosition();
         if (pos > S.errPos() || pos == Position.NOPOS) {
             if (token.kind == EOF) {
@@ -459,14 +459,14 @@ public class JavacParser implements Parser {
     /** Generate a syntax error at current position unless one was already
      *  reported at the same position.
      */
-    private JCErroneous syntaxError(String key) {
+    protected JCErroneous syntaxError(String key) {
         return syntaxError(token.pos, key);
     }
 
     /** Generate a syntax error at current position unless one was
      *  already reported at the same position.
      */
-    private JCErroneous syntaxError(String key, TokenKind arg) {
+    protected JCErroneous syntaxError(String key, TokenKind arg) {
         return syntaxError(token.pos, key, arg);
     }
 
@@ -500,7 +500,7 @@ public class JavacParser implements Parser {
     }
 
     /** Diagnose a modifier flag from the set, if any. */
-    void checkNoMods(long mods) {
+    protected void checkNoMods(long mods) {
         if (mods != 0) {
             long lowestMod = mods & -mods;
             error(token.pos, "mod.not.allowed.here",
@@ -521,7 +521,7 @@ public class JavacParser implements Parser {
      *  @param tree   The tree to be used as index in the hashtable
      *  @param dc     The doc comment to associate with the tree, or null.
      */
-    void attach(JCTree tree, Comment dc) {
+    protected void attach(JCTree tree, Comment dc) {
         if (keepDocComments && dc != null) {
 //          System.out.println("doc comment = ");System.out.println(dc);//DEBUG
             docComments.putComment(tree, dc);
@@ -530,19 +530,19 @@ public class JavacParser implements Parser {
 
 /* -------- source positions ------- */
 
-    private void setErrorEndPos(int errPos) {
+    protected void setErrorEndPos(int errPos) {
         endPosTable.setErrorEndPos(errPos);
     }
 
-    private void storeEnd(JCTree tree, int endpos) {
+    protected void storeEnd(JCTree tree, int endpos) {
         endPosTable.storeEnd(tree, endpos);
     }
 
-    private <T extends JCTree> T to(T t) {
+    protected <T extends JCTree> T to(T t) {
         return endPosTable.to(t);
     }
 
-    private <T extends JCTree> T toP(T t) {
+    protected <T extends JCTree> T toP(T t) {
         return endPosTable.toP(t);
     }
 
@@ -574,7 +574,7 @@ public class JavacParser implements Parser {
     /**
      * Ident = IDENTIFIER
      */
-    Name ident() {
+    protected Name ident() {
         if (token.kind == IDENTIFIER) {
             Name name = token.name();
             nextToken();
@@ -789,7 +789,7 @@ public class JavacParser implements Parser {
         return term(TYPE);
     }
 
-    JCExpression term(int newmode) {
+    protected JCExpression term(int newmode) {
         int prevmode = mode;
         mode = newmode;
         JCExpression t = term();
@@ -1209,15 +1209,7 @@ public class JavacParser implements Parser {
                             if (annos.nonEmpty()) {
                                 t = toP(F.at(pos).AnnotatedType(annos, t));
                             }
-                            // .class is only allowed if there were no annotations
-                            JCExpression nt = bracketsSuffix(t);
-                            if (nt != t && (annos.nonEmpty() || TreeInfo.containsTypeAnnotation(t))) {
-                                // t and nt are different if bracketsSuffix parsed a .class.
-                                // The check for nonEmpty covers the case when the whole array is annotated.
-                                // Helper method isAnnotated looks for annos deeply within t.
-                                syntaxError("no.annotations.on.dot.class");
-                            }
-                            t = nt;
+                            t = bracketsSuffix(t);
                         } else {
                             if ((mode & EXPR) != 0) {
                                 mode = EXPR;
@@ -1669,7 +1661,7 @@ public class JavacParser implements Parser {
     }
 
     /** Accepts all identifier-like tokens */
-    Filter<TokenKind> LAX_IDENTIFIER = new Filter<TokenKind>() {
+    protected Filter<TokenKind> LAX_IDENTIFIER = new Filter<TokenKind>() {
         public boolean accepts(TokenKind t) {
             return t == IDENTIFIER || t == UNDERSCORE || t == ASSERT || t == ENUM;
         }
@@ -1956,6 +1948,12 @@ public class JavacParser implements Parser {
                 }
                 t = F.at(pos).Erroneous(List.<JCTree>of(toP(F.at(pos).Select(t, name))));
             } else {
+                Tag tag = t.getTag();
+                // Type annotations are illegal on class literals. Annotated non array class literals
+                // are complained about directly in term3(), Here check for type annotations on dimensions
+                // taking care to handle some interior dimension(s) being annotated.
+                if ((tag == TYPEARRAY && TreeInfo.containsTypeAnnotation(t)) || tag == ANNOTATED_TYPE)
+                    syntaxError("no.annotations.on.dot.class");
                 t = toP(F.at(pos).Select(t, names._class));
             }
         } else if ((mode & TYPE) != 0) {
@@ -2408,7 +2406,7 @@ public class JavacParser implements Parser {
      *     | ASSERT Expression [ ":" Expression ] ";"
      *     | ";"
      */
-    JCStatement parseSimpleStatement() {
+    public JCStatement parseSimpleStatement() {
         int pos = token.pos;
         switch (token.kind) {
         case LBRACE:
@@ -2706,7 +2704,7 @@ public class JavacParser implements Parser {
      *
      * @param kind Whether to parse an ANNOTATION or TYPE_ANNOTATION
      */
-    List<JCAnnotation> annotationsOpt(Tag kind) {
+    protected List<JCAnnotation> annotationsOpt(Tag kind) {
         if (token.kind != MONKEYS_AT) return List.nil(); // optimization
         ListBuffer<JCAnnotation> buf = new ListBuffer<>();
         int prevmode = mode;
@@ -2732,7 +2730,7 @@ public class JavacParser implements Parser {
      *           | NATIVE | SYNCHRONIZED | TRANSIENT | VOLATILE | "@"
      *           | "@" Annotation
      */
-    JCModifiers modifiersOpt() {
+    protected JCModifiers modifiersOpt() {
         return modifiersOpt(null);
     }
     protected JCModifiers modifiersOpt(JCModifiers partial) {
@@ -2914,7 +2912,7 @@ public class JavacParser implements Parser {
      *  @param reqInit  Is an initializer always required?
      *  @param dc       The documentation comment for the variable declarations, or null.
      */
-    <T extends ListBuffer<? super JCVariableDecl>> T variableDeclaratorsRest(int pos,
+    protected <T extends ListBuffer<? super JCVariableDecl>> T variableDeclaratorsRest(int pos,
                                                                      JCModifiers mods,
                                                                      JCExpression type,
                                                                      Name name,
@@ -3117,7 +3115,7 @@ public class JavacParser implements Parser {
 
     /** ImportDeclaration = IMPORT [ STATIC ] Ident { "." Ident } [ "." "*" ] ";"
      */
-    JCTree importDeclaration() {
+    protected JCTree importDeclaration() {
         int pos = token.pos;
         nextToken();
         boolean importStatic = false;
@@ -3159,7 +3157,7 @@ public class JavacParser implements Parser {
      *  @param mods     Any modifiers starting the class or interface declaration
      *  @param dc       The documentation comment for the class, or null.
      */
-    JCStatement classOrInterfaceOrEnumDeclaration(JCModifiers mods, Comment dc) {
+    protected JCStatement classOrInterfaceOrEnumDeclaration(JCModifiers mods, Comment dc) {
         if (token.kind == CLASS) {
             return classDeclaration(mods, dc);
         } else if (token.kind == INTERFACE) {
@@ -3569,7 +3567,7 @@ public class JavacParser implements Parser {
      *  TypeParametersOpt = ["<" TypeParameter {"," TypeParameter} ">"]
      *  }
      */
-    List<JCTypeParameter> typeParametersOpt() {
+    protected List<JCTypeParameter> typeParametersOpt() {
         if (token.kind == LT) {
             ListBuffer<JCTypeParameter> typarams = new ListBuffer<>();
             nextToken();
@@ -4004,7 +4002,7 @@ public class JavacParser implements Parser {
             allowTypeAnnotations = true;
         }
     }
-    void checkAnnotationsAfterTypeParams(int pos) {
+    protected void checkAnnotationsAfterTypeParams(int pos) {
         if (!allowAnnotationsAfterTypeParams) {
             log.error(pos, "annotations.after.type.params.not.supported.in.source", source.name);
             allowAnnotationsAfterTypeParams = true;
@@ -4092,7 +4090,7 @@ public class JavacParser implements Parser {
         /**
          * Store the last error position.
          */
-        protected int errorEndPos = Position.NOPOS;
+        public int errorEndPos = Position.NOPOS;
 
         public AbstractEndPosTable(JavacParser parser) {
             this.parser = parser;
@@ -4119,13 +4117,13 @@ public class JavacParser implements Parser {
          * will be set only if it is greater than the last stored error position.
          * @param errPos The error position
          */
-        protected void setErrorEndPos(int errPos) {
+        public void setErrorEndPos(int errPos) {
             if (errPos > errorEndPos) {
                 errorEndPos = errPos;
             }
         }
 
-        protected void setParser(JavacParser parser) {
+        public void setParser(JavacParser parser) {
             this.parser = parser;
         }
     }

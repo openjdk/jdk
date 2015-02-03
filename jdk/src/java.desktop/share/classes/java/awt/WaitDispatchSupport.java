@@ -208,7 +208,7 @@ class WaitDispatchSupport implements SecondaryLoop {
                     }
                 }, interval);
             }
-            // Dispose SequencedEvent we are dispatching on the the current
+            // Dispose SequencedEvent we are dispatching on the current
             // AppContext, to prevent us from hang - see 4531693 for details
             SequencedEvent currentSE = KeyboardFocusManager.
                 getCurrentKeyboardFocusManager().getCurrentSequencedEvent();
@@ -220,7 +220,7 @@ class WaitDispatchSupport implements SecondaryLoop {
             }
             // In case the exit() method is called before starting
             // new event pump it will post the waking event to EDT.
-            // The event will be handled after the the new event pump
+            // The event will be handled after the new event pump
             // starts. Thus, the enter() method will not hang.
             //
             // Event pump should be privileged. See 6300270.

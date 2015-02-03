@@ -63,7 +63,7 @@ class Utils {
             System.getProperty("os.name").startsWith("Windows");
     static final boolean Is64Bit =
             System.getProperty("sun.arch.data.model", "32").equals("64");
-    static final File   JavaSDK =  new File(JavaHome).getParentFile();
+    static final File   JavaSDK =  new File(JavaHome);
 
     static final String PACK_FILE_EXT   = ".pack";
     static final String JAVA_FILE_EXT   = ".java";
@@ -82,11 +82,7 @@ class Utils {
         if (VerifierJar.exists()) {
             return;
         }
-        File srcDir = new File(TEST_SRC_DIR, VERIFIER_DIR_NAME);
-        if (!srcDir.exists()) {
-            // if not available try one level above
-            srcDir = new File(TEST_SRC_DIR.getParentFile(), VERIFIER_DIR_NAME);
-        }
+        File srcDir = new File(getVerifierDir(), "src");
         List<File> javaFileList = findFiles(srcDir, createFilter(JAVA_FILE_EXT));
         File tmpFile = File.createTempFile("javac", ".tmp");
         XCLASSES.mkdirs();
@@ -115,6 +111,18 @@ class Utils {
             ".");
     }
 
+    private static File getVerifierDir() {
+        File srcDir = new File(TEST_SRC_DIR, VERIFIER_DIR_NAME);
+        if (!srcDir.exists()) {
+            // if not available try one level above
+            srcDir = new File(TEST_SRC_DIR.getParentFile(), VERIFIER_DIR_NAME);
+        }
+        return srcDir;
+    }
+
+    static File getGoldenJar() {
+        return new File(new File(getVerifierDir(), "data"), "golden.jar");
+    }
     static void dirlist(File dir) {
         File[] files = dir.listFiles();
         System.out.println("--listing " + dir.getAbsolutePath() + "---");
@@ -564,7 +572,8 @@ class Utils {
         File rtJar = new File("rt.jar");
         cmdList.clear();
         cmdList.add(getJarCmd());
-        cmdList.add("cvf");
+        // cmdList.add("cvf"); too noisy
+        cmdList.add("cf");
         cmdList.add(rtJar.getName());
         cmdList.add("-C");
         cmdList.add("out");
@@ -573,25 +582,5 @@ class Utils {
 
         recursiveDelete(new File("out"));
         return rtJar;
-    }
-    private static List<File> locaterCache = null;
-    // search the source dir and jdk dir for requested file and returns
-    // the first location it finds.
-    static File locateJar(String name) {
-        try {
-            if (locaterCache == null) {
-                locaterCache = new ArrayList<File>();
-                locaterCache.addAll(findFiles(TEST_SRC_DIR, createFilter(JAR_FILE_EXT)));
-                locaterCache.addAll(findFiles(JavaSDK, createFilter(JAR_FILE_EXT)));
-            }
-            for (File f : locaterCache) {
-                if (f.getName().equals(name)) {
-                    return f;
-                }
-            }
-            throw new IOException("file not found: " + name);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

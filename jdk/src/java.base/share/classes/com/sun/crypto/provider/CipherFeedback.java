@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
+import java.security.ProviderException;
 
 /**
  * This class represents ciphers in cipher-feedback (CFB) mode.
@@ -133,66 +134,72 @@ final class CipherFeedback extends FeedbackCipher {
      *
      * <p>The input plain text <code>plain</code>, starting at
      * <code>plainOffset</code> and ending at
-     * <code>(plainOffset + len - 1)</code>, is encrypted.
+     * <code>(plainOffset + plainLen - 1)</code>, is encrypted.
      * The result is stored in <code>cipher</code>, starting at
      * <code>cipherOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>plainLen</code> is a multiple of the stream unit size
-     * <code>numBytes</code>, as any excess bytes are ignored.
-     *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
      *
      * @param plain the buffer with the input data to be encrypted
      * @param plainOffset the offset in <code>plain</code>
      * @param plainLen the length of the input data
      * @param cipher the buffer for the result
      * @param cipherOffset the offset in <code>cipher</code>
+     * @exception ProviderException if <code>plainLen</code> is not
+     * a multiple of the <code>numBytes</code>
      * @return the length of the encrypted data
      */
     int encrypt(byte[] plain, int plainOffset, int plainLen,
-                byte[] cipher, int cipherOffset)
-    {
-        int i, len;
-        len = blockSize - numBytes;
+                byte[] cipher, int cipherOffset) {
+        if ((plainLen % numBytes) != 0) {
+            throw new ProviderException("Internal error in input buffering");
+        }
+
+        int nShift = blockSize - numBytes;
         int loopCount = plainLen / numBytes;
+
+        for (; loopCount > 0 ;
+             plainOffset += numBytes, cipherOffset += numBytes,
+             loopCount--) {
+            embeddedCipher.encryptBlock(register, 0, k, 0);
+            if (nShift != 0) {
+                System.arraycopy(register, numBytes, register, 0, nShift);
+            }
+            for (int i = 0; i < numBytes; i++) {
+                register[nShift + i] = cipher[i + cipherOffset] =
+                        (byte)(k[i] ^ plain[i + plainOffset]);
+            }
+        }
+        return plainLen;
+    }
+
+    /**
+     * Performs the last encryption operation.
+     *
+     * <p>The input plain text <code>plain</code>, starting at
+     * <code>plainOffset</code> and ending at
+     * <code>(plainOffset + plainLen - 1)</code>, is encrypted.
+     * The result is stored in <code>cipher</code>, starting at
+     * <code>cipherOffset</code>.
+     *
+     * @param plain the buffer with the input data to be encrypted
+     * @param plainOffset the offset in <code>plain</code>
+     * @param plainLen the length of the input data
+     * @param cipher the buffer for the result
+     * @param cipherOffset the offset in <code>cipher</code>
+     * @return the number of bytes placed into <code>cipher</code>
+     */
+    int encryptFinal(byte[] plain, int plainOffset, int plainLen,
+                     byte[] cipher, int cipherOffset) {
+
         int oddBytes = plainLen % numBytes;
-
-        if (len == 0) {
-            for (; loopCount > 0 ;
-                 plainOffset += numBytes, cipherOffset += numBytes,
-                 loopCount--) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                for (i = 0; i < blockSize; i++)
-                    register[i] = cipher[i+cipherOffset] =
-                        (byte)(k[i] ^ plain[i+plainOffset]);
-            }
-            if (oddBytes > 0) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                for (i=0; i<oddBytes; i++)
-                    register[i] = cipher[i+cipherOffset] =
-                        (byte)(k[i] ^ plain[i+plainOffset]);
-            }
-        } else {
-            for (; loopCount > 0 ;
-                 plainOffset += numBytes, cipherOffset += numBytes,
-                 loopCount--) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                System.arraycopy(register, numBytes, register, 0, len);
-                for (i=0; i<numBytes; i++)
-                    register[i+len] = cipher[i+cipherOffset] =
-                        (byte)(k[i] ^ plain[i+plainOffset]);
-
-            }
-            if (oddBytes != 0) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                System.arraycopy(register, numBytes, register, 0, len);
-                for (i=0; i<oddBytes; i++) {
-                    register[i+len] = cipher[i+cipherOffset] =
-                        (byte)(k[i] ^ plain[i+plainOffset]);
-                }
+        int len = encrypt(plain, plainOffset, (plainLen - oddBytes),
+                          cipher, cipherOffset);
+        plainOffset += len;
+        cipherOffset += len;
+        if (oddBytes != 0) {
+            embeddedCipher.encryptBlock(register, 0, k, 0);
+            for (int i = 0; i < oddBytes; i++) {
+                 cipher[i + cipherOffset] =
+                    (byte)(k[i] ^ plain[i + plainOffset]);
             }
         }
         return plainLen;
@@ -203,17 +210,52 @@ final class CipherFeedback extends FeedbackCipher {
      *
      * <p>The input cipher text <code>cipher</code>, starting at
      * <code>cipherOffset</code> and ending at
-     * <code>(cipherOffset + len - 1)</code>, is decrypted.
+     * <code>(cipherOffset + cipherLen - 1)</code>, is decrypted.
      * The result is stored in <code>plain</code>, starting at
      * <code>plainOffset</code>.
      *
-     * <p>It is the application's responsibility to make sure that
-     * <code>cipherLen</code> is a multiple of the stream unit size
-     * <code>numBytes</code>, as any excess bytes are ignored.
+     * @param cipher the buffer with the input data to be decrypted
+     * @param cipherOffset the offset in <code>cipherOffset</code>
+     * @param cipherLen the length of the input data
+     * @param plain the buffer for the result
+     * @param plainOffset the offset in <code>plain</code>
+     * @exception ProviderException if <code>cipherLen</code> is not
+     * a multiple of the <code>numBytes</code>
+     * @return the length of the decrypted data
+     */
+    int decrypt(byte[] cipher, int cipherOffset, int cipherLen,
+                byte[] plain, int plainOffset) {
+        if ((cipherLen % numBytes) != 0) {
+            throw new ProviderException("Internal error in input buffering");
+        }
+
+        int nShift = blockSize - numBytes;
+        int loopCount = cipherLen / numBytes;
+
+        for (; loopCount > 0;
+             plainOffset += numBytes, cipherOffset += numBytes,
+             loopCount--) {
+            embeddedCipher.encryptBlock(register, 0, k, 0);
+            if (nShift != 0) {
+                System.arraycopy(register, numBytes, register, 0, nShift);
+            }
+            for (int i = 0; i < numBytes; i++) {
+                register[i + nShift] = cipher[i + cipherOffset];
+                plain[i + plainOffset]
+                    = (byte)(cipher[i + cipherOffset] ^ k[i]);
+            }
+        }
+        return cipherLen;
+    }
+
+    /**
+     * Performs the last decryption operation.
      *
-     * <p>It is also the application's responsibility to make sure that
-     * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
+     * <p>The input cipher text <code>cipher</code>, starting at
+     * <code>cipherOffset</code> and ending at
+     * <code>(cipherOffset + cipherLen - 1)</code>, is decrypted.
+     * The result is stored in <code>plain</code>, starting at
+     * <code>plainOffset</code>.
      *
      * @param cipher the buffer with the input data to be decrypted
      * @param cipherOffset the offset in <code>cipherOffset</code>
@@ -222,53 +264,19 @@ final class CipherFeedback extends FeedbackCipher {
      * @param plainOffset the offset in <code>plain</code>
      * @return the length of the decrypted data
      */
-    int decrypt(byte[] cipher, int cipherOffset, int cipherLen,
-                byte[] plain, int plainOffset)
-    {
-        int i, len;
-        len = blockSize - numBytes;
-        int loopCount = cipherLen / numBytes;
-        int oddBytes = cipherLen % numBytes;
+    int decryptFinal(byte[] cipher, int cipherOffset, int cipherLen,
+                byte[] plain, int plainOffset) {
 
-        if (len == 0) {
-            for (; loopCount > 0;
-                 plainOffset += numBytes, cipherOffset += numBytes,
-                 loopCount--) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                for (i = 0; i < blockSize; i++) {
-                    register[i] = cipher[i+cipherOffset];
-                    plain[i+plainOffset]
-                        = (byte)(cipher[i+cipherOffset] ^ k[i]);
-                }
-            }
-            if (oddBytes > 0) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                for (i=0; i<oddBytes; i++) {
-                    register[i] = cipher[i+cipherOffset];
-                    plain[i+plainOffset]
-                        = (byte)(cipher[i+cipherOffset] ^ k[i]);
-                }
-            }
-        } else {
-            for (; loopCount > 0;
-                 plainOffset += numBytes, cipherOffset += numBytes,
-                 loopCount--) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                System.arraycopy(register, numBytes, register, 0, len);
-                for (i=0; i<numBytes; i++) {
-                    register[i+len] = cipher[i+cipherOffset];
-                    plain[i+plainOffset]
-                        = (byte)(cipher[i+cipherOffset] ^ k[i]);
-                }
-            }
-            if (oddBytes != 0) {
-                embeddedCipher.encryptBlock(register, 0, k, 0);
-                System.arraycopy(register, numBytes, register, 0, len);
-                for (i=0; i<oddBytes; i++) {
-                    register[i+len] = cipher[i+cipherOffset];
-                    plain[i+plainOffset]
-                        = (byte)(cipher[i+cipherOffset] ^ k[i]);
-                }
+        int oddBytes = cipherLen % numBytes;
+        int len = decrypt(cipher, cipherOffset, (cipherLen - oddBytes),
+                          plain, plainOffset);
+        cipherOffset += len;
+        plainOffset += len;
+        if (oddBytes != 0) {
+            embeddedCipher.encryptBlock(register, 0, k, 0);
+            for (int i = 0; i < oddBytes; i++) {
+                plain[i + plainOffset]
+                    = (byte)(cipher[i + cipherOffset] ^ k[i]);
             }
         }
         return cipherLen;

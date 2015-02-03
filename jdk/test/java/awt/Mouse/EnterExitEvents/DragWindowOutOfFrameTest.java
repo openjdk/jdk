@@ -37,7 +37,6 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import java.util.concurrent.*;
-import sun.awt.SunToolkit;
 
 import test.java.awt.regtesthelpers.Util;
 
@@ -57,7 +56,6 @@ public class DragWindowOutOfFrameTest {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -69,7 +67,7 @@ public class DragWindowOutOfFrameTest {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point pointToClick = Util.invokeOnEDT(new Callable<Point>() {
 
@@ -82,7 +80,7 @@ public class DragWindowOutOfFrameTest {
 
         robot.mouseMove(pointToClick.x, pointToClick.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (dragWindowMouseEnteredCount != 1 && dragWindowMouseExitedCount != 0) {
             throw new RuntimeException(
@@ -100,7 +98,7 @@ public class DragWindowOutOfFrameTest {
         });
 
         robot.mouseMove(450, pointToClick.y);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (labelMouseEnteredCount != 0 && labelMouseExitedCount != 1) {
             throw new RuntimeException(
@@ -108,7 +106,7 @@ public class DragWindowOutOfFrameTest {
         }
 
         robot.mouseMove(450, pointToDrag.y);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (labelMouseEnteredCount != 0 && labelMouseExitedCount != 1) {
             throw new RuntimeException(
@@ -121,7 +119,7 @@ public class DragWindowOutOfFrameTest {
         }
 
         robot.mouseMove(pointToDrag.y, pointToDrag.y);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (buttonMouseEnteredCount != 1 && buttonMouseExitedCount != 0) {
             throw new RuntimeException(
@@ -129,7 +127,7 @@ public class DragWindowOutOfFrameTest {
         }
 
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (labelMouseReleasedCount != 1) {
             throw new RuntimeException("No MouseReleased event on label!");

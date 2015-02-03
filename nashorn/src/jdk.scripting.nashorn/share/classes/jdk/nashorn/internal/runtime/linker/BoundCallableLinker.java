@@ -99,7 +99,7 @@ final class BoundCallableLinker implements TypeBasedGuardingDynamicLinker {
         MethodType newMethodType = descriptor.getMethodType().changeParameterType(0, callable.getClass());
         if (isCall) {
             // R(callable.class, T1, ...) => R(callable.class, boundThis.class, ...)
-            newMethodType = newMethodType.changeParameterType(1, boundThis.getClass());
+            newMethodType = newMethodType.changeParameterType(1, boundThis == null? Object.class : boundThis.getClass());
         }
         // R(callable.class[, boundThis.class], T2, ...) => R(callable.class[, boundThis.class], boundArg0.class, ..., boundArgn.class, T2, ...)
         for(int i = boundArgs.length; i-- > 0;) {

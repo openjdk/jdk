@@ -32,7 +32,6 @@ import java.awt.event.KeyEvent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -50,7 +49,6 @@ public class bug8021253 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -60,7 +58,7 @@ public class bug8021253 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -68,11 +66,11 @@ public class bug8021253 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!defaultKeyPressed) {
             throw new RuntimeException("Default button is not pressed");

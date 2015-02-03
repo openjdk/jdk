@@ -42,7 +42,7 @@ public interface JavaNioAccess {
 
     /**
      * Constructs a direct ByteBuffer referring to the block of memory starting
-     * at the given memory address and and extending {@code cap} bytes.
+     * at the given memory address and extending {@code cap} bytes.
      * The {@code ob} parameter is an arbitrary object that is attached
      * to the resulting buffer.
      */

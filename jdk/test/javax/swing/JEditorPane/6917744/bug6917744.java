@@ -33,8 +33,6 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import javax.swing.*;
 
-import sun.awt.SunToolkit;
-
 public class bug6917744 {
     private static JFrame frame;
 
@@ -45,7 +43,6 @@ public class bug6917744 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         robot = new Robot();
         robot.setAutoDelay(100);
@@ -70,13 +67,14 @@ public class bug6917744 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         for (int i = 0; i < 50; i++) {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
+            robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Check that we at the end of document
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -89,13 +87,14 @@ public class bug6917744 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         for (int i = 0; i < 50; i++) {
             robot.keyPress(KeyEvent.VK_PAGE_UP);
+            robot.keyRelease(KeyEvent.VK_PAGE_UP);
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Check that we at the begin of document
         SwingUtilities.invokeAndWait(new Runnable() {

@@ -2993,7 +2993,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Sets the date of this {@code Calendar} with the the given date
+     * Sets the date of this {@code Calendar} with the given date
      * specifiers - week year, week of year, and day of week.
      *
      * <p>Unlike the {@code set} method, all of the calendar fields

@@ -35,20 +35,42 @@ import com.oracle.java.testlibrary.*;
 public class UseCompressedOops {
 
     public static void main(String[] args) throws Exception {
+        testCompressedOopsModesGCs();
+        testCompressedOopsModesGCs("-XX:+UseLargePages");
+    }
+
+    public static void testCompressedOopsModesGCs(String... flags) throws Exception {
+        ArrayList<String> args = new ArrayList<>();
+        Collections.addAll(args, flags);
+
+        // Test default.
+        testCompressedOopsModes(args);
+        // Test GCs.
+        testCompressedOopsModes(args, "-XX:+UseG1GC");
+        testCompressedOopsModes(args, "-XX:+UseConcMarkSweepGC");
+        testCompressedOopsModes(args, "-XX:+UseSerialGC");
+        testCompressedOopsModes(args, "-XX:+UseParallelGC");
+        testCompressedOopsModes(args, "-XX:+UseParallelOldGC");
+    }
+
+    public static void testCompressedOopsModes(ArrayList<String> flags1, String... flags2) throws Exception {
+        ArrayList<String> args = new ArrayList<>();
+        args.addAll(flags1);
+        Collections.addAll(args, flags2);
 
         if (Platform.is64bit()) {
             // Explicitly turn of compressed oops
-            testCompressedOops("-XX:-UseCompressedOops", "-Xmx32m")
+            testCompressedOops(args, "-XX:-UseCompressedOops", "-Xmx32m")
                 .shouldNotContain("Compressed Oops")
                 .shouldHaveExitValue(0);
 
             // Compressed oops should be on by default
-            testCompressedOops("-Xmx32m")
+            testCompressedOops(args, "-Xmx32m")
                 .shouldContain("Compressed Oops mode")
                 .shouldHaveExitValue(0);
 
             // Explicly enabling compressed oops
-            testCompressedOops("-XX:+UseCompressedOops", "-Xmx32m")
+            testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32m")
                 .shouldContain("Compressed Oops mode")
                 .shouldHaveExitValue(0);
 
@@ -58,68 +80,89 @@ public class UseCompressedOops {
             // puts the heap way up, forcing different behaviour.
             if (!Platform.isOSX() && !Platform.isSolaris()) {
                 // Larger than 4gb heap should result in zero based with shift 3
-                testCompressedOops("-XX:+UseCompressedOops", "-Xmx5g")
+                testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx5g")
+                    .shouldContain("Zero based")
+                    .shouldContain("Oop shift amount: 3")
+                    .shouldHaveExitValue(0);
+
+                // Larger than 3gb heap and HeapBaseMinAddress=1g should result in zero based with shift 3
+                testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx3200m", "-XX:HeapBaseMinAddress=1g")
                     .shouldContain("Zero based")
                     .shouldContain("Oop shift amount: 3")
                     .shouldHaveExitValue(0);
 
                 // Small heap above 4gb should result in zero based with shift 3
-                testCompressedOops("-XX:+UseCompressedOops", "-Xmx32m", "-XX:HeapBaseMinAddress=4g")
+                testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32m", "-XX:HeapBaseMinAddress=4g")
                     .shouldContain("Zero based")
                     .shouldContain("Oop shift amount: 3")
                     .shouldHaveExitValue(0);
 
                 // Small heap above 32gb should result in non-zero based with shift 3
-                testCompressedOops("-XX:+UseCompressedOops", "-Xmx32m", "-XX:HeapBaseMinAddress=32g")
+                testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32m", "-XX:HeapBaseMinAddress=32g")
+                    .shouldContain("Non-zero disjoint base")
+                    .shouldContain("Oop shift amount: 3")
+                    .shouldHaveExitValue(0);
+
+                // Small heap above 32gb should result in non-zero based with shift 3
+                testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32m", "-XX:HeapBaseMinAddress=72704m")
                     .shouldContain("Non-zero based")
                     .shouldContain("Oop shift amount: 3")
                     .shouldHaveExitValue(0);
 
                 // 32gb heap with heap base above 64gb and object alignment set to 16 bytes should result
                 // in non-zero based with shift 4
-                testCompressedOops("-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=16",
+                testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=16",
                                "-XX:HeapBaseMinAddress=64g")
-                    .shouldContain("Non-zero based")
+                    .shouldContain("Non-zero disjoint base")
                     .shouldContain("Oop shift amount: 4")
                     .shouldHaveExitValue(0);
 
                 // 32gb heap with object alignment set to 16 bytes should result in zero based with shift 4
-                testCompressedOops("-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=16")
+                testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=16")
                     .shouldContain("Zero based")
                     .shouldContain("Oop shift amount: 4")
                     .shouldHaveExitValue(0);
             }
 
+            // This is a pathologic case for the heap allocation algorithm. Regression test.
+            // HeapBaseMinAddress must be 2g and should not be set on the command line.
+            testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx2g")
+                .shouldNotContain("Max heap size too large for Compressed Oops")
+                .shouldHaveExitValue(0);
+            testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx29g", "-XX:CompressedClassSpaceSize=1g")
+                .shouldNotContain("Max heap size too large for Compressed Oops")
+                .shouldHaveExitValue(0);
+
             // Explicitly enabling compressed oops with 32gb heap should result a warning
-            testCompressedOops("-XX:+UseCompressedOops", "-Xmx32g")
+            testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32g")
                 .shouldContain("Max heap size too large for Compressed Oops")
                 .shouldHaveExitValue(0);
 
             // 32gb heap should not result a warning
-            testCompressedOops("-Xmx32g")
+            testCompressedOops(args, "-Xmx32g")
                 .shouldNotContain("Max heap size too large for Compressed Oops")
                 .shouldHaveExitValue(0);
 
             // Explicitly enabling compressed oops with 32gb heap and object
             // alignment set to 8 byte should result a warning
-            testCompressedOops("-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=8")
+            testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=8")
                 .shouldContain("Max heap size too large for Compressed Oops")
                 .shouldHaveExitValue(0);
 
             // 64gb heap and object alignment set to 16 bytes should result in a warning
-            testCompressedOops("-XX:+UseCompressedOops", "-Xmx64g", "-XX:ObjectAlignmentInBytes=16")
+            testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx64g", "-XX:ObjectAlignmentInBytes=16")
                 .shouldContain("Max heap size too large for Compressed Oops")
                 .shouldHaveExitValue(0);
 
         } else {
             // Compressed oops should only apply to 64bit platforms
-            testCompressedOops("-XX:+UseCompressedOops", "-Xmx32m")
+            testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx32m")
                 .shouldContain("Unrecognized VM option 'UseCompressedOops'")
                 .shouldHaveExitValue(1);
         }
     }
 
-    private static OutputAnalyzer testCompressedOops(String... flags) throws Exception {
+    private static OutputAnalyzer testCompressedOops(ArrayList<String> flags1, String... flags2) throws Exception {
         ArrayList<String> args = new ArrayList<>();
 
         // Always run with these three:
@@ -128,7 +171,8 @@ public class UseCompressedOops {
         args.add("-Xms32m");
 
         // Add the extra flags
-        Collections.addAll(args, flags);
+        args.addAll(flags1);
+        Collections.addAll(args, flags2);
 
         args.add("-version");
 

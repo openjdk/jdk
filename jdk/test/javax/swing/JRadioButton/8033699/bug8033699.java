@@ -35,11 +35,9 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.event.*;
 import java.awt.*;
-import sun.awt.SunToolkit;
 
 public class bug8033699 {
     private static Robot robot;
-    private static SunToolkit toolkit;
 
     private static JButton btnStart;
     private static ButtonGroup btnGrp;
@@ -61,7 +59,6 @@ public class bug8033699 {
         Thread.sleep(100);
 
         robot.setAutoDelay(100);
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         // tab key test grouped radio button
         runTest1();
@@ -242,7 +239,7 @@ public class bug8033699 {
     private static void hitKey(Robot robot, int keycode) {
         robot.keyPress(keycode);
         robot.keyRelease(keycode);
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 
     private static void hitKey(Robot robot, int mode, int keycode) {
@@ -250,6 +247,6 @@ public class bug8033699 {
         robot.keyPress(keycode);
         robot.keyRelease(mode);
         robot.keyRelease(keycode);
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 }

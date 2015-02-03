@@ -792,6 +792,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             return label;
         }
 
+        @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
 

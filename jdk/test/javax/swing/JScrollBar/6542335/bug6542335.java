@@ -28,8 +28,6 @@
    @run main bug6542335
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
@@ -42,8 +40,6 @@ public class bug6542335 {
     public static void main(String[] args) throws Exception {
         final Robot robot = new Robot();
         robot.setAutoDelay(10);
-
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         final Rectangle[] thumbBounds = new Rectangle[1];
 
@@ -72,7 +68,7 @@ public class bug6542335 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -86,7 +82,7 @@ public class bug6542335 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

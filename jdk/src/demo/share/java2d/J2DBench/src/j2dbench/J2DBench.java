@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,6 +60,8 @@ import javax.swing.JPanel;
 import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -376,7 +378,11 @@ public class J2DBench {
         }
 
         if (gui) {
-            startGUI();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    startGUI();
+                }
+            });
         } else {
 
             long start = System.currentTimeMillis();
@@ -772,6 +778,7 @@ public class J2DBench {
 
         f.getContentPane().add(p, BorderLayout.SOUTH);
         f.pack();
+        f.setLocationRelativeTo(null);
         f.show();
     }
 

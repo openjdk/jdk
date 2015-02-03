@@ -36,13 +36,13 @@ public class ClasspathTest {
 
     ClasspathTest() {
         /*
-         * Since providers can only be loaded from the extension directory,
-         * this test will fail if they are loaded from classpath.
+         * Since providers can be loaded from the application's classpath,
+         * this test will fail if they are NOT loaded from classpath.
          */
         Locale OSAKA = new Locale("ja", "JP", "osaka");
         List<Locale> availableLocales = Arrays.asList(Locale.getAvailableLocales());
-        if (availableLocales.contains(OSAKA)) {
-            throw new RuntimeException("LSS providers were loaded from the class path.");
+        if (!availableLocales.contains(OSAKA)) {
+            throw new RuntimeException("LSS providers were NOT loaded from the class path.");
         }
     }
 }

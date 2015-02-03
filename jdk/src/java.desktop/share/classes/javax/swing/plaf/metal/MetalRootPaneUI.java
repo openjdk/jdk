@@ -441,6 +441,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          * @param the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's preferred size
          */
+        @SuppressWarnings("deprecation")
         public Dimension preferredLayoutSize(Container parent) {
             Dimension cpd, mbd, tpd;
             int cpWidth = 0;
@@ -493,6 +494,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          * @param the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's minimum size
          */
+        @SuppressWarnings("deprecation")
         public Dimension minimumLayoutSize(Container parent) {
             Dimension cpd, mbd, tpd;
             int cpWidth = 0;
@@ -544,6 +546,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          * @param the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's maximum size
          */
+        @SuppressWarnings("deprecation")
         public Dimension maximumLayoutSize(Container target) {
             Dimension cpd, mbd, tpd;
             int cpWidth = Integer.MAX_VALUE;
@@ -607,6 +610,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          *
          * @param the Container for which this layout manager is being used
          */
+        @SuppressWarnings("deprecation")
         public void layoutContainer(Container parent) {
             JRootPane root = (JRootPane) parent;
             Rectangle b = root.getBounds();

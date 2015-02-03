@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -112,10 +112,10 @@ public abstract class GraphicsTests extends Test {
 
         sizeList = new Option.IntList(groptroot, "sizes",
                                       "Size of Operations to perform",
-                                      new int[] {1, 20, 100, 250, 1000},
+                                      new int[] {1, 20, 100, 250, 1000, 4000},
                                       new String[] {
                                           "1x1", "20x20", "100x100", "250x250",
-                                          "1000x1000",
+                                          "1000x1000", "4000x4000",
                                       },
                                       new String[] {
                                           "Tiny Shapes (1x1)",
@@ -123,6 +123,7 @@ public abstract class GraphicsTests extends Test {
                                           "Medium Shapes (100x100)",
                                           "Large Shapes (250x250)",
                                           "X-Large Shapes (1000x1000)",
+                                          "Huge Shapes (4000x4000)",
                                       }, 0xa);
         if (hasGraphics2D) {
             String rulenames[] = {

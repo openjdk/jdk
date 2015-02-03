@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -122,8 +121,8 @@ public final class TernaryNode extends Expression {
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
-        return Type.widestReturnType(getTrueExpression().getType(localVariableTypes), getFalseExpression().getType(localVariableTypes));
+    public Type getType() {
+        return Type.widestReturnType(getTrueExpression().getType(), getFalseExpression().getType());
     }
 
 

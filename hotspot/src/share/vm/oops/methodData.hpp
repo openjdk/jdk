@@ -254,6 +254,7 @@ public:
 
   // Redefinition support
   void clean_weak_method_links();
+  DEBUG_ONLY(void verify_clean_weak_method_links();)
 };
 
 
@@ -511,6 +512,7 @@ public:
 
   // Redefinition support
   virtual void clean_weak_method_links() {}
+  DEBUG_ONLY(virtual void verify_clean_weak_method_links() {})
 
   // CI translation: ProfileData can represent both MethodDataOop data
   // as well as CIMethodData data. This function is provided for translating
@@ -1971,6 +1973,7 @@ public:
   }
 
   void set_method(Method* m) {
+    assert(!m->is_old(), "cannot add old methods");
     set_intptr_at(speculative_trap_method, (intptr_t)m);
   }
 
@@ -2085,6 +2088,8 @@ private:
   int               _invocation_counter_start;
   int               _backedge_counter_start;
   uint              _tenure_traps;
+  int               _invoke_mask;      // per-method Tier0InvokeNotifyFreqLog
+  int               _backedge_mask;    // per-method Tier0BackedgeNotifyFreqLog
 
 #if INCLUDE_RTM_OPT
   // State of RTM code generation during compilation of the method
@@ -2444,8 +2449,17 @@ public:
   static ByteSize invocation_counter_offset() {
     return byte_offset_of(MethodData, _invocation_counter);
   }
+
   static ByteSize backedge_counter_offset() {
     return byte_offset_of(MethodData, _backedge_counter);
+  }
+
+  static ByteSize invoke_mask_offset() {
+    return byte_offset_of(MethodData, _invoke_mask);
+  }
+
+  static ByteSize backedge_mask_offset() {
+    return byte_offset_of(MethodData, _backedge_mask);
   }
 
   static ByteSize parameters_type_data_di_offset() {
@@ -2480,6 +2494,7 @@ public:
 
   void clean_method_data(BoolObjectClosure* is_alive);
   void clean_weak_method_links();
+  DEBUG_ONLY(void verify_clean_weak_method_links();)
   Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
 

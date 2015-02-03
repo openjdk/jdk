@@ -46,6 +46,7 @@ final class WKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setCurrentFocusOwner(Component comp) {
         setNativeFocusOwner(comp != null ? comp.getPeer() : null);
     }

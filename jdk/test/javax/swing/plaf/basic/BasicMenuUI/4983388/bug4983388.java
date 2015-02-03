@@ -30,7 +30,6 @@
    @run main bug4983388
 */
 
-import sun.awt.*;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.MenuListener;
@@ -64,7 +63,6 @@ public class bug4983388 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         } catch (UnsupportedLookAndFeelException | ClassNotFoundException ex) {
@@ -78,9 +76,10 @@ public class bug4983388 {
         });
 
         Robot robot = new Robot();
+        robot.waitForIdle();
         Util.hitMnemonics(robot, KeyEvent.VK_F);
-
-        toolkit.realSync();
+        robot.waitForIdle();
+        robot.delay(1000);
 
         if (!bMenuSelected) {
             throw new RuntimeException("shortcuts on menus do not work");

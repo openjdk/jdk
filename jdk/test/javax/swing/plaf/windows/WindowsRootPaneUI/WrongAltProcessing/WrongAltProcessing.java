@@ -28,8 +28,6 @@
    @run main WrongAltProcessing
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -56,7 +54,7 @@ public class WrongAltProcessing {
                 createWindows();
             }
         });
-        sync();
+        robot.waitForIdle();
         initRobot();
         runScript();
         SwingUtilities.invokeLater(new Runnable() {
@@ -73,11 +71,6 @@ public class WrongAltProcessing {
         if (!(c == mainFrameTf2)) {
             throw new RuntimeException("Wrong focus owner.");
         }
-    }
-
-    public static void sync() {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
     }
 
     public static void initRobot() throws AWTException {
@@ -101,7 +94,7 @@ public class WrongAltProcessing {
         robot.keyPress(KeyEvent.VK_ALT);
         robot.keyRelease(KeyEvent.VK_ALT);
         clickWindowsTitle(firstFrame);
-        sync();
+        robot.waitForIdle();
     }
 
     private static void pressTab() {

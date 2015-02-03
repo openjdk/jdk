@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
     <output url="file://$MODULE_DIR$/build" />
     <output-test url="file://$MODULE_DIR$/build" />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/gensrc" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/genstubs" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/java.base/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/java.compiler/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.compiler/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.dev/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.javadoc/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/java.base/gensrc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/java.compiler/gensrc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.compiler/gensrc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.dev/gensrc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.javadoc/gensrc" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
   </component>
 </module>
-

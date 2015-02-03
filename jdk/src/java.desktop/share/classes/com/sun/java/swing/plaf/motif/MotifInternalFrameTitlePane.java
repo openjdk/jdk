@@ -242,6 +242,7 @@ public class MotifInternalFrameTitlePane
             setBorderPainted(false);
         }
 
+        @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
         }

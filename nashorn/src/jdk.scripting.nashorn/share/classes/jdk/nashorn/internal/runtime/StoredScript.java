@@ -58,7 +58,7 @@ public final class StoredScript implements Serializable {
      * @param compilationId compilation id
      * @param mainClassName main class name
      * @param classBytes map of class names to class bytes
-     * @param initializers initializer map, id -> FunctionInitializer
+     * @param initializers initializer map, id -&gt; FunctionInitializer
      * @param constants constants array
      */
     public StoredScript(final int compilationId, final String mainClassName, final Map<String, byte[]> classBytes, final Map<Integer, FunctionInitializer> initializers, final Object[] constants) {

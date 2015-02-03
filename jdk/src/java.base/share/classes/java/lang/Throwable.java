@@ -202,7 +202,7 @@ public class Throwable implements Serializable {
      * The field is initialized to a zero-length array.  A {@code
      * null} value of this field indicates subsequent calls to {@link
      * #setStackTrace(StackTraceElement[])} and {@link
-     * #fillInStackTrace()} will be be no-ops.
+     * #fillInStackTrace()} will be no-ops.
      *
      * @serial
      * @since 1.4

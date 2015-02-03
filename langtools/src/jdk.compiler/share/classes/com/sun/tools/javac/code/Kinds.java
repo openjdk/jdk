@@ -74,8 +74,7 @@ public class Kinds {
         WRONG_MTHS(Category.OVERLOAD, KindName.METHOD),
         WRONG_MTH(Category.OVERLOAD, KindName.METHOD),
         ABSENT_MTH(Category.OVERLOAD, KindName.METHOD),
-        ABSENT_TYP(Category.OVERLOAD, KindName.CLASS),
-        WRONG_STATICNESS(Category.OVERLOAD, KindName.METHOD);
+        ABSENT_TYP(Category.OVERLOAD, KindName.CLASS);
 
         // There are essentially two "levels" to the Kind datatype.
         // The first is a totally-ordered set of categories of

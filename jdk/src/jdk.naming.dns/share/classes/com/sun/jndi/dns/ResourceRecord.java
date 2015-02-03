@@ -103,7 +103,7 @@ public class ResourceRecord {
     int rrlen;                  // number of octets in encoded RR
     DnsName name;               // name field of RR, including root label
     int rrtype;                 // type field of RR
-    String rrtypeName;          // name of of rrtype
+    String rrtypeName;          // name of rrtype
     int rrclass;                // class field of RR
     String rrclassName;         // name of rrclass
     int ttl = 0;                // ttl field of RR

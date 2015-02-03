@@ -78,6 +78,7 @@ class WindowsPopupWindow extends JWindow {
         paint(g);
     }
 
+    @SuppressWarnings("deprecation")
     public void hide() {
         super.hide();
         /** We need to call removeNotify() here because hide() does
@@ -89,6 +90,7 @@ class WindowsPopupWindow extends JWindow {
         removeNotify();
     }
 
+    @SuppressWarnings("deprecation")
     public void show() {
         super.show();
         this.pack();

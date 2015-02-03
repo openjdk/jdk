@@ -267,7 +267,7 @@ public final class TableSorter extends TableMap {
         than assigned otherwise sister calls in the recursion might
         get out of sinc.  When the number of elements is three they
         are partitioned so that the first set, [low, mid), has one
-        element and and the second, [mid, high), has two. We skip the
+        element and the second, [mid, high), has two. We skip the
         optimisation when the number of elements is three or less as
         the first compare in the normal merge will produce the same
         sequence of steps. This optimisation seems to be worthwhile

@@ -2231,6 +2231,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             return total;
         }
 
+        @SuppressWarnings("deprecation")
         public void layoutContainer(final Container parent) {
             /* Some of the code in this method deals with changing the
              * visibility of components to hide and show the contents for the
@@ -2725,6 +2726,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             return calculateMaxTabWidth(tabPlacement);
         }
 
+        @SuppressWarnings("deprecation")
         public void layoutContainer(final Container parent) {
             /* Some of the code in this method deals with changing the
              * visibility of components to hide and show the contents for the

@@ -1453,6 +1453,7 @@ public class DebugGraphics extends Graphics {
 
     /** Returns a DebugGraphics for use in buffering window.
       */
+    @SuppressWarnings("deprecation")
     private Graphics debugGraphics() {
         DebugGraphics        debugGraphics;
         DebugGraphicsInfo    info = info();

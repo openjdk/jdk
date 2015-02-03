@@ -1169,7 +1169,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      * @return the column value; if the value is SQL <code>NULL</code>, the
      *         result is <code>null</code>
      * @throws SQLException if the given column index is out of bounds,
-     *            the cursor is not on a valid row, or the the value to be
+     *            the cursor is not on a valid row, or the value to be
      *            retrieved is not binary
      */
     public byte[] getBytes(int columnIndex) throws SQLException {
@@ -4129,7 +4129,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
     }
 
     /**
-     * Creates an an output stream of the internal state and contents of a
+     * Creates an output stream of the internal state and contents of a
      * <code>WebRowSet</code> for XML proceessing
      *
      * @throws SQLException if a datasource access occurs

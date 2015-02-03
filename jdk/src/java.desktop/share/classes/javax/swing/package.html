@@ -3,7 +3,7 @@
 
 <HEAD>
 <!--
-Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,8 @@ invokeLater} method schedules a {@code Runnable} to be processed on
 the event dispatching thread. The following two examples work equally
 well for transferring control and starting up a Swing application:
 <pre>
+import javax.swing.SwingUtilities;
+
 public class MyApp implements Runnable {
     public void run() {
         // Invoked on the event dispatching thread.
@@ -75,16 +77,18 @@ public class MyApp implements Runnable {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new MyApp(args));
+        SwingUtilities.invokeLater(new MyApp());
     }
 }
 </pre>
 Or:
 <pre>
+import javax.swing.SwingUtilities;
+
 public class MyApp {
     MyApp(String[] args) {
-        // Invoked on the event dispatching thread. Do any initialization
-        // here.
+        // Invoked on the event dispatching thread.
+        // Do any initialization here.
     }
 
     public void show() {

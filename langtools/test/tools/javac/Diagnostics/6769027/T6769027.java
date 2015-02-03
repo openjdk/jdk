@@ -387,7 +387,7 @@ public class T6769027
         messages.add("tester");
         JCDiagnostic.Factory diags = JCDiagnostic.Factory.instance(ctx);
         log.useSource(new MyFileObject("This is a source line"));
-        JCDiagnostic d = diags.error(log.currentSource(),
+        JCDiagnostic d = diags.error(null, log.currentSource(),
             posKind.pos(),
             errorKind.key(), "Hello!");
         if (multiKind != MultilineKind.NONE) {

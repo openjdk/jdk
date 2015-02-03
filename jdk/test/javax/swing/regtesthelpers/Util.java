@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import sun.swing.*;
+//import sun.swing.*;
 
 /**
  * <p>This class contains utilities useful for regression testing.
@@ -231,13 +231,6 @@ public class Util {
 
         return result.get(0);
     }
-    /**
-     * Gets key codes from system mnemonic key mask
-     * @return key codes list
-     */
-    public static ArrayList<Integer> getSystemMnemonicKeyCodes() {
-        return Util.getKeyCodesFromKeyMask(SwingUtilities2.getSystemMnemonicKeyMask());
-    }
 
     /**
      * Gets the key codes list from modifiers
@@ -258,6 +251,20 @@ public class Util {
         if ((modifiers & InputEvent.META_MASK) != 0) {
             result.add(KeyEvent.VK_META);
         }
+        return result;
+    }
+
+    /**
+     * Gets key codes from system mnemonic key mask
+     * @return key codes list
+     */
+    public static ArrayList<Integer> getSystemMnemonicKeyCodes() {
+        String osName = System.getProperty("os.name");
+        ArrayList<Integer> result = new ArrayList<>();
+        if (osName.contains("OS X")) {
+            result.add(KeyEvent.VK_CONTROL);
+        }
+        result.add(KeyEvent.ALT_MASK);
         return result;
     }
 }
