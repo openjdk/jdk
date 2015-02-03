@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @library /testlibrary
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
- * @run testng HelpTest
+ * @run testng/othervm -XX:+UsePerfData HelpTest
  */
 public class HelpTest {
     public void run(CommandExecutor executor) {

@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @library /testlibrary
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
- * @run testng VMVersionTest
+ * @run testng/othervm -XX:+UsePerfData VMVersionTest
  */
 public class VMVersionTest {
     public void run(CommandExecutor executor) {
