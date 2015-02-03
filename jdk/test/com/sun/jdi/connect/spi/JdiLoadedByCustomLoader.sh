@@ -68,7 +68,7 @@ SOMEOTHERDIR="${TESTCLASSES}"/someotherdir
 $JAVAC -d "${TESTCLASSES}" "${TESTSRC}"/JdiLoadedByCustomLoader.java
 
 mkdir "${SOMEOTHERDIR}"
-$JAVAC -d "${SOMEOTHERDIR}" -classpath "${TESTSRC}${PS}${TESTJAVA}/lib/tools.jar" \
+$JAVAC -d "${SOMEOTHERDIR}" -classpath "${TESTSRC}" \
     "${TESTSRC}"/ListConnectors.java
 
 # Run the test

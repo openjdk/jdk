@@ -132,13 +132,7 @@ public class LocalManagementTest {
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
                 "-cp",
-                TEST_CLASSPATH +
-                    File.pathSeparator +
-                    TEST_JDK +
-                    File.separator +
-                    "lib" +
-                    File.separator +
-                    "tools.jar",
+                TEST_CLASSPATH,
                 "TestManager",
                 String.valueOf(serverPrc.getPid()),
                 port.get(),
