@@ -51,7 +51,7 @@ public class HeapDumpTest {
     }
 
     private void verifyHeapDump(String fileName) {
-        String jhat = JDKToolFinder.getTestJDKTool("jhat");
+        String jhat = JDKToolFinder.getJDKTool("jhat");
         String[] cmd = { jhat, "-parseonly", "true", fileName };
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
