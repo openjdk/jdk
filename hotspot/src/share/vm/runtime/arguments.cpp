@@ -57,18 +57,6 @@
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
-// Disable options not supported in this release, with a warning if they
-// were explicitly requested on the command-line
-#define UNSUPPORTED_OPTION(opt, description)                    \
-do {                                                            \
-  if (opt) {                                                    \
-    if (FLAG_IS_CMDLINE(opt)) {                                 \
-      warning(description " is disabled in this release.");     \
-    }                                                           \
-    FLAG_SET_DEFAULT(opt, false);                               \
-  }                                                             \
-} while(0)
-
 #define UNSUPPORTED_GC_OPTION(gc)                                     \
 do {                                                                  \
   if (gc) {                                                           \
@@ -3853,6 +3841,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
   #endif
 #endif
+
+  ArgumentsExt::report_unsupported_options();
 
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {
