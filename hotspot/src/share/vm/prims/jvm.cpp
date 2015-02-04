@@ -304,7 +304,7 @@ JVM_END
 // java.lang.System, but we choose to keep it here so that it stays next
 // to JVM_CurrentTimeMillis and JVM_NanoTime
 
-const jlong MAX_DIFF_SECS = 0x0100000000;   //  2^32
+const jlong MAX_DIFF_SECS = 0x0100000000LL; //  2^32
 const jlong MIN_DIFF_SECS = -MAX_DIFF_SECS; // -2^32
 
 JVM_LEAF(jlong, JVM_GetNanoTimeAdjustment(JNIEnv *env, jclass ignored, jlong offset_secs))
