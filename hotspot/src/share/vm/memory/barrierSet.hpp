@@ -39,8 +39,7 @@ public:
     CardTableModRef,
     CardTableExtension,
     G1SATBCT,
-    G1SATBCTLogging,
-    Other
+    G1SATBCTLogging
   };
 
   enum Flags {
