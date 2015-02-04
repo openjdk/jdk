@@ -33,6 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @summary Test of diagnostic command help (tests all DCMD executors)
  * @library /testlibrary
+ * @ignore 8072440
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
  * @run testng/othervm -XX:+UsePerfData HelpTest
