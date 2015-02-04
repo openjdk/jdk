@@ -30,6 +30,7 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <thread.h>
 #include <signal.h>
 
 void VMError::show_message_box(char *buf, int buflen) {
@@ -59,9 +60,15 @@ void VMError::show_message_box(char *buf, int buflen) {
   } while (yes);
 }
 
+// handle all synchronous program error signals which may happen during error
+// reporting. They must be unblocked, caught, handled.
+
+static const int SIGNALS[] = { SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP }; // add more if needed
+static const int NUM_SIGNALS = sizeof(SIGNALS) / sizeof(int);
+
 // Space for our "saved" signal flags and handlers
-static int resettedSigflags[2];
-static address resettedSighandler[2];
+static int resettedSigflags[NUM_SIGNALS];
+static address resettedSighandler[NUM_SIGNALS];
 
 static void save_signal(int idx, int sig)
 {
@@ -74,19 +81,19 @@ static void save_signal(int idx, int sig)
 }
 
 int VMError::get_resetted_sigflags(int sig) {
-  if(SIGSEGV == sig) {
-    return resettedSigflags[0];
-  } else if(SIGBUS == sig) {
-    return resettedSigflags[1];
+  for (int i = 0; i < NUM_SIGNALS; i++) {
+    if (SIGNALS[i] == sig) {
+      return resettedSigflags[i];
+    }
   }
   return -1;
 }
 
 address VMError::get_resetted_sighandler(int sig) {
-  if(SIGSEGV == sig) {
-    return resettedSighandler[0];
-  } else if(SIGBUS == sig) {
-    return resettedSighandler[1];
+  for (int i = 0; i < NUM_SIGNALS; i++) {
+    if (SIGNALS[i] == sig) {
+      return resettedSighandler[i];
+    }
   }
   return NULL;
 }
@@ -96,16 +103,25 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   sigset_t newset;
   sigemptyset(&newset);
   sigaddset(&newset, sig);
-  sigprocmask(SIG_UNBLOCK, &newset, NULL);
+  // also unmask other synchronous signals
+  for (int i = 0; i < NUM_SIGNALS; i++) {
+    sigaddset(&newset, SIGNALS[i]);
+  }
+  thr_sigsetmask(SIG_UNBLOCK, &newset, NULL);
 
   VMError err(NULL, sig, NULL, info, ucVoid);
   err.report_and_die();
 }
 
 void VMError::reset_signal_handlers() {
-  // Save sigflags for resetted signals
-  save_signal(0, SIGSEGV);
-  save_signal(1, SIGBUS);
-  os::signal(SIGSEGV, CAST_FROM_FN_PTR(void *, crash_handler));
-  os::signal(SIGBUS, CAST_FROM_FN_PTR(void *, crash_handler));
+  // install signal handlers for all synchronous program error signals
+  sigset_t newset;
+  sigemptyset(&newset);
+
+  for (int i = 0; i < NUM_SIGNALS; i++) {
+    save_signal(i, SIGNALS[i]);
+    os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));
+    sigaddset(&newset, SIGNALS[i]);
+  }
+  thr_sigsetmask(SIG_UNBLOCK, &newset, NULL);
 }
