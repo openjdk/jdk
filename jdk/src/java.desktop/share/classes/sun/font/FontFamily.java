@@ -78,7 +78,7 @@ public class FontFamily {
             family.bolditalic = null;
         }
         if (family.plain == null && family.bold == null &&
-            family.plain == null && family.bold == null) {
+            family.italic == null && family.bolditalic == null) {
             familyNameMap.remove(name);
         }
     }
