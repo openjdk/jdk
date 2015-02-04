@@ -1652,7 +1652,7 @@ public class JPEGImageWriter extends ImageWriter {
         int vsamp0 = specs[0].VsamplingFactor;
         for (int i = 1; i < specs.length; i++) {
             if ((specs[i].HsamplingFactor != hsamp0) ||
-                (specs[i].HsamplingFactor != hsamp0))
+                (specs[i].VsamplingFactor != vsamp0))
                 return true;
         }
         return false;
