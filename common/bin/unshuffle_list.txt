@@ -123,6 +123,7 @@ jdk/src/java.base/share/classes/java/lang/reflect : jdk/src/share/classes/java/l
 jdk/src/java.base/share/classes/java/math : jdk/src/share/classes/java/math
 jdk/src/java.base/share/classes/java/net : jdk/src/share/classes/java/net
 jdk/src/java.base/share/classes/java/nio : jdk/src/share/classes/java/nio
+jdk/src/java.base/share/classes/java/security/acl : jdk/src/share/classes/java/security/acl
 jdk/src/java.base/share/classes/java/security/cert : jdk/src/share/classes/java/security/cert
 jdk/src/java.base/share/classes/java/security/interfaces : jdk/src/share/classes/java/security/interfaces
 jdk/src/java.base/share/classes/java/security : jdk/src/share/classes/java/security
@@ -179,6 +180,7 @@ jdk/src/java.base/share/classes/sun/nio/ch : jdk/src/share/classes/sun/nio/ch
 jdk/src/java.base/share/classes/sun/nio/cs : jdk/src/share/classes/sun/nio/cs
 jdk/src/java.base/share/classes/sun/nio/fs : jdk/src/share/classes/sun/nio/fs
 jdk/src/java.base/share/classes/sun/reflect : jdk/src/share/classes/sun/reflect
+jdk/src/java.base/share/classes/sun/security/acl : jdk/src/share/classes/sun/security/acl
 jdk/src/java.base/share/classes/sun/security/action : jdk/src/share/classes/sun/security/action
 jdk/src/java.base/share/classes/sun/security/internal : jdk/src/share/classes/sun/security/internal
 jdk/src/java.base/share/classes/sun/security/jca : jdk/src/share/classes/sun/security/jca
@@ -1211,8 +1213,6 @@ jdk/src/java.rmi/share/doc/stub/java/rmi/activation : jdk/src/share/doc/stub/jav
 jdk/src/java.rmi/unix/bin/java-rmi.cgi.sh : jdk/src/solaris/bin/java-rmi.cgi.sh
 jdk/src/java.scripting/share/classes/javax/script : jdk/src/share/classes/javax/script
 jdk/src/java.scripting/share/classes/com/sun/tools/script/shell : jdk/src/share/classes/com/sun/tools/script/shell
-jdk/src/java.security.acl/share/classes/java/security/acl : jdk/src/share/classes/java/security/acl
-jdk/src/java.security.acl/share/classes/sun/security/acl : jdk/src/share/classes/sun/security/acl
 jdk/src/java.security.jgss/macosx/native/libosxkrb5/nativeccache.c : jdk/src/share/native/sun/security/krb5/nativeccache.c
 jdk/src/java.security.jgss/macosx/native/libosxkrb5/SCDynamicStoreConfig.m : jdk/src/macosx/native/sun/security/krb5/SCDynamicStoreConfig.m
 jdk/src/java.security.jgss/share/classes/javax/security/auth/kerberos : jdk/src/share/classes/javax/security/auth/kerberos
