@@ -22,9 +22,8 @@
  */
 
 /*
- * Creates a URLClassLoader from 2 file URLs. The first
- * file URL is constructed from the given argument. The
- * second is the SDK tools.jar. Once created the test
+ * Creates a URLClassLoader from a file URL. The file URL
+ * is constructed from the given argument. Once created the test
  * attempts to load another test case (ListConnectors)
  * using the class loader and then it invokes the list()
  * method.
@@ -39,13 +38,9 @@ public class JdiLoadedByCustomLoader {
     public static void main(String args[]) throws Exception {
         // create files from given arguments and tools.jar
         File f1 = new File(args[0]);
-        String home = System.getProperty("java.home");
-        String tools = ".." + File.separatorChar + "lib" +
-            File.separatorChar + "tools.jar";
-        File f2 = (new File(home, tools)).getCanonicalFile();
 
         // create class loader
-        URL[] urls = { f1.toURL(), f2.toURL() };
+        URL[] urls = { f1.toURL() };
         URLClassLoader cl = new URLClassLoader(urls);
 
         // load ListConnectors using the class loader

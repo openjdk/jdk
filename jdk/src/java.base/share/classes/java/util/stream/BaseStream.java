@@ -79,6 +79,14 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
+     * <p>
+     * The returned spliterator should report the set of characteristics derived
+     * from the stream pipeline (namely the characteristics derived from the
+     * stream source spliterator and the intermediate operations).
+     * Implementations may report a sub-set of those characteristics.  For
+     * example, it may be too expensive to compute the entire set for some or
+     * all possible stream pipelines.
+     *
      * @return the element spliterator for this stream
      */
     Spliterator<T> spliterator();

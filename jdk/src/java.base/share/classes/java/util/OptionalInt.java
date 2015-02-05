@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 /**
  * A container object which may or may not contain a {@code int} value.
@@ -138,8 +139,32 @@ public final class OptionalInt {
      * null
      */
     public void ifPresent(IntConsumer consumer) {
-        if (isPresent)
+        if (isPresent) {
             consumer.accept(value);
+        }
+    }
+
+    /**
+     * If a value is present return a sequential {@link IntStream} containing
+     * only that value, otherwise return an empty {@code IntStream}.
+     *
+     * @apiNote This method can be used to transform a {@code Stream} of
+     * optional integers to an {@code IntStream} of present integers:
+     *
+     * <pre>{@code
+     *     Stream<OptionalInt> os = ..
+     *     IntStream s = os.flatMapToInt(OptionalInt::stream)
+     * }</pre>
+     *
+     * @return the optional value as an {@code IntStream}
+     * @since 1.9
+     */
+    public IntStream stream() {
+        if (isPresent) {
+            return IntStream.of(value);
+        } else {
+            return IntStream.empty();
+        }
     }
 
     /**
@@ -182,7 +207,7 @@ public final class OptionalInt {
      * @throws NullPointerException if no value is present and
      * {@code exceptionSupplier} is null
      */
-    public<X extends Throwable> int orElseThrow(Supplier<X> exceptionSupplier) throws X {
+    public<X extends Throwable> int orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {
