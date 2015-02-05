@@ -163,8 +163,8 @@ instruct $4$1(iReg$1NoSp dst, iReg$1 src, immI lshift_count, immI rshift_count)
     int s = $2 - lshift;
     int r = (rshift - lshift) & $2;
     __ $4(as_Register($dst$$reg),
-	    as_Register($src$$reg),
-	    r, s);
+            as_Register($src$$reg),
+            r, s);
   %}
 
   ins_pipe(ialu_reg_shift);
@@ -187,7 +187,7 @@ define(`BFX_INSN',
     long mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ $3(as_Register($dst$$reg),
-	    as_Register($src$$reg), rshift, width);
+            as_Register($src$$reg), rshift, width);
   %}
   ins_pipe(ialu_reg_shift);
 %}')
@@ -207,7 +207,7 @@ instruct ubfxIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask m
     long mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ ubfx(as_Register($dst$$reg),
-	    as_Register($src$$reg), rshift, width);
+            as_Register($src$$reg), rshift, width);
   %}
   ins_pipe(ialu_reg_shift);
 %}
@@ -237,7 +237,7 @@ EXTRACT_INSN(I, 31, Add, extrw)
 define(`ROL_EXPAND', `
 // $2 expander
 
-instruct $2$1_rReg(iReg$1 dst, iReg$1 src, iRegI shift, rFlagsReg cr)
+instruct $2$1_rReg(iReg$1NoSp dst, iReg$1 src, iRegI shift, rFlagsReg cr)
 %{
   effect(DEF dst, USE src, USE shift);
 
@@ -246,14 +246,14 @@ instruct $2$1_rReg(iReg$1 dst, iReg$1 src, iRegI shift, rFlagsReg cr)
   ins_encode %{
     __ subw(rscratch1, zr, as_Register($shift$$reg));
     __ $3(as_Register($dst$$reg), as_Register($src$$reg),
-	    rscratch1);
+            rscratch1);
     %}
   ins_pipe(ialu_reg_reg_vshift);
 %}')dnl
 define(`ROR_EXPAND', `
 // $2 expander
 
-instruct $2$1_rReg(iReg$1 dst, iReg$1 src, iRegI shift, rFlagsReg cr)
+instruct $2$1_rReg(iReg$1NoSp dst, iReg$1 src, iRegI shift, rFlagsReg cr)
 %{
   effect(DEF dst, USE src, USE shift);
 
@@ -261,12 +261,12 @@ instruct $2$1_rReg(iReg$1 dst, iReg$1 src, iRegI shift, rFlagsReg cr)
   ins_cost(INSN_COST);
   ins_encode %{
     __ $3(as_Register($dst$$reg), as_Register($src$$reg),
-	    as_Register($shift$$reg));
+            as_Register($shift$$reg));
     %}
   ins_pipe(ialu_reg_reg_vshift);
 %}')dnl
 define(ROL_INSN, `
-instruct $3$1_rReg_Var_C$2(iRegL dst, iRegL src, iRegI shift, immI$2 c$2, rFlagsReg cr)
+instruct $3$1_rReg_Var_C$2(iRegLNoSp dst, iRegL src, iRegI shift, immI$2 c$2, rFlagsReg cr)
 %{
   match(Set dst (Or$1 (LShift$1 src shift) (URShift$1 src (SubI c$2 shift))));
 
@@ -275,7 +275,7 @@ instruct $3$1_rReg_Var_C$2(iRegL dst, iRegL src, iRegI shift, immI$2 c$2, rFlags
   %}
 %}')dnl
 define(ROR_INSN, `
-instruct $3$1_rReg_Var_C$2(iRegL dst, iRegL src, iRegI shift, immI$2 c$2, rFlagsReg cr)
+instruct $3$1_rReg_Var_C$2(iRegLNoSp dst, iRegL src, iRegI shift, immI$2 c$2, rFlagsReg cr)
 %{
   match(Set dst (Or$1 (URShift$1 src shift) (LShift$1 src (SubI c$2 shift))));
 
