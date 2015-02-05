@@ -580,13 +580,15 @@ public final class Global extends ScriptObject implements Scope {
         } else if (obj instanceof String || obj instanceof ConsString) {
             return new NativeString((CharSequence)obj, this);
         } else if (obj instanceof Object[]) { // extension
-            return new NativeArray((Object[])obj);
+            return new NativeArray(ArrayData.allocate((Object[])obj), this);
         } else if (obj instanceof double[]) { // extension
-            return new NativeArray((double[])obj);
+            return new NativeArray(ArrayData.allocate((double[])obj), this);
         } else if (obj instanceof long[]) {
-            return new NativeArray((long[])obj);
+            return new NativeArray(ArrayData.allocate((long[])obj), this);
         } else if (obj instanceof int[]) {
-            return new NativeArray((int[])obj);
+            return new NativeArray(ArrayData.allocate((int[]) obj), this);
+        } else if (obj instanceof ArrayData) {
+            return new NativeArray((ArrayData) obj, this);
         } else {
             // FIXME: more special cases? Map? List?
             return obj;
@@ -1028,12 +1030,17 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     // builtin prototype accessors
-    ScriptObject getFunctionPrototype() {
-        return ScriptFunction.getPrototype(builtinFunction);
+
+    /**
+     * Get the builtin Object prototype.
+      * @return the object prototype.
+     */
+    public ScriptObject getObjectPrototype() {
+        return ScriptFunction.getPrototype(builtinObject);
     }
 
-    ScriptObject getObjectPrototype() {
-        return ScriptFunction.getPrototype(builtinObject);
+    ScriptObject getFunctionPrototype() {
+        return ScriptFunction.getPrototype(builtinFunction);
     }
 
     ScriptObject getArrayPrototype() {
