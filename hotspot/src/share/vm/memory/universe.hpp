@@ -148,8 +148,7 @@ class Universe: AllStatic {
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
   static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
   static LatestMethodCache* _pd_implies_cache;         // method for checking protection domain attributes
-
-  static Method* _throw_illegal_access_error;
+  static LatestMethodCache* _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
 
   // preallocated error objects (no backtrace)
   static oop          _out_of_memory_error_java_heap;
@@ -305,6 +304,7 @@ class Universe: AllStatic {
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
   static Method*      protection_domain_implies_method() { return _pd_implies_cache->get_method(); }
+  static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error_cache->get_method(); }
 
   static oop          null_ptr_exception_instance()   { return _null_ptr_exception_instance;   }
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
@@ -313,8 +313,6 @@ class Universe: AllStatic {
 
   static inline oop   allocation_context_notification_obj();
   static inline void  set_allocation_context_notification_obj(oop obj);
-
-  static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error; }
 
   static Array<int>*       the_empty_int_array()    { return _the_empty_int_array; }
   static Array<u2>*        the_empty_short_array()  { return _the_empty_short_array; }
