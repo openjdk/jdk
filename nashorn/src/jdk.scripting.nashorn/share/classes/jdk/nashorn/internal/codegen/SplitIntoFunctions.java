@@ -52,6 +52,7 @@ import jdk.nashorn.internal.ir.GetSplitState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.JumpStatement;
+import jdk.nashorn.internal.ir.JumpToInlinedFinally;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ReturnNode;
@@ -357,6 +358,11 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
     @Override
     public Node leaveContinueNode(final ContinueNode continueNode) {
         return leaveJumpNode(continueNode);
+    }
+
+    @Override
+    public Node leaveJumpToInlinedFinally(final JumpToInlinedFinally jumpToInlinedFinally) {
+        return leaveJumpNode(jumpToInlinedFinally);
     }
 
     private JumpStatement leaveJumpNode(final JumpStatement jump) {

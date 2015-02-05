@@ -58,6 +58,9 @@ public class CredentialsUtil {
             // TODO: we do not support kerberos referral now
             throw new KrbException("Cross realm impersonation not supported");
         }
+        if (!ccreds.isForwardable()) {
+            throw new KrbException("S4U2self needs a FORWARDABLE ticket");
+        }
         KrbTgsReq req = new KrbTgsReq(
                 ccreds,
                 ccreds.getClient(),
@@ -67,6 +70,9 @@ public class CredentialsUtil {
         Credentials creds = req.sendAndGetCreds();
         if (!creds.getClient().equals(client)) {
             throw new KrbException("S4U2self request not honored by KDC");
+        }
+        if (!creds.isForwardable()) {
+            throw new KrbException("S4U2self ticket must be FORWARDABLE");
         }
         return creds;
     }

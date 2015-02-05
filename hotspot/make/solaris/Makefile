@@ -190,8 +190,7 @@ endif
 XSLT_CHECK	= $(RUN.JAVAP) javax.xml.transform.TransformerFactory
 # If not found then fail fast.
 check_j2se_version:
-	$(QUIETLY) $(XSLT_CHECK) > /dev/null 2>&1; \
-	if [ $$? -ne 0 ]; then \
+	$(QUIETLY) if ! $(XSLT_CHECK) > /dev/null 2>&1; then \
 	  $(RUN.JAVA) -version; \
 	  echo "*** An XSLT processor (J2SE 1.4.x or newer) is required" \
 	  "to bootstrap this build" 1>&2; \
