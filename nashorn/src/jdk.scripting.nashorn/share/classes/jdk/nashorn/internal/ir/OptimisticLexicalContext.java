@@ -115,7 +115,7 @@ public class OptimisticLexicalContext extends LexicalContext {
     }
 
     @Override
-    public <T extends LexicalContextNode> T pop(final T node) {
+    public <T extends Node> T pop(final T node) {
         final T popped = super.pop(node);
         if (isEnabled) {
             if(node instanceof FunctionNode) {
