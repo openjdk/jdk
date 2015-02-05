@@ -120,9 +120,6 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         this(ArrayData.allocate(array.length));
 
         ArrayData arrayData = this.getArray();
-        if (array.length > 0) {
-            arrayData.ensure(array.length - 1);
-        }
 
         for (int index = 0; index < array.length; index++) {
             final Object value = array[index];
