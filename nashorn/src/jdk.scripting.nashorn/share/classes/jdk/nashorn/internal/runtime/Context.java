@@ -60,6 +60,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -904,7 +905,7 @@ public final class Context {
      * @throw SecurityException if not accessible
      */
     private static void checkPackageAccess(final SecurityManager sm, final String fullName) {
-        sm.getClass(); // null check
+        Objects.requireNonNull(sm);
         final int index = fullName.lastIndexOf('.');
         if (index != -1) {
             final String pkgName = fullName.substring(0, index);
