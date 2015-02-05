@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Spliterator traversing and splitting tests
  * @run testng SpliteratorTraversingAndSplittingTest
- * @bug 8020016
+ * @bug 8020016 8071477
  */
 
 import org.testng.annotations.DataProvider;
@@ -85,7 +85,38 @@ import static org.testng.Assert.assertEquals;
 @Test
 public class SpliteratorTraversingAndSplittingTest {
 
-    private static List<Integer> SIZES = Arrays.asList(0, 1, 10, 100, 1000);
+    private static final List<Integer> SIZES = Arrays.asList(0, 1, 10, 100, 1000);
+
+    private static final String LOW = new String(new char[] {Character.MIN_LOW_SURROGATE});
+    private static final String HIGH = new String(new char[] {Character.MIN_HIGH_SURROGATE});
+    private static final String HIGH_LOW = HIGH + LOW;
+    private static final String CHAR_HIGH_LOW = "A" + HIGH_LOW;
+    private static final String HIGH_LOW_CHAR = HIGH_LOW + "A";
+    private static final String CHAR_HIGH_LOW_CHAR = "A" + HIGH_LOW + "A";
+
+    private static final List<String> STRINGS = generateTestStrings();
+
+    private static List<String> generateTestStrings() {
+        List<String> strings = new ArrayList<>();
+        for (int n : Arrays.asList(1, 2, 3, 16, 17)) {
+            strings.add(generate("A", n));
+            strings.add(generate(LOW, n));
+            strings.add(generate(HIGH, n));
+            strings.add(generate(HIGH_LOW, n));
+            strings.add(generate(CHAR_HIGH_LOW, n));
+            strings.add(generate(HIGH_LOW_CHAR, n));
+            strings.add(generate(CHAR_HIGH_LOW_CHAR, n));
+        }
+        return strings;
+    }
+
+    private static String generate(String s, int n) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            sb.append(s);
+        }
+        return sb.toString();
+    }
 
     private static class SpliteratorDataBuilder<T> {
         List<Object[]> data;
@@ -564,6 +595,60 @@ public class SpliteratorTraversingAndSplittingTest {
         }
     }
 
+    private static class SpliteratorOfIntCharDataBuilder {
+        List<Object[]> data;
+
+        String s;
+
+        List<Integer> expChars;
+
+        List<Integer> expCodePoints;
+
+        SpliteratorOfIntCharDataBuilder(List<Object[]> data, String s) {
+            this.data = data;
+            this.s = s;
+            this.expChars = transform(s, false);
+            this.expCodePoints = transform(s, true);
+        }
+
+        static List<Integer> transform(String s, boolean toCodePoints) {
+            List<Integer> l = new ArrayList<>();
+
+            if (!toCodePoints) {
+                for (int i = 0; i < s.length(); i++) {
+                    l.add((int) s.charAt(i));
+                }
+            }
+            else {
+                for (int i = 0; i < s.length();) {
+                    char c1 = s.charAt(i++);
+                    int cp = c1;
+                    if (Character.isHighSurrogate(c1) && i < s.length()) {
+                        char c2 = s.charAt(i);
+                        if (Character.isLowSurrogate(c2)) {
+                            i++;
+                            cp = Character.toCodePoint(c1, c2);
+                        }
+                    }
+                    l.add(cp);
+                }
+            }
+            return l;
+        }
+
+        void add(String description, Function<String, CharSequence> f) {
+            description = description.replace("%s", s);
+            {
+                Supplier<Spliterator.OfInt> supplier = () -> f.apply(s).chars().spliterator();
+                data.add(new Object[]{description + ".chars().spliterator()", expChars, supplier});
+            }
+            {
+                Supplier<Spliterator.OfInt> supplier = () -> f.apply(s).codePoints().spliterator();
+                data.add(new Object[]{description + ".codePoints().spliterator()", expCodePoints, supplier});
+            }
+        }
+    }
+
     static Object[][] spliteratorOfIntDataProvider;
 
     @DataProvider(name = "Spliterator.OfInt")
@@ -613,6 +698,43 @@ public class SpliteratorTraversingAndSplittingTest {
             }
             db.add("new Spliterators.AbstractIntAdvancingSpliterator()",
                    () -> new IntSpliteratorFromArray(exp));
+        }
+
+        // Class for testing default methods
+        class CharSequenceImpl implements CharSequence {
+            final String s;
+
+            public CharSequenceImpl(String s) {
+                this.s = s;
+            }
+
+            @Override
+            public int length() {
+                return s.length();
+            }
+
+            @Override
+            public char charAt(int index) {
+                return s.charAt(index);
+            }
+
+            @Override
+            public CharSequence subSequence(int start, int end) {
+                return s.subSequence(start, end);
+            }
+
+            @Override
+            public String toString() {
+                return s;
+            }
+        }
+
+        for (String string : STRINGS) {
+            SpliteratorOfIntCharDataBuilder cdb = new SpliteratorOfIntCharDataBuilder(data, string);
+            cdb.add("\"%s\"", s -> s);
+            cdb.add("new CharSequenceImpl(\"%s\")", CharSequenceImpl::new);
+            cdb.add("new StringBuilder(\"%s\")", StringBuilder::new);
+            cdb.add("new StringBuffer(\"%s\")", StringBuffer::new);
         }
 
         return spliteratorOfIntDataProvider = data.toArray(new Object[0][]);
