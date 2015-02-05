@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ size_t CardTableModRefBS::compute_byte_map_size()
   return align_size_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
 
-CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap) :
-  ModRefBarrierSet(),
+CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap, BarrierSet::Name kind) :
+  ModRefBarrierSet(kind),
   _whole_heap(whole_heap),
   _guard_index(0),
   _guard_region(),
@@ -72,8 +72,6 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap) :
   _lowest_non_clean_base_chunk_index(NULL),
   _last_LNC_resizing_collection(NULL)
 {
-  _kind = BarrierSet::CardTableModRef;
-
   assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");
 
