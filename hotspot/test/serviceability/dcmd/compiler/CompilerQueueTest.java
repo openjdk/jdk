@@ -24,17 +24,22 @@
 /*
  * @test CompilerQueueTest
  * @bug 8054889
- * @library ..
+ * @library /testlibrary
  * @ignore 8069160
- * @build DcmdUtil CompilerQueueTest
- * @run main CompilerQueueTest
- * @run main/othervm -XX:-TieredCompilation CompilerQueueTest
- * @run main/othervm -Xint CompilerQueueTest
+ * @build com.oracle.java.testlibrary.*
+ * @build com.oracle.java.testlibrary.dcmd.*
+ * @run testng CompilerQueueTest
+ * @run testng/othervm -XX:-TieredCompilation CompilerQueueTest
+ * @run testng/othervm -Xint CompilerQueueTest
  * @summary Test of diagnostic command Compiler.queue
  */
 
-import java.io.BufferedReader;
-import java.io.StringReader;
+import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.oracle.java.testlibrary.dcmd.CommandExecutor;
+import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+import org.testng.annotations.Test;
+
+import java.util.Iterator;
 
 public class CompilerQueueTest {
 
@@ -60,52 +65,55 @@ public class CompilerQueueTest {
      *
      **/
 
-    public static void main(String arg[]) throws Exception {
+    public void run(CommandExecutor executor) {
 
         // Get output from dcmd (diagnostic command)
-        String result = DcmdUtil.executeDcmd("Compiler.queue");
-        BufferedReader r = new BufferedReader(new StringReader(result));
+        OutputAnalyzer output = executor.execute("Compiler.queue");
+        Iterator<String> lines = output.asLines().iterator();
 
-        String str = r.readLine();
-
-        while (str != null) {
+        while (lines.hasNext()) {
+            String str = lines.next();
             if (str.startsWith("Contents of C")) {
-                match(r.readLine(), "----------------------------");
-                str = r.readLine();
+                match(lines.next(), "----------------------------");
+                str = lines.next();
                 if (!str.equals("Empty")) {
                     while (str.charAt(0) != '-') {
                         validateMethodLine(str);
-                        str = r.readLine();
+                        str = lines.next();
                     }
                 } else {
-                    str = r.readLine();
+                    str = lines.next();
                 }
                 match(str,"----------------------------");
-                str = r.readLine();
             } else {
-                throw new Exception("Failed parsing dcmd queue, line: " + str);
+                Assert.fail("Failed parsing dcmd queue, line: " + str);
             }
         }
     }
 
-    private static void validateMethodLine(String str)  throws Exception {
+    private static void validateMethodLine(String str) {
         // Skip until package/class name begins. Trim to remove whitespace that
         // may differ.
         String name = str.substring(14).trim();
         int sep = name.indexOf("::");
         if (sep == -1) {
-            throw new Exception("Failed dcmd queue, didn't find separator :: in: " + name);
+            Assert.fail("Failed dcmd queue, didn't find separator :: in: " + name);
         }
         try {
             Class.forName(name.substring(0, sep));
         } catch (ClassNotFoundException e) {
-            throw new Exception("Failed dcmd queue, Class for name: " + str);
+            Assert.fail("Failed dcmd queue, Class for name: " + str);
         }
     }
 
-    public static void match(String line, String str) throws Exception {
+    public static void match(String line, String str) {
         if (!line.equals(str)) {
-            throw new Exception("String equals: " + line + ", " + str);
+            Assert.fail("String equals: " + line + ", " + str);
         }
+    }
+
+    @Test
+    public void jmx() {
+        run(new JMXExecutor());
     }
 }
