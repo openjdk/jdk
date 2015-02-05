@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.script.ScriptContext;
@@ -463,8 +464,7 @@ public final class Global extends ScriptObject implements Scope {
             sm.checkPermission(new RuntimePermission(Context.NASHORN_CREATE_GLOBAL));
         }
 
-        // null check on context
-        context.getClass();
+        Objects.requireNonNull(context);
 
         return $nasgenmap$;
     }
@@ -488,7 +488,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static Global instance() {
         final Global global = Context.getGlobal();
-        global.getClass(); // null check
+        Objects.requireNonNull(global);
         return global;
     }
 
