@@ -572,7 +572,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     # avoid bundling msvcpNNN.dll. Doesn't work with newer versions of visual
     # studio.
     if test "x$TOOLCHAIN_VERSION" = "x2010"; then
-      COMMON_CXXFLAGS_JDK="$COMMON_CXXFLAGS_JDK \
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
           -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
     fi
   fi
