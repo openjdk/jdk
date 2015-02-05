@@ -6286,7 +6286,7 @@ instruct bytes_reverse_short(iRegINoSp dst, iRegIorL2I src) %{
 // ============================================================================
 // Zero Count Instructions
 
-instruct countLeadingZerosI(iRegI dst, iRegI src) %{
+instruct countLeadingZerosI(iRegINoSp dst, iRegI src) %{
   match(Set dst (CountLeadingZerosI src));
 
   ins_cost(INSN_COST);
@@ -6298,7 +6298,7 @@ instruct countLeadingZerosI(iRegI dst, iRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countLeadingZerosL(iRegI dst, iRegL src) %{
+instruct countLeadingZerosL(iRegINoSp dst, iRegL src) %{
   match(Set dst (CountLeadingZerosL src));
 
   ins_cost(INSN_COST);
@@ -6310,7 +6310,7 @@ instruct countLeadingZerosL(iRegI dst, iRegL src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosI(iRegI dst, iRegI src) %{
+instruct countTrailingZerosI(iRegINoSp dst, iRegI src) %{
   match(Set dst (CountTrailingZerosI src));
 
   ins_cost(INSN_COST * 2);
@@ -6324,7 +6324,7 @@ instruct countTrailingZerosI(iRegI dst, iRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosL(iRegI dst, iRegL src) %{
+instruct countTrailingZerosL(iRegINoSp dst, iRegL src) %{
   match(Set dst (CountTrailingZerosL src));
 
   ins_cost(INSN_COST * 2);
@@ -9471,7 +9471,7 @@ instruct extrAddI(iRegINoSp dst, iRegI src1, iRegI src2, immI lshift, immI rshif
 
 // rol expander
 
-instruct rolL_rReg(iRegL dst, iRegL src, iRegI shift, rFlagsReg cr)
+instruct rolL_rReg(iRegLNoSp dst, iRegL src, iRegI shift, rFlagsReg cr)
 %{
   effect(DEF dst, USE src, USE shift);
 
@@ -9487,7 +9487,7 @@ instruct rolL_rReg(iRegL dst, iRegL src, iRegI shift, rFlagsReg cr)
 
 // rol expander
 
-instruct rolI_rReg(iRegI dst, iRegI src, iRegI shift, rFlagsReg cr)
+instruct rolI_rReg(iRegINoSp dst, iRegI src, iRegI shift, rFlagsReg cr)
 %{
   effect(DEF dst, USE src, USE shift);
 
@@ -9501,7 +9501,7 @@ instruct rolI_rReg(iRegI dst, iRegI src, iRegI shift, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_vshift);
 %}
 
-instruct rolL_rReg_Var_C_64(iRegL dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
+instruct rolL_rReg_Var_C_64(iRegLNoSp dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
 %{
   match(Set dst (OrL (LShiftL src shift) (URShiftL src (SubI c_64 shift))));
 
@@ -9510,7 +9510,7 @@ instruct rolL_rReg_Var_C_64(iRegL dst, iRegL src, iRegI shift, immI_64 c_64, rFl
   %}
 %}
 
-instruct rolL_rReg_Var_C0(iRegL dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rolL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
 %{
   match(Set dst (OrL (LShiftL src shift) (URShiftL src (SubI c0 shift))));
 
@@ -9519,7 +9519,7 @@ instruct rolL_rReg_Var_C0(iRegL dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg
   %}
 %}
 
-instruct rolI_rReg_Var_C_32(iRegL dst, iRegL src, iRegI shift, immI_32 c_32, rFlagsReg cr)
+instruct rolI_rReg_Var_C_32(iRegLNoSp dst, iRegL src, iRegI shift, immI_32 c_32, rFlagsReg cr)
 %{
   match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c_32 shift))));
 
@@ -9528,7 +9528,7 @@ instruct rolI_rReg_Var_C_32(iRegL dst, iRegL src, iRegI shift, immI_32 c_32, rFl
   %}
 %}
 
-instruct rolI_rReg_Var_C0(iRegL dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rolI_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
 %{
   match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c0 shift))));
 
@@ -9539,7 +9539,7 @@ instruct rolI_rReg_Var_C0(iRegL dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg
 
 // ror expander
 
-instruct rorL_rReg(iRegL dst, iRegL src, iRegI shift, rFlagsReg cr)
+instruct rorL_rReg(iRegLNoSp dst, iRegL src, iRegI shift, rFlagsReg cr)
 %{
   effect(DEF dst, USE src, USE shift);
 
@@ -9554,7 +9554,7 @@ instruct rorL_rReg(iRegL dst, iRegL src, iRegI shift, rFlagsReg cr)
 
 // ror expander
 
-instruct rorI_rReg(iRegI dst, iRegI src, iRegI shift, rFlagsReg cr)
+instruct rorI_rReg(iRegINoSp dst, iRegI src, iRegI shift, rFlagsReg cr)
 %{
   effect(DEF dst, USE src, USE shift);
 
@@ -9567,7 +9567,7 @@ instruct rorI_rReg(iRegI dst, iRegI src, iRegI shift, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_vshift);
 %}
 
-instruct rorL_rReg_Var_C_64(iRegL dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
+instruct rorL_rReg_Var_C_64(iRegLNoSp dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
 %{
   match(Set dst (OrL (URShiftL src shift) (LShiftL src (SubI c_64 shift))));
 
@@ -9576,7 +9576,7 @@ instruct rorL_rReg_Var_C_64(iRegL dst, iRegL src, iRegI shift, immI_64 c_64, rFl
   %}
 %}
 
-instruct rorL_rReg_Var_C0(iRegL dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rorL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
 %{
   match(Set dst (OrL (URShiftL src shift) (LShiftL src (SubI c0 shift))));
 
@@ -9585,7 +9585,7 @@ instruct rorL_rReg_Var_C0(iRegL dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg
   %}
 %}
 
-instruct rorI_rReg_Var_C_32(iRegL dst, iRegL src, iRegI shift, immI_32 c_32, rFlagsReg cr)
+instruct rorI_rReg_Var_C_32(iRegLNoSp dst, iRegL src, iRegI shift, immI_32 c_32, rFlagsReg cr)
 %{
   match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c_32 shift))));
 
@@ -9594,7 +9594,7 @@ instruct rorI_rReg_Var_C_32(iRegL dst, iRegL src, iRegI shift, immI_32 c_32, rFl
   %}
 %}
 
-instruct rorI_rReg_Var_C0(iRegL dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rorI_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
 %{
   match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c0 shift))));
 
