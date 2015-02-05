@@ -232,12 +232,13 @@ public class JSONParser {
         final long oldLength = arrayData.length();
         final long longIndex = ArrayIndex.toLongIndex(index);
         ArrayData newArrayData = arrayData;
-        if (longIndex > oldLength) {
-            if (arrayData.canDelete(oldLength, longIndex - 1, false)) {
+        if (longIndex >= oldLength) {
+            newArrayData = newArrayData.ensure(longIndex);
+            if (longIndex > oldLength) {
                 newArrayData = newArrayData.delete(oldLength, longIndex - 1);
             }
         }
-        return newArrayData.ensure(longIndex).set(index, value, false);
+        return newArrayData.set(index, value, false);
     }
 
     private static PropertyMap addObjectProperty(final PropertyMap propertyMap, final List<Object> values,
