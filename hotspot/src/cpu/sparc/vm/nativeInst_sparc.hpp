@@ -51,7 +51,6 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
     nop_instruction_size        =    4
   };
 
-  bool is_dtrace_trap();
   bool is_nop()                        { return long_at(0) == nop_instruction(); }
   bool is_call()                       { return is_op(long_at(0), Assembler::call_op); }
   bool is_sethi()                      { return (is_op2(long_at(0), Assembler::sethi_op2)

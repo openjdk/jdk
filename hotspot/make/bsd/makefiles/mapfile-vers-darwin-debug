@@ -60,11 +60,6 @@
                 _JVM_DefineClassWithSourceCond
                 _JVM_DesiredAssertionStatus
                 _JVM_DoPrivileged
-                _JVM_DTraceGetVersion
-                _JVM_DTraceActivate
-                _JVM_DTraceIsProbeEnabled
-                _JVM_DTraceIsSupported
-                _JVM_DTraceDispose
                 _JVM_DumpAllStacks
                 _JVM_DumpThreads
                 _JVM_FillInStackTrace

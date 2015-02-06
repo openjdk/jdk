@@ -905,6 +905,10 @@ class CommandLineFlags {
           "determines which error to provoke. See test_error_handler() "    \
           "in debug.cpp.")                                                  \
                                                                             \
+  notproduct(uintx, TestCrashInErrorHandler, 0,                             \
+          "If > 0, provokes an error inside VM error handler (a secondary " \
+          "crash). see test_error_handler() in debug.cpp.")                 \
+                                                                            \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
@@ -3842,9 +3846,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, RelaxAccessControlCheck, false,                             \
           "Relax the access control checks in the verifier")                \
-                                                                            \
-  diagnostic(bool, PrintDTraceDOF, false,                                   \
-          "Print the DTrace DOF passed to the system for JSDT probes")      \
                                                                             \
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table")                 \
