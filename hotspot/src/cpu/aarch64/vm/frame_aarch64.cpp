@@ -123,7 +123,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     intptr_t* sender_sp = NULL;
+    intptr_t* sender_unextended_sp = NULL;
     address   sender_pc = NULL;
+    intptr_t* saved_fp =  NULL;
 
     if (is_interpreted_frame()) {
       // fp must be safe
@@ -132,7 +134,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
       }
 
       sender_pc = (address) this->fp()[return_addr_offset];
+      // for interpreted frames, the value below is the sender "raw" sp,
+      // which can be different from the sender unextended sp (the sp seen
+      // by the sender) because of current frame local variables
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
+      sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
+      saved_fp = (intptr_t*) this->fp()[link_offset];
 
     } else {
       // must be some sort of compiled/runtime frame
@@ -144,7 +151,10 @@ bool frame::safe_for_sender(JavaThread *thread) {
       }
 
       sender_sp = _unextended_sp + _cb->frame_size();
+      sender_unextended_sp = sender_sp;
       sender_pc = (address) *(sender_sp-1);
+      // Note: frame::sender_sp_offset is only valid for compiled frame
+      saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
     }
 
 
@@ -155,7 +165,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // only if the sender is interpreted/call_stub (c1 too?) are we certain that the saved fp
       // is really a frame pointer.
 
-      intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset);
       bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
 
       if (!saved_fp_safe) {
@@ -164,7 +173,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       // construct the potential sender
 
-      frame sender(sender_sp, saved_fp, sender_pc);
+      frame sender(sender_sp, sender_unextended_sp, saved_fp, sender_pc);
 
       return sender.is_interpreted_frame_valid(thread);
 
@@ -193,7 +202,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // Could be the call_stub
     if (StubRoutines::returns_to_call_stub(sender_pc)) {
-      intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset);
       bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
 
       if (!saved_fp_safe) {
@@ -202,7 +210,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       // construct the potential sender
 
-      frame sender(sender_sp, saved_fp, sender_pc);
+      frame sender(sender_sp, sender_unextended_sp, saved_fp, sender_pc);
 
       // Validate the JavaCallWrapper an entry frame must have
       address jcw = (address)sender.entry_frame_call_wrapper();
@@ -569,8 +577,11 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (!m->is_valid_method()) return false;
 
   // stack frames shouldn't be much larger than max_stack elements
-
-  if (fp() - sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
+  // this test requires the use of unextended_sp which is the sp as seen by
+  // the current frame, and not sp which is the "raw" pc which could point
+  // further because of local variables of the callee method inserted after
+  // method arguments
+  if (fp() - unextended_sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
     return false;
   }
 
