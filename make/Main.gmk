@@ -553,7 +553,8 @@ reconfigure:
         else
 	  @$(ECHO) "Re-running configure using default settings"
         endif
-	@( cd $(OUTPUT_ROOT) && $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
+	@( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
+	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
 
 ALL_TARGETS += reconfigure
 

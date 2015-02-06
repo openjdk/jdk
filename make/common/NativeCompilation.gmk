@@ -469,9 +469,10 @@ define SetupNativeCompilationInner
 
       $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET)))"
-		$(RC) $$($1_RC_FLAGS) $(CC_OUT_OPTION)$$@ $$($1_VERSIONINFO_RESOURCE)
+		$(RC) $$($1_RC_FLAGS) $(SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
+		    $$($1_VERSIONINFO_RESOURCE)
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
-		$(CC) $$($1_RC_FLAGS) -showIncludes -nologo -TC \
+		$(CC) $$($1_RC_FLAGS) $(SYSROOT_CFLAGS) -showIncludes -nologo -TC \
 		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || exit 0
 		($(ECHO) $$($1_RES): \\ \
 		&& $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw) > $$($1_RES_DEP)
