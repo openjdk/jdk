@@ -353,6 +353,26 @@ void VMError::report(outputStream* st) {
                    "Runtime Environment to continue.");
     }
 
+#ifndef PRODUCT
+  // Error handler self tests
+
+  // test secondary error handling. Test it twice, to test that resetting
+  // error handler after a secondary crash works.
+  STEP(13, "(test secondary crash 1)")
+    if (_verbose && TestCrashInErrorHandler != 0) {
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+        TestCrashInErrorHandler);
+      controlled_crash(TestCrashInErrorHandler);
+    }
+
+  STEP(14, "(test secondary crash 2)")
+    if (_verbose && TestCrashInErrorHandler != 0) {
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+        TestCrashInErrorHandler);
+      controlled_crash(TestCrashInErrorHandler);
+    }
+#endif // PRODUCT
+
   STEP(15, "(printing type of error)")
 
      switch(_id) {
@@ -785,6 +805,15 @@ void VMError::report(outputStream* st) {
        os::print_date_and_time(st);
        st->cr();
      }
+
+#ifndef PRODUCT
+  // print a defined marker to show that error handling finished correctly.
+  STEP(290, "(printing end marker)" )
+
+     if (_verbose) {
+       st->print_cr("END.");
+     }
+#endif
 
   END
 
