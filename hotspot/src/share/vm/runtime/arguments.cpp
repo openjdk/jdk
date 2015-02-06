@@ -1126,34 +1126,39 @@ static void no_shared_spaces(const char* message) {
 }
 #endif
 
+// Returns threshold scaled with the value of scale.
+// If scale < 0.0, threshold is returned without scaling.
 intx Arguments::scaled_compile_threshold(intx threshold, double scale) {
-  if (scale == 1.0 || scale <= 0.0) {
+  if (scale == 1.0 || scale < 0.0) {
     return threshold;
   } else {
     return (intx)(threshold * scale);
   }
 }
 
-// Returns freq_log scaled with CompileThresholdScaling
+// Returns freq_log scaled with the value of scale.
+// Returned values are in the range of [0, InvocationCounter::number_of_count_bits + 1].
+// If scale < 0.0, freq_log is returned without scaling.
 intx Arguments::scaled_freq_log(intx freq_log, double scale) {
-  // Check if scaling is necessary or negative value was specified.
+  // Check if scaling is necessary or if negative value was specified.
   if (scale == 1.0 || scale < 0.0) {
     return freq_log;
   }
-
-  // Check value to avoid calculating log2 of 0.
-  if (scale == 0.0) {
-    return freq_log;
+  // Check values to avoid calculating log2 of 0.
+  if (scale == 0.0 || freq_log == 0) {
+    return 0;
   }
-
-  intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
   // Determine the maximum notification frequency value currently supported.
   // The largest mask value that the interpreter/C1 can handle is
   // of length InvocationCounter::number_of_count_bits. Mask values are always
   // one bit shorter then the value of the notification frequency. Set
   // max_freq_bits accordingly.
   intx max_freq_bits = InvocationCounter::number_of_count_bits + 1;
-  if (scaled_freq > nth_bit(max_freq_bits)) {
+  intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
+  if (scaled_freq == 0) {
+    // Return 0 right away to avoid calculating log2 of 0.
+    return 0;
+  } else if (scaled_freq > nth_bit(max_freq_bits)) {
     return max_freq_bits;
   } else {
     return log2_intptr(scaled_freq);
@@ -1204,8 +1209,9 @@ void Arguments::set_tiered_flags() {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
   }
 
-  // Scale tiered compilation thresholds
-  if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
+  // Scale tiered compilation thresholds.
+  // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves compilation thresholds unchanged.
+  if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
     FLAG_SET_ERGO(intx, Tier0InvokeNotifyFreqLog, scaled_freq_log(Tier0InvokeNotifyFreqLog));
     FLAG_SET_ERGO(intx, Tier0BackedgeNotifyFreqLog, scaled_freq_log(Tier0BackedgeNotifyFreqLog));
 
@@ -3921,7 +3927,8 @@ jint Arguments::apply_ergo() {
         "Incompatible compilation policy selected", NULL);
     }
     // Scale CompileThreshold
-    if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
+    // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves CompileThreshold unchanged.
+    if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
       FLAG_SET_ERGO(intx, CompileThreshold, scaled_compile_threshold(CompileThreshold));
     }
   }
