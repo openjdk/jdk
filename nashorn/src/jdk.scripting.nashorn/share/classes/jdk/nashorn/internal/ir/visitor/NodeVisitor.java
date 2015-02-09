@@ -43,6 +43,7 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
+import jdk.nashorn.internal.ir.JumpToInlinedFinally;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
@@ -470,6 +471,26 @@ public abstract class NodeVisitor<T extends LexicalContext> {
      */
     public Node leaveIndexNode(final IndexNode indexNode) {
         return leaveDefault(indexNode);
+    }
+
+    /**
+     * Callback for entering a JumpToInlinedFinally
+     *
+     * @param  jumpToInlinedFinally the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
+     */
+    public boolean enterJumpToInlinedFinally(final JumpToInlinedFinally jumpToInlinedFinally) {
+        return enterDefault(jumpToInlinedFinally);
+    }
+
+    /**
+     * Callback for leaving a JumpToInlinedFinally
+     *
+     * @param  jumpToInlinedFinally the node
+     * @return processed node, which will replace the original one, or the original node
+     */
+    public Node leaveJumpToInlinedFinally(final JumpToInlinedFinally jumpToInlinedFinally) {
+        return leaveDefault(jumpToInlinedFinally);
     }
 
     /**

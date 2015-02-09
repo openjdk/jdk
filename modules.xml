@@ -108,6 +108,9 @@
       <name>java.security</name>
     </export>
     <export>
+      <name>java.security.acl</name>
+    </export>
+    <export>
       <name>java.security.cert</name>
     </export>
     <export>
@@ -446,7 +449,6 @@
     <depend re-exports="true">java.management</depend>
     <depend re-exports="true">java.naming</depend>
     <depend re-exports="true">java.prefs</depend>
-    <depend re-exports="true">java.security.acl</depend>
     <depend re-exports="true">java.security.jgss</depend>
     <depend re-exports="true">java.security.sasl</depend>
     <depend re-exports="true">java.sql.rowset</depend>
@@ -889,13 +891,6 @@
     <depend re-exports="true">java.transaction</depend>
     <depend re-exports="true">java.xml.bind</depend>
     <depend re-exports="true">java.xml.ws</depend>
-  </module>
-  <module>
-    <name>java.security.acl</name>
-    <depend>java.base</depend>
-    <export>
-      <name>java.security.acl</name>
-    </export>
   </module>
   <module>
     <name>java.security.jgss</name>

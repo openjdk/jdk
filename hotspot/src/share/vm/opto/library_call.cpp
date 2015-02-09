@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1351,7 +1351,6 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   Node* cache            = __ ConI(cache_i);
   Node* md2              = __ ConI(md2_i);
   Node* lastChar         = __ ConI(target_array->char_at(target_length - 1));
-  Node* targetCount      = __ ConI(target_length);
   Node* targetCountLess1 = __ ConI(target_length - 1);
   Node* targetOffset     = __ ConI(targetOffset_i);
   Node* sourceEnd        = __ SubI(__ AddI(sourceOffset, sourceCount), targetCountLess1);
@@ -1408,8 +1407,6 @@ bool LibraryCallKit::inline_string_indexOf() {
   Node* arg      = argument(1);
 
   Node* result;
-  // Disable the use of pcmpestri until it can be guaranteed that
-  // the load doesn't cross into the uncommited space.
   if (Matcher::has_match_rule(Op_StrIndexOf) &&
       UseSSE42Intrinsics) {
     // Generate SSE4.2 version of indexOf
@@ -1420,9 +1417,6 @@ bool LibraryCallKit::inline_string_indexOf() {
     if (stopped()) {
       return true;
     }
-
-    ciInstanceKlass* str_klass = env()->String_klass();
-    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(str_klass);
 
     // Make the merge point
     RegionNode* result_rgn = new RegionNode(4);

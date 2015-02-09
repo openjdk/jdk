@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6925932 7006126 8037945
+ * @bug 4313887 6838333 6925932 7006126 8037945 8072495
  * @summary Unit test for java.nio.file.Path path operations
  */
 
@@ -516,7 +516,9 @@ public class PathOps {
             .relativize("\\\\server\\share\\bar", "..\\bar")
             .relativize("\\\\server\\share\\foo", "");
         test("")
-            .relativize("", "");
+            .relativize("", "")
+            .relativize("a", "a")
+            .relativize("a\\b\\c", "a\\b\\c");
 
         // normalize
         test("C:\\")

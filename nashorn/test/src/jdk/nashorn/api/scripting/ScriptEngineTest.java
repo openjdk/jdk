@@ -721,6 +721,15 @@ public class ScriptEngineTest {
         assertTrue(invoked.get());
     }
 
+    @Test
+    public void testLengthOnArrayLikeObjects() throws Exception {
+        final ScriptEngine e = new ScriptEngineManager().getEngineByName("nashorn");
+        final Object val = e.eval("var arr = { length: 1, 0: 1}; arr.length");
+
+        assertTrue(Number.class.isAssignableFrom(val.getClass()));
+        assertTrue(((Number)val).intValue() == 1);
+    }
+
     // @bug JDK-8068603: NashornScriptEngine.put/get() impls don't conform to NPE, IAE spec assertions
     @Test
     public void illegalBindingsValuesTest() throws Exception {

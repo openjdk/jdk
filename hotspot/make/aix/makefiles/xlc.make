@@ -74,6 +74,12 @@ CFLAGS += -D_REENTRANT
 # no xlc counterpart for -fcheck-new
 # CFLAGS += -fcheck-new
 
+# We need to define this on the command line if we want to use the the
+# predefined format specifiers from "inttypes.h". Otherwise system headrs
+# can indirectly include inttypes.h before we define __STDC_FORMAT_MACROS
+# in globalDefinitions.hpp
+CFLAGS += -D__STDC_FORMAT_MACROS
+
 ARCHFLAG = -q64
 
 CFLAGS     += $(ARCHFLAG)
