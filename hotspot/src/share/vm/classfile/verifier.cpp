@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1546,10 +1546,15 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = true; break;
         case Bytecodes::_getstatic :
         case Bytecodes::_putstatic :
+          // pass TRUE, operand can be an array type for getstatic/putstatic.
+          verify_field_instructions(
+            &bcs, &current_frame, cp, true, CHECK_VERIFY(this));
+          no_control_flow = false; break;
         case Bytecodes::_getfield :
         case Bytecodes::_putfield :
+          // pass FALSE, operand can't be an array type for getfield/putfield.
           verify_field_instructions(
-            &bcs, &current_frame, cp, CHECK_VERIFY(this));
+            &bcs, &current_frame, cp, false, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_invokevirtual :
         case Bytecodes::_invokespecial :
@@ -1945,7 +1950,7 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
   InstanceKlass* target_instance = InstanceKlass::cast(target_class);
   fieldDescriptor fd;
   if (is_method) {
-    Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::normal);
+    Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::find_overpass);
     if (m != NULL && m->is_protected()) {
       if (!this_class->is_same_class_package(m->method_holder())) {
         return true;
@@ -2107,6 +2112,7 @@ bool ClassVerifier::name_in_supers(
 void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
                                               StackMapFrame* current_frame,
                                               constantPoolHandle cp,
+                                              bool allow_arrays,
                                               TRAPS) {
   u2 index = bcs->get_index_u2();
   verify_cp_type(bcs->bci(), index, cp,
@@ -2126,8 +2132,8 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   // Get referenced class type
   VerificationType ref_class_type = cp_ref_index_to_type(
     index, cp, CHECK_VERIFY(this));
-  if (!ref_class_type.is_object()) {
-    /* Unreachable?  Class file parser verifies Fieldref contents */
+  if (!ref_class_type.is_object() &&
+    (!allow_arrays || !ref_class_type.is_array())) {
     verify_error(ErrorContext::bad_type(bcs->bci(),
         TypeOrigin::cp(index, ref_class_type)),
         "Expecting reference to class in class %s at constant pool index %d",
@@ -2490,7 +2496,7 @@ void ClassVerifier::verify_invoke_init(
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
         cp->signature_ref_at(bcs->get_index_u2()),
-        Klass::normal);
+        Klass::find_overpass);
       // Do nothing if method is not found.  Let resolution detect the error.
       if (m != NULL) {
         instanceKlassHandle mh(THREAD, m->method_holder());

@@ -257,28 +257,28 @@ void SimpleThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel l
 // Call and loop predicates determine whether a transition to a higher
 // compilation level should be performed (pointers to predicate functions
 // are passed to common() transition function).
-bool SimpleThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level) {
+bool SimpleThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
   case CompLevel_none:
   case CompLevel_limited_profile: {
-    return loop_predicate_helper<CompLevel_none>(i, b, 1.0);
+    return loop_predicate_helper<CompLevel_none>(i, b, 1.0, method);
   }
   case CompLevel_full_profile: {
-    return loop_predicate_helper<CompLevel_full_profile>(i, b, 1.0);
+    return loop_predicate_helper<CompLevel_full_profile>(i, b, 1.0, method);
   }
   default:
     return true;
   }
 }
 
-bool SimpleThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level) {
+bool SimpleThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
   case CompLevel_none:
   case CompLevel_limited_profile: {
-    return call_predicate_helper<CompLevel_none>(i, b, 1.0);
+    return call_predicate_helper<CompLevel_none>(i, b, 1.0, method);
   }
   case CompLevel_full_profile: {
-    return call_predicate_helper<CompLevel_full_profile>(i, b, 1.0);
+    return call_predicate_helper<CompLevel_full_profile>(i, b, 1.0, method);
   }
   default:
     return true;
@@ -293,8 +293,8 @@ bool SimpleThresholdPolicy::is_mature(Method* method) {
     int i = mdo->invocation_count();
     int b = mdo->backedge_count();
     double k = ProfileMaturityPercentage / 100.0;
-    return call_predicate_helper<CompLevel_full_profile>(i, b, k) ||
-           loop_predicate_helper<CompLevel_full_profile>(i, b, k);
+    return call_predicate_helper<CompLevel_full_profile>(i, b, k, method) ||
+           loop_predicate_helper<CompLevel_full_profile>(i, b, k, method);
   }
   return false;
 }
@@ -313,7 +313,7 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, Method* method, CompLevel c
       // If we were at full profile level, would we switch to full opt?
       if (common(p, method, CompLevel_full_profile) == CompLevel_full_optimization) {
         next_level = CompLevel_full_optimization;
-      } else if ((this->*p)(i, b, cur_level)) {
+      } else if ((this->*p)(i, b, cur_level, method)) {
         next_level = CompLevel_full_profile;
       }
       break;
@@ -325,7 +325,7 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, Method* method, CompLevel c
           if (mdo->would_profile()) {
             int mdo_i = mdo->invocation_count_delta();
             int mdo_b = mdo->backedge_count_delta();
-            if ((this->*p)(mdo_i, mdo_b, cur_level)) {
+            if ((this->*p)(mdo_i, mdo_b, cur_level, method)) {
               next_level = CompLevel_full_optimization;
             }
           } else {

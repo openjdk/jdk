@@ -267,8 +267,8 @@ ifdef CONCURRENCY
   EXTRA_JTREG_OPTIONS += -concurrency:$(CONCURRENCY)
 endif
 
-# Default JTREG to run (win32 script works for everybody)
-JTREG = $(JT_HOME)/win32/bin/jtreg
+# Default JTREG to run
+JTREG = $(JT_HOME)/bin/jtreg
 # run in agentvm mode
 JTREG_BASIC_OPTIONS += -agentvm
 # Only run automatic tests

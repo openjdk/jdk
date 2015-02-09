@@ -157,7 +157,9 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
             final int newLength = ArrayData.nextSize((int)safeIndex);
             array = Arrays.copyOf(array, newLength);
         }
-        setLength(safeIndex + 1);
+        if (safeIndex >= length()) {
+            setLength(safeIndex + 1);
+        }
         return this;
     }
 
