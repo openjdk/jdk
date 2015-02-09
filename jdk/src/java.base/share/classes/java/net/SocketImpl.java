@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,6 +362,7 @@ public abstract class SocketImpl implements SocketOptions {
     /**
      * Called to set a socket option.
      *
+     * @param <T> The type of the socket option value
      * @param name The socket option
      *
      * @param value The value of the socket option. A value of {@code null}
@@ -397,6 +398,7 @@ public abstract class SocketImpl implements SocketOptions {
     /**
      * Called to get a socket option.
      *
+     * @param <T> The type of the socket option value
      * @param name The socket option
      *
      * @return the value of the named option
