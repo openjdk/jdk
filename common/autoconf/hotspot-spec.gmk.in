@@ -132,6 +132,13 @@ else
   ZIP_DEBUGINFO_FILES:=0
 endif
 
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  # On Windows, the Visual Studio toolchain needs the LIB and INCLUDE
+  # environment variables (in Windows path style).
+  export INCLUDE:=@VS_INCLUDE@
+  export LIB:=@VS_LIB@
+endif
+
 # Sneak this in via the spec.gmk file, since we don't want to mess around too much with the Hotspot make files.
 # This is needed to get the LOG setting to work properly.
 include $(SRC_ROOT)/make/common/MakeBase.gmk

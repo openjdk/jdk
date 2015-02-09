@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ extern char **environ;
   } while((_result == -1) && (errno == EINTR)); \
 } while(0)
 
-/* These numbers must be the same as the Enum in UNIXProcess.java
+/* These numbers must be the same as the Enum in ProcessImpl.java
  * Must be a better way of doing this.
  */
 #define MODE_FORK 1

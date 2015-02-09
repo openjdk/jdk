@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -982,6 +982,14 @@ jlong os::javaTimeMillis() {
   int status = gettimeofday(&time, NULL);
   assert(status != -1, "bsd error");
   return jlong(time.tv_sec) * 1000  +  jlong(time.tv_usec / 1000);
+}
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  timeval time;
+  int status = gettimeofday(&time, NULL);
+  assert(status != -1, "bsd error");
+  seconds = jlong(time.tv_sec);
+  nanos = jlong(time.tv_usec) * 1000;
 }
 
 #ifndef __APPLE__

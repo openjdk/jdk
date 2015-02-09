@@ -29,6 +29,7 @@
 
 import java.util.NoSuchElementException;
 import java.util.OptionalDouble;
+import java.util.stream.DoubleStream;
 
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
@@ -107,6 +108,26 @@ public class BasicDouble {
         assertEquals(1.0, present.orElseGet(()-> 3.0));
         assertEquals(1.0, present.<RuntimeException>orElseThrow(null));
         assertEquals(1.0, present.<RuntimeException>orElseThrow(ObscureException::new));
+    }
+
+    @Test(groups = "unit")
+    public void testStream() {
+        {
+            DoubleStream s = OptionalDouble.empty().stream();
+            assertFalse(s.isParallel());
+
+            double[] es = s.toArray();
+            assertEquals(es.length, 0);
+        }
+
+        {
+            DoubleStream s = OptionalDouble.of(42.0).stream();
+            assertFalse(s.isParallel());
+
+            double[] es = s.toArray();
+            assertEquals(es.length, 1);
+            assertEquals(es[0], 42.0);
+        }
     }
 
     private static class ObscureException extends RuntimeException {

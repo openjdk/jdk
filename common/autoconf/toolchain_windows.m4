@@ -332,9 +332,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_MSG_ERROR([Your VC command prompt seems broken, INCLUDE and/or LIB is missing.])
     else
       AC_MSG_RESULT([ok])
-      # Remove any trailing "\" and " " from the variables.
-      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED 's/\\\\* *$//'`
-      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\* *$//'`
+      # Remove any trailing "\" ";" and " " from the variables.
+      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED -e 's/\\\\*;* *$//'`
+      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\*;* *$//'`
       VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
       WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
       WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
@@ -345,6 +345,26 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_SUBST(VS_PATH)
       AC_SUBST(VS_INCLUDE)
       AC_SUBST(VS_LIB)
+
+      # Convert VS_INCLUDE into SYSROOT_CFLAGS
+      OLDIFS="$IFS"
+      IFS=";"
+      for i in $VS_INCLUDE; do
+        ipath=$i
+	IFS="$OLDIFS"
+        BASIC_FIXUP_PATH([ipath])
+	IFS=";"
+      	SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+      done
+      # Convert VS_LIB into SYSROOT_LDFLAGS
+      for i in $VS_LIB; do
+        libpath=$i
+	IFS="$OLDIFS"
+        BASIC_FIXUP_PATH([libpath])
+	IFS=";"
+      	SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+      done
+      IFS="$OLDIFS"
     fi
   else
     AC_MSG_RESULT([not found])

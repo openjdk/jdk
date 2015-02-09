@@ -84,7 +84,7 @@ class CompileQueue;
  *   invocation and backedge notifications. Basically every n-th invocation or backedge a mutator thread
  *   makes a call into the runtime.
  *
- * - Tier?CompileThreshold, Tier?BackEdgeThreshold, Tier?MinInvocationThreshold control
+ * - Tier?InvocationThreshold, Tier?CompileThreshold, Tier?BackEdgeThreshold, Tier?MinInvocationThreshold control
  *   compilation thresholds.
  *   Level 2 thresholds are not used and are provided for option-compatibility and potential future use.
  *   Other thresholds work as follows:
@@ -100,7 +100,9 @@ class CompileQueue;
  *   The same predicate is used to control the transition from level 3 to level 4 (C2). It should be
  *   noted though that the thresholds are relative. Moreover i and b for the 0->3 transition come
  *   from Method* and for 3->4 transition they come from MDO (since profiled invocations are
- *   counted separately).
+ *   counted separately). Finally, if a method does not contain anything worth profiling, a transition
+ *   from level 3 to level 4 occurs without considering thresholds (e.g., with fewer invocations than
+ *   what is specified by Tier4InvocationThreshold).
  *
  *   OSR transitions are controlled simply with b > TierXBackEdgeThreshold * s predicates.
  *
@@ -164,9 +166,9 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
   // Call and loop predicates determine whether a transition to a higher compilation
   // level should be performed (pointers to predicate functions are passed to common().
   // Predicates also take compiler load into account.
-  typedef bool (AdvancedThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level);
-  bool call_predicate(int i, int b, CompLevel cur_level);
-  bool loop_predicate(int i, int b, CompLevel cur_level);
+  typedef bool (AdvancedThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level, Method* method);
+  bool call_predicate(int i, int b, CompLevel cur_level, Method* method);
+  bool loop_predicate(int i, int b, CompLevel cur_level, Method* method);
   // Common transition function. Given a predicate determines if a method should transition to another level.
   CompLevel common(Predicate p, Method* method, CompLevel cur_level, bool disable_feedback = false);
   // Transition functions.

@@ -29,6 +29,7 @@
 
 import java.util.NoSuchElementException;
 import java.util.OptionalInt;
+import java.util.stream.IntStream;
 
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
@@ -53,36 +54,36 @@ public class BasicInt {
         assertEquals(2, empty.orElseGet(()-> 2));
     }
 
-        @Test(expectedExceptions=NoSuchElementException.class)
-        public void testEmptyGet() {
-            OptionalInt empty = OptionalInt.empty();
+    @Test(expectedExceptions=NoSuchElementException.class)
+    public void testEmptyGet() {
+        OptionalInt empty = OptionalInt.empty();
 
-            int got = empty.getAsInt();
-        }
+        int got = empty.getAsInt();
+    }
 
-        @Test(expectedExceptions=NullPointerException.class)
-        public void testEmptyOrElseGetNull() {
-            OptionalInt empty = OptionalInt.empty();
+    @Test(expectedExceptions=NullPointerException.class)
+    public void testEmptyOrElseGetNull() {
+        OptionalInt empty = OptionalInt.empty();
 
-            int got = empty.orElseGet(null);
-        }
+        int got = empty.orElseGet(null);
+    }
 
-        @Test(expectedExceptions=NullPointerException.class)
-        public void testEmptyOrElseThrowNull() throws Throwable {
-            OptionalInt empty = OptionalInt.empty();
+    @Test(expectedExceptions=NullPointerException.class)
+    public void testEmptyOrElseThrowNull() throws Throwable {
+        OptionalInt empty = OptionalInt.empty();
 
-            int got = empty.orElseThrow(null);
-        }
+        int got = empty.orElseThrow(null);
+    }
 
-        @Test(expectedExceptions=ObscureException.class)
-        public void testEmptyOrElseThrow() throws Exception {
-            OptionalInt empty = OptionalInt.empty();
+    @Test(expectedExceptions=ObscureException.class)
+    public void testEmptyOrElseThrow() throws Exception {
+        OptionalInt empty = OptionalInt.empty();
 
-            int got = empty.orElseThrow(ObscureException::new);
-        }
+        int got = empty.orElseThrow(ObscureException::new);
+    }
 
-        @Test(groups = "unit")
-        public void testPresent() {
+    @Test(groups = "unit")
+    public void testPresent() {
         OptionalInt empty = OptionalInt.empty();
         OptionalInt present = OptionalInt.of(1);
 
@@ -107,6 +108,26 @@ public class BasicInt {
         assertEquals(1, present.orElseGet(()-> 3));
         assertEquals(1, present.<RuntimeException>orElseThrow(null));
         assertEquals(1, present.<RuntimeException>orElseThrow(ObscureException::new));
+    }
+
+    @Test(groups = "unit")
+    public void testStream() {
+        {
+            IntStream s = OptionalInt.empty().stream();
+            assertFalse(s.isParallel());
+
+            int[] es = s.toArray();
+            assertEquals(es.length, 0);
+        }
+
+        {
+            IntStream s = OptionalInt.of(42).stream();
+            assertFalse(s.isParallel());
+
+            int[] es = OptionalInt.of(42).stream().toArray();
+            assertEquals(es.length, 1);
+            assertEquals(es[0], 42);
+        }
     }
 
     private static class ObscureException extends RuntimeException {
