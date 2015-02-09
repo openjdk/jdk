@@ -1501,7 +1501,7 @@ class CommandLineFlags {
                                                                             \
   product(bool, ExplicitGCInvokesConcurrent, false,                         \
           "A System.gc() request invokes a concurrent collection; "         \
-          "(effective only when UseConcMarkSweepGC)")                       \
+          "(effective only when using concurrent collectors)")              \
                                                                             \
   product(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false,        \
           "A System.gc() request invokes a concurrent collection and "      \
