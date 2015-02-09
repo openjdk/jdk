@@ -2477,7 +2477,7 @@ class CommandLineFlags {
           "Number of compiler threads to run")                              \
                                                                             \
   product(intx, CompilationPolicyChoice, 0,                                 \
-          "which compilation policy (0/1)")                                 \
+          "which compilation policy (0-3)")                                 \
                                                                             \
   develop(bool, UseStackBanging, true,                                      \
           "use stack banging for stack overflow checks (required for "      \
@@ -3528,7 +3528,16 @@ class CommandLineFlags {
                                                                             \
   product(double, CompileThresholdScaling, 1.0,                             \
           "Factor to control when first compilation happens "               \
-          "(both with and without tiered compilation)")                     \
+          "(both with and without tiered compilation): "                    \
+          "values greater than 1.0 delay counter overflow, "                \
+          "values between 0 and 1.0 rush counter overflow, "                \
+          "value of 1.0 leave compilation thresholds unchanged "            \
+          "value of 0.0 is equivalent to -Xint. "                           \
+          ""                                                                \
+          "Flag can be set as per-method option. "                          \
+          "If a value is specified for a method, compilation thresholds "   \
+          "for that method are scaled by both the value of the global flag "\
+          "and the value of the per-method flag.")                          \
                                                                             \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \

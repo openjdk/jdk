@@ -25,19 +25,11 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.runtime.Source.sourceFor;
-
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
-import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ObjectNode;
-import jdk.nashorn.internal.ir.PropertyNode;
-import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.JSONParser;
-import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
@@ -78,20 +70,18 @@ public final class JSONFunctions {
      * @return Object representation of JSON text given
      */
     public static Object parse(final Object text, final Object reviver) {
-        final String     str     = JSType.toString(text);
-        final JSONParser parser  = new JSONParser(sourceFor("<json>", str), new Context.ThrowErrorManager());
-
-        Node node;
+        final String     str    = JSType.toString(text);
+        final Global     global = Context.getGlobal();
+        final JSONParser parser = new JSONParser(str, global);
+        final Object     value;
 
         try {
-            node = parser.parse();
+            value = parser.parse();
         } catch (final ParserException e) {
             throw ECMAErrors.syntaxError(e, "invalid.json", e.getMessage());
         }
 
-        final Global global = Context.getGlobal();
-        final Object unfiltered = convertNode(global, node);
-        return applyReviver(global, unfiltered, reviver);
+        return applyReviver(global, value, reviver);
     }
 
     // -- Internals only below this point
@@ -137,61 +127,6 @@ public final class JSONFunctions {
         }
     }
 
-    // Converts IR node to runtime value
-    private static Object convertNode(final Global global, final Node node) {
-        if (node instanceof LiteralNode) {
-            // check for array literal
-            if (node.tokenType() == TokenType.ARRAY) {
-                assert node instanceof LiteralNode.ArrayLiteralNode;
-                final Node[] elements = ((LiteralNode.ArrayLiteralNode)node).getValue();
-
-                // NOTE: We cannot use LiteralNode.isNumericArray() here as that
-                // method uses symbols of element nodes. Since we don't do lower
-                // pass, there won't be any symbols!
-                if (isNumericArray(elements)) {
-                    final double[] values = new double[elements.length];
-                    int   index = 0;
-
-                    for (final Node elem : elements) {
-                        values[index++] = JSType.toNumber(convertNode(global, elem));
-                    }
-                    return global.wrapAsObject(values);
-                }
-
-                final Object[] values = new Object[elements.length];
-                int   index = 0;
-
-                for (final Node elem : elements) {
-                    values[index++] = convertNode(global, elem);
-                }
-
-                return global.wrapAsObject(values);
-            }
-
-            return ((LiteralNode<?>)node).getValue();
-
-        } else if (node instanceof ObjectNode) {
-            final ObjectNode   objNode  = (ObjectNode) node;
-            final ScriptObject object   = global.newObject();
-
-            for (final PropertyNode pNode: objNode.getElements()) {
-                final Node         valueNode = pNode.getValue();
-
-                final String name = pNode.getKeyName();
-                final Object value = convertNode(global, valueNode);
-                setPropertyValue(object, name, value);
-            }
-
-            return object;
-        } else if (node instanceof UnaryNode) {
-            // UnaryNode used only to represent negative number JSON value
-            final UnaryNode unaryNode = (UnaryNode)node;
-            return -((LiteralNode<?>)unaryNode.getExpression()).getNumber();
-        } else {
-            return null;
-        }
-    }
-
     // add a new property if does not exist already, or else set old property
     private static void setPropertyValue(final ScriptObject sobj, final String name, final Object value) {
         final int index = ArrayIndex.getArrayIndex(name);
@@ -207,14 +142,4 @@ public final class JSONFunctions {
         }
     }
 
-    // does the given IR node represent a numeric array?
-    private static boolean isNumericArray(final Node[] values) {
-        for (final Node node : values) {
-            if (node instanceof LiteralNode && ((LiteralNode<?>)node).getValue() instanceof Number) {
-                continue;
-            }
-            return false;
-        }
-        return true;
-    }
 }
