@@ -4740,6 +4740,8 @@ bool LibraryCallKit::inline_arraycopy() {
   // tightly_coupled_allocation()
   AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
 
+  ciMethod* trap_method = method();
+  int trap_bci = bci();
   SafePointNode* sfpt = NULL;
   if (alloc != NULL) {
     // The JVM state for uncommon traps between the allocation and
@@ -4764,6 +4766,9 @@ bool LibraryCallKit::inline_arraycopy() {
 
     sfpt->set_i_o(map()->i_o());
     sfpt->set_memory(map()->memory());
+
+    trap_method = jvms->method();
+    trap_bci = jvms->bci();
   }
 
   bool validated = false;
@@ -4868,7 +4873,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  if (!too_many_traps(Deoptimization::Reason_intrinsic) && !src->is_top() && !dest->is_top()) {
+  if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) && !src->is_top() && !dest->is_top()) {
     // validate arguments: enables transformation the ArrayCopyNode
     validated = true;
 

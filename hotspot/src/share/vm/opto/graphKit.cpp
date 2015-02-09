@@ -2819,8 +2819,12 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
   if (type != NULL) {
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
     Deoptimization::DeoptReason null_reason = Deoptimization::Reason_speculate_null_check;
+    ciMethod* trap_method = (sfpt == NULL) ? method() : sfpt->jvms()->method();
+    int trap_bci = (sfpt == NULL) ? bci() : sfpt->jvms()->bci();
+
     if (!too_many_traps(null_reason) && !too_many_recompiles(null_reason) &&
-        !too_many_traps(class_reason) && !too_many_recompiles(class_reason)) {
+        !C->too_many_traps(trap_method, trap_bci, class_reason) &&
+        !C->too_many_recompiles(trap_method, trap_bci, class_reason)) {
       Node* not_null_obj = NULL;
       // not_null is true if we know the object is not null and
       // there's no need for a null check

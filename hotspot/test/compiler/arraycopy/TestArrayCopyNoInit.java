@@ -29,8 +29,6 @@
  *
  */
 
-import java.lang.invoke.*;
-
 public class TestArrayCopyNoInit {
 
     static int[] m1(int[] src) {
@@ -134,7 +132,7 @@ public class TestArrayCopyNoInit {
         return dest;
     }
 
-    static public void main(String[] args) throws Throwable {
+    static public void main(String[] args) {
         boolean success = true;
         int[] src = new int[10];
         TestArrayCopyNoInit[] src2 = new TestArrayCopyNoInit[10];
