@@ -1920,8 +1920,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(CompareAndSwapINode, LoadStoreNode)                     \
   declare_c2_type(CompareAndSwapPNode, LoadStoreNode)                     \
   declare_c2_type(CompareAndSwapNNode, LoadStoreNode)                     \
-  declare_c2_type(PrefetchReadNode, Node)                                 \
-  declare_c2_type(PrefetchWriteNode, Node)                                \
   declare_c2_type(MulNode, Node)                                          \
   declare_c2_type(MulINode, MulNode)                                      \
   declare_c2_type(MulLNode, MulNode)                                      \

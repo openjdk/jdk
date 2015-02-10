@@ -232,7 +232,6 @@ class LibraryCallKit : public GraphKit {
   // Unsafe.getObject should be recorded in an SATB log buffer.
   void insert_pre_barrier(Node* base_oop, Node* offset, Node* pre_val, bool need_mem_bar);
   bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, bool is_volatile);
-  bool inline_unsafe_prefetch(bool is_native_ptr, bool is_store, bool is_static);
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
   bool inline_unsafe_copyMemory();
@@ -795,11 +794,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putLongVolatile:          return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     is_volatile);
   case vmIntrinsics::_putFloatVolatile:         return inline_unsafe_access(!is_native_ptr,  is_store, T_FLOAT,    is_volatile);
   case vmIntrinsics::_putDoubleVolatile:        return inline_unsafe_access(!is_native_ptr,  is_store, T_DOUBLE,   is_volatile);
-
-  case vmIntrinsics::_prefetchRead:             return inline_unsafe_prefetch(!is_native_ptr, !is_store, !is_static);
-  case vmIntrinsics::_prefetchWrite:            return inline_unsafe_prefetch(!is_native_ptr,  is_store, !is_static);
-  case vmIntrinsics::_prefetchReadStatic:       return inline_unsafe_prefetch(!is_native_ptr, !is_store,  is_static);
-  case vmIntrinsics::_prefetchWriteStatic:      return inline_unsafe_prefetch(!is_native_ptr,  is_store,  is_static);
 
   case vmIntrinsics::_compareAndSwapObject:     return inline_unsafe_load_store(T_OBJECT, LS_cmpxchg);
   case vmIntrinsics::_compareAndSwapInt:        return inline_unsafe_load_store(T_INT,    LS_cmpxchg);
@@ -2506,7 +2500,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
 
   Node* receiver = argument(0);  // type: oop
 
-  // Build address expression.  See the code in inline_unsafe_prefetch.
+  // Build address expression.
   Node* adr;
   Node* heap_base_oop = top();
   Node* offset = top();
@@ -2691,73 +2685,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   }
 
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
-
-  return true;
-}
-
-//----------------------------inline_unsafe_prefetch----------------------------
-
-bool LibraryCallKit::inline_unsafe_prefetch(bool is_native_ptr, bool is_store, bool is_static) {
-#ifndef PRODUCT
-  {
-    ResourceMark rm;
-    // Check the signatures.
-    ciSignature* sig = callee()->signature();
-#ifdef ASSERT
-    // Object getObject(Object base, int/long offset), etc.
-    BasicType rtype = sig->return_type()->basic_type();
-    if (!is_native_ptr) {
-      assert(sig->count() == 2, "oop prefetch has 2 arguments");
-      assert(sig->type_at(0)->basic_type() == T_OBJECT, "prefetch base is object");
-      assert(sig->type_at(1)->basic_type() == T_LONG, "prefetcha offset is correct");
-    } else {
-      assert(sig->count() == 1, "native prefetch has 1 argument");
-      assert(sig->type_at(0)->basic_type() == T_LONG, "prefetch base is long");
-    }
-#endif // ASSERT
-  }
-#endif // !PRODUCT
-
-  C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
-
-  const int idx = is_static ? 0 : 1;
-  if (!is_static) {
-    null_check_receiver();
-    if (stopped()) {
-      return true;
-    }
-  }
-
-  // Build address expression.  See the code in inline_unsafe_access.
-  Node *adr;
-  if (!is_native_ptr) {
-    // The base is either a Java object or a value produced by Unsafe.staticFieldBase
-    Node* base   = argument(idx + 0);  // type: oop
-    // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-    Node* offset = argument(idx + 1);  // type: long
-    // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
-    // to be plain byte offsets, which are also the same as those accepted
-    // by oopDesc::field_base.
-    assert(Unsafe_field_offset_to_byte_offset(11) == 11,
-           "fieldOffset must be byte-scaled");
-    // 32-bit machines ignore the high half!
-    offset = ConvL2X(offset);
-    adr = make_unsafe_address(base, offset);
-  } else {
-    Node* ptr = argument(idx + 0);  // type: long
-    ptr = ConvL2X(ptr);  // adjust Java long to machine word
-    adr = make_unsafe_address(NULL, ptr);
-  }
-
-  // Generate the read or write prefetch
-  Node *prefetch;
-  if (is_store) {
-    prefetch = new PrefetchWriteNode(i_o(), adr);
-  } else {
-    prefetch = new PrefetchReadNode(i_o(), adr);
-  }
-  prefetch->init_req(0, control());
-  set_i_o(_gvn.transform(prefetch));
 
   return true;
 }
