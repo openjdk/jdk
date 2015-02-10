@@ -87,12 +87,12 @@ define add_native_source
 
   ifneq (,$$(filter %.c,$2))
     # Compile as a C file
-    $1_$2_FLAGS=$4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.m,$2))
     # Compile as a objective-c file
-    $1_$2_FLAGS=-x objective-c $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=-x objective-c $(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$8
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.s,$2))
@@ -102,7 +102,7 @@ define add_native_source
     $1_$2_DEP_FLAG:=
   else ifneq (,$$(filter %.cpp,$2)$$(filter %.mm,$2))
     # Compile as a C++ file
-    $1_$2_FLAGS=$6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$7
     $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
   else
