@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,21 +54,30 @@ class HeapRegion;
 // code, increasing throughput.
 
 class G1HotCardCache: public CHeapObj<mtGC> {
-  G1CollectedHeap*   _g1h;
+
+  G1CollectedHeap*  _g1h;
+
+  bool              _use_cache;
+
+  G1CardCounts      _card_counts;
 
   // The card cache table
-  jbyte**      _hot_cache;
+  jbyte**           _hot_cache;
 
-  int          _hot_cache_size;
-  int          _n_hot;
-  int          _hot_cache_idx;
+  size_t            _hot_cache_size;
 
-  int          _hot_cache_par_chunk_size;
-  volatile int _hot_cache_par_claimed_idx;
+  int               _hot_cache_par_chunk_size;
 
-  bool         _use_cache;
+  // Avoids false sharing when concurrently updating _hot_cache_idx or
+  // _hot_cache_par_claimed_idx. These are never updated at the same time
+  // thus it's not necessary to separate them as well
+  char _pad_before[DEFAULT_CACHE_LINE_SIZE];
 
-  G1CardCounts _card_counts;
+  volatile size_t _hot_cache_idx;
+
+  volatile size_t _hot_cache_par_claimed_idx;
+
+  char _pad_after[DEFAULT_CACHE_LINE_SIZE];
 
   // The number of cached cards a thread claims when flushing the cache
   static const int ClaimChunkSize = 32;
@@ -113,16 +122,25 @@ class G1HotCardCache: public CHeapObj<mtGC> {
   void reset_hot_cache() {
     assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
     assert(Thread::current()->is_VM_thread(), "Current thread should be the VMthread");
-    _hot_cache_idx = 0; _n_hot = 0;
+    if (default_use_cache()) {
+        reset_hot_cache_internal();
+    }
   }
-
-  bool hot_cache_is_empty() { return _n_hot == 0; }
 
   // Zeros the values in the card counts table for entire committed heap
   void reset_card_counts();
 
   // Zeros the values in the card counts table for the given region
   void reset_card_counts(HeapRegion* hr);
+
+ private:
+  void reset_hot_cache_internal() {
+    assert(_hot_cache != NULL, "Logic");
+    _hot_cache_idx = 0;
+    for (size_t i = 0; i < _hot_cache_size; i++) {
+      _hot_cache[i] = NULL;
+    }
+  }
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1HOTCARDCACHE_HPP
