@@ -6365,58 +6365,6 @@ instruct loadConD_Ex(regD dst, immD src) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-instruct prefetchr(indirectMemory mem, iRegLsrc src) %{
-  match(PrefetchRead (AddP mem src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 0, $src \t// Prefetch read-many" %}
-  size(4);
-  ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbt);
-    __ dcbt($src$$Register, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetchr_no_offset(indirectMemory mem) %{
-  match(PrefetchRead mem);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem" %}
-  size(4);
-  ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbt);
-    __ dcbt($mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetchw(indirectMemory mem, iRegLsrc src) %{
-  match(PrefetchWrite (AddP mem src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many (and read)" %}
-  size(4);
-  ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbtst);
-    __ dcbtst($src$$Register, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetchw_no_offset(indirectMemory mem) %{
-  match(PrefetchWrite mem);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem" %}
-  size(4);
-  ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbtst);
-    __ dcbtst($mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 // Special prefetch versions which use the dcbz instruction.
 instruct prefetch_alloc_zero(indirectMemory mem, iRegLsrc src) %{
   match(PrefetchAllocation (AddP mem src));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1017,18 +1017,6 @@
   do_intrinsic(_getAndSetObject,          sun_misc_Unsafe,        getAndSetObject_name, getAndSetObject_signature,  F_R)\
    do_name(     getAndSetObject_name,                             "getAndSetObject")                                    \
    do_signature(getAndSetObject_signature,                        "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
-                                                                                                                        \
-  /* prefetch_signature is shared by all prefetch variants */                                                           \
-  do_signature( prefetch_signature,        "(Ljava/lang/Object;J)V")                                                    \
-                                                                                                                        \
-  do_intrinsic(_prefetchRead,             sun_misc_Unsafe,        prefetchRead_name, prefetch_signature,         F_RN)  \
-   do_name(     prefetchRead_name,                               "prefetchRead")                                        \
-  do_intrinsic(_prefetchWrite,            sun_misc_Unsafe,        prefetchWrite_name, prefetch_signature,        F_RN)  \
-   do_name(     prefetchWrite_name,                              "prefetchWrite")                                       \
-  do_intrinsic(_prefetchReadStatic,       sun_misc_Unsafe,        prefetchReadStatic_name, prefetch_signature,   F_SN)  \
-   do_name(     prefetchReadStatic_name,                         "prefetchReadStatic")                                  \
-  do_intrinsic(_prefetchWriteStatic,      sun_misc_Unsafe,        prefetchWriteStatic_name, prefetch_signature,  F_SN)  \
-   do_name(     prefetchWriteStatic_name,                        "prefetchWriteStatic")                                 \
     /*== LAST_COMPILER_INLINE*/                                                                                         \
     /*the compiler does have special inlining code for these; bytecode inline is just fine */                           \
                                                                                                                         \
@@ -1203,7 +1191,7 @@ class vmIntrinsics: AllStatic {
     #undef VM_INTRINSIC_ENUM
 
     ID_LIMIT,
-    LAST_COMPILER_INLINE = _prefetchWriteStatic,
+    LAST_COMPILER_INLINE = _getAndSetObject,
     FIRST_MH_SIG_POLY    = _invokeGeneric,
     FIRST_MH_STATIC      = _linkToVirtual,
     LAST_MH_SIG_POLY     = _linkToInterface,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,8 +159,6 @@ public:
     void do_UnsafeGetRaw   (UnsafeGetRaw*    x) { /* nothing to do */ };
     void do_UnsafeGetObject(UnsafeGetObject* x) { /* nothing to do */ };
     void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) { /* nothing to do */ };
-    void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) { /* nothing to do */ };
-    void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) { /* nothing to do */ };
     void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ };
     void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ };
     void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
