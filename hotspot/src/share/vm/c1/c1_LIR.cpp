@@ -527,8 +527,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_move:           // input and result always valid, may have info
     case lir_pack64:         // input and result always valid
     case lir_unpack64:       // input and result always valid
-    case lir_prefetchr:      // input always valid, result and info always invalid
-    case lir_prefetchw:      // input always valid, result and info always invalid
     {
       assert(op->as_Op1() != NULL, "must be");
       LIR_Op1* op1 = (LIR_Op1*)op;
@@ -1263,13 +1261,6 @@ void LIR_List::volatile_load_unsafe_reg(LIR_Opr base, LIR_Opr offset, LIR_Opr ds
             type,
             patch_code,
             info, lir_move_volatile));
-}
-
-
-void LIR_List::prefetch(LIR_Address* addr, bool is_store) {
-  append(new LIR_Op1(
-            is_store ? lir_prefetchw : lir_prefetchr,
-            LIR_OprFact::address(addr)));
 }
 
 

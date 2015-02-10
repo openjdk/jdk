@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2382,35 +2382,6 @@ void LIRGenerator::do_UnsafePutObject(UnsafePutObject* x) {
   if (x->is_volatile() && os::is_MP()) __ membar_release();
   put_Object_unsafe(src.result(), off.result(), data.result(), type, x->is_volatile());
   if (x->is_volatile() && os::is_MP()) __ membar();
-}
-
-
-void LIRGenerator::do_UnsafePrefetch(UnsafePrefetch* x, bool is_store) {
-  LIRItem src(x->object(), this);
-  LIRItem off(x->offset(), this);
-
-  src.load_item();
-  if (off.is_constant() && can_inline_as_constant(x->offset())) {
-    // let it be a constant
-    off.dont_load_item();
-  } else {
-    off.load_item();
-  }
-
-  set_no_result(x);
-
-  LIR_Address* addr = generate_address(src.result(), off.result(), 0, 0, T_BYTE);
-  __ prefetch(addr, is_store);
-}
-
-
-void LIRGenerator::do_UnsafePrefetchRead(UnsafePrefetchRead* x) {
-  do_UnsafePrefetch(x, false);
-}
-
-
-void LIRGenerator::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {
-  do_UnsafePrefetch(x, true);
 }
 
 
