@@ -37,6 +37,7 @@ public:
   // no additional parsing needed in Arguments::parse() for the option.
   // Otherwise returns false.
   static inline bool process_options(const JavaVMOption *option) { return false; }
+  static inline void report_unsupported_options() { }
 };
 
 void ArgumentsExt::select_gc_ergonomically() {

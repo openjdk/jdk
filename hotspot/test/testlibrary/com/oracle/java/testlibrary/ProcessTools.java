@@ -184,23 +184,36 @@ public final class ProcessTools {
     return executeProcess(pb);
   }
 
-  /**
-   * Executes a process, waits for it to finish and returns the process output.
-   * @param pb The ProcessBuilder to execute.
-   * @return The output from the process.
-   */
-  public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Throwable {
-    OutputAnalyzer output = null;
-    try {
-      output = new OutputAnalyzer(pb.start());
-      return output;
-    } catch (Throwable t) {
-      System.out.println("executeProcess() failed: " + t);
-      throw t;
-    } finally {
-      System.out.println(getProcessLog(pb, output));
+    /**
+     * Executes a process, waits for it to finish and returns the process output.
+     * The process will have exited before this method returns.
+     * @param pb The ProcessBuilder to execute.
+     * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
+     */
+    public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Exception {
+        OutputAnalyzer output = null;
+        Process p = null;
+        boolean failed = false;
+        try {
+            p = pb.start();
+            output = new OutputAnalyzer(p);
+            p.waitFor();
+
+            return output;
+        } catch (Throwable t) {
+            if (p != null) {
+                p.destroyForcibly().waitFor();
+            }
+
+            failed = true;
+            System.out.println("executeProcess() failed: " + t);
+            throw t;
+        } finally {
+            if (failed) {
+                System.err.println(getProcessLog(pb, output));
+            }
+        }
     }
-  }
 
   /**
    * Executes a process, waits for it to finish and returns the process output.

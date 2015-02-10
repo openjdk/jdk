@@ -23,18 +23,26 @@
 
 /*
  * @test
- *
- * @build ClassLoaderStatsTest DcmdUtil
- * @run main ClassLoaderStatsTest
+ * @summary Test of diagnostic command VM.classloader_stats
+ * @library /testlibrary
+ * @build com.oracle.java.testlibrary.*
+ * @build com.oracle.java.testlibrary.dcmd.*
+ * @run testng ClassLoaderStatsTest
  */
 
-import java.io.BufferedReader;
+import org.testng.annotations.Test;
+import org.testng.Assert;
+
+import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.oracle.java.testlibrary.dcmd.CommandExecutor;
+import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,36 +65,36 @@ public class ClassLoaderStatsTest {
 
     public static DummyClassLoader dummyloader;
 
-    public static void main(String arg[]) throws Exception {
+    public void run(CommandExecutor executor) throws ClassNotFoundException {
 
         // create a classloader and load our special class
         dummyloader = new DummyClassLoader();
         Class<?> c = Class.forName("TestClass", true, dummyloader);
         if (c.getClassLoader() != dummyloader) {
-            throw new RuntimeException("TestClass defined by wrong classloader: " + c.getClassLoader());
+            Assert.fail("TestClass defined by wrong classloader: " + c.getClassLoader());
         }
 
-        String result = DcmdUtil.executeDcmd("VM.classloader_stats");
-        BufferedReader r = new BufferedReader(new StringReader(result));
-        String line;
-        while((line = r.readLine()) != null) {
+        OutputAnalyzer output = executor.execute("VM.classloader_stats");
+        Iterator<String> lines = output.asLines().iterator();
+        while (lines.hasNext()) {
+            String line = lines.next();
             Matcher m = clLine.matcher(line);
             if (m.matches()) {
                 // verify that DummyClassLoader has loaded 1 class and 1 anonymous class
                 if (m.group(4).equals("ClassLoaderStatsTest$DummyClassLoader")) {
                     System.out.println("line: " + line);
                     if (!m.group(1).equals("1")) {
-                        throw new Exception("Should have loaded 1 class: " + line);
+                        Assert.fail("Should have loaded 1 class: " + line);
                     }
                     checkPositiveInt(m.group(2));
                     checkPositiveInt(m.group(3));
 
-                    String next = r.readLine();
+                    String next = lines.next();
                     System.out.println("next: " + next);
                     Matcher m1 = anonLine.matcher(next);
                     m1.matches();
                     if (!m1.group(1).equals("1")) {
-                        throw new Exception("Should have loaded 1 anonymous class, but found : " + m1.group(1));
+                        Assert.fail("Should have loaded 1 anonymous class, but found : " + m1.group(1));
                     }
                     checkPositiveInt(m1.group(2));
                     checkPositiveInt(m1.group(3));
@@ -95,9 +103,9 @@ public class ClassLoaderStatsTest {
         }
     }
 
-    private static void checkPositiveInt(String s) throws Exception {
+    private static void checkPositiveInt(String s) {
         if (Integer.parseInt(s) <= 0) {
-            throw new Exception("Value should have been > 0: " + s);
+            Assert.fail("Value should have been > 0: " + s);
         }
     }
 
@@ -114,8 +122,11 @@ public class ClassLoaderStatsTest {
             {
                 return fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
             } catch (IOException e) {
-                throw new RuntimeException("Can't open file: " + name, e);
+                Assert.fail("Can't open file: " + name, e);
             }
+
+            /* Will not reach here as Assert.fail() throws exception */
+            return null;
         }
 
         protected Class<?> loadClass(String name, boolean resolve)
@@ -144,6 +155,10 @@ public class ClassLoaderStatsTest {
         }
     } /* DummyClassLoader */
 
+    @Test
+    public void jmx() throws ClassNotFoundException {
+        run(new JMXExecutor());
+    }
 }
 
 class TestClass {
