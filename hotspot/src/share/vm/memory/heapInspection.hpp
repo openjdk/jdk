@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,11 +188,15 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   long            _instance_count;
   size_t          _instance_words;
   long            _index;
+  bool            _do_print; // True if we should print this class when printing the class hierarchy.
+  GrowableArray<KlassInfoEntry*>* _subclasses;
 
  public:
   KlassInfoEntry(Klass* k, KlassInfoEntry* next) :
-    _klass(k), _instance_count(0), _instance_words(0), _next(next), _index(-1)
+    _klass(k), _instance_count(0), _instance_words(0), _next(next), _index(-1),
+    _do_print(false), _subclasses(NULL)
   {}
+  ~KlassInfoEntry();
   KlassInfoEntry* next() const   { return _next; }
   bool is_equal(const Klass* k)  { return k == _klass; }
   Klass* klass()  const      { return _klass; }
@@ -202,6 +206,10 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   void set_words(size_t wds) { _instance_words = wds; }
   void set_index(long index) { _index = index; }
   long index()    const      { return _index; }
+  GrowableArray<KlassInfoEntry*>* subclasses() const { return _subclasses; }
+  void add_subclass(KlassInfoEntry* cie);
+  void set_do_print(bool do_print) { _do_print = do_print; }
+  bool do_print() const      { return _do_print; }
   int compare(KlassInfoEntry* e1, KlassInfoEntry* e2);
   void print_on(outputStream* st) const;
   const char* name() const;
@@ -248,7 +256,7 @@ class KlassInfoTable: public StackObj {
   };
 
  public:
-  KlassInfoTable(bool need_class_stats);
+  KlassInfoTable(bool add_all_classes);
   ~KlassInfoTable();
   bool record_instance(const oop obj);
   void iterate(KlassInfoClosure* cic);
@@ -256,6 +264,18 @@ class KlassInfoTable: public StackObj {
   size_t size_of_instances_in_words() const;
 
   friend class KlassInfoHisto;
+  friend class KlassHierarchy;
+};
+
+class KlassHierarchy : AllStatic {
+ public:
+  static void print_class_hierarchy(outputStream* st, bool print_interfaces,  bool print_subclasses,
+                                    char* classname);
+
+ private:
+  static void set_do_print_for_class_hierarchy(KlassInfoEntry* cie, KlassInfoTable* cit,
+                                               bool print_subclasse);
+  static void print_class(outputStream* st, KlassInfoEntry* cie, bool print_subclasses);
 };
 
 class KlassInfoHisto : public StackObj {
