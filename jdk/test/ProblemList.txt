@@ -141,9 +141,6 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         macosx-all
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
 
-# 8069286
-java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
-
 ############################################################################
 
 # jdk_jmx
