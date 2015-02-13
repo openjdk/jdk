@@ -448,7 +448,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         checkKey(key);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(sobj.remove(key, strict), global);
+                return translateUndefined(wrap(sobj.remove(key, strict), global));
             }
         });
     }
