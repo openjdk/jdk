@@ -1505,7 +1505,7 @@ class CommandLineFlags {
                                                                             \
   product(bool, ExplicitGCInvokesConcurrent, false,                         \
           "A System.gc() request invokes a concurrent collection; "         \
-          "(effective only when UseConcMarkSweepGC)")                       \
+          "(effective only when using concurrent collectors)")              \
                                                                             \
   product(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false,        \
           "A System.gc() request invokes a concurrent collection and "      \
@@ -3535,7 +3535,7 @@ class CommandLineFlags {
           "(both with and without tiered compilation): "                    \
           "values greater than 1.0 delay counter overflow, "                \
           "values between 0 and 1.0 rush counter overflow, "                \
-          "value of 1.0 leave compilation thresholds unchanged "            \
+          "value of 1.0 leaves compilation thresholds unchanged "           \
           "value of 0.0 is equivalent to -Xint. "                           \
           ""                                                                \
           "Flag can be set as per-method option. "                          \

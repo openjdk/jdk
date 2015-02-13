@@ -663,7 +663,7 @@ void ParallelScavengeHeap::print_heap_change(size_t prev_used) {
   }
 }
 
-void ParallelScavengeHeap::trace_heap(GCWhen::Type when, GCTracer* gc_tracer) {
+void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const PSHeapSummary& heap_summary = create_ps_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);
 
