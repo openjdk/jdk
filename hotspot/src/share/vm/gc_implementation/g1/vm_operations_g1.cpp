@@ -38,7 +38,7 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(uint gc_count_before,
                                                      size_t word_size)
   : VM_G1OperationWithAllocRequest(gc_count_before, word_size,
                                    GCCause::_allocation_failure) {
-  guarantee(word_size > 0, "an allocation should always be requested");
+  guarantee(word_size != 0, "An allocation should always be requested with this operation.");
 }
 
 void VM_G1CollectForAllocation::doit() {
@@ -73,7 +73,7 @@ VM_G1IncCollectionPause::VM_G1IncCollectionPause(uint           gc_count_before,
 }
 
 bool VM_G1IncCollectionPause::doit_prologue() {
-  bool res = VM_GC_Operation::doit_prologue();
+  bool res = VM_G1OperationWithAllocRequest::doit_prologue();
   if (!res) {
     if (_should_initiate_conc_mark) {
       // The prologue can fail for a couple of reasons. The first is that another GC
@@ -163,7 +163,7 @@ void VM_G1IncCollectionPause::doit() {
 }
 
 void VM_G1IncCollectionPause::doit_epilogue() {
-  VM_GC_Operation::doit_epilogue();
+  VM_G1OperationWithAllocRequest::doit_epilogue();
 
   // If the pause was initiated by a System.gc() and
   // +ExplicitGCInvokesConcurrent, we have to wait here for the cycle

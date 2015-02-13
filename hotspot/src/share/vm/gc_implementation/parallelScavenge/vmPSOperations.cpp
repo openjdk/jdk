@@ -32,12 +32,10 @@
 #include "utilities/dtrace.hpp"
 
 // The following methods are used by the parallel scavenge collector
-VM_ParallelGCFailedAllocation::VM_ParallelGCFailedAllocation(size_t size,
+VM_ParallelGCFailedAllocation::VM_ParallelGCFailedAllocation(size_t word_size,
                                                              uint gc_count) :
-  VM_GC_Operation(gc_count, GCCause::_allocation_failure),
-  _size(size),
-  _result(NULL)
-{
+    VM_CollectForAllocation(word_size, gc_count, GCCause::_allocation_failure) {
+  assert(word_size != 0, "An allocation should always be requested with this operation.");
 }
 
 void VM_ParallelGCFailedAllocation::doit() {
@@ -47,7 +45,7 @@ void VM_ParallelGCFailedAllocation::doit() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "must be a ParallelScavengeHeap");
 
   GCCauseSetter gccs(heap, _gc_cause);
-  _result = heap->failed_mem_allocate(_size);
+  _result = heap->failed_mem_allocate(_word_size);
 
   if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();

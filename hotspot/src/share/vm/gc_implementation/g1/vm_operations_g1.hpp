@@ -36,10 +36,8 @@
 //     - VM_G1CollectForAllocation
 //     - VM_G1IncCollectionPause
 
-class VM_G1OperationWithAllocRequest: public VM_GC_Operation {
+class VM_G1OperationWithAllocRequest : public VM_CollectForAllocation {
 protected:
-  size_t    _word_size;
-  HeapWord* _result;
   bool      _pause_succeeded;
   AllocationContext_t _allocation_context;
 
@@ -47,9 +45,8 @@ public:
   VM_G1OperationWithAllocRequest(uint           gc_count_before,
                                  size_t         word_size,
                                  GCCause::Cause gc_cause)
-    : VM_GC_Operation(gc_count_before, gc_cause),
-      _word_size(word_size), _result(NULL), _pause_succeeded(false) { }
-  HeapWord* result() { return _result; }
+    : VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
+      _pause_succeeded(false) {}
   bool pause_succeeded() { return _pause_succeeded; }
   void set_allocation_context(AllocationContext_t context) { _allocation_context = context; }
   AllocationContext_t  allocation_context() { return _allocation_context; }
