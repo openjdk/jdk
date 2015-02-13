@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_VMGCOPERATIONS_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_VMGCOPERATIONS_HPP
 
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/heapInspection.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/jniHandles.hpp"
@@ -106,10 +107,7 @@ class VM_GC_Operation: public VM_Operation {
     // mutators have run.  Soft refs will be cleared again in this
     // collection.
   }
-  ~VM_GC_Operation() {
-    CollectedHeap* ch = Universe::heap();
-    ch->collector_policy()->set_all_soft_refs_clear(false);
-  }
+  ~VM_GC_Operation();
 
   // Acquire the reference synchronization lock
   virtual bool doit_prologue();

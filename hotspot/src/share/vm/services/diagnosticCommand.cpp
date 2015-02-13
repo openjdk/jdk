@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/diagnosticArgument.hpp"

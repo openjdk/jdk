@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,9 +204,8 @@ class java_lang_String : AllStatic {
   static Symbol* as_symbol_or_null(oop java_string);
 
   // Testers
-  static bool is_instance(oop obj) {
-    return obj != NULL && obj->klass() == SystemDictionary::String_klass();
-  }
+  static bool is_instance(oop obj);
+  static bool is_instance_inlined(oop obj);
 
   // Debugging
   static void print(oop java_string, outputStream* st);
@@ -273,9 +272,8 @@ class java_lang_Class : AllStatic {
   static Symbol* as_signature(oop java_class, bool intern_if_not_found, TRAPS);
   static void print_signature(oop java_class, outputStream *st);
   // Testing
-  static bool is_instance(oop obj) {
-    return obj != NULL && obj->klass() == SystemDictionary::Class_klass();
-  }
+  static bool is_instance(oop obj);
+
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
@@ -989,9 +987,7 @@ class java_lang_invoke_MethodHandle: AllStatic {
   static bool is_subclass(Klass* klass) {
     return klass->is_subclass_of(SystemDictionary::MethodHandle_klass());
   }
-  static bool is_instance(oop obj) {
-    return obj != NULL && is_subclass(obj->klass());
-  }
+  static bool is_instance(oop obj);
 
   // Accessors for code generation:
   static int type_offset_in_bytes()             { return _type_offset; }
@@ -1016,9 +1012,7 @@ class java_lang_invoke_DirectMethodHandle: AllStatic {
   static bool is_subclass(Klass* klass) {
     return klass->is_subclass_of(SystemDictionary::DirectMethodHandle_klass());
   }
-  static bool is_instance(oop obj) {
-    return obj != NULL && is_subclass(obj->klass());
-  }
+  static bool is_instance(oop obj);
 
   // Accessors for code generation:
   static int member_offset_in_bytes()           { return _member_offset; }
@@ -1045,9 +1039,7 @@ class java_lang_invoke_LambdaForm: AllStatic {
     return SystemDictionary::LambdaForm_klass() != NULL &&
       klass->is_subclass_of(SystemDictionary::LambdaForm_klass());
   }
-  static bool is_instance(oop obj) {
-    return obj != NULL && is_subclass(obj->klass());
-  }
+  static bool is_instance(oop obj);
 
   // Accessors for code generation:
   static int vmentry_offset_in_bytes()          { return _vmentry_offset; }
@@ -1111,9 +1103,7 @@ class java_lang_invoke_MemberName: AllStatic {
   static bool is_subclass(Klass* klass) {
     return klass->is_subclass_of(SystemDictionary::MemberName_klass());
   }
-  static bool is_instance(oop obj) {
-    return obj != NULL && is_subclass(obj->klass());
-  }
+  static bool is_instance(oop obj);
 
   static bool is_method(oop obj);
 
@@ -1166,9 +1156,7 @@ class java_lang_invoke_MethodType: AllStatic {
   static Symbol*        as_signature(oop mt, bool intern_if_not_found, TRAPS);
   static void           print_signature(oop mt, outputStream* st);
 
-  static bool is_instance(oop obj) {
-    return obj != NULL && obj->klass() == SystemDictionary::MethodType_klass();
-  }
+  static bool is_instance(oop obj);
 
   static bool equals(oop mt1, oop mt2);
 
@@ -1190,19 +1178,17 @@ private:
 
 public:
   // Accessors
-  static oop              target(         oop site)             { return site->obj_field(             _target_offset);         }
-  static void         set_target(         oop site, oop target) {        site->obj_field_put(         _target_offset, target); }
+  static oop              target(         oop site);
+  static void         set_target(         oop site, oop target);
 
-  static volatile oop     target_volatile(oop site)             { return oop((oopDesc *)(site->obj_field_volatile(_target_offset))); }
-  static void         set_target_volatile(oop site, oop target) {        site->obj_field_put_volatile(_target_offset, target); }
+  static volatile oop     target_volatile(oop site);
+  static void         set_target_volatile(oop site, oop target);
 
   // Testers
   static bool is_subclass(Klass* klass) {
     return klass->is_subclass_of(SystemDictionary::CallSite_klass());
   }
-  static bool is_instance(oop obj) {
-    return obj != NULL && is_subclass(obj->klass());
-  }
+  static bool is_instance(oop obj);
 
   // Accessors for code generation:
   static int target_offset_in_bytes()           { return _target_offset; }
@@ -1268,9 +1254,7 @@ class java_lang_ClassLoader : AllStatic {
   static bool is_subclass(Klass* klass) {
     return klass->is_subclass_of(SystemDictionary::ClassLoader_klass());
   }
-  static bool is_instance(oop obj) {
-    return obj != NULL && is_subclass(obj->klass());
-  }
+  static bool is_instance(oop obj);
 
   // Debugging
   friend class JavaClasses;
