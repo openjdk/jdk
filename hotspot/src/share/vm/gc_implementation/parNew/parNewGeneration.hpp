@@ -333,6 +333,9 @@ class ParNewGeneration: public DefNewGeneration {
   // references to live referent.
   DefNewGeneration::IsAliveClosure _is_alive_closure;
 
+  // GC tracer that should be used during collection.
+  ParNewTracer _gc_tracer;
+
   static oop real_forwardee_slow(oop obj);
   static void waste_some_time();
 
@@ -340,7 +343,7 @@ class ParNewGeneration: public DefNewGeneration {
   // word being overwritten with a self-forwarding-pointer.
   void preserve_mark_if_necessary(oop obj, markOop m);
 
-  void handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set, ParNewTracer& gc_tracer);
+  void handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set);
 
  protected:
 
@@ -409,6 +412,10 @@ class ParNewGeneration: public DefNewGeneration {
 
   size_t desired_plab_sz() {
     return _plab_stats.desired_plab_sz();
+  }
+
+  const ParNewTracer* gc_tracer() const {
+    return &_gc_tracer;
   }
 
   static oop real_forwardee(oop obj);
