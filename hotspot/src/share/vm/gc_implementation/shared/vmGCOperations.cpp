@@ -179,10 +179,10 @@ void VM_GenCollectForAllocation::doit() {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
-  _res = gch->satisfy_failed_allocation(_size, _tlab);
-  assert(gch->is_in_reserved_or_null(_res), "result not in heap");
+  _result = gch->satisfy_failed_allocation(_word_size, _tlab);
+  assert(gch->is_in_reserved_or_null(_result), "result not in heap");
 
-  if (_res == NULL && GC_locker::is_active_and_needs_gc()) {
+  if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }

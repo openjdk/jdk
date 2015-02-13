@@ -29,20 +29,14 @@
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "gc_interface/gcCause.hpp"
 
-class VM_ParallelGCFailedAllocation: public VM_GC_Operation {
- private:
-  size_t    _size;
-  HeapWord* _result;
-
+class VM_ParallelGCFailedAllocation : public VM_CollectForAllocation {
  public:
-  VM_ParallelGCFailedAllocation(size_t size, uint gc_count);
+  VM_ParallelGCFailedAllocation(size_t word_size, uint gc_count);
 
   virtual VMOp_Type type() const {
     return VMOp_ParallelGCFailedAllocation;
   }
   virtual void doit();
-
-  HeapWord* result() const       { return _result; }
 };
 
 class VM_ParallelGCSystemGC: public VM_GC_Operation {

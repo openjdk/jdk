@@ -38,11 +38,12 @@
 //  VM_Operation
 //      VM_GC_Operation
 //          VM_GC_HeapInspection
-//          VM_GenCollectForAllocation
 //          VM_GenCollectFull
 //          VM_GenCollectFullConcurrent
-//          VM_ParallelGCFailedAllocation
 //          VM_ParallelGCSystemGC
+//          VM_CollectForAllocation
+//              VM_GenCollectForAllocation
+//              VM_ParallelGCFailedAllocation
 //  VM_GC_Operation
 //   - implements methods common to all classes in the hierarchy:
 //     prevents multiple gc requests and manages lock on heap;
@@ -51,6 +52,7 @@
 //   - prints class histogram on SIGBREAK if PrintClassHistogram
 //     is specified; and also the attach "inspectheap" operation
 //
+//  VM_CollectForAllocation
 //  VM_GenCollectForAllocation
 //  VM_ParallelGCFailedAllocation
 //   - this operation is invoked when allocation is failed;
@@ -160,25 +162,34 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   bool collect();
 };
 
+class VM_CollectForAllocation : public VM_GC_Operation {
+ protected:
+  size_t    _word_size; // Size of object to be allocated (in number of words)
+  HeapWord* _result;    // Allocation result (NULL if allocation failed)
 
-class VM_GenCollectForAllocation: public VM_GC_Operation {
+ public:
+  VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)
+    : VM_GC_Operation(gc_count_before, cause), _result(NULL), _word_size(word_size) {}
+
+  HeapWord* result() const {
+    return _result;
+  }
+};
+
+class VM_GenCollectForAllocation : public VM_CollectForAllocation {
  private:
-  HeapWord*   _res;
-  size_t      _size;                       // size of object to be allocated.
   bool        _tlab;                       // alloc is of a tlab.
  public:
-  VM_GenCollectForAllocation(size_t size,
+  VM_GenCollectForAllocation(size_t word_size,
                              bool tlab,
                              uint gc_count_before)
-    : VM_GC_Operation(gc_count_before, GCCause::_allocation_failure),
-      _size(size),
+    : VM_CollectForAllocation(word_size, gc_count_before, GCCause::_allocation_failure),
       _tlab(tlab) {
-    _res = NULL;
+    assert(word_size != 0, "An allocation should always be requested with this operation.");
   }
   ~VM_GenCollectForAllocation()  {}
   virtual VMOp_Type type() const { return VMOp_GenCollectForAllocation; }
   virtual void doit();
-  HeapWord* result() const       { return _res; }
 };
 
 // VM operation to invoke a collection of the heap as a
