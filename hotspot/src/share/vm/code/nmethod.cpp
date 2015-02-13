@@ -2184,17 +2184,6 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
 #endif // !SHARK
 }
 
-
-oop nmethod::embeddedOop_at(u_char* p) {
-  RelocIterator iter(this, p, p + 1);
-  while (iter.next())
-    if (iter.type() == relocInfo::oop_type) {
-      return iter.oop_reloc()->oop_value();
-    }
-  return NULL;
-}
-
-
 inline bool includes(void* p, void* from, void* to) {
   return from <= p && p < to;
 }
