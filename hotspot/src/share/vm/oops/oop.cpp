@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -122,3 +122,17 @@ VerifyOopClosure VerifyOopClosure::verify_oop;
 
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }
 void VerifyOopClosure::do_oop(narrowOop* p) { VerifyOopClosure::do_oop_work(p); }
+
+// type test operations that doesn't require inclusion of oop.inline.hpp.
+bool oopDesc::is_instance_noinline()          const { return is_instance();            }
+bool oopDesc::is_instanceMirror_noinline()    const { return is_instanceMirror();      }
+bool oopDesc::is_instanceClassLoader_noline() const { return is_instanceClassLoader(); }
+bool oopDesc::is_instanceRef_noline()         const { return is_instanceRef();         }
+bool oopDesc::is_array_noinline()             const { return is_array();               }
+bool oopDesc::is_objArray_noinline()          const { return is_objArray();            }
+bool oopDesc::is_typeArray_noinline()         const { return is_typeArray();           }
+
+bool oopDesc::has_klass_gap() {
+  // Only has a klass gap when compressed class pointers are used.
+  return UseCompressedClassPointers;
+}
