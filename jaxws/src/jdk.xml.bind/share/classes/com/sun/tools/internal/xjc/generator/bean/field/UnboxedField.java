@@ -35,7 +35,7 @@ import com.sun.codemodel.internal.JVar;
 import com.sun.tools.internal.xjc.generator.bean.ClassOutlineImpl;
 import com.sun.tools.internal.xjc.generator.bean.MethodWriter;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.FieldAccessor;
 import com.sun.xml.internal.bind.api.impl.NameConverter;
 
