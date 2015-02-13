@@ -555,8 +555,8 @@ class Parse : public GraphKit {
   void do_jsr();
   void do_ret();
 
-  float   dynamic_branch_prediction(float &cnt);
-  float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci);
+  float   dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* test);
+  float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;
   bool    path_is_suitable_for_uncommon_trap(float prob) const;
   bool    seems_stable_comparison() const;

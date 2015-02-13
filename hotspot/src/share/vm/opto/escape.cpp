@@ -206,6 +206,11 @@ bool ConnectionGraph::compute_escape() {
     _verify = false;
   }
 #endif
+  // Bytecode analyzer BCEscapeAnalyzer, used for Call nodes
+  // processing, calls to CI to resolve symbols (types, fields, methods)
+  // referenced in bytecode. During symbol resolution VM may throw
+  // an exception which CI cleans and converts to compilation failure.
+  if (C->failing())  return false;
 
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
