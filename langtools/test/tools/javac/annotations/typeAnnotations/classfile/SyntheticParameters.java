@@ -44,15 +44,6 @@ public class SyntheticParameters extends ClassfileInspector {
                      null,
                      new ExpectedMethodTypeAnnotation[] {
                          (ExpectedMethodTypeAnnotation)
-                         // Assert there is no annotation on the
-                         // this$0 parameter.
-                         new ExpectedMethodTypeAnnotation.Builder(
-                             "<init>",
-                             "A",
-                             TypeAnnotation.TargetType.METHOD_FORMAL_PARAMETER,
-                             false,
-                             0).setParameterIndex(0).build(),
-                         (ExpectedMethodTypeAnnotation)
                          // Assert there is an annotation on the
                          // first parameter.
                          new ExpectedMethodTypeAnnotation.Builder(
@@ -60,21 +51,7 @@ public class SyntheticParameters extends ClassfileInspector {
                              "A",
                              TypeAnnotation.TargetType.METHOD_FORMAL_PARAMETER,
                              false,
-                             1).setParameterIndex(1).build(),
-                         (ExpectedMethodTypeAnnotation)
-                         new ExpectedMethodTypeAnnotation.Builder(
-                             "foo",
-                             "A",
-                             TypeAnnotation.TargetType.METHOD_FORMAL_PARAMETER,
-                             false,
-                             1).setParameterIndex(0).build(),
-                         (ExpectedMethodTypeAnnotation)
-                         new ExpectedMethodTypeAnnotation.Builder(
-                             "foo",
-                             "A",
-                             TypeAnnotation.TargetType.METHOD_FORMAL_PARAMETER,
-                             false,
-                             0).setParameterIndex(1).build()
+                             1).setParameterIndex(0).build()
                      },
                      null);
     private static final Expected Foo_expected =
@@ -89,26 +66,7 @@ public class SyntheticParameters extends ClassfileInspector {
                              "A",
                              TypeAnnotation.TargetType.METHOD_FORMAL_PARAMETER,
                              false,
-                             0).setParameterIndex(0).build(),
-                         (ExpectedMethodTypeAnnotation)
-                         // Assert there is no annotation on the
-                         // $enum$ordinal parameter.
-                         new ExpectedMethodTypeAnnotation.Builder(
-                             "<init>",
-                             "A",
-                             TypeAnnotation.TargetType.METHOD_FORMAL_PARAMETER,
-                             false,
-                             0).setParameterIndex(1).build(),
-                         (ExpectedMethodTypeAnnotation)
-                         // Assert there is an annotation on the
-                         // first parameter.
-                         new ExpectedMethodTypeAnnotation.Builder(
-                             "<init>",
-                             "A",
-                             TypeAnnotation.TargetType.METHOD_FORMAL_PARAMETER,
-                             false,
-                             1).setParameterIndex(2).build()
-                     },
+                             1).setParameterIndex(0).build()                     },
                      null);
 
     public static void main(String... args) throws Exception {
