@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8016081 8016178
+ * @bug 8016081 8016178 8069545
  * @summary structural most specific and stuckness
  * @compile/fail/ref=T8016177g.out -XDrawDiagnostics T8016177g.java
  */
