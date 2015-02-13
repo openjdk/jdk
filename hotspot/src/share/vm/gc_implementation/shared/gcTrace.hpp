@@ -153,7 +153,7 @@ class YoungGCTracer : public GCTracer {
   virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  public:
-  void report_promotion_failed(const PromotionFailedInfo& pf_info);
+  void report_promotion_failed(const PromotionFailedInfo& pf_info) const;
   void report_tenuring_threshold(const uint tenuring_threshold);
 
   /*
