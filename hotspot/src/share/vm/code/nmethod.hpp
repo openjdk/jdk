@@ -730,11 +730,6 @@ public:
   int  compile_id() const                         { return _compile_id; }
   const char* compile_kind() const;
 
-  // For debugging
-  // CompiledIC*    IC_at(char* p) const;
-  // PrimitiveIC*   primitiveIC_at(char* p) const;
-  oop embeddedOop_at(address p);
-
   // tells if any of this method's dependencies have been invalidated
   // (this is expensive!)
   static void check_all_dependencies(DepChange& changes);
