@@ -2644,7 +2644,6 @@ public class Lower extends TreeTranslator {
 
             MethodSymbol m = tree.sym;
             tree.params = tree.params.prepend(ordParam).prepend(nameParam);
-            incrementParamTypeAnnoIndexes(m, 2);
 
             m.extraParams = m.extraParams.prepend(ordParam.sym);
             m.extraParams = m.extraParams.prepend(nameParam.sym);
@@ -2665,17 +2664,6 @@ public class Lower extends TreeTranslator {
         } finally {
             currentMethodDef = prevMethodDef;
             currentMethodSym = prevMethodSym;
-        }
-    }
-    //where
-    private void incrementParamTypeAnnoIndexes(MethodSymbol m,
-                                               int amount) {
-        for (final Attribute.TypeCompound anno : m.getRawTypeAttributes()) {
-            // Increment the parameter_index of any existing formal
-            // parameter annotations.
-            if (anno.position.type == TargetType.METHOD_FORMAL_PARAMETER) {
-                anno.position.parameter_index += amount;
-            }
         }
     }
 
@@ -2711,7 +2699,6 @@ public class Lower extends TreeTranslator {
             tree.params = tree.params.appendList(fvdefs);
             if (currentClass.hasOuterInstance()) {
                 tree.params = tree.params.prepend(otdef);
-                incrementParamTypeAnnoIndexes(m, 1);
             }
 
             // If this is an initial constructor, i.e., it does not start with
