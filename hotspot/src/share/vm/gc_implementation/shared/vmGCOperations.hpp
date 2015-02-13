@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,13 +66,13 @@
 
 class VM_GC_Operation: public VM_Operation {
  protected:
-  BasicLock     _pending_list_basic_lock; // for refs pending list notification (PLL)
-  unsigned int  _gc_count_before;         // gc count before acquiring PLL
-  unsigned int  _full_gc_count_before;    // full gc count before acquiring PLL
-  bool          _full;                    // whether a "full" collection
-  bool          _prologue_succeeded;      // whether doit_prologue succeeded
+  BasicLock      _pending_list_basic_lock; // for refs pending list notification (PLL)
+  uint           _gc_count_before;         // gc count before acquiring PLL
+  uint           _full_gc_count_before;    // full gc count before acquiring PLL
+  bool           _full;                    // whether a "full" collection
+  bool           _prologue_succeeded;      // whether doit_prologue succeeded
   GCCause::Cause _gc_cause;                // the putative cause for this gc op
-  bool          _gc_locked;               // will be set if gc was locked
+  bool           _gc_locked;               // will be set if gc was locked
 
   virtual bool skip_operation() const;
 
@@ -81,9 +81,9 @@ class VM_GC_Operation: public VM_Operation {
   void release_and_notify_pending_list_lock();
 
  public:
-  VM_GC_Operation(unsigned int gc_count_before,
+  VM_GC_Operation(uint gc_count_before,
                   GCCause::Cause _cause,
-                  unsigned int full_gc_count_before = 0,
+                  uint full_gc_count_before = 0,
                   bool full = false) {
     _full = full;
     _prologue_succeeded = false;
@@ -169,7 +169,7 @@ class VM_GenCollectForAllocation: public VM_GC_Operation {
  public:
   VM_GenCollectForAllocation(size_t size,
                              bool tlab,
-                             unsigned int gc_count_before)
+                             uint gc_count_before)
     : VM_GC_Operation(gc_count_before, GCCause::_allocation_failure),
       _size(size),
       _tlab(tlab) {
@@ -181,17 +181,16 @@ class VM_GenCollectForAllocation: public VM_GC_Operation {
   HeapWord* result() const       { return _res; }
 };
 
-
 // VM operation to invoke a collection of the heap as a
 // GenCollectedHeap heap.
 class VM_GenCollectFull: public VM_GC_Operation {
  private:
   int _max_level;
  public:
-  VM_GenCollectFull(unsigned int gc_count_before,
-                    unsigned int full_gc_count_before,
+  VM_GenCollectFull(uint gc_count_before,
+                    uint full_gc_count_before,
                     GCCause::Cause gc_cause,
-                      int max_level)
+                    int max_level)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true /* full */),
       _max_level(max_level) { }
   ~VM_GenCollectFull() {}
@@ -208,9 +207,9 @@ class VM_CollectForMetadataAllocation: public VM_GC_Operation {
  public:
   VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,
                                   size_t size, Metaspace::MetadataType mdtype,
-                                      unsigned int gc_count_before,
-                                      unsigned int full_gc_count_before,
-                                      GCCause::Cause gc_cause)
+                                  uint gc_count_before,
+                                  uint full_gc_count_before,
+                                  GCCause::Cause gc_cause)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
       _loader_data(loader_data), _size(size), _mdtype(mdtype), _result(NULL) {
   }
