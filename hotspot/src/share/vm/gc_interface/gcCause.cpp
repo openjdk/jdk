@@ -103,9 +103,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _last_ditch_collection:
       return "Last ditch collection";
 
-    case _dcmd_gc_run:
-      return "Diagnostic Command";
-
     case _last_gc_cause:
       return "ILLEGAL VALUE - last gc cause - ILLEGAL VALUE";
 
