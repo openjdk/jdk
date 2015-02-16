@@ -1,6 +1,6 @@
 java.base
-java.desktop
 java.compiler
+java.desktop
 java.instrument
 java.logging
 java.management
@@ -13,7 +13,6 @@ java.security.sasl
 java.smartcardio
 java.sql
 java.sql.rowset
-java.transaction
 java.xml
 java.xml.crypto
 jdk.charsets
@@ -21,9 +20,9 @@ jdk.deploy
 jdk.deploy.osx
 jdk.hprof.agent
 jdk.httpserver
+jdk.jfr
 jdk.naming.rmi
 jdk.sctp
 jdk.security.auth
 jdk.security.jgss
-jdk.jfr
 jdk.snmp
