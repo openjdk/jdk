@@ -94,7 +94,7 @@ java.datatransfer_COPY := flavormap.properties
 ################################################################################
 
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
-java.desktop_CLEAN := iio-plugin.properties
+java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
 java.desktop_EXCLUDES += \
     java/awt/doc-files \
