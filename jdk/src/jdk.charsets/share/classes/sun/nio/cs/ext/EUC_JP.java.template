@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+package $PACKAGE$;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -32,8 +32,11 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.DelegatableDecoder;
+import sun.nio.cs.DoubleByte;
 import sun.nio.cs.Surrogate;
 import sun.nio.cs.SingleByte;
+import sun.nio.cs.*;
 import static sun.nio.cs.CharsetMapping.*;
 
 public class EUC_JP
@@ -41,7 +44,7 @@ public class EUC_JP
     implements HistoricallyNamedCharset
 {
     public EUC_JP() {
-        super("EUC-JP", ExtendedCharsets.aliasesFor("EUC-JP"));
+        super("EUC-JP",  $ALIASES$);
     }
 
     public String historicalName() {

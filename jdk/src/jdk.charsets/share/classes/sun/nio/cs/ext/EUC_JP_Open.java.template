@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+package $PACKAGE$;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -31,7 +31,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import sun.nio.cs.DoubleByte;
 import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.*;
 import static sun.nio.cs.CharsetMapping.*;
 
 public class EUC_JP_Open
@@ -39,7 +41,7 @@ public class EUC_JP_Open
     implements HistoricallyNamedCharset
 {
     public EUC_JP_Open() {
-        super("x-eucJP-Open", ExtendedCharsets.aliasesFor("x-eucJP-Open"));
+        super("x-eucJP-Open", $ALIASES$);
     }
 
     public String historicalName() {

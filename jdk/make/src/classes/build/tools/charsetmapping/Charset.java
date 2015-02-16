@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,20 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+package build.tools.charsetmapping;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CoderResult;
-
-/**
- * A decoder that can be delegated to by another decoder
- * when normal inheritance cannot be used.
- * Used by autodecting decoders.
- */
-interface DelegatableDecoder {
-    CoderResult decodeLoop(ByteBuffer src, CharBuffer dst);
-    void implReset();
-    CoderResult implFlush(CharBuffer out);
+class Charset {
+    String   pkgName;
+    String   clzName;
+    String   csName;
+    String   hisName;
+    String   type;
+    boolean  isASCII;
+    int      b1Min;
+    int      b1Max;
+    int      b2Min;
+    int      b2Max;
+    String[] aliases;
+    boolean  isGenSrc = false;
+    boolean  isInternal = false;
 }

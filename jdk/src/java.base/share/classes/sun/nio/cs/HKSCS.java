@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+package sun.nio.cs;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -32,6 +32,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Arrays;
+import sun.nio.cs.DoubleByte;
 import sun.nio.cs.Surrogate;
 import static sun.nio.cs.CharsetMapping.*;
 
@@ -216,7 +217,7 @@ public class HKSCS {
                 return decodeBufferLoop(src, dst);
         }
 
-        static void initb2c(char[][]b2c, String[] b2cStr)
+        public static void initb2c(char[][]b2c, String[] b2cStr)
         {
             for (int i = 0; i < b2cStr.length; i++) {
                 if (b2cStr[i] == null)
@@ -395,7 +396,7 @@ public class HKSCS {
             Arrays.fill(C2B_UNMAPPABLE, (char)UNMAPPABLE_ENCODING);
         }
 
-       static void initc2b(char[][] c2b, String[] b2cStr, String pua) {
+        public static void initc2b(char[][] c2b, String[] b2cStr, String pua) {
             // init c2b/c2bSupp from b2cStr and supp
             int b2Min = 0x40;
             Arrays.fill(c2b, C2B_UNMAPPABLE);
