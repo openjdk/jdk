@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,93 +30,23 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Formatter;
-import java.util.regex.*;
-import java.nio.charset.*;
+import java.util.regex.Pattern;
 import static build.tools.charsetmapping.Utils.*;
 
 public class SBCS {
 
-    public static void genClass(String args[]) throws Exception {
-
-        Scanner s = new Scanner(new File(args[0], args[2]));
-        while (s.hasNextLine()) {
-            String line = s.nextLine();
-            if (line.startsWith("#") || line.length() == 0)
-                continue;
-            String[] fields = line.split("\\s+");
-            if (fields.length < 5) {
-                System.err.println("Misconfiged sbcs line <" + line + ">?");
-                continue;
-            }
-            String clzName = fields[0];
-            String csName  = fields[1];
-            String hisName = fields[2];
-            boolean isASCII = Boolean.valueOf(fields[3]);
-            String pkgName  = fields[4];
-            System.out.printf("%s,%s,%s,%b,%s%n", clzName, csName, hisName, isASCII, pkgName);
-
-            genClass0(args[0], args[1], "SingleByte-X.java.template",
-                      clzName, csName, hisName, pkgName, isASCII);
-        }
-    }
-
-    private static void toString(char[] sb, int off, int end,
-                                 Formatter out, String closure,
-                                 boolean comment) {
-        while (off < end) {
-            out.format("        \"");
-            for (int j = 0; j < 8; j++) {
-                if (off == end)
-                    break;
-                char c = sb[off++];
-                switch (c) {
-                case '\b':
-                    out.format("\\b"); break;
-                case '\t':
-                    out.format("\\t"); break;
-                case '\n':
-                    out.format("\\n"); break;
-                case '\f':
-                    out.format("\\f"); break;
-                case '\r':
-                    out.format("\\r"); break;
-                case '\"':
-                    out.format("\\\""); break;
-                case '\'':
-                    out.format("\\'"); break;
-                case '\\':
-                    out.format("\\\\"); break;
-                default:
-                    out.format("\\u%04X", c & 0xffff);
-                }
-            }
-            if (comment) {
-                if (off == end)
-                    out.format("\" %s      // 0x%02x - 0x%02x%n",
-                               closure, off-8, off-1);
-                else
-                    out.format("\" +      // 0x%02x - 0x%02x%n",
-                               off-8, off-1);
-            } else {
-                if (off == end)
-                    out.format("\"%s%n", closure);
-                else
-                    out.format("\" +%n");
-            }
-        }
-    }
-
     static Pattern sbmap = Pattern.compile("0x(\\p{XDigit}++)\\s++(?:U\\+|0x)?(\\p{XDigit}++)(?:\\s++#.*)?");
 
-    private static void genClass0(String srcDir, String dstDir,
-                                  String template,
-                                  String clzName,
-                                  String csName,
-                                  String hisName,
-                                  String pkgName,
-                                  boolean isASCII)
+    public static void genClass(Charset cs,
+                                String srcDir, String dstDir, String template)
         throws Exception
     {
+        String clzName = cs.clzName;
+        String csName  = cs.csName;
+        String hisName = cs.hisName;
+        String pkgName = cs.pkgName;
+        boolean isASCII = cs.isASCII;
+
         StringBuilder b2cSB = new StringBuilder();
         StringBuilder b2cNRSB = new StringBuilder();
         StringBuilder c2bNRSB = new StringBuilder();
@@ -265,5 +195,51 @@ public class SBCS {
             out.println(line);
         }
         out.close();
+    }
+
+    private static void toString(char[] sb, int off, int end,
+                                 Formatter out, String closure, boolean comment)
+    {
+        while (off < end) {
+            out.format("        \"");
+            for (int j = 0; j < 8; j++) {
+                if (off == end)
+                    break;
+                char c = sb[off++];
+                switch (c) {
+                case '\b':
+                    out.format("\\b"); break;
+                case '\t':
+                    out.format("\\t"); break;
+                case '\n':
+                    out.format("\\n"); break;
+                case '\f':
+                    out.format("\\f"); break;
+                case '\r':
+                    out.format("\\r"); break;
+                case '\"':
+                    out.format("\\\""); break;
+                case '\'':
+                    out.format("\\'"); break;
+                case '\\':
+                    out.format("\\\\"); break;
+                default:
+                    out.format("\\u%04X", c & 0xffff);
+                }
+            }
+            if (comment) {
+                if (off == end)
+                    out.format("\" %s      // 0x%02x - 0x%02x%n",
+                               closure, off-8, off-1);
+                else
+                    out.format("\" +      // 0x%02x - 0x%02x%n",
+                               off-8, off-1);
+            } else {
+                if (off == end)
+                    out.format("\"%s%n", closure);
+                else
+                    out.format("\" +%n");
+            }
+        }
     }
 }
