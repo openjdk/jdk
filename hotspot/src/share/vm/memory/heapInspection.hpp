@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_MEMORY_HEAPINSPECTION_HPP
 #define SHARE_VM_MEMORY_HEAPINSPECTION_HPP
 
-#include "memory/allocation.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "memory/allocation.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
 
