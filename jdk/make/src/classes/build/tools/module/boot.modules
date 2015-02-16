@@ -1,7 +1,6 @@
 java.base
 java.desktop
 java.compiler
-java.corba
 java.instrument
 java.logging
 java.management

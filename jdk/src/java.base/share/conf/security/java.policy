@@ -1,4 +1,8 @@
 // permissions required by each component
+grant codeBase "jrt:/java.corba" {
+        permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/jdk.zipfs" {
         permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
         permission java.lang.RuntimePermission "fileSystemProvider";
