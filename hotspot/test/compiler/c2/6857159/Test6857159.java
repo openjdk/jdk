@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,24 @@
  * @test
  * @bug 6857159
  * @summary local schedule failed with checkcast of Thread.currentThread()
- *
- * @run shell Test6857159.sh
+ * @library /testlibrary
  */
 
-public class Test6857159 extends Thread {
-    static class ct0 extends Test6857159 {
-        public void message() {
-            // System.out.println("message");
-        }
+import com.oracle.java.testlibrary.*;
+
+public class Test6857159 {
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbatch", "-XX:+PrintCompilation",
+                                                                  "-XX:CompileOnly=Test$ct.run", "Test");
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldNotContain("COMPILE SKIPPED");
+        analyzer.shouldContain("Test$ct0::run (16 bytes)");
+    }
+}
+
+class Test extends Thread {
+    static class ct0 extends Test {
+        public void message() { }
 
         public void run() {
              message();
@@ -43,14 +52,10 @@ public class Test6857159 extends Thread {
         }
     }
     static class ct1 extends ct0 {
-        public void message() {
-            // System.out.println("message");
-        }
+        public void message() { }
     }
     static class ct2 extends ct0 {
-        public void message() {
-            // System.out.println("message");
-        }
+        public void message() { }
     }
 
     public static void main(String[] args) throws Exception {

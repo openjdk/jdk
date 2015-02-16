@@ -1982,6 +1982,7 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
 
 
 Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (remove_dead_region(phase, can_reshape))  return this;
 
   if (StressArrayCopyMacroNode && !can_reshape) return NULL;
 

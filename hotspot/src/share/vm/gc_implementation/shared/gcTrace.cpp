@@ -162,7 +162,7 @@ void YoungGCTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* t
   _tenuring_threshold = UNSET_TENURING_THRESHOLD;
 }
 
-void YoungGCTracer::report_promotion_failed(const PromotionFailedInfo& pf_info) {
+void YoungGCTracer::report_promotion_failed(const PromotionFailedInfo& pf_info) const {
   assert_set_gc_id();
 
   send_promotion_failed_event(pf_info);

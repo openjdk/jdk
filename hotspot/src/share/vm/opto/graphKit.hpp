@@ -714,6 +714,15 @@ class GraphKit : public Phase {
                   klass, reason_string, must_throw, keep_exact_action);
   }
 
+  // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
+  void uncommon_trap_exact(Deoptimization::DeoptReason reason,
+                           Deoptimization::DeoptAction action,
+                           ciKlass* klass = NULL, const char* reason_string = NULL,
+                           bool must_throw = false) {
+    uncommon_trap(Deoptimization::make_trap_request(reason, action),
+                  klass, reason_string, must_throw, /*keep_exact_action=*/true);
+  }
+
   // SP when bytecode needs to be reexecuted.
   virtual int reexecute_sp() { return sp(); }
 
