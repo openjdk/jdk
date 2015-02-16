@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1433,26 +1433,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
     patching_epilog(patch, patch_code, src, info);
   }
   if (info != NULL) add_debug_info_for_null_check(offset, info);
-}
-
-
-void LIR_Assembler::prefetchr(LIR_Opr src) {
-  LIR_Address* addr = src->as_address_ptr();
-  Address from_addr = as_Address(addr);
-
-  if (VM_Version::has_v9()) {
-    __ prefetch(from_addr, Assembler::severalReads);
-  }
-}
-
-
-void LIR_Assembler::prefetchw(LIR_Opr src) {
-  LIR_Address* addr = src->as_address_ptr();
-  Address from_addr = as_Address(addr);
-
-  if (VM_Version::has_v9()) {
-    __ prefetch(from_addr, Assembler::severalWritesAndPossiblyReads);
-  }
 }
 
 

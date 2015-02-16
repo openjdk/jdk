@@ -36,7 +36,7 @@ import sun.hotspot.code.BlobType;
  * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
  *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+SegmentedCodeCache -XX:CompileCommand=compileonly,null::*
- *     InitialAndMaxUsageTest
+ *     -XX:-UseLargePages InitialAndMaxUsageTest
  * @summary testing of initial and max usage
  */
 public class InitialAndMaxUsageTest {

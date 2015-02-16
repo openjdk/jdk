@@ -466,19 +466,6 @@ class SharedRuntime: AllStatic {
   // Block before entering a JNI critical method
   static void block_for_jni_critical(JavaThread* thread);
 
-#ifdef HAVE_DTRACE_H
-  // Generate a dtrace wrapper for a given method.  The method takes arguments
-  // in the Java compiled code convention, marshals them to the native
-  // convention (handlizes oops, etc), transitions to native, makes the call,
-  // returns to java state (possibly blocking), unhandlizes any result and
-  // returns.
-  static nmethod *generate_dtrace_nmethod(MacroAssembler* masm,
-                                          methodHandle method);
-
-  // dtrace support to convert a Java string to utf8
-  static void get_utf(oopDesc* src, address dst);
-#endif // def HAVE_DTRACE_H
-
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
   static void fixup_callers_callsite(Method* moop, address ret_pc);
@@ -679,10 +666,6 @@ class AdapterHandlerLibrary: public AllStatic {
                                         address i2c_entry, address c2i_entry, address c2i_unverified_entry);
   static void create_native_wrapper(methodHandle method);
   static AdapterHandlerEntry* get_adapter(methodHandle method);
-
-#ifdef HAVE_DTRACE_H
-  static nmethod* create_dtrace_nmethod (methodHandle method);
-#endif // HAVE_DTRACE_H
 
   static void print_handler(CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, CodeBlob* b);
