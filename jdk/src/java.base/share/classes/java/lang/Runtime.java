@@ -564,9 +564,6 @@ public class Runtime {
      * <code>cmdarray</code> as its argument. This may result in a
      * {@link SecurityException} being thrown.
      *
-     * <p>If the operating system does not support the creation of
-     * processes, an {@link UnsupportedOperationException} will be thrown.
-     *
      * <p>Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -578,6 +575,9 @@ public class Runtime {
      * <p>In such cases an exception will be thrown.  The exact nature
      * of the exception is system-dependent, but it will always be a
      * subclass of {@link IOException}.
+     *
+     * <p>If the operating system does not support the creation of
+     * processes, an {@link UnsupportedOperationException} will be thrown.
      *
      *
      * @param   cmdarray  array containing the command to call and

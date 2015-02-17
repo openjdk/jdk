@@ -164,19 +164,26 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
       [enable using ccache to speed up recompilations @<:@disabled@:>@])])
 
   CCACHE=
+  CCACHE_STATUS=
   AC_MSG_CHECKING([is ccache enabled])
-  ENABLE_CCACHE=$enable_ccache
   if test "x$enable_ccache" = xyes; then
-    AC_MSG_RESULT([yes])
-    OLD_PATH="$PATH"
-    if test "x$TOOLCHAIN_PATH" != x; then
-      PATH=$TOOLCHAIN_PATH:$PATH
+    if test "x$TOOLCHAIN_TYPE" = "xgcc" -o "x$TOOLCHAIN_TYPE" = "xclang"; then
+      AC_MSG_RESULT([yes])
+      OLD_PATH="$PATH"
+      if test "x$TOOLCHAIN_PATH" != x; then
+        PATH=$TOOLCHAIN_PATH:$PATH
+      fi
+      BASIC_REQUIRE_PROGS(CCACHE, ccache)
+      PATH="$OLD_PATH"
+      CCACHE_VERSION=[`$CCACHE --version | head -n1 | $SED 's/[A-Za-z ]*//'`]
+      CCACHE_STATUS="Active ($CCACHE_VERSION)"
+    else
+      AC_MSG_RESULT([no])
+      AC_MSG_WARN([ccache is not supported with toolchain type $TOOLCHAIN_TYPE])
     fi
-    BASIC_REQUIRE_PROGS(CCACHE, ccache)
-    CCACHE_STATUS="enabled"
-    PATH="$OLD_PATH"
   elif test "x$enable_ccache" = xno; then
     AC_MSG_RESULT([no, explicitly disabled])
+    CCACHE_STATUS="Disabled"
   elif test "x$enable_ccache" = x; then
     AC_MSG_RESULT([no])
   else
@@ -206,35 +213,31 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
 AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
 [
   if test "x$CCACHE" != x; then
-    # Only use ccache if it is 3.1.4 or later, which supports
-    # precompiled headers.
-    AC_MSG_CHECKING([if ccache supports precompiled headers])
-    HAS_GOOD_CCACHE=`($CCACHE --version | head -n 1 | grep -E 3.1.@<:@456789@:>@) 2> /dev/null`
-    if test "x$HAS_GOOD_CCACHE" = x; then
-      AC_MSG_RESULT([no, disabling ccache])
-      CCACHE=
-      CCACHE_STATUS="disabled"
-    else
-      AC_MSG_RESULT([yes])
+    if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
+      HAS_BAD_CCACHE=[`$ECHO $CCACHE_VERSION | \
+          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]'`]
+      if test "x$HAS_BAD_CCACHE" != "x"; then
+        AC_MSG_ERROR([Precompiled headers requires ccache 3.1.4 or later, found $CCACHE_VERSION])
+      fi
       AC_MSG_CHECKING([if C-compiler supports ccache precompiled headers])
+      CCACHE_PRECOMP_FLAG="-fpch-preprocess"
       PUSHED_FLAGS="$CXXFLAGS"
-      CXXFLAGS="-fpch-preprocess $CXXFLAGS"
+      CXXFLAGS="$CCACHE_PRECOMP_FLAG $CXXFLAGS"
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [CC_KNOWS_CCACHE_TRICK=yes], [CC_KNOWS_CCACHE_TRICK=no])
       CXXFLAGS="$PUSHED_FLAGS"
       if test "x$CC_KNOWS_CCACHE_TRICK" = xyes; then
         AC_MSG_RESULT([yes])
+        CFLAGS_CCACHE="$CCACHE_PRECOMP_FLAG"
+        AC_SUBST(CFLAGS_CCACHE)
+        CCACHE_SLOPPINESS=pch_defines,time_macros
       else
-        AC_MSG_RESULT([no, disabling ccaching of precompiled headers])
-        CCACHE=
-        CCACHE_STATUS="disabled"
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([Cannot use ccache with precompiled headers without compiler support for $CCACHE_PRECOMP_FLAG])
       fi
     fi
-  fi
 
-  if test "x$CCACHE" != x; then
-    CCACHE_SLOPPINESS=time_macros
-    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS $CCACHE"
-    CCACHE_FLAGS=-fpch-preprocess
+    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR \
+        CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS CCACHE_BASEDIR=$TOPDIR $CCACHE"
 
     if test "x$SET_CCACHE_DIR" != x; then
       mkdir -p $CCACHE_DIR > /dev/null 2>&1

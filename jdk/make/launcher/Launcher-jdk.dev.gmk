@@ -31,6 +31,12 @@ $(eval $(call SetupLauncher,jar, \
 $(eval $(call SetupLauncher,jarsigner, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.jarsigner.Main"$(COMMA) }'))
 
+ifndef BUILD_HEADLESS_ONLY
+  $(eval $(call SetupLauncher,policytool, \
+      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.policytool.PolicyTool"$(COMMA) }',, \
+      $(XLIBS)))
+endif
+
 $(eval $(call SetupLauncher,jdeps, \
     -DEXPAND_CLASSPATH_WILDCARDS \
     -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \

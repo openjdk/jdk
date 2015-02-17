@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,6 +267,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
     /**
      * Called to set a socket option.
      *
+     * @param <T> The type of the socket option value
      * @param name The socket option
      *
      * @param value The value of the socket option. A value of {@code null}
@@ -276,7 +277,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      *         support the option
      *
      * @throws NullPointerException if name is {@code null}
-     *
+     * @throws IOException if an I/O problem occurs while attempting to set the option
      * @since 1.9
      */
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
@@ -308,12 +309,15 @@ public abstract class DatagramSocketImpl implements SocketOptions {
     /**
      * Called to get a socket option.
      *
+     * @return the socket option
+     * @param <T> The type of the socket option value
      * @param name The socket option
      *
      * @throws UnsupportedOperationException if the DatagramSocketImpl does not
      *         support the option
      *
      * @throws NullPointerException if name is {@code null}
+     * @throws IOException if an I/O problem occurs while attempting to set the option
      *
      * @since 1.9
      */

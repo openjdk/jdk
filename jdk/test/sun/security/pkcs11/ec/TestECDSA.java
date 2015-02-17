@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6405536
+ * @bug 6405536 8042967
  * @summary basic test of SHA1withECDSA and NONEwithECDSA signing/verifying
  * @author Andreas Sterbenz
  * @library ..
@@ -176,17 +176,28 @@ public class TestECDSA extends PKCS11Test {
         verify(provider, "NONEwithECDSA", publicKey, data1SHA, sig, true);
         verify(provider, "NONEwithECDSA", publicKey, data2SHA, sig, false);
 
-        testSigning(provider, privateKey, publicKey);
+        System.out.println("Testing with default signature format: ASN.1");
+        testSigning(provider, privateKey, publicKey, false);
+
+        System.out.println("Testing with IEEE P1363 signature format");
+        testSigning(provider, privateKey, publicKey, true);
     }
 
-    private void testSigning(Provider provider, PrivateKey privateKey,
-            PublicKey publicKey) throws Exception {
+    private void testSigning(Provider provider,
+                             PrivateKey privateKey,
+                             PublicKey publicKey,
+                             boolean p1363Format) throws Exception {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
 
         // sign random data using SHA1withECDSA and verify using
         // SHA1withECDSA and NONEwithECDSA
-        Signature s = Signature.getInstance("SHA1withECDSA", provider);
+        Signature s;
+        if (p1363Format) {
+            s = Signature.getInstance("SHA1withECDSAinP1363Format", provider);
+        } else {
+            s = Signature.getInstance("SHA1withECDSA", provider);
+        }
         s.initSign(privateKey);
         s.update(data);
         byte[] s1 = s.sign();
@@ -197,7 +208,11 @@ public class TestECDSA extends PKCS11Test {
             throw new Exception("Sign/verify 1 failed");
         }
 
-        s = Signature.getInstance("NONEwithECDSA", provider);
+        if (p1363Format) {
+            s = Signature.getInstance("NONEwithECDSAinP1363Format", provider);
+        } else {
+            s = Signature.getInstance("NONEwithECDSA", provider);
+        }
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         byte[] digest = md.digest(data);
         s.initVerify(publicKey);
@@ -218,7 +233,11 @@ public class TestECDSA extends PKCS11Test {
             throw new Exception("Sign/verify 3 failed");
         }
 
-        s = Signature.getInstance("SHA1withECDSA", provider);
+        if (p1363Format) {
+            s = Signature.getInstance("SHA1withECDSAinP1363Format", provider);
+        } else {
+            s = Signature.getInstance("SHA1withECDSA", provider);
+        }
         s.initVerify(publicKey);
         s.update(data);
         if (!s.verify(s2)) {

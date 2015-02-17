@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ import sun.security.util.KeyUtil;
  * . DSA
  *   . NONEwithDSA (RawDSA)
  *   . SHA1withDSA
+ *   . NONEwithDSAinP1363Format (RawDSAinP1363Format)
+ *   . SHA1withDSAinP1363Format
  * . RSA:
  *   . MD2withRSA
  *   . MD5withRSA
@@ -65,6 +67,12 @@ import sun.security.util.KeyUtil;
  *   . SHA256withECDSA
  *   . SHA384withECDSA
  *   . SHA512withECDSA
+ *   . NONEwithECDSAinP1363Format
+ *   . SHA1withECDSAinP1363Format
+ *   . SHA224withECDSAinP1363Format
+ *   . SHA256withECDSAinP1363Format
+ *   . SHA384withECDSAinP1363Format
+ *   . SHA512withECDSAinP1363Format
  *
  * Note that the underlying PKCS#11 token may support complete signature
  * algorithm (e.g. CKM_DSA_SHA1, CKM_MD5_RSA_PKCS), or it may just
@@ -117,6 +125,12 @@ final class P11Signature extends SignatureSpi {
     // total number of bytes processed in current operation
     private int bytesProcessed;
 
+    // The format, to be used for DSA and ECDSA signatures.
+    // If true, the IEEE P1363 format will be used, the concatenation of
+    // r and s. If false (default), the signature will be formatted as a
+    // DER-encoded ASN.1 sequence of r and s.
+    private boolean p1363Format = false;
+
     // constant for signing mode
     private final static int M_SIGN   = 1;
     // constant for verification mode
@@ -166,10 +180,12 @@ final class P11Signature extends SignatureSpi {
             break;
         case (int)CKM_DSA:
             keyAlgorithm = "DSA";
-            if (algorithm.equals("DSA")) {
+            if (algorithm.equals("DSA") ||
+                algorithm.equals("DSAinP1363Format")) {
                 type = T_DIGEST;
                 md = MessageDigest.getInstance("SHA-1");
-            } else if (algorithm.equals("RawDSA")) {
+            } else if (algorithm.equals("RawDSA") ||
+                       algorithm.equals("RawDSAinP1363Format")) {
                 type = T_RAW;
                 buffer = new byte[20];
             } else {
@@ -178,20 +194,26 @@ final class P11Signature extends SignatureSpi {
             break;
         case (int)CKM_ECDSA:
             keyAlgorithm = "EC";
-            if (algorithm.equals("NONEwithECDSA")) {
+            if (algorithm.equals("NONEwithECDSA") ||
+                algorithm.equals("NONEwithECDSAinP1363Format")) {
                 type = T_RAW;
                 buffer = new byte[RAW_ECDSA_MAX];
             } else {
                 String digestAlg;
-                if (algorithm.equals("SHA1withECDSA")) {
+                if (algorithm.equals("SHA1withECDSA") ||
+                    algorithm.equals("SHA1withECDSAinP1363Format")) {
                     digestAlg = "SHA-1";
-                } else if (algorithm.equals("SHA224withECDSA")) {
+                } else if (algorithm.equals("SHA224withECDSA") ||
+                           algorithm.equals("SHA224withECDSAinP1363Format")) {
                     digestAlg = "SHA-224";
-                } else if (algorithm.equals("SHA256withECDSA")) {
+                } else if (algorithm.equals("SHA256withECDSA") ||
+                           algorithm.equals("SHA256withECDSAinP1363Format")) {
                     digestAlg = "SHA-256";
-                } else if (algorithm.equals("SHA384withECDSA")) {
+                } else if (algorithm.equals("SHA384withECDSA") ||
+                           algorithm.equals("SHA384withECDSAinP1363Format")) {
                     digestAlg = "SHA-384";
-                } else if (algorithm.equals("SHA512withECDSA")) {
+                } else if (algorithm.equals("SHA512withECDSA") ||
+                           algorithm.equals("SHA512withECDSAinP1363Format")) {
                     digestAlg = "SHA-512";
                 } else {
                     throw new ProviderException(algorithm);
@@ -235,6 +257,9 @@ final class P11Signature extends SignatureSpi {
         this.buffer = buffer;
         this.digestOID = digestOID;
         this.md = md;
+        if (algorithm.endsWith("inP1363Format")) {
+            this.p1363Format = true;
+        }
     }
 
     private void ensureInitialized() {
@@ -582,10 +607,14 @@ final class P11Signature extends SignatureSpi {
                     signature = token.p11.C_Sign(session.id(), data);
                 }
             }
-            if (keyAlgorithm.equals("RSA") == false) {
-                return dsaToASN1(signature);
-            } else {
+            if (keyAlgorithm.equals("RSA")) {
                 return signature;
+            } else {
+                if (p1363Format) {
+                    return signature;
+                } else {
+                    return dsaToASN1(signature);
+                }
             }
         } catch (PKCS11Exception e) {
             throw new ProviderException(e);
@@ -599,10 +628,12 @@ final class P11Signature extends SignatureSpi {
     protected boolean engineVerify(byte[] signature) throws SignatureException {
         ensureInitialized();
         try {
-            if (keyAlgorithm.equals("DSA")) {
-                signature = asn1ToDSA(signature);
-            } else if (keyAlgorithm.equals("EC")) {
-                signature = asn1ToECDSA(signature);
+            if (!p1363Format) {
+                if (keyAlgorithm.equals("DSA")) {
+                    signature = asn1ToDSA(signature);
+                } else if (keyAlgorithm.equals("EC")) {
+                    signature = asn1ToECDSA(signature);
+                }
             }
             if (type == T_UPDATE) {
                 token.p11.C_VerifyFinal(session.id(), signature);

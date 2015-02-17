@@ -629,6 +629,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+CFLAGS_CCACHE
 CCACHE
 USE_PRECOMPILED_HEADER
 SJAVAC_SERVER_DIR
@@ -991,6 +992,7 @@ CAT
 BASH
 BASENAME
 DATE_WHEN_CONFIGURED
+ORIGINAL_PATH
 CONFIGURE_COMMAND_LINE
 target_alias
 host_alias
@@ -4333,7 +4335,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1421247827
+DATE_WHEN_GENERATED=1423567509
 
 ###############################################################################
 #
@@ -4365,6 +4367,9 @@ DATE_WHEN_GENERATED=1421247827
 # Basic initialization that must happen first of all in the normal process.
 
   # Save the original command line. This is passed to us by the wrapper configure script.
+
+  # Save the path variable before it gets changed
+  ORIGINAL_PATH="$PATH"
 
   DATE_WHEN_CONFIGURED=`LANG=C date`
 
@@ -27438,8 +27443,8 @@ $as_echo "$as_me: Trying to extract Visual Studio environment variables" >&6;}
     # The trailing space for everyone except PATH is no typo, but is needed due
     # to trailing \ in the Windows paths. These will be stripped later.
     $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE\;$include \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB\;$lib \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
     $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
     $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
     $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
@@ -27486,9 +27491,9 @@ $as_echo "present but broken" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      # Remove any trailing "\" and " " from the variables.
-      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED 's/\\\\* *$//'`
-      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\* *$//'`
+      # Remove any trailing "\" ";" and " " from the variables.
+      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED -e 's/\\\\*;* *$//'`
+      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\*;* *$//'`
       VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
       WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
       WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
@@ -27499,6 +27504,268 @@ $as_echo "ok" >&6; }
 
 
 
+
+      # Convert VS_INCLUDE into SYSROOT_CFLAGS
+      OLDIFS="$IFS"
+      IFS=";"
+      for i in $VS_INCLUDE; do
+        ipath=$i
+	IFS="$OLDIFS"
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$ipath"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of ipath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of ipath, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of ipath" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    ipath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting ipath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting ipath to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$ipath"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    ipath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting ipath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting ipath to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a unix platform. Hooray! :)
+    path="$ipath"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of ipath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of ipath, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of ipath, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    ipath="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+	IFS=";"
+      	SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+      done
+      # Convert VS_LIB into SYSROOT_LDFLAGS
+      for i in $VS_LIB; do
+        libpath=$i
+	IFS="$OLDIFS"
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$libpath"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of libpath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of libpath, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of libpath" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    libpath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting libpath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting libpath to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$libpath"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    libpath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting libpath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting libpath to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a unix platform. Hooray! :)
+    path="$libpath"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of libpath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of libpath, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of libpath, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    libpath="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+	IFS=";"
+      	SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+      done
+      IFS="$OLDIFS"
     fi
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
@@ -50616,16 +50883,17 @@ fi
 
 
   CCACHE=
+  CCACHE_STATUS=
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking is ccache enabled" >&5
 $as_echo_n "checking is ccache enabled... " >&6; }
-  ENABLE_CCACHE=$enable_ccache
   if test "x$enable_ccache" = xyes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    if test "x$TOOLCHAIN_TYPE" = "xgcc" -o "x$TOOLCHAIN_TYPE" = "xclang"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    OLD_PATH="$PATH"
-    if test "x$TOOLCHAIN_PATH" != x; then
-      PATH=$TOOLCHAIN_PATH:$PATH
-    fi
+      OLD_PATH="$PATH"
+      if test "x$TOOLCHAIN_PATH" != x; then
+        PATH=$TOOLCHAIN_PATH:$PATH
+      fi
 
 
 
@@ -50819,11 +51087,19 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
-    CCACHE_STATUS="enabled"
-    PATH="$OLD_PATH"
+      PATH="$OLD_PATH"
+      CCACHE_VERSION=`$CCACHE --version | head -n1 | $SED 's/[A-Za-z ]*//'`
+      CCACHE_STATUS="Active ($CCACHE_VERSION)"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ccache is not supported with toolchain type $TOOLCHAIN_TYPE" >&5
+$as_echo "$as_me: WARNING: ccache is not supported with toolchain type $TOOLCHAIN_TYPE" >&2;}
+    fi
   elif test "x$enable_ccache" = xno; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, explicitly disabled" >&5
 $as_echo "no, explicitly disabled" >&6; }
+    CCACHE_STATUS="Disabled"
   elif test "x$enable_ccache" = x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -50854,23 +51130,17 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
   if test "x$CCACHE" != x; then
 
   if test "x$CCACHE" != x; then
-    # Only use ccache if it is 3.1.4 or later, which supports
-    # precompiled headers.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ccache supports precompiled headers" >&5
-$as_echo_n "checking if ccache supports precompiled headers... " >&6; }
-    HAS_GOOD_CCACHE=`($CCACHE --version | head -n 1 | grep -E 3.1.[456789]) 2> /dev/null`
-    if test "x$HAS_GOOD_CCACHE" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccache" >&5
-$as_echo "no, disabling ccache" >&6; }
-      CCACHE=
-      CCACHE_STATUS="disabled"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+    if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
+      HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
+          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]'`
+      if test "x$HAS_BAD_CCACHE" != "x"; then
+        as_fn_error $? "Precompiled headers requires ccache 3.1.4 or later, found $CCACHE_VERSION" "$LINENO" 5
+      fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if C-compiler supports ccache precompiled headers" >&5
 $as_echo_n "checking if C-compiler supports ccache precompiled headers... " >&6; }
+      CCACHE_PRECOMP_FLAG="-fpch-preprocess"
       PUSHED_FLAGS="$CXXFLAGS"
-      CXXFLAGS="-fpch-preprocess $CXXFLAGS"
+      CXXFLAGS="$CCACHE_PRECOMP_FLAG $CXXFLAGS"
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -50892,19 +51162,18 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
       if test "x$CC_KNOWS_CCACHE_TRICK" = xyes; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+        CFLAGS_CCACHE="$CCACHE_PRECOMP_FLAG"
+
+        CCACHE_SLOPPINESS=pch_defines,time_macros
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccaching of precompiled headers" >&5
-$as_echo "no, disabling ccaching of precompiled headers" >&6; }
-        CCACHE=
-        CCACHE_STATUS="disabled"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        as_fn_error $? "Cannot use ccache with precompiled headers without compiler support for $CCACHE_PRECOMP_FLAG" "$LINENO" 5
       fi
     fi
-  fi
 
-  if test "x$CCACHE" != x; then
-    CCACHE_SLOPPINESS=time_macros
-    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS $CCACHE"
-    CCACHE_FLAGS=-fpch-preprocess
+    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR \
+        CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS CCACHE_BASEDIR=$TOPDIR $CCACHE"
 
     if test "x$SET_CCACHE_DIR" != x; then
       mkdir -p $CCACHE_DIR > /dev/null 2>&1
