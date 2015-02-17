@@ -326,6 +326,8 @@ CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
 
 CFLAGS_WARNINGS_ARE_ERRORS:=@CFLAGS_WARNINGS_ARE_ERRORS@
 
+CFLAGS_CCACHE:=@CFLAGS_CCACHE@
+
 # Tools that potentially need to be cross compilation aware.
 CC:=@FIXPATH@ @CCACHE@ @CC@
 

@@ -55,6 +55,29 @@ grant codeBase "jrt:/jdk.crypto.pkcs11" {
         permission java.io.FilePermission "<<ALL FILES>>", "read";
 };
 
+grant codeBase "jrt:/java.xml.ws" {
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.xml.internal.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.org.apache.xerces.internal.*";
+        permission java.lang.RuntimePermission "accessDeclaredMembers";
+        permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+        permission java.util.PropertyPermission "*", "read";
+};
+
+grant codeBase "jrt:/java.xml.bind" {
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.xml.internal.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal.*";
+        permission java.lang.RuntimePermission "accessDeclaredMembers";
+        permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+        permission java.util.PropertyPermission "*", "read";
+};
+
+grant codeBase "jrt:/java.activation" {
+        permission java.security.AllPermission;
+};
+
 // default permissions granted to all domains
 
 grant {

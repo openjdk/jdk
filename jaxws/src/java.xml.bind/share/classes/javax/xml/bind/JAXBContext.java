@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,14 @@ import java.io.InputStream;
  * specialized forms of the method available:
  *
  * <ul>
- *   <li>{@link #newInstance(String,ClassLoader) JAXBContext.newInstance( "com.acme.foo:com.acme.bar" )} <br/>
+ *   <li>{@link #newInstance(String,ClassLoader) JAXBContext.newInstance( "com.acme.foo:com.acme.bar" )} <br>
  *   The JAXBContext instance is initialized from a list of colon
  *   separated Java package names. Each java package contains
  *   JAXB mapped classes, schema-derived classes and/or user annotated
  *   classes. Additionally, the java package may contain JAXB package annotations
  *   that must be processed. (see JLS, Section 7.4.1 "Named Packages").
  *   </li>
- *   <li>{@link #newInstance(Class...) JAXBContext.newInstance( com.acme.foo.Foo.class )} <br/>
+ *   <li>{@link #newInstance(Class...) JAXBContext.newInstance( com.acme.foo.Foo.class )} <br>
  *    The JAXBContext instance is initialized with class(es)
  *    passed as parameter(s) and classes that are statically reachable from
  *    these class(es). See {@link #newInstance(Class...)} for details.
@@ -64,8 +64,8 @@ import java.io.InputStream;
  * class containing the following method signatures:</i>
  *
  * <pre>
- * public static JAXBContext createContext( String contextPath, ClassLoader classLoader, Map&lt;String,Object> properties ) throws JAXBException
- * public static JAXBContext createContext( Class[] classes, Map&lt;String,Object> properties ) throws JAXBException
+ * public static JAXBContext createContext( String contextPath, ClassLoader classLoader, Map&lt;String,Object&gt; properties ) throws JAXBException
+ * public static JAXBContext createContext( Class[] classes, Map&lt;String,Object&gt; properties ) throws JAXBException
  * </pre>
  *
  * <p><i>
@@ -256,7 +256,7 @@ import java.io.InputStream;
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
  * @see Marshaller
  * @see Unmarshaller
- * @see S 7.4.1 "Named Packages" in Java Language Specification</a>
+ * @see <a href="http://docs.oracle.com/javase/specs/jls/se7/html/jls-7.html#jls-7.4.1">S 7.4.1 "Named Packages" in Java Language Specification</a>
  * @since 1.6, JAXB 1.0
  */
 public abstract class JAXBContext {
@@ -352,7 +352,7 @@ public abstract class JAXBContext {
      * <p>
      * To maintain compatibility with JAXB 1.0 schema to java
      * interface/implementation binding, enabled by schema customization
-     * <tt>&lt;jaxb:globalBindings valueClass="false"></tt>,
+     * <tt>&lt;jaxb:globalBindings valueClass="false"&gt;</tt>,
      * the JAXB provider will ensure that each package on the context path
      * has a <tt>jaxb.properties</tt> file which contains a value for the
      * <tt>javax.xml.bind.context.factory</tt> property and that all values

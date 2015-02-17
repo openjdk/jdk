@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/resourceHash.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -691,7 +692,6 @@ void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Hand
   // On fall-through, mark the patch as used.
   clear_cp_patch_at(index);
 }
-
 
 
 class NameSigHash: public ResourceObj {
@@ -1370,6 +1370,33 @@ void ClassFileParser::parse_linenumber_table(
 }
 
 
+class LVT_Hash : public AllStatic {
+ public:
+
+  static bool equals(LocalVariableTableElement const& e0, LocalVariableTableElement const& e1) {
+  /*
+   * 3-tuple start_bci/length/slot has to be unique key,
+   * so the following comparison seems to be redundant:
+   *       && elem->name_cp_index == entry->_elem->name_cp_index
+   */
+    return (e0.start_bci     == e1.start_bci &&
+            e0.length        == e1.length &&
+            e0.name_cp_index == e1.name_cp_index &&
+            e0.slot          == e1.slot);
+  }
+
+  static unsigned int hash(LocalVariableTableElement const& e0) {
+    unsigned int raw_hash = e0.start_bci;
+
+    raw_hash = e0.length        + raw_hash * 37;
+    raw_hash = e0.name_cp_index + raw_hash * 37;
+    raw_hash = e0.slot          + raw_hash * 37;
+
+    return raw_hash;
+  }
+};
+
+
 // Class file LocalVariableTable elements.
 class Classfile_LVT_Element VALUE_OBJ_CLASS_SPEC {
  public:
@@ -1379,88 +1406,6 @@ class Classfile_LVT_Element VALUE_OBJ_CLASS_SPEC {
   u2 descriptor_cp_index;
   u2 slot;
 };
-
-
-class LVT_Hash: public CHeapObj<mtClass> {
- public:
-  LocalVariableTableElement  *_elem;  // element
-  LVT_Hash*                   _next;  // Next entry in hash table
-};
-
-unsigned int hash(LocalVariableTableElement *elem) {
-  unsigned int raw_hash = elem->start_bci;
-
-  raw_hash = elem->length        + raw_hash * 37;
-  raw_hash = elem->name_cp_index + raw_hash * 37;
-  raw_hash = elem->slot          + raw_hash * 37;
-
-  return raw_hash % HASH_ROW_SIZE;
-}
-
-void initialize_hashtable(LVT_Hash** table) {
-  for (int i = 0; i < HASH_ROW_SIZE; i++) {
-    table[i] = NULL;
-  }
-}
-
-void clear_hashtable(LVT_Hash** table) {
-  for (int i = 0; i < HASH_ROW_SIZE; i++) {
-    LVT_Hash* current = table[i];
-    LVT_Hash* next;
-    while (current != NULL) {
-      next = current->_next;
-      current->_next = NULL;
-      delete(current);
-      current = next;
-    }
-    table[i] = NULL;
-  }
-}
-
-LVT_Hash* LVT_lookup(LocalVariableTableElement *elem, int index, LVT_Hash** table) {
-  LVT_Hash* entry = table[index];
-
-  /*
-   * 3-tuple start_bci/length/slot has to be unique key,
-   * so the following comparison seems to be redundant:
-   *       && elem->name_cp_index == entry->_elem->name_cp_index
-   */
-  while (entry != NULL) {
-    if (elem->start_bci           == entry->_elem->start_bci
-     && elem->length              == entry->_elem->length
-     && elem->name_cp_index       == entry->_elem->name_cp_index
-     && elem->slot                == entry->_elem->slot
-    ) {
-      return entry;
-    }
-    entry = entry->_next;
-  }
-  return NULL;
-}
-
-// Return false if the local variable is found in table.
-// Return true if no duplicate is found.
-// And local variable is added as a new entry in table.
-bool LVT_put_after_lookup(LocalVariableTableElement *elem, LVT_Hash** table) {
-  // First lookup for duplicates
-  int index = hash(elem);
-  LVT_Hash* entry = LVT_lookup(elem, index, table);
-
-  if (entry != NULL) {
-      return false;
-  }
-  // No duplicate is found, allocate a new entry and fill it.
-  if ((entry = new LVT_Hash()) == NULL) {
-    return false;
-  }
-  entry->_elem = elem;
-
-  // Insert into hash table
-  entry->_next = table[index];
-  table[index] = entry;
-
-  return true;
-}
 
 void copy_lvt_element(Classfile_LVT_Element *src, LocalVariableTableElement *lvt) {
   lvt->start_bci           = Bytes::get_Java_u2((u1*) &src->start_bci);
@@ -1861,8 +1806,12 @@ void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
                                                u2** localvariable_type_table_start,
                                                TRAPS) {
 
-  LVT_Hash** lvt_Hash = NEW_RESOURCE_ARRAY(LVT_Hash*, HASH_ROW_SIZE);
-  initialize_hashtable(lvt_Hash);
+  ResourceMark rm(THREAD);
+
+  typedef ResourceHashtable<LocalVariableTableElement, LocalVariableTableElement*,
+                            &LVT_Hash::hash, &LVT_Hash::equals> LVT_HashTable;
+
+  LVT_HashTable* table = new LVT_HashTable();
 
   // To fill LocalVariableTable in
   Classfile_LVT_Element*  cf_lvt;
@@ -1872,11 +1821,10 @@ void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
     cf_lvt = (Classfile_LVT_Element *) localvariable_table_start[tbl_no];
     for (int idx = 0; idx < localvariable_table_length[tbl_no]; idx++, lvt++) {
       copy_lvt_element(&cf_lvt[idx], lvt);
-      // If no duplicates, add LVT elem in hashtable lvt_Hash.
-      if (LVT_put_after_lookup(lvt, lvt_Hash) == false
+      // If no duplicates, add LVT elem in hashtable.
+      if (table->put(*lvt, lvt) == false
           && _need_verify
           && _major_version >= JAVA_1_5_VERSION) {
-        clear_hashtable(lvt_Hash);
         classfile_parse_error("Duplicated LocalVariableTable attribute "
                               "entry for '%s' in class file %s",
                                _cp->symbol_at(lvt->name_cp_index)->as_utf8(),
@@ -1893,29 +1841,25 @@ void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
     cf_lvtt = (Classfile_LVT_Element *) localvariable_type_table_start[tbl_no];
     for (int idx = 0; idx < localvariable_type_table_length[tbl_no]; idx++) {
       copy_lvt_element(&cf_lvtt[idx], &lvtt_elem);
-      int index = hash(&lvtt_elem);
-      LVT_Hash* entry = LVT_lookup(&lvtt_elem, index, lvt_Hash);
+      LocalVariableTableElement** entry = table->get(lvtt_elem);
       if (entry == NULL) {
         if (_need_verify) {
-          clear_hashtable(lvt_Hash);
           classfile_parse_error("LVTT entry for '%s' in class file %s "
                                 "does not match any LVT entry",
                                  _cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
                                  CHECK);
         }
-      } else if (entry->_elem->signature_cp_index != 0 && _need_verify) {
-        clear_hashtable(lvt_Hash);
+      } else if ((*entry)->signature_cp_index != 0 && _need_verify) {
         classfile_parse_error("Duplicated LocalVariableTypeTable attribute "
                               "entry for '%s' in class file %s",
                                _cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
                                CHECK);
       } else {
         // to add generic signatures into LocalVariableTable
-        entry->_elem->signature_cp_index = lvtt_elem.descriptor_cp_index;
+        (*entry)->signature_cp_index = lvtt_elem.descriptor_cp_index;
       }
     }
   }
-  clear_hashtable(lvt_Hash);
 }
 
 

@@ -629,6 +629,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+CFLAGS_CCACHE
 CCACHE
 USE_PRECOMPILED_HEADER
 SJAVAC_SERVER_DIR
@@ -4392,7 +4393,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1423504354
+DATE_WHEN_GENERATED=1424202275
 
 ###############################################################################
 #
@@ -51450,16 +51451,17 @@ fi
 
 
   CCACHE=
+  CCACHE_STATUS=
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking is ccache enabled" >&5
 $as_echo_n "checking is ccache enabled... " >&6; }
-  ENABLE_CCACHE=$enable_ccache
   if test "x$enable_ccache" = xyes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    if test "x$TOOLCHAIN_TYPE" = "xgcc" -o "x$TOOLCHAIN_TYPE" = "xclang"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    OLD_PATH="$PATH"
-    if test "x$TOOLCHAIN_PATH" != x; then
-      PATH=$TOOLCHAIN_PATH:$PATH
-    fi
+      OLD_PATH="$PATH"
+      if test "x$TOOLCHAIN_PATH" != x; then
+        PATH=$TOOLCHAIN_PATH:$PATH
+      fi
 
 
 
@@ -51653,11 +51655,19 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
-    CCACHE_STATUS="enabled"
-    PATH="$OLD_PATH"
+      PATH="$OLD_PATH"
+      CCACHE_VERSION=`$CCACHE --version | head -n1 | $SED 's/[A-Za-z ]*//'`
+      CCACHE_STATUS="Active ($CCACHE_VERSION)"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ccache is not supported with toolchain type $TOOLCHAIN_TYPE" >&5
+$as_echo "$as_me: WARNING: ccache is not supported with toolchain type $TOOLCHAIN_TYPE" >&2;}
+    fi
   elif test "x$enable_ccache" = xno; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, explicitly disabled" >&5
 $as_echo "no, explicitly disabled" >&6; }
+    CCACHE_STATUS="Disabled"
   elif test "x$enable_ccache" = x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -51688,23 +51698,17 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
   if test "x$CCACHE" != x; then
 
   if test "x$CCACHE" != x; then
-    # Only use ccache if it is 3.1.4 or later, which supports
-    # precompiled headers.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ccache supports precompiled headers" >&5
-$as_echo_n "checking if ccache supports precompiled headers... " >&6; }
-    HAS_GOOD_CCACHE=`($CCACHE --version | head -n 1 | grep -E 3.1.[456789]) 2> /dev/null`
-    if test "x$HAS_GOOD_CCACHE" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccache" >&5
-$as_echo "no, disabling ccache" >&6; }
-      CCACHE=
-      CCACHE_STATUS="disabled"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+    if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
+      HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
+          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]'`
+      if test "x$HAS_BAD_CCACHE" != "x"; then
+        as_fn_error $? "Precompiled headers requires ccache 3.1.4 or later, found $CCACHE_VERSION" "$LINENO" 5
+      fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if C-compiler supports ccache precompiled headers" >&5
 $as_echo_n "checking if C-compiler supports ccache precompiled headers... " >&6; }
+      CCACHE_PRECOMP_FLAG="-fpch-preprocess"
       PUSHED_FLAGS="$CXXFLAGS"
-      CXXFLAGS="-fpch-preprocess $CXXFLAGS"
+      CXXFLAGS="$CCACHE_PRECOMP_FLAG $CXXFLAGS"
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -51726,19 +51730,18 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
       if test "x$CC_KNOWS_CCACHE_TRICK" = xyes; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+        CFLAGS_CCACHE="$CCACHE_PRECOMP_FLAG"
+
+        CCACHE_SLOPPINESS=pch_defines,time_macros
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccaching of precompiled headers" >&5
-$as_echo "no, disabling ccaching of precompiled headers" >&6; }
-        CCACHE=
-        CCACHE_STATUS="disabled"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        as_fn_error $? "Cannot use ccache with precompiled headers without compiler support for $CCACHE_PRECOMP_FLAG" "$LINENO" 5
       fi
     fi
-  fi
 
-  if test "x$CCACHE" != x; then
-    CCACHE_SLOPPINESS=time_macros
-    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS $CCACHE"
-    CCACHE_FLAGS=-fpch-preprocess
+    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR \
+        CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS CCACHE_BASEDIR=$TOPDIR $CCACHE"
 
     if test "x$SET_CCACHE_DIR" != x; then
       mkdir -p $CCACHE_DIR > /dev/null 2>&1

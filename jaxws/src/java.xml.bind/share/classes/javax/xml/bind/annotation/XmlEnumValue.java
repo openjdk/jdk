@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,23 +56,23 @@ import static java.lang.annotation.ElementType.FIELD;
  * <p> In the absence of this annotation, {@link Enum#name()} is used
  * as the XML representation.
  *
- * <p> <b>Example 1: </b>Map enum constant name -> enumeration facet</p>
+ * <p> <b>Example 1: </b>Map enum constant name -&gt; enumeration facet</p>
  * <pre>
  *     //Example: Code fragment
  *     &#64;XmlEnum(String.class)
  *     public enum Card { CLUBS, DIAMONDS, HEARTS, SPADES }
  *
- *     &lt;!-- Example: XML Schema fragment -->
- *     &lt;xs:simpleType name="Card">
- *       &lt;xs:restriction base="xs:string"/>
- *         &lt;xs:enumeration value="CLUBS"/>
- *         &lt;xs:enumeration value="DIAMONDS"/>
- *         &lt;xs:enumeration value="HEARTS"/>
- *         &lt;xs:enumeration value="SPADES"/>
- *     &lt;/xs:simpleType>
+ *     &lt;!-- Example: XML Schema fragment --&gt;
+ *     &lt;xs:simpleType name="Card"&gt;
+ *       &lt;xs:restriction base="xs:string"/&gt;
+ *         &lt;xs:enumeration value="CLUBS"/&gt;
+ *         &lt;xs:enumeration value="DIAMONDS"/&gt;
+ *         &lt;xs:enumeration value="HEARTS"/&gt;
+ *         &lt;xs:enumeration value="SPADES"/&gt;
+ *     &lt;/xs:simpleType&gt;
  * </pre>
  *
- * <p><b>Example 2: </b>Map enum constant name(value) -> enumeration facet </p>
+ * <p><b>Example 2: </b>Map enum constant name(value) -&gt; enumeration facet </p>
  * <pre>
  *     //Example: code fragment
  *     &#64;XmlType
@@ -83,18 +83,18 @@ import static java.lang.annotation.ElementType.FIELD;
  *         &#64;XmlEnumValue("10") DIME(10),
  *         &#64;XmlEnumValue("25") QUARTER(25) }
  *
- *     &lt;!-- Example: XML Schema fragment -->
- *     &lt;xs:simpleType name="Coin">
- *       &lt;xs:restriction base="xs:int">
- *         &lt;xs:enumeration value="1"/>
- *         &lt;xs:enumeration value="5"/>
- *         &lt;xs:enumeration value="10"/>
- *         &lt;xs:enumeration value="25"/>
- *       &lt;/xs:restriction>
- *     &lt;/xs:simpleType>
+ *     &lt;!-- Example: XML Schema fragment --&gt;
+ *     &lt;xs:simpleType name="Coin"&gt;
+ *       &lt;xs:restriction base="xs:int"&gt;
+ *         &lt;xs:enumeration value="1"/&gt;
+ *         &lt;xs:enumeration value="5"/&gt;
+ *         &lt;xs:enumeration value="10"/&gt;
+ *         &lt;xs:enumeration value="25"/&gt;
+ *       &lt;/xs:restriction&gt;
+ *     &lt;/xs:simpleType&gt;
  * </pre>
  *
- * <p><b>Example 3: </b>Map enum constant name -> enumeration facet </p>
+ * <p><b>Example 3: </b>Map enum constant name -&gt; enumeration facet </p>
  *
  * <pre>
  *     //Code fragment
@@ -105,13 +105,13 @@ import static java.lang.annotation.ElementType.FIELD;
  *         &#64;XmlEnumValue("2") TWO;
  *     }
  *
- *     &lt;!-- Example: XML Schema fragment -->
- *     &lt;xs:simpleType name="Code">
- *       &lt;xs:restriction base="xs:int">
- *         &lt;xs:enumeration value="1"/>
- *         &lt;xs:enumeration value="2"/>
- *       &lt;/xs:restriction>
- *     &lt;/xs:simpleType>
+ *     &lt;!-- Example: XML Schema fragment --&gt;
+ *     &lt;xs:simpleType name="Code"&gt;
+ *       &lt;xs:restriction base="xs:int"&gt;
+ *         &lt;xs:enumeration value="1"/&gt;
+ *         &lt;xs:enumeration value="2"/&gt;
+ *       &lt;/xs:restriction&gt;
+ *     &lt;/xs:simpleType&gt;
  * </pre>
  *
  * @since 1.6, JAXB 2.0
