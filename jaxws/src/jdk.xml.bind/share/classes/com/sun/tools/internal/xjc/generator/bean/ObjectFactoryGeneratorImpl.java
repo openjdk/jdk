@@ -51,7 +51,7 @@ import com.sun.tools.internal.xjc.model.CElementInfo;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
 import com.sun.tools.internal.xjc.model.Constructor;
 import com.sun.tools.internal.xjc.model.Model;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.FieldAccessor;
 import com.sun.tools.internal.xjc.outline.FieldOutline;
 import com.sun.xml.internal.bind.v2.TODO;

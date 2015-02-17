@@ -5819,6 +5819,10 @@ NEXT:       while (i <= last) {
 
             MatcherIterator() {
                 this.matcher = matcher(input);
+                // If the input is an empty string then the result can only be a
+                // stream of the input.  Induce that by setting the empty
+                // element count to 1
+                this.emptyElementCount = input.length() == 0 ? 1 : 0;
             }
 
             public String next() {
