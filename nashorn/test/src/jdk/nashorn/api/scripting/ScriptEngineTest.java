@@ -852,6 +852,17 @@ public class ScriptEngineTest {
         }
     }
 
+    // @bug 8071989: NashornScriptEngine returns javax.script.ScriptContext instance
+    // with insonsistent get/remove methods behavior for undefined attributes
+    @Test
+    public void testScriptContextGetRemoveUndefined() throws Exception {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine e = manager.getEngineByName("nashorn");
+        final ScriptContext ctx = e.getContext();
+        assertNull(ctx.getAttribute("undefinedname", ScriptContext.ENGINE_SCOPE));
+        assertNull(ctx.removeAttribute("undefinedname", ScriptContext.ENGINE_SCOPE));
+    }
+
     private static void checkProperty(final ScriptEngine e, final String name)
         throws ScriptException {
         final String value = System.getProperty(name);

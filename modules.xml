@@ -360,7 +360,7 @@
       <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.runtime</to>
+      <to>jdk.dev</to>
       <to>jdk.security.auth</to>
     </export>
     <export>
@@ -393,7 +393,6 @@
       <to>jdk.crypto.ucrypto</to>
       <to>jdk.deploy.osx</to>
       <to>jdk.dev</to>
-      <to>jdk.runtime</to>
       <to>jdk.security.auth</to>
     </export>
     <export>
@@ -1590,6 +1589,7 @@
     <depend>java.base</depend>
     <depend>java.scripting</depend>
     <depend>java.xml</depend>
+    <depend>java.desktop</depend>
     <depend>jdk.compiler</depend>
     <depend>jdk.rmic</depend>
     <depend>jdk.xml.bind</depend>
@@ -1725,8 +1725,6 @@
   <module>
     <name>jdk.runtime</name>
     <depend>java.base</depend>
-    <depend>java.desktop</depend>
-    <depend>java.se</depend>
   </module>
   <module>
     <name>jdk.scripting.nashorn</name>
