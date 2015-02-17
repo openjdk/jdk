@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                     line = line.substring(0, line.length() - 1) + reader.readLine().trim();
                 }
                 int delimiterPosition = line.indexOf('=');
-                String key = line.substring(0, delimiterPosition).replaceAll("\\ ", " ");
+                String key = line.substring(0, delimiterPosition).replace("\\ ", " ");
                 String[] values = line.substring(delimiterPosition + 1, line.length()).split(",");
                 for (String value : values) {
                     try {

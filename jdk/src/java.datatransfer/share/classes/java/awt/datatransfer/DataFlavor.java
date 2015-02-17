@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,6 @@ import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
-
-import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
 
 /**
  * A {@code DataFlavor} provides meta information about data. {@code DataFlavor}
@@ -137,7 +135,7 @@ public class DataFlavor implements Externalizable, Cloneable {
         try {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPermission(GET_CLASSLOADER_PERMISSION);
+                sm.checkPermission(new RuntimePermission("getClassLoader"));
             }
             ClassLoader loader = ClassLoader.getSystemClassLoader();
             try {
