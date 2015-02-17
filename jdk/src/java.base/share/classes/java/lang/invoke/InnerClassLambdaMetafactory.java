@@ -285,6 +285,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // Forward the SAM method
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, samMethodName,
                                           samMethodType.toMethodDescriptorString(), null, null);
+        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
         new ForwardingMethodGenerator(mv).generate(samMethodType);
 
         // Forward the bridges
@@ -292,6 +293,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             for (MethodType mt : additionalBridges) {
                 mv = cw.visitMethod(ACC_PUBLIC|ACC_BRIDGE, samMethodName,
                                     mt.toMethodDescriptorString(), null, null);
+                mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
                 new ForwardingMethodGenerator(mv).generate(mt);
             }
         }
