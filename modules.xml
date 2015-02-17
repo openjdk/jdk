@@ -262,6 +262,7 @@
       <to>jdk.pack200</to>
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
+      <to>jdk.snmp</to>
     </export>
     <export>
       <name>sun.net.dns</name>
