@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1098,8 +1098,15 @@ public class AquaFileChooserUI extends FileChooserUI {
             super(f);
         }
 
-        public Component getTableCellRendererComponent(final JTable list, final Object value, final boolean isSelected, final boolean cellHasFocus, final int index, final int col) {
-            super.getTableCellRendererComponent(list, value, isSelected, false, index, col); // No focus border, thanks
+        public Component getTableCellRendererComponent(final JTable list,
+                                                       final Object value,
+                                                       final boolean isSelected,
+                                                       final boolean cellHasFocus,
+                                                       final int index,
+                                                       final int col) {
+            super.getTableCellRendererComponent(list, value, isSelected, false,
+                                                index,
+                                                col); // No focus border, thanks
             final File file = (File)value;
             final JFileChooser fc = getFileChooser();
             setText(fc.getName(file));
@@ -1115,8 +1122,14 @@ public class AquaFileChooserUI extends FileChooserUI {
             super(f);
         }
 
-        public Component getTableCellRendererComponent(final JTable list, final Object value, final boolean isSelected, final boolean cellHasFocus, final int index, final int col) {
-            super.getTableCellRendererComponent(list, value, isSelected, false, index, col);
+        public Component getTableCellRendererComponent(final JTable list,
+                                                       final Object value,
+                                                       final boolean isSelected,
+                                                       final boolean cellHasFocus,
+                                                       final int index,
+                                                       final int col) {
+            super.getTableCellRendererComponent(list, value, isSelected, false,
+                                                index, col);
             final File file = (File)fFileList.getValueAt(index, 0);
             setEnabled(isSelectableInList(file));
             final DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.SHORT);
@@ -1132,14 +1145,17 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
-        return PREF_SIZE;
+        return new Dimension(PREF_WIDTH, PREF_HEIGHT);
     }
 
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
-        return MIN_SIZE;
+        return new Dimension(MIN_WIDTH, MIN_HEIGHT);
     }
 
+    @Override
     public Dimension getMaximumSize(final JComponent c) {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
@@ -1819,12 +1835,8 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     private static final int PREF_WIDTH = 550;
     private static final int PREF_HEIGHT = 400;
-    private static final Dimension PREF_SIZE = new Dimension(PREF_WIDTH, PREF_HEIGHT);
-
     private static final int MIN_WIDTH = 400;
     private static final int MIN_HEIGHT = 250;
-    private static final Dimension MIN_SIZE = new Dimension(MIN_WIDTH, MIN_HEIGHT);
-
     private static final int LIST_MIN_WIDTH = 400;
     private static final int LIST_MIN_HEIGHT = 100;
     private static final Dimension LIST_MIN_SIZE = new Dimension(LIST_MIN_WIDTH, LIST_MIN_HEIGHT);

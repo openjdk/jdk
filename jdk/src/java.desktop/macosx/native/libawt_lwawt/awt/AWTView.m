@@ -890,9 +890,9 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     // text, or 'text in progress'.  We also need to send the event if we get an insert text out of the blue!
     // (i.e., when the user uses the Character palette or Inkwell), or when the string to insert is a complex
     // Unicode value.
-    NSUInteger utf8Length = [aString lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    NSUInteger utf16Length = [aString lengthOfBytesUsingEncoding:NSUTF16StringEncoding];
 
-    if ([self hasMarkedText] || !fProcessingKeystroke || (utf8Length > 1)) {
+    if ([self hasMarkedText] || !fProcessingKeystroke || (utf16Length > 2)) {
         JNIEnv *env = [ThreadUtilities getJNIEnv];
 
         static JNF_MEMBER_CACHE(jm_selectPreviousGlyph, jc_CInputMethod, "selectPreviousGlyph", "()V");
