@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,20 @@
  * questions.
  */
 
-#import <pthread.h>
-#import <assert.h>
+import java.awt.Toolkit;
 
-#import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+import javax.sound.midi.MidiSystem;
 
-#define DEBUG 1
-
-// number of mouse buttons supported
-extern int gNumberOfButtons;
-
-// InputEvent mask array
-extern jint* gButtonDownMasks;
-
-@interface AWTToolkit : NSObject { }
-+ (long) getEventCount;
-+ (void) eventCountPlusPlus;
-@end
-
-/*
- * Utility Macros
+/**
+ * @test
+ * @bug 8068412
+ * @author Sergey Bylokhov
  */
+public final class InitializationHang {
 
-/** Macro to cast a jlong to an Objective-C object (id). Casts to long on 32-bit systems to quiesce the compiler. */
-#define OBJC(jl) ((id)jlong_to_ptr(jl))
+    public static void main(final String[] argv) throws Exception {
+        MidiSystem.getReceiver();
+        Toolkit.getDefaultToolkit();
+    }
+}
+
