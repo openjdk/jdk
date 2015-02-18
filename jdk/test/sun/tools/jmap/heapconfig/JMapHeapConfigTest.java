@@ -55,6 +55,8 @@ public class JMapHeapConfigTest {
 
     // ignoring MaxMetaspaceSize
 
+    static final String desiredMaxHeapSize = "-Xmx128m";
+
     private static Map<String, String> parseJMapOutput(List<String> jmapOutput) {
         Map<String, String> heapConfigMap = new HashMap<String, String>();
         boolean shouldParse = false;
@@ -110,9 +112,23 @@ public class JMapHeapConfigTest {
     public static void main(String[] args) {
         System.out.println("Starting JMapHeapConfigTest");
 
+        boolean mx_found = false;
+        List<String> jvmOptions = Utils.getVmOptions();
+        for (String option : jvmOptions) {
+            if (option.startsWith("-Xmx")) {
+               System.out.println("INFO: maximum heap size set by JTREG as " + option);
+               mx_found = true;
+               break;
+           }
+        }
+
         // Forward vm options to LingeredApp
         ArrayList<String> cmd = new ArrayList();
         cmd.addAll(Utils.getVmOptions());
+        if (!mx_found) {
+            cmd.add(desiredMaxHeapSize);
+            System.out.println("INFO: maximum heap size set explicitly as " + desiredMaxHeapSize);
+        }
         cmd.add("-XX:+PrintFlagsFinal");
 
         TmtoolTestScenario tmt = TmtoolTestScenario.create("jmap", "-heap");
