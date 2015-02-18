@@ -30,6 +30,7 @@
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
+#include "opto/arraycopynode.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -3876,18 +3877,57 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       // Extreme case:  Arrays.copyOf((Integer[])x, 10, String[].class).
       // This will fail a store-check if x contains any non-nulls.
 
-      Node* alloc = tightly_coupled_allocation(newcopy, NULL);
+      // ArrayCopyNode:Ideal may transform the ArrayCopyNode to
+      // loads/stores but it is legal only if we're sure the
+      // Arrays.copyOf would succeed. So we need all input arguments
+      // to the copyOf to be validated, including that the copy to the
+      // new array won't trigger an ArrayStoreException. That subtype
+      // check can be optimized if we know something on the type of
+      // the input array from type speculation.
+      if (_gvn.type(klass_node)->singleton()) {
+        ciKlass* subk   = _gvn.type(load_object_klass(original))->is_klassptr()->klass();
+        ciKlass* superk = _gvn.type(klass_node)->is_klassptr()->klass();
 
-      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, alloc != NULL,
+        int test = C->static_subtype_check(superk, subk);
+        if (test != Compile::SSC_always_true && test != Compile::SSC_always_false) {
+          const TypeOopPtr* t_original = _gvn.type(original)->is_oopptr();
+          if (t_original->speculative_type() != NULL) {
+            original = maybe_cast_profiled_obj(original, t_original->speculative_type(), true);
+          }
+        }
+      }
+
+      bool validated = false;
+      // Reason_class_check rather than Reason_intrinsic because we
+      // want to intrinsify even if this traps.
+      if (!too_many_traps(Deoptimization::Reason_class_check)) {
+        Node* not_subtype_ctrl = gen_subtype_check(load_object_klass(original),
+                                                   klass_node);
+
+        if (not_subtype_ctrl != top()) {
+          PreserveJVMState pjvms(this);
+          set_control(not_subtype_ctrl);
+          uncommon_trap(Deoptimization::Reason_class_check,
+                        Deoptimization::Action_make_not_entrant);
+          assert(stopped(), "Should be stopped");
+        }
+        validated = true;
+      }
+
+      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true,
                                               load_object_klass(original), klass_node);
       if (!is_copyOfRange) {
-        ac->set_copyof();
+        ac->set_copyof(validated);
       } else {
-        ac->set_copyofrange();
+        ac->set_copyofrange(validated);
       }
       Node* n = _gvn.transform(ac);
-      assert(n == ac, "cannot disappear");
-      ac->connect_outputs(this);
+      if (n == ac) {
+        ac->connect_outputs(this);
+      } else {
+        assert(validated, "shouldn't transform if all arguments not validated");
+        set_all_memory(n);
+      }
     }
   } // original reexecute is set back here
 
