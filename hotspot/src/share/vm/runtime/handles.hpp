@@ -25,7 +25,11 @@
 #ifndef SHARE_VM_RUNTIME_HANDLES_HPP
 #define SHARE_VM_RUNTIME_HANDLES_HPP
 
-#include "oops/klass.hpp"
+#include "oops/oop.hpp"
+#include "oops/oopsHierarchy.hpp"
+
+class InstanceKlass;
+class Klass;
 
 //------------------------------------------------------------------------------------------------------------------------
 // In order to preserve oops during garbage collection, they should be
@@ -201,16 +205,16 @@ class instanceKlassHandle : public KlassHandle {
   /* Constructors */
   instanceKlassHandle () : KlassHandle() {}
   instanceKlassHandle (const Klass* k) : KlassHandle(k) {
-    assert(k == NULL || k->oop_is_instance(),
-           "illegal type");
+    assert(k == NULL || is_instanceKlass(k), "illegal type");
   }
   instanceKlassHandle (Thread* thread, const Klass* k) : KlassHandle(thread, k) {
-    assert(k == NULL || k->oop_is_instance(),
-           "illegal type");
+    assert(k == NULL || is_instanceKlass(k), "illegal type");
   }
   /* Access to klass part */
   InstanceKlass*       operator () () const { return (InstanceKlass*)obj(); }
   InstanceKlass*       operator -> () const { return (InstanceKlass*)obj(); }
+
+  debug_only(bool is_instanceKlass(const Klass* k));
 };
 
 
