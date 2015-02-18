@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jdk.testlibrary.Utils;
+import jdk.testlibrary.Platform;
 
 public class JMapHeapConfigTest {
 
@@ -109,8 +110,20 @@ public class JMapHeapConfigTest {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.out.println("Starting JMapHeapConfigTest");
+
+        if (!Platform.shouldSAAttach()) {
+            // Silently skip the test if we don't have enough permissions to attach
+            System.err.println("Error! Insufficient permissions to attach.");
+            return;
+        }
+
+        if (!LingeredApp.isLastModifiedWorking()) {
+            // Exact behaviour of the test depends to operating system and the test nature,
+            // so just print the warning and continue
+            System.err.println("Warning! Last modified time doesn't work.");
+        }
 
         boolean mx_found = false;
         List<String> jvmOptions = Utils.getVmOptions();
