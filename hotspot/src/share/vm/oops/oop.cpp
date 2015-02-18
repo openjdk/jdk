@@ -26,6 +26,7 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
@@ -119,6 +120,11 @@ unsigned int oopDesc::new_hash(juint seed) {
 }
 
 VerifyOopClosure VerifyOopClosure::verify_oop;
+
+template <class T> void VerifyOopClosure::do_oop_work(T* p) {
+  oop obj = oopDesc::load_decode_heap_oop(p);
+  guarantee(obj->is_oop_or_null(), err_msg("invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj)));
+}
 
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }
 void VerifyOopClosure::do_oop(narrowOop* p) { VerifyOopClosure::do_oop_work(p); }
