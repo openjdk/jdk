@@ -162,7 +162,6 @@ public final class RSACore {
      */
     private static byte[] crtCrypt(byte[] msg, RSAPrivateCrtKey key,
             boolean verify) throws BadPaddingException {
-        long start = System.nanoTime();
         BigInteger n = key.getModulus();
         BigInteger c0 = parseMsg(msg, n);
         BigInteger c = c0;
