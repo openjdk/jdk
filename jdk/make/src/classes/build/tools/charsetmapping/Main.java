@@ -206,7 +206,7 @@ public class Main {
     }
 
     static void verbose(Charset cs) {
-         System.err.printf("%s, %s, %s, %s, %s  %b%n",
+         System.out.printf("%s, %s, %s, %s, %s  %b%n",
                            cs.clzName, cs.csName, cs.hisName, cs.pkgName, cs.type, cs.isASCII);
     }
 
