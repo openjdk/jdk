@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,19 +36,6 @@
  */
 JNIEXPORT jboolean JNICALL Java_com_sun_media_sound_Platform_nIsBigEndian(JNIEnv *env, jclass clss) {
     return UTIL_IsBigEndianPlatform();
-}
-
-/*
- * Class:     com_sun_media_sound_Platform
- * Method:    nIsSigned8
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_sun_media_sound_Platform_nIsSigned8(JNIEnv *env, jclass clss) {
-#if ((X_ARCH == X_SPARC) || (X_ARCH == X_SPARCV9))
-    return 1;
-#else
-    return 0;
-#endif
 }
 
 /*
