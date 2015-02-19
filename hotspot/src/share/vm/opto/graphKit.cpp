@@ -3244,6 +3244,9 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 
   const TypeFunc *tf = OptoRuntime::complete_monitor_exit_Type();
   UnlockNode *unlock = new UnlockNode(C, tf);
+#ifdef ASSERT
+  unlock->set_dbg_jvms(sync_jvms());
+#endif
   uint raw_idx = Compile::AliasIdxRaw;
   unlock->init_req( TypeFunc::Control, control() );
   unlock->init_req( TypeFunc::Memory , memory(raw_idx) );
