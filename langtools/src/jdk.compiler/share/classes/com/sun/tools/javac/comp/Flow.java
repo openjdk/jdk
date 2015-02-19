@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,17 +353,17 @@ public class Flow {
                 this.tree = tree;
             }
 
-            void resolveJump(JCTree tree) {
+            void resolveJump() {
                 //do nothing
             }
         }
 
-        abstract void markDead(JCTree tree);
+        abstract void markDead();
 
         /** Record an outward transfer of control. */
-        void recordExit(JCTree tree, P pe) {
+        void recordExit(P pe) {
             pendingExits.append(pe);
-            markDead(tree);
+            markDead();
         }
 
         /** Resolve all jumps of this statement. */
@@ -377,7 +377,7 @@ public class Flow {
                 P exit = exits.head;
                 if (exit.tree.hasTag(jk.treeTag) &&
                         jk.getTarget(exit.tree) == tree) {
-                    exit.resolveJump(tree);
+                    exit.resolveJump();
                     resolved = true;
                 } else {
                     pendingExits.append(exit);
@@ -424,7 +424,7 @@ public class Flow {
         private boolean alive;
 
         @Override
-        void markDead(JCTree tree) {
+        void markDead() {
             alive = false;
         }
 
@@ -692,21 +692,21 @@ public class Flow {
         }
 
         public void visitBreak(JCBreak tree) {
-            recordExit(tree, new PendingExit(tree));
+            recordExit(new PendingExit(tree));
         }
 
         public void visitContinue(JCContinue tree) {
-            recordExit(tree, new PendingExit(tree));
+            recordExit(new PendingExit(tree));
         }
 
         public void visitReturn(JCReturn tree) {
             scan(tree.expr);
-            recordExit(tree, new PendingExit(tree));
+            recordExit(new PendingExit(tree));
         }
 
         public void visitThrow(JCThrow tree) {
             scan(tree.expr);
-            markDead(tree);
+            markDead();
         }
 
         public void visitApply(JCMethodInvocation tree) {
@@ -803,7 +803,7 @@ public class Flow {
         }
 
         @Override
-        void markDead(JCTree tree) {
+        void markDead() {
             //do nothing
         }
 
@@ -1201,16 +1201,16 @@ public class Flow {
             }
 
         public void visitBreak(JCBreak tree) {
-            recordExit(tree, new FlowPendingExit(tree, null));
+            recordExit(new FlowPendingExit(tree, null));
         }
 
         public void visitContinue(JCContinue tree) {
-            recordExit(tree, new FlowPendingExit(tree, null));
+            recordExit(new FlowPendingExit(tree, null));
         }
 
         public void visitReturn(JCReturn tree) {
             scan(tree.expr);
-            recordExit(tree, new FlowPendingExit(tree, null));
+            recordExit(new FlowPendingExit(tree, null));
         }
 
         public void visitThrow(JCThrow tree) {
@@ -1228,7 +1228,7 @@ public class Flow {
             else {
                 markThrown(tree, tree.expr.type);
             }
-            markDead(tree);
+            markDead();
         }
 
         public void visitApply(JCMethodInvocation tree) {
@@ -1375,12 +1375,11 @@ public class Flow {
      * effectively-final local variables/parameters.
      */
 
-    public abstract class AbstractAssignAnalyzer<P extends AbstractAssignAnalyzer<P>.AbstractAssignPendingExit>
-        extends BaseAnalyzer<P> {
+    public class AssignAnalyzer extends BaseAnalyzer<AssignAnalyzer.AssignPendingExit> {
 
         /** The set of definitely assigned variables.
          */
-        protected Bits inits;
+        final Bits inits;
 
         /** The set of definitely unassigned variables.
          */
@@ -1428,20 +1427,20 @@ public class Flow {
          */
         WriteableScope unrefdResources;
 
-        /** Set when processing a loop body the second time for DU analysis. */
+        /** Modified when processing a loop body the second time for DU analysis. */
         FlowKind flowKind = FlowKind.NORMAL;
 
-        /** The starting position of the analysed tree */
+        /** The starting position of the analyzed tree */
         int startPos;
 
-        public class AbstractAssignPendingExit extends BaseAnalyzer.PendingExit {
+        public class AssignPendingExit extends BaseAnalyzer.PendingExit {
 
             final Bits inits;
             final Bits uninits;
             final Bits exit_inits = new Bits(true);
             final Bits exit_uninits = new Bits(true);
 
-            public AbstractAssignPendingExit(JCTree tree, final Bits inits, final Bits uninits) {
+            public AssignPendingExit(JCTree tree, final Bits inits, final Bits uninits) {
                 super(tree);
                 this.inits = inits;
                 this.uninits = uninits;
@@ -1450,13 +1449,13 @@ public class Flow {
             }
 
             @Override
-            public void resolveJump(JCTree tree) {
+            public void resolveJump() {
                 inits.andSet(exit_inits);
                 uninits.andSet(exit_uninits);
             }
         }
 
-        public AbstractAssignAnalyzer() {
+        public AssignAnalyzer() {
             this.inits = new Bits();
             uninits = new Bits();
             uninitsTry = new Bits();
@@ -1469,7 +1468,7 @@ public class Flow {
         private boolean isInitialConstructor = false;
 
         @Override
-        protected void markDead(JCTree tree) {
+        protected void markDead() {
             if (!isInitialConstructor) {
                 inits.inclRange(returnadr, nextadr);
             } else {
@@ -1516,35 +1515,43 @@ public class Flow {
             }
             sym.adr = nextadr;
             vardecls[nextadr] = varDecl;
-            exclVarFromInits(varDecl, nextadr);
+            inits.excl(nextadr);
             uninits.incl(nextadr);
             nextadr++;
-        }
-
-        protected void exclVarFromInits(JCTree tree, int adr) {
-            inits.excl(adr);
-        }
-
-        protected void assignToInits(JCTree tree, Bits bits) {
-            inits.assign(bits);
-        }
-
-        protected void andSetInits(JCTree tree, Bits bits) {
-            inits.andSet(bits);
-        }
-
-        protected void orSetInits(JCTree tree, Bits bits) {
-            inits.orSet(bits);
         }
 
         /** Record an initialization of a trackable variable.
          */
         void letInit(DiagnosticPosition pos, VarSymbol sym) {
             if (sym.adr >= firstadr && trackable(sym)) {
-                if (uninits.isMember(sym.adr)) {
-                    uninit(sym);
+                if ((sym.flags() & EFFECTIVELY_FINAL) != 0) {
+                    if (!uninits.isMember(sym.adr)) {
+                        //assignment targeting an effectively final variable
+                        //makes the variable lose its status of effectively final
+                        //if the variable is _not_ definitively unassigned
+                        sym.flags_field &= ~EFFECTIVELY_FINAL;
+                    } else {
+                        uninit(sym);
+                    }
+                }
+                else if ((sym.flags() & FINAL) != 0) {
+                    if ((sym.flags() & PARAMETER) != 0) {
+                        if ((sym.flags() & UNION) != 0) { //multi-catch parameter
+                            log.error(pos, "multicatch.parameter.may.not.be.assigned", sym);
+                        }
+                        else {
+                            log.error(pos, "final.parameter.may.not.be.assigned",
+                                  sym);
+                        }
+                    } else if (!uninits.isMember(sym.adr)) {
+                        log.error(pos, flowKind.errKey, sym);
+                    } else {
+                        uninit(sym);
+                    }
                 }
                 inits.incl(sym.adr);
+            } else if ((sym.flags() & FINAL) != 0) {
+                log.error(pos, "var.might.already.be.assigned", sym);
             }
         }
         //where
@@ -1579,7 +1586,14 @@ public class Flow {
             checkInit(pos, sym, "var.might.not.have.been.initialized");
         }
 
-        void checkInit(DiagnosticPosition pos, VarSymbol sym, String errkey) {}
+        void checkInit(DiagnosticPosition pos, VarSymbol sym, String errkey) {
+            if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
+                trackable(sym) &&
+                !inits.isMember(sym.adr)) {
+                log.error(pos, errkey, sym);
+                inits.incl(sym.adr);
+            }
+        }
 
         /** Utility method to reset several Bits instances.
          */
@@ -1603,7 +1617,7 @@ public class Flow {
 
         /** Merge (intersect) inits/uninits from WhenTrue/WhenFalse sets.
          */
-        protected void merge(JCTree tree) {
+        protected void merge() {
             inits.assign(initsWhenFalse.andSet(initsWhenTrue));
             uninits.assign(uninitsWhenFalse.andSet(uninitsWhenTrue));
         }
@@ -1619,7 +1633,7 @@ public class Flow {
             if (tree != null) {
                 scan(tree);
                 if (inits.isReset()) {
-                    merge(tree);
+                    merge();
                 }
             }
         }
@@ -1637,7 +1651,7 @@ public class Flow {
          */
         void scanCond(JCTree tree) {
             if (tree.type.isFalse()) {
-                if (inits.isReset()) merge(tree);
+                if (inits.isReset()) merge();
                 initsWhenTrue.assign(inits);
                 initsWhenTrue.inclRange(firstadr, nextadr);
                 uninitsWhenTrue.assign(uninits);
@@ -1645,7 +1659,7 @@ public class Flow {
                 initsWhenFalse.assign(inits);
                 uninitsWhenFalse.assign(uninits);
             } else if (tree.type.isTrue()) {
-                if (inits.isReset()) merge(tree);
+                if (inits.isReset()) merge();
                 initsWhenFalse.assign(inits);
                 initsWhenFalse.inclRange(firstadr, nextadr);
                 uninitsWhenFalse.assign(uninits);
@@ -1664,173 +1678,203 @@ public class Flow {
 
         /* ------------ Visitor methods for various sorts of trees -------------*/
 
-        @Override
         public void visitClassDef(JCClassDecl tree) {
             if (tree.sym == null) {
                 return;
             }
 
-            JCClassDecl classDefPrev = classDef;
-            int firstadrPrev = firstadr;
-            int nextadrPrev = nextadr;
-            ListBuffer<P> pendingExitsPrev = pendingExits;
-
-            pendingExits = new ListBuffer<>();
-            if (tree.name != names.empty) {
-                firstadr = nextadr;
-            }
-            classDef = tree;
+            Lint lintPrev = lint;
+            lint = lint.augment(tree.sym);
             try {
-                // define all the static fields
-                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                    if (l.head.hasTag(VARDEF)) {
-                        JCVariableDecl def = (JCVariableDecl)l.head;
-                        if ((def.mods.flags & STATIC) != 0) {
-                            VarSymbol sym = def.sym;
-                            if (trackable(sym)) {
-                                newVar(def);
+                if (tree.sym == null) {
+                    return;
+                }
+
+                JCClassDecl classDefPrev = classDef;
+                int firstadrPrev = firstadr;
+                int nextadrPrev = nextadr;
+                ListBuffer<AssignPendingExit> pendingExitsPrev = pendingExits;
+
+                pendingExits = new ListBuffer<>();
+                if (tree.name != names.empty) {
+                    firstadr = nextadr;
+                }
+                classDef = tree;
+                try {
+                    // define all the static fields
+                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                        if (l.head.hasTag(VARDEF)) {
+                            JCVariableDecl def = (JCVariableDecl)l.head;
+                            if ((def.mods.flags & STATIC) != 0) {
+                                VarSymbol sym = def.sym;
+                                if (trackable(sym)) {
+                                    newVar(def);
+                                }
                             }
                         }
                     }
-                }
 
-                // process all the static initializers
-                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                    if (!l.head.hasTag(METHODDEF) &&
-                        (TreeInfo.flags(l.head) & STATIC) != 0) {
-                        scan(l.head);
+                    // process all the static initializers
+                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                        if (!l.head.hasTag(METHODDEF) &&
+                            (TreeInfo.flags(l.head) & STATIC) != 0) {
+                            scan(l.head);
+                        }
                     }
-                }
 
-                // define all the instance fields
-                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                    if (l.head.hasTag(VARDEF)) {
-                        JCVariableDecl def = (JCVariableDecl)l.head;
-                        if ((def.mods.flags & STATIC) == 0) {
-                            VarSymbol sym = def.sym;
-                            if (trackable(sym)) {
-                                newVar(def);
+                    // define all the instance fields
+                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                        if (l.head.hasTag(VARDEF)) {
+                            JCVariableDecl def = (JCVariableDecl)l.head;
+                            if ((def.mods.flags & STATIC) == 0) {
+                                VarSymbol sym = def.sym;
+                                if (trackable(sym)) {
+                                    newVar(def);
+                                }
                             }
                         }
                     }
-                }
 
-                // process all the instance initializers
-                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                    if (!l.head.hasTag(METHODDEF) &&
-                        (TreeInfo.flags(l.head) & STATIC) == 0) {
-                        scan(l.head);
+                    // process all the instance initializers
+                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                        if (!l.head.hasTag(METHODDEF) &&
+                            (TreeInfo.flags(l.head) & STATIC) == 0) {
+                            scan(l.head);
+                        }
                     }
-                }
 
-                // process all the methods
-                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                    if (l.head.hasTag(METHODDEF)) {
-                        scan(l.head);
+                    // process all the methods
+                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                        if (l.head.hasTag(METHODDEF)) {
+                            scan(l.head);
+                        }
                     }
+                } finally {
+                    pendingExits = pendingExitsPrev;
+                    nextadr = nextadrPrev;
+                    firstadr = firstadrPrev;
+                    classDef = classDefPrev;
                 }
             } finally {
-                pendingExits = pendingExitsPrev;
-                nextadr = nextadrPrev;
-                firstadr = firstadrPrev;
-                classDef = classDefPrev;
+                lint = lintPrev;
             }
         }
 
-        @Override
         public void visitMethodDef(JCMethodDecl tree) {
             if (tree.body == null) {
                 return;
             }
-            /*  Ignore synthetic methods, except for translated lambda methods.
+
+            /*  MemberEnter can generate synthetic methods ignore them
              */
-            if ((tree.sym.flags() & (SYNTHETIC | LAMBDA_METHOD)) == SYNTHETIC) {
+            if ((tree.sym.flags() & SYNTHETIC) != 0) {
                 return;
             }
 
-            final Bits initsPrev = new Bits(inits);
-            final Bits uninitsPrev = new Bits(uninits);
-            int nextadrPrev = nextadr;
-            int firstadrPrev = firstadr;
-            int returnadrPrev = returnadr;
-
-            Assert.check(pendingExits.isEmpty());
-            boolean lastInitialConstructor = isInitialConstructor;
+            Lint lintPrev = lint;
+            lint = lint.augment(tree.sym);
             try {
-                isInitialConstructor = TreeInfo.isInitialConstructor(tree);
-
-                if (!isInitialConstructor) {
-                    firstadr = nextadr;
+                if (tree.body == null) {
+                    return;
                 }
-                for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
-                    JCVariableDecl def = l.head;
-                    scan(def);
-                    Assert.check((def.sym.flags() & PARAMETER) != 0, "Method parameter without PARAMETER flag");
-                    /*  If we are executing the code from Gen, then there can be
-                     *  synthetic or mandated variables, ignore them.
-                     */
-                    initParam(def);
+                /*  Ignore synthetic methods, except for translated lambda methods.
+                 */
+                if ((tree.sym.flags() & (SYNTHETIC | LAMBDA_METHOD)) == SYNTHETIC) {
+                    return;
                 }
-                // else we are in an instance initializer block;
-                // leave caught unchanged.
-                scan(tree.body);
 
-                if (isInitialConstructor) {
-                    boolean isSynthesized = (tree.sym.flags() &
-                                             GENERATEDCONSTR) != 0;
-                    for (int i = firstadr; i < nextadr; i++) {
-                        JCVariableDecl vardecl = vardecls[i];
-                        VarSymbol var = vardecl.sym;
-                        if (var.owner == classDef.sym) {
-                            // choose the diagnostic position based on whether
-                            // the ctor is default(synthesized) or not
-                            if (isSynthesized) {
-                                checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
-                                    var, "var.not.initialized.in.default.constructor");
-                            } else {
-                                checkInit(TreeInfo.diagEndPos(tree.body), var);
+                final Bits initsPrev = new Bits(inits);
+                final Bits uninitsPrev = new Bits(uninits);
+                int nextadrPrev = nextadr;
+                int firstadrPrev = firstadr;
+                int returnadrPrev = returnadr;
+
+                Assert.check(pendingExits.isEmpty());
+                boolean lastInitialConstructor = isInitialConstructor;
+                try {
+                    isInitialConstructor = TreeInfo.isInitialConstructor(tree);
+
+                    if (!isInitialConstructor) {
+                        firstadr = nextadr;
+                    }
+                    for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
+                        JCVariableDecl def = l.head;
+                        scan(def);
+                        Assert.check((def.sym.flags() & PARAMETER) != 0, "Method parameter without PARAMETER flag");
+                        /*  If we are executing the code from Gen, then there can be
+                         *  synthetic or mandated variables, ignore them.
+                         */
+                        initParam(def);
+                    }
+                    // else we are in an instance initializer block;
+                    // leave caught unchanged.
+                    scan(tree.body);
+
+                    if (isInitialConstructor) {
+                        boolean isSynthesized = (tree.sym.flags() &
+                                                 GENERATEDCONSTR) != 0;
+                        for (int i = firstadr; i < nextadr; i++) {
+                            JCVariableDecl vardecl = vardecls[i];
+                            VarSymbol var = vardecl.sym;
+                            if (var.owner == classDef.sym) {
+                                // choose the diagnostic position based on whether
+                                // the ctor is default(synthesized) or not
+                                if (isSynthesized) {
+                                    checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
+                                        var, "var.not.initialized.in.default.constructor");
+                                } else {
+                                    checkInit(TreeInfo.diagEndPos(tree.body), var);
+                                }
                             }
                         }
                     }
-                }
-                List<P> exits = pendingExits.toList();
-                pendingExits = new ListBuffer<>();
-                while (exits.nonEmpty()) {
-                    P exit = exits.head;
-                    exits = exits.tail;
-                    Assert.check(exit.tree.hasTag(RETURN), exit.tree);
-                    if (isInitialConstructor) {
-                        assignToInits(exit.tree, exit.exit_inits);
-                        for (int i = firstadr; i < nextadr; i++) {
-                            checkInit(exit.tree.pos(), vardecls[i].sym);
+                    List<AssignPendingExit> exits = pendingExits.toList();
+                    pendingExits = new ListBuffer<>();
+                    while (exits.nonEmpty()) {
+                        AssignPendingExit exit = exits.head;
+                        exits = exits.tail;
+                        Assert.check(exit.tree.hasTag(RETURN), exit.tree);
+                        if (isInitialConstructor) {
+                            inits.assign(exit.exit_inits);
+                            for (int i = firstadr; i < nextadr; i++) {
+                                checkInit(exit.tree.pos(), vardecls[i].sym);
+                            }
                         }
                     }
+                } finally {
+                    inits.assign(initsPrev);
+                    uninits.assign(uninitsPrev);
+                    nextadr = nextadrPrev;
+                    firstadr = firstadrPrev;
+                    returnadr = returnadrPrev;
+                    isInitialConstructor = lastInitialConstructor;
                 }
             } finally {
-                assignToInits(tree, initsPrev);
-                uninits.assign(uninitsPrev);
-                nextadr = nextadrPrev;
-                firstadr = firstadrPrev;
-                returnadr = returnadrPrev;
-                isInitialConstructor = lastInitialConstructor;
+                lint = lintPrev;
             }
         }
 
         protected void initParam(JCVariableDecl def) {
             inits.incl(def.sym.adr);
             uninits.excl(def.sym.adr);
-            }
+        }
 
         public void visitVarDef(JCVariableDecl tree) {
-            boolean track = trackable(tree.sym);
-            if (track && tree.sym.owner.kind == MTH) {
-                newVar(tree);
-            }
-            if (tree.init != null) {
-                scanExpr(tree.init);
-                if (track) {
-                    letInit(tree.pos(), tree.sym);
+            Lint lintPrev = lint;
+            lint = lint.augment(tree.sym);
+            try{
+                boolean track = trackable(tree.sym);
+                if (track && tree.sym.owner.kind == MTH) {
+                    newVar(tree);
                 }
+                if (tree.init != null) {
+                    scanExpr(tree.init);
+                    if (track) {
+                        letInit(tree.pos(), tree.sym);
+                    }
+                }
+            } finally {
+                lint = lintPrev;
             }
         }
 
@@ -1840,18 +1884,14 @@ public class Flow {
             nextadr = nextadrPrev;
         }
 
-        int getLogNumberOfErrors() {
-            return 0;
-        }
-
         public void visitDoLoop(JCDoWhileLoop tree) {
-            ListBuffer<P> prevPendingExits = pendingExits;
+            ListBuffer<AssignPendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
             final Bits initsSkip = new Bits(true);
             final Bits uninitsSkip = new Bits(true);
             pendingExits = new ListBuffer<>();
-            int prevErrors = getLogNumberOfErrors();
+            int prevErrors = log.nerrors;
             do {
                 final Bits uninitsEntry = new Bits(uninits);
                 uninitsEntry.excludeFrom(nextadr);
@@ -1862,28 +1902,28 @@ public class Flow {
                     initsSkip.assign(initsWhenFalse);
                     uninitsSkip.assign(uninitsWhenFalse);
                 }
-                if (getLogNumberOfErrors() !=  prevErrors ||
+                if (log.nerrors !=  prevErrors ||
                     flowKind.isFinal() ||
                     new Bits(uninitsEntry).diffSet(uninitsWhenTrue).nextBit(firstadr)==-1)
                     break;
-                assignToInits(tree.cond, initsWhenTrue);
+                inits.assign(initsWhenTrue);
                 uninits.assign(uninitsEntry.andSet(uninitsWhenTrue));
                 flowKind = FlowKind.SPECULATIVE_LOOP;
             } while (true);
             flowKind = prevFlowKind;
-            assignToInits(tree, initsSkip);
+            inits.assign(initsSkip);
             uninits.assign(uninitsSkip);
             resolveBreaks(tree, prevPendingExits);
         }
 
         public void visitWhileLoop(JCWhileLoop tree) {
-            ListBuffer<P> prevPendingExits = pendingExits;
+            ListBuffer<AssignPendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
             final Bits initsSkip = new Bits(true);
             final Bits uninitsSkip = new Bits(true);
             pendingExits = new ListBuffer<>();
-            int prevErrors = getLogNumberOfErrors();
+            int prevErrors = log.nerrors;
             final Bits uninitsEntry = new Bits(uninits);
             uninitsEntry.excludeFrom(nextadr);
             do {
@@ -1892,11 +1932,11 @@ public class Flow {
                     initsSkip.assign(initsWhenFalse) ;
                     uninitsSkip.assign(uninitsWhenFalse);
                 }
-                assignToInits(tree, initsWhenTrue);
+                inits.assign(initsWhenTrue);
                 uninits.assign(uninitsWhenTrue);
                 scan(tree.body);
                 resolveContinues(tree);
-                if (getLogNumberOfErrors() != prevErrors ||
+                if (log.nerrors != prevErrors ||
                     flowKind.isFinal() ||
                     new Bits(uninitsEntry).diffSet(uninits).nextBit(firstadr) == -1) {
                     break;
@@ -1907,13 +1947,13 @@ public class Flow {
             flowKind = prevFlowKind;
             //a variable is DA/DU after the while statement, if it's DA/DU assuming the
             //branch is not taken AND if it's DA/DU before any break statement
-            assignToInits(tree.body, initsSkip);
+            inits.assign(initsSkip);
             uninits.assign(uninitsSkip);
             resolveBreaks(tree, prevPendingExits);
         }
 
         public void visitForLoop(JCForLoop tree) {
-            ListBuffer<P> prevPendingExits = pendingExits;
+            ListBuffer<AssignPendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
             int nextadrPrev = nextadr;
@@ -1921,7 +1961,7 @@ public class Flow {
             final Bits initsSkip = new Bits(true);
             final Bits uninitsSkip = new Bits(true);
             pendingExits = new ListBuffer<>();
-            int prevErrors = getLogNumberOfErrors();
+            int prevErrors = log.nerrors;
             do {
                 final Bits uninitsEntry = new Bits(uninits);
                 uninitsEntry.excludeFrom(nextadr);
@@ -1931,7 +1971,7 @@ public class Flow {
                         initsSkip.assign(initsWhenFalse);
                         uninitsSkip.assign(uninitsWhenFalse);
                     }
-                    assignToInits(tree.body, initsWhenTrue);
+                    inits.assign(initsWhenTrue);
                     uninits.assign(uninitsWhenTrue);
                 } else if (!flowKind.isFinal()) {
                     initsSkip.assign(inits);
@@ -1942,7 +1982,7 @@ public class Flow {
                 scan(tree.body);
                 resolveContinues(tree);
                 scan(tree.step);
-                if (getLogNumberOfErrors() != prevErrors ||
+                if (log.nerrors != prevErrors ||
                     flowKind.isFinal() ||
                     new Bits(uninitsEntry).diffSet(uninits).nextBit(firstadr) == -1)
                     break;
@@ -1952,7 +1992,7 @@ public class Flow {
             flowKind = prevFlowKind;
             //a variable is DA/DU after a for loop, if it's DA/DU assuming the
             //branch is not taken AND if it's DA/DU before any break statement
-            assignToInits(tree.body, initsSkip);
+            inits.assign(initsSkip);
             uninits.assign(uninitsSkip);
             resolveBreaks(tree, prevPendingExits);
             nextadr = nextadrPrev;
@@ -1961,7 +2001,7 @@ public class Flow {
         public void visitForeachLoop(JCEnhancedForLoop tree) {
             visitVarDef(tree.var);
 
-            ListBuffer<P> prevPendingExits = pendingExits;
+            ListBuffer<AssignPendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
             int nextadrPrev = nextadr;
@@ -1971,13 +2011,13 @@ public class Flow {
 
             letInit(tree.pos(), tree.var.sym);
             pendingExits = new ListBuffer<>();
-            int prevErrors = getLogNumberOfErrors();
+            int prevErrors = log.nerrors;
             do {
                 final Bits uninitsEntry = new Bits(uninits);
                 uninitsEntry.excludeFrom(nextadr);
                 scan(tree.body);
                 resolveContinues(tree);
-                if (getLogNumberOfErrors() != prevErrors ||
+                if (log.nerrors != prevErrors ||
                     flowKind.isFinal() ||
                     new Bits(uninitsEntry).diffSet(uninits).nextBit(firstadr) == -1)
                     break;
@@ -1985,21 +2025,21 @@ public class Flow {
                 flowKind = FlowKind.SPECULATIVE_LOOP;
             } while (true);
             flowKind = prevFlowKind;
-            assignToInits(tree.body, initsStart);
+            inits.assign(initsStart);
             uninits.assign(uninitsStart.andSet(uninits));
             resolveBreaks(tree, prevPendingExits);
             nextadr = nextadrPrev;
         }
 
         public void visitLabelled(JCLabeledStatement tree) {
-            ListBuffer<P> prevPendingExits = pendingExits;
+            ListBuffer<AssignPendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scan(tree.body);
             resolveBreaks(tree, prevPendingExits);
         }
 
         public void visitSwitch(JCSwitch tree) {
-            ListBuffer<P> prevPendingExits = pendingExits;
+            ListBuffer<AssignPendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             int nextadrPrev = nextadr;
             scanExpr(tree.selector);
@@ -2007,7 +2047,7 @@ public class Flow {
             final Bits uninitsSwitch = new Bits(uninits);
             boolean hasDefault = false;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
-                assignToInits(l.head, initsSwitch);
+                inits.assign(initsSwitch);
                 uninits.assign(uninits.andSet(uninitsSwitch));
                 JCCase c = l.head;
                 if (c.pat == null) {
@@ -2016,19 +2056,19 @@ public class Flow {
                     scanExpr(c.pat);
                 }
                 if (hasDefault) {
-                    assignToInits(null, initsSwitch);
+                    inits.assign(initsSwitch);
                     uninits.assign(uninits.andSet(uninitsSwitch));
                 }
                 scan(c.stats);
                 addVars(c.stats, initsSwitch, uninitsSwitch);
                 if (!hasDefault) {
-                    assignToInits(l.head.stats.last(), initsSwitch);
+                    inits.assign(initsSwitch);
                     uninits.assign(uninits.andSet(uninitsSwitch));
                 }
                 // Warn about fall-through if lint switch fallthrough enabled.
             }
             if (!hasDefault) {
-                andSetInits(null, initsSwitch);
+                inits.andSet(initsSwitch);
             }
             resolveBreaks(tree, prevPendingExits);
             nextadr = nextadrPrev;
@@ -2047,16 +2087,10 @@ public class Flow {
                 }
             }
 
-        boolean isEnabled(Lint.LintCategory lc) {
-            return false;
-        }
-
-        void reportWarning(Lint.LintCategory lc, DiagnosticPosition pos, String key, Object ... args) {}
-
         public void visitTry(JCTry tree) {
             ListBuffer<JCVariableDecl> resourceVarDecls = new ListBuffer<>();
             final Bits uninitsTryPrev = new Bits(uninitsTry);
-            ListBuffer<P> prevPendingExits = pendingExits;
+            ListBuffer<AssignPendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             final Bits initsTry = new Bits(inits);
             uninitsTry.assign(uninits);
@@ -2079,10 +2113,10 @@ public class Flow {
             int nextadrCatch = nextadr;
 
             if (!resourceVarDecls.isEmpty() &&
-                    isEnabled(Lint.LintCategory.TRY)) {
+                    lint.isEnabled(Lint.LintCategory.TRY)) {
                 for (JCVariableDecl resVar : resourceVarDecls) {
                     if (unrefdResources.includes(resVar.sym)) {
-                        reportWarning(Lint.LintCategory.TRY, resVar.pos(),
+                        log.warning(Lint.LintCategory.TRY, resVar.pos(),
                                     "try.resource.not.referenced", resVar.sym);
                         unrefdResources.remove(resVar.sym);
                     }
@@ -2098,7 +2132,7 @@ public class Flow {
 
             for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
                 JCVariableDecl param = l.head.param;
-                assignToInits(tree.body, initsCatchPrev);
+                inits.assign(initsCatchPrev);
                 uninits.assign(uninitsCatchPrev);
                 scan(param);
                 /* If this is a TWR and we are executing the code from Gen,
@@ -2111,9 +2145,9 @@ public class Flow {
                 nextadr = nextadrCatch;
             }
             if (tree.finalizer != null) {
-                assignToInits(tree.finalizer, initsTry);
+                inits.assign(initsTry);
                 uninits.assign(uninitsTry);
-                ListBuffer<P> exits = pendingExits;
+                ListBuffer<AssignPendingExit> exits = pendingExits;
                 pendingExits = prevPendingExits;
                 scan(tree.finalizer);
                 if (!tree.finallyCanCompleteNormally) {
@@ -2123,19 +2157,19 @@ public class Flow {
                     // FIX: this doesn't preserve source order of exits in catch
                     // versus finally!
                     while (exits.nonEmpty()) {
-                        P exit = exits.next();
+                        AssignPendingExit exit = exits.next();
                         if (exit.exit_inits != null) {
                             exit.exit_inits.orSet(inits);
                             exit.exit_uninits.andSet(uninits);
                         }
                         pendingExits.append(exit);
                     }
-                    orSetInits(tree, initsEnd);
+                    inits.orSet(initsEnd);
                 }
             } else {
-                assignToInits(tree, initsEnd);
+                inits.assign(initsEnd);
                 uninits.assign(uninitsEnd);
-                ListBuffer<P> exits = pendingExits;
+                ListBuffer<AssignPendingExit> exits = pendingExits;
                 pendingExits = prevPendingExits;
                 while (exits.nonEmpty()) pendingExits.append(exits.next());
             }
@@ -2146,7 +2180,7 @@ public class Flow {
             scanCond(tree.cond);
             final Bits initsBeforeElse = new Bits(initsWhenFalse);
             final Bits uninitsBeforeElse = new Bits(uninitsWhenFalse);
-            assignToInits(tree.cond, initsWhenTrue);
+            inits.assign(initsWhenTrue);
             uninits.assign(uninitsWhenTrue);
             if (tree.truepart.type.hasTag(BOOLEAN) &&
                 tree.falsepart.type.hasTag(BOOLEAN)) {
@@ -2159,7 +2193,7 @@ public class Flow {
                 final Bits initsAfterThenWhenFalse = new Bits(initsWhenFalse);
                 final Bits uninitsAfterThenWhenTrue = new Bits(uninitsWhenTrue);
                 final Bits uninitsAfterThenWhenFalse = new Bits(uninitsWhenFalse);
-                assignToInits(tree.truepart, initsBeforeElse);
+                inits.assign(initsBeforeElse);
                 uninits.assign(uninitsBeforeElse);
                 scanCond(tree.falsepart);
                 initsWhenTrue.andSet(initsAfterThenWhenTrue);
@@ -2170,10 +2204,10 @@ public class Flow {
                 scanExpr(tree.truepart);
                 final Bits initsAfterThen = new Bits(inits);
                 final Bits uninitsAfterThen = new Bits(uninits);
-                assignToInits(tree.truepart, initsBeforeElse);
+                inits.assign(initsBeforeElse);
                 uninits.assign(uninitsBeforeElse);
                 scanExpr(tree.falsepart);
-                andSetInits(tree.falsepart, initsAfterThen);
+                inits.andSet(initsAfterThen);
                 uninits.andSet(uninitsAfterThen);
             }
         }
@@ -2182,46 +2216,42 @@ public class Flow {
             scanCond(tree.cond);
             final Bits initsBeforeElse = new Bits(initsWhenFalse);
             final Bits uninitsBeforeElse = new Bits(uninitsWhenFalse);
-            assignToInits(tree.cond, initsWhenTrue);
+            inits.assign(initsWhenTrue);
             uninits.assign(uninitsWhenTrue);
             scan(tree.thenpart);
             if (tree.elsepart != null) {
                 final Bits initsAfterThen = new Bits(inits);
                 final Bits uninitsAfterThen = new Bits(uninits);
-                assignToInits(tree.thenpart, initsBeforeElse);
+                inits.assign(initsBeforeElse);
                 uninits.assign(uninitsBeforeElse);
                 scan(tree.elsepart);
-                andSetInits(tree.elsepart, initsAfterThen);
+                inits.andSet(initsAfterThen);
                 uninits.andSet(uninitsAfterThen);
             } else {
-                andSetInits(tree.thenpart, initsBeforeElse);
+                inits.andSet(initsBeforeElse);
                 uninits.andSet(uninitsBeforeElse);
             }
         }
 
-        protected P createNewPendingExit(JCTree tree, Bits inits, Bits uninits) {
-            return null;
-        }
-
         @Override
         public void visitBreak(JCBreak tree) {
-            recordExit(tree, createNewPendingExit(tree, inits, uninits));
+            recordExit(new AssignPendingExit(tree, inits, uninits));
         }
 
         @Override
         public void visitContinue(JCContinue tree) {
-            recordExit(tree, createNewPendingExit(tree, inits, uninits));
+            recordExit(new AssignPendingExit(tree, inits, uninits));
         }
 
         @Override
         public void visitReturn(JCReturn tree) {
             scanExpr(tree.expr);
-            recordExit(tree, createNewPendingExit(tree, inits, uninits));
+            recordExit(new AssignPendingExit(tree, inits, uninits));
         }
 
         public void visitThrow(JCThrow tree) {
             scanExpr(tree.expr);
-            markDead(tree.expr);
+            markDead();
         }
 
         public void visitApply(JCMethodInvocation tree) {
@@ -2240,7 +2270,7 @@ public class Flow {
             final Bits prevUninits = new Bits(uninits);
             final Bits prevInits = new Bits(inits);
             int returnadrPrev = returnadr;
-            ListBuffer<P> prevPending = pendingExits;
+            ListBuffer<AssignPendingExit> prevPending = pendingExits;
             try {
                 returnadr = nextadr;
                 pendingExits = new ListBuffer<>();
@@ -2259,7 +2289,7 @@ public class Flow {
             finally {
                 returnadr = returnadrPrev;
                 uninits.assign(prevUninits);
-                assignToInits(tree, prevInits);
+                inits.assign(prevInits);
                 pendingExits = prevPending;
             }
         }
@@ -2275,11 +2305,11 @@ public class Flow {
             scanCond(tree.cond);
             uninitsExit.andSet(uninitsWhenTrue);
             if (tree.detail != null) {
-                assignToInits(tree, initsWhenFalse);
+                inits.assign(initsWhenFalse);
                 uninits.assign(uninitsWhenFalse);
                 scanExpr(tree.detail);
             }
-            assignToInits(tree, initsExit);
+            inits.assign(initsExit);
             uninits.assign(uninitsExit);
         }
 
@@ -2308,8 +2338,7 @@ public class Flow {
             if (enforceThisDotInit &&
                 tree.selected.hasTag(IDENT) &&
                 ((JCIdent)tree.selected).name == names._this &&
-                tree.sym.kind == VAR)
-            {
+                tree.sym.kind == VAR) {
                 checkInit(tree.pos(), (VarSymbol)tree.sym);
             }
         }
@@ -2347,7 +2376,7 @@ public class Flow {
                 scanCond(tree.lhs);
                 final Bits initsWhenFalseLeft = new Bits(initsWhenFalse);
                 final Bits uninitsWhenFalseLeft = new Bits(uninitsWhenFalse);
-                assignToInits(tree.lhs, initsWhenTrue);
+                inits.assign(initsWhenTrue);
                 uninits.assign(uninitsWhenTrue);
                 scanCond(tree.rhs);
                 initsWhenFalse.andSet(initsWhenFalseLeft);
@@ -2357,7 +2386,7 @@ public class Flow {
                 scanCond(tree.lhs);
                 final Bits initsWhenTrueLeft = new Bits(initsWhenTrue);
                 final Bits uninitsWhenTrueLeft = new Bits(uninitsWhenTrue);
-                assignToInits(tree.lhs, initsWhenFalse);
+                inits.assign(initsWhenFalse);
                 uninits.assign(uninitsWhenFalse);
                 scanCond(tree.rhs);
                 initsWhenTrue.andSet(initsWhenTrueLeft);
@@ -2428,136 +2457,6 @@ public class Flow {
         }
     }
 
-    public class AssignAnalyzer extends AbstractAssignAnalyzer<AssignAnalyzer.AssignPendingExit> {
-
-        public class AssignPendingExit extends AbstractAssignAnalyzer<AssignPendingExit>.AbstractAssignPendingExit {
-
-            public AssignPendingExit(JCTree tree, final Bits inits, final Bits uninits) {
-                super(tree, inits, uninits);
-            }
-        }
-
-        @Override
-        protected AssignPendingExit createNewPendingExit(JCTree tree,
-            Bits inits, Bits uninits) {
-            return new AssignPendingExit(tree, inits, uninits);
-        }
-
-        /** Record an initialization of a trackable variable.
-         */
-        @Override
-        void letInit(DiagnosticPosition pos, VarSymbol sym) {
-            if (sym.adr >= firstadr && trackable(sym)) {
-                if ((sym.flags() & EFFECTIVELY_FINAL) != 0) {
-                    if (!uninits.isMember(sym.adr)) {
-                        //assignment targeting an effectively final variable
-                        //makes the variable lose its status of effectively final
-                        //if the variable is _not_ definitively unassigned
-                        sym.flags_field &= ~EFFECTIVELY_FINAL;
-                    } else {
-                        uninit(sym);
-                    }
-                }
-                else if ((sym.flags() & FINAL) != 0) {
-                    if ((sym.flags() & PARAMETER) != 0) {
-                        if ((sym.flags() & UNION) != 0) { //multi-catch parameter
-                            log.error(pos, "multicatch.parameter.may.not.be.assigned", sym);
-                        }
-                        else {
-                            log.error(pos, "final.parameter.may.not.be.assigned",
-                                  sym);
-                        }
-                    } else if (!uninits.isMember(sym.adr)) {
-                        log.error(pos, flowKind.errKey, sym);
-                    } else {
-                        uninit(sym);
-                    }
-                }
-                inits.incl(sym.adr);
-            } else if ((sym.flags() & FINAL) != 0) {
-                log.error(pos, "var.might.already.be.assigned", sym);
-            }
-        }
-
-        @Override
-        void checkInit(DiagnosticPosition pos, VarSymbol sym, String errkey) {
-            if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
-                trackable(sym) &&
-                !inits.isMember(sym.adr)) {
-                log.error(pos, errkey, sym);
-                inits.incl(sym.adr);
-            }
-        }
-
-        @Override
-        void reportWarning(Lint.LintCategory lc, DiagnosticPosition pos,
-            String key, Object ... args) {
-            log.warning(lc, pos, key, args);
-        }
-
-        @Override
-        int getLogNumberOfErrors() {
-            return log.nerrors;
-        }
-
-        @Override
-        boolean isEnabled(Lint.LintCategory lc) {
-            return lint.isEnabled(lc);
-        }
-
-        @Override
-        public void visitClassDef(JCClassDecl tree) {
-            if (tree.sym == null) {
-                return;
-            }
-
-            Lint lintPrev = lint;
-            lint = lint.augment(tree.sym);
-            try {
-                super.visitClassDef(tree);
-            } finally {
-                lint = lintPrev;
-            }
-        }
-
-        @Override
-        public void visitMethodDef(JCMethodDecl tree) {
-            if (tree.body == null) {
-                return;
-            }
-
-            /*  MemberEnter can generate synthetic methods ignore them
-             */
-            if ((tree.sym.flags() & SYNTHETIC) != 0) {
-                return;
-            }
-
-            Lint lintPrev = lint;
-            lint = lint.augment(tree.sym);
-            try {
-                super.visitMethodDef(tree);
-            } finally {
-                lint = lintPrev;
-            }
-        }
-
-        @Override
-        public void visitVarDef(JCVariableDecl tree) {
-            if (tree.init == null) {
-                super.visitVarDef(tree);
-            } else {
-                Lint lintPrev = lint;
-                lint = lint.augment(tree.sym);
-                try{
-                    super.visitVarDef(tree);
-                } finally {
-                    lint = lintPrev;
-                }
-            }
-        }
-
-    }
-
     /**
      * This pass implements the last step of the dataflow analysis, namely
      * the effectively-final analysis check. This checks that every local variable
@@ -2572,7 +2471,7 @@ public class Flow {
         JCTree currentTree; //local class or lambda
 
         @Override
-        void markDead(JCTree tree) {
+        void markDead() {
             //do nothing
         }
 
