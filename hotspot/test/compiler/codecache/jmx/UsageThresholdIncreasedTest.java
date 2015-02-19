@@ -51,7 +51,9 @@ public class UsageThresholdIncreasedTest {
 
     public static void main(String[] args) {
         for (BlobType btype : BlobType.getAvailable()) {
-            new UsageThresholdIncreasedTest(btype).runTest();
+            if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
+                new UsageThresholdIncreasedTest(btype).runTest();
+            }
         }
     }
 
