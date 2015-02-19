@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,15 +83,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *       ....
  *    }
  *
- *   &lt;!-- Example: XML Schema fragment -->
- *   &lt;xs:complexType name="Shipping">
- *     &lt;xs:complexContent>
- *       &lt;xs:sequence>
- *         &lt;xs:element name="customer" type="xs:IDREF"/>
+ *   &lt;!-- Example: XML Schema fragment --&gt;
+ *   &lt;xs:complexType name="Shipping"&gt;
+ *     &lt;xs:complexContent&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="customer" type="xs:IDREF"/&gt;
  *         ....
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexContent>
- *   &lt;/xs:complexType>
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexContent&gt;
+ *   &lt;/xs:complexType&gt;
  *
  * </pre>
  *
@@ -143,61 +143,61 @@ import static java.lang.annotation.RetentionPolicy.*;
  *       public Invoice getInvoice();
  *   }
  *
- *   &lt;!-- XML Schema mapping for above code frament -->
+ *   &lt;!-- XML Schema mapping for above code frament --&gt;
  *
- *   &lt;xs:complexType name="Invoice">
- *     &lt;xs:complexContent>
- *       &lt;xs:sequence>
- *         &lt;xs:element name="customer" type="xs:IDREF"/>
+ *   &lt;xs:complexType name="Invoice"&gt;
+ *     &lt;xs:complexContent&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="customer" type="xs:IDREF"/&gt;
  *         ....
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexContent>
- *   &lt;/xs:complexType>
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexContent&gt;
+ *   &lt;/xs:complexType&gt;
  *
- *   &lt;xs:complexType name="Shipping">
- *     &lt;xs:complexContent>
- *       &lt;xs:sequence>
- *         &lt;xs:element name="customer" type="xs:IDREF"/>
+ *   &lt;xs:complexType name="Shipping"&gt;
+ *     &lt;xs:complexContent&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="customer" type="xs:IDREF"/&gt;
  *         ....
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexContent>
- *   &lt;/xs:complexType>
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexContent&gt;
+ *   &lt;/xs:complexType&gt;
  *
- *   &lt;xs:complexType name="Customer">
- *     &lt;xs:complexContent>
- *       &lt;xs:sequence>
+ *   &lt;xs:complexType name="Customer"&gt;
+ *     &lt;xs:complexContent&gt;
+ *       &lt;xs:sequence&gt;
  *         ....
- *       &lt;/xs:sequence>
- *       &lt;xs:attribute name="CustomerID" type="xs:ID"/>
- *     &lt;/xs:complexContent>
- *   &lt;/xs:complexType>
+ *       &lt;/xs:sequence&gt;
+ *       &lt;xs:attribute name="CustomerID" type="xs:ID"/&gt;
+ *     &lt;/xs:complexContent&gt;
+ *   &lt;/xs:complexType&gt;
  *
- *   &lt;xs:complexType name="CustomerData">
- *     &lt;xs:complexContent>
- *       &lt;xs:sequence>
- *         &lt;xs:element name="customer" type="xs:Customer"/>
- *         &lt;xs:element name="shipping" type="xs:Shipping"/>
- *         &lt;xs:element name="invoice"  type="xs:Invoice"/>
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexContent>
- *   &lt;/xs:complexType>
+ *   &lt;xs:complexType name="CustomerData"&gt;
+ *     &lt;xs:complexContent&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="customer" type="xs:Customer"/&gt;
+ *         &lt;xs:element name="shipping" type="xs:Shipping"/&gt;
+ *         &lt;xs:element name="invoice"  type="xs:Invoice"/&gt;
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexContent&gt;
+ *   &lt;/xs:complexType&gt;
  *
- *   &lt;xs:element name"customerData" type="xs:CustomerData"/>
+ *   &lt;xs:element name"customerData" type="xs:CustomerData"/&gt;
  *
- *   &lt;!-- Instance document conforming to the above XML Schema -->
- *    &lt;customerData>
- *       &lt;customer customerID="Alice">
+ *   &lt;!-- Instance document conforming to the above XML Schema --&gt;
+ *    &lt;customerData&gt;
+ *       &lt;customer customerID="Alice"&gt;
  *           ....
- *       &lt;/customer>
+ *       &lt;/customer&gt;
  *
- *       &lt;shipping customer="Alice">
+ *       &lt;shipping customer="Alice"&gt;
  *           ....
- *       &lt;/shipping>
+ *       &lt;/shipping&gt;
  *
- *       &lt;invoice customer="Alice">
+ *       &lt;invoice customer="Alice"&gt;
  *           ....
- *       &lt;/invoice>
- *   &lt;/customerData>
+ *       &lt;/invoice&gt;
+ *   &lt;/customerData&gt;
  *
  * </pre>
  *
@@ -210,14 +210,14 @@ import static java.lang.annotation.RetentionPolicy.*;
  *             public List customers;
  *     }
  *
- *     &lt;!-- XML schema fragment -->
- *     &lt;xs:complexType name="Shipping">
- *       &lt;xs:sequence>
- *         &lt;xs:choice minOccurs="0" maxOccurs="unbounded">
- *           &lt;xs:element name="Alice" type="xs:IDREF"/>
- *         &lt;/xs:choice>
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexType>
+ *     &lt;!-- XML schema fragment --&gt;
+ *     &lt;xs:complexType name="Shipping"&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:choice minOccurs="0" maxOccurs="unbounded"&gt;
+ *           &lt;xs:element name="Alice" type="xs:IDREF"/&gt;
+ *         &lt;/xs:choice&gt;
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  *
  * <p><b>Example 4: </b> Mapping a List to a list of elements of type IDREF.
@@ -231,15 +231,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *         public List customers;
  *     }
  *
- *     &lt;!-- XML Schema fragment -->
- *     &lt;xs:complexType name="Shipping">
- *       &lt;xs:sequence>
- *         &lt;xs:choice minOccurs="0" maxOccurs="unbounded">
- *           &lt;xs:element name="Alice" type="xs:IDREF"/>
- *           &lt;xs:element name="John" type="xs:IDREF"/>
- *         &lt;/xs:choice>
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexType>
+ *     &lt;!-- XML Schema fragment --&gt;
+ *     &lt;xs:complexType name="Shipping"&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:choice minOccurs="0" maxOccurs="unbounded"&gt;
+ *           &lt;xs:element name="Alice" type="xs:IDREF"/&gt;
+ *           &lt;xs:element name="John" type="xs:IDREF"/&gt;
+ *         &lt;/xs:choice&gt;
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @see XmlID

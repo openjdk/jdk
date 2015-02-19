@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,13 +238,12 @@ import java.io.Reader;
  * to a JAXB mapped class by {@link JAXBContext}, that the root
  * element's <tt>xsi:type</tt> attribute takes
  * precedence over the unmarshal methods <tt>declaredType</tt> parameter.
- * These methods always return a <tt>JAXBElement&lt;declaredType></tt>
+ * These methods always return a <tt>JAXBElement&lt;declaredType&gt;</tt>
  * instance. The table below shows how the properties of the returned JAXBElement
  * instance are set.
  *
  * <a name="unmarshalDeclaredTypeReturn"></a>
- * <p>
- *   <table border="2" rules="all" cellpadding="4">
+ *   <table summary="" border="2" rules="all" cellpadding="4">
  *   <thead>
  *     <tr>
  *       <th align="center" colspan="2">
@@ -284,19 +283,19 @@ import java.io.Reader;
  * <blockquote>
  *    <pre>
  *       Schema fragment for example
- *       &lt;xs:schema>
- *          &lt;xs:complexType name="FooType">...&lt;\xs:complexType>
- *          &lt;!-- global element declaration "PurchaseOrder" -->
- *          &lt;xs:element name="PurchaseOrder">
- *              &lt;xs:complexType>
- *                 &lt;xs:sequence>
- *                    &lt;!-- local element declaration "foo" -->
- *                    &lt;xs:element name="foo" type="FooType"/>
+ *       &lt;xs:schema&gt;
+ *          &lt;xs:complexType name="FooType"&gt;...&lt;\xs:complexType&gt;
+ *          &lt;!-- global element declaration "PurchaseOrder" --&gt;
+ *          &lt;xs:element name="PurchaseOrder"&gt;
+ *              &lt;xs:complexType&gt;
+ *                 &lt;xs:sequence&gt;
+ *                    &lt;!-- local element declaration "foo" --&gt;
+ *                    &lt;xs:element name="foo" type="FooType"/&gt;
  *                    ...
- *                 &lt;/xs:sequence>
- *              &lt;/xs:complexType>
- *          &lt;/xs:element>
- *       &lt;/xs:schema>
+ *                 &lt;/xs:sequence&gt;
+ *              &lt;/xs:complexType&gt;
+ *          &lt;/xs:element&gt;
+ *       &lt;/xs:schema&gt;
  *
  *       JAXBContext jc = JAXBContext.newInstance( "com.acme.foo" );
  *       Unmarshaller u = jc.createUnmarshaller();
@@ -309,7 +308,7 @@ import java.io.Reader;
  *                                  // local element declaration in schema.
  *
  *       // FooType is the JAXB mapping of the type of local element declaration foo.
- *       JAXBElement&lt;FooType> foo = u.unmarshal( fooSubtree, FooType.class);
+ *       JAXBElement&lt;FooType&gt; foo = u.unmarshal( fooSubtree, FooType.class);
  *    </pre>
  * </blockquote>
  *
@@ -390,7 +389,7 @@ import java.io.Reader;
  * The external listener callback mechanism enables the registration of a {@link Listener}
  * instance with an {@link Unmarshaller#setListener(Listener)}. The external listener receives all callback events,
  * allowing for more centralized processing than per class defined callback methods.  The external listener
- * receives events when unmarshalling proces is marshalling to a JAXB element or to JAXB mapped class.
+ * receives events when unmarshalling process is marshalling to a JAXB element or to JAXB mapped class.
  * <p>
  * The 'class defined' and external listener event callback methods are independent of each other,
  * both can be called for one event.  The invocation ordering when both listener callback methods exist is
@@ -1010,7 +1009,7 @@ public interface Unmarshaller {
      *
      * <p>
      * Every unmarshaller internally maintains a
-     * {@link java.util.Map}&lt;{@link Class},{@link XmlAdapter}>,
+     * {@link java.util.Map}&lt;{@link Class},{@link XmlAdapter}&gt;,
      * which it uses for unmarshalling classes whose fields/methods are annotated
      * with {@link javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter}.
      *
@@ -1050,7 +1049,6 @@ public interface Unmarshaller {
     /**
      * <p>Associate a context that resolves cid's, content-id URIs, to
      * binary data passed as attachments.</p>
-     * <p/>
      * <p>Unmarshal time validation, enabled via {@link #setSchema(Schema)},
      * must be supported even when unmarshaller is performing XOP processing.
      * </p>
@@ -1063,21 +1061,21 @@ public interface Unmarshaller {
     AttachmentUnmarshaller getAttachmentUnmarshaller();
 
     /**
-     * <p/>
+     * <p>
      * Register an instance of an implementation of this class with {@link Unmarshaller} to externally listen
      * for unmarshal events.
-     * <p/>
-     * <p/>
+     * </p>
+     * <p>
      * This class enables pre and post processing of an instance of a JAXB mapped class
      * as XML data is unmarshalled into it. The event callbacks are called when unmarshalling
      * XML content into a JAXBElement instance or a JAXB mapped class that represents a complex type definition.
      * The event callbacks are not called when unmarshalling to an instance of a
      * Java datatype that represents a simple type definition.
-     * <p/>
-     * <p/>
+     * </p>
+     * <p>
      * External listener is one of two different mechanisms for defining unmarshal event callbacks.
      * See <a href="Unmarshaller.html#unmarshalEventCallback">Unmarshal Event Callbacks</a> for an overview.
-     * <p/>
+     * </p>
      * (@link #setListener(Listener)}
      * (@link #getListener()}
      *
@@ -1085,10 +1083,10 @@ public interface Unmarshaller {
      */
     public static abstract class Listener {
         /**
-         * <p/>
+         * <p>
          * Callback method invoked before unmarshalling into <tt>target</tt>.
-         * <p/>
-         * <p/>
+         * </p>
+         * <p>
          * This method is invoked immediately after <tt>target</tt> was created and
          * before the unmarshalling of this object begins. Note that
          * if the class of <tt>target</tt> defines its own <tt>beforeUnmarshal</tt> method,
@@ -1102,10 +1100,10 @@ public interface Unmarshaller {
         }
 
         /**
-         * <p/>
+         * <p>
          * Callback method invoked after unmarshalling XML data into <tt>target</tt>.
-         * <p/>
-         * <p/>
+         * </p>
+         * <p>
          * This method is invoked after all the properties (except IDREF) are unmarshalled into <tt>target</tt>,
          * but before <tt>target</tt> is set into its <tt>parent</tt> object.
          * Note that if the class of <tt>target</tt> defines its own <tt>afterUnmarshal</tt> method,

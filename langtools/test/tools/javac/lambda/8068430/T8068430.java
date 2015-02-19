@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,24 @@
  * questions.
  */
 
-package sun.management;
-
-import java.util.Collections;
-import java.util.List;
-import java.lang.management.PlatformManagedObject;
-
-/**
- * Class to allow for an extended set of platform MXBeans
+/*
+ * @test
+ * @bug 8068430
+ * @summary structural most specific and stuckness
  */
-public final class ExtendedPlatformComponent {
-    private ExtendedPlatformComponent() {} // Don't create any instances
 
-    /**
-     * Get the extended set of platform MXBeans that should be registered in the
-     * platform MBeanServer, or an empty list if there are no such MXBeans.
-     */
-    public static List<? extends PlatformManagedObject> getMXBeans() {
-        return Collections.emptyList();
-    }
+import java.util.HashMap;
+import java.util.Map;
 
-    /**
-     * Returns the extended platform MXBean implementing the given
-     * mxbeanInterface, or null if there is no such MXBean.
-     */
-    public static <T extends PlatformManagedObject>
-            T getMXBean(Class<T> mxbeanInterface) {
-        return null;
+public class T8068430 {
+    public static void main(String[] args) {
+        Map<Integer, String> mp = new HashMap<>();
+        mp.put(1, "a");
+        mp.put(2, "b");
+        mp.put(3, "c");
+        mp.put(4, "d");
+        System.out.println(mp.entrySet().stream().reduce(0,
+                (i, e) -> i + e.getKey(),
+                (i1, i2) -> i1 + i2));
     }
 }
