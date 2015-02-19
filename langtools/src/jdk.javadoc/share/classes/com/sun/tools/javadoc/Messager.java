@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.javadoc;
 
 import java.io.PrintWriter;
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.util.Context;
@@ -126,9 +127,11 @@ public class Messager extends Log implements DocErrorReporter {
                        PrintWriter noticeWriter) {
         super(context, errWriter, warnWriter, noticeWriter);
         messages = JavacMessages.instance(context);
-        messages.add("com.sun.tools.javadoc.resources.javadoc");
+        messages.add(locale -> ResourceBundle.getBundle("com.sun.tools.javadoc.resources.javadoc",
+                                                         locale));
         javadocDiags = new JCDiagnostic.Factory(messages, "javadoc");
         this.programName = programName;
+
     }
 
     public void setLocale(Locale locale) {

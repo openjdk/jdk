@@ -1,3 +1,8 @@
+java.corba
+java.activation
+java.annotations.common
+java.xml.bind
+java.xml.ws
 jdk.crypto.ec
 jdk.crypto.mscapi
 jdk.crypto.pkcs11

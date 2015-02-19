@@ -57,18 +57,6 @@
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
-// Disable options not supported in this release, with a warning if they
-// were explicitly requested on the command-line
-#define UNSUPPORTED_OPTION(opt, description)                    \
-do {                                                            \
-  if (opt) {                                                    \
-    if (FLAG_IS_CMDLINE(opt)) {                                 \
-      warning(description " is disabled in this release.");     \
-    }                                                           \
-    FLAG_SET_DEFAULT(opt, false);                               \
-  }                                                             \
-} while(0)
-
 #define UNSUPPORTED_GC_OPTION(gc)                                     \
 do {                                                                  \
   if (gc) {                                                           \
@@ -1127,7 +1115,7 @@ static void no_shared_spaces(const char* message) {
 #endif
 
 intx Arguments::scaled_compile_threshold(intx threshold, double scale) {
-  if (scale == 1.0 || scale < 0.0) {
+  if (scale == 1.0 || scale <= 0.0) {
     return threshold;
   } else {
     return (intx)(threshold * scale);
@@ -1143,7 +1131,7 @@ intx Arguments::scaled_freq_log(intx freq_log, double scale) {
 
   // Check value to avoid calculating log2 of 0.
   if (scale == 0.0) {
-    return 1;
+    return freq_log;
   }
 
   intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
@@ -2316,6 +2304,7 @@ bool Arguments::check_vm_args_consistency() {
     status = status && verify_percentage(G1MaxNewSizePercent, "G1MaxNewSizePercent");
     status = status && verify_interval(G1NewSizePercent, 0, G1MaxNewSizePercent, "G1NewSizePercent");
 
+    status = status && verify_percentage(G1ConfidencePercent, "G1ConfidencePercent");
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
     status = status && verify_min_value(G1RefProcDrainInterval, 1,
@@ -3479,8 +3468,10 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     set_mode_flags(_int);
   }
 
-  if ((TieredCompilation && CompileThresholdScaling == 0)
-      || (!TieredCompilation && scaled_compile_threshold(CompileThreshold) == 0)) {
+  // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),
+  // but like -Xint, leave compilation thresholds unaffected.
+  // With tiered compilation disabled, setting CompileThreshold to 0 disables compilation as well.
+  if ((CompileThresholdScaling == 0.0) || (!TieredCompilation && CompileThreshold == 0)) {
     set_mode_flags(_int);
   }
 
@@ -3850,6 +3841,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
   #endif
 #endif
+
+  ArgumentsExt::report_unsupported_options();
 
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {

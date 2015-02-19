@@ -24,6 +24,8 @@
 package com.oracle.java.testlibrary;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,6 +71,58 @@ public final class OutputAnalyzer {
   }
 
   /**
+   * Verify that the stdout contents of output buffer is empty
+   *
+   * @throws RuntimeException
+   *             If stdout was not empty
+   */
+  public void stdoutShouldBeEmpty() {
+    if (!getStdout().isEmpty()) {
+      reportDiagnosticSummary();
+      throw new RuntimeException("stdout was not empty");
+    }
+  }
+
+  /**
+   * Verify that the stderr contents of output buffer is empty
+   *
+   * @throws RuntimeException
+   *             If stderr was not empty
+   */
+  public void stderrShouldBeEmpty() {
+    if (!getStderr().isEmpty()) {
+      reportDiagnosticSummary();
+      throw new RuntimeException("stderr was not empty");
+    }
+  }
+
+  /**
+   * Verify that the stdout contents of output buffer is not empty
+   *
+   * @throws RuntimeException
+   *             If stdout was empty
+   */
+  public void stdoutShouldNotBeEmpty() {
+    if (getStdout().isEmpty()) {
+      reportDiagnosticSummary();
+      throw new RuntimeException("stdout was empty");
+    }
+  }
+
+  /**
+   * Verify that the stderr contents of output buffer is not empty
+   *
+   * @throws RuntimeException
+   *             If stderr was empty
+   */
+  public void stderrShouldNotBeEmpty() {
+    if (getStderr().isEmpty()) {
+      reportDiagnosticSummary();
+      throw new RuntimeException("stderr was empty");
+    }
+  }
+
+    /**
    * Verify that the stdout and stderr contents of output buffer contains the string
    *
    * @param expectedString String that buffer should contain
@@ -364,5 +418,19 @@ public final class OutputAnalyzer {
    */
   public int getExitValue() {
     return exitValue;
+  }
+
+  /**
+   * Get the contents of the output buffer (stdout and stderr) as list of strings.
+   * Output will be split by newlines.
+   *
+   * @return Contents of the output buffer as list of strings
+   */
+  public List<String> asLines() {
+    return asLines(getOutput());
+  }
+
+  private List<String> asLines(String buffer) {
+    return Arrays.asList(buffer.split("(\\r\\n|\\n|\\r)"));
   }
 }
