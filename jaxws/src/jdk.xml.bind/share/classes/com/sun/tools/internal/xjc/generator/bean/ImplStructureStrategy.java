@@ -42,7 +42,7 @@ import com.sun.codemodel.internal.JType;
 import com.sun.codemodel.internal.JVar;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlAccessorTypeWriter;
 import com.sun.tools.internal.xjc.model.CClassInfo;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 
 /**

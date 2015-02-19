@@ -406,6 +406,7 @@ needs_jdk = \
   com/sun/tools \
   demo \
   sun/security/tools/jarsigner \
+  sun/security/tools/policytool \
   sun/rmi/rmic \
   sun/tools \
   sun/jvmstat \
@@ -455,7 +456,6 @@ needs_jre = \
   com/oracle/security/ucrypto/TestRSA.java \
   sun/net/ftp \
   sun/net/www/protocol/ftp \
-  sun/security/tools/policytool \
   java/net/URI/URItoURLTest.java \
   java/net/URL/URIToURLTest.java \
   java/net/URLConnection/HandleContentTypeWithAttrs.java \

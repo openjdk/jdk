@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,8 @@ public class DeferredAttr extends JCTree.Visitor {
             DeferredStuckPolicy deferredStuckPolicy;
             if (resultInfo.pt.hasTag(NONE) || resultInfo.pt.isErroneous()) {
                 deferredStuckPolicy = dummyStuckPolicy;
-            } else if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.SPECULATIVE) {
+            } else if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.SPECULATIVE ||
+                    resultInfo.checkContext.deferredAttrContext().insideOverloadPhase()) {
                 deferredStuckPolicy = new OverloadStuckPolicy(resultInfo, this);
             } else {
                 deferredStuckPolicy = new CheckStuckPolicy(resultInfo, this);

@@ -632,4 +632,16 @@ bool Arguments::check_gc_consistency_ergo() {
   return check_gc_consistency_user();
 }
 
+// Disable options not supported in this release, with a warning if they
+// were explicitly requested on the command-line
+#define UNSUPPORTED_OPTION(opt, description)                    \
+do {                                                            \
+  if (opt) {                                                    \
+    if (FLAG_IS_CMDLINE(opt)) {                                 \
+      warning(description " is disabled in this release.");     \
+    }                                                           \
+    FLAG_SET_DEFAULT(opt, false);                               \
+  }                                                             \
+} while(0)
+
 #endif // SHARE_VM_RUNTIME_ARGUMENTS_HPP

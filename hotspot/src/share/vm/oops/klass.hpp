@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,9 @@ protected:
   void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
-  enum MethodLookupMode { normal, skip_overpass, skip_defaults };
+  enum DefaultsLookupMode { find_defaults, skip_defaults };
+  enum OverpassLookupMode { find_overpass, skip_overpass };
+  enum StaticLookupMode   { find_static,   skip_static };
 
   bool is_klass() const volatile { return true; }
 
@@ -413,10 +415,10 @@ protected:
   // lookup operation for MethodLookupCache
   friend class MethodLookupCache;
   virtual Klass* find_field(Symbol* name, Symbol* signature, fieldDescriptor* fd) const;
-  virtual Method* uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const;
+  virtual Method* uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const;
  public:
   Method* lookup_method(Symbol* name, Symbol* signature) const {
-    return uncached_lookup_method(name, signature, normal);
+    return uncached_lookup_method(name, signature, find_overpass);
   }
 
   // array class with specific rank

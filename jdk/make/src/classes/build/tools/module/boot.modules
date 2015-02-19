@@ -1,9 +1,6 @@
 java.base
 java.desktop
-java.activation
-java.annotations.common
 java.compiler
-java.corba
 java.instrument
 java.logging
 java.management
@@ -18,9 +15,7 @@ java.sql
 java.sql.rowset
 java.transaction
 java.xml
-java.xml.bind
 java.xml.crypto
-java.xml.ws
 jdk.charsets
 jdk.deploy
 jdk.deploy.osx

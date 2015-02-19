@@ -143,7 +143,6 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
       }
       break;
     case BarrierSet::ModRef:
-    case BarrierSet::Other:
       ShouldNotReachHere();
       break;
     default:

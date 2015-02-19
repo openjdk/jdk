@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,11 +76,11 @@ package javax.xml.bind.annotation.adapters;
  * <p> <b> Step 1: </b> Determine the desired XML representation for HashMap.
  *
  * <pre>
- *     &lt;hashmap>
- *         &lt;entry key="id123">this is a value&lt;/entry>
- *         &lt;entry key="id312">this is another value&lt;/entry>
+ *     &lt;hashmap&gt;
+ *         &lt;entry key="id123"&gt;this is a value&lt;/entry&gt;
+ *         &lt;entry key="id312"&gt;this is another value&lt;/entry&gt;
  *         ...
- *       &lt;/hashmap>
+ *       &lt;/hashmap&gt;
  * </pre>
  *
  * <p> <b> Step 2: </b> Determine the schema definition that the
@@ -88,20 +88,20 @@ package javax.xml.bind.annotation.adapters;
  *
  * <pre>
  *
- *     &lt;xs:complexType name="myHashMapType">
- *       &lt;xs:sequence>
+ *     &lt;xs:complexType name="myHashMapType"&gt;
+ *       &lt;xs:sequence&gt;
  *         &lt;xs:element name="entry" type="myHashMapEntryType"
- *                        minOccurs = "0" maxOccurs="unbounded"/>
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexType>
+ *                        minOccurs = "0" maxOccurs="unbounded"/&gt;
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexType&gt;
  *
- *     &lt;xs:complexType name="myHashMapEntryType">
- *       &lt;xs:simpleContent>
- *         &lt;xs:extension base="xs:string">
- *           &lt;xs:attribute name="key" type="xs:int"/>
- *         &lt;/xs:extension>
- *       &lt;/xs:simpleContent>
- *     &lt;/xs:complexType>
+ *     &lt;xs:complexType name="myHashMapEntryType"&gt;
+ *       &lt;xs:simpleContent&gt;
+ *         &lt;xs:extension base="xs:string"&gt;
+ *           &lt;xs:attribute name="key" type="xs:int"/&gt;
+ *         &lt;/xs:extension&gt;
+ *       &lt;/xs:simpleContent&gt;
+ *     &lt;/xs:complexType&gt;
  *
  * </pre>
  *
@@ -110,7 +110,7 @@ package javax.xml.bind.annotation.adapters;
  *
  * <pre>
  *     public class MyHashMapType {
- *         List&lt;MyHashMapEntryType> entry;
+ *         List&lt;MyHashMapEntryType&gt; entry;
  *     }
  *
  *     public class MyHashMapEntryType {
@@ -127,7 +127,7 @@ package javax.xml.bind.annotation.adapters;
  *
  * <pre>
  *     public final class MyHashMapAdapter extends
- *                        XmlAdapter&lt;MyHashMapType,HashMap> { ... }
+ *                        XmlAdapter&lt;MyHashMapType,HashMap&gt; { ... }
  *
  * </pre>
  *
@@ -144,11 +144,11 @@ package javax.xml.bind.annotation.adapters;
  * The above code fragment will map to the following schema:
  *
  * <pre>
- *     &lt;xs:complexType name="Foo">
- *       &lt;xs:sequence>
- *         &lt;xs:element name="hashmap" type="myHashMapType"
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexType>
+ *     &lt;xs:complexType name="Foo"&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="hashmap" type="myHashMapType"&gt;
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  *
  * @param <BoundType>
