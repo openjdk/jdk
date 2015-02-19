@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -112,39 +112,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   LIBJSOUND_SRC_FILES += $(LIBJSOUND_PORTFILES)
   LIBJSOUND_SRC_FILES += $(LIBJSOUND_DAUDIOFILES)
 endif # OPENJDK_TARGET_OS solaris
-
-
-ifeq ($(JVM_VARIANT_ZERO), true)
-  LIBJSOUND_CFLAGS += -DX_ARCH=X_ZERO
-else
-  ifeq ($(OPENJDK_TARGET_CPU), x86)
-    LIBJSOUND_CFLAGS += -DX_ARCH=X_I586
-  endif
-
-  ifeq ($(OPENJDK_TARGET_CPU), sparc)
-    LIBJSOUND_CFLAGS += -DX_ARCH=X_SPARC
-  endif
-
-  ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
-    LIBJSOUND_CFLAGS += -DX_ARCH=X_SPARCV9
-  endif
-
-  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
-    LIBJSOUND_CFLAGS += -DX_ARCH=X_AMD64
-  endif
-
-  ifeq ($(OPENJDK_TARGET_CPU), arm)
-    LIBJSOUND_CFLAGS += -DX_ARCH=X_ARM
-  endif
-
-  ifeq ($(OPENJDK_TARGET_CPU), ppc)
-    LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC
-  endif
-
-  ifeq ($(OPENJDK_TARGET_CPU), ppc64)
-       LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC64
-  endif
-endif
 
 LIBJSOUND_CFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
 

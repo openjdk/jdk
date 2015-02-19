@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,32 +34,13 @@
 #define X_BSD           4
 #define X_MACOSX        5
 
-// types for X_ARCH
-#define X_I586          1
-#define X_SPARC         2
-#define X_SPARCV9       3
-#define X_IA64          4
-#define X_AMD64         5
-#define X_ZERO          6
-#define X_ARM           7
-#define X_PPC           8
-
 // **********************************
-// Make sure you set X_PLATFORM and X_ARCH defines correctly.
+// Make sure you set X_PLATFORM defines correctly.
 // Everything depends upon this flag being setup correctly.
 // **********************************
 
-#if (X_PLATFORM == X_MACOSX) && !defined(X_ARCH)
-#if __x86_64__
-#define X_ARCH X_AMD64
-#endif
-#if __i386__
-#define X_ARCH X_I586
-#endif
-#endif
-
-#if (!defined(X_PLATFORM) || !defined(X_ARCH))
-#error "You need to define X_PLATFORM and X_ARCH outside of the source. Use the types above."
+#if (!defined(X_PLATFORM))
+#error "You need to define X_PLATFORM outside of the source. Use the types above."
 #endif
 
 
