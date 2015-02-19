@@ -195,10 +195,11 @@ public final class JapaneseEra
      * @throws DateTimeException if the value is invalid
      */
     public static JapaneseEra of(int japaneseEra) {
-        if (japaneseEra < MEIJI.eraValue || japaneseEra + ERA_OFFSET > KNOWN_ERAS.length) {
+        int i = ordinal(japaneseEra);
+        if (i < 0 || i >= KNOWN_ERAS.length) {
             throw new DateTimeException("Invalid era: " + japaneseEra);
         }
-        return KNOWN_ERAS[ordinal(japaneseEra)];
+        return KNOWN_ERAS[i];
     }
 
     /**

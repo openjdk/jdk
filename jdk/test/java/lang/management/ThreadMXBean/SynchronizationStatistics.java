@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class SynchronizationStatistics {
     }
 
     private static void waitForThreadState(Thread t, Thread.State state) throws InterruptedException {
-        while (!t.isInterrupted() && t.getState() != state) {
+        while (t.getState() != state) {
             Thread.sleep(3);
         }
     }
@@ -109,7 +109,9 @@ public class SynchronizationStatistics {
         synchronized(lock1) {
             p.arriveAndAwaitAdvance(); // phase[1]
             waitForThreadState(lt, Thread.State.BLOCKED);
-            lockName = mbean.getThreadInfo(tid).getLockName();
+            do {
+                lockName = mbean.getThreadInfo(tid).getLockName();
+            } while (lockName == null);
         }
 
         p.arriveAndAwaitAdvance(); // phase[2]
@@ -159,7 +161,9 @@ public class SynchronizationStatistics {
         synchronized(lock1) {
             p.arriveAndAwaitAdvance(); // phase[1]
             waitForThreadState(lt, Thread.State.BLOCKED);
-            lockName = mbean.getThreadInfo(tid).getLockName();
+            do {
+                lockName = mbean.getThreadInfo(tid).getLockName();
+            } while (lockName == null);
         }
         p.arriveAndAwaitAdvance(); // phase[2]
 
@@ -168,7 +172,9 @@ public class SynchronizationStatistics {
         synchronized(lock2) {
             p.arriveAndAwaitAdvance(); // phase [3]
             waitForThreadState(lt, Thread.State.BLOCKED);
-            lockName = mbean.getThreadInfo(tid).getLockName();
+            do {
+                lockName = mbean.getThreadInfo(tid).getLockName();
+            } while (lockName == null);
         }
         p.arriveAndAwaitAdvance(); // phase [4]
         testBlocked(ti, () -> mbean.getThreadInfo(tid), lockName, lock2);

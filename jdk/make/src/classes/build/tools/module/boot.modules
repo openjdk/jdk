@@ -1,7 +1,5 @@
 java.base
 java.desktop
-java.activation
-java.annotations.common
 java.compiler
 java.corba
 java.instrument
@@ -11,7 +9,6 @@ java.naming
 java.prefs
 java.rmi
 java.scripting
-java.security.acl
 java.security.jgss
 java.security.sasl
 java.smartcardio
@@ -19,9 +16,7 @@ java.sql
 java.sql.rowset
 java.transaction
 java.xml
-java.xml.bind
 java.xml.crypto
-java.xml.ws
 jdk.charsets
 jdk.deploy
 jdk.deploy.osx

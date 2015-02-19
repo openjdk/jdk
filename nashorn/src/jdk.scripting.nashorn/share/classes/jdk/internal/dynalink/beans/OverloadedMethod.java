@@ -139,7 +139,8 @@ class OverloadedMethod {
         final MethodHandle bound = SELECT_METHOD.bindTo(this);
         final MethodHandle collecting = SingleDynamicMethod.collectArguments(bound, argNum).asType(
                 callSiteType.changeReturnType(MethodHandle.class));
-        invoker = MethodHandles.foldArguments(MethodHandles.exactInvoker(this.callSiteType), collecting);
+        invoker = linkerServices.asTypeLosslessReturn(MethodHandles.foldArguments(
+                MethodHandles.exactInvoker(this.callSiteType), collecting), callSiteType);
     }
 
     MethodHandle getInvoker() {

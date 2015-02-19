@@ -1463,14 +1463,13 @@
 
                 <h4>Building with ccache</h4>
 
-                <p>A simple way to radically speed up compilation of native code
-                    (typically hotspot and native libraries in JDK) is to install
-                    ccache. This will cache and reuse prior compilation results, if the
-                    source code is unchanged. However, ccache versions prior to 3.1.4
-                    does not work correctly with the precompiled headers used in
-                    OpenJDK. So if your platform supports ccache at 3.1.4 or later, we
-                    highly recommend installing it. This is currently only supported on
-                    linux.</p> 
+                <p>The OpenJDK build supports building with ccache 
+                    when using gcc or clang. Using ccache can
+                    radically speed up compilation of native code if
+                    you often rebuild the same sources. Your milage
+                    may vary however so we recommend evaluating it for
+                    yourself. To enable it, make sure it's on the path
+                    and configure with <code>--enable-ccache</code>.</p> 
 
                 <h4>Building on local disk</h4>
 
