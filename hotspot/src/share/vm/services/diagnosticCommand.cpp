@@ -58,6 +58,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassStatsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
 #endif // INCLUDE_SERVICES
@@ -696,3 +697,35 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
   VMThread::execute(&printCodeCacheOp);
 }
 
+#if INCLUDE_SERVICES
+ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
+                                       DCmdWithParser(output, heap),
+  _print_interfaces("-i", "Inherited interfaces should be printed.", "BOOLEAN", false, "false"),
+  _print_subclasses("-s", "If a classname is specified, print its subclasses. "
+                    "Otherwise only its superclasses are printed.", "BOOLEAN", false, "false"),
+  _classname("classname", "Name of class whose hierarchy should be printed. "
+             "If not specified, all class hierarchies are printed.",
+             "STRING", false) {
+  _dcmdparser.add_dcmd_option(&_print_interfaces);
+  _dcmdparser.add_dcmd_option(&_print_subclasses);
+  _dcmdparser.add_dcmd_argument(&_classname);
+}
+
+void ClassHierarchyDCmd::execute(DCmdSource source, TRAPS) {
+  VM_PrintClassHierarchy printClassHierarchyOp(output(), _print_interfaces.value(),
+                                               _print_subclasses.value(), _classname.value());
+  VMThread::execute(&printClassHierarchyOp);
+}
+
+int ClassHierarchyDCmd::num_arguments() {
+  ResourceMark rm;
+  ClassHierarchyDCmd* dcmd = new ClassHierarchyDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
+
+#endif
