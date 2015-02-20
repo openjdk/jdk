@@ -46,7 +46,6 @@
 #include "compiler/oopMap.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc_implementation/shared/immutableSpace.hpp"
-#include "gc_implementation/shared/markSweep.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
