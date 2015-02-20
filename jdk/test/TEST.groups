@@ -190,7 +190,6 @@ core_tools = \
 
 svc_tools = \
     com/sun/tools/attach \
-    com/sun/tracing \
     sun/tools \
     -sun/tools/java \
     -sun/tools/native2ascii \
@@ -407,6 +406,7 @@ needs_jdk = \
   com/sun/tools \
   demo \
   sun/security/tools/jarsigner \
+  sun/security/tools/policytool \
   sun/rmi/rmic \
   sun/tools \
   sun/jvmstat \
@@ -456,7 +456,6 @@ needs_jre = \
   com/oracle/security/ucrypto/TestRSA.java \
   sun/net/ftp \
   sun/net/www/protocol/ftp \
-  sun/security/tools/policytool \
   java/net/URI/URItoURLTest.java \
   java/net/URL/URIToURLTest.java \
   java/net/URLConnection/HandleContentTypeWithAttrs.java \
@@ -562,7 +561,6 @@ needs_compact3 = \
   com/sun/security/auth \
   com/sun/security/sasl \
   com/sun/security/jgss \
-  com/sun/tracing \
   java/util/prefs \
   javax/naming \
   javax/security \
