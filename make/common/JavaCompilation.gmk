@@ -65,7 +65,7 @@ define SetupJavaCompiler
 endef
 
 define SetupJavaCompilerInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupJavaCompiler($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompiler, please update JavaCompilation.gmk))
 
@@ -83,6 +83,9 @@ endef
 #
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name.
+#
+# Parameter 2 is a list of dependencies for the jar target. If left empty,
+# dependencies are searched using SRCS, which should not be empty.
 #
 # Remaining parameters are named arguments. These include:
 #   SRCS:=List of directories in where to find files to add to archive
@@ -106,7 +109,7 @@ endef
 
 define SetupArchiveInner
   # NOTE: $2 is dependencies, not a named argument!
-  $(foreach i,3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(foreach i,3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupArchive($1),<dependencies>,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
   $(if $(findstring $(LOG_LEVEL),trace), $(info *[2] <dependencies> = $(strip $2)))
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupArchive, please update JavaCompilation.gmk))
@@ -362,6 +365,10 @@ endef
 # This is the new clean standard. Though it is to be superseded by
 # a standard annotation processor from with sjavac.
 #
+# An empty echo ensures that the input to sed always ends with a newline.
+# Certain implementations (e.g. Solaris) will skip the last line without
+# it.
+#
 # The sed expression does this:
 # 1. Add a backslash before any :, = or ! that do not have a backslash already.
 # 2. Apply the file unicode2x.sed which does a whole bunch of \u00XX to \xXX
@@ -384,7 +391,7 @@ define add_file_to_clean
   # Now we can setup the depency that will trigger the copying.
   $$($1_BIN)$$($2_TARGET) : $2
 	$(MKDIR) -p $$(@D)
-	export LC_ALL=C ; $(CAT) $$< \
+	export LC_ALL=C ; ( $(CAT) $$< && $(ECHO) "" ) \
 	    | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
 	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/#.*/#/g' \
 	    | $(SED) -f "$(SRC_ROOT)/make/common/support/unicode2x.sed" \
@@ -434,9 +441,14 @@ define SetupJavaCompilation
 endef
 
 define SetupJavaCompilationInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupJavaCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompilation, please update JavaCompilation.gmk))
+
+  # Verify arguments
+  ifeq ($$($1_BIN),)
+    $$(error Must specify BIN (in $1))
+  endif
 
   # Extract the info from the java compiler setup.
   $1_JVM := $$($$($1_SETUP)_JVM)
