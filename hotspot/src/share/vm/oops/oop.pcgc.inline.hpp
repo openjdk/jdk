@@ -33,7 +33,6 @@
 #include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 
 inline void oopDesc::update_contents(ParCompactionManager* cm) {
