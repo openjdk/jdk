@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,18 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "ci/ciBaseObject.hpp"
-#include "ci/ciUtilities.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#ifndef SHARE_VM_OOPS_VERIFYOOPCLOSURE_HPP
+#define SHARE_VM_OOPS_VERIFYOOPCLOSURE_HPP
 
-// ------------------------------------------------------------------
-// ciBaseObject::set_ident
-//
-// Set the unique identity number of a ciBaseObject.
-void ciBaseObject::set_ident(uint id) {
-  assert((_ident >> FLAG_BITS) == 0, "must only initialize once");
-  assert( id < ((uint)1 << (BitsPerInt-FLAG_BITS)), "id too big");
-  _ident = _ident + (id << FLAG_BITS);
-}
+#include "memory/iterator.hpp"
 
-// ------------------------------------------------------------------
-// ciBaseObject::ident
-//
-// Report the unique identity number of a ciBaseObject.
-uint ciBaseObject::ident() {
-  uint id = _ident >> FLAG_BITS;
-  assert(id != 0, "must be initialized");
-  return id;
-}
+class VerifyOopClosure: public OopClosure {
+ protected:
+  template <class T> void do_oop_work(T* p);
+ public:
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+  static VerifyOopClosure verify_oop;
+};
+
+#endif // SHARE_VM_OOPS_VERIFYOOPCLOSURE_HPP

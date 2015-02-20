@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "ci/ciBaseObject.hpp"
-#include "ci/ciUtilities.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#ifndef SHARE_VM_OOPS_OBJARRAYOOP_INLINE_HPP
+#define SHARE_VM_OOPS_OBJARRAYOOP_INLINE_HPP
 
-// ------------------------------------------------------------------
-// ciBaseObject::set_ident
-//
-// Set the unique identity number of a ciBaseObject.
-void ciBaseObject::set_ident(uint id) {
-  assert((_ident >> FLAG_BITS) == 0, "must only initialize once");
-  assert( id < ((uint)1 << (BitsPerInt-FLAG_BITS)), "id too big");
-  _ident = _ident + (id << FLAG_BITS);
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
+
+inline oop objArrayOopDesc::obj_at(int index) const {
+  // With UseCompressedOops decode the narrow oop in the objArray to an
+  // uncompressed oop.  Otherwise this is simply a "*" operator.
+  if (UseCompressedOops) {
+    return load_decode_heap_oop(obj_at_addr<narrowOop>(index));
+  } else {
+    return load_decode_heap_oop(obj_at_addr<oop>(index));
+  }
 }
 
-// ------------------------------------------------------------------
-// ciBaseObject::ident
-//
-// Report the unique identity number of a ciBaseObject.
-uint ciBaseObject::ident() {
-  uint id = _ident >> FLAG_BITS;
-  assert(id != 0, "must be initialized");
-  return id;
-}
+#endif // SHARE_VM_OOPS_OBJARRAYOOP_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,10 +123,10 @@ class Handle VALUE_OBJ_CLASS_SPEC {
   };
 
 
-DEF_HANDLE(instance         , is_instance         )
-DEF_HANDLE(array            , is_array            )
-DEF_HANDLE(objArray         , is_objArray         )
-DEF_HANDLE(typeArray        , is_typeArray        )
+DEF_HANDLE(instance         , is_instance_noinline         )
+DEF_HANDLE(array            , is_array_noinline            )
+DEF_HANDLE(objArray         , is_objArray_noinline         )
+DEF_HANDLE(typeArray        , is_typeArray_noinline        )
 
 //------------------------------------------------------------------------------------------------------------------------
 
