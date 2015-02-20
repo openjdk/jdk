@@ -40,7 +40,7 @@ public class GetPutObject {
         Object o = new Object();
         Field field = Test.class.getField("o");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals(t.o, unsafe.getObject(t, offset));
 
         unsafe.putObject(t, offset, o);

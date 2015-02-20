@@ -80,7 +80,6 @@ static void save_signal(int idx, int sig) {
 }
 
 int VMError::get_resetted_sigflags(int sig) {
-  // Handle all program errors.
   for (int i = 0; i < NUM_SIGNALS; i++) {
     if (SIGNALS[i] == sig) {
       return resettedSigflags[i];
@@ -90,7 +89,6 @@ int VMError::get_resetted_sigflags(int sig) {
 }
 
 address VMError::get_resetted_sighandler(int sig) {
-  // Handle all program errors.
   for (int i = 0; i < NUM_SIGNALS; i++) {
     if (SIGNALS[i] == sig) {
       return resettedSighandler[i];
@@ -100,12 +98,19 @@ address VMError::get_resetted_sighandler(int sig) {
 }
 
 static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
+
   // Unmask current signal.
   sigset_t newset;
   sigemptyset(&newset);
   sigaddset(&newset, sig);
+  // and all other synchronous signals too.
+  for (int i = 0; i < NUM_SIGNALS; i++) {
+    sigaddset(&newset, SIGNALS[i]);
+  }
+  sigthreadmask(SIG_UNBLOCK, &newset, NULL);
 
-  Unimplemented();
+  VMError err(NULL, sig, NULL, info, ucVoid);
+  err.report_and_die();
 }
 
 void VMError::reset_signal_handlers() {

@@ -39,7 +39,7 @@ public class GetPutByte {
         Test t = new Test();
         Field field = Test.class.getField("b");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals((byte)0, unsafe.getByte(t, offset));
         unsafe.putByte(t, offset, (byte)1);
         assertEquals((byte)1, unsafe.getByte(t, offset));

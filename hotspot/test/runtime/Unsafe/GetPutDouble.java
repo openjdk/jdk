@@ -39,7 +39,7 @@ public class GetPutDouble {
         Test t = new Test();
         Field field = Test.class.getField("d");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals(-1.0, unsafe.getDouble(t, offset));
         unsafe.putDouble(t, offset, 0.0);
         assertEquals(0.0, unsafe.getDouble(t, offset));
