@@ -29,6 +29,7 @@ import java.lang.reflect.*;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Objects;
 
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
@@ -632,7 +633,7 @@ public class MethodHandles {
          * @throws NullPointerException if the argument is null
          */
         public Lookup in(Class<?> requestedLookupClass) {
-            requestedLookupClass.getClass();  // null check
+            Objects.requireNonNull(requestedLookupClass);
             if (allowedModes == TRUSTED)  // IMPL_LOOKUP can make any lookup at all
                 return new Lookup(requestedLookupClass, ALL_MODES);
             if (requestedLookupClass == this.lookupClass)
@@ -1367,16 +1368,16 @@ return mh1;
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            name.getClass();  // NPE
-            type.getClass();  // NPE
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(type);
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(),
                                             NoSuchFieldException.class);
         }
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            name.getClass();  // NPE
-            type.getClass();  // NPE
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(type);
             checkMethodName(refKind, name);  // NPE check on name
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(),
                                             NoSuchMethodException.class);
@@ -1384,14 +1385,14 @@ return mh1;
 
         MemberName resolveOrFail(byte refKind, MemberName member) throws ReflectiveOperationException {
             checkSymbolicClass(member.getDeclaringClass());  // do this before attempting to resolve
-            member.getName().getClass();  // NPE
-            member.getType().getClass();  // NPE
+            Objects.requireNonNull(member.getName());
+            Objects.requireNonNull(member.getType());
             return IMPL_NAMES.resolveOrFail(refKind, member, lookupClassOrNull(),
                                             ReflectiveOperationException.class);
         }
 
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
-            refc.getClass();  // NPE
+            Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
             if (caller != null && !VerifyAccess.isClassAccessible(refc, caller, allowedModes))
                 throw new MemberName(refc).makeAccessException("symbolic reference class is not public", this);
