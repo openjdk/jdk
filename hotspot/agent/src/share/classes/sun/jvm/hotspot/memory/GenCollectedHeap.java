@@ -76,9 +76,9 @@ public class GenCollectedHeap extends SharedHeap {
 
     switch (i) {
     case 0:
-      return genFactory.newObject(youngGenField.getAddress());
+      return genFactory.newObject(youngGenField.getValue(addr));
     case 1:
-      return genFactory.newObject(oldGenField.getAddress());
+      return genFactory.newObject(oldGenField.getValue(addr));
     default:
       // no generation for i, and assertions disabled.
       return null;
