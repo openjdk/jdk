@@ -597,6 +597,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static final NamedFunction NF_checkSpreadArgument;
         static final NamedFunction NF_guardWithCatch;
         static final NamedFunction NF_throwException;
+        static final NamedFunction NF_profileBoolean;
 
         static final MethodHandle MH_castReference;
         static final MethodHandle MH_selectAlternative;
@@ -614,10 +615,12 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 NF_guardWithCatch      = new NamedFunction(MHI.getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
                                                                                  MethodHandle.class, Object[].class));
                 NF_throwException      = new NamedFunction(MHI.getDeclaredMethod("throwException", Throwable.class));
+                NF_profileBoolean      = new NamedFunction(MHI.getDeclaredMethod("profileBoolean", boolean.class, int[].class));
 
                 NF_checkSpreadArgument.resolve();
                 NF_guardWithCatch.resolve();
                 NF_throwException.resolve();
+                NF_profileBoolean.resolve();
 
                 MH_castReference        = IMPL_LOOKUP.findStatic(MHI, "castReference",
                                             MethodType.methodType(Object.class, Class.class, Object.class));
@@ -697,7 +700,26 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     @LambdaForm.Hidden
     static
     MethodHandle selectAlternative(boolean testResult, MethodHandle target, MethodHandle fallback) {
-        return testResult ? target : fallback;
+        if (testResult) {
+            return target;
+        } else {
+            return fallback;
+        }
+    }
+
+    // Intrinsified by C2. Counters are used during parsing to calculate branch frequencies.
+    @LambdaForm.Hidden
+    static
+    boolean profileBoolean(boolean result, int[] counters) {
+        // Profile is int[2] where [0] and [1] correspond to false and true occurrences respectively.
+        int idx = result ? 1 : 0;
+        try {
+            counters[idx] = Math.addExact(counters[idx], 1);
+        } catch (ArithmeticException e) {
+            // Avoid continuous overflow by halving the problematic count.
+            counters[idx] = counters[idx] / 2;
+        }
+        return result;
     }
 
     static
@@ -708,13 +730,18 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         assert(test.type().equals(type.changeReturnType(boolean.class)) && fallback.type().equals(type));
         MethodType basicType = type.basicType();
         LambdaForm form = makeGuardWithTestForm(basicType);
-        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
         BoundMethodHandle mh;
-
         try {
-            mh = (BoundMethodHandle)
-                    data.constructor().invokeBasic(type, form,
-                        (Object) test, (Object) profile(target), (Object) profile(fallback));
+            if (PROFILE_GWT) {
+                int[] counts = new int[2];
+                mh = (BoundMethodHandle)
+                        BoundMethodHandle.speciesData_LLLL().constructor().invokeBasic(type, form,
+                                (Object) test, (Object) profile(target), (Object) profile(fallback), counts);
+            } else {
+                mh = (BoundMethodHandle)
+                        BoundMethodHandle.speciesData_LLL().constructor().invokeBasic(type, form,
+                                (Object) test, (Object) profile(target), (Object) profile(fallback));
+            }
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -726,7 +753,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static
     MethodHandle profile(MethodHandle target) {
         if (DONT_INLINE_THRESHOLD >= 0) {
-            return makeBlockInlningWrapper(target);
+            return makeBlockInliningWrapper(target);
         } else {
             return target;
         }
@@ -737,8 +764,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      * Corresponding LambdaForm has @DontInline when compiled into bytecode.
      */
     static
-    MethodHandle makeBlockInlningWrapper(MethodHandle target) {
-        LambdaForm lform = PRODUCE_BLOCK_INLINING_FORM.apply(target);
+    MethodHandle makeBlockInliningWrapper(MethodHandle target) {
+        LambdaForm lform;
+        if (DONT_INLINE_THRESHOLD > 0) {
+            lform = PRODUCE_BLOCK_INLINING_FORM.apply(target);
+        } else {
+            lform = PRODUCE_REINVOKER_FORM.apply(target);
+        }
         return new CountingWrapper(target, lform,
                 PRODUCE_BLOCK_INLINING_FORM, PRODUCE_REINVOKER_FORM,
                                    DONT_INLINE_THRESHOLD);
@@ -800,7 +832,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle wrapper;
             if (isCounting) {
                 LambdaForm lform;
-                lform = countingFormProducer.apply(target);
+                lform = countingFormProducer.apply(newTarget);
                 wrapper = new CountingWrapper(newTarget, lform, countingFormProducer, nonCountingFormProducer, DONT_INLINE_THRESHOLD);
             } else {
                 wrapper = newTarget; // no need for a counting wrapper anymore
@@ -809,7 +841,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         boolean countDown() {
-            if (count <= 0) {
+            int c = count;
+            if (c <= 1) {
                 // Try to limit number of updates. MethodHandle.updateForm() doesn't guarantee LF update visibility.
                 if (isCounting) {
                     isCounting = false;
@@ -818,7 +851,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     return false;
                 }
             } else {
-                --count;
+                count = c - 1;
                 return false;
             }
         }
@@ -856,7 +889,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         final int GET_TEST     = nameCursor++;
         final int GET_TARGET   = nameCursor++;
         final int GET_FALLBACK = nameCursor++;
+        final int GET_COUNTERS = PROFILE_GWT ? nameCursor++ : -1;
         final int CALL_TEST    = nameCursor++;
+        final int PROFILE      = (GET_COUNTERS != -1) ? nameCursor++ : -1;
+        final int TEST         = nameCursor-1; // previous statement: either PROFILE or CALL_TEST
         final int SELECT_ALT   = nameCursor++;
         final int CALL_TARGET  = nameCursor++;
         assert(CALL_TARGET == SELECT_ALT+1);  // must be true to trigger IBG.emitSelectAlternative
@@ -864,12 +900,16 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodType lambdaType = basicType.invokerType();
         Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
 
-        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
+        BoundMethodHandle.SpeciesData data =
+                (GET_COUNTERS != -1) ? BoundMethodHandle.speciesData_LLLL()
+                                     : BoundMethodHandle.speciesData_LLL();
         names[THIS_MH] = names[THIS_MH].withConstraint(data);
         names[GET_TEST]     = new Name(data.getterFunction(0), names[THIS_MH]);
         names[GET_TARGET]   = new Name(data.getterFunction(1), names[THIS_MH]);
         names[GET_FALLBACK] = new Name(data.getterFunction(2), names[THIS_MH]);
-
+        if (GET_COUNTERS != -1) {
+            names[GET_COUNTERS] = new Name(data.getterFunction(3), names[THIS_MH]);
+        }
         Object[] invokeArgs = Arrays.copyOfRange(names, 0, ARG_LIMIT, Object[].class);
 
         // call test
@@ -877,15 +917,18 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         invokeArgs[0] = names[GET_TEST];
         names[CALL_TEST] = new Name(testType, invokeArgs);
 
+        // profile branch
+        if (PROFILE != -1) {
+            names[PROFILE] = new Name(Lazy.NF_profileBoolean, names[CALL_TEST], names[GET_COUNTERS]);
+        }
         // call selectAlternative
-        names[SELECT_ALT] = new Name(Lazy.MH_selectAlternative, names[CALL_TEST],
-                                     names[GET_TARGET], names[GET_FALLBACK]);
+        names[SELECT_ALT] = new Name(Lazy.MH_selectAlternative, names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
 
         // call target or fallback
         invokeArgs[0] = names[SELECT_ALT];
         names[CALL_TARGET] = new Name(basicType, invokeArgs);
 
-        lform = new LambdaForm("guard", lambdaType.parameterCount(), names);
+        lform = new LambdaForm("guard", lambdaType.parameterCount(), names, /*forceInline=*/true);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWT, lform);
     }
@@ -1628,5 +1671,14 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         Class<?> elemType = arrayType.getComponentType();
         assert(elemType.isPrimitive());
         return Lazy.MH_copyAsPrimitiveArray.bindTo(Wrapper.forPrimitiveType(elemType));
+    }
+
+    /*non-public*/ static void assertSame(Object mh1, Object mh2) {
+        if (mh1 != mh2) {
+            String msg = String.format("mh1 != mh2: mh1 = %s (form: %s); mh2 = %s (form: %s)",
+                    mh1, ((MethodHandle)mh1).form,
+                    mh2, ((MethodHandle)mh2).form);
+            throw newInternalError(msg);
+        }
     }
 }

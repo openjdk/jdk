@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 8072909
- * @run main/othervm TimSortStackSize2 67108864
+ * @run main/othervm -Xmx385m TimSortStackSize2 67108864
  * not for regular execution on all platforms:
  * run main/othervm -Xmx8g TimSortStackSize2 1073741824
- * run main/othervm -Xmx32g TimSortStackSize2 2147483644
+ * run main/othervm -Xmx16g TimSortStackSize2 2147483644
  * @summary Test TimSort stack size on big arrays
  */
 import java.util.ArrayList;
@@ -41,22 +41,30 @@ public class TimSortStackSize2 {
         int lengthOfTest = Integer.parseInt(args[0]);
         boolean passed = true;
         try {
-            Arrays.sort(new TimSortStackSize2(lengthOfTest).createArray(),
-                new Comparator<Object>() {
+            Integer [] a = new TimSortStackSize2(lengthOfTest).createArray();
+            long begin = System.nanoTime();
+            Arrays.sort(a, new Comparator<Object>() {
                     @SuppressWarnings("unchecked")
                     public int compare(Object first, Object second) {
                         return ((Comparable<Object>)first).compareTo(second);
                     }
                 });
-            System.out.println("TimSort OK");
+            long end = System.nanoTime();
+            System.out.println("TimSort: " + (end - begin));
+            a = null;
         } catch (ArrayIndexOutOfBoundsException e){
-            System.out.println("TimSort broken");
+            System.out.println("TimSort broken:");
             e.printStackTrace();
             passed = false;
         }
+
         try {
-            Arrays.sort(new TimSortStackSize2(lengthOfTest).createArray());
-            System.out.println("ComparableTimSort OK");
+            Integer [] a = new TimSortStackSize2(lengthOfTest).createArray();
+            long begin = System.nanoTime();
+            Arrays.sort(a);
+            long end = System.nanoTime();
+            System.out.println("ComparableTimSort: " + (end - begin));
+            a = null;
         } catch (ArrayIndexOutOfBoundsException e){
             System.out.println("ComparableTimSort broken:");
             e.printStackTrace();

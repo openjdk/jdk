@@ -26,6 +26,7 @@
 package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
+import sun.nio.cs.*;
 
 public class MS50221 extends MS50220
 {

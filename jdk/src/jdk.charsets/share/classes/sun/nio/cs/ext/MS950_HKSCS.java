@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.*;
 import static sun.nio.cs.CharsetMapping.*;
 
 public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset

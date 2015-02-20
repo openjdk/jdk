@@ -25,12 +25,6 @@
 
 include LauncherCommon.gmk
 
-ifndef BUILD_HEADLESS_ONLY
-  $(eval $(call SetupLauncher,policytool, \
-      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.policytool.PolicyTool"$(COMMA) }',, \
-      $(XLIBS)))
-endif
-
 $(eval $(call SetupLauncher,pack200, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.java.util.jar.pack.Driver"$(COMMA) }'))
 

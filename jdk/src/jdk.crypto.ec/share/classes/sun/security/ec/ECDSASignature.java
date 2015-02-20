@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,12 @@ import sun.security.util.*;
  *   . "SHA256withECDSA"
  *   . "SHA384withECDSA"
  *   . "SHA512withECDSA"
+ *   . "NONEwithECDSAinP1363Format"
+ *   . "SHA1withECDSAinP1363Format"
+ *   . "SHA224withECDSAinP1363Format"
+ *   . "SHA256withECDSAinP1363Format"
+ *   . "SHA384withECDSAinP1363Format"
+ *   . "SHA512withECDSAinP1363Format"
  *
  * @since   1.7
  */
@@ -65,29 +71,56 @@ abstract class ECDSASignature extends SignatureSpi {
     // public key, if initialized for verifying
     private ECPublicKey publicKey;
 
+    // The format. true for the IEEE P1363 format. false (default) for ASN.1
+    private final boolean p1363Format;
+
     /**
-     * Constructs a new ECDSASignature. Used by Raw subclass.
+     * Constructs a new ECDSASignature.
      *
      * @exception ProviderException if the native ECC library is unavailable.
      */
     ECDSASignature() {
-        messageDigest = null;
+        this(false);
+    }
+
+    /**
+     * Constructs a new ECDSASignature that will use the specified
+     * signature format. {@code p1363Format} should be {@code true} to
+     * use the IEEE P1363 format. If {@code p1363Format} is {@code false},
+     * the DER-encoded ASN.1 format will be used. This constructor is
+     * used by the RawECDSA subclasses.
+     */
+    ECDSASignature(boolean p1363Format) {
+        this.messageDigest = null;
+        this.p1363Format = p1363Format;
     }
 
     /**
      * Constructs a new ECDSASignature. Used by subclasses.
      */
     ECDSASignature(String digestName) {
+        this(digestName, false);
+    }
+
+    /**
+     * Constructs a new ECDSASignature that will use the specified
+     * digest and signature format. {@code p1363Format} should be
+     * {@code true} to use the IEEE P1363 format. If {@code p1363Format}
+     * is {@code false}, the DER-encoded ASN.1 format will be used. This
+     * constructor is used by subclasses.
+     */
+    ECDSASignature(String digestName, boolean p1363Format) {
         try {
             messageDigest = MessageDigest.getInstance(digestName);
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         }
-        needsReset = false;
+        this.needsReset = false;
+        this.p1363Format = p1363Format;
     }
 
-    // Nested class for NONEwithECDSA signatures
-    public static final class Raw extends ECDSASignature {
+    // Class for Raw ECDSA signatures.
+    static class RawECDSA extends ECDSASignature {
 
         // the longest supported digest is 512 bits (SHA-512)
         private static final int RAW_ECDSA_MAX = 64;
@@ -95,7 +128,8 @@ abstract class ECDSASignature extends SignatureSpi {
         private final byte[] precomputedDigest;
         private int offset = 0;
 
-        public Raw() {
+        RawECDSA(boolean p1363Format) {
+            super(p1363Format);
             precomputedDigest = new byte[RAW_ECDSA_MAX];
         }
 
@@ -156,10 +190,31 @@ abstract class ECDSASignature extends SignatureSpi {
         }
     }
 
+    // Nested class for NONEwithECDSA signatures
+    public static final class Raw extends RawECDSA {
+        public Raw() {
+            super(false);
+        }
+    }
+
+    // Nested class for NONEwithECDSAinP1363Format signatures
+    public static final class RawinP1363Format extends RawECDSA {
+        public RawinP1363Format() {
+            super(true);
+        }
+    }
+
     // Nested class for SHA1withECDSA signatures
     public static final class SHA1 extends ECDSASignature {
         public SHA1() {
             super("SHA1");
+        }
+    }
+
+    // Nested class for SHA1withECDSAinP1363Format signatures
+    public static final class SHA1inP1363Format extends ECDSASignature {
+        public SHA1inP1363Format() {
+            super("SHA1", true);
         }
     }
 
@@ -170,10 +225,24 @@ abstract class ECDSASignature extends SignatureSpi {
         }
     }
 
+    // Nested class for SHA224withECDSAinP1363Format signatures
+    public static final class SHA224inP1363Format extends ECDSASignature {
+        public SHA224inP1363Format() {
+           super("SHA-224", true);
+        }
+    }
+
     // Nested class for SHA256withECDSA signatures
     public static final class SHA256 extends ECDSASignature {
         public SHA256() {
             super("SHA-256");
+        }
+    }
+
+    // Nested class for SHA256withECDSAinP1363Format signatures
+    public static final class SHA256inP1363Format extends ECDSASignature {
+        public SHA256inP1363Format() {
+            super("SHA-256", true);
         }
     }
 
@@ -184,10 +253,24 @@ abstract class ECDSASignature extends SignatureSpi {
         }
     }
 
+    // Nested class for SHA384withECDSAinP1363Format signatures
+    public static final class SHA384inP1363Format extends ECDSASignature {
+        public SHA384inP1363Format() {
+            super("SHA-384", true);
+        }
+    }
+
     // Nested class for SHA512withECDSA signatures
     public static final class SHA512 extends ECDSASignature {
         public SHA512() {
             super("SHA-512");
+        }
+    }
+
+    // Nested class for SHA512withECDSAinP1363Format signatures
+    public static final class SHA512inP1363Format extends ECDSASignature {
+        public SHA512inP1363Format() {
+            super("SHA-512", true);
         }
     }
 
@@ -286,13 +369,17 @@ abstract class ECDSASignature extends SignatureSpi {
         }
         random.nextBytes(seed);
 
+        byte[] sig;
         try {
-
-            return encodeSignature(
-                signDigest(getDigestValue(), s, encodedParams, seed));
-
+            sig = signDigest(getDigestValue(), s, encodedParams, seed);
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
+        }
+
+        if (p1363Format) {
+            return sig;
+        } else {
+            return encodeSignature(sig);
         }
     }
 
@@ -311,11 +398,15 @@ abstract class ECDSASignature extends SignatureSpi {
             w = ECUtil.encodePoint(publicKey.getW(), params.getCurve());
         }
 
+        byte[] sig;
+        if (p1363Format) {
+            sig = signature;
+        } else {
+            sig = decodeSignature(signature);
+        }
+
         try {
-
-            return verifySignedDigest(
-                decodeSignature(signature), getDigestValue(), w, encodedParams);
-
+            return verifySignedDigest(sig, getDigestValue(), w, encodedParams);
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not verify signature", e);
         }
