@@ -31,7 +31,6 @@
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc_implementation/shared/markSweep.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/iterator.hpp"

@@ -90,8 +90,6 @@
 # include "gc_implementation/shared/gcUtil.hpp"
 # include "gc_implementation/shared/generationCounters.hpp"
 # include "gc_implementation/shared/immutableSpace.hpp"
-# include "gc_implementation/shared/markSweep.hpp"
-# include "gc_implementation/shared/markSweep.inline.hpp"
 # include "gc_implementation/shared/mutableSpace.hpp"
 # include "gc_implementation/shared/spaceCounters.hpp"
 # include "gc_implementation/shared/spaceDecorator.hpp"
