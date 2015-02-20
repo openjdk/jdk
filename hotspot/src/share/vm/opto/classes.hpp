@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,7 @@ macro(NeverBranch)
 macro(Opaque1)
 macro(Opaque2)
 macro(Opaque3)
+macro(ProfileBoolean)
 macro(OrI)
 macro(OrL)
 macro(OverflowAddI)
@@ -216,8 +217,6 @@ macro(PopCountI)
 macro(PopCountL)
 macro(PowD)
 macro(PrefetchAllocation)
-macro(PrefetchRead)
-macro(PrefetchWrite)
 macro(Proj)
 macro(RShiftI)
 macro(RShiftL)
