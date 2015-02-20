@@ -80,6 +80,7 @@ public class LambdaToMethod extends TreeTranslator {
     private Names names;
     private Symtab syms;
     private Resolve rs;
+    private Operators operators;
     private TreeMaker make;
     private Types types;
     private TransTypes transTypes;
@@ -130,6 +131,7 @@ public class LambdaToMethod extends TreeTranslator {
         names = Names.instance(context);
         syms = Symtab.instance(context);
         rs = Resolve.instance(context);
+        operators = Operators.instance(context);
         make = TreeMaker.instance(context);
         types = Types.instance(context);
         transTypes = TransTypes.instance(context);
@@ -654,7 +656,7 @@ public class LambdaToMethod extends TreeTranslator {
 
     private JCExpression eqTest(Type argType, JCExpression arg1, JCExpression arg2) {
         JCBinary testExpr = make.Binary(JCTree.Tag.EQ, arg1, arg2);
-        testExpr.operator = rs.resolveBinaryOperator(null, JCTree.Tag.EQ, attrEnv, argType, argType);
+        testExpr.operator = operators.resolveBinary(testExpr, JCTree.Tag.EQ, argType, argType);
         testExpr.setType(syms.booleanType);
         return testExpr;
     }
@@ -668,7 +670,7 @@ public class LambdaToMethod extends TreeTranslator {
                 List.<JCExpression>of(make.Literal(lit)));
         eqtest.setType(syms.booleanType);
         JCBinary compound = make.Binary(JCTree.Tag.AND, prev, eqtest);
-        compound.operator = rs.resolveBinaryOperator(null, JCTree.Tag.AND, attrEnv, syms.booleanType, syms.booleanType);
+        compound.operator = operators.resolveBinary(compound, JCTree.Tag.AND, syms.booleanType, syms.booleanType);
         compound.setType(syms.booleanType);
         return compound;
     }
