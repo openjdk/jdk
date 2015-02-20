@@ -89,7 +89,11 @@ endif
 
 ################################################################################
 
-java.desktop_COPY := .gif .png .wav .txt .xml .css flavormap.properties .pf
+java.datatransfer_COPY := flavormap.properties
+
+################################################################################
+
+java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties
 
 java.desktop_EXCLUDES += \
