@@ -1402,8 +1402,7 @@ public class Types {
                     return isSameWildcard(t, s)
                         || isCaptureOf(s, t)
                         || ((t.isExtendsBound() || isSubtypeNoCapture(wildLowerBound(t), wildLowerBound(s))) &&
-                            // TODO: JDK-8039214, cvarUpperBound call here is incorrect
-                            (t.isSuperBound() || isSubtypeNoCapture(cvarUpperBound(wildUpperBound(s)), wildUpperBound(t))));
+                            (t.isSuperBound() || isSubtypeNoCapture(wildUpperBound(s), wildUpperBound(t))));
                 }
             }
 
