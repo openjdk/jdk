@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import static java.lang.annotation.ElementType.TYPE;
  * <p> This annotation can be used with the following annotations:
  * {@link XmlType}, {@link XmlEnum}, {@link XmlAccessorType},
  * {@link XmlAccessorOrder}.
- * <p>
+ * </p>
 
  * <p>
  * <b>Example 1: </b> Associate an element with XML Schema type
@@ -74,11 +74,11 @@ import static java.lang.annotation.ElementType.TYPE;
  * </pre>
  *
  * <pre>
- *     &lt;!-- Example: XML output -->
- *     &lt;point>
- *       &lt;x> 3 </x>
- *       &lt;y> 5 </y>
- *     &lt;/point>
+ *     &lt;!-- Example: XML output --&gt;
+ *     &lt;point&gt;
+ *       &lt;x&gt; 3 &lt;/x&gt;
+ *       &lt;y&gt; 5 &lt;/y&gt;
+ *     &lt;/point&gt;
  * </pre>
  *
  * The annotation causes an global element declaration to be produced
@@ -86,14 +86,14 @@ import static java.lang.annotation.ElementType.TYPE;
  * the XML schema type to which the class is mapped.
  *
  * <pre>
- *     &lt;!-- Example: XML schema definition -->
- *     &lt;xs:element name="point" type="point"/>
- *     &lt;xs:complexType name="point">
- *       &lt;xs:sequence>
- *         &lt;xs:element name="x" type="xs:int"/>
- *         &lt;xs:element name="y" type="xs:int"/>
- *       &lt;/xs:sequence>
- *     &lt;/xs:complexType>
+ *     &lt;!-- Example: XML schema definition --&gt;
+ *     &lt;xs:element name="point" type="point"/&gt;
+ *     &lt;xs:complexType name="point"&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="x" type="xs:int"/&gt;
+ *         &lt;xs:element name="y" type="xs:int"/&gt;
+ *       &lt;/xs:sequence&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  *
  * <p>
@@ -114,25 +114,25 @@ import static java.lang.annotation.ElementType.TYPE;
  *     //Example: Code fragment corresponding to XML output *
  *     marshal( new Point3D(3,5,0), System.out );
  *
- *     &lt;!-- Example: XML output -->
- *     &lt;!-- The element name is point3D not point -->
- *     &lt;point3D>
- *       &lt;x>3&lt;/x>
- *       &lt;y>5&lt;/y>
- *       &lt;z>0&lt;/z>
- *     &lt;/point3D>
+ *     &lt;!-- Example: XML output --&gt;
+ *     &lt;!-- The element name is point3D not point --&gt;
+ *     &lt;point3D&gt;
+ *       &lt;x&gt;3&lt;/x&gt;
+ *       &lt;y&gt;5&lt;/y&gt;
+ *       &lt;z&gt;0&lt;/z&gt;
+ *     &lt;/point3D&gt;
  *
- *     &lt;!-- Example: XML schema definition -->
- *     &lt;xs:element name="point3D" type="point3D"/>
- *     &lt;xs:complexType name="point3D">
- *       &lt;xs:complexContent>
- *         &lt;xs:extension base="point">
- *           &lt;xs:sequence>
- *             &lt;xs:element name="z" type="xs:int"/>
- *           &lt;/xs:sequence>
- *         &lt;/xs:extension>
- *       &lt;/xs:complexContent>
- *     &lt;/xs:complexType>
+ *     &lt;!-- Example: XML schema definition --&gt;
+ *     &lt;xs:element name="point3D" type="point3D"/&gt;
+ *     &lt;xs:complexType name="point3D"&gt;
+ *       &lt;xs:complexContent&gt;
+ *         &lt;xs:extension base="point"&gt;
+ *           &lt;xs:sequence&gt;
+ *             &lt;xs:element name="z" type="xs:int"/&gt;
+ *           &lt;/xs:sequence&gt;
+ *         &lt;/xs:extension&gt;
+ *       &lt;/xs:complexContent&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  *
  * <b>Example 3: </b> Associate a global element with XML Schema type
@@ -145,13 +145,13 @@ import static java.lang.annotation.ElementType.TYPE;
  *         public java.math.BigDecimal price;
  *     }
  *
- *     &lt;!-- Example: XML schema definition -->
- *     &lt;xs:element name="PriceElement" type="USPrice"/>
- *     &lt;xs:complexType name="USPrice">
- *       &lt;xs:sequence>
- *         &lt;xs:element name="price" type="xs:decimal"/>
- *       &lt;/sequence>
- *     &lt;/xs:complexType>
+ *     &lt;!-- Example: XML schema definition --&gt;
+ *     &lt;xs:element name="PriceElement" type="USPrice"/&gt;
+ *     &lt;xs:complexType name="USPrice"&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="price" type="xs:decimal"/&gt;
+ *       &lt;/sequence&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.

@@ -1430,35 +1430,32 @@ Zone	Europe/Budapest	1:16:20 -	LMT	1890 Oct
 # might be a reference to the Julian calendar as opposed to Gregorian, or it
 # might mean something else (???).
 #
-# From Paul Eggert (2006-03-22):
-# The Iceland Almanak, Shanks & Pottenger, and Whitman disagree on many points.
-# We go with the Almanak, except for one claim from Shanks & Pottenger, namely
-# that Reykavik was 21W57 from 1837 to 1908, local mean time before that.
+# From Paul Eggert (2014-11-22):
+# The information below is taken from the 1988 Almanak; see
+# http://www.almanak.hi.is/klukkan.html
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Iceland	1917	1918	-	Feb	19	23:00	1:00	S
+Rule	Iceland	1917	1919	-	Feb	19	23:00	1:00	S
 Rule	Iceland	1917	only	-	Oct	21	 1:00	0	-
-Rule	Iceland	1918	only	-	Nov	16	 1:00	0	-
+Rule	Iceland	1918	1919	-	Nov	16	 1:00	0	-
+Rule	Iceland	1921	only	-	Mar	19	23:00	1:00	S
+Rule	Iceland	1921	only	-	Jun	23	 1:00	0	-
 Rule	Iceland	1939	only	-	Apr	29	23:00	1:00	S
-Rule	Iceland	1939	only	-	Nov	29	 2:00	0	-
+Rule	Iceland	1939	only	-	Oct	29	 2:00	0	-
 Rule	Iceland	1940	only	-	Feb	25	 2:00	1:00	S
-Rule	Iceland	1940	only	-	Nov	 3	 2:00	0	-
-Rule	Iceland	1941	only	-	Mar	 2	 1:00s	1:00	S
-Rule	Iceland	1941	only	-	Nov	 2	 1:00s	0	-
-Rule	Iceland	1942	only	-	Mar	 8	 1:00s	1:00	S
-Rule	Iceland	1942	only	-	Oct	25	 1:00s	0	-
+Rule	Iceland	1940	1941	-	Nov	Sun>=2	 1:00s	0	-
+Rule	Iceland	1941	1942	-	Mar	Sun>=2	 1:00s	1:00	S
 # 1943-1946 - first Sunday in March until first Sunday in winter
 Rule	Iceland	1943	1946	-	Mar	Sun>=1	 1:00s	1:00	S
-Rule	Iceland	1943	1948	-	Oct	Sun>=22	 1:00s	0	-
+Rule	Iceland	1942	1948	-	Oct	Sun>=22	 1:00s	0	-
 # 1947-1967 - first Sunday in April until first Sunday in winter
 Rule	Iceland	1947	1967	-	Apr	Sun>=1	 1:00s	1:00	S
-# 1949 Oct transition delayed by 1 week
+# 1949 and 1967 Oct transitions delayed by 1 week
 Rule	Iceland	1949	only	-	Oct	30	 1:00s	0	-
 Rule	Iceland	1950	1966	-	Oct	Sun>=22	 1:00s	0	-
 Rule	Iceland	1967	only	-	Oct	29	 1:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Atlantic/Reykjavik	-1:27:24 -	LMT	1837
-			-1:27:48 -	RMT	1908 # Reykjavik Mean Time?
+Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
 			-1:00	Iceland	IS%sT	1968 Apr  7  1:00s
 			 0:00	-	GMT
 

@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_MEMORY_HEAPINSPECTION_HPP
 #define SHARE_VM_MEMORY_HEAPINSPECTION_HPP
 
-#include "memory/allocation.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "memory/allocation.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
 

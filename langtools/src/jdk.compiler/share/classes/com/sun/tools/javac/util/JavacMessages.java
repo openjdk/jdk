@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class JavacMessages implements Messages {
 
     private Map<Locale, SoftReference<List<ResourceBundle>>> bundleCache;
 
-    private List<String> bundleNames;
+    private List<ResourceBundleHelper> bundleHelpers;
 
     private Locale currentLocale;
     private List<ResourceBundle> currentBundles;
@@ -91,7 +91,7 @@ public class JavacMessages implements Messages {
      * @param bundleName the name to identify the resource bundle of localized messages.
      */
     public JavacMessages(String bundleName, Locale locale) throws MissingResourceException {
-        bundleNames = List.nil();
+        bundleHelpers = List.nil();
         bundleCache = new HashMap<>();
         add(bundleName);
         setCurrentLocale(locale);
@@ -101,8 +101,13 @@ public class JavacMessages implements Messages {
         this(defaultBundleName);
     }
 
+    @Override
     public void add(String bundleName) throws MissingResourceException {
-        bundleNames = bundleNames.prepend(bundleName);
+        add(locale -> ResourceBundle.getBundle(bundleName, locale));
+    }
+
+    public void add(ResourceBundleHelper ma) {
+        bundleHelpers = bundleHelpers.prepend(ma);
         if (!bundleCache.isEmpty())
             bundleCache.clear();
         currentBundles = null;
@@ -115,12 +120,13 @@ public class JavacMessages implements Messages {
         List<ResourceBundle> bundleList = bundles == null ? null : bundles.get();
         if (bundleList == null) {
             bundleList = List.nil();
-            for (String bundleName : bundleNames) {
+            for (ResourceBundleHelper helper : bundleHelpers) {
                 try {
-                    ResourceBundle rb = ResourceBundle.getBundle(bundleName, locale);
+                    ResourceBundle rb = helper.getResourceBundle(locale);
                     bundleList = bundleList.prepend(rb);
                 } catch (MissingResourceException e) {
-                    throw new InternalError("Cannot find javac resource bundle for locale " + locale);
+                    throw new InternalError("Cannot find requested resource bundle for locale " +
+                            locale, e);
                 }
             }
             bundleCache.put(locale, new SoftReference<>(bundleList));
@@ -134,6 +140,7 @@ public class JavacMessages implements Messages {
         return getLocalizedString(currentLocale, key, args);
     }
 
+    @Override
     public String getLocalizedString(Locale l, String key, Object... args) {
         if (l == null)
             l = getCurrentLocale();
@@ -146,8 +153,7 @@ public class JavacMessages implements Messages {
      * easy access to simple localized strings.
      */
 
-    private static final String defaultBundleName =
-        "com.sun.tools.javac.resources.compiler";
+    private static final String defaultBundleName = "com.sun.tools.javac.resources.compiler";
     private static ResourceBundle defaultBundle;
     private static JavacMessages defaultMessages;
 
@@ -197,5 +203,18 @@ public class JavacMessages implements Messages {
                " arguments={0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}";
        }
        return MessageFormat.format(msg, args);
+    }
+
+    /**
+     * This provides a way for the JavacMessager to retrieve a
+     * ResourceBundle from another module such as jdk.javadoc.
+     */
+    public interface ResourceBundleHelper {
+        /**
+         * Gets the ResourceBundle.
+         * @param locale the requested bundle's locale
+         * @return ResourceBundle
+         */
+        ResourceBundle getResourceBundle(Locale locale);
     }
 }

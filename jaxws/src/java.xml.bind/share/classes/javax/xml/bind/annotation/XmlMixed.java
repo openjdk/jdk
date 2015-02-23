@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,16 +57,16 @@ import javax.xml.bind.JAXBElement;
  *
  * Below is an example of binding and creation of mixed content.
  * <pre>
- *  &lt;!-- schema fragment having  mixed content -->
- *  &lt;xs:complexType name="letterBody" mixed="true">
- *    &lt;xs:sequence>
- *      &lt;xs:element name="name" type="xs:string"/>
- *      &lt;xs:element name="quantity" type="xs:positiveInteger"/>
- *      &lt;xs:element name="productName" type="xs:string"/>
- *      &lt;!-- etc. -->
- *    &lt;/xs:sequence>
- *  &lt;/xs:complexType>
- *  &lt;xs:element name="letterBody" type="letterBody"/>
+ *  &lt;!-- schema fragment having  mixed content --&gt;
+ *  &lt;xs:complexType name="letterBody" mixed="true"&gt;
+ *    &lt;xs:sequence&gt;
+ *      &lt;xs:element name="name" type="xs:string"/&gt;
+ *      &lt;xs:element name="quantity" type="xs:positiveInteger"/&gt;
+ *      &lt;xs:element name="productName" type="xs:string"/&gt;
+ *      &lt;!-- etc. --&gt;
+ *    &lt;/xs:sequence&gt;
+ *  &lt;/xs:complexType&gt;
+ *  &lt;xs:element name="letterBody" type="letterBody"/&gt;
  *
  * // Schema-derived Java code:
  * // (Only annotations relevant to mixed content are shown below,
@@ -74,12 +74,12 @@ import javax.xml.bind.JAXBElement;
  * import java.math.BigInteger;
  * public class ObjectFactory {
  *      // element instance factories
- *      JAXBElement&lt;LetterBody> createLetterBody(LetterBody value);
- *      JAXBElement&lt;String>     createLetterBodyName(String value);
- *      JAXBElement&lt;BigInteger> createLetterBodyQuantity(BigInteger value);
- *      JAXBElement&lt;String>     createLetterBodyProductName(String value);
+ *      JAXBElement&lt;LetterBody&gt; createLetterBody(LetterBody value);
+ *      JAXBElement&lt;String&gt;     createLetterBodyName(String value);
+ *      JAXBElement&lt;BigInteger&gt; createLetterBodyQuantity(BigInteger value);
+ *      JAXBElement&lt;String&gt;     createLetterBodyProductName(String value);
  *      // type instance factory
- *      LetterBody> createLetterBody();
+ *      LetterBody createLetterBody();
  * }
  * </pre>
  * <pre>
@@ -97,16 +97,16 @@ import javax.xml.bind.JAXBElement;
  * </pre>
  * The following is an XML instance document with mixed content
  * <pre>
- * &lt;letterBody>
- * Dear Mr.&lt;name>Robert Smith&lt;/name>
- * Your order of &lt;quantity>1&lt;/quantity> &lt;productName>Baby
- * Monitor&lt;/productName> shipped from our warehouse. ....
- * &lt;/letterBody>
+ * &lt;letterBody&gt;
+ * Dear Mr.&lt;name&gt;Robert Smith&lt;/name&gt;
+ * Your order of &lt;quantity&gt;1&lt;/quantity&gt; &lt;productName&gt;Baby
+ * Monitor&lt;/productName&gt; shipped from our warehouse. ....
+ * &lt;/letterBody&gt;
  * </pre>
  * that can be constructed using following JAXB API calls.
  * <pre>
  * LetterBody lb = ObjectFactory.createLetterBody();
- * JAXBElement&lt;LetterBody> lbe = ObjectFactory.createLetterBody(lb);
+ * JAXBElement&lt;LetterBody&gt; lbe = ObjectFactory.createLetterBody(lb);
  * List gcl = lb.getContent();  //add mixed content to general content property.
  * gcl.add("Dear Mr.");  // add text information item as a String.
  *
