@@ -38,7 +38,7 @@ public class GetPutInt {
         Test t = new Test();
         Field field = Test.class.getField("i");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals(-1, unsafe.getInt(t, offset));
         unsafe.putInt(t, offset, 0);
         assertEquals(0, unsafe.getInt(t, offset));

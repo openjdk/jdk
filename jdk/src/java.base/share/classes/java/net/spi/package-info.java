@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,13 @@
  * questions.
  */
 
-package com.sun.tracing.dtrace;
-
-import java.lang.annotation.Target;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.ElementType;
-
 /**
- * This annotation describes the interface attributes of the
- * {@code name} field for a single provider.
+ * Service-provider classes for the <tt>{@link java.net}</tt> package.
  *
- * This annotation can be added to a user-defined Provider specification
- * interface to set the stability attributes of the {@code name} field for
- * all probes specified in that provider.
- * <p>
- * If this annotation is not present, the interface attributes for the
- * {@code name} field will be Private/Private/Unknown.
- * <p>
- * @see <a href="http://docs.sun.com/app/docs/doc/817-6223/6mlkidlnp?a=view">Solaris Dynamic Tracing Guide, Chapter 39: Stability</a>
- * @since 1.7
+ * <p> Only developers who are defining new URL stream handler providers
+ * should need to make direct use of this package.
+ *
+ * @since 1.9
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE })
-public @interface NameAttributes {
-    Attributes value();
-}
+
+package java.net.spi;

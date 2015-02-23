@@ -889,8 +889,6 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, 
           !(n->ideal_Opcode()==Op_LoadD_unaligned && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_ConvI2F   && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_ConvI2D   && ld_op==Op_LoadF) &&
-          !(n->ideal_Opcode()==Op_PrefetchRead  && ld_op==Op_LoadI) &&
-          !(n->ideal_Opcode()==Op_PrefetchWrite && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchAllocation && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_LoadVector && ld_op==Op_LoadD) &&
           !(n->rule() == loadUB_rule)) {
@@ -6316,32 +6314,8 @@ instruct loadConD(regD dst, immD con, o7RegI tmp) %{
   ins_pipe(loadConFD);
 %}
 
-// Prefetch instructions.
-// Must be safe to execute with invalid address (cannot fault).
-
-instruct prefetchr( memory mem ) %{
-  match( PrefetchRead mem );
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-
-  format %{ "PREFETCH $mem,0\t! Prefetch read-many" %}
-  opcode(Assembler::prefetch_op3);
-  ins_encode( form3_mem_prefetch_read( mem ) );
-  ins_pipe(iload_mem);
-%}
-
-instruct prefetchw( memory mem ) %{
-  match( PrefetchWrite mem );
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-
-  format %{ "PREFETCH $mem,2\t! Prefetch write-many (and read)" %}
-  opcode(Assembler::prefetch_op3);
-  ins_encode( form3_mem_prefetch_write( mem ) );
-  ins_pipe(iload_mem);
-%}
-
 // Prefetch instructions for allocation.
+// Must be safe to execute with invalid address (cannot fault).
 
 instruct prefetchAlloc( memory mem ) %{
   predicate(AllocatePrefetchInstr == 0);

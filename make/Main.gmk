@@ -347,8 +347,8 @@ else
   $(foreach m, $(RMIC_MODULES), $(eval $m-rmic: $m-java))
 
   # Declare dependencies from <module>-lib to <module>-java
-  # Skip jdk.jdwp.agent as it contains no java code.
-  $(foreach m, $(filter-out jdk.jdwp.agent, $(LIBS_MODULES)), $(eval $m-libs: $m-java))
+  # Skip modules that do not have java source.
+  $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs: $m-java))
 
   # Declare dependencies from all other <module>-lib to java.base-lib
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \

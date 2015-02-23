@@ -434,6 +434,8 @@ public abstract class MethodHandle {
     // form is not private so that invokers can easily fetch it
     /*private*/ MethodHandle asTypeCache;
     // asTypeCache is not private so that invokers can easily fetch it
+    /*non-public*/ byte customizationCount;
+    // customizationCount should be accessible from invokers
 
     /**
      * Reports the type of this method handle.
@@ -451,12 +453,10 @@ public abstract class MethodHandle {
      */
     // @param type type (permanently assigned) of the new method handle
     /*non-public*/ MethodHandle(MethodType type, LambdaForm form) {
-        type.getClass();  // explicit NPE
-        form.getClass();  // explicit NPE
-        this.type = type;
-        this.form = form;
+        this.type = Objects.requireNonNull(type);
+        this.form = Objects.requireNonNull(form).uncustomize();
 
-        form.prepare();  // TO DO:  Try to delay this step until just before invocation.
+        this.form.prepare();  // TO DO:  Try to delay this step until just before invocation.
     }
 
     /**
@@ -1169,7 +1169,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * @see #asFixedArity
      */
     public MethodHandle asVarargsCollector(Class<?> arrayType) {
-        arrayType.getClass(); // explicit NPE
+        Objects.requireNonNull(arrayType);
         boolean lastMatch = asCollectorChecks(arrayType, 0);
         if (isVarargsCollector() && lastMatch)
             return this;
@@ -1425,10 +1425,22 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      */
     /*non-public*/
     void updateForm(LambdaForm newForm) {
+        assert(newForm.customized == null || newForm.customized == this);
         if (form == newForm)  return;
         newForm.prepare();  // as in MethodHandle.<init>
         UNSAFE.putObject(this, FORM_OFFSET, newForm);
         UNSAFE.fullFence();
+    }
+
+    /** Craft a LambdaForm customized for this particular MethodHandle */
+    /*non-public*/
+    void customize() {
+        if (form.customized == null) {
+            LambdaForm newForm = form.customize(this);
+            updateForm(newForm);
+        } else {
+            assert(form.customized == this);
+        }
     }
 
     private static final long FORM_OFFSET;

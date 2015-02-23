@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,25 +21,7 @@
  * questions.
  */
 
-package com.sun.tracing.dtrace;
-
-import java.lang.annotation.Target;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.ElementType;
-
-/**
- * An annotation used to specify the {@code function} field for a DTrace probe.
- *
- * This annotation can be added to a method in a user-defined Provider
- * specification interface to set the {@code function} field that is used
- * for the generated DTrace probe associated with that method.
- * <p>
- * @since 1.7
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface FunctionName {
-    String value();
-}
+ grant {
+    permission java.lang.RuntimePermission "setFactory";
+};
 
