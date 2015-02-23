@@ -1248,7 +1248,7 @@ public final class URL implements java.io.Serializable {
                 checkedWithFactory = true;
             }
 
-            if (handler == null) {
+            if (handler == null && !protocol.equalsIgnoreCase("jar")) {
                 handler = lookupViaProviders(protocol);
             }
         }
