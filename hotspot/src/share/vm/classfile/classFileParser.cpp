@@ -38,6 +38,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.hpp"
@@ -59,6 +60,7 @@
 #include "services/threadService.hpp"
 #include "utilities/array.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
@@ -312,6 +314,19 @@ inline Symbol* check_symbol_at(constantPoolHandle cp, int index) {
   else
     return NULL;
 }
+
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+void ClassFileParser::report_assert_property_failure(const char* msg, TRAPS) {
+  ResourceMark rm(THREAD);
+  fatal(err_msg(msg, _class_name->as_C_string()));
+}
+
+void ClassFileParser::report_assert_property_failure(const char* msg, int index, TRAPS) {
+  ResourceMark rm(THREAD);
+  fatal(err_msg(msg, index, _class_name->as_C_string()));
+}
+PRAGMA_DIAG_POP
 
 constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   ClassFileStream* cfs = stream();

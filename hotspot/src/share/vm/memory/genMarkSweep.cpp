@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ void GenMarkSweep::allocate_stacks() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   // Scratch request on behalf of oldest generation; will do no
   // allocation.
-  ScratchBlock* scratch = gch->gather_scratch(gch->_gens[gch->_n_gens-1], 0);
+  ScratchBlock* scratch = gch->gather_scratch(gch->get_gen(gch->_n_gens-1), 0);
 
   // $$$ To cut a corner, we'll only use the first scratch block, and then
   // revert to malloc.

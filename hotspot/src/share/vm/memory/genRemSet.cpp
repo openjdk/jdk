@@ -26,6 +26,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "memory/cardTableRS.hpp"
 #include "memory/genRemSet.hpp"
+#include "oops/klass.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
