@@ -24,7 +24,7 @@
  */
 /*
  * @test
- * @bug 8068399
+ * @bug 8068399 8069545
  * @summary structural most specific and stuckness
  */
 

@@ -37,18 +37,31 @@ import static com.oracle.java.testlibrary.Asserts.*;
 public class FieldOffset {
     public static void main(String args[]) throws Exception {
         Unsafe unsafe = Utils.getUnsafe();
-        Field fields[] = Test.class.getDeclaredFields();
+        Field[] fields = Test.class.getDeclaredFields();
 
         for (int i = 0; i < fields.length; i++) {
-            int offset = unsafe.fieldOffset(fields[i]);
+            long offset = unsafe.objectFieldOffset(fields[i]);
             // Ensure we got a valid offset value back
             assertNotEquals(offset, unsafe.INVALID_FIELD_OFFSET);
 
             // Make sure the field offset is unique
             for (int j = 0; j < i; j++) {
-                assertNotEquals(offset, unsafe.fieldOffset(fields[j]));
+                assertNotEquals(offset, unsafe.objectFieldOffset(fields[j]));
             }
         }
+
+        fields = StaticTest.class.getDeclaredFields();
+        for (int i = 0; i < fields.length; i++) {
+            long offset = unsafe.staticFieldOffset(fields[i]);
+            // Ensure we got a valid offset value back
+            assertNotEquals(offset, unsafe.INVALID_FIELD_OFFSET);
+
+            // Make sure the field offset is unique
+            for (int j = 0; j < i; j++) {
+                assertNotEquals(offset, unsafe.staticFieldOffset(fields[j]));
+            }
+        }
+
     }
 
     class Test {
@@ -62,4 +75,17 @@ public class FieldOffset {
         Object objectField;
         short shortField;
     }
+
+    static class StaticTest {
+        static boolean booleanField;
+        static byte byteField;
+        static char charField;
+        static double doubleField;
+        static float floatField;
+        static int intField;
+        static long longField;
+        static Object objectField;
+        static short shortField;
+    }
+
 }

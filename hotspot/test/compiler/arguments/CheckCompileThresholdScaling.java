@@ -26,7 +26,7 @@ import com.oracle.java.testlibrary.*;
 /*
  * @test CheckCompileThresholdScaling
  * @bug 8059604
- * @summary "Add CompileThresholdScalingPercentage flag to control when methods are first compiled (with +/-TieredCompilation)"
+ * @summary "Add CompileThresholdScaling flag to control when methods are first compiled (with +/-TieredCompilation)"
  * @library /testlibrary
  * @run main CheckCompileThresholdScaling
  */

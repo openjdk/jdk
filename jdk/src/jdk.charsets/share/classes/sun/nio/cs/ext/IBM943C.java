@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
+import sun.nio.cs.DoubleByte;
 import sun.nio.cs.HistoricallyNamedCharset;
 
 public class IBM943C extends Charset implements HistoricallyNamedCharset
