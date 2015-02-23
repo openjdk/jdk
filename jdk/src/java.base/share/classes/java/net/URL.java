@@ -27,8 +27,15 @@ package java.net;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.spi.URLStreamHandlerProvider;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Hashtable;
-import java.util.StringTokenizer;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+
 import sun.security.util.SecurityConstants;
 
 /**
@@ -248,23 +255,19 @@ public final class URL implements java.io.Serializable {
      *     stream protocol handler.
      * <li>If no {@code URLStreamHandlerFactory} has yet been set up,
      *     or if the factory's {@code createURLStreamHandler} method
-     *     returns {@code null}, then the constructor finds the
-     *     value of the system property:
-     *     <blockquote><pre>
-     *         java.protocol.handler.pkgs
-     *     </pre></blockquote>
-     *     If the value of that system property is not {@code null},
-     *     it is interpreted as a list of packages separated by a vertical
-     *     slash character '{@code |}'. The constructor tries to load
-     *     the class named:
-     *     <blockquote><pre>
-     *         &lt;<i>package</i>&gt;.&lt;<i>protocol</i>&gt;.Handler
-     *     </pre></blockquote>
-     *     where &lt;<i>package</i>&gt; is replaced by the name of the package
-     *     and &lt;<i>protocol</i>&gt; is replaced by the name of the protocol.
-     *     If this class does not exist, or if the class exists but it is not
-     *     a subclass of {@code URLStreamHandler}, then the next package
-     *     in the list is tried.
+     *     returns {@code null}, then the {@linkplain java.util.ServiceLoader
+     *     ServiceLoader} mechanism is used to locate {@linkplain
+     *     java.net.spi.URLStreamHandlerProvider URLStreamHandlerProvider}
+     *     implementations using the system class
+     *     loader. The order that providers are located is implementation
+     *     specific, and an implementation is free to cache the located
+     *     providers. A {@linkplain java.util.ServiceConfigurationError
+     *     ServiceConfigurationError}, {@code Error} or {@code RuntimeException}
+     *     thrown from the {@code createURLStreamHandler}, if encountered, will
+     *     be propagated to the calling thread. The {@code
+     *     createURLStreamHandler} method of each provider, if instantiated, is
+     *     invoked, with the protocol string, until a provider returns non-null,
+     *     or all providers have been exhausted.
      * <li>If the previous step fails to find a protocol handler, then the
      *     constructor tries to load a built-in protocol handler.
      *     If this class does not exist, or if the class exists but it is not a
@@ -277,8 +280,12 @@ public final class URL implements java.io.Serializable {
      * <blockquote><pre>
      *     http, https, file, and jar
      * </pre></blockquote>
-     * Protocol handlers for additional protocols may also be
-     * available.
+     * Protocol handlers for additional protocols may also be  available.
+     * Some protocol handlers, for example those used for loading platform
+     * classes or classes on the class path, may not be overridden. The details
+     * of such restrictions, and when those restrictions apply (during
+     * initialization of the runtime for example), are implementation specific
+     * and therefore not specified
      *
      * <p>No validation of the inputs is performed by this constructor.
      *
@@ -1107,20 +1114,115 @@ public final class URL implements java.io.Serializable {
             }
             handlers.clear();
 
-            // ensure the core protocol handlers are loaded before setting
-            // a custom URLStreamHandlerFactory
-            ensureHandlersLoaded("jrt", "jar", "file");
-
             // safe publication of URLStreamHandlerFactory with volatile write
             factory = fac;
         }
+    }
+
+    private static final URLStreamHandlerFactory defaultFactory = new DefaultFactory();
+
+    private static class DefaultFactory implements URLStreamHandlerFactory {
+        private static String PREFIX = "sun.net.www.protocol";
+
+        public URLStreamHandler createURLStreamHandler(String protocol) {
+            String name = PREFIX + "." + protocol + ".Handler";
+            try {
+                Class<?> c = Class.forName(name);
+                return (URLStreamHandler)c.newInstance();
+            } catch (ClassNotFoundException x) {
+                // ignore
+            } catch (Exception e) {
+                // For compatibility, all Exceptions are ignored.
+                // any number of exceptions can get thrown here
+            }
+            return null;
+        }
+    }
+
+    private static Iterator<URLStreamHandlerProvider> providers() {
+        return new Iterator<URLStreamHandlerProvider>() {
+
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            ServiceLoader<URLStreamHandlerProvider> sl =
+                    ServiceLoader.load(URLStreamHandlerProvider.class, cl);
+            Iterator<URLStreamHandlerProvider> i = sl.iterator();
+
+            URLStreamHandlerProvider next = null;
+
+            private boolean getNext() {
+                while (next == null) {
+                    try {
+                        if (!i.hasNext())
+                            return false;
+                        next = i.next();
+                    } catch (ServiceConfigurationError sce) {
+                        if (sce.getCause() instanceof SecurityException) {
+                            // Ignore security exceptions
+                            continue;
+                        }
+                        throw sce;
+                    }
+                }
+                return true;
+            }
+
+            public boolean hasNext() {
+                return getNext();
+            }
+
+            public URLStreamHandlerProvider next() {
+                if (!getNext())
+                    throw new NoSuchElementException();
+                URLStreamHandlerProvider n = next;
+                next = null;
+                return n;
+            }
+        };
+    }
+
+    // Thread-local gate to prevent recursive provider lookups
+    private static ThreadLocal<Object> gate = new ThreadLocal<>();
+
+    private static URLStreamHandler lookupViaProviders(final String protocol) {
+        if (!sun.misc.VM.isBooted())
+            return null;
+
+        if (gate.get() != null)
+            throw new Error("Circular loading of URL stream handler providers detected");
+
+        gate.set(gate);
+        try {
+            return AccessController.doPrivileged(
+                new PrivilegedAction<URLStreamHandler>() {
+                    public URLStreamHandler run() {
+                        Iterator<URLStreamHandlerProvider> itr = providers();
+                        while (itr.hasNext()) {
+                            URLStreamHandlerProvider f = itr.next();
+                            URLStreamHandler h = f.createURLStreamHandler(protocol);
+                            if (h != null)
+                                return h;
+                        }
+                        return null;
+                    }
+                });
+        } finally {
+            gate.set(null);
+        }
+    }
+
+    private static final String[] NON_OVERRIDEABLE_PROTOCOLS = {"file", "jrt"};
+    private static boolean isOverrideable(String protocol) {
+        for (String p : NON_OVERRIDEABLE_PROTOCOLS)
+            if (protocol.equalsIgnoreCase(p))
+                return false;
+        return true;
     }
 
     /**
      * A table of protocol handlers.
      */
     static Hashtable<String,URLStreamHandler> handlers = new Hashtable<>();
-    private static Object streamHandlerLock = new Object();
+    private static final Object streamHandlerLock = new Object();
 
     /**
      * Returns the Stream Handler.
@@ -1129,66 +1231,33 @@ public final class URL implements java.io.Serializable {
     static URLStreamHandler getURLStreamHandler(String protocol) {
 
         URLStreamHandler handler = handlers.get(protocol);
-        if (handler == null) {
 
-            boolean checkedWithFactory = false;
+        if (handler != null) {
+            return handler;
+        }
 
+        URLStreamHandlerFactory fac;
+        boolean checkedWithFactory = false;
+
+        if (isOverrideable(protocol)) {
             // Use the factory (if any). Volatile read makes
             // URLStreamHandlerFactory appear fully initialized to current thread.
-            URLStreamHandlerFactory fac = factory;
+            fac = factory;
             if (fac != null) {
                 handler = fac.createURLStreamHandler(protocol);
                 checkedWithFactory = true;
             }
 
-            // Try java protocol handler
             if (handler == null) {
-                String packagePrefixList = null;
-
-                packagePrefixList
-                    = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction(
-                        protocolPathProp,""));
-                if (packagePrefixList != "") {
-                    packagePrefixList += "|";
-                }
-
-                // REMIND: decide whether to allow the "null" class prefix
-                // or not.
-                packagePrefixList += "sun.net.www.protocol";
-
-                StringTokenizer packagePrefixIter =
-                    new StringTokenizer(packagePrefixList, "|");
-
-                while (handler == null &&
-                       packagePrefixIter.hasMoreTokens()) {
-
-                    String packagePrefix =
-                      packagePrefixIter.nextToken().trim();
-                    try {
-                        String clsName = packagePrefix + "." + protocol +
-                          ".Handler";
-                        Class<?> cls = null;
-                        try {
-                            cls = Class.forName(clsName);
-                        } catch (ClassNotFoundException e) {
-                            ClassLoader cl = ClassLoader.getSystemClassLoader();
-                            if (cl != null) {
-                                cls = cl.loadClass(clsName);
-                            }
-                        }
-                        if (cls != null) {
-                            handler  =
-                              (URLStreamHandler)cls.newInstance();
-                        }
-                    } catch (Exception e) {
-                        // any number of exceptions can get thrown here
-                    }
-                }
+                handler = lookupViaProviders(protocol);
             }
+        }
 
-            synchronized (streamHandlerLock) {
-
+        synchronized (streamHandlerLock) {
+            if (handler == null) {
+                // Try the built-in protocol handler
+                handler = defaultFactory.createURLStreamHandler(protocol);
+            } else {
                 URLStreamHandler handler2 = null;
 
                 // Check again with hashtable just in case another
@@ -1202,7 +1271,7 @@ public final class URL implements java.io.Serializable {
                 // Check with factory if another thread set a
                 // factory since our last check
                 if (!checkedWithFactory && (fac = factory) != null) {
-                    handler2 = fac.createURLStreamHandler(protocol);
+                    handler2 =  fac.createURLStreamHandler(protocol);
                 }
 
                 if (handler2 != null) {
@@ -1211,28 +1280,16 @@ public final class URL implements java.io.Serializable {
                     // this thread created.
                     handler = handler2;
                 }
+            }
 
-                // Insert this handler into the hashtable
-                if (handler != null) {
-                    handlers.put(protocol, handler);
-                }
-
+            // Insert this handler into the hashtable
+            if (handler != null) {
+                handlers.put(protocol, handler);
             }
         }
 
         return handler;
-
     }
-
-    /**
-     * Ensures that the given protocol handlers are loaded
-     */
-    private static void ensureHandlersLoaded(String... protocols) {
-        for (String protocol: protocols) {
-            getURLStreamHandler(protocol);
-        }
-    }
-
 
     /**
      * WriteObject is called to save the state of the URL to an
