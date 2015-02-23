@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -924,15 +924,9 @@ void VM_Version::get_processor_features() {
   }
 #endif // COMPILER2
 
-  assert(0 <= ReadPrefetchInstr && ReadPrefetchInstr <= 3, "invalid value");
   assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 3, "invalid value");
 
   // set valid Prefetch instruction
-  if( ReadPrefetchInstr < 0 ) ReadPrefetchInstr = 0;
-  if( ReadPrefetchInstr > 3 ) ReadPrefetchInstr = 3;
-  if( ReadPrefetchInstr == 3 && !supports_3dnow_prefetch() ) ReadPrefetchInstr = 0;
-  if( !supports_sse() && supports_3dnow_prefetch() ) ReadPrefetchInstr = 3;
-
   if( AllocatePrefetchInstr < 0 ) AllocatePrefetchInstr = 0;
   if( AllocatePrefetchInstr > 3 ) AllocatePrefetchInstr = 3;
   if( AllocatePrefetchInstr == 3 && !supports_3dnow_prefetch() ) AllocatePrefetchInstr=0;

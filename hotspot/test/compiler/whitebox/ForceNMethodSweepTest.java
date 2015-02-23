@@ -34,7 +34,6 @@ import com.oracle.java.testlibrary.InfiniteLoop;
 /*
  * @test
  * @bug 8059624 8064669
- * @ignore 8066998
  * @library /testlibrary /../../test/lib
  * @build ForceNMethodSweepTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -42,7 +41,7 @@ import com.oracle.java.testlibrary.InfiniteLoop;
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,SimpleTestCase$Helper::*
- *                   ForceNMethodSweepTest
+ *                   -XX:-BackgroundCompilation ForceNMethodSweepTest
  * @summary testing of WB::forceNMethodSweep
  */
 public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {

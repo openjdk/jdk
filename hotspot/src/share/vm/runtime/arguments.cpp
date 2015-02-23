@@ -57,18 +57,6 @@
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
-// Disable options not supported in this release, with a warning if they
-// were explicitly requested on the command-line
-#define UNSUPPORTED_OPTION(opt, description)                    \
-do {                                                            \
-  if (opt) {                                                    \
-    if (FLAG_IS_CMDLINE(opt)) {                                 \
-      warning(description " is disabled in this release.");     \
-    }                                                           \
-    FLAG_SET_DEFAULT(opt, false);                               \
-  }                                                             \
-} while(0)
-
 #define UNSUPPORTED_GC_OPTION(gc)                                     \
 do {                                                                  \
   if (gc) {                                                           \
@@ -1126,6 +1114,8 @@ static void no_shared_spaces(const char* message) {
 }
 #endif
 
+// Returns threshold scaled with the value of scale.
+// If scale < 0.0, threshold is returned without scaling.
 intx Arguments::scaled_compile_threshold(intx threshold, double scale) {
   if (scale == 1.0 || scale < 0.0) {
     return threshold;
@@ -1134,26 +1124,29 @@ intx Arguments::scaled_compile_threshold(intx threshold, double scale) {
   }
 }
 
-// Returns freq_log scaled with CompileThresholdScaling
+// Returns freq_log scaled with the value of scale.
+// Returned values are in the range of [0, InvocationCounter::number_of_count_bits + 1].
+// If scale < 0.0, freq_log is returned without scaling.
 intx Arguments::scaled_freq_log(intx freq_log, double scale) {
-  // Check if scaling is necessary or negative value was specified.
+  // Check if scaling is necessary or if negative value was specified.
   if (scale == 1.0 || scale < 0.0) {
     return freq_log;
   }
-
-  // Check value to avoid calculating log2 of 0.
-  if (scale == 0.0) {
-    return 1;
+  // Check values to avoid calculating log2 of 0.
+  if (scale == 0.0 || freq_log == 0) {
+    return 0;
   }
-
-  intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
   // Determine the maximum notification frequency value currently supported.
   // The largest mask value that the interpreter/C1 can handle is
   // of length InvocationCounter::number_of_count_bits. Mask values are always
   // one bit shorter then the value of the notification frequency. Set
   // max_freq_bits accordingly.
   intx max_freq_bits = InvocationCounter::number_of_count_bits + 1;
-  if (scaled_freq > nth_bit(max_freq_bits)) {
+  intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
+  if (scaled_freq == 0) {
+    // Return 0 right away to avoid calculating log2 of 0.
+    return 0;
+  } else if (scaled_freq > nth_bit(max_freq_bits)) {
     return max_freq_bits;
   } else {
     return log2_intptr(scaled_freq);
@@ -1204,8 +1197,9 @@ void Arguments::set_tiered_flags() {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
   }
 
-  // Scale tiered compilation thresholds
-  if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
+  // Scale tiered compilation thresholds.
+  // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves compilation thresholds unchanged.
+  if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
     FLAG_SET_ERGO(intx, Tier0InvokeNotifyFreqLog, scaled_freq_log(Tier0InvokeNotifyFreqLog));
     FLAG_SET_ERGO(intx, Tier0BackedgeNotifyFreqLog, scaled_freq_log(Tier0BackedgeNotifyFreqLog));
 
@@ -2316,6 +2310,7 @@ bool Arguments::check_vm_args_consistency() {
     status = status && verify_percentage(G1MaxNewSizePercent, "G1MaxNewSizePercent");
     status = status && verify_interval(G1NewSizePercent, 0, G1MaxNewSizePercent, "G1NewSizePercent");
 
+    status = status && verify_percentage(G1ConfidencePercent, "G1ConfidencePercent");
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
     status = status && verify_min_value(G1RefProcDrainInterval, 1,
@@ -3479,8 +3474,10 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     set_mode_flags(_int);
   }
 
-  if ((TieredCompilation && CompileThresholdScaling == 0)
-      || (!TieredCompilation && scaled_compile_threshold(CompileThreshold) == 0)) {
+  // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),
+  // but like -Xint, leave compilation thresholds unaffected.
+  // With tiered compilation disabled, setting CompileThreshold to 0 disables compilation as well.
+  if ((CompileThresholdScaling == 0.0) || (!TieredCompilation && CompileThreshold == 0)) {
     set_mode_flags(_int);
   }
 
@@ -3851,6 +3848,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   #endif
 #endif
 
+  ArgumentsExt::report_unsupported_options();
+
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {
     TraceBytecodes = true;
@@ -3919,7 +3918,8 @@ jint Arguments::apply_ergo() {
         "Incompatible compilation policy selected", NULL);
     }
     // Scale CompileThreshold
-    if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
+    // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves CompileThreshold unchanged.
+    if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
       FLAG_SET_ERGO(intx, CompileThreshold, scaled_compile_threshold(CompileThreshold));
     }
   }

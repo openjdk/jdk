@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,17 +48,21 @@ class SymbolHashMap;
 class CPSlot VALUE_OBJ_CLASS_SPEC {
   intptr_t _ptr;
  public:
+  enum TagBits  { _resolved_value = 0, _symbol_bit = 1, _pseudo_bit = 2, _symbol_mask = 3 };
+
   CPSlot(intptr_t ptr): _ptr(ptr) {}
   CPSlot(Klass* ptr): _ptr((intptr_t)ptr) {}
-  CPSlot(Symbol* ptr): _ptr((intptr_t)ptr | 1) {}
+  CPSlot(Symbol* ptr): _ptr((intptr_t)ptr | _symbol_bit) {}
+  CPSlot(Symbol* ptr, int tag_bits): _ptr((intptr_t)ptr | tag_bits) {}
 
   intptr_t value()   { return _ptr; }
-  bool is_resolved()   { return (_ptr & 1) == 0; }
-  bool is_unresolved() { return (_ptr & 1) == 1; }
+  bool is_resolved()      { return (_ptr & _symbol_bit ) == _resolved_value; }
+  bool is_unresolved()    { return (_ptr & _symbol_bit ) != _resolved_value; }
+  bool is_pseudo_string() { return (_ptr & _symbol_mask) == _symbol_bit + _pseudo_bit; }
 
   Symbol* get_symbol() {
     assert(is_unresolved(), "bad call");
-    return (Symbol*)(_ptr & ~1);
+    return (Symbol*)(_ptr & ~_symbol_mask);
   }
   Klass* get_klass() {
     assert(is_resolved(), "bad call");
@@ -261,7 +265,7 @@ class ConstantPool : public Metadata {
 
   void unresolved_string_at_put(int which, Symbol* s) {
     release_tag_at_put(which, JVM_CONSTANT_String);
-    *symbol_at_addr(which) = s;
+    slot_at_put(which, CPSlot(s, CPSlot::_symbol_bit));
   }
 
   void int_at_put(int which, jint i) {
@@ -405,20 +409,18 @@ class ConstantPool : public Metadata {
   // use pseudo-strings to link themselves to related metaobjects.
 
   bool is_pseudo_string_at(int which) {
-    // A pseudo string is a string that doesn't have a symbol in the cpSlot
-    return unresolved_string_at(which) == NULL;
+    assert(tag_at(which).is_string(), "Corrupted constant pool");
+    return slot_at(which).is_pseudo_string();
   }
 
   oop pseudo_string_at(int which, int obj_index) {
-    assert(tag_at(which).is_string(), "Corrupted constant pool");
-    assert(unresolved_string_at(which) == NULL, "shouldn't have symbol");
+    assert(is_pseudo_string_at(which), "must be a pseudo-string");
     oop s = resolved_references()->obj_at(obj_index);
     return s;
   }
 
   oop pseudo_string_at(int which) {
-    assert(tag_at(which).is_string(), "Corrupted constant pool");
-    assert(unresolved_string_at(which) == NULL, "shouldn't have symbol");
+    assert(is_pseudo_string_at(which), "must be a pseudo-string");
     int obj_index = cp_to_object_index(which);
     oop s = resolved_references()->obj_at(obj_index);
     return s;
@@ -426,7 +428,8 @@ class ConstantPool : public Metadata {
 
   void pseudo_string_at_put(int which, int obj_index, oop x) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
-    unresolved_string_at_put(which, NULL); // indicates patched string
+    Symbol* sym = unresolved_string_at(which);
+    slot_at_put(which, CPSlot(sym, (CPSlot::_symbol_bit | CPSlot::_pseudo_bit)));
     string_at_put(which, obj_index, x);    // this works just fine
   }
 
@@ -443,15 +446,14 @@ class ConstantPool : public Metadata {
 
   Symbol* unresolved_string_at(int which) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* s = *symbol_at_addr(which);
-    return s;
+    Symbol* sym = slot_at(which).get_symbol();
+    return sym;
   }
 
   // Returns an UTF8 for a CONSTANT_String entry at a given index.
   // UTF8 char* representation was chosen to avoid conversion of
   // java_lang_Strings at resolved entries into Symbol*s
   // or vice versa.
-  // Caller is responsible for checking for pseudo-strings.
   char* string_at_noresolve(int which);
 
   jint name_and_type_at(int which) {

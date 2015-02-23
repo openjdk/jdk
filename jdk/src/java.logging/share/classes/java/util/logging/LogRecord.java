@@ -175,9 +175,7 @@ public class LogRecord implements java.io.Serializable {
      * @param msg  the raw non-localized logging message (may be null)
      */
     public LogRecord(Level level, String msg) {
-        // Make sure level isn't null, by calling random method.
-        level.getClass();
-        this.level = level;
+        this.level = Objects.requireNonNull(level);
         message = msg;
         // Assign a thread ID and a unique sequence number.
         sequenceNumber = globalSequenceNumber.getAndIncrement();

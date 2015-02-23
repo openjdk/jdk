@@ -36,7 +36,7 @@ public class CodeCacheStressRunner {
         try {
             // adjust timeout and substract vm init and exit time
             long timeout = Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
-            timeout *= 0.9;
+            timeout *= 0.8;
             new TimeLimitedRunner(timeout, 2.0d, this::test).call();
         } catch (Exception e) {
             throw new Error("Exception occurred during test execution", e);

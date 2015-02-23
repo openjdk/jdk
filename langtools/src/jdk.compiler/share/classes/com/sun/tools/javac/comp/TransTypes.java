@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -720,7 +720,7 @@ public class TransTypes extends TreeTranslator {
 
     public void visitParens(JCParens tree) {
         tree.expr = translate(tree.expr, pt);
-        tree.type = erasure(tree.type);
+        tree.type = erasure(tree.expr.type);
         result = tree;
     }
 
@@ -755,7 +755,7 @@ public class TransTypes extends TreeTranslator {
         tree.clazz = translate(tree.clazz, null);
         Type originalTarget = tree.type;
         tree.type = erasure(tree.type);
-        JCExpression newExpression = translate(tree.expr, erasure(tree.expr.type));
+        JCExpression newExpression = translate(tree.expr, tree.type);
         if (newExpression != tree.expr) {
             JCTypeCast typeCast = newExpression.hasTag(Tag.TYPECAST)
                 ? (JCTypeCast) newExpression
