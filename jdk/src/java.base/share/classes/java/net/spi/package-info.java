@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,13 @@
  * questions.
  */
 
-package java.net;
-
 /**
- * This interface defines a factory for {@code URL} stream
- * protocol handlers.
- * <p>
- * It is used by the {@code URL} class to create a
- * {@code URLStreamHandler} for a specific protocol.
+ * Service-provider classes for the <tt>{@link java.net}</tt> package.
  *
- * @author  Arthur van Hoff
- * @see     java.net.URL
- * @see     java.net.URLStreamHandler
- * @since   1.0
+ * <p> Only developers who are defining new URL stream handler providers
+ * should need to make direct use of this package.
+ *
+ * @since 1.9
  */
-public interface URLStreamHandlerFactory {
-    /**
-     * Creates a new {@code URLStreamHandler} instance with the specified
-     * protocol.
-     *
-     * @param   protocol   the protocol ("{@code ftp}",
-     *                     "{@code http}", "{@code nntp}", etc.).
-     * @return  a {@code URLStreamHandler} for the specific protocol, or {@code
-     *          null} if this factory cannot create a handler for the specific
-     *          protocol
-     * @see     java.net.URLStreamHandler
-     */
-    URLStreamHandler createURLStreamHandler(String protocol);
-}
+
+package java.net.spi;
