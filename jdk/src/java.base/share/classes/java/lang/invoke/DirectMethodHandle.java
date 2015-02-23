@@ -31,11 +31,11 @@ import java.util.Arrays;
 import sun.invoke.util.VerifyAccess;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.LambdaForm.*;
-import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.util.Objects;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
@@ -440,8 +440,7 @@ class DirectMethodHandle extends MethodHandle {
         // Therefore, the only remaining check is for null.
         // Since this check is *not* guaranteed by Unsafe.getInt
         // and its siblings, we need to make an explicit one here.
-        obj.getClass();  // maybe throw NPE
-        return obj;
+        return Objects.requireNonNull(obj);
     }
 
     /** This subclass handles static field references. */
@@ -469,8 +468,7 @@ class DirectMethodHandle extends MethodHandle {
 
     @ForceInline
     /*non-public*/ static Object nullCheck(Object obj) {
-        obj.getClass();
-        return obj;
+        return Objects.requireNonNull(obj);
     }
 
     @ForceInline
@@ -692,5 +690,11 @@ class DirectMethodHandle extends MethodHandle {
                 throw newInternalError(ex);
             }
         }
+    }
+
+    @Override
+    void customize() {
+        assert(form.customized == null);
+        // No need to customize DMHs.
     }
 }

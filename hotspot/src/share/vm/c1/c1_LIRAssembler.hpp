@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,9 +181,6 @@ class LIR_Assembler: public CompilationResourceObj {
   void mem2reg    (LIR_Opr src, LIR_Opr dest, BasicType type,
                    LIR_PatchCode patch_code,
                    CodeEmitInfo* info, bool wide, bool unaligned);
-
-  void prefetchr  (LIR_Opr src);
-  void prefetchw  (LIR_Opr src);
 
   void shift_op(LIR_Code code, LIR_Opr left, LIR_Opr count, LIR_Opr dest, LIR_Opr tmp);
   void shift_op(LIR_Code code, LIR_Opr left, jint  count, LIR_Opr dest);

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,25 @@
  * questions.
  */
 
-package com.sun.tracing;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-import java.lang.annotation.Target;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.ElementType;
+public class Child {
 
-/**
- * An annotation used to specify the name of a provider.
- * <p>
- * This annotation can be added to a user-defined {@code Provider}
- * interface, to set the name that will be used
- * for the provider in the generated probes.  Without this annotation,
- * the simple class name of the provider interface is used.
- * <p>
- * @since 1.7
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface ProviderName {
-    String value();
+    public static void main(String[] args) throws MalformedURLException {
+        if (args.length != 1) {
+            System.err.println("Usage: java Child <protocol>");
+            return;
+        }
+        String protocol = args[0];
+        URL url = new URL(protocol + "://");
+
+        // toExternalForm should return the protocol string
+        String s = url.toExternalForm();
+        if (!s.equals(protocol)) {
+            System.err.println("Expected url.toExternalForm to return "
+                                       + protocol + ", but got: " + s);
+            System.exit(1);
+        }
+    }
 }
-

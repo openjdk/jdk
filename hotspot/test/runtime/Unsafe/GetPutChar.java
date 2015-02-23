@@ -39,7 +39,7 @@ public class GetPutChar {
         Test t = new Test();
         Field field = Test.class.getField("c");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals('\u0000', unsafe.getChar(t, offset));
         unsafe.putChar(t, offset, '\u0001');
         assertEquals('\u0001', unsafe.getChar(t, offset));
