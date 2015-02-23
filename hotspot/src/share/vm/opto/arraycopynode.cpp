@@ -455,7 +455,7 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
     if (in(TypeFunc::Control) != ctl) {
       // we can't return new memory and control from Ideal at parse time
       assert(!is_clonebasic(), "added control for clone?");
-      return NULL;
+      return false;
     }
   }
   return true;
