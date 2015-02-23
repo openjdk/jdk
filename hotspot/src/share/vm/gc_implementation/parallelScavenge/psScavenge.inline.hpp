@@ -27,7 +27,6 @@
 
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "memory/iterator.hpp"
@@ -63,42 +62,6 @@ inline bool PSScavenge::should_scavenge(T* p, bool check_to_space) {
   return should_scavenge(p);
 }
 
-// Attempt to "claim" oop at p via CAS, push the new obj if successful
-// This version tests the oop* to make sure it is within the heap before
-// attempting marking.
-template <class T, bool promote_immediately>
-inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
-                                                   T*                  p) {
-  assert(should_scavenge(p, true), "revisiting object?");
-
-  oop o = oopDesc::load_decode_heap_oop_not_null(p);
-  oop new_obj = o->is_forwarded()
-        ? o->forwardee()
-        : pm->copy_to_survivor_space<promote_immediately>(o);
-
-#ifndef PRODUCT
-  // This code must come after the CAS test, or it will print incorrect
-  // information.
-  if (TraceScavenge &&  o->is_forwarded()) {
-    gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
-       "forwarding",
-       new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
-  }
-#endif
-
-  oopDesc::encode_store_heap_oop_not_null(p, new_obj);
-
-  // We cannot mark without test, as some code passes us pointers
-  // that are outside the heap. These pointers are either from roots
-  // or from metadata.
-  if ((!PSScavenge::is_obj_in_young((HeapWord*)p)) &&
-      Universe::heap()->is_in_reserved(p)) {
-    if (PSScavenge::is_obj_in_young(new_obj)) {
-      card_table()->inline_write_ref_field_gc(p, new_obj);
-    }
-  }
-}
-
 template<bool promote_immediately>
 class PSRootsClosure: public OopClosure {
  private:
@@ -108,7 +71,7 @@ class PSRootsClosure: public OopClosure {
   template <class T> void do_oop_work(T *p) {
     if (PSScavenge::should_scavenge(p)) {
       // We never card mark roots, maybe call a func without test?
-      PSScavenge::copy_and_push_safe_barrier<T, promote_immediately>(_promotion_manager, p);
+      _promotion_manager->copy_and_push_safe_barrier<T, promote_immediately>(p);
     }
   }
  public:
