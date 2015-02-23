@@ -26,7 +26,7 @@
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.Map;
 
@@ -60,7 +60,7 @@ public final class CReferencePropertyInfo extends CPropertyInfo implements Refer
     /**
      * List of referenced elements.
      */
-    private final Set<CElement> elements = new HashSet<CElement>();
+    private final Set<CElement> elements = new LinkedHashSet<CElement>();
 
     private final boolean isMixed;
     private WildcardMode wildcard;
@@ -87,7 +87,7 @@ public final class CReferencePropertyInfo extends CPropertyInfo implements Refer
         // so the Java types of the substitution members need to be taken into account
         // when computing the signature
 
-        final class RefList extends HashSet<CTypeInfo> {
+        final class RefList extends LinkedHashSet<CTypeInfo> {
             RefList() {
                 super(elements.size());
                 addAll(elements);

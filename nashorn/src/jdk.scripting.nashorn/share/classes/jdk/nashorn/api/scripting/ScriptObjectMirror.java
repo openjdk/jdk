@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
@@ -180,7 +181,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @return return value of function
      */
     public Object callMember(final String functionName, final Object... args) {
-        functionName.getClass(); // null check
+        Objects.requireNonNull(functionName);
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
@@ -213,7 +214,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public Object getMember(final String name) {
-        name.getClass();
+        Objects.requireNonNull(name);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
                 return wrap(sobj.get(name), global);
@@ -232,7 +233,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public boolean hasMember(final String name) {
-        name.getClass();
+        Objects.requireNonNull(name);
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
                 return sobj.has(name);
@@ -251,13 +252,13 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public void removeMember(final String name) {
-        name.getClass();
+        Objects.requireNonNull(name);
         remove(name);
     }
 
     @Override
     public void setMember(final String name, final Object value) {
-        name.getClass();
+        Objects.requireNonNull(name);
         put(name, value);
     }
 
@@ -425,9 +426,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public void putAll(final Map<? extends String, ? extends Object> map) {
-        if (map == null) {
-            throw new NullPointerException("map is null");
-        }
+        Objects.requireNonNull(map, "map is null");
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         inGlobal(new Callable<Object>() {
@@ -449,7 +448,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         checkKey(key);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(sobj.remove(key, strict), global);
+                return translateUndefined(wrap(sobj.remove(key, strict), global));
             }
         });
     }
@@ -804,9 +803,9 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @throws IllegalArgumentException if key is empty string
      */
     private static void checkKey(final Object key) {
-        if (key == null) {
-            throw new NullPointerException("key can not be null");
-        } else if (!(key instanceof String)) {
+        Objects.requireNonNull(key, "key can not be null");
+
+        if (!(key instanceof String)) {
             throw new ClassCastException("key should be a String. It is " + key.getClass().getName() + " instead.");
         } else if (((String)key).length() == 0) {
             throw new IllegalArgumentException("key can not be empty");

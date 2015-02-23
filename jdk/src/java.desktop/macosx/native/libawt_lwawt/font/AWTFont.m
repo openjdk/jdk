@@ -35,15 +35,11 @@
 #import "AWTStrike.h"
 #import "CoreTextSupport.h"
 
-
-#define DEBUG
-
 @implementation AWTFont
 
-- (id) initWithFont:(NSFont *)font isFakeItalic:(BOOL)isFakeItalic {
+- (id) initWithFont:(NSFont *)font {
     self = [super init];
     if (self) {
-        fIsFakeItalic = isFakeItalic;
         fFont = [font retain];
         fNativeCGFont = CTFontCopyGraphicsFont((CTFontRef)font, NULL);
     }
@@ -72,7 +68,6 @@
 
 + (AWTFont *) awtFontForName:(NSString *)name
                        style:(int)style
-                isFakeItalic:(BOOL)isFakeItalic
 {
     // create font with family & size
     NSFont *nsFont = [NSFont fontWithName:name size:1.0];
@@ -95,7 +90,7 @@
         nsFont = [[NSFontManager sharedFontManager] convertFont:nsFont toHaveTrait:NSBoldFontMask];
     }
 
-    return [[[AWTFont alloc] initWithFont:nsFont isFakeItalic:isFakeItalic] autorelease];
+    return [[[AWTFont alloc] initWithFont:nsFont] autorelease];
 }
 
 + (NSFont *) nsFontForJavaFont:(jobject)javaFont env:(JNIEnv *)env {
@@ -354,7 +349,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT jlong JNICALL
 Java_sun_font_CFont_createNativeFont
     (JNIEnv *env, jclass clazz,
-     jstring nativeFontName, jint style, jboolean isFakeItalic)
+     jstring nativeFontName, jint style)
 {
     AWTFont *awtFont = nil;
 
@@ -362,8 +357,7 @@ JNF_COCOA_ENTER(env);
 
     awtFont =
         [AWTFont awtFontForName:JNFJavaToNSString(env, nativeFontName)
-         style:style
-         isFakeItalic:isFakeItalic]; // autoreleased
+         style:style]; // autoreleased
 
     if (awtFont) {
         CFRetain(awtFont); // GC
@@ -372,6 +366,52 @@ JNF_COCOA_ENTER(env);
 JNF_COCOA_EXIT(env);
 
     return ptr_to_jlong(awtFont);
+}
+
+/*
+ * Class:     sun_font_CFont
+ * Method:    getWidthNative
+ * Signature: (J)F
+ */
+JNIEXPORT jfloat JNICALL
+Java_sun_font_CFont_getWidthNative
+    (JNIEnv *env, jobject cfont, jlong awtFontPtr)
+{
+    float widthVal;
+JNF_COCOA_ENTER(env);
+
+    AWTFont *awtFont = (AWTFont *)jlong_to_ptr(awtFontPtr);
+    NSFont* nsFont = awtFont->fFont;
+    NSFontDescriptor *fontDescriptor = nsFont.fontDescriptor;
+    NSDictionary *fontTraits = [fontDescriptor objectForKey : NSFontTraitsAttribute];
+    NSNumber *width = [fontTraits objectForKey : NSFontWidthTrait];
+    widthVal = (float)[width floatValue];
+
+JNF_COCOA_EXIT(env);
+   return (jfloat)widthVal;
+}
+
+/*
+ * Class:     sun_font_CFont
+ * Method:    getWeightNative
+ * Signature: (J)F
+ */
+JNIEXPORT jfloat JNICALL
+Java_sun_font_CFont_getWeightNative
+    (JNIEnv *env, jobject cfont, jlong awtFontPtr)
+{
+    float weightVal;
+JNF_COCOA_ENTER(env);
+
+    AWTFont *awtFont = (AWTFont *)jlong_to_ptr(awtFontPtr);
+    NSFont* nsFont = awtFont->fFont;
+    NSFontDescriptor *fontDescriptor = nsFont.fontDescriptor;
+    NSDictionary *fontTraits = [fontDescriptor objectForKey : NSFontTraitsAttribute];
+    NSNumber *weight = [fontTraits objectForKey : NSFontWeightTrait];
+    weightVal = (float)[weight floatValue];
+
+JNF_COCOA_EXIT(env);
+   return (jfloat)weightVal;
 }
 
 /*

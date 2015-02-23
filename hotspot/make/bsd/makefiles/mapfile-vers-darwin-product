@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,6 @@
                 _JVM_DefineClassWithSourceCond
                 _JVM_DesiredAssertionStatus
                 _JVM_DoPrivileged
-                _JVM_DTraceGetVersion
-                _JVM_DTraceActivate
-                _JVM_DTraceIsProbeEnabled
-                _JVM_DTraceIsSupported
-                _JVM_DTraceDispose
                 _JVM_DumpAllStacks
                 _JVM_DumpThreads
                 _JVM_FillInStackTrace
@@ -130,6 +125,7 @@
                 _JVM_GetMethodIxSignatureUTF
                 _JVM_GetMethodParameters
                 _JVM_GetMethodTypeAnnotations
+                _JVM_GetNanoTimeAdjustment
                 _JVM_GetPrimitiveArrayElement
                 _JVM_GetProtectionDomain
                 _JVM_GetStackAccessControlContext

@@ -1,3 +1,10 @@
+java.activation
+java.annotations.common
+java.corba
+java.transaction
+java.xml.bind
+java.xml.ws
+jdk.accessbridge
 jdk.crypto.ec
 jdk.crypto.mscapi
 jdk.crypto.pkcs11
@@ -6,4 +13,3 @@ jdk.localedata
 jdk.naming.dns
 jdk.scripting.nashorn
 jdk.zipfs
-jdk.accessbridge

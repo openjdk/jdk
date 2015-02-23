@@ -32,7 +32,8 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
 import sun.nio.cs.HistoricallyNamedCharset;
-import sun.nio.cs.ext.DoubleByte;
+import sun.nio.cs.DoubleByte;
+import sun.nio.cs.*;
 
 public class $NAME_CLZ$ extends Charset
                         $IMPLEMENTS$

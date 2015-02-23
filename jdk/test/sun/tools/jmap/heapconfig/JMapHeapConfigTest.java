@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jdk.testlibrary.Utils;
+import jdk.testlibrary.Platform;
 
 public class JMapHeapConfigTest {
 
@@ -54,6 +55,8 @@ public class JMapHeapConfigTest {
         "G1HeapRegionSize"};
 
     // ignoring MaxMetaspaceSize
+
+    static final String desiredMaxHeapSize = "-Xmx128m";
 
     private static Map<String, String> parseJMapOutput(List<String> jmapOutput) {
         Map<String, String> heapConfigMap = new HashMap<String, String>();
@@ -107,12 +110,38 @@ public class JMapHeapConfigTest {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.out.println("Starting JMapHeapConfigTest");
+
+        if (!Platform.shouldSAAttach()) {
+            // Silently skip the test if we don't have enough permissions to attach
+            System.err.println("Error! Insufficient permissions to attach.");
+            return;
+        }
+
+        if (!LingeredApp.isLastModifiedWorking()) {
+            // Exact behaviour of the test depends to operating system and the test nature,
+            // so just print the warning and continue
+            System.err.println("Warning! Last modified time doesn't work.");
+        }
+
+        boolean mx_found = false;
+        List<String> jvmOptions = Utils.getVmOptions();
+        for (String option : jvmOptions) {
+            if (option.startsWith("-Xmx")) {
+               System.out.println("INFO: maximum heap size set by JTREG as " + option);
+               mx_found = true;
+               break;
+           }
+        }
 
         // Forward vm options to LingeredApp
         ArrayList<String> cmd = new ArrayList();
         cmd.addAll(Utils.getVmOptions());
+        if (!mx_found) {
+            cmd.add(desiredMaxHeapSize);
+            System.out.println("INFO: maximum heap size set explicitly as " + desiredMaxHeapSize);
+        }
         cmd.add("-XX:+PrintFlagsFinal");
 
         TmtoolTestScenario tmt = TmtoolTestScenario.create("jmap", "-heap");
