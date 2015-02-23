@@ -538,7 +538,14 @@ public interface Chronology extends Comparable<Chronology> {
      * <ul>
      * <li>a leap-year must imply a year-length longer than a non leap-year.
      * <li>a chronology that does not support the concept of a year must return false.
+     * <li>the correct result must be returned for all years within the
+     *     valid range of years for the chronology.
      * </ul>
+     * <p>
+     * Outside the range of valid years an implementation is free to return
+     * either a best guess or false.
+     * An implementation must not throw an exception, even if the year is
+     * outside the range of valid years.
      *
      * @param prolepticYear  the proleptic-year to check, not validated for range
      * @return true if the year is a leap year

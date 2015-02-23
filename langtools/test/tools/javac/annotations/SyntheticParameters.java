@@ -46,20 +46,11 @@ public class SyntheticParameters extends ClassfileInspector {
                      null,
                      new ExpectedParameterAnnotation[] {
                          (ExpectedParameterAnnotation)
-                         // Assert there is no annotation on the
-                         // this$0 parameter.
-                         new ExpectedParameterAnnotation(
-                             "<init>",
-                             0,
-                             "A",
-                             true,
-                             0),
-                         (ExpectedParameterAnnotation)
                          // Assert there is an annotation on the
                          // first parameter.
                          new ExpectedParameterAnnotation(
                              "<init>",
-                             1,
+                             0,
                              "A",
                              true,
                              1),
@@ -71,27 +62,11 @@ public class SyntheticParameters extends ClassfileInspector {
                              true,
                              1),
                          (ExpectedParameterAnnotation)
-                         new ExpectedParameterAnnotation(
-                             "foo",
-                             1,
-                             "A",
-                             true,
-                             0),
-                         (ExpectedParameterAnnotation)
-                         // Assert there is no annotation on the
-                         // this$0 parameter.
-                         new ExpectedParameterAnnotation(
-                             "<init>",
-                             0,
-                             "B",
-                             false,
-                             0),
-                         (ExpectedParameterAnnotation)
                          // Assert there is an annotation on the
                          // first parameter.
                          new ExpectedParameterAnnotation(
                              "<init>",
-                             1,
+                             0,
                              "B",
                              false,
                              1),
@@ -117,56 +92,20 @@ public class SyntheticParameters extends ClassfileInspector {
                      null,
                      new ExpectedParameterAnnotation[] {
                          (ExpectedParameterAnnotation)
-                         // Assert there is no annotation on the
-                         // $enum$name parameter.
-                         new ExpectedParameterAnnotation(
-                             "<init>",
-                             0,
-                             "A",
-                             true,
-                             0),
-                         (ExpectedParameterAnnotation)
-                         // Assert there is no annotation on the
-                         // $enum$ordinal parameter.
-                         new ExpectedParameterAnnotation(
-                             "<init>",
-                             1,
-                             "A",
-                             true,
-                             0),
-                         (ExpectedParameterAnnotation)
                          // Assert there is an annotation on the
                          // first parameter.
                          new ExpectedParameterAnnotation(
                              "<init>",
-                             2,
+                             0,
                              "A",
                              true,
                              1),
                          (ExpectedParameterAnnotation)
-                         // Assert there is no annotation on the
-                         // $enum$name parameter.
-                         new ExpectedParameterAnnotation(
-                             "<init>",
-                             0,
-                             "B",
-                             false,
-                             0),
-                         (ExpectedParameterAnnotation)
-                         // Assert there is no annotation on the
-                         // $enum$ordinal parameter.
-                         new ExpectedParameterAnnotation(
-                             "<init>",
-                             1,
-                             "B",
-                             false,
-                             0),
-                         (ExpectedParameterAnnotation)
                          // Assert there is an annotation on the
                          // first parameter.
                          new ExpectedParameterAnnotation(
                              "<init>",
-                             2,
+                             0,
                              "B",
                              false,
                              1)

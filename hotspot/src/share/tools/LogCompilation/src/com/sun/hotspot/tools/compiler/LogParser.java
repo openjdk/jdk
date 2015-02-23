@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 
 /**
  * A SAX based parser of LogCompilation output from HotSpot.  It takes a complete
- * @author never
  */
 
 package com.sun.hotspot.tools.compiler;
 
 import java.io.FileReader;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -134,6 +134,44 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         }
     };
 
+    class Jvms {
+        Jvms(Method method, int bci) {
+            this.method = method;
+            this.bci = bci;
+        }
+        final public Method method;
+        final public int bci;
+        final public String toString() {
+            return "@" + bci + " " + method;
+        }
+    }
+
+    class LockElimination extends BasicLogEvent {
+
+        ArrayList<Jvms> jvms = new ArrayList<Jvms>(1);
+        final String kind;
+        final String classId;
+        final String tagName;
+        LockElimination(String tagName, double start, String id, String kind, String classId) {
+            super(start, id);
+            this.kind = kind;
+            this.classId = classId;
+            this.tagName = tagName;
+        }
+
+        @Override
+        public void print(PrintStream stream) {
+            stream.printf("%s %s %s %s  %.3f ", getId(), tagName, kind, classId, getStart());
+            stream.print(jvms.toString());
+            stream.print("\n");
+        }
+
+        void addJVMS(Method method, int bci) {
+            jvms.add(new Jvms(method, bci));
+        }
+
+    }
+
     private ArrayList<LogEvent> events = new ArrayList<LogEvent>();
 
     private HashMap<String, String> types = new HashMap<String, String>();
@@ -147,6 +185,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
     private CallSite site;
     private CallSite methodHandleSite;
     private Stack<Phase> phaseStack = new Stack<Phase>();
+    private LockElimination currentLockElimination;
     private UncommonTrapEvent currentTrap;
     private Stack<CallSite> lateInlineScope;
     private boolean lateInlining;
@@ -192,7 +231,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         }
 
         LogParser log = new LogParser();
-        p.parse(new InputSource(reader), log);
+        try {
+            p.parse(new InputSource(reader), log);
+        } catch (Throwable th) {
+            th.printStackTrace();
+            // Carry on with what we've got...
+        }
 
         // Associate compilations with their NMethods
         for (NMethod nm : log.nmethods.values()) {
@@ -418,8 +462,23 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                 // uncommon trap inserted during parsing.
                 // ignore for now
             }
+        } else if (qname.startsWith("eliminate_lock")) {
+            String id = atts.getValue("compile_id");
+            if (id != null) {
+                id = makeId(atts);
+                String kind = atts.getValue("kind");
+                String classId = atts.getValue("class_id");
+                currentLockElimination = new LockElimination(qname, Double.parseDouble(search(atts, "stamp")), id, kind, classId);
+                events.add(currentLockElimination);
+            }
         } else if (qname.equals("late_inline")) {
-            long inlineId = Long.parseLong(search(atts, "inline_id"));
+            long inlineId = 0;
+            try {
+                Long.parseLong(search(atts, "inline_id"));
+            } catch (InternalError ex) {
+                // Log files from older hotspots may lack inline_id,
+                // and zero is an acceptable substitute that allows processing to continue.
+            }
             lateInlineScope = new Stack<CallSite>();
             site = new CallSite(-999, method(search(atts, "method")));
             site.setInlineId(inlineId);
@@ -428,13 +487,14 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             // <jvms bci='4' method='java/io/DataInputStream readChar ()C' bytes='40' count='5815' iicount='20815'/>
             if (currentTrap != null) {
                 currentTrap.addJVMS(atts.getValue("method"), Integer.parseInt(atts.getValue("bci")));
+            } else if (currentLockElimination != null) {
+                  currentLockElimination.addJVMS(method(atts.getValue("method")), Integer.parseInt(atts.getValue("bci")));
             } else if (lateInlineScope != null) {
                 bci = Integer.parseInt(search(atts, "bci"));
                 site = new CallSite(bci, method(search(atts, "method")));
                 lateInlineScope.push(site);
             } else {
                 // Ignore <eliminate_allocation type='667'>,
-                //        <eliminate_lock lock='1'>,
                 //        <replace_string_concat arguments='2' string_alloc='0' multiple='0'>
             }
         } else if (qname.equals("inline_id")) {
@@ -512,6 +572,8 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             }
         } else if (qname.equals("uncommon_trap")) {
             currentTrap = null;
+        } else if (qname.startsWith("eliminate_lock")) {
+            currentLockElimination = null;
         } else if (qname.equals("late_inline")) {
             // Populate late inlining info.
             if (scopes.size() != 0) {
@@ -522,8 +584,8 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             CallSite caller = lateInlineScope.pop();
             Method m = compile.getMethod();
             if (m != caller.getMethod()) {
-                System.out.println(m);
-                System.out.println(caller.getMethod() + " bci: " + bci);
+                System.err.println(m);
+                System.err.println(caller.getMethod() + " bci: " + bci);
                 throw new InternalError("call site and late_inline info don't match");
             }
 

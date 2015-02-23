@@ -65,11 +65,17 @@ public class NIOCharsetAvailabilityTest {
         charsets.remove(Class.forName("sun.nio.cs.ext.ISO2022"));
         charsets.remove(Class.forName("sun.nio.cs.ext.ISO2022_CN_GB"));
         charsets.remove(Class.forName("sun.nio.cs.ext.ISO2022_CN_CNS"));
-        charsets.remove(Class.forName("sun.nio.cs.ext.JIS_X_0208_Solaris"));
         charsets.remove(Class.forName("sun.nio.cs.ext.JIS_X_0208_MS932"));
         charsets.remove(Class.forName("sun.nio.cs.ext.JIS_X_0212_MS5022X"));
-        charsets.remove(Class.forName("sun.nio.cs.ext.JIS_X_0212_Solaris"));
         charsets.remove(Class.forName("sun.nio.cs.ext.JIS_X_0208_MS5022X"));
+        try {
+            charsets.remove(Class.forName("sun.nio.cs.ext.JIS_X_0208_Solaris"));
+            charsets.remove(Class.forName("sun.nio.cs.ext.JIS_X_0212_Solaris"));
+        } catch (ClassNotFoundException x) {
+            // these two might be moved into stdcs
+            charsets.remove(Class.forName("sun.nio.cs.JIS_X_0208_Solaris"));
+            charsets.remove(Class.forName("sun.nio.cs.JIS_X_0212_Solaris"));
+        }
 
         // report the charsets that are implemented but not available
         iter = charsets.iterator();

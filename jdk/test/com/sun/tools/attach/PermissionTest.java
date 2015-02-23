@@ -71,10 +71,8 @@ public class PermissionTest {
     private static void runTests(long pid) throws Throwable {
         final String sep = File.separator;
 
-        // Need to add jdk/lib/tools.jar to classpath.
         String classpath =
-            System.getProperty("test.class.path", "") + File.pathSeparator +
-            System.getProperty("test.jdk", ".") + sep + "lib" + sep + "tools.jar";
+            System.getProperty("test.class.path", "");
         String testSrc = System.getProperty("test.src", "") + sep;
 
         // Use a policy that will NOT allow attach. Test will verify exception.

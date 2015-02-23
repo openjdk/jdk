@@ -46,6 +46,8 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
+import jaxp.library.JAXPDataProvider;
+
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -80,6 +82,59 @@ public class SchemaFactoryTest {
 
         xml = Files.readAllBytes(Paths.get(XML_DIR + "test.xml"));
     }
+
+
+    @DataProvider(name = "parameters")
+    public Object[][] getValidateParameters() {
+        return new Object[][] { { W3C_XML_SCHEMA_NS_URI, SCHEMA_FACTORY_CLASSNAME, null },
+                { W3C_XML_SCHEMA_NS_URI, SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    }
+
+    /*
+     * test for SchemaFactory.newInstance(java.lang.String schemaLanguage,
+     * java.lang.String factoryClassName, java.lang.ClassLoader classLoader)
+     * factoryClassName points to correct implementation of
+     * javax.xml.validation.SchemaFactory , should return newInstance of
+     * SchemaFactory
+     */
+    @Test(dataProvider = "parameters")
+    public void testNewInstance(String schemaLanguage, String factoryClassName, ClassLoader classLoader) throws SAXException {
+        SchemaFactory sf = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI, SCHEMA_FACTORY_CLASSNAME, null);
+        Schema schema = sf.newSchema();
+        assertNotNull(schema);
+    }
+
+    /*
+     * test for SchemaFactory.newInstance(java.lang.String schemaLanguage,
+     * java.lang.String factoryClassName, java.lang.ClassLoader classLoader)
+     * factoryClassName is null , should throw IllegalArgumentException
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
+    public void testNewInstanceWithNullFactoryClassName(String factoryClassName, ClassLoader classLoader) {
+
+        SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI, factoryClassName, classLoader);
+    }
+
+    /*
+     * test for SchemaFactory.newInstance(java.lang.String schemaLanguage,
+     * java.lang.String factoryClassName, java.lang.ClassLoader classLoader)
+     * schemaLanguage is null , should throw NPE
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNewInstanceWithNullSchemaLanguage() {
+        SchemaFactory.newInstance(null, SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader());
+    }
+
+    /*
+     * test for SchemaFactory.newInstance(java.lang.String schemaLanguage,
+     * java.lang.String factoryClassName, java.lang.ClassLoader classLoader)
+     * schemaLanguage is empty , should throw IllegalArgumentException
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testNewInstanceWithEmptySchemaLanguage() {
+        SchemaFactory.newInstance("", SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader());
+    }
+
 
     @Test(expectedExceptions = SAXParseException.class)
     public void testNewSchemaDefault() throws SAXException, IOException {
@@ -287,6 +342,8 @@ public class SchemaFactoryTest {
     }
 
     private static final String UNRECOGNIZED_NAME = "http://xml.org/sax/features/namespace-prefixes";
+
+    private static final String SCHEMA_FACTORY_CLASSNAME = "com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory";
 
     private SchemaFactory sf;
     private byte[] xsd1;

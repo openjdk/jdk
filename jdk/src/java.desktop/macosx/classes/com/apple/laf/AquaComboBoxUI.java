@@ -275,7 +275,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
         actionMap.put("aquaSelectNext", highlightNextAction);
         actionMap.put("aquaSelectPrevious", highlightPreviousAction);
-        actionMap.put("aquaEnterPressed", triggerSelectionAction);
+        actionMap.put("enterPressed", triggerSelectionAction);
         actionMap.put("aquaSpacePressed", toggleSelectionAction);
 
         actionMap.put("aquaSelectHome", highlightFirstAction);

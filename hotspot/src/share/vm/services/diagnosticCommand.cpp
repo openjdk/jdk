@@ -26,6 +26,7 @@
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/diagnosticArgument.hpp"

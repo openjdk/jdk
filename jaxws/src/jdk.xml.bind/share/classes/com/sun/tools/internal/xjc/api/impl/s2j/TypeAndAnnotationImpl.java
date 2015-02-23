@@ -36,7 +36,7 @@ import com.sun.tools.internal.xjc.generator.annotation.spec.XmlJavaTypeAdapterWr
 import com.sun.tools.internal.xjc.model.CAdapter;
 import com.sun.tools.internal.xjc.model.TypeUse;
 import com.sun.tools.internal.xjc.model.nav.NType;
-import static com.sun.tools.internal.xjc.model.Aspect.EXPOSED;
+import static com.sun.tools.internal.xjc.outline.Aspect.EXPOSED;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapterMarker;
 
