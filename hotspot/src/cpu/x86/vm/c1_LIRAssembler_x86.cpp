@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1394,50 +1394,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_klass_not_null(dest->as_register());
     }
 #endif
-  }
-}
-
-
-void LIR_Assembler::prefetchr(LIR_Opr src) {
-  LIR_Address* addr = src->as_address_ptr();
-  Address from_addr = as_Address(addr);
-
-  if (VM_Version::supports_sse()) {
-    switch (ReadPrefetchInstr) {
-      case 0:
-        __ prefetchnta(from_addr); break;
-      case 1:
-        __ prefetcht0(from_addr); break;
-      case 2:
-        __ prefetcht2(from_addr); break;
-      default:
-        ShouldNotReachHere(); break;
-    }
-  } else if (VM_Version::supports_3dnow_prefetch()) {
-    __ prefetchr(from_addr);
-  }
-}
-
-
-void LIR_Assembler::prefetchw(LIR_Opr src) {
-  LIR_Address* addr = src->as_address_ptr();
-  Address from_addr = as_Address(addr);
-
-  if (VM_Version::supports_sse()) {
-    switch (AllocatePrefetchInstr) {
-      case 0:
-        __ prefetchnta(from_addr); break;
-      case 1:
-        __ prefetcht0(from_addr); break;
-      case 2:
-        __ prefetcht2(from_addr); break;
-      case 3:
-        __ prefetchw(from_addr); break;
-      default:
-        ShouldNotReachHere(); break;
-    }
-  } else if (VM_Version::supports_3dnow_prefetch()) {
-    __ prefetchw(from_addr);
   }
 }
 

@@ -200,9 +200,6 @@ public class Symtab {
      */
     public final VarSymbol lengthVar;
 
-    /** The null check operator. */
-    public final OperatorSymbol nullcheck;
-
     /** The symbol representing the final finalize method on enums */
     public final MethodSymbol enumFinalFinalize;
 
@@ -216,10 +213,6 @@ public class Symtab {
     /** The name of the class that belongs to a basix type tag.
      */
     public final Name[] boxedName = new Name[TypeTag.getTypeTagCount()];
-
-    /** A set containing all operator names.
-     */
-    public final Set<Name> operatorNames = new HashSet<>();
 
     /** A hashtable containing the encountered top-level and member classes,
      *  indexed by flat names. The table does not contain local classes.
@@ -254,85 +247,6 @@ public class Symtab {
     /** The class symbol that owns all predefined symbols.
      */
     public final ClassSymbol predefClass;
-
-    /** Enter a constant into symbol table.
-     *  @param name   The constant's name.
-     *  @param type   The constant's type.
-     */
-    private VarSymbol enterConstant(String name, Type type) {
-        VarSymbol c = new VarSymbol(
-            PUBLIC | STATIC | FINAL,
-            names.fromString(name),
-            type,
-            predefClass);
-        c.setData(type.constValue());
-        predefClass.members().enter(c);
-        return c;
-    }
-
-    /** Enter a binary operation into symbol table.
-     *  @param name     The name of the operator.
-     *  @param left     The type of the left operand.
-     *  @param right    The type of the left operand.
-     *  @param res      The operation's result type.
-     *  @param opcode   The operation's bytecode instruction.
-     */
-    private void enterBinop(String name,
-                            Type left, Type right, Type res,
-                            int opcode) {
-        predefClass.members().enter(
-            new OperatorSymbol(
-                makeOperatorName(name),
-                new MethodType(List.of(left, right), res,
-                               List.<Type>nil(), methodClass),
-                opcode,
-                predefClass));
-    }
-
-    /** Enter a binary operation, as above but with two opcodes,
-     *  which get encoded as
-     *  {@code (opcode1 << ByteCodeTags.preShift) + opcode2 }.
-     *  @param opcode1     First opcode.
-     *  @param opcode2     Second opcode.
-     */
-    private void enterBinop(String name,
-                            Type left, Type right, Type res,
-                            int opcode1, int opcode2) {
-        enterBinop(
-            name, left, right, res, (opcode1 << ByteCodes.preShift) | opcode2);
-    }
-
-    /** Enter a unary operation into symbol table.
-     *  @param name     The name of the operator.
-     *  @param arg      The type of the operand.
-     *  @param res      The operation's result type.
-     *  @param opcode   The operation's bytecode instruction.
-     */
-    private OperatorSymbol enterUnop(String name,
-                                     Type arg,
-                                     Type res,
-                                     int opcode) {
-        OperatorSymbol sym =
-            new OperatorSymbol(makeOperatorName(name),
-                               new MethodType(List.of(arg),
-                                              res,
-                                              List.<Type>nil(),
-                                              methodClass),
-                               opcode,
-                               predefClass);
-        predefClass.members().enter(sym);
-        return sym;
-    }
-
-    /**
-     * Create a new operator name from corresponding String representation
-     * and add the name to the set of known operator names.
-     */
-    private Name makeOperatorName(String name) {
-        Name opName = names.fromString(name);
-        operatorNames.add(opName);
-        return opName;
-    }
 
     /** Enter a class into symbol table.
      *  @param s The name of the class.
@@ -591,163 +505,6 @@ public class Symtab {
                            List.<Type>nil(), methodClass),
             arrayClass);
         arrayClass.members().enter(arrayCloneMethod);
-
-        // Enter operators.
-        /*  Internally we use +++, --- for unary +, - to reduce +, - operators
-         *  overloading
-         */
-        enterUnop("+++", doubleType, doubleType, nop);
-        enterUnop("+++", floatType, floatType, nop);
-        enterUnop("+++", longType, longType, nop);
-        enterUnop("+++", intType, intType, nop);
-
-        enterUnop("---", doubleType, doubleType, dneg);
-        enterUnop("---", floatType, floatType, fneg);
-        enterUnop("---", longType, longType, lneg);
-        enterUnop("---", intType, intType, ineg);
-
-        enterUnop("~", longType, longType, lxor);
-        enterUnop("~", intType, intType, ixor);
-
-        enterUnop("++", doubleType, doubleType, dadd);
-        enterUnop("++", floatType, floatType, fadd);
-        enterUnop("++", longType, longType, ladd);
-        enterUnop("++", intType, intType, iadd);
-        enterUnop("++", charType, charType, iadd);
-        enterUnop("++", shortType, shortType, iadd);
-        enterUnop("++", byteType, byteType, iadd);
-
-        enterUnop("--", doubleType, doubleType, dsub);
-        enterUnop("--", floatType, floatType, fsub);
-        enterUnop("--", longType, longType, lsub);
-        enterUnop("--", intType, intType, isub);
-        enterUnop("--", charType, charType, isub);
-        enterUnop("--", shortType, shortType, isub);
-        enterUnop("--", byteType, byteType, isub);
-
-        enterUnop("!", booleanType, booleanType, bool_not);
-        nullcheck = enterUnop("<*nullchk*>", objectType, objectType, nullchk);
-
-        // string concatenation
-        enterBinop("+", stringType, objectType, stringType, string_add);
-        enterBinop("+", objectType, stringType, stringType, string_add);
-        enterBinop("+", stringType, stringType, stringType, string_add);
-        enterBinop("+", stringType, intType, stringType, string_add);
-        enterBinop("+", stringType, longType, stringType, string_add);
-        enterBinop("+", stringType, floatType, stringType, string_add);
-        enterBinop("+", stringType, doubleType, stringType, string_add);
-        enterBinop("+", stringType, booleanType, stringType, string_add);
-        enterBinop("+", stringType, botType, stringType, string_add);
-        enterBinop("+", intType, stringType, stringType, string_add);
-        enterBinop("+", longType, stringType, stringType, string_add);
-        enterBinop("+", floatType, stringType, stringType, string_add);
-        enterBinop("+", doubleType, stringType, stringType, string_add);
-        enterBinop("+", booleanType, stringType, stringType, string_add);
-        enterBinop("+", botType, stringType, stringType, string_add);
-
-        // these errors would otherwise be matched as string concatenation
-        enterBinop("+", botType, botType, botType, error);
-        enterBinop("+", botType, intType, botType, error);
-        enterBinop("+", botType, longType, botType, error);
-        enterBinop("+", botType, floatType, botType, error);
-        enterBinop("+", botType, doubleType, botType, error);
-        enterBinop("+", botType, booleanType, botType, error);
-        enterBinop("+", botType, objectType, botType, error);
-        enterBinop("+", intType, botType, botType, error);
-        enterBinop("+", longType, botType, botType, error);
-        enterBinop("+", floatType, botType, botType, error);
-        enterBinop("+", doubleType, botType, botType, error);
-        enterBinop("+", booleanType, botType, botType, error);
-        enterBinop("+", objectType, botType, botType, error);
-
-        enterBinop("+", doubleType, doubleType, doubleType, dadd);
-        enterBinop("+", floatType, floatType, floatType, fadd);
-        enterBinop("+", longType, longType, longType, ladd);
-        enterBinop("+", intType, intType, intType, iadd);
-
-        enterBinop("-", doubleType, doubleType, doubleType, dsub);
-        enterBinop("-", floatType, floatType, floatType, fsub);
-        enterBinop("-", longType, longType, longType, lsub);
-        enterBinop("-", intType, intType, intType, isub);
-
-        enterBinop("*", doubleType, doubleType, doubleType, dmul);
-        enterBinop("*", floatType, floatType, floatType, fmul);
-        enterBinop("*", longType, longType, longType, lmul);
-        enterBinop("*", intType, intType, intType, imul);
-
-        enterBinop("/", doubleType, doubleType, doubleType, ddiv);
-        enterBinop("/", floatType, floatType, floatType, fdiv);
-        enterBinop("/", longType, longType, longType, ldiv);
-        enterBinop("/", intType, intType, intType, idiv);
-
-        enterBinop("%", doubleType, doubleType, doubleType, dmod);
-        enterBinop("%", floatType, floatType, floatType, fmod);
-        enterBinop("%", longType, longType, longType, lmod);
-        enterBinop("%", intType, intType, intType, imod);
-
-        enterBinop("&", booleanType, booleanType, booleanType, iand);
-        enterBinop("&", longType, longType, longType, land);
-        enterBinop("&", intType, intType, intType, iand);
-
-        enterBinop("|", booleanType, booleanType, booleanType, ior);
-        enterBinop("|", longType, longType, longType, lor);
-        enterBinop("|", intType, intType, intType, ior);
-
-        enterBinop("^", booleanType, booleanType, booleanType, ixor);
-        enterBinop("^", longType, longType, longType, lxor);
-        enterBinop("^", intType, intType, intType, ixor);
-
-        enterBinop("<<", longType, longType, longType, lshll);
-        enterBinop("<<", intType, longType, intType, ishll);
-        enterBinop("<<", longType, intType, longType, lshl);
-        enterBinop("<<", intType, intType, intType, ishl);
-
-        enterBinop(">>", longType, longType, longType, lshrl);
-        enterBinop(">>", intType, longType, intType, ishrl);
-        enterBinop(">>", longType, intType, longType, lshr);
-        enterBinop(">>", intType, intType, intType, ishr);
-
-        enterBinop(">>>", longType, longType, longType, lushrl);
-        enterBinop(">>>", intType, longType, intType, iushrl);
-        enterBinop(">>>", longType, intType, longType, lushr);
-        enterBinop(">>>", intType, intType, intType, iushr);
-
-        enterBinop("<", doubleType, doubleType, booleanType, dcmpg, iflt);
-        enterBinop("<", floatType, floatType, booleanType, fcmpg, iflt);
-        enterBinop("<", longType, longType, booleanType, lcmp, iflt);
-        enterBinop("<", intType, intType, booleanType, if_icmplt);
-
-        enterBinop(">", doubleType, doubleType, booleanType, dcmpl, ifgt);
-        enterBinop(">", floatType, floatType, booleanType, fcmpl, ifgt);
-        enterBinop(">", longType, longType, booleanType, lcmp, ifgt);
-        enterBinop(">", intType, intType, booleanType, if_icmpgt);
-
-        enterBinop("<=", doubleType, doubleType, booleanType, dcmpg, ifle);
-        enterBinop("<=", floatType, floatType, booleanType, fcmpg, ifle);
-        enterBinop("<=", longType, longType, booleanType, lcmp, ifle);
-        enterBinop("<=", intType, intType, booleanType, if_icmple);
-
-        enterBinop(">=", doubleType, doubleType, booleanType, dcmpl, ifge);
-        enterBinop(">=", floatType, floatType, booleanType, fcmpl, ifge);
-        enterBinop(">=", longType, longType, booleanType, lcmp, ifge);
-        enterBinop(">=", intType, intType, booleanType, if_icmpge);
-
-        enterBinop("==", objectType, objectType, booleanType, if_acmpeq);
-        enterBinop("==", booleanType, booleanType, booleanType, if_icmpeq);
-        enterBinop("==", doubleType, doubleType, booleanType, dcmpl, ifeq);
-        enterBinop("==", floatType, floatType, booleanType, fcmpl, ifeq);
-        enterBinop("==", longType, longType, booleanType, lcmp, ifeq);
-        enterBinop("==", intType, intType, booleanType, if_icmpeq);
-
-        enterBinop("!=", objectType, objectType, booleanType, if_acmpne);
-        enterBinop("!=", booleanType, booleanType, booleanType, if_icmpne);
-        enterBinop("!=", doubleType, doubleType, booleanType, dcmpl, ifne);
-        enterBinop("!=", floatType, floatType, booleanType, fcmpl, ifne);
-        enterBinop("!=", longType, longType, booleanType, lcmp, ifne);
-        enterBinop("!=", intType, intType, booleanType, if_icmpne);
-
-        enterBinop("&&", booleanType, booleanType, booleanType, bool_and);
-        enterBinop("||", booleanType, booleanType, booleanType, bool_or);
     }
 
     /** Define a new class given its name and owner.

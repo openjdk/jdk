@@ -141,9 +141,6 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         macosx-all
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
 
-# 8069286
-java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
-
 ############################################################################
 
 # jdk_jmx
@@ -351,8 +348,5 @@ sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
 
 # 8064572 8060736 8062938
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
-
-# 8060088
-com/sun/tracing/BasicWithSecurityMgr.java                       generic-all
 
 ############################################################################

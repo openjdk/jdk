@@ -51,7 +51,10 @@ class LambdaFormEditor {
     static LambdaFormEditor lambdaFormEditor(LambdaForm lambdaForm) {
         // TO DO:  Consider placing intern logic here, to cut down on duplication.
         // lambdaForm = findPreexistingEquivalent(lambdaForm)
-        return new LambdaFormEditor(lambdaForm);
+
+        // Always use uncustomized version for editing.
+        // It helps caching and customized LambdaForms reuse transformCache field to keep a link to uncustomized version.
+        return new LambdaFormEditor(lambdaForm.uncustomize());
     }
 
     /** A description of a cached transform, possibly associated with the result of the transform.

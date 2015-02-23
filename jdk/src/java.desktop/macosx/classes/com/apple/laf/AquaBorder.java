@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,9 @@ public abstract class AquaBorder implements Border, UIResource {
         painter.state.set(size);
     }
 
+    @Override
     public Insets getBorderInsets(final Component c) {
-        return sizeVariant.margins;
+        return (Insets) sizeVariant.margins.clone();
     }
 
     protected AquaBorder deriveBorderForSize(final Size size) {
@@ -130,8 +131,10 @@ public abstract class AquaBorder implements Border, UIResource {
         return (focusable != null && focusable instanceof JComponent && ((JComponent)focusable).hasFocus());
     }
 
+    @Override
     public boolean isBorderOpaque() { return false; }
 
+    @Override
     public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
         painter.paint(g, c, x, y, w, h);
     }

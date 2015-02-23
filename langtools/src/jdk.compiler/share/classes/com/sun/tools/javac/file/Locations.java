@@ -678,27 +678,41 @@ public class Locations {
                     boolean haveJImageFiles =
                             files.anyMatch(f -> f.getFileName().toString().endsWith(".jimage"));
                     if (haveJImageFiles) {
-                        return Collections.singleton(JRT_MARKER_FILE);
+                        return addAdditionalBootEntries(Collections.singleton(JRT_MARKER_FILE));
                     }
                 }
-            }
-
-            // Temporary: if no .jimage files, return individual modules
-            if (Files.exists(libModules.resolve("java.base"))) {
-                return Files.list(libModules)
-                            .map(d -> d.resolve("classes"))
-                            .collect(Collectors.toList());
             }
 
             // Exploded module image
             Path modules = Paths.get(java_home, "modules");
             if (Files.isDirectory(modules.resolve("java.base"))) {
-                return Files.list(modules)
-                            .collect(Collectors.toList());
+                try (Stream<Path> listedModules = Files.list(modules)) {
+                    return addAdditionalBootEntries(listedModules.collect(Collectors.toList()));
+                }
             }
 
             // not a modular image that we know about
             return null;
+        }
+
+        //ensure bootclasspath prepends/appends are reflected in the systemClasses
+        private Collection<Path> addAdditionalBootEntries(Collection<Path> modules) throws IOException {
+            String files = System.getProperty("sun.boot.class.path");
+
+            if (files == null)
+                return modules;
+
+            Set<Path> paths = new LinkedHashSet<>();
+
+            for (String s : files.split(Pattern.quote(File.pathSeparator))) {
+                if (s.endsWith(".jimage")) {
+                    paths.addAll(modules);
+                } else if (!s.isEmpty()) {
+                    paths.add(Paths.get(s));
+                }
+            }
+
+            return paths;
         }
 
         private void lazy() {

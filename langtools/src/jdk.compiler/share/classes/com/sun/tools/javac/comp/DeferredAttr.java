@@ -1386,7 +1386,7 @@ public class DeferredAttr extends JCTree.Visitor {
                 Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
                     return rec == null ?
                         rs.findFun(env, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
-                        rs.findMethod(env, site, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired(), false);
+                        rs.findMethod(env, site, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired());
                 }
                 @Override
                 Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
