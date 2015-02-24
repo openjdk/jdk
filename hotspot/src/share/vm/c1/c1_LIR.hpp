@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_C1_C1_LIR_HPP
 #define SHARE_VM_C1_C1_LIR_HPP
 
+#include "c1/c1_Defs.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "oops/method.hpp"
 
@@ -561,7 +562,13 @@ class LIR_Address: public LIR_OprPtr {
   virtual BasicType type() const                 { return _type; }
   virtual void print_value_on(outputStream* out) const PRODUCT_RETURN;
 
-  void verify() const PRODUCT_RETURN;
+  void verify0() const PRODUCT_RETURN;
+#if defined(LIR_ADDRESS_PD_VERIFY) && !defined(PRODUCT)
+  void pd_verify() const;
+  void verify() const { pd_verify(); }
+#else
+  void verify() const { verify0(); }
+#endif
 
   static Scale scale(BasicType type);
 };
@@ -610,7 +617,7 @@ class LIR_OprFact: public AllStatic {
                                                                              LIR_OprDesc::float_type           |
                                                                              LIR_OprDesc::fpu_register         |
                                                                              LIR_OprDesc::single_size); }
-#if defined(ARM)
+#if defined(ARM32)
   static LIR_Opr double_fpu(int reg1, int reg2)    { return (LIR_Opr)((reg1 << LIR_OprDesc::reg1_shift) | (reg2 << LIR_OprDesc::reg2_shift) | LIR_OprDesc::double_type | LIR_OprDesc::fpu_register | LIR_OprDesc::double_size); }
   static LIR_Opr single_softfp(int reg)            { return (LIR_Opr)((reg  << LIR_OprDesc::reg1_shift) |                                     LIR_OprDesc::float_type  | LIR_OprDesc::cpu_register | LIR_OprDesc::single_size); }
   static LIR_Opr double_softfp(int reg1, int reg2) { return (LIR_Opr)((reg1 << LIR_OprDesc::reg1_shift) | (reg2 << LIR_OprDesc::reg2_shift) | LIR_OprDesc::double_type | LIR_OprDesc::cpu_register | LIR_OprDesc::double_size); }
