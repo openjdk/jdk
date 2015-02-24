@@ -59,7 +59,7 @@ public class bug6824395 {
                 editorPaneLayer.setUI(layerUI);
 
                 scrollPane = new JScrollPane(editorPaneLayer);
-
+                scrollPane.setViewportBorder(null);
                 scrollPane.setPreferredSize(new Dimension(200, 250));
                 frame.add(scrollPane);
 

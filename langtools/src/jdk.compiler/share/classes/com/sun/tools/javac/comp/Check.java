@@ -83,7 +83,6 @@ public class Check {
     private boolean warnOnSyntheticConflicts;
     private boolean suppressAbortOnBadClassFile;
     private boolean enableSunApiLintControl;
-    private final TreeInfo treeinfo;
     private final JavaFileManager fileManager;
     private final Profile profile;
     private final boolean warnOnAccessToSensitiveMembers;
@@ -121,7 +120,6 @@ public class Check {
         diags = JCDiagnostic.Factory.instance(context);
         Options options = Options.instance(context);
         lint = Lint.instance(context);
-        treeinfo = TreeInfo.instance(context);
         fileManager = context.get(JavaFileManager.class);
 
         Source source = Source.instance(context);
@@ -3263,30 +3261,6 @@ public class Check {
 /* *************************************************************************
  * Miscellaneous
  **************************************************************************/
-
-    /**
-     * Return the opcode of the operator but emit an error if it is an
-     * error.
-     * @param pos        position for error reporting.
-     * @param operator   an operator
-     * @param tag        a tree tag
-     * @param left       type of left hand side
-     * @param right      type of right hand side
-     */
-    int checkOperator(DiagnosticPosition pos,
-                       OperatorSymbol operator,
-                       JCTree.Tag tag,
-                       Type left,
-                       Type right) {
-        if (operator.opcode == ByteCodes.error) {
-            log.error(pos,
-                      "operator.cant.be.applied.1",
-                      treeinfo.operatorName(tag),
-                      left, right);
-        }
-        return operator.opcode;
-    }
-
 
     /**
      *  Check for division by integer constant zero

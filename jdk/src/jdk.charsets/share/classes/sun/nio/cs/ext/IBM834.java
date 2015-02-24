@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import sun.nio.cs.DoubleByte;
 import static sun.nio.cs.CharsetMapping.*;
 
 // EBCDIC DBCS-only Korean

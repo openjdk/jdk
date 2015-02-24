@@ -2599,8 +2599,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   // bypassing each other.  Happens after null checks, so the
   // exception paths do not take memory state from the memory barrier,
   // so there's no problems making a strong assert about mixing users
-  // of safe & unsafe memory.  Otherwise fails in a CTW of rt.jar
-  // around 5701, class sun/reflect/UnsafeBooleanFieldAccessorImpl.
+  // of safe & unsafe memory.
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
 
   if (!is_store) {

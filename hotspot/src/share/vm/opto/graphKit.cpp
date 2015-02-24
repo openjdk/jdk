@@ -3742,6 +3742,17 @@ void GraphKit::final_sync(IdealKit& ideal) {
   sync_kit(ideal);
 }
 
+Node* GraphKit::byte_map_base_node() {
+  // Get base of card map
+  CardTableModRefBS* ct = (CardTableModRefBS*)(Universe::heap()->barrier_set());
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust users of this code");
+  if (ct->byte_map_base != NULL) {
+    return makecon(TypeRawPtr::make((address)ct->byte_map_base));
+  } else {
+    return null();
+  }
+}
+
 // vanilla/CMS post barrier
 // Insert a write-barrier store.  This is to let generational GC work; we have
 // to flag all oop-stores before the next GC point.

@@ -28,6 +28,8 @@ package sun.nio.cs.ext;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import sun.nio.cs.DoubleByte;
+import sun.nio.cs.*;
 
 public class ISO2022_JP_2 extends ISO2022_JP
 {

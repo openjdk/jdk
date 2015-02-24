@@ -74,6 +74,7 @@ public class Lower extends TreeTranslator {
     private final Log log;
     private final Symtab syms;
     private final Resolve rs;
+    private final Operators operators;
     private final Check chk;
     private final Attr attr;
     private TreeMaker make;
@@ -95,6 +96,7 @@ public class Lower extends TreeTranslator {
         log = Log.instance(context);
         syms = Symtab.instance(context);
         rs = Resolve.instance(context);
+        operators = Operators.instance(context);
         chk = Check.instance(context);
         attr = Attr.instance(context);
         make = TreeMaker.instance(context);
@@ -575,8 +577,7 @@ public class Lower extends TreeTranslator {
      */
     JCUnary makeUnary(JCTree.Tag optag, JCExpression arg) {
         JCUnary tree = make.Unary(optag, arg);
-        tree.operator = rs.resolveUnaryOperator(
-            make_pos, optag, attrEnv, arg.type);
+        tree.operator = operators.resolveUnary(tree, optag, arg.type);
         tree.type = tree.operator.type.getReturnType();
         return tree;
     }
@@ -588,8 +589,7 @@ public class Lower extends TreeTranslator {
      */
     JCBinary makeBinary(JCTree.Tag optag, JCExpression lhs, JCExpression rhs) {
         JCBinary tree = make.Binary(optag, lhs, rhs);
-        tree.operator = rs.resolveBinaryOperator(
-            make_pos, optag, attrEnv, lhs.type, rhs.type);
+        tree.operator = operators.resolveBinary(tree, optag, lhs.type, rhs.type);
         tree.type = tree.operator.type.getReturnType();
         return tree;
     }
@@ -601,8 +601,7 @@ public class Lower extends TreeTranslator {
      */
     JCAssignOp makeAssignop(JCTree.Tag optag, JCTree lhs, JCTree rhs) {
         JCAssignOp tree = make.Assignop(optag, lhs, rhs);
-        tree.operator = rs.resolveBinaryOperator(
-            make_pos, tree.getTag().noAssignOp(), attrEnv, lhs.type, rhs.type);
+        tree.operator = operators.resolveBinary(tree, tree.getTag().noAssignOp(), lhs.type, rhs.type);
         tree.type = lhs.type;
         return tree;
     }
@@ -2644,7 +2643,6 @@ public class Lower extends TreeTranslator {
 
             MethodSymbol m = tree.sym;
             tree.params = tree.params.prepend(ordParam).prepend(nameParam);
-            incrementParamTypeAnnoIndexes(m, 2);
 
             m.extraParams = m.extraParams.prepend(ordParam.sym);
             m.extraParams = m.extraParams.prepend(nameParam.sym);
@@ -2665,17 +2663,6 @@ public class Lower extends TreeTranslator {
         } finally {
             currentMethodDef = prevMethodDef;
             currentMethodSym = prevMethodSym;
-        }
-    }
-    //where
-    private void incrementParamTypeAnnoIndexes(MethodSymbol m,
-                                               int amount) {
-        for (final Attribute.TypeCompound anno : m.getRawTypeAttributes()) {
-            // Increment the parameter_index of any existing formal
-            // parameter annotations.
-            if (anno.position.type == TargetType.METHOD_FORMAL_PARAMETER) {
-                anno.position.parameter_index += amount;
-            }
         }
     }
 
@@ -2711,7 +2698,6 @@ public class Lower extends TreeTranslator {
             tree.params = tree.params.appendList(fvdefs);
             if (currentClass.hasOuterInstance()) {
                 tree.params = tree.params.prepend(otdef);
-                incrementParamTypeAnnoIndexes(m, 1);
             }
 
             // If this is an initial constructor, i.e., it does not start with
@@ -3206,9 +3192,8 @@ public class Lower extends TreeTranslator {
                         // tree.lhs.  However, we can still get the
                         // unerased type of tree.lhs as it is stored
                         // in tree.type in Attr.
-                        Symbol newOperator = rs.resolveBinaryOperator(tree.pos(),
+                        Symbol newOperator = operators.resolveBinary(tree,
                                                                       newTag,
-                                                                      attrEnv,
                                                                       tree.type,
                                                                       tree.rhs.type);
                         JCExpression expr = (JCExpression)lhs;

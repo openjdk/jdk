@@ -176,42 +176,9 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
         staticWrapper = ORBUtilSystemException.get(
             CORBALogDomains.RPC_PRESENTATION ) ;
 
-        boolean useDynamicStub =
-            ((Boolean)AccessController.doPrivileged(
-                new PrivilegedAction() {
-                    public java.lang.Object run() {
-                        return Boolean.valueOf( Boolean.getBoolean (
-                            ORBConstants.USE_DYNAMIC_STUB_PROPERTY ) ) ;
-                    }
-                }
-            )).booleanValue() ;
+        boolean useDynamicStub = false;
 
-        PresentationManager.StubFactoryFactory dynamicStubFactoryFactory =
-            (PresentationManager.StubFactoryFactory)AccessController.doPrivileged(
-                new PrivilegedAction() {
-                    public java.lang.Object run() {
-                        PresentationManager.StubFactoryFactory sff =
-                            PresentationDefaults.getProxyStubFactoryFactory() ;
-
-                        String className = System.getProperty(
-                            ORBConstants.DYNAMIC_STUB_FACTORY_FACTORY_CLASS,
-                            "com.sun.corba.se.impl.presentation.rmi.bcel.StubFactoryFactoryBCELImpl" ) ;
-
-                        try {
-                            // First try the configured class name, if any
-                            Class<?> cls =
-                                sun.corba.SharedSecrets.getJavaCorbaAccess().loadClass(className);
-                            sff = (PresentationManager.StubFactoryFactory)cls.newInstance();
-                        } catch (Exception exc) {
-                            // Use the default. Log the error as a warning.
-                            staticWrapper.errorInSettingDynamicStubFactoryFactory(
-                                exc, className ) ;
-                        }
-
-                        return sff ;
-                    }
-                }
-            ) ;
+        PresentationManager.StubFactoryFactory dynamicStubFactoryFactory = null;
 
         PresentationManager pm = new PresentationManagerImpl( useDynamicStub ) ;
         pm.setStubFactoryFactory( false,
