@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     private static Dimension WITH_ACCELERATOR_PREF_SIZE = new Dimension(650, 450);
     private static Dimension PREF_SIZE = new Dimension(350, 450);
-    private static Dimension MIN_SIZE = new Dimension(200, 300);
-
+    private static final int MIN_WIDTH = 200;
+    private static final int MIN_HEIGHT = 300;
     private static Dimension PREF_ACC_SIZE = new Dimension(10, 10);
     private static Dimension ZERO_ACC_SIZE = new Dimension(1, 1);
 
@@ -628,6 +628,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         return scrollpane;
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension prefSize =
             (getFileChooser().getAccessory() != null) ? WITH_ACCELERATOR_PREF_SIZE : PREF_SIZE;
@@ -640,10 +641,12 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    public Dimension getMinimumSize(JComponent x)  {
-        return MIN_SIZE;
+    @Override
+    public Dimension getMinimumSize(JComponent x) {
+        return new Dimension(MIN_WIDTH, MIN_HEIGHT);
     }
 
+    @Override
     public Dimension getMaximumSize(JComponent x) {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }

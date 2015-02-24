@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "gc_interface/gcCause.hpp"
 #include "gc_implementation/shared/gcWhen.hpp"
 #include "memory/allocation.hpp"
-#include "memory/barrierSet.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
@@ -576,13 +575,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     print_on(st);
   }
 
-  virtual void print_on_error(outputStream* st) const {
-    st->print_cr("Heap:");
-    print_extended_on(st);
-    st->cr();
-
-    _barrier_set->print_on(st);
-  }
+  virtual void print_on_error(outputStream* st) const;
 
   // Print all GC threads (other than the VM thread)
   // used by this heap.

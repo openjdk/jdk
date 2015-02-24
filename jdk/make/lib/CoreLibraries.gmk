@@ -271,6 +271,11 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   # Staticically link with c runtime on windows.
   LIBJLI_CFLAGS := $(filter-out -MD, $(LIBJLI_CFLAGS))
   LIBJLI_OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE)
+  # Supply the name of the C runtime lib.
+  LIBJLI_CFLAGS += -DMSVCR_DLL_NAME='"$(notdir $(MSVCR_DLL))"'
+  ifneq ($(MSVCP_DLL), )
+    LIBJLI_CFLAGS += -DMSVCP_DLL_NAME='"$(notdir $(MSVCP_DLL))"'
+  endif
 else
   LIBJLI_OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE)/jli
 endif

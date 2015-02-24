@@ -1,0 +1,16 @@
+#
+#   generate these charsets into sun.nio.cs
+#
+GBK
+Johab
+MS1255
+MS1256
+MS1258
+MS874
+MS932
+JIS_X_0201 # JIS_X_0201 is used by MS932 in its contains() method
+SJIS       # SJIS must go together with MS932 to support sun.nio.cs.map
+MS936
+MS949
+MS950
+MS950_HKSCS_XP
