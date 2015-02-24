@@ -114,7 +114,9 @@ needs_jre = \
   compiler/c2/7047069/Test7047069.java \
   runtime/6294277/SourceDebugExtension.java \
   runtime/ClassFile/JsrRewriting.java \
-  runtime/ClassFile/OomWhileParsingRepeatedJsr.java
+  runtime/ClassFile/OomWhileParsingRepeatedJsr.java \
+  runtime/SharedArchiveFile/LimitSharedSizes.java \
+  runtime/SharedArchiveFile/SpaceUtilizationCheck.java
 
 # Compact 3 adds further tests to compact2
 #
