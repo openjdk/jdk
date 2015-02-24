@@ -122,7 +122,7 @@ class CodeCache : AllStatic {
   static void initialize();
 
   // Allocation/administration
-  static CodeBlob* allocate(int size, int code_blob_type); // allocates a new CodeBlob
+  static CodeBlob* allocate(int size, int code_blob_type, bool strict = false); // allocates a new CodeBlob
   static void commit(CodeBlob* cb);                        // called when the allocated CodeBlob has been filled
   static int  alignment_unit();                            // guaranteed alignment of all CodeBlobs
   static int  alignment_offset();                          // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
