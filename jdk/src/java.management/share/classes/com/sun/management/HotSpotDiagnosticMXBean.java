@@ -45,7 +45,7 @@ import java.lang.management.PlatformManagedObject;
  * All methods throw a {@code NullPointerException} if any input argument is
  * {@code null} unless it's stated otherwise.
  *
- * @see ManagementFactory#getPlatformMXBeans(Class)
+ * @see java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
  */
 @jdk.Exported
 public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
