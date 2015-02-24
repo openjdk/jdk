@@ -2032,7 +2032,7 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
     // Hopefully, compiler will optimize for powers of 2.
     Node *ctrl = get_ctrl(main_limit);
     Node *stride = cl->stride();
-    Node *init = cl->init_trip();
+    Node *init = cl->init_trip()->uncast();
     Node *span = new SubINode(main_limit,init);
     register_new_node(span,ctrl);
     Node *rndup = _igvn.intcon(stride_con + ((stride_con>0)?-1:1));
