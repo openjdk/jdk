@@ -455,7 +455,6 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
           new_method->name()->as_C_string(),
           new_method->signature()->as_C_string()));
       }
-
       return true;
     }
 
@@ -483,7 +482,6 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
         new_method->name()->as_C_string(),
         new_method->signature()->as_C_string()));
     }
-
     return true;
   }
 
@@ -510,36 +508,33 @@ bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
           (!f1_as_method()->is_old() && !f1_as_method()->is_obsolete())));
 }
 
-bool ConstantPoolCacheEntry::is_interesting_method_entry(Klass* k) {
+Method* ConstantPoolCacheEntry::get_interesting_method_entry(Klass* k) {
   if (!is_method_entry()) {
     // not a method entry so not interesting by default
-    return false;
+    return NULL;
   }
-
   Method* m = NULL;
   if (is_vfinal()) {
     // virtual and final so _f2 contains method ptr instead of vtable index
     m = f2_as_vfinal_method();
   } else if (is_f1_null()) {
     // NULL _f1 means this is a virtual entry so also not interesting
-    return false;
+    return NULL;
   } else {
     if (!(_f1->is_method())) {
       // _f1 can also contain a Klass* for an interface
-      return false;
+      return NULL;
     }
     m = f1_as_method();
   }
-
   assert(m != NULL && m->is_method(), "sanity check");
   if (m == NULL || !m->is_method() || (k != NULL && m->method_holder() != k)) {
     // robustness for above sanity checks or method is not in
     // the interesting class
-    return false;
+    return NULL;
   }
-
   // the method is in the interesting class so the entry is interesting
-  return true;
+  return m;
 }
 #endif // INCLUDE_JVMTI
 
@@ -616,7 +611,7 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
 // If any entry of this ConstantPoolCache points to any of
 // old_methods, replace it with the corresponding new_method.
 void ConstantPoolCache::adjust_method_entries(Method** old_methods, Method** new_methods,
-                                                     int methods_length, bool * trace_name_printed) {
+                                              int methods_length, bool * trace_name_printed) {
 
   if (methods_length == 0) {
     // nothing to do if there are no methods
@@ -627,7 +622,7 @@ void ConstantPoolCache::adjust_method_entries(Method** old_methods, Method** new
   Klass* old_holder = old_methods[0]->method_holder();
 
   for (int i = 0; i < length(); i++) {
-    if (!entry_at(i)->is_interesting_method_entry(old_holder)) {
+    if (entry_at(i)->get_interesting_method_entry(old_holder) == NULL) {
       // skip uninteresting methods
       continue;
     }
@@ -651,10 +646,33 @@ void ConstantPoolCache::adjust_method_entries(Method** old_methods, Method** new
   }
 }
 
+// If any entry of this ConstantPoolCache points to any of
+// old_methods, replace it with the corresponding new_method.
+void ConstantPoolCache::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
+  for (int i = 0; i < length(); i++) {
+    ConstantPoolCacheEntry* entry = entry_at(i);
+    Method* old_method = entry->get_interesting_method_entry(holder);
+    if (old_method == NULL || !old_method->is_old()) {
+      continue; // skip uninteresting entries
+    }
+    if (old_method->is_deleted()) {
+      // clean up entries with deleted methods
+      entry->initialize_entry(entry->constant_pool_index());
+      continue;
+    }
+    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
+
+    assert(new_method != NULL, "method_with_idnum() should not be NULL");
+    assert(old_method != new_method, "sanity check");
+
+    entry_at(i)->adjust_method_entry(old_method, new_method, trace_name_printed);
+  }
+}
+
 // the constant pool cache should never contain old or obsolete methods
 bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->is_interesting_method_entry(NULL) &&
+    if (entry_at(i)->get_interesting_method_entry(NULL) != NULL &&
         !entry_at(i)->check_no_old_or_obsolete_entries()) {
       return false;
     }
@@ -664,7 +682,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
 
 void ConstantPoolCache::dump_cache() {
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->is_interesting_method_entry(NULL)) {
+    if (entry_at(i)->get_interesting_method_entry(NULL) != NULL) {
       entry_at(i)->print(tty, i);
     }
   }
