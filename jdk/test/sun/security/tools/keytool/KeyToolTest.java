@@ -1184,6 +1184,16 @@ public class KeyToolTest {
         assertTrue(!a.getExtension(new ObjectIdentifier("2.3.4")).isCritical());
         assertTrue(a.getExtensionValue("2.3.4").length == 6);
 
+        // 8073181: keytool -ext honored not working correctly
+        testOK("", simple+"-gencert -alias ca -infile test.req -ext " +
+                "honored=1.2.3,1.2.4:critical " +
+                "-debug -rfc -outfile test2.cert");
+        testOK("", simple+"-importcert -file test2.cert -alias b");
+        ks = loadStore("x.jks", "changeit", "JKS");
+        X509CertImpl b = (X509CertImpl)ks.getCertificate("b");
+        assertTrue(!b.getExtension(new ObjectIdentifier("1.2.3")).isCritical());
+        assertTrue(b.getExtension(new ObjectIdentifier("1.2.4")).isCritical());
+
         remove("x.jks");
         remove("test.req");
         remove("test.cert");

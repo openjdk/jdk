@@ -3806,14 +3806,15 @@ public final class Main {
                             if (item.equals("all")) continue;
 
                             // add or remove
-                            boolean add = true;
-                            // -1, unchanged, 0 crtical, 1 non-critical
+                            boolean add;
+                            // -1, unchanged, 0 critical, 1 non-critical
                             int action = -1;
                             String type = null;
                             if (item.startsWith("-")) {
                                 add = false;
                                 type = item.substring(1);
                             } else {
+                                add = true;
                                 int colonpos = item.indexOf(':');
                                 if (colonpos >= 0) {
                                     type = item.substring(0, colonpos);
@@ -3823,6 +3824,8 @@ public final class Main {
                                         throw new Exception(rb.getString
                                             ("Illegal.value.") + item);
                                     }
+                                } else {
+                                    type = item;
                                 }
                             }
                             String n = reqex.getNameByOid(findOidForExtName(type));
@@ -3834,8 +3837,8 @@ public final class Main {
                                             e.getExtensionId(),
                                             !e.isCritical(),
                                             e.getExtensionValue());
-                                    ext.set(n, e);
                                 }
+                                ext.set(n, e);
                             } else {
                                 ext.delete(n);
                             }
