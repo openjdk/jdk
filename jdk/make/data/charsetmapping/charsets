@@ -503,7 +503,7 @@ charset x-windows-874 MS874
 
 charset x-EUC-TW EUC_TW
     package sun.nio.cs.ext
-    type    source
+    type    template
     alias   euc_tw               # JDK historical
     alias   euctw
     alias   cns11643
@@ -1816,3 +1816,17 @@ charset x-JIS0212_MS5022X JIS_X_0212_MS5022X
     ascii   false
     minmax  0x21 0x7e 0x21 0x7e
     internal true               # "internal implementation
+
+########################################################
+#
+# platform specific charsets, to be registered into spi
+##
+########################################################
+ 
+charset x-COMPOUND_TEXT COMPOUND_TEXT
+    package sun.nio.cs.ext
+    type    source
+    os      unix
+    alias   COMPOUND_TEXT       # JDK historical
+    alias   x11-compound_text
+    alias   x-compound-text
