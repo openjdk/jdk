@@ -3868,8 +3868,6 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
       Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
-      newcopy = new_array(klass_node, length, 0);  // no arguments to push
-
       // Generate a direct call to the right arraycopy function(s).
       // We know the copy is disjoint but we might not know if the
       // oop stores need checking.
@@ -3912,6 +3910,8 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
         }
         validated = true;
       }
+
+      newcopy = new_array(klass_node, length, 0);  // no arguments to push
 
       ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true,
                                               load_object_klass(original), klass_node);
