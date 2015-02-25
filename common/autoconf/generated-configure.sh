@@ -4393,7 +4393,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1424872060
+DATE_WHEN_GENERATED=1424872170
 
 ###############################################################################
 #
@@ -27696,7 +27696,22 @@ $as_echo "ok" >&6; }
       IFS=";"
       for i in $VS_INCLUDE; do
         ipath=$i
-	IFS="$OLDIFS"
+        # Only process non-empty elements
+        if test "x$ipath" != x; then
+          IFS="$OLDIFS"
+          # Check that directory exists before calling fixup_path
+          testpath=$ipath
+
+  windows_path="$testpath"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    testpath="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    testpath="$unix_path"
+  fi
+
+          if test -d "$testpath"; then
 
   # Only process if variable expands to non-empty
 
@@ -27823,13 +27838,30 @@ $as_echo "$as_me: The path of ipath, which resolves as \"$path\", is invalid." >
     fi
   fi
 
-	IFS=";"
-      	SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+            SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+          fi
+          IFS=";"
+        fi
       done
       # Convert VS_LIB into SYSROOT_LDFLAGS
       for i in $VS_LIB; do
         libpath=$i
-	IFS="$OLDIFS"
+        # Only process non-empty elements
+        if test "x$libpath" != x; then
+          IFS="$OLDIFS"
+          # Check that directory exists before calling fixup_path
+          testpath=$libpath
+
+  windows_path="$testpath"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    testpath="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    testpath="$unix_path"
+  fi
+
+          if test -d "$testpath"; then
 
   # Only process if variable expands to non-empty
 
@@ -27956,8 +27988,10 @@ $as_echo "$as_me: The path of libpath, which resolves as \"$path\", is invalid."
     fi
   fi
 
-	IFS=";"
-      	SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+            SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+          fi
+          IFS=";"
+        fi
       done
       IFS="$OLDIFS"
     fi
