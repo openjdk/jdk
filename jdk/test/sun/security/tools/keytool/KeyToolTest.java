@@ -1194,6 +1194,12 @@ public class KeyToolTest {
         assertTrue(!b.getExtension(new ObjectIdentifier("1.2.3")).isCritical());
         assertTrue(b.getExtension(new ObjectIdentifier("1.2.4")).isCritical());
 
+        // 8073182: keytool may generate duplicate extensions
+        testOK("", pre+"dup -ext bc=2 -ext 2.5.29.19=30030101FF -ext bc=3");
+        ks = loadStore("x.jks", "changeit", "JKS");
+        X509CertImpl dup = (X509CertImpl)ks.getCertificate("dup");
+        assertTrue(dup.getBasicConstraints() == 3);
+
         remove("x.jks");
         remove("test.req");
         remove("test.cert");
