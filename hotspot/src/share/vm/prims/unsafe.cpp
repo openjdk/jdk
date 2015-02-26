@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jni.h"
 #include "prims/jvm.h"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "runtime/prefetch.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
-#include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/threadService.hpp"
 #include "trace/tracing.hpp"
@@ -596,17 +596,7 @@ UNSAFE_ENTRY(void, Unsafe_FreeMemory(JNIEnv *env, jobject unsafe, jlong addr))
   os::free(p);
 UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_SetMemory(JNIEnv *env, jobject unsafe, jlong addr, jlong size, jbyte value))
-  UnsafeWrapper("Unsafe_SetMemory");
-  size_t sz = (size_t)size;
-  if (sz != (julong)size || size < 0) {
-    THROW(vmSymbols::java_lang_IllegalArgumentException());
-  }
-  char* p = (char*) addr_from_java(addr);
-  Copy::fill_to_memory_atomic(p, sz, value);
-UNSAFE_END
-
-UNSAFE_ENTRY(void, Unsafe_SetMemory2(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value))
+UNSAFE_ENTRY(void, Unsafe_SetMemory(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value))
   UnsafeWrapper("Unsafe_SetMemory");
   size_t sz = (size_t)size;
   if (sz != (julong)size || size < 0) {
@@ -617,21 +607,7 @@ UNSAFE_ENTRY(void, Unsafe_SetMemory2(JNIEnv *env, jobject unsafe, jobject obj, j
   Copy::fill_to_memory_atomic(p, sz, value);
 UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_CopyMemory(JNIEnv *env, jobject unsafe, jlong srcAddr, jlong dstAddr, jlong size))
-  UnsafeWrapper("Unsafe_CopyMemory");
-  if (size == 0) {
-    return;
-  }
-  size_t sz = (size_t)size;
-  if (sz != (julong)size || size < 0) {
-    THROW(vmSymbols::java_lang_IllegalArgumentException());
-  }
-  void* src = addr_from_java(srcAddr);
-  void* dst = addr_from_java(dstAddr);
-  Copy::conjoint_memory_atomic(src, dst, sz);
-UNSAFE_END
-
-UNSAFE_ENTRY(void, Unsafe_CopyMemory2(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size))
+UNSAFE_ENTRY(void, Unsafe_CopyMemory(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size))
   UnsafeWrapper("Unsafe_CopyMemory");
   if (size == 0) {
     return;
@@ -723,24 +699,6 @@ UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBaseFromField(JNIEnv *env, jobject unsaf
   }
 
   return JNIHandles::make_local(env, mirror);
-UNSAFE_END
-
-//@deprecated
-UNSAFE_ENTRY(jint, Unsafe_FieldOffset(JNIEnv *env, jobject unsafe, jobject field))
-  UnsafeWrapper("Unsafe_FieldOffset");
-  // tries (but fails) to be polymorphic between static and non-static:
-  jlong offset = find_field_offset(field, -1, THREAD);
-  guarantee(offset == (jint)offset, "offset fits in 32 bits");
-  return (jint)offset;
-UNSAFE_END
-
-//@deprecated
-UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBaseFromClass(JNIEnv *env, jobject unsafe, jobject clazz))
-  UnsafeWrapper("Unsafe_StaticFieldBase");
-  if (clazz == NULL) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
-  }
-  return JNIHandles::make_local(env, JNIHandles::resolve_non_null(clazz));
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized(JNIEnv *env, jobject unsafe, jobject clazz)) {
@@ -915,31 +873,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineClass(JNIEnv *env, jobject unsafe, jstring nam
   }
 UNSAFE_END
 
-static jobject get_class_loader(JNIEnv* env, jclass cls) {
-  if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(cls))) {
-    return NULL;
-  }
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  oop loader = k->class_loader();
-  return JNIHandles::make_local(env, loader);
-}
 
-UNSAFE_ENTRY(jclass, Unsafe_DefineClass0(JNIEnv *env, jobject unsafe, jstring name, jbyteArray data, int offset, int length))
-  UnsafeWrapper("Unsafe_DefineClass");
-  {
-    ThreadToNativeFromVM ttnfv(thread);
-
-    int depthFromDefineClass0 = 1;
-    jclass  caller = JVM_GetCallerClass(env, depthFromDefineClass0);
-    jobject loader = (caller == NULL) ? NULL : get_class_loader(env, caller);
-    jobject pd     = (caller == NULL) ? NULL : JVM_GetProtectionDomain(env, caller);
-
-    return Unsafe_DefineClass_impl(env, name, data, offset, length, loader, pd);
-  }
-UNSAFE_END
-
-
-#define DAC_Args CLS"[B["OBJ
 // define a class but do not make it known to the class loader or system dictionary
 // - host_class:  supplies context for linkage, access control, protection domain, and class loader
 // - data:  bytes of a class file, a raw memory address (length gives the number of bytes)
@@ -1104,43 +1038,6 @@ UNSAFE_END
 
 
 
-UNSAFE_ENTRY(void, Unsafe_MonitorEnter(JNIEnv *env, jobject unsafe, jobject jobj))
-  UnsafeWrapper("Unsafe_MonitorEnter");
-  {
-    if (jobj == NULL) {
-      THROW(vmSymbols::java_lang_NullPointerException());
-    }
-    Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-    ObjectSynchronizer::jni_enter(obj, CHECK);
-  }
-UNSAFE_END
-
-
-UNSAFE_ENTRY(jboolean, Unsafe_TryMonitorEnter(JNIEnv *env, jobject unsafe, jobject jobj))
-  UnsafeWrapper("Unsafe_TryMonitorEnter");
-  {
-    if (jobj == NULL) {
-      THROW_(vmSymbols::java_lang_NullPointerException(), JNI_FALSE);
-    }
-    Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-    bool res = ObjectSynchronizer::jni_try_enter(obj, CHECK_0);
-    return (res ? JNI_TRUE : JNI_FALSE);
-  }
-UNSAFE_END
-
-
-UNSAFE_ENTRY(void, Unsafe_MonitorExit(JNIEnv *env, jobject unsafe, jobject jobj))
-  UnsafeWrapper("Unsafe_MonitorExit");
-  {
-    if (jobj == NULL) {
-      THROW(vmSymbols::java_lang_NullPointerException());
-    }
-    Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
-    ObjectSynchronizer::jni_exit(obj(), CHECK);
-  }
-UNSAFE_END
-
-
 UNSAFE_ENTRY(void, Unsafe_ThrowException(JNIEnv *env, jobject unsafe, jthrowable thr))
   UnsafeWrapper("Unsafe_ThrowException");
   {
@@ -1270,20 +1167,6 @@ UNSAFE_ENTRY(jint, Unsafe_Loadavg(JNIEnv *env, jobject unsafe, jdoubleArray load
   return ret;
 UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_PrefetchRead(JNIEnv* env, jclass ignored, jobject obj, jlong offset))
-  UnsafeWrapper("Unsafe_PrefetchRead");
-  oop p = JNIHandles::resolve(obj);
-  void* addr = index_oop_from_field_offset_long(p, 0);
-  Prefetch::read(addr, (intx)offset);
-UNSAFE_END
-
-UNSAFE_ENTRY(void, Unsafe_PrefetchWrite(JNIEnv* env, jclass ignored, jobject obj, jlong offset))
-  UnsafeWrapper("Unsafe_PrefetchWrite");
-  oop p = JNIHandles::resolve(obj);
-  void* addr = index_oop_from_field_offset_long(p, 0);
-  Prefetch::write(addr, (intx)offset);
-UNSAFE_END
-
 
 /// JVM_RegisterUnsafeMethods
 
@@ -1293,208 +1176,50 @@ UNSAFE_END
 
 #define OBJ LANG"Object;"
 #define CLS LANG"Class;"
-#define CTR LANG"reflect/Constructor;"
 #define FLD LANG"reflect/Field;"
-#define MTH LANG"reflect/Method;"
 #define THR LANG"Throwable;"
 
-#define DC0_Args LANG"String;[BII"
-#define DC_Args  DC0_Args LANG"ClassLoader;" "Ljava/security/ProtectionDomain;"
+#define DC_Args  LANG"String;[BII" LANG"ClassLoader;" "Ljava/security/ProtectionDomain;"
+#define DAC_Args CLS"[B["OBJ
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
-// define deprecated accessors for compabitility with 1.4.0
-#define DECLARE_GETSETOOP_140(Boolean, Z) \
-    {CC"get"#Boolean,      CC"("OBJ"I)"#Z,      FN_PTR(Unsafe_Get##Boolean##140)}, \
-    {CC"put"#Boolean,      CC"("OBJ"I"#Z")V",   FN_PTR(Unsafe_Set##Boolean##140)}
-
-// Note:  In 1.4.1, getObject and kin take both int and long offsets.
-#define DECLARE_GETSETOOP_141(Boolean, Z) \
-    {CC"get"#Boolean,      CC"("OBJ"J)"#Z,      FN_PTR(Unsafe_Get##Boolean)}, \
-    {CC"put"#Boolean,      CC"("OBJ"J"#Z")V",   FN_PTR(Unsafe_Set##Boolean)}
-
-// Note:  In 1.5.0, there are volatile versions too
-#define DECLARE_GETSETOOP(Boolean, Z) \
+#define DECLARE_GETPUTOOP(Boolean, Z) \
     {CC"get"#Boolean,      CC"("OBJ"J)"#Z,      FN_PTR(Unsafe_Get##Boolean)}, \
     {CC"put"#Boolean,      CC"("OBJ"J"#Z")V",   FN_PTR(Unsafe_Set##Boolean)}, \
     {CC"get"#Boolean"Volatile",      CC"("OBJ"J)"#Z,      FN_PTR(Unsafe_Get##Boolean##Volatile)}, \
     {CC"put"#Boolean"Volatile",      CC"("OBJ"J"#Z")V",   FN_PTR(Unsafe_Set##Boolean##Volatile)}
 
 
-#define DECLARE_GETSETNATIVE(Byte, B) \
+#define DECLARE_GETPUTNATIVE(Byte, B) \
     {CC"get"#Byte,         CC"("ADR")"#B,       FN_PTR(Unsafe_GetNative##Byte)}, \
     {CC"put"#Byte,         CC"("ADR#B")V",      FN_PTR(Unsafe_SetNative##Byte)}
 
 
 
-// These are the methods for 1.4.0
-static JNINativeMethod methods_140[] = {
-    DECLARE_GETSETOOP_140(Boolean, Z),
-    DECLARE_GETSETOOP_140(Byte, B),
-    DECLARE_GETSETOOP_140(Short, S),
-    DECLARE_GETSETOOP_140(Char, C),
-    DECLARE_GETSETOOP_140(Int, I),
-    DECLARE_GETSETOOP_140(Long, J),
-    DECLARE_GETSETOOP_140(Float, F),
-    DECLARE_GETSETOOP_140(Double, D),
-
-    DECLARE_GETSETNATIVE(Byte, B),
-    DECLARE_GETSETNATIVE(Short, S),
-    DECLARE_GETSETNATIVE(Char, C),
-    DECLARE_GETSETNATIVE(Int, I),
-    DECLARE_GETSETNATIVE(Long, J),
-    DECLARE_GETSETNATIVE(Float, F),
-    DECLARE_GETSETNATIVE(Double, D),
-
-    {CC"getAddress",         CC"("ADR")"ADR,             FN_PTR(Unsafe_GetNativeAddress)},
-    {CC"putAddress",         CC"("ADR""ADR")V",          FN_PTR(Unsafe_SetNativeAddress)},
-
-    {CC"allocateMemory",     CC"(J)"ADR,                 FN_PTR(Unsafe_AllocateMemory)},
-    {CC"reallocateMemory",   CC"("ADR"J)"ADR,            FN_PTR(Unsafe_ReallocateMemory)},
-    {CC"freeMemory",         CC"("ADR")V",               FN_PTR(Unsafe_FreeMemory)},
-
-    {CC"fieldOffset",        CC"("FLD")I",               FN_PTR(Unsafe_FieldOffset)},
-    {CC"staticFieldBase",    CC"("CLS")"OBJ,             FN_PTR(Unsafe_StaticFieldBaseFromClass)},
-    {CC"ensureClassInitialized",CC"("CLS")V",            FN_PTR(Unsafe_EnsureClassInitialized)},
-    {CC"arrayBaseOffset",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayBaseOffset)},
-    {CC"arrayIndexScale",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayIndexScale)},
-    {CC"addressSize",        CC"()I",                    FN_PTR(Unsafe_AddressSize)},
-    {CC"pageSize",           CC"()I",                    FN_PTR(Unsafe_PageSize)},
-
-    {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
-    {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
-    {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
-    {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)}
-};
-
-// These are the methods prior to the JSR 166 changes in 1.5.0
-static JNINativeMethod methods_141[] = {
-    {CC"getObject",        CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObject)},
-    {CC"putObject",        CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObject)},
-
-    DECLARE_GETSETOOP_141(Boolean, Z),
-    DECLARE_GETSETOOP_141(Byte, B),
-    DECLARE_GETSETOOP_141(Short, S),
-    DECLARE_GETSETOOP_141(Char, C),
-    DECLARE_GETSETOOP_141(Int, I),
-    DECLARE_GETSETOOP_141(Long, J),
-    DECLARE_GETSETOOP_141(Float, F),
-    DECLARE_GETSETOOP_141(Double, D),
-
-    DECLARE_GETSETNATIVE(Byte, B),
-    DECLARE_GETSETNATIVE(Short, S),
-    DECLARE_GETSETNATIVE(Char, C),
-    DECLARE_GETSETNATIVE(Int, I),
-    DECLARE_GETSETNATIVE(Long, J),
-    DECLARE_GETSETNATIVE(Float, F),
-    DECLARE_GETSETNATIVE(Double, D),
-
-    {CC"getAddress",         CC"("ADR")"ADR,             FN_PTR(Unsafe_GetNativeAddress)},
-    {CC"putAddress",         CC"("ADR""ADR")V",          FN_PTR(Unsafe_SetNativeAddress)},
-
-    {CC"allocateMemory",     CC"(J)"ADR,                 FN_PTR(Unsafe_AllocateMemory)},
-    {CC"reallocateMemory",   CC"("ADR"J)"ADR,            FN_PTR(Unsafe_ReallocateMemory)},
-    {CC"freeMemory",         CC"("ADR")V",               FN_PTR(Unsafe_FreeMemory)},
-
-    {CC"objectFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_ObjectFieldOffset)},
-    {CC"staticFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_StaticFieldOffset)},
-    {CC"staticFieldBase",    CC"("FLD")"OBJ,             FN_PTR(Unsafe_StaticFieldBaseFromField)},
-    {CC"ensureClassInitialized",CC"("CLS")V",            FN_PTR(Unsafe_EnsureClassInitialized)},
-    {CC"arrayBaseOffset",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayBaseOffset)},
-    {CC"arrayIndexScale",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayIndexScale)},
-    {CC"addressSize",        CC"()I",                    FN_PTR(Unsafe_AddressSize)},
-    {CC"pageSize",           CC"()I",                    FN_PTR(Unsafe_PageSize)},
-
-    {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
-    {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
-    {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
-    {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)}
-
-};
-
-// These are the methods prior to the JSR 166 changes in 1.6.0
-static JNINativeMethod methods_15[] = {
+static JNINativeMethod methods[] = {
     {CC"getObject",        CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObject)},
     {CC"putObject",        CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObject)},
     {CC"getObjectVolatile",CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObjectVolatile)},
     {CC"putObjectVolatile",CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObjectVolatile)},
 
+    DECLARE_GETPUTOOP(Boolean, Z),
+    DECLARE_GETPUTOOP(Byte, B),
+    DECLARE_GETPUTOOP(Short, S),
+    DECLARE_GETPUTOOP(Char, C),
+    DECLARE_GETPUTOOP(Int, I),
+    DECLARE_GETPUTOOP(Long, J),
+    DECLARE_GETPUTOOP(Float, F),
+    DECLARE_GETPUTOOP(Double, D),
 
-    DECLARE_GETSETOOP(Boolean, Z),
-    DECLARE_GETSETOOP(Byte, B),
-    DECLARE_GETSETOOP(Short, S),
-    DECLARE_GETSETOOP(Char, C),
-    DECLARE_GETSETOOP(Int, I),
-    DECLARE_GETSETOOP(Long, J),
-    DECLARE_GETSETOOP(Float, F),
-    DECLARE_GETSETOOP(Double, D),
-
-    DECLARE_GETSETNATIVE(Byte, B),
-    DECLARE_GETSETNATIVE(Short, S),
-    DECLARE_GETSETNATIVE(Char, C),
-    DECLARE_GETSETNATIVE(Int, I),
-    DECLARE_GETSETNATIVE(Long, J),
-    DECLARE_GETSETNATIVE(Float, F),
-    DECLARE_GETSETNATIVE(Double, D),
-
-    {CC"getAddress",         CC"("ADR")"ADR,             FN_PTR(Unsafe_GetNativeAddress)},
-    {CC"putAddress",         CC"("ADR""ADR")V",          FN_PTR(Unsafe_SetNativeAddress)},
-
-    {CC"allocateMemory",     CC"(J)"ADR,                 FN_PTR(Unsafe_AllocateMemory)},
-    {CC"reallocateMemory",   CC"("ADR"J)"ADR,            FN_PTR(Unsafe_ReallocateMemory)},
-    {CC"freeMemory",         CC"("ADR")V",               FN_PTR(Unsafe_FreeMemory)},
-
-    {CC"objectFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_ObjectFieldOffset)},
-    {CC"staticFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_StaticFieldOffset)},
-    {CC"staticFieldBase",    CC"("FLD")"OBJ,             FN_PTR(Unsafe_StaticFieldBaseFromField)},
-    {CC"ensureClassInitialized",CC"("CLS")V",            FN_PTR(Unsafe_EnsureClassInitialized)},
-    {CC"arrayBaseOffset",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayBaseOffset)},
-    {CC"arrayIndexScale",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayIndexScale)},
-    {CC"addressSize",        CC"()I",                    FN_PTR(Unsafe_AddressSize)},
-    {CC"pageSize",           CC"()I",                    FN_PTR(Unsafe_PageSize)},
-
-    {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
-    {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
-    {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
-    {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)},
-    {CC"compareAndSwapObject", CC"("OBJ"J"OBJ""OBJ")Z",  FN_PTR(Unsafe_CompareAndSwapObject)},
-    {CC"compareAndSwapInt",  CC"("OBJ"J""I""I"")Z",      FN_PTR(Unsafe_CompareAndSwapInt)},
-    {CC"compareAndSwapLong", CC"("OBJ"J""J""J"")Z",      FN_PTR(Unsafe_CompareAndSwapLong)},
-    {CC"park",               CC"(ZJ)V",                  FN_PTR(Unsafe_Park)},
-    {CC"unpark",             CC"("OBJ")V",               FN_PTR(Unsafe_Unpark)}
-
-};
-
-// These are the methods for 1.6.0 and 1.7.0
-static JNINativeMethod methods_16[] = {
-    {CC"getObject",        CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObject)},
-    {CC"putObject",        CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObject)},
-    {CC"getObjectVolatile",CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObjectVolatile)},
-    {CC"putObjectVolatile",CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObjectVolatile)},
-
-    DECLARE_GETSETOOP(Boolean, Z),
-    DECLARE_GETSETOOP(Byte, B),
-    DECLARE_GETSETOOP(Short, S),
-    DECLARE_GETSETOOP(Char, C),
-    DECLARE_GETSETOOP(Int, I),
-    DECLARE_GETSETOOP(Long, J),
-    DECLARE_GETSETOOP(Float, F),
-    DECLARE_GETSETOOP(Double, D),
-
-    DECLARE_GETSETNATIVE(Byte, B),
-    DECLARE_GETSETNATIVE(Short, S),
-    DECLARE_GETSETNATIVE(Char, C),
-    DECLARE_GETSETNATIVE(Int, I),
-    DECLARE_GETSETNATIVE(Long, J),
-    DECLARE_GETSETNATIVE(Float, F),
-    DECLARE_GETSETNATIVE(Double, D),
+    DECLARE_GETPUTNATIVE(Byte, B),
+    DECLARE_GETPUTNATIVE(Short, S),
+    DECLARE_GETPUTNATIVE(Char, C),
+    DECLARE_GETPUTNATIVE(Int, I),
+    DECLARE_GETPUTNATIVE(Long, J),
+    DECLARE_GETPUTNATIVE(Float, F),
+    DECLARE_GETPUTNATIVE(Double, D),
 
     {CC"getAddress",         CC"("ADR")"ADR,             FN_PTR(Unsafe_GetNativeAddress)},
     {CC"putAddress",         CC"("ADR""ADR")V",          FN_PTR(Unsafe_SetNativeAddress)},
@@ -1512,12 +1237,8 @@ static JNINativeMethod methods_16[] = {
     {CC"addressSize",        CC"()I",                    FN_PTR(Unsafe_AddressSize)},
     {CC"pageSize",           CC"()I",                    FN_PTR(Unsafe_PageSize)},
 
-    {CC"defineClass",        CC"("DC0_Args")"CLS,        FN_PTR(Unsafe_DefineClass0)},
     {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
     {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
-    {CC"tryMonitorEnter",    CC"("OBJ")Z",               FN_PTR(Unsafe_TryMonitorEnter)},
     {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)},
     {CC"compareAndSwapObject", CC"("OBJ"J"OBJ""OBJ")Z",  FN_PTR(Unsafe_CompareAndSwapObject)},
     {CC"compareAndSwapInt",  CC"("OBJ"J""I""I"")Z",      FN_PTR(Unsafe_CompareAndSwapInt)},
@@ -1526,95 +1247,17 @@ static JNINativeMethod methods_16[] = {
     {CC"putOrderedInt",      CC"("OBJ"JI)V",             FN_PTR(Unsafe_SetOrderedInt)},
     {CC"putOrderedLong",     CC"("OBJ"JJ)V",             FN_PTR(Unsafe_SetOrderedLong)},
     {CC"park",               CC"(ZJ)V",                  FN_PTR(Unsafe_Park)},
-    {CC"unpark",             CC"("OBJ")V",               FN_PTR(Unsafe_Unpark)}
-};
+    {CC"unpark",             CC"("OBJ")V",               FN_PTR(Unsafe_Unpark)},
 
-// These are the methods for 1.8.0
-static JNINativeMethod methods_18[] = {
-    {CC"getObject",        CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObject)},
-    {CC"putObject",        CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObject)},
-    {CC"getObjectVolatile",CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObjectVolatile)},
-    {CC"putObjectVolatile",CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObjectVolatile)},
+    {CC"getLoadAverage",     CC"([DI)I",                 FN_PTR(Unsafe_Loadavg)},
 
-    DECLARE_GETSETOOP(Boolean, Z),
-    DECLARE_GETSETOOP(Byte, B),
-    DECLARE_GETSETOOP(Short, S),
-    DECLARE_GETSETOOP(Char, C),
-    DECLARE_GETSETOOP(Int, I),
-    DECLARE_GETSETOOP(Long, J),
-    DECLARE_GETSETOOP(Float, F),
-    DECLARE_GETSETOOP(Double, D),
+    {CC"copyMemory",         CC"("OBJ"J"OBJ"JJ)V",       FN_PTR(Unsafe_CopyMemory)},
+    {CC"setMemory",          CC"("OBJ"JJB)V",            FN_PTR(Unsafe_SetMemory)},
 
-    DECLARE_GETSETNATIVE(Byte, B),
-    DECLARE_GETSETNATIVE(Short, S),
-    DECLARE_GETSETNATIVE(Char, C),
-    DECLARE_GETSETNATIVE(Int, I),
-    DECLARE_GETSETNATIVE(Long, J),
-    DECLARE_GETSETNATIVE(Float, F),
-    DECLARE_GETSETNATIVE(Double, D),
-
-    {CC"getAddress",         CC"("ADR")"ADR,             FN_PTR(Unsafe_GetNativeAddress)},
-    {CC"putAddress",         CC"("ADR""ADR")V",          FN_PTR(Unsafe_SetNativeAddress)},
-
-    {CC"allocateMemory",     CC"(J)"ADR,                 FN_PTR(Unsafe_AllocateMemory)},
-    {CC"reallocateMemory",   CC"("ADR"J)"ADR,            FN_PTR(Unsafe_ReallocateMemory)},
-    {CC"freeMemory",         CC"("ADR")V",               FN_PTR(Unsafe_FreeMemory)},
-
-    {CC"objectFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_ObjectFieldOffset)},
-    {CC"staticFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_StaticFieldOffset)},
-    {CC"staticFieldBase",    CC"("FLD")"OBJ,             FN_PTR(Unsafe_StaticFieldBaseFromField)},
-    {CC"ensureClassInitialized",CC"("CLS")V",            FN_PTR(Unsafe_EnsureClassInitialized)},
-    {CC"arrayBaseOffset",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayBaseOffset)},
-    {CC"arrayIndexScale",    CC"("CLS")I",               FN_PTR(Unsafe_ArrayIndexScale)},
-    {CC"addressSize",        CC"()I",                    FN_PTR(Unsafe_AddressSize)},
-    {CC"pageSize",           CC"()I",                    FN_PTR(Unsafe_PageSize)},
-
-    {CC"defineClass",        CC"("DC_Args")"CLS,         FN_PTR(Unsafe_DefineClass)},
-    {CC"allocateInstance",   CC"("CLS")"OBJ,             FN_PTR(Unsafe_AllocateInstance)},
-    {CC"monitorEnter",       CC"("OBJ")V",               FN_PTR(Unsafe_MonitorEnter)},
-    {CC"monitorExit",        CC"("OBJ")V",               FN_PTR(Unsafe_MonitorExit)},
-    {CC"tryMonitorEnter",    CC"("OBJ")Z",               FN_PTR(Unsafe_TryMonitorEnter)},
-    {CC"throwException",     CC"("THR")V",               FN_PTR(Unsafe_ThrowException)},
-    {CC"compareAndSwapObject", CC"("OBJ"J"OBJ""OBJ")Z",  FN_PTR(Unsafe_CompareAndSwapObject)},
-    {CC"compareAndSwapInt",  CC"("OBJ"J""I""I"")Z",      FN_PTR(Unsafe_CompareAndSwapInt)},
-    {CC"compareAndSwapLong", CC"("OBJ"J""J""J"")Z",      FN_PTR(Unsafe_CompareAndSwapLong)},
-    {CC"putOrderedObject",   CC"("OBJ"J"OBJ")V",         FN_PTR(Unsafe_SetOrderedObject)},
-    {CC"putOrderedInt",      CC"("OBJ"JI)V",             FN_PTR(Unsafe_SetOrderedInt)},
-    {CC"putOrderedLong",     CC"("OBJ"JJ)V",             FN_PTR(Unsafe_SetOrderedLong)},
-    {CC"park",               CC"(ZJ)V",                  FN_PTR(Unsafe_Park)},
-    {CC"unpark",             CC"("OBJ")V",               FN_PTR(Unsafe_Unpark)}
-};
-
-JNINativeMethod loadavg_method[] = {
-    {CC"getLoadAverage",     CC"([DI)I",                 FN_PTR(Unsafe_Loadavg)}
-};
-
-JNINativeMethod prefetch_methods[] = {
-    {CC"prefetchRead",       CC"("OBJ"J)V",              FN_PTR(Unsafe_PrefetchRead)},
-    {CC"prefetchWrite",      CC"("OBJ"J)V",              FN_PTR(Unsafe_PrefetchWrite)},
-    {CC"prefetchReadStatic", CC"("OBJ"J)V",              FN_PTR(Unsafe_PrefetchRead)},
-    {CC"prefetchWriteStatic",CC"("OBJ"J)V",              FN_PTR(Unsafe_PrefetchWrite)}
-};
-
-JNINativeMethod memcopy_methods_17[] = {
-    {CC"copyMemory",         CC"("OBJ"J"OBJ"JJ)V",       FN_PTR(Unsafe_CopyMemory2)},
-    {CC"setMemory",          CC"("OBJ"JJB)V",            FN_PTR(Unsafe_SetMemory2)}
-};
-
-JNINativeMethod memcopy_methods_15[] = {
-    {CC"setMemory",          CC"("ADR"JB)V",             FN_PTR(Unsafe_SetMemory)},
-    {CC"copyMemory",         CC"("ADR ADR"J)V",          FN_PTR(Unsafe_CopyMemory)}
-};
-
-JNINativeMethod anonk_methods[] = {
     {CC"defineAnonymousClass", CC"("DAC_Args")"CLS,      FN_PTR(Unsafe_DefineAnonymousClass)},
-};
 
-JNINativeMethod lform_methods[] = {
     {CC"shouldBeInitialized",CC"("CLS")Z",               FN_PTR(Unsafe_ShouldBeInitialized)},
-};
 
-JNINativeMethod fence_methods[] = {
     {CC"loadFence",          CC"()V",                    FN_PTR(Unsafe_LoadFence)},
     {CC"storeFence",         CC"()V",                    FN_PTR(Unsafe_StoreFence)},
     {CC"fullFence",          CC"()V",                    FN_PTR(Unsafe_FullFence)},
@@ -1627,35 +1270,13 @@ JNINativeMethod fence_methods[] = {
 #undef LANG
 #undef OBJ
 #undef CLS
-#undef CTR
 #undef FLD
-#undef MTH
 #undef THR
-#undef DC0_Args
 #undef DC_Args
+#undef DAC_Args
 
-#undef DECLARE_GETSETOOP
-#undef DECLARE_GETSETNATIVE
-
-
-/**
- * Helper method to register native methods.
- */
-static bool register_natives(const char* message, JNIEnv* env, jclass clazz, const JNINativeMethod* methods, jint nMethods) {
-  int status = env->RegisterNatives(clazz, methods, nMethods);
-  if (status < 0 || env->ExceptionOccurred()) {
-    if (PrintMiscellaneous && (Verbose || WizardMode)) {
-      tty->print_cr("Unsafe:  failed registering %s", message);
-    }
-    env->ExceptionClear();
-    return false;
-  } else {
-    if (PrintMiscellaneous && (Verbose || WizardMode)) {
-      tty->print_cr("Unsafe:  successfully registered %s", message);
-    }
-    return true;
-  }
-}
+#undef DECLARE_GETPUTOOP
+#undef DECLARE_GETPUTNATIVE
 
 
 // This one function is exported, used by NativeLookup.
@@ -1663,57 +1284,12 @@ static bool register_natives(const char* message, JNIEnv* env, jclass clazz, con
 // The optimizer looks at names and signatures to recognize
 // individual functions.
 
-JVM_ENTRY(void, JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafecls))
+JVM_ENTRY(void, JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafeclass))
   UnsafeWrapper("JVM_RegisterUnsafeMethods");
   {
     ThreadToNativeFromVM ttnfv(thread);
 
-    // Unsafe methods
-    {
-      bool success = false;
-      // We need to register the 1.6 methods first because the 1.8 methods would register fine on 1.7 and 1.6
-      if (!success) {
-        success = register_natives("1.6 methods",   env, unsafecls, methods_16,  sizeof(methods_16)/sizeof(JNINativeMethod));
-      }
-      if (!success) {
-        success = register_natives("1.8 methods",   env, unsafecls, methods_18,  sizeof(methods_18)/sizeof(JNINativeMethod));
-      }
-      if (!success) {
-        success = register_natives("1.5 methods",   env, unsafecls, methods_15,  sizeof(methods_15)/sizeof(JNINativeMethod));
-      }
-      if (!success) {
-        success = register_natives("1.4.1 methods", env, unsafecls, methods_141, sizeof(methods_141)/sizeof(JNINativeMethod));
-      }
-      if (!success) {
-        success = register_natives("1.4.0 methods", env, unsafecls, methods_140, sizeof(methods_140)/sizeof(JNINativeMethod));
-      }
-      guarantee(success, "register unsafe natives");
-    }
-
-    // Unsafe.getLoadAverage
-    register_natives("1.6 loadavg method", env, unsafecls, loadavg_method, sizeof(loadavg_method)/sizeof(JNINativeMethod));
-
-    // Prefetch methods
-    register_natives("1.6 prefetch methods", env, unsafecls, prefetch_methods, sizeof(prefetch_methods)/sizeof(JNINativeMethod));
-
-    // Memory copy methods
-    {
-      bool success = false;
-      if (!success) {
-        success = register_natives("1.7 memory copy methods", env, unsafecls, memcopy_methods_17, sizeof(memcopy_methods_17)/sizeof(JNINativeMethod));
-      }
-      if (!success) {
-        success = register_natives("1.5 memory copy methods", env, unsafecls, memcopy_methods_15, sizeof(memcopy_methods_15)/sizeof(JNINativeMethod));
-      }
-    }
-
-    // Unsafe.defineAnonymousClass
-    register_natives("1.7 define anonymous class method", env, unsafecls, anonk_methods, sizeof(anonk_methods)/sizeof(JNINativeMethod));
-
-    // Unsafe.shouldBeInitialized
-    register_natives("1.7 LambdaForm support", env, unsafecls, lform_methods, sizeof(lform_methods)/sizeof(JNINativeMethod));
-
-    // Fence methods
-    register_natives("1.8 fence methods", env, unsafecls, fence_methods, sizeof(fence_methods)/sizeof(JNINativeMethod));
+    int ok = env->RegisterNatives(unsafeclass, methods, sizeof(methods)/sizeof(JNINativeMethod));
+    guarantee(ok == 0, "register unsafe natives");
   }
 JVM_END

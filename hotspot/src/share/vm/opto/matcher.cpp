@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 OptoReg::Name OptoReg::c_frame_pointer;
 
@@ -884,8 +885,6 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
   // %%% Kludgery.  Instead, fix ideal adr_type methods for all these cases:
   if (nidx == Compile::AliasIdxTop && midx == Compile::AliasIdxRaw) {
     switch (n->Opcode()) {
-    case Op_PrefetchRead:
-    case Op_PrefetchWrite:
     case Op_PrefetchAllocation:
       nidx = Compile::AliasIdxRaw;
       nat = TypeRawPtr::BOTTOM;

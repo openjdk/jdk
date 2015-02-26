@@ -1223,14 +1223,6 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   const char* home = Arguments::get_java_home();
   int home_len = (int)strlen(home);
 
-  static const char* meta_index_dir_format = "%/lib/";
-  static const char* meta_index_format = "%/lib/meta-index";
-  char* meta_index = format_boot_path(meta_index_format, home, home_len, fileSep, pathSep);
-  if (meta_index == NULL) return false;
-  char* meta_index_dir = format_boot_path(meta_index_dir_format, home, home_len, fileSep, pathSep);
-  if (meta_index_dir == NULL) return false;
-  Arguments::set_meta_index_path(meta_index, meta_index_dir);
-
   char* sysclasspath = NULL;
   struct stat st;
 
@@ -1244,38 +1236,17 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   }
   FREE_C_HEAP_ARRAY(char, jimage);
 
-  // images build if rt.jar exists
-  char* rt_jar = format_boot_path("%/lib/rt.jar", home, home_len, fileSep, pathSep);
-  if (rt_jar == NULL) return false;
-  bool has_rt_jar = (os::stat(rt_jar, &st) == 0);
-  FREE_C_HEAP_ARRAY(char, rt_jar);
-
-  if (has_rt_jar) {
-    // Any modification to the JAR-file list, for the boot classpath must be
-    // aligned with install/install/make/common/Pack.gmk. Note: boot class
-    // path class JARs, are stripped for StackMapTable to reduce download size.
-    static const char classpath_format[] =
-      "%/lib/resources.jar:"
-      "%/lib/rt.jar:"
-      "%/lib/jsse.jar:"
-      "%/lib/jce.jar:"
-      "%/lib/charsets.jar:"
-      "%/lib/jfr.jar:"
-      "%/classes";
-    sysclasspath = format_boot_path(classpath_format, home, home_len, fileSep, pathSep);
-  } else {
-    // no rt.jar, check if developer build with exploded modules
-    char* modules_dir = format_boot_path("%/modules", home, home_len, fileSep, pathSep);
-    if (os::stat(modules_dir, &st) == 0) {
-      if ((st.st_mode & S_IFDIR) == S_IFDIR) {
-        sysclasspath = expand_entries_to_path(modules_dir, fileSep, pathSep);
-      }
+  // check if developer build with exploded modules
+  char* modules_dir = format_boot_path("%/modules", home, home_len, fileSep, pathSep);
+  if (os::stat(modules_dir, &st) == 0) {
+    if ((st.st_mode & S_IFDIR) == S_IFDIR) {
+      sysclasspath = expand_entries_to_path(modules_dir, fileSep, pathSep);
     }
-
-    // fallback to classes
-    if (sysclasspath == NULL)
-      sysclasspath = format_boot_path("%/classes", home, home_len, fileSep, pathSep);
   }
+
+  // fallback to classes
+  if (sysclasspath == NULL)
+    sysclasspath = format_boot_path("%/classes", home, home_len, fileSep, pathSep);
 
   if (sysclasspath == NULL) return false;
   Arguments::set_sysclasspath(sysclasspath);
@@ -1401,20 +1372,30 @@ bool os::stack_shadow_pages_available(Thread *thread, methodHandle method) {
   return (sp > (stack_limit + reserved_area));
 }
 
-size_t os::page_size_for_region(size_t region_size, size_t min_pages) {
+size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned) {
   assert(min_pages > 0, "sanity");
   if (UseLargePages) {
     const size_t max_page_size = region_size / min_pages;
 
     for (size_t i = 0; _page_sizes[i] != 0; ++i) {
       const size_t page_size = _page_sizes[i];
-      if (page_size <= max_page_size && is_size_aligned(region_size, page_size)) {
-        return page_size;
+      if (page_size <= max_page_size) {
+        if (!must_be_aligned || is_size_aligned(region_size, page_size)) {
+          return page_size;
+        }
       }
     }
   }
 
   return vm_page_size();
+}
+
+size_t os::page_size_for_region_aligned(size_t region_size, size_t min_pages) {
+  return page_size_for_region(region_size, min_pages, true);
+}
+
+size_t os::page_size_for_region_unaligned(size_t region_size, size_t min_pages) {
+  return page_size_for_region(region_size, min_pages, false);
 }
 
 #ifndef PRODUCT
@@ -1665,17 +1646,17 @@ class TestOS : AllStatic {
 
   static size_t large_page_size() {
     const size_t large_page_size_example = 4 * M;
-    return os::page_size_for_region(large_page_size_example, 1);
+    return os::page_size_for_region_aligned(large_page_size_example, 1);
   }
 
-  static void test_page_size_for_region() {
+  static void test_page_size_for_region_aligned() {
     if (UseLargePages) {
       const size_t small_page = small_page_size();
       const size_t large_page = large_page_size();
 
       if (large_page > small_page) {
         size_t num_small_pages_in_large = large_page / small_page;
-        size_t page = os::page_size_for_region(large_page, num_small_pages_in_large);
+        size_t page = os::page_size_for_region_aligned(large_page, num_small_pages_in_large);
 
         assert_eq(page, small_page);
       }
@@ -1688,21 +1669,53 @@ class TestOS : AllStatic {
       const size_t large_page = large_page_size();
       if (large_page > small_page) {
         const size_t unaligned_region = large_page + 17;
-        size_t page = os::page_size_for_region(unaligned_region, 1);
+        size_t page = os::page_size_for_region_aligned(unaligned_region, 1);
         assert_eq(page, small_page);
 
         const size_t num_pages = 5;
         const size_t aligned_region = large_page * num_pages;
-        page = os::page_size_for_region(aligned_region, num_pages);
+        page = os::page_size_for_region_aligned(aligned_region, num_pages);
         assert_eq(page, large_page);
       }
     }
   }
 
+  static void test_page_size_for_region_unaligned() {
+    if (UseLargePages) {
+      // Given exact page size, should return that page size.
+      for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
+        size_t expected = os::_page_sizes[i];
+        size_t actual = os::page_size_for_region_unaligned(expected, 1);
+        assert_eq(expected, actual);
+      }
+
+      // Given slightly larger size than a page size, return the page size.
+      for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
+        size_t expected = os::_page_sizes[i];
+        size_t actual = os::page_size_for_region_unaligned(expected + 17, 1);
+        assert_eq(expected, actual);
+      }
+
+      // Given a slightly smaller size than a page size,
+      // return the next smaller page size.
+      if (os::_page_sizes[1] > os::_page_sizes[0]) {
+        size_t expected = os::_page_sizes[0];
+        size_t actual = os::page_size_for_region_unaligned(os::_page_sizes[1] - 17, 1);
+        assert_eq(actual, expected);
+      }
+
+      // Return small page size for values less than a small page.
+      size_t small_page = small_page_size();
+      size_t actual = os::page_size_for_region_unaligned(small_page - 17, 1);
+      assert_eq(small_page, actual);
+    }
+  }
+
  public:
   static void run_tests() {
-    test_page_size_for_region();
+    test_page_size_for_region_aligned();
     test_page_size_for_region_alignment();
+    test_page_size_for_region_unaligned();
   }
 };
 

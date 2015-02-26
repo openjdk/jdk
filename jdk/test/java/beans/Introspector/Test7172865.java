@@ -30,6 +30,7 @@ import java.beans.PropertyDescriptor;
  * @bug 7172854 7172865
  * @summary Tests that cached methods are not lost
  * @author Sergey Malenkov
+ * @run main/othervm -Xmx128m Test7172865
  */
 
 public class Test7172865 {

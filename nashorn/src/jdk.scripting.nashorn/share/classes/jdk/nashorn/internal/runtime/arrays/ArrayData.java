@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
@@ -117,7 +118,7 @@ public abstract class ArrayData {
                     return new SparseArrayData(this, safeIndex + 1);
                 }
                 //known to fit in int
-                return toRealArrayData((int)safeIndex).ensure(safeIndex);
+                return toRealArrayData((int)safeIndex);
            }
            return this;
         }
@@ -496,7 +497,9 @@ public abstract class ArrayData {
     public abstract ArrayData shiftRight(final int by);
 
     /**
-     * Ensure that the given index exists and won't fail subsequent
+     * Ensure that the given index exists and won't fail in a subsequent access.
+     * If {@code safeIndex} is equal or greater than the current length the length is
+     * updated to {@code safeIndex + 1}.
      *
      * @param safeIndex the index to ensure wont go out of bounds
      * @return new array data (or same)
@@ -758,39 +761,6 @@ public abstract class ArrayData {
      */
     public ArrayData push(final boolean strict, final Object item) {
         return push(strict, new Object[] { item });
-    }
-
-    /**
-     * Push an array of items to the end of the array
-     *
-     * @param strict are we in strict mode
-     * @param item   the item
-     * @return new array data (or same)
-     */
-    public ArrayData push(final boolean strict, final double item) {
-        return push(strict, item);
-    }
-
-    /**
-     * Push an array of items to the end of the array
-     *
-     * @param strict are we in strict mode
-     * @param item   the item
-     * @return new array data (or same)
-     */
-    public ArrayData push(final boolean strict, final long item) {
-        return push(strict, item);
-    }
-
-    /**
-     * Push an array of items to the end of the array
-     *
-     * @param strict are we in strict mode
-     * @param item   the item
-     * @return new array data (or same)
-     */
-    public ArrayData push(final boolean strict, final int item) {
-        return push(strict, item);
     }
 
     /**

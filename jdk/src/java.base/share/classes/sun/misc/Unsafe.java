@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package sun.misc;
 
-import java.security.*;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.security.ProtectionDomain;
 
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
@@ -189,204 +189,38 @@ public final class Unsafe {
      * If the reference <code>o</code> is non-null, car marks or
      * other store barriers for that object (if the VM requires them)
      * are updated.
-     * @see #putInt(Object, int, int)
+     * @see #putInt(Object, long, int)
      */
     public native void putObject(Object o, long offset, Object x);
 
     /** @see #getInt(Object, long) */
     public native boolean getBoolean(Object o, long offset);
-    /** @see #putInt(Object, int, int) */
+    /** @see #putInt(Object, long, int) */
     public native void    putBoolean(Object o, long offset, boolean x);
     /** @see #getInt(Object, long) */
     public native byte    getByte(Object o, long offset);
-    /** @see #putInt(Object, int, int) */
+    /** @see #putInt(Object, long, int) */
     public native void    putByte(Object o, long offset, byte x);
     /** @see #getInt(Object, long) */
     public native short   getShort(Object o, long offset);
-    /** @see #putInt(Object, int, int) */
+    /** @see #putInt(Object, long, int) */
     public native void    putShort(Object o, long offset, short x);
     /** @see #getInt(Object, long) */
     public native char    getChar(Object o, long offset);
-    /** @see #putInt(Object, int, int) */
+    /** @see #putInt(Object, long, int) */
     public native void    putChar(Object o, long offset, char x);
     /** @see #getInt(Object, long) */
     public native long    getLong(Object o, long offset);
-    /** @see #putInt(Object, int, int) */
+    /** @see #putInt(Object, long, int) */
     public native void    putLong(Object o, long offset, long x);
     /** @see #getInt(Object, long) */
     public native float   getFloat(Object o, long offset);
-    /** @see #putInt(Object, int, int) */
+    /** @see #putInt(Object, long, int) */
     public native void    putFloat(Object o, long offset, float x);
     /** @see #getInt(Object, long) */
     public native double  getDouble(Object o, long offset);
-    /** @see #putInt(Object, int, int) */
+    /** @see #putInt(Object, long, int) */
     public native void    putDouble(Object o, long offset, double x);
-
-    /**
-     * This method, like all others with 32-bit offsets, was native
-     * in a previous release but is now a wrapper which simply casts
-     * the offset to a long value.  It provides backward compatibility
-     * with bytecodes compiled against 1.4.
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public int getInt(Object o, int offset) {
-        return getInt(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putInt(Object o, int offset, int x) {
-        putInt(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public Object getObject(Object o, int offset) {
-        return getObject(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putObject(Object o, int offset, Object x) {
-        putObject(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public boolean getBoolean(Object o, int offset) {
-        return getBoolean(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putBoolean(Object o, int offset, boolean x) {
-        putBoolean(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public byte getByte(Object o, int offset) {
-        return getByte(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putByte(Object o, int offset, byte x) {
-        putByte(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public short getShort(Object o, int offset) {
-        return getShort(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putShort(Object o, int offset, short x) {
-        putShort(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public char getChar(Object o, int offset) {
-        return getChar(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putChar(Object o, int offset, char x) {
-        putChar(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public long getLong(Object o, int offset) {
-        return getLong(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putLong(Object o, int offset, long x) {
-        putLong(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public float getFloat(Object o, int offset) {
-        return getFloat(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putFloat(Object o, int offset, float x) {
-        putFloat(o, (long)offset, x);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public double getDouble(Object o, int offset) {
-        return getDouble(o, (long)offset);
-    }
-
-    /**
-     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
-     * See {@link #staticFieldOffset}.
-     */
-    @Deprecated
-    public void putDouble(Object o, int offset, double x) {
-        putDouble(o, (long)offset, x);
-    }
 
     // These work on values in the C heap.
 
@@ -579,58 +413,6 @@ public final class Unsafe {
     public static final int INVALID_FIELD_OFFSET   = -1;
 
     /**
-     * Returns the offset of a field, truncated to 32 bits.
-     * This method is implemented as follows:
-     * <blockquote><pre>
-     * public int fieldOffset(Field f) {
-     *     if (Modifier.isStatic(f.getModifiers()))
-     *         return (int) staticFieldOffset(f);
-     *     else
-     *         return (int) objectFieldOffset(f);
-     * }
-     * </pre></blockquote>
-     * @deprecated As of 1.4.1, use {@link #staticFieldOffset} for static
-     * fields and {@link #objectFieldOffset} for non-static fields.
-     */
-    @Deprecated
-    public int fieldOffset(Field f) {
-        if (Modifier.isStatic(f.getModifiers()))
-            return (int) staticFieldOffset(f);
-        else
-            return (int) objectFieldOffset(f);
-    }
-
-    /**
-     * Returns the base address for accessing some static field
-     * in the given class.  This method is implemented as follows:
-     * <blockquote><pre>
-     * public Object staticFieldBase(Class c) {
-     *     Field[] fields = c.getDeclaredFields();
-     *     for (int i = 0; i < fields.length; i++) {
-     *         if (Modifier.isStatic(fields[i].getModifiers())) {
-     *             return staticFieldBase(fields[i]);
-     *         }
-     *     }
-     *     return null;
-     * }
-     * </pre></blockquote>
-     * @deprecated As of 1.4.1, use {@link #staticFieldBase(Field)}
-     * to obtain the base pertaining to a specific {@link Field}.
-     * This method works only for JVMs which store all statics
-     * for a given class in one place.
-     */
-    @Deprecated
-    public Object staticFieldBase(Class<?> c) {
-        Field[] fields = c.getDeclaredFields();
-        for (int i = 0; i < fields.length; i++) {
-            if (Modifier.isStatic(fields[i].getModifiers())) {
-                return staticFieldBase(fields[i]);
-            }
-        }
-        return null;
-    }
-
-    /**
      * Report the location of a given field in the storage allocation of its
      * class.  Do not expect to perform any sort of arithmetic on this offset;
      * it is just a cookie which is passed to the unsafe heap memory accessors.
@@ -648,7 +430,7 @@ public final class Unsafe {
      * must preserve all bits of static field offsets.
      * @see #getInt(Object, long)
      */
-    public native long staticFieldOffset(Field f);
+    public native long objectFieldOffset(Field f);
 
     /**
      * Report the location of a given static field, in conjunction with {@link
@@ -667,7 +449,7 @@ public final class Unsafe {
      * this method reports its result as a long value.
      * @see #getInt(Object, long)
      */
-    public native long objectFieldOffset(Field f);
+    public native long staticFieldOffset(Field f);
 
     /**
      * Report the location of a given static field, in conjunction with {@link
@@ -748,7 +530,7 @@ public final class Unsafe {
      * Report the scale factor for addressing elements in the storage
      * allocation of a given array class.  However, arrays of "narrow" types
      * will generally not work properly with accessors like {@link
-     * #getByte(Object, int)}, so the scale factor for such classes is reported
+     * #getByte(Object, long)}, so the scale factor for such classes is reported
      * as zero.
      *
      * @see #arrayBaseOffset
@@ -844,22 +626,6 @@ public final class Unsafe {
         Initializes the class if it has not yet been. */
     public native Object allocateInstance(Class<?> cls)
         throws InstantiationException;
-
-    /** Lock the object.  It must get unlocked via {@link #monitorExit}. */
-    public native void monitorEnter(Object o);
-
-    /**
-     * Unlock the object.  It must have been locked via {@link
-     * #monitorEnter}.
-     */
-    public native void monitorExit(Object o);
-
-    /**
-     * Tries to lock the object.  Returns true or false to indicate
-     * whether the lock succeeded.  If it did, the object must be
-     * unlocked via {@link #monitorExit}.
-     */
-    public native boolean tryMonitorEnter(Object o);
 
     /** Throw the exception without telling the verifier. */
     public native void throwException(Throwable ee);
@@ -1152,11 +918,11 @@ public final class Unsafe {
     public native void fullFence();
 
     /**
-     * Throws IllegalAccessError; for use by the VM.
+     * Throws IllegalAccessError; for use by the VM for access control
+     * error support.
      * @since 1.8
      */
     private static void throwIllegalAccessError() {
-       throw new IllegalAccessError();
+        throw new IllegalAccessError();
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,12 @@
 #include "memory/heapInspection.hpp"
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "utilities/copy.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
@@ -1131,6 +1133,13 @@ void MethodData::init() {
   _backedge_counter.init();
   _invocation_counter_start = 0;
   _backedge_counter_start = 0;
+
+  // Set per-method invoke- and backedge mask.
+  double scale = 1.0;
+  CompilerOracle::has_option_value(_method, "CompileThresholdScaling", scale);
+  _invoke_mask = right_n_bits(Arguments::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _backedge_mask = right_n_bits(Arguments::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+
   _tenure_traps = 0;
   _num_loops = 0;
   _num_blocks = 0;

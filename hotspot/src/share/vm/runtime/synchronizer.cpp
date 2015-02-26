@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,70 @@ static volatile intptr_t ListLock = 0;      // protects global monitor free-list
 static volatile int MonitorFreeCount  = 0;  // # on gFreeList
 static volatile int MonitorPopulation = 0;  // # Extant -- in circulation
 #define CHAINMARKER (cast_to_oop<intptr_t>(-1))
+
+
+// =====================> Quick functions
+
+// The quick_* forms are special fast-path variants used to improve
+// performance.  In the simplest case, a "quick_*" implementation could
+// simply return false, in which case the caller will perform the necessary
+// state transitions and call the slow-path form.
+// The fast-path is designed to handle frequently arising cases in an efficient
+// manner and is just a degenerate "optimistic" variant of the slow-path.
+// returns true  -- to indicate the call was satisfied.
+// returns false -- to indicate the call needs the services of the slow-path.
+// A no-loitering ordinance is in effect for code in the quick_* family
+// operators: safepoints or indefinite blocking (blocking that might span a
+// safepoint) are forbidden. Generally the thread_state() is _in_Java upon
+// entry.
+
+// The LockNode emitted directly at the synchronization site would have
+// been too big if it were to have included support for the cases of inflated
+// recursive enter and exit, so they go here instead.
+// Note that we can't safely call AsyncPrintJavaStack() from within
+// quick_enter() as our thread state remains _in_Java.
+
+bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
+                                     BasicLock * Lock) {
+  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert(Self->is_Java_thread(), "invariant");
+  assert(((JavaThread *) Self)->thread_state() == _thread_in_Java, "invariant");
+  No_Safepoint_Verifier nsv;
+  if (obj == NULL) return false;       // Need to throw NPE
+  const markOop mark = obj->mark();
+
+  if (mark->has_monitor()) {
+    ObjectMonitor * const m = mark->monitor();
+    assert(m->object() == obj, "invariant");
+    Thread * const owner = (Thread *) m->_owner;
+
+    // Lock contention and Transactional Lock Elision (TLE) diagnostics
+    // and observability
+    // Case: light contention possibly amenable to TLE
+    // Case: TLE inimical operations such as nested/recursive synchronization
+
+    if (owner == Self) {
+      m->_recursions++;
+      return true;
+    }
+
+    if (owner == NULL &&
+        Atomic::cmpxchg_ptr(Self, &(m->_owner), NULL) == NULL) {
+      assert(m->_recursions == 0, "invariant");
+      assert(m->_owner == Self, "invariant");
+      return true;
+    }
+  }
+
+  // Note that we could inflate in quick_enter.
+  // This is likely a useful optimization
+  // Critically, in quick_enter() we must not:
+  // -- perform bias revocation, or
+  // -- block indefinitely, or
+  // -- reach a safepoint
+
+  return false;        // revert to slow-path
+}
 
 // -----------------------------------------------------------------------------
 //  Fast Monitor Enter/Exit
@@ -275,18 +339,6 @@ void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
   ObjectSynchronizer::inflate(THREAD, obj())->enter(THREAD);
   THREAD->set_current_pending_monitor_is_from_java(true);
 }
-
-// NOTE: must use heavy weight monitor to handle jni monitor enter
-bool ObjectSynchronizer::jni_try_enter(Handle obj, Thread* THREAD) {
-  if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
-    assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
-  }
-
-  ObjectMonitor* monitor = ObjectSynchronizer::inflate_helper(obj());
-  return monitor->try_enter(THREAD);
-}
-
 
 // NOTE: must use heavy weight monitor to handle jni monitor exit
 void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {

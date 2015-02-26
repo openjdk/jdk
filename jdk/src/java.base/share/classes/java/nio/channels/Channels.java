@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,12 +579,13 @@ public final class Channels {
      * charset and writes the resulting bytes to the given channel.
      *
      * <p> An invocation of this method of the form
-     * <p>
+     *
      * <pre> {@code
      *     Channels.newWriter(ch, csname)
      * } </pre>
+     *
      * behaves in exactly the same way as the expression
-     * <p>
+     *
      * <pre> {@code
      *     Channels.newWriter(ch, Charset.forName(csName).newEncoder(), -1)
      * } </pre>

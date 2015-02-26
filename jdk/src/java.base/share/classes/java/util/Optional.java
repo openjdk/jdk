@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * A container object which may or may not contain a non-null value.
@@ -37,8 +38,8 @@ import java.util.function.Supplier;
  * <p>Additional methods that depend on the presence or absence of a contained
  * value are provided, such as {@link #orElse(java.lang.Object) orElse()}
  * (return a default value if value not present) and
- * {@link #ifPresent(java.util.function.Consumer) ifPresent()} (execute a block
- * of code if the value is present).
+ * {@link #ifPresent(java.util.function.Consumer) ifPresent()} (perform an
+ * action if the value is present).
  *
  * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
@@ -147,16 +148,36 @@ public final class Optional<T> {
     }
 
     /**
-     * If a value is present, invoke the specified consumer with the value,
+     * If a value is present, perform the given action with the value,
      * otherwise do nothing.
      *
-     * @param consumer block to be executed if a value is present
-     * @throws NullPointerException if value is present and {@code consumer} is
+     * @param action the action to be performed if a value is present
+     * @throws NullPointerException if a value is present and {@code action} is
      * null
      */
-    public void ifPresent(Consumer<? super T> consumer) {
-        if (value != null)
-            consumer.accept(value);
+    public void ifPresent(Consumer<? super T> action) {
+        if (value != null) {
+            action.accept(value);
+        }
+    }
+
+    /**
+     * If a value is present, perform the given action with the value,
+     * otherwise perform the given empty-based action.
+     *
+     * @param action the action to be performed if a value is present
+     * @param emptyAction the empty-based action to be performed if a value is
+     * not present
+     * @throws NullPointerException if a value is present and {@code action} is
+     * null, or a value is not present and {@code emptyAction} is null.
+     * @since 1.9
+     */
+    public void ifPresentOrElse(Consumer<? super T> action, Runnable emptyAction) {
+        if (value != null) {
+            action.accept(value);
+        } else {
+            emptyAction.run();
+        }
     }
 
     /**
@@ -172,10 +193,11 @@ public final class Optional<T> {
      */
     public Optional<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
-        if (!isPresent())
+        if (!isPresent()) {
             return this;
-        else
+        } else {
             return predicate.test(value) ? this : empty();
+        }
     }
 
     /**
@@ -209,9 +231,9 @@ public final class Optional<T> {
      */
     public<U> Optional<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
-        if (!isPresent())
+        if (!isPresent()) {
             return empty();
-        else {
+        } else {
             return Optional.ofNullable(mapper.apply(value));
         }
     }
@@ -235,10 +257,33 @@ public final class Optional<T> {
      */
     public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
         Objects.requireNonNull(mapper);
-        if (!isPresent())
+        if (!isPresent()) {
             return empty();
-        else {
+        } else {
             return Objects.requireNonNull(mapper.apply(value));
+        }
+    }
+
+    /**
+     * If a value is present return a sequential {@link Stream} containing only
+     * that value, otherwise return an empty {@code Stream}.
+     *
+     * @apiNote This method can be used to transform a {@code Stream} of
+     * optional elements to a {@code Stream} of present value elements:
+     *
+     * <pre>{@code
+     *     Stream<Optional<T>> os = ..
+     *     Stream<T> s = os.flatMap(Optional::stream)
+     * }</pre>
+     *
+     * @return the optional value as a {@code Stream}
+     * @since 1.9
+     */
+    public Stream<T> stream() {
+        if (!isPresent()) {
+            return Stream.empty();
+        } else {
+            return Stream.of(value);
         }
     }
 

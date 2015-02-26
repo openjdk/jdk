@@ -486,7 +486,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return New {@link PropertyMap} with {@link Property} replaced.
      */
-    PropertyMap replaceProperty(final Property oldProperty, final Property newProperty) {
+    public PropertyMap replaceProperty(final Property oldProperty, final Property newProperty) {
         if (listeners != null) {
             listeners.propertyModified(oldProperty, newProperty);
         }

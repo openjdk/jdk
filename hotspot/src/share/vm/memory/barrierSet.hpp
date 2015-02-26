@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,7 @@ public:
     CardTableModRef,
     CardTableExtension,
     G1SATBCT,
-    G1SATBCTLogging,
-    Other,
-    Uninit
+    G1SATBCTLogging
   };
 
   enum Flags {
@@ -57,9 +55,11 @@ protected:
   static const int _max_covered_regions = 2;
   Name _kind;
 
+  BarrierSet(Name kind) : _kind(kind) { }
+  ~BarrierSet() { }
+
 public:
 
-  BarrierSet() { _kind = Uninit; }
   // To get around prohibition on RTTI.
   BarrierSet::Name kind() { return _kind; }
   virtual bool is_a(BarrierSet::Name bsn) = 0;
@@ -160,7 +160,7 @@ public:
   // (For efficiency reasons, this operation is specialized for certain
   // barrier types.  Semantically, it should be thought of as a call to the
   // virtual "_work" function below, which must implement the barrier.)
-  inline void write_region(MemRegion mr);
+  void write_region(MemRegion mr);
 protected:
   virtual void write_region_work(MemRegion mr) = 0;
 public:

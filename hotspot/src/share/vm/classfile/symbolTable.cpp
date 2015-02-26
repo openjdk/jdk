@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "memory/filemap.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.inline2.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -82,6 +81,10 @@ void SymbolTable::initialize_symbols(int arena_alloc_size) {
 
 // Call function for all symbols in the symbol table.
 void SymbolTable::symbols_do(SymbolClosure *cl) {
+  // all symbols from shared table
+  _shared_table.symbols_do(cl);
+
+  // all symbols from the dynamic table
   const int n = the_table()->table_size();
   for (int i = 0; i < n; i++) {
     for (HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);

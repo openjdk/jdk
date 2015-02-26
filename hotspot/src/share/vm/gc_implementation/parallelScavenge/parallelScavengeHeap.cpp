@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
 
   uint loop_count = 0;
   uint gc_count = 0;
-  int gclocker_stalled_count = 0;
+  uint gclocker_stalled_count = 0;
 
   while (result == NULL) {
     // We don't want to have multiple collections for a single filled generation.
@@ -520,8 +520,8 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   assert(!Heap_lock->owned_by_self(),
     "this thread should not own the Heap_lock");
 
-  unsigned int gc_count      = 0;
-  unsigned int full_gc_count = 0;
+  uint gc_count      = 0;
+  uint full_gc_count = 0;
   {
     MutexLocker ml(Heap_lock);
     // This value is guarded by the Heap_lock
@@ -663,7 +663,7 @@ void ParallelScavengeHeap::print_heap_change(size_t prev_used) {
   }
 }
 
-void ParallelScavengeHeap::trace_heap(GCWhen::Type when, GCTracer* gc_tracer) {
+void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const PSHeapSummary& heap_summary = create_ps_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);
 

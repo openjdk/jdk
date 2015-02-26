@@ -82,6 +82,7 @@ public class Attr extends JCTree.Visitor {
     final Log log;
     final Symtab syms;
     final Resolve rs;
+    final Operators operators;
     final Infer infer;
     final Analyzer analyzer;
     final DeferredAttr deferredAttr;
@@ -115,6 +116,7 @@ public class Attr extends JCTree.Visitor {
         log = Log.instance(context);
         syms = Symtab.instance(context);
         rs = Resolve.instance(context);
+        operators = Operators.instance(context);
         chk = Check.instance(context);
         flow = Flow.instance(context);
         memberEnter = MemberEnter.instance(context);
@@ -1467,7 +1469,7 @@ public class Attr extends JCTree.Visitor {
          *  @param thentype The type of the expression's then-part.
          *  @param elsetype The type of the expression's else-part.
          */
-        private Type condType(DiagnosticPosition pos,
+        Type condType(DiagnosticPosition pos,
                                Type thentype, Type elsetype) {
             // If same type, that is the result
             if (types.isSameType(thentype, elsetype))
@@ -2142,7 +2144,7 @@ public class Attr extends JCTree.Visitor {
 
         JCTree.Tag optag = NULLCHK;
         JCUnary tree = make.at(arg.pos).Unary(optag, arg);
-        tree.operator = syms.nullcheck;
+        tree.operator = operators.resolveUnary(arg, optag, arg.type);
         tree.type = arg.type;
         return tree;
     }
@@ -2783,7 +2785,8 @@ public class Attr extends JCTree.Visitor {
 
     @SuppressWarnings("fallthrough")
     void checkReferenceCompatible(JCMemberReference tree, Type descriptor, Type refType, CheckContext checkContext, boolean speculativeAttr) {
-        Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
+        InferenceContext inferenceContext = checkContext.inferenceContext();
+        Type returnType = inferenceContext.asUndetVar(descriptor.getReturnType());
 
         Type resType;
         switch (tree.getMode()) {
@@ -2812,10 +2815,20 @@ public class Attr extends JCTree.Visitor {
         if (incompatibleReturnType != null) {
             checkContext.report(tree, diags.fragment("incompatible.ret.type.in.mref",
                     diags.fragment("inconvertible.types", resType, descriptor.getReturnType())));
+        } else {
+            if (inferenceContext.free(refType)) {
+                // we need to wait for inference to finish and then replace inference vars in the referent type
+                inferenceContext.addFreeTypeListener(List.of(refType),
+                        instantiatedContext -> {
+                            tree.referentType = instantiatedContext.asInstType(refType);
+                        });
+            } else {
+                tree.referentType = refType;
+            }
         }
 
         if (!speculativeAttr) {
-            List<Type> thrownTypes = checkContext.inferenceContext().asUndetVars(descriptor.getThrownTypes());
+            List<Type> thrownTypes = inferenceContext.asUndetVars(descriptor.getThrownTypes());
             if (chk.unhandled(refType.getThrownTypes(), thrownTypes).nonEmpty()) {
                 log.error(tree, "incompatible.thrown.types.in.mref", refType.getThrownTypes());
             }
@@ -2892,18 +2905,10 @@ public class Attr extends JCTree.Visitor {
         Type owntype = attribTree(tree.lhs, env, varAssignmentInfo);
         Type operand = attribExpr(tree.rhs, env);
         // Find operator.
-        Symbol operator = tree.operator = rs.resolveBinaryOperator(
-            tree.pos(), tree.getTag().noAssignOp(), env,
-            owntype, operand);
-
+        Symbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag().noAssignOp(), owntype, operand);
         if (operator.kind == MTH &&
                 !owntype.isErroneous() &&
                 !operand.isErroneous()) {
-            chk.checkOperator(tree.pos(),
-                              (OperatorSymbol)operator,
-                              tree.getTag().noAssignOp(),
-                              owntype,
-                              operand);
             chk.checkDivZero(tree.rhs.pos(), operator, operand);
             chk.checkCastable(tree.rhs.pos(),
                               operator.type.getReturnType(),
@@ -2919,9 +2924,7 @@ public class Attr extends JCTree.Visitor {
             : chk.checkNonVoid(tree.arg.pos(), attribExpr(tree.arg, env));
 
         // Find operator.
-        Symbol operator = tree.operator =
-            rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, argtype);
-
+        Symbol operator = tree.operator = operators.resolveUnary(tree, tree.getTag(), argtype);
         Type owntype = types.createErrorType(tree.type);
         if (operator.kind == MTH &&
                 !argtype.isErroneous()) {
@@ -2946,22 +2949,13 @@ public class Attr extends JCTree.Visitor {
         Type left = chk.checkNonVoid(tree.lhs.pos(), attribExpr(tree.lhs, env));
         Type right = chk.checkNonVoid(tree.lhs.pos(), attribExpr(tree.rhs, env));
         // Find operator.
-        Symbol operator = tree.operator =
-            rs.resolveBinaryOperator(tree.pos(), tree.getTag(), env, left, right);
-
+        Symbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag(), left, right);
         Type owntype = types.createErrorType(tree.type);
         if (operator.kind == MTH &&
                 !left.isErroneous() &&
                 !right.isErroneous()) {
             owntype = operator.type.getReturnType();
-            // This will figure out when unboxing can happen and
-            // choose the right comparison operator.
-            int opc = chk.checkOperator(tree.lhs.pos(),
-                                        (OperatorSymbol)operator,
-                                        tree.getTag(),
-                                        left,
-                                        right);
-
+            int opc = ((OperatorSymbol)operator).opcode;
             // If both arguments are constants, fold them.
             if (left.constValue() != null && right.constValue() != null) {
                 Type ctype = cfolder.fold2(opc, left, right);
@@ -2974,8 +2968,7 @@ public class Attr extends JCTree.Visitor {
             // castable to each other, (JLS 15.21).  Note: unboxing
             // comparisons will not have an acmp* opc at this point.
             if ((opc == ByteCodes.if_acmpeq || opc == ByteCodes.if_acmpne)) {
-                if (!types.isEqualityComparable(left, right,
-                                                new Warner(tree.pos()))) {
+                if (!types.isCastable(left, right, new Warner(tree.pos()))) {
                     log.error(tree.pos(), "incomparable.types", left, right);
                 }
             }

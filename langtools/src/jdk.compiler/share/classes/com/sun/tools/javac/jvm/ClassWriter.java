@@ -656,8 +656,7 @@ public class ClassWriter extends ClassFile {
 
     private void writeParamAnnotations(MethodSymbol m,
                                        RetentionPolicy retention) {
-        databuf.appendByte(m.params.length() + m.extraParams.length());
-        writeParamAnnotations(m.extraParams, retention);
+        databuf.appendByte(m.params.length());
         writeParamAnnotations(m.params, retention);
     }
 

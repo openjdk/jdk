@@ -67,13 +67,13 @@ public class LambdaLambdaSerialized {
         out.writeObject(lamb);
     }
 
-    static void readAssert(ObjectInputStream in, String expected)  throws IOException, ClassNotFoundException {
-        LSI<LSI<Map>> ls = (LSI<LSI<Map>>) in.readObject();
+    static void readAssert(ObjectInputStream in, String expected) throws IOException, ClassNotFoundException {
+        LSI<LSI<Map>> ls = (LSI<LSI<Map>>)in.readObject();
         Map result = ls.get().get();
         System.out.printf("Result: %s\n", result);
     }
-}
 
-interface LSI<T> extends Serializable {
-    T get();
+    interface LSI<T> extends Serializable {
+        T get();
+    }
 }

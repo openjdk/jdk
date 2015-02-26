@@ -311,11 +311,14 @@ inline void MacroAssembler::load_with_trap_null_check(Register d, int si16, Regi
   ld(d, si16, s1);
 }
 
-inline void MacroAssembler::load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1) {
+inline void MacroAssembler::load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1, Register tmp) {
   if (UseCompressedOops) {
-    lwz(d, offs, s1);
+    // In disjoint mode decoding can save a cycle if src != dst.
+    Register narrowOop = (tmp != noreg && Universe::narrow_oop_base_disjoint()) ? tmp : d;
+    lwz(narrowOop, offs, s1);
     // Attention: no null check here!
-    decode_heap_oop_not_null(d);
+    Register res = decode_heap_oop_not_null(d, narrowOop);
+    assert(res == d, "caller will not consume loaded value");
   } else {
     ld(d, offs, s1);
   }
@@ -340,26 +343,36 @@ inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, R
 }
 
 inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register src) {
-  Register current = (src!=noreg) ? src : d; // Compressed oop is in d if no src provided.
-  if (Universe::narrow_oop_base() != NULL) {
+  Register current = (src != noreg) ? src : d; // Oop to be compressed is in d if no src provided.
+  if (Universe::narrow_oop_base_overlaps()) {
     sub(d, current, R30);
     current = d;
   }
   if (Universe::narrow_oop_shift() != 0) {
-    srdi(d, current, LogMinObjAlignmentInBytes);
+    rldicl(d, current, 64-Universe::narrow_oop_shift(), 32);  // Clears the upper bits.
     current = d;
   }
   return current; // Encoded oop is in this register.
 }
 
-inline void MacroAssembler::decode_heap_oop_not_null(Register d) {
+inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register src) {
+  if (Universe::narrow_oop_base_disjoint() && src != noreg && src != d &&
+      Universe::narrow_oop_shift() != 0) {
+    mr(d, R30);
+    rldimi(d, src, Universe::narrow_oop_shift(), 32-Universe::narrow_oop_shift());
+    return d;
+  }
+
+  Register current = (src != noreg) ? src : d; // Compressed oop is in d if no src provided.
   if (Universe::narrow_oop_shift() != 0) {
-    assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
-    sldi(d, d, LogMinObjAlignmentInBytes);
+    sldi(d, current, Universe::narrow_oop_shift());
+    current = d;
   }
   if (Universe::narrow_oop_base() != NULL) {
-    add(d, d, R30);
+    add(d, current, R30);
+    current = d;
   }
+  return current; // Decoded oop is in this register.
 }
 
 inline void MacroAssembler::decode_heap_oop(Register d) {
@@ -368,13 +381,7 @@ inline void MacroAssembler::decode_heap_oop(Register d) {
     cmpwi(CCR0, d, 0);
     beq(CCR0, isNull);
   }
-  if (Universe::narrow_oop_shift() != 0) {
-    assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
-    sldi(d, d, LogMinObjAlignmentInBytes);
-  }
-  if (Universe::narrow_oop_base() != NULL) {
-    add(d, d, R30);
-  }
+  decode_heap_oop_not_null(d);
   bind(isNull);
 }
 

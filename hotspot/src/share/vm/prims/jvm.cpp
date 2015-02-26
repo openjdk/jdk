@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,21 @@
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/bytecode.hpp"
+#include "memory/barrierSet.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/method.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -45,7 +48,6 @@
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
-#include "runtime/dtraceJSDT.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -300,6 +302,48 @@ JVM_LEAF(jlong, JVM_NanoTime(JNIEnv *env, jclass ignored))
   return os::javaTimeNanos();
 JVM_END
 
+// The function below is actually exposed by sun.misc.VM and not
+// java.lang.System, but we choose to keep it here so that it stays next
+// to JVM_CurrentTimeMillis and JVM_NanoTime
+
+const jlong MAX_DIFF_SECS = CONST64(0x0100000000); //  2^32
+const jlong MIN_DIFF_SECS = -MAX_DIFF_SECS; // -2^32
+
+JVM_LEAF(jlong, JVM_GetNanoTimeAdjustment(JNIEnv *env, jclass ignored, jlong offset_secs))
+  JVMWrapper("JVM_GetNanoTimeAdjustment");
+  jlong seconds;
+  jlong nanos;
+
+  os::javaTimeSystemUTC(seconds, nanos);
+
+  // We're going to verify that the result can fit in a long.
+  // For that we need the difference in seconds between 'seconds'
+  // and 'offset_secs' to be such that:
+  //     |seconds - offset_secs| < (2^63/10^9)
+  // We're going to approximate 10^9 ~< 2^30 (1000^3 ~< 1024^3)
+  // which makes |seconds - offset_secs| < 2^33
+  // and we will prefer +/- 2^32 as the maximum acceptable diff
+  // as 2^32 has a more natural feel than 2^33...
+  //
+  // So if |seconds - offset_secs| >= 2^32 - we return a special
+  // sentinel value (-1) which the caller should take as an
+  // exception value indicating that the offset given to us is
+  // too far from range of the current time - leading to too big
+  // a nano adjustment. The caller is expected to recover by
+  // computing a more accurate offset and calling this method
+  // again. (For the record 2^32 secs is ~136 years, so that
+  // should rarely happen)
+  //
+  jlong diff = seconds - offset_secs;
+  if (diff >= MAX_DIFF_SECS || diff <= MIN_DIFF_SECS) {
+     return -1; // sentinel value: the offset is too far off the target
+  }
+
+  // return the adjustment. If you compute a time by adding
+  // this number of nanoseconds along with the number of seconds
+  // in the offset you should get the current UTC time.
+  return (diff * (jlong)1000000000) + nanos;
+JVM_END
 
 JVM_ENTRY(void, JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src_pos,
                                jobject dst, jint dst_pos, jint length))
@@ -1167,7 +1211,7 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
   Method* m_oop = object->klass()->uncached_lookup_method(
                                            vmSymbols::run_method_name(),
                                            vmSymbols::void_object_signature(),
-                                           Klass::normal);
+                                           Klass::find_overpass);
   methodHandle m (THREAD, m_oop);
   if (m.is_null() || !m->is_method() || !m()->is_public() || m()->is_static()) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "No run method");
@@ -3518,36 +3562,6 @@ JVM_END
 JVM_LEAF(jboolean, JVM_SupportsCX8())
   JVMWrapper("JVM_SupportsCX8");
   return VM_Version::supports_cx8();
-JVM_END
-
-// DTrace ///////////////////////////////////////////////////////////////////
-
-JVM_ENTRY(jint, JVM_DTraceGetVersion(JNIEnv* env))
-  JVMWrapper("JVM_DTraceGetVersion");
-  return (jint)JVM_TRACING_DTRACE_VERSION;
-JVM_END
-
-JVM_ENTRY(jlong,JVM_DTraceActivate(
-    JNIEnv* env, jint version, jstring module_name, jint providers_count,
-    JVM_DTraceProvider* providers))
-  JVMWrapper("JVM_DTraceActivate");
-  return DTraceJSDT::activate(
-    version, module_name, providers_count, providers, THREAD);
-JVM_END
-
-JVM_ENTRY(jboolean,JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method))
-  JVMWrapper("JVM_DTraceIsProbeEnabled");
-  return DTraceJSDT::is_probe_enabled(method);
-JVM_END
-
-JVM_ENTRY(void,JVM_DTraceDispose(JNIEnv* env, jlong handle))
-  JVMWrapper("JVM_DTraceDispose");
-  DTraceJSDT::dispose(handle);
-JVM_END
-
-JVM_ENTRY(jboolean,JVM_DTraceIsSupported(JNIEnv* env))
-  JVMWrapper("JVM_DTraceIsSupported");
-  return DTraceJSDT::is_supported();
 JVM_END
 
 // Returns an array of all live Thread objects (VM internal JavaThreads,

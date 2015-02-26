@@ -74,7 +74,7 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
     /** size of next free slot vector */
     private int nextFreeSlotsSize;
 
-    private boolean isWithBoundary(final LexicalContextNode node) {
+    private boolean isWithBoundary(final Object node) {
         return node instanceof Block && !isEmpty() && peek() instanceof WithNode;
     }
 
@@ -102,7 +102,7 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
     }
 
     @Override
-    public <T extends LexicalContextNode> T pop(final T node) {
+    public <T extends Node> T pop(final T node) {
         final T popped = super.pop(node);
         if (isWithBoundary(node)) {
             dynamicScopeCount--;

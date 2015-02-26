@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,13 +65,14 @@ class ObjectSynchronizer : AllStatic {
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.
   static void jni_enter(Handle obj, TRAPS);
-  static bool jni_try_enter(Handle obj, Thread* THREAD); // Implements Unsafe.tryMonitorEnter
   static void jni_exit(oop obj, Thread* THREAD);
 
   // Handle all interpreter, compiler and jni cases
   static int  wait(Handle obj, jlong millis, TRAPS);
   static void notify(Handle obj, TRAPS);
   static void notifyall(Handle obj, TRAPS);
+
+  static bool quick_enter(oop obj, Thread* Self, BasicLock* Lock);
 
   // Special internal-use-only method for use by JVM infrastructure
   // that needs to wait() on a java-level object but that can't risk

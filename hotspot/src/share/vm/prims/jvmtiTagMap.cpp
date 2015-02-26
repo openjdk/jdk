@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "oops/oop.inline2.hpp"
+#include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -1046,10 +1047,16 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
 {
   assert(str->klass() == SystemDictionary::String_klass(), "not a string");
 
+  typeArrayOop s_value = java_lang_String::value(str);
+
+  // JDK-6584008: the value field may be null if a String instance is
+  // partially constructed.
+  if (s_value == NULL) {
+    return 0;
+  }
   // get the string value and length
   // (string value may be offset from the base)
   int s_len = java_lang_String::length(str);
-  typeArrayOop s_value = java_lang_String::value(str);
   int s_offset = java_lang_String::offset(str);
   jchar* value;
   if (s_len > 0) {

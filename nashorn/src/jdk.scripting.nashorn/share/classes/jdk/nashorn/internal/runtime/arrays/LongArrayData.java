@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -156,7 +157,9 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
             final int newLength = ArrayData.nextSize((int)safeIndex);
             array = Arrays.copyOf(array, newLength);
         }
-        setLength(safeIndex + 1);
+        if (safeIndex >= length()) {
+            setLength(safeIndex + 1);
+        }
         return this;
     }
 
@@ -300,17 +303,6 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
         final long start     = from < 0 ? from + length() : from;
         final long newLength = to - start;
         return new LongArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)newLength);
-    }
-
-    @Override
-    public final ArrayData push(final boolean strict, final long item) {
-        final long      len     = length();
-        final ArrayData newData = ensure(len);
-        if (newData == this) {
-            array[(int)len] = item;
-            return this;
-        }
-        return newData.set((int)len, item, strict);
     }
 
     @Override

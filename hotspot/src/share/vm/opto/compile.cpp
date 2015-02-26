@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
@@ -3105,6 +3106,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
+    assert( nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
   }
 
@@ -3321,6 +3323,9 @@ bool Compile::final_graph_reshaping() {
 bool Compile::too_many_traps(ciMethod* method,
                              int bci,
                              Deoptimization::DeoptReason reason) {
+  if (method->has_injected_profile()) {
+    return false;
+  }
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only
@@ -3370,6 +3375,9 @@ bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
 bool Compile::too_many_recompiles(ciMethod* method,
                                   int bci,
                                   Deoptimization::DeoptReason reason) {
+  if (method->has_injected_profile()) {
+    return false;
+  }
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only

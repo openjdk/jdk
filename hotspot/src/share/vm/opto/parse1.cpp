@@ -441,7 +441,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   CompileLog* log = C->log();
   if (log != NULL) {
-    log->begin_head("parse method='%d' uses='%g'",
+    log->begin_head("parse method='%d' uses='%f'",
                     log->identify(parse_method), expected_uses);
     if (depth() == 1 && C->is_osr_compilation()) {
       log->print(" osr_bci='%d'", C->entry_bci());

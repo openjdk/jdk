@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc_interface/allocTracer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/barrierSet.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -124,6 +125,14 @@ void CollectedHeap::print_heap_after_gc() {
   }
 }
 
+void CollectedHeap::print_on_error(outputStream* st) const {
+  st->print_cr("Heap:");
+  print_extended_on(st);
+  st->cr();
+
+  _barrier_set->print_on(st);
+}
+
 void CollectedHeap::register_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
 }
@@ -132,7 +141,7 @@ void CollectedHeap::unregister_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
 }
 
-void CollectedHeap::trace_heap(GCWhen::Type when, GCTracer* gc_tracer) {
+void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);
 
@@ -140,11 +149,11 @@ void CollectedHeap::trace_heap(GCWhen::Type when, GCTracer* gc_tracer) {
   gc_tracer->report_metaspace_summary(when, metaspace_summary);
 }
 
-void CollectedHeap::trace_heap_before_gc(GCTracer* gc_tracer) {
+void CollectedHeap::trace_heap_before_gc(const GCTracer* gc_tracer) {
   trace_heap(GCWhen::BeforeGC, gc_tracer);
 }
 
-void CollectedHeap::trace_heap_after_gc(GCTracer* gc_tracer) {
+void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
   trace_heap(GCWhen::AfterGC, gc_tracer);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/cardTableModRefBS.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
@@ -346,21 +347,6 @@ void decode_env::print_address(address adr) {
         adr == (address)((CardTableModRefBS*)(bs))->byte_map_base) {
       st->print("word_map_base");
       if (WizardMode) st->print(" " INTPTR_FORMAT, (intptr_t)adr);
-      return;
-    }
-
-    oop obj;
-    if (_nm != NULL
-        && (obj = _nm->embeddedOop_at(cur_insn())) != NULL
-        && (address) obj == adr
-        && Universe::heap()->is_in(obj)
-        && Universe::heap()->is_in(obj->klass())) {
-      julong c = st->count();
-      obj->print_value_on(st);
-      if (st->count() == c) {
-        // No output.  (Can happen in product builds.)
-        st->print("(a %s)", obj->klass()->external_name());
-      }
       return;
     }
   }

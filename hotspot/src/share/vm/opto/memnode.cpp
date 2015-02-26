@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
+#include "utilities/copy.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -2609,7 +2610,6 @@ bool StoreNode::value_never_loaded( PhaseTransform *phase) const {
     return false; // if not a distinct instance, there may be aliases of the address
   for (DUIterator_Fast imax, i = adr->fast_outs(imax); i < imax; i++) {
     Node *use = adr->fast_out(i);
-    int opc = use->Opcode();
     if (use->is_Load() || use->is_LoadStore()) {
       return false;
     }

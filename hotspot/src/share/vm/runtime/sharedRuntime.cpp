@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1792,7 +1792,17 @@ JRT_END
 
 
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
-JRT_ENTRY_NO_ASYNC(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
+JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
+  if (!SafepointSynchronize::is_synchronizing()) {
+    // Only try quick_enter() if we're not trying to reach a safepoint
+    // so that the calling thread reaches the safepoint more quickly.
+    if (ObjectSynchronizer::quick_enter(_obj, thread, lock)) return;
+  }
+  // NO_ASYNC required because an async exception on the state transition destructor
+  // would leave you with the lock held and it would never be released.
+  // The normal monitorenter NullPointerException is thrown without acquiring a lock
+  // and the model is that an exception implies the method failed.
+  JRT_BLOCK_NO_ASYNC
   oop obj(_obj);
   if (PrintBiasedLockingStatistics) {
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
@@ -1805,6 +1815,7 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj
     ObjectSynchronizer::slow_enter(h_obj, lock, CHECK);
   }
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
+  JRT_BLOCK_END
 JRT_END
 
 // Handles the uncommon cases of monitor unlocking in compiled code
@@ -2609,68 +2620,6 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* threa
   GC_locker::lock_critical(thread);
   GC_locker::unlock_critical(thread);
 JRT_END
-
-#ifdef HAVE_DTRACE_H
-/**
- * Create a dtrace nmethod for this method.  The wrapper converts the
- * Java-compiled calling convention to the native convention, makes a dummy call
- * (actually nops for the size of the call instruction, which become a trap if
- * probe is enabled), and finally returns to the caller. Since this all looks like a
- * leaf, no thread transition is needed.
- */
-nmethod *AdapterHandlerLibrary::create_dtrace_nmethod(methodHandle method) {
-  ResourceMark rm;
-  nmethod* nm = NULL;
-
-  if (PrintCompilation) {
-    ttyLocker ttyl;
-    tty->print("---   n  ");
-    method->print_short_name(tty);
-    if (method->is_static()) {
-      tty->print(" (static)");
-    }
-    tty->cr();
-  }
-
-  {
-    // perform the work while holding the lock, but perform any printing
-    // outside the lock
-    MutexLocker mu(AdapterHandlerLibrary_lock);
-    // See if somebody beat us to it
-    nm = method->code();
-    if (nm) {
-      return nm;
-    }
-
-    ResourceMark rm;
-
-    BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
-    if (buf != NULL) {
-      CodeBuffer buffer(buf);
-      // Need a few relocation entries
-      double locs_buf[20];
-      buffer.insts()->initialize_shared_locs(
-        (relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-      MacroAssembler _masm(&buffer);
-
-      // Generate the compiled-to-native wrapper code
-      nm = SharedRuntime::generate_dtrace_nmethod(&_masm, method);
-    }
-  }
-  return nm;
-}
-
-// the dtrace method needs to convert java lang string to utf8 string.
-void SharedRuntime::get_utf(oopDesc* src, address dst) {
-  typeArrayOop jlsValue  = java_lang_String::value(src);
-  int          jlsOffset = java_lang_String::offset(src);
-  int          jlsLen    = java_lang_String::length(src);
-  jchar*       jlsPos    = (jlsLen == 0) ? NULL :
-                                           jlsValue->char_at_addr(jlsOffset);
-  assert(TypeArrayKlass::cast(jlsValue->klass())->element_type() == T_CHAR, "compressed string");
-  (void) UNICODE::as_utf8(jlsPos, jlsLen, (char *)dst, max_dtrace_string_size);
-}
-#endif // ndef HAVE_DTRACE_H
 
 int SharedRuntime::convert_ints_to_longints_argcnt(int in_args_count, BasicType* in_sig_bt) {
   int argcnt = in_args_count;

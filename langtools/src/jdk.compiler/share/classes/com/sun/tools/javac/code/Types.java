@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1445,26 +1445,6 @@ public class Types {
     }
     // </editor-fold>
 
-    /**
-     * Can t and s be compared for equality?  Any primitive ==
-     * primitive or primitive == object comparisons here are an error.
-     * Unboxing and correct primitive == primitive comparisons are
-     * already dealt with in Attr.visitBinary.
-     *
-     */
-    public boolean isEqualityComparable(Type s, Type t, Warner warn) {
-        if (t.isNumeric() && s.isNumeric())
-            return true;
-
-        boolean tPrimitive = t.isPrimitive();
-        boolean sPrimitive = s.isPrimitive();
-        if (!tPrimitive && !sPrimitive) {
-            return isCastable(s, t, warn) || isCastable(t, s, warn);
-        } else {
-            return false;
-        }
-    }
-
     // <editor-fold defaultstate="collapsed" desc="isCastable">
     public boolean isCastable(Type t, Type s) {
         return isCastable(t, s, noWarnings);
@@ -1930,6 +1910,11 @@ public class Types {
     /**
      * Return the (most specific) base type of t that starts with the
      * given symbol.  If none exists, return null.
+     *
+     * Caveat Emptor: Since javac represents the class of all arrays with a singleton
+     * symbol Symtab.arrayClass, which by being a singleton cannot hold any discriminant,
+     * this method could yield surprising answers when invoked on arrays. For example when
+     * invoked with t being byte [] and sym being t.sym itself, asSuper would answer null.
      *
      * @param t a type
      * @param sym a symbol

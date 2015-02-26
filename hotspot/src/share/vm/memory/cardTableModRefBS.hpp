@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "memory/modRefBarrierSet.hpp"
 #include "oops/oop.hpp"
-#include "oops/oop.inline2.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
@@ -45,6 +44,7 @@ class Generation;
 class OopsInGenClosure;
 class DirtyCardToOopClosure;
 class ClearNoncleanCardWrapper;
+class CardTableRS;
 
 class CardTableModRefBS: public ModRefBarrierSet {
   // Some classes get to look at some private stuff.
@@ -284,20 +284,22 @@ public:
     return bsn == BarrierSet::CardTableModRef || ModRefBarrierSet::is_a(bsn);
   }
 
-  CardTableModRefBS(MemRegion whole_heap);
-  ~CardTableModRefBS();
-
   virtual void initialize();
 
   // *** Barrier set functions.
 
   bool has_write_ref_pre_barrier() { return false; }
 
+protected:
+
+  CardTableModRefBS(MemRegion whole_heap, BarrierSet::Name kind);
+  ~CardTableModRefBS();
+
   // Record a reference update. Note that these versions are precise!
   // The scanning code has to handle the fact that the write barrier may be
   // either precise or imprecise. We make non-virtual inline variants of
   // these functions here for performance.
-protected:
+
   void write_ref_field_work(oop obj, size_t offset, oop newVal);
   virtual void write_ref_field_work(void* field, oop newVal, bool release = false);
 public:
@@ -331,15 +333,7 @@ public:
 
   template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal) {}
 
-  template <class T> inline void inline_write_ref_field(T* field, oop newVal, bool release) {
-    jbyte* byte = byte_for((void*)field);
-    if (release) {
-      // Perform a releasing store if requested.
-      OrderAccess::release_store((volatile jbyte*) byte, dirty_card);
-    } else {
-      *byte = dirty_card;
-    }
-  }
+  template <class T> inline void inline_write_ref_field(T* field, oop newVal, bool release);
 
   // These are used by G1, when it uses the card table as a temporary data
   // structure for card claiming.
@@ -478,7 +472,7 @@ protected:
   bool card_may_have_been_dirty(jbyte cv);
 public:
   CardTableModRefBSForCTRS(MemRegion whole_heap) :
-    CardTableModRefBS(whole_heap) {}
+    CardTableModRefBS(whole_heap, BarrierSet::CardTableModRef) {}
 
   void set_CTRS(CardTableRS* rs) { _rs = rs; }
 };

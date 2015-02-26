@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,11 @@ bool ConnectionGraph::compute_escape() {
     _verify = false;
   }
 #endif
+  // Bytecode analyzer BCEscapeAnalyzer, used for Call nodes
+  // processing, calls to CI to resolve symbols (types, fields, methods)
+  // referenced in bytecode. During symbol resolution VM may throw
+  // an exception which CI cleans and converts to compilation failure.
+  if (C->failing())  return false;
 
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
@@ -1797,6 +1802,9 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
             // The lock could be marked eliminated by lock coarsening
             // code during first IGVN before EA. Replace coarsened flag
             // to eliminate all associated locks/unlocks.
+#ifdef ASSERT
+            alock->log_lock_optimization(C, "eliminate_lock_set_non_esc3");
+#endif
             alock->set_non_esc_obj();
           }
         }
@@ -2010,14 +2018,9 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
         bt = field->layout_type();
       } else {
         // Check for unsafe oop field access
-        for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-          int opcode = n->fast_out(i)->Opcode();
-          if (opcode == Op_StoreP || opcode == Op_LoadP ||
-              opcode == Op_StoreN || opcode == Op_LoadN) {
-            bt = T_OBJECT;
-            (*unsafe) = true;
-            break;
-          }
+        if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN)) {
+          bt = T_OBJECT;
+          (*unsafe) = true;
         }
       }
     } else if (adr_type->isa_aryptr()) {
@@ -2031,13 +2034,8 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
       }
     } else if (adr_type->isa_rawptr() || adr_type->isa_klassptr()) {
       // Allocation initialization, ThreadLocal field access, unsafe access
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        int opcode = n->fast_out(i)->Opcode();
-        if (opcode == Op_StoreP || opcode == Op_LoadP ||
-            opcode == Op_StoreN || opcode == Op_LoadN) {
-          bt = T_OBJECT;
-          break;
-        }
+      if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN)) {
+        bt = T_OBJECT;
       }
     }
   }
@@ -3092,13 +3090,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         continue;
     } else if (n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node *use = n->fast_out(i);
-        if (use->Opcode() == Op_SCMemProj) {
-          n = use;
-          break;
-        }
-      }
+      n = n->find_out_with(Op_SCMemProj);
       assert(n->Opcode() == Op_SCMemProj, "memory projection required");
     } else {
       assert(n->is_Mem(), "memory node required.");
@@ -3122,13 +3114,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         continue;  // don't push users
       } else if (n->is_LoadStore()) {
         // get the memory projection
-        for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-          Node *use = n->fast_out(i);
-          if (use->Opcode() == Op_SCMemProj) {
-            n = use;
-            break;
-          }
-        }
+        n = n->find_out_with(Op_SCMemProj);
         assert(n->Opcode() == Op_SCMemProj, "memory projection required");
       }
     }

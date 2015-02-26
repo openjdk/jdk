@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -232,7 +233,6 @@ class LibraryCallKit : public GraphKit {
   // Unsafe.getObject should be recorded in an SATB log buffer.
   void insert_pre_barrier(Node* base_oop, Node* offset, Node* pre_val, bool need_mem_bar);
   bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, bool is_volatile);
-  bool inline_unsafe_prefetch(bool is_native_ptr, bool is_store, bool is_static);
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
   bool inline_unsafe_copyMemory();
@@ -287,6 +287,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
   bool inline_multiplyToLen();
+
+  bool inline_profileBoolean();
 };
 
 
@@ -796,11 +798,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putFloatVolatile:         return inline_unsafe_access(!is_native_ptr,  is_store, T_FLOAT,    is_volatile);
   case vmIntrinsics::_putDoubleVolatile:        return inline_unsafe_access(!is_native_ptr,  is_store, T_DOUBLE,   is_volatile);
 
-  case vmIntrinsics::_prefetchRead:             return inline_unsafe_prefetch(!is_native_ptr, !is_store, !is_static);
-  case vmIntrinsics::_prefetchWrite:            return inline_unsafe_prefetch(!is_native_ptr,  is_store, !is_static);
-  case vmIntrinsics::_prefetchReadStatic:       return inline_unsafe_prefetch(!is_native_ptr, !is_store,  is_static);
-  case vmIntrinsics::_prefetchWriteStatic:      return inline_unsafe_prefetch(!is_native_ptr,  is_store,  is_static);
-
   case vmIntrinsics::_compareAndSwapObject:     return inline_unsafe_load_store(T_OBJECT, LS_cmpxchg);
   case vmIntrinsics::_compareAndSwapInt:        return inline_unsafe_load_store(T_INT,    LS_cmpxchg);
   case vmIntrinsics::_compareAndSwapLong:       return inline_unsafe_load_store(T_LONG,   LS_cmpxchg);
@@ -899,6 +896,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_updateBytesCRC32();
   case vmIntrinsics::_updateByteBufferCRC32:
     return inline_updateByteBufferCRC32();
+
+  case vmIntrinsics::_profileBoolean:
+    return inline_profileBoolean();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -1351,7 +1351,6 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   Node* cache            = __ ConI(cache_i);
   Node* md2              = __ ConI(md2_i);
   Node* lastChar         = __ ConI(target_array->char_at(target_length - 1));
-  Node* targetCount      = __ ConI(target_length);
   Node* targetCountLess1 = __ ConI(target_length - 1);
   Node* targetOffset     = __ ConI(targetOffset_i);
   Node* sourceEnd        = __ SubI(__ AddI(sourceOffset, sourceCount), targetCountLess1);
@@ -1408,8 +1407,6 @@ bool LibraryCallKit::inline_string_indexOf() {
   Node* arg      = argument(1);
 
   Node* result;
-  // Disable the use of pcmpestri until it can be guaranteed that
-  // the load doesn't cross into the uncommited space.
   if (Matcher::has_match_rule(Op_StrIndexOf) &&
       UseSSE42Intrinsics) {
     // Generate SSE4.2 version of indexOf
@@ -1420,9 +1417,6 @@ bool LibraryCallKit::inline_string_indexOf() {
     if (stopped()) {
       return true;
     }
-
-    ciInstanceKlass* str_klass = env()->String_klass();
-    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(str_klass);
 
     // Make the merge point
     RegionNode* result_rgn = new RegionNode(4);
@@ -2512,7 +2506,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
 
   Node* receiver = argument(0);  // type: oop
 
-  // Build address expression.  See the code in inline_unsafe_prefetch.
+  // Build address expression.
   Node* adr;
   Node* heap_base_oop = top();
   Node* offset = top();
@@ -2604,8 +2598,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   // bypassing each other.  Happens after null checks, so the
   // exception paths do not take memory state from the memory barrier,
   // so there's no problems making a strong assert about mixing users
-  // of safe & unsafe memory.  Otherwise fails in a CTW of rt.jar
-  // around 5701, class sun/reflect/UnsafeBooleanFieldAccessorImpl.
+  // of safe & unsafe memory.
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
 
   if (!is_store) {
@@ -2697,73 +2690,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   }
 
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
-
-  return true;
-}
-
-//----------------------------inline_unsafe_prefetch----------------------------
-
-bool LibraryCallKit::inline_unsafe_prefetch(bool is_native_ptr, bool is_store, bool is_static) {
-#ifndef PRODUCT
-  {
-    ResourceMark rm;
-    // Check the signatures.
-    ciSignature* sig = callee()->signature();
-#ifdef ASSERT
-    // Object getObject(Object base, int/long offset), etc.
-    BasicType rtype = sig->return_type()->basic_type();
-    if (!is_native_ptr) {
-      assert(sig->count() == 2, "oop prefetch has 2 arguments");
-      assert(sig->type_at(0)->basic_type() == T_OBJECT, "prefetch base is object");
-      assert(sig->type_at(1)->basic_type() == T_LONG, "prefetcha offset is correct");
-    } else {
-      assert(sig->count() == 1, "native prefetch has 1 argument");
-      assert(sig->type_at(0)->basic_type() == T_LONG, "prefetch base is long");
-    }
-#endif // ASSERT
-  }
-#endif // !PRODUCT
-
-  C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
-
-  const int idx = is_static ? 0 : 1;
-  if (!is_static) {
-    null_check_receiver();
-    if (stopped()) {
-      return true;
-    }
-  }
-
-  // Build address expression.  See the code in inline_unsafe_access.
-  Node *adr;
-  if (!is_native_ptr) {
-    // The base is either a Java object or a value produced by Unsafe.staticFieldBase
-    Node* base   = argument(idx + 0);  // type: oop
-    // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-    Node* offset = argument(idx + 1);  // type: long
-    // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
-    // to be plain byte offsets, which are also the same as those accepted
-    // by oopDesc::field_base.
-    assert(Unsafe_field_offset_to_byte_offset(11) == 11,
-           "fieldOffset must be byte-scaled");
-    // 32-bit machines ignore the high half!
-    offset = ConvL2X(offset);
-    adr = make_unsafe_address(base, offset);
-  } else {
-    Node* ptr = argument(idx + 0);  // type: long
-    ptr = ConvL2X(ptr);  // adjust Java long to machine word
-    adr = make_unsafe_address(NULL, ptr);
-  }
-
-  // Generate the read or write prefetch
-  Node *prefetch;
-  if (is_store) {
-    prefetch = new PrefetchWriteNode(i_o(), adr);
-  } else {
-    prefetch = new PrefetchReadNode(i_o(), adr);
-  }
-  prefetch->init_req(0, control());
-  set_i_o(_gvn.transform(prefetch));
 
   return true;
 }
@@ -4740,6 +4666,8 @@ bool LibraryCallKit::inline_arraycopy() {
   // tightly_coupled_allocation()
   AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
 
+  ciMethod* trap_method = method();
+  int trap_bci = bci();
   SafePointNode* sfpt = NULL;
   if (alloc != NULL) {
     // The JVM state for uncommon traps between the allocation and
@@ -4764,6 +4692,9 @@ bool LibraryCallKit::inline_arraycopy() {
 
     sfpt->set_i_o(map()->i_o());
     sfpt->set_memory(map()->memory());
+
+    trap_method = jvms->method();
+    trap_bci = jvms->bci();
   }
 
   bool validated = false;
@@ -4868,7 +4799,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  if (!too_many_traps(Deoptimization::Reason_intrinsic) && !src->is_top() && !dest->is_top()) {
+  if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) && !src->is_top() && !dest->is_top()) {
     // validate arguments: enables transformation the ArrayCopyNode
     validated = true;
 
@@ -5872,4 +5803,48 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
 
   return instof_false;  // even if it is NULL
+}
+
+bool LibraryCallKit::inline_profileBoolean() {
+  Node* counts = argument(1);
+  const TypeAryPtr* ary = NULL;
+  ciArray* aobj = NULL;
+  if (counts->is_Con()
+      && (ary = counts->bottom_type()->isa_aryptr()) != NULL
+      && (aobj = ary->const_oop()->as_array()) != NULL
+      && (aobj->length() == 2)) {
+    // Profile is int[2] where [0] and [1] correspond to false and true value occurrences respectively.
+    jint false_cnt = aobj->element_value(0).as_int();
+    jint  true_cnt = aobj->element_value(1).as_int();
+
+    method()->set_injected_profile(true);
+
+    if (C->log() != NULL) {
+      C->log()->elem("observe source='profileBoolean' false='%d' true='%d'",
+                     false_cnt, true_cnt);
+    }
+
+    if (false_cnt + true_cnt == 0) {
+      // According to profile, never executed.
+      uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                          Deoptimization::Action_reinterpret);
+      return true;
+    }
+    // Stop profiling.
+    // MethodHandleImpl::profileBoolean() has profiling logic in it's bytecode.
+    // By replacing method's body with profile data (represented as ProfileBooleanNode
+    // on IR level) we effectively disable profiling.
+    // It enables full speed execution once optimized code is generated.
+    Node* profile = _gvn.transform(new ProfileBooleanNode(argument(0), false_cnt, true_cnt));
+    C->record_for_igvn(profile);
+    set_result(profile);
+    return true;
+  } else {
+    // Continue profiling.
+    // Profile data isn't available at the moment. So, execute method's bytecode version.
+    // Usually, when GWT LambdaForms are profiled it means that a stand-alone nmethod
+    // is compiled and counters aren't available since corresponding MethodHandle
+    // isn't a compile-time constant.
+    return false;
+  }
 }
