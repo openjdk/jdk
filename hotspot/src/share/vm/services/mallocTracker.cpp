@@ -52,7 +52,7 @@ size_t MallocMemorySnapshot::total_arena() const {
 }
 
 // Make adjustment by subtracting chunks used by arenas
-// from total chunks to get total free chunck size
+// from total chunks to get total free chunk size
 void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
   int chunk_idx = NMTUtil::flag_to_index(mtChunk);

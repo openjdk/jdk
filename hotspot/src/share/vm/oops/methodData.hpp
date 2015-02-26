@@ -2088,6 +2088,8 @@ private:
   int               _invocation_counter_start;
   int               _backedge_counter_start;
   uint              _tenure_traps;
+  int               _invoke_mask;      // per-method Tier0InvokeNotifyFreqLog
+  int               _backedge_mask;    // per-method Tier0BackedgeNotifyFreqLog
 
 #if INCLUDE_RTM_OPT
   // State of RTM code generation during compilation of the method
@@ -2447,8 +2449,17 @@ public:
   static ByteSize invocation_counter_offset() {
     return byte_offset_of(MethodData, _invocation_counter);
   }
+
   static ByteSize backedge_counter_offset() {
     return byte_offset_of(MethodData, _backedge_counter);
+  }
+
+  static ByteSize invoke_mask_offset() {
+    return byte_offset_of(MethodData, _invoke_mask);
+  }
+
+  static ByteSize backedge_mask_offset() {
+    return byte_offset_of(MethodData, _backedge_mask);
   }
 
   static ByteSize parameters_type_data_di_offset() {

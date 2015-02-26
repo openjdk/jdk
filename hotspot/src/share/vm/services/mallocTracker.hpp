@@ -29,6 +29,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/threadCritical.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -164,6 +165,10 @@ class MallocMemorySnapshot : public ResourceObj {
   }
 
   void copy_to(MallocMemorySnapshot* s) {
+    // Need to make sure that mtChunks don't get deallocated while the
+    // copy is going on, because their size is adjusted using this
+    // buffer in make_adjustment().
+    ThreadCritical tc;
     s->_tracking_header = _tracking_header;
     for (int index = 0; index < mt_number_of_types; index ++) {
       s->_malloc[index] = _malloc[index];

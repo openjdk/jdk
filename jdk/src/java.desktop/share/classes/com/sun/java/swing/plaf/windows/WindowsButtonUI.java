@@ -248,7 +248,8 @@ public class WindowsButtonUI extends BasicButtonUI
 
         Part part = getXPButtonType(b);
 
-        if (b.isContentAreaFilled() && xp != null) {
+        if (b.isContentAreaFilled() && b.getBorder() != null
+                && b.isBorderPainted() && xp != null) {
 
             Skin skin = xp.getSkin(b, part);
 

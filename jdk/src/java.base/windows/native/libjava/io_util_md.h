@@ -33,7 +33,8 @@
 
 /*
  * Prototypes for functions in io_util_md.c called from io_util.c,
- * FileDescriptor.c, FileInputStream.c, FileOutputStream.c
+ * FileDescriptor.c, FileInputStream.c, FileOutputStream.c,
+ * ProcessImpl_md.c
  */
 WCHAR* pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE);
 WCHAR* fileToNTPath(JNIEnv *env, jobject file, jfieldID id);

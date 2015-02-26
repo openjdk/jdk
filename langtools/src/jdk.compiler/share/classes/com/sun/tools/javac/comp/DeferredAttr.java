@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,8 @@ public class DeferredAttr extends JCTree.Visitor {
             DeferredStuckPolicy deferredStuckPolicy;
             if (resultInfo.pt.hasTag(NONE) || resultInfo.pt.isErroneous()) {
                 deferredStuckPolicy = dummyStuckPolicy;
-            } else if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.SPECULATIVE) {
+            } else if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.SPECULATIVE ||
+                    resultInfo.checkContext.deferredAttrContext().insideOverloadPhase()) {
                 deferredStuckPolicy = new OverloadStuckPolicy(resultInfo, this);
             } else {
                 deferredStuckPolicy = new CheckStuckPolicy(resultInfo, this);
@@ -1385,7 +1386,7 @@ public class DeferredAttr extends JCTree.Visitor {
                 Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
                     return rec == null ?
                         rs.findFun(env, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
-                        rs.findMethod(env, site, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired(), false);
+                        rs.findMethod(env, site, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired());
                 }
                 @Override
                 Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {

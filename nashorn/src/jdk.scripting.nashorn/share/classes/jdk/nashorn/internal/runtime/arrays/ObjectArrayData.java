@@ -123,7 +123,9 @@ final class ObjectArrayData extends ContinuousArrayData implements AnyElements {
             final int newLength = ArrayData.nextSize((int)safeIndex);
             array = Arrays.copyOf(array, newLength); //fill with undefined or OK? TODO
         }
-        setLength(safeIndex + 1);
+        if (safeIndex >= length()) {
+            setLength(safeIndex + 1);
+        }
         return this;
     }
 

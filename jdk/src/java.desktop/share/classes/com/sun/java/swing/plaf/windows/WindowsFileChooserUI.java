@@ -93,7 +93,6 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
     private static int MIN_WIDTH = 425;
     private static int MIN_HEIGHT = 245;
-    private static Dimension MIN_SIZE = new Dimension(MIN_WIDTH, MIN_HEIGHT);
 
     private static int LIST_PREF_WIDTH = 444;
     private static int LIST_PREF_HEIGHT = 138;
@@ -642,6 +641,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
      * @return   a <code>Dimension</code> specifying the preferred
      *           width and height of the file chooser
      */
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         int prefWidth = PREF_SIZE.width;
         Dimension d = c.getLayout().preferredLayoutSize(c);
@@ -660,8 +660,9 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
      * @return   a <code>Dimension</code> specifying the minimum
      *           width and height of the file chooser
      */
+    @Override
     public Dimension getMinimumSize(JComponent c) {
-        return MIN_SIZE;
+        return new Dimension(MIN_WIDTH, MIN_HEIGHT);
     }
 
     /**
@@ -671,6 +672,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
      * @return   a <code>Dimension</code> specifying the maximum
      *           width and height of the file chooser
      */
+    @Override
     public Dimension getMaximumSize(JComponent c) {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
@@ -1081,16 +1083,9 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
             directories.clear();
 
-            File[] baseFolders;
-            if (useShellFolder) {
-                baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
-                    public File[] run() {
-                        return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
-                    }
-                });
-            } else {
-                baseFolders = fsv.getRoots();
-            }
+            File[] baseFolders = (useShellFolder)
+                    ? (File[]) ShellFolder.get("fileChooserComboBoxFolders")
+                    : fsv.getRoots();
             directories.addAll(Arrays.asList(baseFolders));
 
             // Get the canonical (full) path. This has the side

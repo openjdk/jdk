@@ -34,28 +34,23 @@ include JavaCompilation.gmk
 include NativeCompilation.gmk
 include SetupJavaCompilers.gmk
 
-# The exception handling of swing beaninfo which have the own tool directory
-ifeq (, $(BUILD_TOOLS_JDK))
-  $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
-      SETUP := GENERATE_OLDBYTECODE, \
-      ADD_JAVAC_FLAGS := "-Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes", \
-      SRC := $(JDK_TOPDIR)/make/src/classes, \
-      BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
-      COPY := boot.modules ext.modules))
-endif
+################################################################################
 
-$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources/%.template: \
-    $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/%.template
-	$(call install-file)
+$(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    ADD_JAVAC_FLAGS := "-Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes", \
+    SRC := $(JDK_TOPDIR)/make/src/classes, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
+    COPY := boot.modules ext.modules))
 
-BUILD_TOOLS_JDK += $(foreach i, $(wildcard $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template), $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources/$(notdir $i))
+$(eval $(call SetupCopyFiles,COPY_NIMBUS_TEMPLATES, \
+    SRC := $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus, \
+    DEST := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources, \
+    FILES := $(wildcard $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template)))
 
-# Resource used by CheckDeps tool
-$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/deps/refs.allowed: \
-    $(JDK_TOPDIR)/make/data/checkdeps/refs.allowed
-	$(call install-file)
+BUILD_TOOLS_JDK += $(COPY_NIMBUS_TEMPLATES)
 
-BUILD_TOOLS_JDK += $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/deps/refs.allowed
+################################################################################
 
 # Add a checksum ("jsum") to the end of a text file. Prevents trivial tampering with class lists.
 TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
@@ -130,10 +125,6 @@ TOOL_OSX_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(BUILDTOOLS_OUTPUTD
 TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.cldrconverter.CLDRConverter
 
-TOOL_CHECKDEPS = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
-    -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes$(PATH_SEP)$(JDK_OUTPUTDIR)" \
-    build.tools.deps.CheckDeps
-
 TOOL_GENMODULESXML = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
     -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes$(PATH_SEP)$(JDK_OUTPUTDIR)" \
     build.tools.module.GenJdepsModulesXml
@@ -156,33 +147,42 @@ $(eval $(call SetupJavaCompilation,BUILD_INTERIM_JIMAGE, \
     EXCLUDES := jdk/internal/jimage/concurrent, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes))
 
+# Because of the explicit INCLUDES in the compilation setup above, the service provider
+# file will not be copied unless META-INF/services would also be added to the INCLUDES.
+# Adding META-INF/services would include all files in that directory when only the one
+# is needed, which is why this explicit copy is defined instead.
+$(eval $(call SetupCopyFiles,COPY_JIMAGE_SERVICE_PROVIDER, \
+    SRC := $(JDK_TOPDIR)/src/java.base/share/classes, \
+    DEST := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes, \
+    FILES := META-INF/services/java.nio.file.spi.FileSystemProvider))
+
 ##########################################################################################
 
 # Tools needed on solaris because OBJCOPY is broken.
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-$(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK, \
-    SRC := $(JDK_TOPDIR)/make/src/native/add_gnu_debuglink, \
-    LANG := C, \
-    CC := $(BUILD_CC), \
-    LDEXE := $(BUILD_LD), \
-    LDFLAGS := -lelf, \
-    OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/add_gnu_debuglink, \
-    OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
-    PROGRAM := add_gnu_debuglink))
+  $(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK, \
+      SRC := $(JDK_TOPDIR)/make/src/native/add_gnu_debuglink, \
+      LANG := C, \
+      CC := $(BUILD_CC), \
+      LDEXE := $(BUILD_LD), \
+      LDFLAGS := -lelf, \
+      OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/add_gnu_debuglink, \
+      OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
+      PROGRAM := add_gnu_debuglink))
 
-$(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS, \
-    SRC := $(JDK_TOPDIR)/make/src/native/fix_empty_sec_hdr_flags, \
-    LANG := C, \
-    CC := $(BUILD_CC), \
-    LDEXE := $(BUILD_LD), \
-    LDFLAGS := -lelf, \
-    OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags, \
-    OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
-    PROGRAM := fix_empty_sec_hdr_flags))
+  $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS, \
+      SRC := $(JDK_TOPDIR)/make/src/native/fix_empty_sec_hdr_flags, \
+      LANG := C, \
+      CC := $(BUILD_CC), \
+      LDEXE := $(BUILD_LD), \
+      LDFLAGS := -lelf, \
+      OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags, \
+      OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
+      PROGRAM := fix_empty_sec_hdr_flags))
 endif
 
-$(BUILD_TOOLS_JDK): $(BUILD_INTERIM_JIMAGE)
+$(BUILD_TOOLS_JDK): $(BUILD_INTERIM_JIMAGE) $(COPY_JIMAGE_SERVICE_PROVIDER)
 
 java-tools: $(BUILD_TOOLS_JDK)
 

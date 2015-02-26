@@ -70,8 +70,8 @@ Rule	ChileAQ	2009	only	-	Mar	Sun>=9	3:00u	0	-
 Rule	ChileAQ	2010	only	-	Apr	Sun>=1	3:00u	0	-
 Rule	ChileAQ	2011	only	-	May	Sun>=2	3:00u	0	-
 Rule	ChileAQ	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
-Rule	ChileAQ	2012	max	-	Apr	Sun>=23	3:00u	0	-
-Rule	ChileAQ	2012	max	-	Sep	Sun>=2	4:00u	1:00	S
+Rule	ChileAQ	2012	2015	-	Apr	Sun>=23	3:00u	0	-
+Rule	ChileAQ	2012	2014	-	Sep	Sun>=2	4:00u	1:00	S
 
 # Argentina - year-round bases
 # Belgrano II, Confin Coast, -770227-0343737, since 1972-02-05
@@ -377,9 +377,10 @@ Zone Antarctica/Rothera	0	-	zzz	1976 Dec  1
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Palmer	0	-	zzz	1965
-			-4:00	ArgAQ	AR%sT	1969 Oct 5
+			-4:00	ArgAQ	AR%sT	1969 Oct  5
 			-3:00	ArgAQ	AR%sT	1982 May
-			-4:00	ChileAQ	CL%sT
+			-4:00	ChileAQ	CL%sT	2015 Apr 26 3:00u
+			-3:00	-	CLT
 #
 #
 # McMurdo Station, Ross Island, since 1955-12

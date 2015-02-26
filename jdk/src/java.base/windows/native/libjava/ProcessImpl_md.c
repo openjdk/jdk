@@ -30,6 +30,7 @@
 #include "jvm.h"
 #include "jni_util.h"
 #include "io_util.h"
+#include "io_util_md.h"
 #include <windows.h>
 #include <io.h>
 
@@ -283,14 +284,10 @@ static jlong processCreate(
         FALSE, FALSE, FALSE,
         FALSE, FALSE, FALSE};
 
-    {
-        /* Extraction of current process standard IOE handles */
-        DWORD idsIOE[3] = {STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE};
-        int i;
-        for (i = 0; i < 3; ++i)
-            /* Should not be closed by CloseHandle! */
-            stdIOE[i] = GetStdHandle(idsIOE[i]);
-    }
+    /* These three should not be closed by CloseHandle! */
+    stdIOE[0] = GetStdHandle(STD_INPUT_HANDLE);
+    stdIOE[1] = GetStdHandle(STD_OUTPUT_HANDLE);
+    stdIOE[2] = GetStdHandle(STD_ERROR_HANDLE);
 
     prepareIOEHandleState(stdIOE, inherit);
     {
@@ -319,11 +316,16 @@ static jlong processCreate(
 
                 if (success) {
                     PROCESS_INFORMATION pi;
-                    DWORD processFlag = CREATE_UNICODE_ENVIRONMENT;
+                    DWORD processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
 
-                    /* Suppress popping-up of a console window for non-console applications */
-                    if (GetConsoleWindow() == NULL)
-                        processFlag |= CREATE_NO_WINDOW;
+                    /* If the standard I/O is inherited, CREATE_NO_WINDOW must not be used. */
+                    if (GetConsoleWindow() != NULL &&
+                        (si.hStdInput  == stdIOE[0] ||
+                         si.hStdOutput == stdIOE[1] ||
+                         si.hStdError  == (redirectErrorStream ? stdIOE[1] : stdIOE[2])))
+                    {
+                        processFlag &= ~CREATE_NO_WINDOW;
+                    }
 
                     si.dwFlags = STARTF_USESTDHANDLES;
                     if (!CreateProcessW(
@@ -466,26 +468,6 @@ Java_java_lang_ProcessImpl_closeHandle(JNIEnv *env, jclass ignored, jlong handle
     return (jboolean) CloseHandle((HANDLE) handle);
 }
 
-/**
- * Returns a copy of the Unicode characters of a string. Fow now this
- * function doesn't handle long path names and other issues.
- */
-static WCHAR* getPath(JNIEnv *env, jstring ps) {
-    WCHAR *pathbuf = NULL;
-    const jchar *chars = (*(env))->GetStringChars(env, ps, NULL);
-    if (chars != NULL) {
-        size_t pathlen = wcslen(chars);
-        pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
-        if (pathbuf == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
-        } else {
-            wcscpy(pathbuf, chars);
-        }
-        (*env)->ReleaseStringChars(env, ps, chars);
-    }
-    return pathbuf;
-}
-
 JNIEXPORT jlong JNICALL
 Java_java_lang_ProcessImpl_openForAtomicAppend(JNIEnv *env, jclass ignored, jstring path)
 {
@@ -494,7 +476,7 @@ Java_java_lang_ProcessImpl_openForAtomicAppend(JNIEnv *env, jclass ignored, jstr
     const DWORD disposition = OPEN_ALWAYS;
     const DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
     HANDLE h;
-    WCHAR *pathbuf = getPath(env, path);
+    WCHAR *pathbuf = pathToNTPath(env, path, JNI_FALSE);
     if (pathbuf == NULL) {
         /* Exception already pending */
         return -1;

@@ -308,7 +308,7 @@ public:
 
   inline ParScanThreadState& thread_state(int i);
 
-  void trace_promotion_failed(YoungGCTracer& gc_tracer);
+  void trace_promotion_failed(const YoungGCTracer* gc_tracer);
   void reset(int active_workers, bool promotion_failed);
   void flush();
 
@@ -357,10 +357,10 @@ inline ParScanThreadState& ParScanThreadStateSet::thread_state(int i)
   return ((ParScanThreadState*)_data)[i];
 }
 
-void ParScanThreadStateSet::trace_promotion_failed(YoungGCTracer& gc_tracer) {
+void ParScanThreadStateSet::trace_promotion_failed(const YoungGCTracer* gc_tracer) {
   for (int i = 0; i < length(); ++i) {
     if (thread_state(i).promotion_failed()) {
-      gc_tracer.report_promotion_failed(thread_state(i).promotion_failed_info());
+      gc_tracer->report_promotion_failed(thread_state(i).promotion_failed_info());
       thread_state(i).promotion_failed_info().reset();
     }
   }
@@ -883,7 +883,7 @@ void EvacuateFollowersClosureGeneral::do_void() {
 
 // A Generation that does parallel young-gen collection.
 
-void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set, ParNewTracer& gc_tracer) {
+void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set) {
   assert(_promo_failure_scan_stack.is_empty(), "post condition");
   _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
@@ -899,10 +899,10 @@ void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThr
   _next_gen->promotion_failure_occurred();
 
   // Trace promotion failure in the parallel GC threads
-  thread_state_set.trace_promotion_failed(gc_tracer);
+  thread_state_set.trace_promotion_failed(gc_tracer());
   // Single threaded code may have reported promotion failure to the global state
   if (_promotion_failed_info.has_failed()) {
-    gc_tracer.report_promotion_failed(_promotion_failed_info);
+    _gc_tracer.report_promotion_failed(_promotion_failed_info);
   }
   // Reset the PromotionFailureALot counters.
   NOT_PRODUCT(Universe::heap()->reset_promotion_should_fail();)
@@ -941,9 +941,8 @@ void ParNewGeneration::collect(bool   full,
   }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
 
-  ParNewTracer gc_tracer;
-  gc_tracer.report_gc_start(gch->gc_cause(), _gc_timer->gc_start());
-  gch->trace_heap_before_gc(&gc_tracer);
+  _gc_tracer.report_gc_start(gch->gc_cause(), _gc_timer->gc_start());
+  gch->trace_heap_before_gc(gc_tracer());
 
   init_assuming_no_promotion_failure();
 
@@ -952,7 +951,7 @@ void ParNewGeneration::collect(bool   full,
     size_policy->minor_collection_begin();
   }
 
-  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL, gc_tracer.gc_id());
+  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL, _gc_tracer.gc_id());
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
@@ -994,7 +993,7 @@ void ParNewGeneration::collect(bool   full,
 
   // Trace and reset failed promotion info.
   if (promotion_failed()) {
-    thread_state_set.trace_promotion_failed(gc_tracer);
+    thread_state_set.trace_promotion_failed(gc_tracer());
   }
 
   // Process (weak) reference objects found during scavenge.
@@ -1015,16 +1014,16 @@ void ParNewGeneration::collect(bool   full,
     ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, &task_executor,
-                                              _gc_timer, gc_tracer.gc_id());
+                                              _gc_timer, _gc_tracer.gc_id());
   } else {
     thread_state_set.flush();
     gch->set_par_threads(0);  // 0 ==> non-parallel.
     gch->save_marks();
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, NULL,
-                                              _gc_timer, gc_tracer.gc_id());
+                                              _gc_timer, _gc_tracer.gc_id());
   }
-  gc_tracer.report_gc_reference_stats(stats);
+  _gc_tracer.report_gc_reference_stats(stats);
   if (!promotion_failed()) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
@@ -1049,7 +1048,7 @@ void ParNewGeneration::collect(bool   full,
 
     adjust_desired_tenuring_threshold();
   } else {
-    handle_promotion_failed(gch, thread_state_set, gc_tracer);
+    handle_promotion_failed(gch, thread_state_set);
   }
   // set new iteration safe limit for the survivor spaces
   from()->set_concurrent_iteration_safe_limit(from()->top());
@@ -1088,12 +1087,12 @@ void ParNewGeneration::collect(bool   full,
   }
   rp->verify_no_references_recorded();
 
-  gch->trace_heap_after_gc(&gc_tracer);
-  gc_tracer.report_tenuring_threshold(tenuring_threshold());
+  gch->trace_heap_after_gc(gc_tracer());
+  _gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   _gc_timer->register_gc_end();
 
-  gc_tracer.report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+  _gc_tracer.report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
 }
 
 static int sum;
@@ -1194,8 +1193,10 @@ oop ParNewGeneration::copy_to_survivor_space(
         return real_forwardee(old);
     }
 
-    new_obj = _next_gen->par_promote(par_scan_state->thread_num(),
-                                       old, m, sz);
+    if (!_promotion_failed) {
+      new_obj = _next_gen->par_promote(par_scan_state->thread_num(),
+                                        old, m, sz);
+    }
 
     if (new_obj == NULL) {
       // promotion failed, forward to self

@@ -45,7 +45,8 @@
 #include "utilities/bitMap.inline.hpp"
 
 G1PageBasedVirtualSpace::G1PageBasedVirtualSpace() : _low_boundary(NULL),
-  _high_boundary(NULL), _committed(), _page_size(0), _special(false), _executable(false) {
+  _high_boundary(NULL), _committed(), _page_size(0), _special(false),
+  _dirty(), _executable(false) {
 }
 
 bool G1PageBasedVirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t page_size) {
@@ -66,6 +67,9 @@ bool G1PageBasedVirtualSpace::initialize_with_granularity(ReservedSpace rs, size
   assert(_committed.size() == 0, "virtual space initialized more than once");
   uintx size_in_bits = rs.size() / page_size;
   _committed.resize(size_in_bits, /* in_resource_area */ false);
+  if (_special) {
+    _dirty.resize(size_in_bits, /* in_resource_area */ false);
+  }
 
   return true;
 }
@@ -84,6 +88,7 @@ void G1PageBasedVirtualSpace::release() {
   _executable             = false;
   _page_size              = 0;
   _committed.resize(0, false);
+  _dirty.resize(0, false);
 }
 
 size_t G1PageBasedVirtualSpace::committed_size() const {
@@ -120,34 +125,43 @@ size_t G1PageBasedVirtualSpace::byte_size_for_pages(size_t num) {
   return num * _page_size;
 }
 
-MemRegion G1PageBasedVirtualSpace::commit(uintptr_t start, size_t size_in_pages) {
+bool G1PageBasedVirtualSpace::commit(uintptr_t start, size_t size_in_pages) {
   // We need to make sure to commit all pages covered by the given area.
   guarantee(is_area_uncommitted(start, size_in_pages), "Specified area is not uncommitted");
 
-  if (!_special) {
+  bool zero_filled = true;
+  uintptr_t end = start + size_in_pages;
+
+  if (_special) {
+    // Check for dirty pages and update zero_filled if any found.
+    if (_dirty.get_next_one_offset(start,end) < end) {
+      zero_filled = false;
+      _dirty.clear_range(start, end);
+    }
+  } else {
     os::commit_memory_or_exit(page_start(start), byte_size_for_pages(size_in_pages), _executable,
                               err_msg("Failed to commit pages from "SIZE_FORMAT" of length "SIZE_FORMAT, start, size_in_pages));
   }
-  _committed.set_range(start, start + size_in_pages);
+  _committed.set_range(start, end);
 
-  MemRegion result((HeapWord*)page_start(start), byte_size_for_pages(size_in_pages) / HeapWordSize);
   if (AlwaysPreTouch) {
-    os::pretouch_memory((char*)result.start(), (char*)result.end());
+    os::pretouch_memory(page_start(start), page_start(end));
   }
-  return result;
+  return zero_filled;
 }
 
-MemRegion G1PageBasedVirtualSpace::uncommit(uintptr_t start, size_t size_in_pages) {
+void G1PageBasedVirtualSpace::uncommit(uintptr_t start, size_t size_in_pages) {
   guarantee(is_area_committed(start, size_in_pages), "checking");
 
-  if (!_special) {
+  if (_special) {
+    // Mark that memory is dirty. If committed again the memory might
+    // need to be cleared explicitly.
+    _dirty.set_range(start, start + size_in_pages);
+  } else {
     os::uncommit_memory(page_start(start), byte_size_for_pages(size_in_pages));
   }
 
   _committed.clear_range(start, start + size_in_pages);
-
-  MemRegion result((HeapWord*)page_start(start), byte_size_for_pages(size_in_pages) / HeapWordSize);
-  return result;
 }
 
 bool G1PageBasedVirtualSpace::contains(const void* p) const {
@@ -157,7 +171,7 @@ bool G1PageBasedVirtualSpace::contains(const void* p) const {
 #ifndef PRODUCT
 void G1PageBasedVirtualSpace::print_on(outputStream* out) {
   out->print   ("Virtual space:");
-  if (special()) out->print(" (pinned in memory)");
+  if (_special) out->print(" (pinned in memory)");
   out->cr();
   out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
   out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());

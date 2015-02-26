@@ -881,6 +881,34 @@ Node* Node::uncast() const {
     return (Node*) this;
 }
 
+// Find out of current node that matches opcode.
+Node* Node::find_out_with(int opcode) {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* use = fast_out(i);
+    if (use->Opcode() == opcode) {
+      return use;
+    }
+  }
+  return NULL;
+}
+
+// Return true if the current node has an out that matches opcode.
+bool Node::has_out_with(int opcode) {
+  return (find_out_with(opcode) != NULL);
+}
+
+// Return true if the current node has an out that matches any of the opcodes.
+bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+      int opcode = fast_out(i)->Opcode();
+      if (opcode == opcode1 || opcode == opcode2 || opcode == opcode3 || opcode == opcode4) {
+        return true;
+      }
+  }
+  return false;
+}
+
+
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p) {
 #ifdef ASSERT
@@ -1080,18 +1108,21 @@ bool Node::has_special_unique_user() const {
   assert(outcnt() == 1, "match only for unique out");
   Node* n = unique_out();
   int op  = Opcode();
-  if( this->is_Store() ) {
+  if (this->is_Store()) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
   } else if (this->is_Load()) {
     // Condition for removing an unused LoadNode from the MemBarAcquire precedence input
     return n->Opcode() == Op_MemBarAcquire;
-  } else if( op == Op_AddL ) {
+  } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
-  } else if( op == Op_SubI || op == Op_SubL ) {
+  } else if (op == Op_SubI || op == Op_SubL) {
     // Condition for subI(x,subI(y,z)) ==> subI(addI(x,z),y)
     return n->Opcode() == op && n->in(2) == this;
+  } else if (is_If() && (n->is_IfFalse() || n->is_IfTrue())) {
+    // See IfProjNode::Identity()
+    return true;
   }
   return false;
 };
