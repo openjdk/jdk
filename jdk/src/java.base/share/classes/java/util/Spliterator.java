@@ -125,7 +125,7 @@ import java.util.function.LongConsumer;
  * are encountered.
  *
  * @apiNote
- * <p>Spliterators, like {@code Iterators}s, are for traversing the elements of
+ * <p>Spliterators, like {@code Iterator}s, are for traversing the elements of
  * a source.  The {@code Spliterator} API was designed to support efficient
  * parallel traversal in addition to sequential traversal, by supporting
  * decomposition as well as single-element iteration.  In addition, the
@@ -552,6 +552,12 @@ public interface Spliterator<T> {
      * that Spliterator. Sub-spliterators may report {@code SIZED} if the
      * sub-split size is known and additions or removals to the source are not
      * reflected when traversing.
+     *
+     * <p>A top-level Spliterator should not report both {@code CONCURRENT} and
+     * {@code IMMUTABLE}, since they are mutually exclusive. Such a Spliterator
+     * is inconsistent and no guarantees can be made about any computation using
+     * that Spliterator. Sub-spliterators may report {@code IMMUTABLE} if
+     * additions or removals to the source are not reflected when traversing.
      *
      * @apiNote Most concurrent collections maintain a consistency policy
      * guaranteeing accuracy with respect to elements present at the point of

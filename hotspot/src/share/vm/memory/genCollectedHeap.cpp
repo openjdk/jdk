@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
 #include "memory/sharedHeap.hpp"
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.inline2.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.hpp"
@@ -108,12 +107,11 @@ jint GenCollectedHeap::initialize() {
   // Allocate space for the heap.
 
   char* heap_address;
-  size_t total_reserved = 0;
   ReservedSpace heap_rs;
 
   size_t heap_alignment = collector_policy()->heap_alignment();
 
-  heap_address = allocate(heap_alignment, &total_reserved, &heap_rs);
+  heap_address = allocate(heap_alignment, &heap_rs);
 
   if (!heap_rs.is_reserved()) {
     vm_shutdown_during_initialization(
@@ -149,7 +147,6 @@ jint GenCollectedHeap::initialize() {
 
 
 char* GenCollectedHeap::allocate(size_t alignment,
-                                 size_t* _total_reserved,
                                  ReservedSpace* heap_rs){
   const char overflow_msg[] = "The size of the object heap + VM data exceeds "
     "the maximum representable size";
@@ -170,8 +167,6 @@ char* GenCollectedHeap::allocate(size_t alignment,
   assert(total_reserved % alignment == 0,
          err_msg("Gen size; total_reserved=" SIZE_FORMAT ", alignment="
                  SIZE_FORMAT, total_reserved, alignment));
-
-  *_total_reserved = total_reserved;
 
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
   return heap_rs->base();

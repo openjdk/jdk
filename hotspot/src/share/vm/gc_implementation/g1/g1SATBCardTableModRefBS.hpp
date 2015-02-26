@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/memRegion.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "utilities/macros.hpp"
 
 class DirtyCardQueueSet;
@@ -43,14 +43,15 @@ protected:
     g1_young_gen = CT_MR_BS_last_reserved << 1
   };
 
+  G1SATBCardTableModRefBS(MemRegion whole_heap, BarrierSet::Name kind);
+  ~G1SATBCardTableModRefBS() { }
+
 public:
   static int g1_young_card_val()   { return g1_young_gen; }
 
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);
-
-  G1SATBCardTableModRefBS(MemRegion whole_heap);
 
   bool is_a(BarrierSet::Name bsn) {
     return bsn == BarrierSet::G1SATBCT || CardTableModRefBS::is_a(bsn);

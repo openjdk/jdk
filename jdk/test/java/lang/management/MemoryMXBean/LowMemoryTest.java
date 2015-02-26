@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,17 @@
  *
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
- * @requires vm.opt.ExplicitGCInvokesConcurrent == "false" | vm.opt.ExplicitGCInvokesConcurrent == "null"
- * @run main/timeout=600 LowMemoryTest
+  * @run main/timeout=600 LowMemoryTest
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
+ * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
+ * @requires vm.opt.DisableExplicitGC != "true"
  */
 
-import com.sun.management.DiagnosticCommandMBean;
 import java.lang.management.*;
 import java.util.*;
 import java.util.concurrent.Phaser;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
-import sun.management.ManagementFactoryHelper;
 
 public class LowMemoryTest {
     private static final MemoryMXBean mm = ManagementFactory.getMemoryMXBean();
@@ -115,14 +115,13 @@ public class LowMemoryTest {
             triggers++;
         }
         public void checkResult() throws Exception {
-            if ((!isRelaxed && triggers != NUM_TRIGGERS) ||
-                (isRelaxed && triggers < NUM_TRIGGERS)) {
+            if (!checkValue(triggers, NUM_TRIGGERS)) {
                 throw new RuntimeException("Unexpected number of triggers = " +
                     triggers + " but expected to be " + NUM_TRIGGERS);
             }
 
             for (int i = 0; i < triggers; i++) {
-                if (count[i] != i+1) {
+                if (!checkValue(count[i], i + 1)) {
                     throw new RuntimeException("Unexpected count of" +
                         " notification #" + i +
                         " count = " + count[i] +
@@ -133,6 +132,18 @@ public class LowMemoryTest {
                         usedMemory[i] + " is less than the threshold = " +
                         newThreshold);
                 }
+            }
+        }
+
+        private boolean checkValue(int value, int target) {
+            return checkValue((long)value, target);
+        }
+
+        private boolean checkValue(long value, int target) {
+            if (!isRelaxed) {
+                return value == target;
+            } else {
+                return value >= target;
             }
         }
     }

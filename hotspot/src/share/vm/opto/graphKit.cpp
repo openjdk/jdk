@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1528,7 +1528,6 @@ void GraphKit::pre_barrier(bool do_load,
     case BarrierSet::ModRef:
       break;
 
-    case BarrierSet::Other:
     default      :
       ShouldNotReachHere();
 
@@ -1547,7 +1546,6 @@ bool GraphKit::can_move_pre_barrier() const {
     case BarrierSet::ModRef:
       return true; // There is no pre-barrier
 
-    case BarrierSet::Other:
     default      :
       ShouldNotReachHere();
   }
@@ -1578,7 +1576,6 @@ void GraphKit::post_barrier(Node* ctl,
     case BarrierSet::ModRef:
       break;
 
-    case BarrierSet::Other:
     default      :
       ShouldNotReachHere();
 
@@ -1989,6 +1986,11 @@ void GraphKit::uncommon_trap(int trap_request,
         Deoptimization::trap_request_index(trap_request) < 0 &&
         too_many_recompiles(reason)) {
       // This BCI is causing too many recompilations.
+      if (C->log() != NULL) {
+        C->log()->elem("observe that='trap_action_change' reason='%s' from='%s' to='none'",
+                Deoptimization::trap_reason_name(reason),
+                Deoptimization::trap_action_name(action));
+      }
       action = Deoptimization::Action_none;
       trap_request = Deoptimization::make_trap_request(reason, action);
     } else {
@@ -2763,7 +2765,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   Deoptimization::DeoptReason reason = Deoptimization::reason_class_check(spec_klass != NULL);
 
   // Make sure we haven't already deoptimized from this tactic.
-  if (too_many_traps(reason))
+  if (too_many_traps(reason) || too_many_recompiles(reason))
     return NULL;
 
   // (No, this isn't a call, but it's enough like a virtual call
@@ -2785,8 +2787,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
                                             &exact_obj);
       { PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap(reason,
-                      Deoptimization::Action_maybe_recompile);
+        uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
       }
       if (safe_for_replace) {
         replace_in_map(not_null_obj, exact_obj);
@@ -2815,8 +2816,12 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
   if (type != NULL) {
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
     Deoptimization::DeoptReason null_reason = Deoptimization::Reason_speculate_null_check;
-    if (!too_many_traps(null_reason) &&
-        !too_many_traps(class_reason)) {
+    ciMethod* trap_method = (sfpt == NULL) ? method() : sfpt->jvms()->method();
+    int trap_bci = (sfpt == NULL) ? bci() : sfpt->jvms()->bci();
+
+    if (!too_many_traps(null_reason) && !too_many_recompiles(null_reason) &&
+        !C->too_many_traps(trap_method, trap_bci, class_reason) &&
+        !C->too_many_recompiles(trap_method, trap_bci, class_reason)) {
       Node* not_null_obj = NULL;
       // not_null is true if we know the object is not null and
       // there's no need for a null check
@@ -2836,19 +2841,18 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
         GraphKit kit(sfpt->jvms());
         PreserveJVMState pjvms(&kit);
         kit.set_control(slow_ctl);
-        kit.uncommon_trap(class_reason,
-                          Deoptimization::Action_maybe_recompile);
+        kit.uncommon_trap_exact(class_reason, Deoptimization::Action_maybe_recompile);
       } else {
         PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap(class_reason,
-                      Deoptimization::Action_maybe_recompile);
+        uncommon_trap_exact(class_reason, Deoptimization::Action_maybe_recompile);
       }
       replace_in_map(not_null_obj, exact_obj);
       obj = exact_obj;
     }
   } else {
-    if (!too_many_traps(Deoptimization::Reason_null_assert)) {
+    if (!too_many_traps(Deoptimization::Reason_null_assert) &&
+        !too_many_recompiles(Deoptimization::Reason_null_assert)) {
       Node* exact_obj = null_assert(obj);
       replace_in_map(obj, exact_obj);
       obj = exact_obj;
@@ -3240,6 +3244,9 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 
   const TypeFunc *tf = OptoRuntime::complete_monitor_exit_Type();
   UnlockNode *unlock = new UnlockNode(C, tf);
+#ifdef ASSERT
+  unlock->set_dbg_jvms(sync_jvms());
+#endif
   uint raw_idx = Compile::AliasIdxRaw;
   unlock->init_req( TypeFunc::Control, control() );
   unlock->init_req( TypeFunc::Memory , memory(raw_idx) );
@@ -3748,6 +3755,17 @@ void GraphKit::sync_kit(IdealKit& ideal) {
 void GraphKit::final_sync(IdealKit& ideal) {
   // Final sync IdealKit and graphKit.
   sync_kit(ideal);
+}
+
+Node* GraphKit::byte_map_base_node() {
+  // Get base of card map
+  CardTableModRefBS* ct = (CardTableModRefBS*)(Universe::heap()->barrier_set());
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust users of this code");
+  if (ct->byte_map_base != NULL) {
+    return makecon(TypeRawPtr::make((address)ct->byte_map_base));
+  } else {
+    return null();
+  }
 }
 
 // vanilla/CMS post barrier

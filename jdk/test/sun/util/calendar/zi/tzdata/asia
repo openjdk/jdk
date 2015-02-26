@@ -168,10 +168,7 @@ Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
 			4:00	Azer	AZ%sT
 
 # Bahrain
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Bahrain	3:22:20 -	LMT	1920     # Manamah
-			4:00	-	GST	1972 Jun
-			3:00	-	AST
+# See Asia/Qatar.
 
 # Bangladesh
 # From Alexander Krivenyshev (2009-05-13):
@@ -1754,9 +1751,7 @@ Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
 ###############################################################################
 
 # Kuwait
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Kuwait	3:11:56 -	LMT	1950
-			3:00	-	AST
+# See Asia/Riyadh.
 
 # Laos
 # See Asia/Bangkok.
@@ -1977,12 +1972,7 @@ Zone	Asia/Kathmandu	5:41:16 -	LMT	1920
 			5:45	-	NPT	# Nepal Time
 
 # Oman
-
-# Milne says 3:54:24 was the meridian of the Muscat Tidal Observatory.
-
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Muscat	3:54:24 -	LMT	1920
-			4:00	-	GST
+# See Asia/Dubai.
 
 # Pakistan
 
@@ -2476,6 +2466,7 @@ Zone	Asia/Manila	-15:56:00 -	LMT	1844 Dec 31
 Zone	Asia/Qatar	3:26:08 -	LMT	1920     # Al Dawhah / Doha
 			4:00	-	GST	1972 Jun
 			3:00	-	AST
+Link Asia/Qatar Asia/Bahrain
 
 # Saudi Arabia
 #
@@ -2502,6 +2493,8 @@ Zone	Asia/Qatar	3:26:08 -	LMT	1920     # Al Dawhah / Doha
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Riyadh	3:06:52 -	LMT	1947 Mar 14
 			3:00	-	AST
+Link Asia/Riyadh Asia/Aden	# Yemen
+Link Asia/Riyadh Asia/Kuwait
 
 # Singapore
 # taken from Mok Ly Yng (2003-10-30)
@@ -2790,6 +2783,7 @@ Zone	Asia/Ashgabat	3:53:32 -	LMT	1924 May  2 # or Ashkhabad
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dubai	3:41:12 -	LMT	1920
 			4:00	-	GST
+Link Asia/Dubai Asia/Muscat	# Oman
 
 # Uzbekistan
 # Byalokoz 1919 says Uzbekistan was 4:27:53.
@@ -2874,10 +2868,4 @@ Zone Asia/Ho_Chi_Minh	7:06:40 -	LMT	1906 Jul  1
 			7:00	-	ICT
 
 # Yemen
-
-# Milne says 2:59:54 was the meridian of the saluting battery at Aden,
-# and that Yemen was at 1:55:56, the meridian of the Hagia Sophia.
-
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Aden	2:59:54	-	LMT	1950
-			3:00	-	AST
+# See Asia/Riyadh.

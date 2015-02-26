@@ -160,22 +160,18 @@ public class SingleByte
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
+            int len  = Math.min(dl - dp, sl - sp);
 
-            CoderResult cr = CoderResult.UNDERFLOW;
-            if ((dl - dp) < (sl - sp)) {
-                sl = sp + (dl - dp);
-                cr = CoderResult.OVERFLOW;
-            }
-
-            while (sp < sl) {
+            while (len-- > 0) {
                 char c = sa[sp];
                 int b = encode(c);
                 if (b == UNMAPPABLE_ENCODING) {
                     if (Character.isSurrogate(c)) {
                         if (sgp == null)
                             sgp = new Surrogate.Parser();
-                        if (sgp.parse(c, sa, sp, sl) < 0)
+                        if (sgp.parse(c, sa, sp, sl) < 0) {
                             return withResult(sgp.error(), src, sp, dst, dp);
+                        }
                         return withResult(sgp.unmappableResult(), src, sp, dst, dp);
                     }
                     return withResult(CoderResult.unmappableForLength(1),
@@ -184,7 +180,8 @@ public class SingleByte
                 da[dp++] = (byte)b;
                 sp++;
             }
-            return withResult(cr, src, sp, dst, dp);
+            return withResult(sp < sl ? CoderResult.OVERFLOW : CoderResult.UNDERFLOW,
+                              src, sp, dst, dp);
         }
 
         private CoderResult encodeBufferLoop(CharBuffer src, ByteBuffer dst) {

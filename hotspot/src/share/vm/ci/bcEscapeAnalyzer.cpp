@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
 #include "interpreter/bytecode.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 
@@ -89,8 +90,8 @@ class BCEscapeAnalyzer::StateInfo {
 public:
   ArgumentMap *_vars;
   ArgumentMap *_stack;
-  short _stack_height;
-  short _max_stack;
+  int _stack_height;
+  int _max_stack;
   bool _initialized;
   ArgumentMap empty_map;
 

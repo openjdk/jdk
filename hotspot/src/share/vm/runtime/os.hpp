@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ class os: AllStatic {
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
+  static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
 
  public:
   static void init(void);                      // Called before command line parsing
@@ -172,9 +173,9 @@ class os: AllStatic {
   static jlong  javaTimeMillis();
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
+  static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
   static bool   supports_monotonic_clock();
-
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -267,8 +268,13 @@ class os: AllStatic {
 
   // Returns the page size to use for a region of memory.
   // region_size / min_pages will always be greater than or equal to the
-  // returned value.
-  static size_t page_size_for_region(size_t region_size, size_t min_pages);
+  // returned value. The returned value will divide region_size.
+  static size_t page_size_for_region_aligned(size_t region_size, size_t min_pages);
+
+  // Returns the page size to use for a region of memory.
+  // region_size / min_pages will always be greater than or equal to the
+  // returned value. The returned value might not divide region_size.
+  static size_t page_size_for_region_unaligned(size_t region_size, size_t min_pages);
 
   // Return the largest page size that can be used
   static size_t max_page_size() {

@@ -25,6 +25,7 @@
  * @test TestNUMAPageSize
  * @summary Make sure that start up with NUMA support does not cause problems.
  * @bug 8061467
+ * @requires (vm.opt.AggressiveOpts == null) | (vm.opt.AggressiveOpts == false)
  * @key gc
  * @key regression
  * @run main/othervm -Xmx8M -XX:+UseNUMA TestNUMAPageSize

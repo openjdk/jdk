@@ -26,6 +26,7 @@
  * @bug 7195106
  * @summary Tests that explicit BeanInfo is not collected
  * @author Sergey Malenkov
+ * @run main/othervm -Xmx128m Test7195106
  */
 
 import java.awt.Image;

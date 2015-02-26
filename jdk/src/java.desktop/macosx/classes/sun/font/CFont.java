@@ -77,13 +77,71 @@ public final class CFont extends PhysicalFont {
     }
 
     private static native long createNativeFont(final String nativeFontName,
-                                                final int style,
-                                                final boolean isFakeItalic);
+                                                final int style);
     private static native void disposeNativeFont(final long nativeFontPtr);
 
     private boolean isFakeItalic;
     private String nativeFontName;
     private long nativeFontPtr;
+
+    private native float getWidthNative(final long nativeFontPtr);
+    private native float getWeightNative(final long nativeFontPtr);
+
+    private int fontWidth = -1;
+    private int fontWeight = -1;
+
+    @Override
+    public int getWidth() {
+        if (fontWidth == -1) {
+            // Apple use a range of -1 -> +1, where 0.0 is normal
+            // OpenType uses a % range from 50% -> 200% where 100% is normal
+            // and maps these onto the integer values 1->9.
+            // Since that is what Font2D.getWidth() expects, remap to that.
+            float fw = getWidthNative(getNativeFontPtr());
+            if (fw == 0.0) { // short cut the common case
+                fontWidth = Font2D.FWIDTH_NORMAL;
+                return fontWidth;
+            }
+            fw += 1.0; fw *= 100.0;
+            if (fw <= 50.0) {
+                fontWidth = 1;
+            } else if (fw <= 62.5) {
+                fontWidth = 2;
+            } else if (fw <= 75.0) {
+                fontWidth = 3;
+            } else if (fw <= 87.5) {
+                fontWidth = 4;
+            } else if (fw <= 100.0) {
+                fontWidth = 5;
+            } else if (fw <= 112.5) {
+                fontWidth = 6;
+            } else if (fw <= 125.0) {
+                fontWidth = 7;
+            } else if (fw <= 150.0) {
+                fontWidth = 8;
+            } else {
+                fontWidth = 9;
+            }
+        }
+        return fontWidth;
+   }
+
+    @Override
+    public int getWeight() {
+        if (fontWeight == -1) {
+            // Apple use a range of -1 -> +1, where 0 is medium/regular
+            // Map this on to the OpenType range of 100->900 where
+            // 500 is medium/regular.
+            // We'll actually map to 0->1000 but that's close enough.
+            float fw = getWeightNative(getNativeFontPtr());
+            if (fw == 0) {
+               return Font2D.FWEIGHT_NORMAL;
+            }
+            fw += 1.0; fw *= 500;
+            fontWeight = (int)fw;
+          }
+          return fontWeight;
+    }
 
     // this constructor is called from CFontWrapper.m
     public CFont(String name) {
@@ -94,10 +152,11 @@ public final class CFont extends PhysicalFont {
         handle = new Font2DHandle(this);
         fullName = name;
         familyName = inFamilyName;
-        nativeFontName = inFamilyName;
+        nativeFontName = fullName;
         setStyle();
     }
 
+    /* Called from CFontManager too */
     public CFont(CFont other, String logicalFamilyName) {
         handle = new Font2DHandle(this);
         fullName = logicalFamilyName;
@@ -109,6 +168,7 @@ public final class CFont extends PhysicalFont {
 
     public CFont createItalicVariant() {
         CFont font = new CFont(this, familyName);
+        font.nativeFontName = fullName;
         font.fullName =
             fullName + (style == Font.BOLD ? "" : "-") + "Italic-Derived";
         font.style |= Font.ITALIC;
@@ -118,7 +178,7 @@ public final class CFont extends PhysicalFont {
 
     protected synchronized long getNativeFontPtr() {
         if (nativeFontPtr == 0L) {
-            nativeFontPtr = createNativeFont(nativeFontName, style, isFakeItalic);
+            nativeFontPtr = createNativeFont(nativeFontName, style);
 }
         return nativeFontPtr;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,31 +275,30 @@ class ChunkPool: public CHeapObj<mtInternal> {
     Chunk* cur = NULL;
     Chunk* next;
     {
-    // if we have more than n chunks, free all of them
-    ThreadCritical tc;
-    if (_num_chunks > n) {
-      // free chunks at end of queue, for better locality
+      // if we have more than n chunks, free all of them
+      ThreadCritical tc;
+      if (_num_chunks > n) {
+        // free chunks at end of queue, for better locality
         cur = _first;
-      for (size_t i = 0; i < (n - 1) && cur != NULL; i++) cur = cur->next();
+        for (size_t i = 0; i < (n - 1) && cur != NULL; i++) cur = cur->next();
 
-      if (cur != NULL) {
+        if (cur != NULL) {
           next = cur->next();
-        cur->set_next(NULL);
-        cur = next;
+          cur->set_next(NULL);
+          cur = next;
 
-          _num_chunks = n;
+          // Free all remaining chunks while in ThreadCritical lock
+          // so NMT adjustment is stable.
+          while(cur != NULL) {
+            next = cur->next();
+            os::free(cur);
+            _num_chunks--;
+            cur = next;
+          }
         }
       }
     }
-
-    // Free all remaining chunks, outside of ThreadCritical
-    // to avoid deadlock with NMT
-        while(cur != NULL) {
-          next = cur->next();
-      os::free(cur);
-          cur = next;
-        }
-      }
+  }
 
   // Accessors to preallocated pool's
   static ChunkPool* large_pool()  { assert(_large_pool  != NULL, "must be initialized"); return _large_pool;  }
@@ -384,7 +383,9 @@ void Chunk::operator delete(void* p) {
    case Chunk::medium_size: ChunkPool::medium_pool()->free(c); break;
    case Chunk::init_size:   ChunkPool::small_pool()->free(c); break;
    case Chunk::tiny_size:   ChunkPool::tiny_pool()->free(c); break;
-   default:                 os::free(c);
+   default:
+     ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
+     os::free(c);
   }
 }
 

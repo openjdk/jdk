@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,12 +66,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *         public XMLGregorianCalendar date;
  *     }
  *
- *     &lt;!-- Example: Local XML Schema element -->
- *     &lt;xs:complexType name="USPrice"/>
- *       &lt;xs:sequence>
- *         &lt;xs:element name="date" type="xs:date"/>
- *       &lt;/sequence>
- *     &lt;/xs:complexType>
+ *     &lt;!-- Example: Local XML Schema element --&gt;
+ *     &lt;xs:complexType name="USPrice"/&gt;
+ *       &lt;xs:sequence&gt;
+ *         &lt;xs:element name="date" type="xs:date"/&gt;
+ *       &lt;/sequence&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  *
  * <p> <b> Example 2: </b> Customize mapping of XMLGregorianCalendar at package

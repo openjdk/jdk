@@ -56,7 +56,7 @@ public class SimpleSSLContext {
      */
     public SimpleSSLContext () throws IOException {
         String paths = System.getProperty("test.src.path");
-        StringTokenizer st = new StringTokenizer(paths,":");
+        StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
         boolean securityExceptions = false;
         while (st.hasMoreTokens()) {
             String path = st.nextToken();

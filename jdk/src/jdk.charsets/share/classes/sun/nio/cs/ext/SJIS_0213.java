@@ -35,6 +35,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import sun.nio.cs.CharsetMapping;
+import sun.nio.cs.*;
 
 /*
  *  5 types of entry in SJIS_X_0213/Unicode mapping table

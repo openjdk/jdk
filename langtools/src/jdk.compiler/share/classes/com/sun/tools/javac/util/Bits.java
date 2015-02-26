@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,20 +82,6 @@ public class Bits {
             }
         }
 
-    }
-
-    public enum BitsOpKind {
-        INIT,
-        CLEAR,
-        INCL_BIT,
-        EXCL_BIT,
-        ASSIGN,
-        AND_SET,
-        OR_SET,
-        DIFF_SET,
-        XOR_SET,
-        INCL_RANGE,
-        EXCL_RANGE,
     }
 
     private final static int wordlen = 32;

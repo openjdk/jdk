@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "ci/ciField.hpp"
@@ -249,6 +250,7 @@ typedef TwoOopHashtable<Klass*, mtClass>      KlassTwoOopHashtable;
 typedef Hashtable<Klass*, mtClass>            KlassHashtable;
 typedef HashtableEntry<Klass*, mtClass>       KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
+typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -357,11 +359,18 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(MethodData,           _arg_stack,                                    intx)                                  \
   nonstatic_field(MethodData,           _arg_returned,                                 intx)                                  \
   nonstatic_field(MethodData,           _tenure_traps,                                 uint)                                  \
+  nonstatic_field(MethodData,           _invoke_mask,                                  int)                                   \
+  nonstatic_field(MethodData,           _backedge_mask,                                int)                                   \
   nonstatic_field(DataLayout,           _header._struct._tag,                          u1)                                    \
   nonstatic_field(DataLayout,           _header._struct._flags,                        u1)                                    \
   nonstatic_field(DataLayout,           _header._struct._bci,                          u2)                                    \
   nonstatic_field(DataLayout,           _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,       _nmethod_age,                                  int)                                   \
+  nonstatic_field(MethodCounters,       _interpreter_invocation_limit,                 int)                                   \
+  nonstatic_field(MethodCounters,       _interpreter_backward_branch_limit,            int)                                   \
+  nonstatic_field(MethodCounters,       _interpreter_profile_limit,                    int)                                   \
+  nonstatic_field(MethodCounters,       _invoke_mask,                                  int)                                   \
+  nonstatic_field(MethodCounters,       _backedge_mask,                                int)                                   \
   nonstatic_field(MethodCounters,       _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(MethodCounters,       _interpreter_throwout_count,                   u2)                                    \
   nonstatic_field(MethodCounters,       _number_of_breakpoints,                        u2)                                    \
@@ -623,12 +632,23 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /***************/                                                                                                                  \
                                                                                                                                      \
      static_field(SymbolTable,                  _the_table,                                   SymbolTable*)                          \
+     static_field(SymbolTable,                  _shared_table,                                SymbolCompactHashTable)                \
                                                                                                                                      \
   /***************/                                                                                                                  \
   /* StringTable */                                                                                                                  \
   /***************/                                                                                                                  \
                                                                                                                                      \
      static_field(StringTable,                  _the_table,                                   StringTable*)                          \
+                                                                                                                                     \
+  /********************/                                                                                                             \
+  /* CompactHashTable */                                                                                                             \
+  /********************/                                                                                                             \
+                                                                                                                                     \
+  nonstatic_field(SymbolCompactHashTable, _base_address, uintx)                                                                      \
+  nonstatic_field(SymbolCompactHashTable, _entry_count, juint)                                                                       \
+  nonstatic_field(SymbolCompactHashTable, _bucket_count, juint)                                                                      \
+  nonstatic_field(SymbolCompactHashTable, _table_end_offset, juint)                                                                  \
+  nonstatic_field(SymbolCompactHashTable, _buckets, juint*)                                                                          \
                                                                                                                                      \
   /********************/                                                                                                             \
   /* SystemDictionary */                                                                                                             \
@@ -667,6 +687,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
       static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              Klass*)                               \
+      static_field(SystemDictionary,            WK_KLASS(Cleaner_klass),                       Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   Klass*)                               \
@@ -1578,6 +1599,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
     declare_type(ResourceArea, Arena)                                     \
   declare_toplevel_type(Chunk)                                            \
                                                                           \
+  declare_toplevel_type(SymbolCompactHashTable)                           \
+                                                                          \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
   /***********************************************************/           \
@@ -1903,8 +1926,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(CompareAndSwapINode, LoadStoreNode)                     \
   declare_c2_type(CompareAndSwapPNode, LoadStoreNode)                     \
   declare_c2_type(CompareAndSwapNNode, LoadStoreNode)                     \
-  declare_c2_type(PrefetchReadNode, Node)                                 \
-  declare_c2_type(PrefetchWriteNode, Node)                                \
   declare_c2_type(MulNode, Node)                                          \
   declare_c2_type(MulINode, MulNode)                                      \
   declare_c2_type(MulLNode, MulNode)                                      \
@@ -2211,7 +2232,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(BarrierSet::CardTableExtension)                        \
   declare_constant(BarrierSet::G1SATBCT)                                  \
   declare_constant(BarrierSet::G1SATBCTLogging)                           \
-  declare_constant(BarrierSet::Other)                                     \
                                                                           \
   declare_constant(BlockOffsetSharedArray::LogN)                          \
   declare_constant(BlockOffsetSharedArray::LogN_words)                    \

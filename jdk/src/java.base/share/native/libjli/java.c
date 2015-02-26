@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,12 +350,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         } \
     } while (JNI_FALSE)
 
-#define CHECK_EXCEPTION_RETURN() \
-    do { \
-        if ((*env)->ExceptionOccurred(env)) { \
-            return; \
-        } \
-    } while (JNI_FALSE)
 
 int JNICALL
 JavaMain(void * _args)
@@ -466,6 +460,7 @@ JavaMain(void * _args)
      * of the application class.
      */
     PostJVMInit(env, appClass, vm);
+    CHECK_EXCEPTION_LEAVE(1);
     /*
      * The LoadMainClass not only loads the main class, it will also ensure
      * that the main method's signature is correct, therefore further checking

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
- *      4947220 7018606 7034570 4244896 5049299 8003488
+ *      4947220 7018606 7034570 4244896 5049299 8003488 8054494
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm/timeout=300 Basic
  * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
@@ -2042,7 +2042,7 @@ public class Basic {
                     final Object deferred;
                     Class<?> c = s.getClass();
                     if (c.getName().equals(
-                        "java.lang.UNIXProcess$DeferredCloseInputStream"))
+                        "java.lang.ProcessImpl$DeferredCloseInputStream"))
                     {
                         deferred = s;
                     } else {
@@ -2059,13 +2059,11 @@ public class Basic {
                         Thread.yield();
                     }
                 } else if (s instanceof BufferedInputStream) {
-                    Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                    f.setAccessible(true);
-                    Unsafe unsafe = (Unsafe)f.get(null);
-
-                    while (unsafe.tryMonitorEnter(s)) {
-                        unsafe.monitorExit(s);
-                        Thread.sleep(1);
+                    // Wait until after the s.read occurs in "thread" by
+                    // checking when the input stream monitor is acquired
+                    // (BufferedInputStream.read is synchronized)
+                    while (!isLocked(s, 10)) {
+                        Thread.sleep(100);
                     }
                 }
                 p.destroy();
@@ -2565,4 +2563,21 @@ public class Basic {
             catch (Throwable t) {
                 if (k.isAssignableFrom(t.getClass())) pass();
                 else unexpected(t);}}
+
+    static boolean isLocked(final Object monitor, final long millis) throws InterruptedException {
+        return new Thread() {
+            volatile boolean unlocked;
+
+            @Override
+            public void run() {
+                synchronized (monitor) { unlocked = true; }
+            }
+
+            boolean isLocked() throws InterruptedException {
+                start();
+                join(millis);
+                return !unlocked;
+            }
+        }.isLocked();
+    }
 }

@@ -36,10 +36,12 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
 import javax.script.Invocable;
@@ -717,6 +719,148 @@ public class ScriptEngineTest {
         });
         e.eval("var x = 'xy'; x += 'z';c({a:x})");
         assertTrue(invoked.get());
+    }
+
+    @Test
+    public void testLengthOnArrayLikeObjects() throws Exception {
+        final ScriptEngine e = new ScriptEngineManager().getEngineByName("nashorn");
+        final Object val = e.eval("var arr = { length: 1, 0: 1}; arr.length");
+
+        assertTrue(Number.class.isAssignableFrom(val.getClass()));
+        assertTrue(((Number)val).intValue() == 1);
+    }
+
+    // @bug JDK-8068603: NashornScriptEngine.put/get() impls don't conform to NPE, IAE spec assertions
+    @Test
+    public void illegalBindingsValuesTest() throws Exception {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine e = manager.getEngineByName("nashorn");
+
+        try {
+            e.put(null, "null-value");
+            fail();
+        } catch (NullPointerException x) {
+            // expected
+        }
+
+        try {
+            e.put("", "empty-value");
+            fail();
+        } catch (IllegalArgumentException x) {
+            // expected
+        }
+
+        final Bindings b = e.getBindings(ScriptContext.ENGINE_SCOPE);
+        assertTrue(b instanceof ScriptObjectMirror);
+
+        try {
+            b.put(null, "null-value");
+            fail();
+        } catch (NullPointerException x) {
+            // expected
+        }
+
+        try {
+            b.put("", "empty-value");
+            fail();
+        } catch (IllegalArgumentException x) {
+            // expected
+        }
+
+        try {
+            b.get(null);
+            fail();
+        } catch (NullPointerException x) {
+            // expected
+        }
+
+        try {
+            b.get("");
+            fail();
+        } catch (IllegalArgumentException x) {
+            // expected
+        }
+
+        try {
+            b.get(1);
+            fail();
+        } catch (ClassCastException x) {
+            // expected
+        }
+
+        try {
+            b.remove(null);
+            fail();
+        } catch (NullPointerException x) {
+            // expected
+        }
+
+        try {
+            b.remove("");
+            fail();
+        } catch (IllegalArgumentException x) {
+            // expected
+        }
+
+        try {
+            b.remove(1);
+            fail();
+        } catch (ClassCastException x) {
+            // expected
+        }
+
+        try {
+            b.containsKey(null);
+            fail();
+        } catch (NullPointerException x) {
+            // expected
+        }
+
+        try {
+            b.containsKey("");
+            fail();
+        } catch (IllegalArgumentException x) {
+            // expected
+        }
+
+        try {
+            b.containsKey(1);
+            fail();
+        } catch (ClassCastException x) {
+            // expected
+        }
+
+        try {
+            b.putAll(null);
+            fail();
+        } catch (NullPointerException x) {
+            // expected
+        }
+
+        try {
+            b.putAll(Collections.singletonMap((String)null, "null-value"));
+            fail();
+        } catch (NullPointerException x) {
+            // expected
+        }
+
+        try {
+            b.putAll(Collections.singletonMap("", "empty-value"));
+            fail();
+        } catch (IllegalArgumentException x) {
+            // expected
+        }
+    }
+
+    // @bug 8071989: NashornScriptEngine returns javax.script.ScriptContext instance
+    // with insonsistent get/remove methods behavior for undefined attributes
+    @Test
+    public void testScriptContextGetRemoveUndefined() throws Exception {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine e = manager.getEngineByName("nashorn");
+        final ScriptContext ctx = e.getContext();
+        assertNull(ctx.getAttribute("undefinedname", ScriptContext.ENGINE_SCOPE));
+        assertNull(ctx.removeAttribute("undefinedname", ScriptContext.ENGINE_SCOPE));
     }
 
     private static void checkProperty(final ScriptEngine e, final String name)

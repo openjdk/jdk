@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/methodData.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -477,9 +478,6 @@ void nmethod::init_defaults() {
 #if INCLUDE_RTM_OPT
   _rtm_state               = NoRTM;
 #endif
-#ifdef HAVE_DTRACE_H
-  _trap_offset             = 0;
-#endif // def HAVE_DTRACE_H
 }
 
 nmethod* nmethod::new_native_nmethod(methodHandle method,
@@ -519,44 +517,6 @@ nmethod* nmethod::new_native_nmethod(methodHandle method,
 
   return nm;
 }
-
-#ifdef HAVE_DTRACE_H
-nmethod* nmethod::new_dtrace_nmethod(methodHandle method,
-                                     CodeBuffer *code_buffer,
-                                     int vep_offset,
-                                     int trap_offset,
-                                     int frame_complete,
-                                     int frame_size) {
-  code_buffer->finalize_oop_references(method);
-  // create nmethod
-  nmethod* nm = NULL;
-  {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    int nmethod_size = allocation_size(code_buffer, sizeof(nmethod));
-    CodeOffsets offsets;
-    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
-    offsets.set_value(CodeOffsets::Dtrace_trap, trap_offset);
-    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
-
-    nm = new (nmethod_size, CompLevel_none) nmethod(method(), nmethod_size,
-                                    &offsets, code_buffer, frame_size);
-
-    NOT_PRODUCT(if (nm != NULL)  nmethod_stats.note_nmethod(nm));
-    if (PrintAssembly && nm != NULL) {
-      Disassembler::decode(nm);
-    }
-  }
-  // verify nmethod
-  debug_only(if (nm) nm->verify();) // might block
-
-  if (nm != NULL) {
-    nm->log_new_nmethod();
-  }
-
-  return nm;
-}
-
-#endif // def HAVE_DTRACE_H
 
 nmethod* nmethod::new_nmethod(methodHandle method,
   int compile_id,
@@ -717,91 +677,6 @@ nmethod::nmethod(
     }
   }
 }
-
-// For dtrace wrappers
-#ifdef HAVE_DTRACE_H
-nmethod::nmethod(
-  Method* method,
-  int nmethod_size,
-  CodeOffsets* offsets,
-  CodeBuffer* code_buffer,
-  int frame_size)
-  : CodeBlob("dtrace nmethod", code_buffer, sizeof(nmethod),
-             nmethod_size, offsets->value(CodeOffsets::Frame_Complete), frame_size, NULL),
-  _native_receiver_sp_offset(in_ByteSize(-1)),
-  _native_basic_lock_sp_offset(in_ByteSize(-1))
-{
-  {
-    debug_only(No_Safepoint_Verifier nsv;)
-    assert_locked_or_safepoint(CodeCache_lock);
-
-    init_defaults();
-    _method                  = method;
-    _entry_bci               = InvocationEntryBci;
-    // We have no exception handler or deopt handler make the
-    // values something that will never match a pc like the nmethod vtable entry
-    _exception_offset        = 0;
-    _deoptimize_offset       = 0;
-    _deoptimize_mh_offset    = 0;
-    _unwind_handler_offset   = -1;
-    _trap_offset             = offsets->value(CodeOffsets::Dtrace_trap);
-    _orig_pc_offset          = 0;
-    _consts_offset           = data_offset();
-    _stub_offset             = data_offset();
-    _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset         + round_to(code_buffer->total_oop_size(), oopSize);
-    _scopes_data_offset      = _metadata_offset     + round_to(code_buffer->total_metadata_size(), wordSize);
-    _scopes_pcs_offset       = _scopes_data_offset;
-    _dependencies_offset     = _scopes_pcs_offset;
-    _handler_table_offset    = _dependencies_offset;
-    _nul_chk_table_offset    = _handler_table_offset;
-    _nmethod_end_offset      = _nul_chk_table_offset;
-    _compile_id              = 0;  // default
-    _comp_level              = CompLevel_none;
-    _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
-    _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
-    _osr_entry_point         = NULL;
-    _exception_cache         = NULL;
-    _pc_desc_cache.reset_to(NULL);
-    _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
-
-    code_buffer->copy_values_to(this);
-    if (ScavengeRootsInCode) {
-      if (detect_scavenge_root_oops()) {
-        CodeCache::add_scavenge_root_nmethod(this);
-      }
-      Universe::heap()->register_nmethod(this);
-    }
-    DEBUG_ONLY(verify_scavenge_root_oops();)
-    CodeCache::commit(this);
-  }
-
-  if (PrintNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
-    ttyLocker ttyl;  // keep the following output all in one block
-    // This output goes directly to the tty, not the compiler log.
-    // To enable tools to match it up with the compilation activity,
-    // be sure to tag this tty output with the compile ID.
-    if (xtty != NULL) {
-      xtty->begin_head("print_dtrace_nmethod");
-      xtty->method(_method);
-      xtty->stamp();
-      xtty->end_head(" address='" INTPTR_FORMAT "'", (intptr_t) this);
-    }
-    // print the header part first
-    print();
-    // then print the requested information
-    if (PrintNMethods) {
-      print_code();
-    }
-    if (PrintRelocations) {
-      print_relocations();
-    }
-    if (xtty != NULL) {
-      xtty->tail("print_dtrace_nmethod");
-    }
-  }
-}
-#endif // def HAVE_DTRACE_H
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
@@ -2309,17 +2184,6 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   }
 #endif // !SHARK
 }
-
-
-oop nmethod::embeddedOop_at(u_char* p) {
-  RelocIterator iter(this, p, p + 1);
-  while (iter.next())
-    if (iter.type() == relocInfo::oop_type) {
-      return iter.oop_reloc()->oop_value();
-    }
-  return NULL;
-}
-
 
 inline bool includes(void* p, void* from, void* to) {
   return from <= p && p < to;

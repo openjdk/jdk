@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,10 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
   if (default_use_cache()) {
     _use_cache = true;
 
-    _hot_cache_size = (1 << G1ConcRSLogCacheSize);
+    _hot_cache_size = (size_t)1 << G1ConcRSLogCacheSize;
     _hot_cache = NEW_C_HEAP_ARRAY(jbyte*, _hot_cache_size, mtGC);
 
-    _n_hot = 0;
-    _hot_cache_idx = 0;
+    reset_hot_cache_internal();
 
     // For refining the cards in the hot cache in parallel
     _hot_cache_par_chunk_size = ClaimChunkSize;
@@ -64,26 +63,21 @@ jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
     // return it for immediate refining.
     return card_ptr;
   }
-
   // Otherwise, the card is hot.
-  jbyte* res = NULL;
-  MutexLockerEx x(HotCardCache_lock, Mutex::_no_safepoint_check_flag);
-  if (_n_hot == _hot_cache_size) {
-    res = _hot_cache[_hot_cache_idx];
-    _n_hot--;
-  }
+  size_t index = Atomic::add(1, &_hot_cache_idx) - 1;
+  size_t masked_index = index & (_hot_cache_size - 1);
+  jbyte* current_ptr = _hot_cache[masked_index];
 
-  // Now _n_hot < _hot_cache_size, and we can insert at _hot_cache_idx.
-  _hot_cache[_hot_cache_idx] = card_ptr;
-  _hot_cache_idx++;
-
-  if (_hot_cache_idx == _hot_cache_size) {
-    // Wrap around
-    _hot_cache_idx = 0;
-  }
-  _n_hot++;
-
-  return res;
+  // Try to store the new card pointer into the cache. Compare-and-swap to guard
+  // against the unlikely event of a race resulting in another card pointer to
+  // have already been written to the cache. In this case we will return
+  // card_ptr in favor of the other option, which would be starting over. This
+  // should be OK since card_ptr will likely be the older card already when/if
+  // this ever happens.
+  jbyte* previous_ptr = (jbyte*)Atomic::cmpxchg_ptr(card_ptr,
+                                                    &_hot_cache[masked_index],
+                                                    current_ptr);
+  return (previous_ptr == current_ptr) ? previous_ptr : card_ptr;
 }
 
 void G1HotCardCache::drain(uint worker_i,
@@ -96,38 +90,38 @@ void G1HotCardCache::drain(uint worker_i,
 
   assert(_hot_cache != NULL, "Logic");
   assert(!use_cache(), "cache should be disabled");
-  int start_idx;
 
-  while ((start_idx = _hot_cache_par_claimed_idx) < _n_hot) { // read once
-    int end_idx = start_idx + _hot_cache_par_chunk_size;
+  while (_hot_cache_par_claimed_idx < _hot_cache_size) {
+    size_t end_idx = Atomic::add(_hot_cache_par_chunk_size,
+                                 &_hot_cache_par_claimed_idx);
+    size_t start_idx = end_idx - _hot_cache_par_chunk_size;
+    // The current worker has successfully claimed the chunk [start_idx..end_idx)
+    end_idx = MIN2(end_idx, _hot_cache_size);
+    for (size_t i = start_idx; i < end_idx; i++) {
+      jbyte* card_ptr = _hot_cache[i];
+      if (card_ptr != NULL) {
+        if (g1rs->refine_card(card_ptr, worker_i, true)) {
+          // The part of the heap spanned by the card contains references
+          // that point into the current collection set.
+          // We need to record the card pointer in the DirtyCardQueueSet
+          // that we use for such cards.
+          //
+          // The only time we care about recording cards that contain
+          // references that point into the collection set is during
+          // RSet updating while within an evacuation pause.
+          // In this case worker_i should be the id of a GC worker thread
+          assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
+          assert(worker_i < ParallelGCThreads,
+                 err_msg("incorrect worker id: %u", worker_i));
 
-    if (start_idx ==
-        Atomic::cmpxchg(end_idx, &_hot_cache_par_claimed_idx, start_idx)) {
-      // The current worker has successfully claimed the chunk [start_idx..end_idx)
-      end_idx = MIN2(end_idx, _n_hot);
-      for (int i = start_idx; i < end_idx; i++) {
-        jbyte* card_ptr = _hot_cache[i];
-        if (card_ptr != NULL) {
-          if (g1rs->refine_card(card_ptr, worker_i, true)) {
-            // The part of the heap spanned by the card contains references
-            // that point into the current collection set.
-            // We need to record the card pointer in the DirtyCardQueueSet
-            // that we use for such cards.
-            //
-            // The only time we care about recording cards that contain
-            // references that point into the collection set is during
-            // RSet updating while within an evacuation pause.
-            // In this case worker_i should be the id of a GC worker thread
-            assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
-            assert(worker_i < ParallelGCThreads,
-                   err_msg("incorrect worker id: %u", worker_i));
-
-            into_cset_dcq->enqueue(card_ptr);
-          }
+          into_cset_dcq->enqueue(card_ptr);
         }
+      } else {
+        break;
       }
     }
   }
+
   // The existing entries in the hot card cache, which were just refined
   // above, are discarded prior to re-enabling the cache near the end of the GC.
 }

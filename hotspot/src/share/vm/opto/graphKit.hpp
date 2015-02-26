@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,16 +104,7 @@ class GraphKit : public Phase {
   // (See also macro MakeConX in type.hpp, which uses intcon or longcon.)
 
   // Helper for byte_map_base
-  Node* byte_map_base_node() {
-    // Get base of card map
-    CardTableModRefBS* ct = (CardTableModRefBS*)(Universe::heap()->barrier_set());
-    assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust users of this code");
-    if (ct->byte_map_base != NULL) {
-      return makecon(TypeRawPtr::make((address)ct->byte_map_base));
-    } else {
-      return null();
-    }
-  }
+  Node* byte_map_base_node();
 
   jint  find_int_con(Node* n, jint value_if_unknown) {
     return _gvn.find_int_con(n, value_if_unknown);
@@ -712,6 +703,15 @@ class GraphKit : public Phase {
                      bool must_throw = false, bool keep_exact_action = false) {
     uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, keep_exact_action);
+  }
+
+  // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
+  void uncommon_trap_exact(Deoptimization::DeoptReason reason,
+                           Deoptimization::DeoptAction action,
+                           ciKlass* klass = NULL, const char* reason_string = NULL,
+                           bool must_throw = false) {
+    uncommon_trap(Deoptimization::make_trap_request(reason, action),
+                  klass, reason_string, must_throw, /*keep_exact_action=*/true);
   }
 
   // SP when bytecode needs to be reexecuted.

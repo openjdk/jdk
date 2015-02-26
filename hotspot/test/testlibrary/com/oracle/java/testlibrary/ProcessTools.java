@@ -33,8 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import sun.management.VMManagement;
-
 public final class ProcessTools {
 
   private ProcessTools() {
@@ -90,19 +88,8 @@ public final class ProcessTools {
    * @return Process id
    */
   public static int getProcessId() throws Exception {
-
-    // Get the current process id using a reflection hack
     RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-    Field jvm = runtime.getClass().getDeclaredField("jvm");
-
-    jvm.setAccessible(true);
-    VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-
-    Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-
-    pid_method.setAccessible(true);
-
-    int pid = (Integer) pid_method.invoke(mgmt);
+    int pid = Integer.parseInt(runtime.getName().split("@")[0]);
 
     return pid;
   }
@@ -184,23 +171,36 @@ public final class ProcessTools {
     return executeProcess(pb);
   }
 
-  /**
-   * Executes a process, waits for it to finish and returns the process output.
-   * @param pb The ProcessBuilder to execute.
-   * @return The output from the process.
-   */
-  public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Throwable {
-    OutputAnalyzer output = null;
-    try {
-      output = new OutputAnalyzer(pb.start());
-      return output;
-    } catch (Throwable t) {
-      System.out.println("executeProcess() failed: " + t);
-      throw t;
-    } finally {
-      System.out.println(getProcessLog(pb, output));
+    /**
+     * Executes a process, waits for it to finish and returns the process output.
+     * The process will have exited before this method returns.
+     * @param pb The ProcessBuilder to execute.
+     * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
+     */
+    public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Exception {
+        OutputAnalyzer output = null;
+        Process p = null;
+        boolean failed = false;
+        try {
+            p = pb.start();
+            output = new OutputAnalyzer(p);
+            p.waitFor();
+
+            return output;
+        } catch (Throwable t) {
+            if (p != null) {
+                p.destroyForcibly().waitFor();
+            }
+
+            failed = true;
+            System.out.println("executeProcess() failed: " + t);
+            throw t;
+        } finally {
+            if (failed) {
+                System.err.println(getProcessLog(pb, output));
+            }
+        }
     }
-  }
 
   /**
    * Executes a process, waits for it to finish and returns the process output.

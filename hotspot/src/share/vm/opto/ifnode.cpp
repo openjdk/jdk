@@ -145,10 +145,18 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       Node* v = u->fast_out(k); // User of the phi
       // CNC - Allow only really simple patterns.
       // In particular I disallow AddP of the Phi, a fairly common pattern
-      if( v == cmp ) continue;  // The compare is OK
-      if( (v->is_ConstraintCast()) &&
-          v->in(0)->in(0) == iff )
-        continue;               // CastPP/II of the IfNode is OK
+      if (v == cmp) continue;  // The compare is OK
+      if (v->is_ConstraintCast()) {
+        // If the cast is derived from data flow edges, it may not have a control edge.
+        // If so, it should be safe to split. But follow-up code can not deal with
+        // this (l. 359). So skip.
+        if (v->in(0) == NULL) {
+          return NULL;
+        }
+        if (v->in(0)->in(0) == iff) {
+          continue;               // CastPP/II of the IfNode is OK
+        }
+      }
       // Disabled following code because I cannot tell if exactly one
       // path dominates without a real dominator check. CNC 9/9/1999
       //uint vop = v->Opcode();

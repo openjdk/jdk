@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -6061,102 +6061,8 @@ instruct loadSSD(regDPR dst, stackSlotD src) %{
   ins_pipe( fpu_reg_mem );
 %}
 
-// Prefetch instructions.
-// Must be safe to execute with invalid address (cannot fault).
-
-instruct prefetchr0( memory mem ) %{
-  predicate(UseSSE==0 && !VM_Version::supports_3dnow_prefetch());
-  match(PrefetchRead mem);
-  ins_cost(0);
-  size(0);
-  format %{ "PREFETCHR (non-SSE is empty encoding)" %}
-  ins_encode();
-  ins_pipe(empty);
-%}
-
-instruct prefetchr( memory mem ) %{
-  predicate(UseSSE==0 && VM_Version::supports_3dnow_prefetch() || ReadPrefetchInstr==3);
-  match(PrefetchRead mem);
-  ins_cost(100);
-
-  format %{ "PREFETCHR $mem\t! Prefetch into level 1 cache for read" %}
-  ins_encode %{
-    __ prefetchr($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchrNTA( memory mem ) %{
-  predicate(UseSSE>=1 && ReadPrefetchInstr==0);
-  match(PrefetchRead mem);
-  ins_cost(100);
-
-  format %{ "PREFETCHNTA $mem\t! Prefetch into non-temporal cache for read" %}
-  ins_encode %{
-    __ prefetchnta($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchrT0( memory mem ) %{
-  predicate(UseSSE>=1 && ReadPrefetchInstr==1);
-  match(PrefetchRead mem);
-  ins_cost(100);
-
-  format %{ "PREFETCHT0 $mem\t! Prefetch into L1 and L2 caches for read" %}
-  ins_encode %{
-    __ prefetcht0($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchrT2( memory mem ) %{
-  predicate(UseSSE>=1 && ReadPrefetchInstr==2);
-  match(PrefetchRead mem);
-  ins_cost(100);
-
-  format %{ "PREFETCHT2 $mem\t! Prefetch into L2 cache for read" %}
-  ins_encode %{
-    __ prefetcht2($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchw0( memory mem ) %{
-  predicate(UseSSE==0 && !VM_Version::supports_3dnow_prefetch());
-  match(PrefetchWrite mem);
-  ins_cost(0);
-  size(0);
-  format %{ "Prefetch (non-SSE is empty encoding)" %}
-  ins_encode();
-  ins_pipe(empty);
-%}
-
-instruct prefetchw( memory mem ) %{
-  predicate(UseSSE==0 && VM_Version::supports_3dnow_prefetch());
-  match( PrefetchWrite mem );
-  ins_cost(100);
-
-  format %{ "PREFETCHW $mem\t! Prefetch into L1 cache and mark modified" %}
-  ins_encode %{
-    __ prefetchw($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchwNTA( memory mem ) %{
-  predicate(UseSSE>=1);
-  match(PrefetchWrite mem);
-  ins_cost(100);
-
-  format %{ "PREFETCHNTA $mem\t! Prefetch into non-temporal cache for write" %}
-  ins_encode %{
-    __ prefetchnta($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
 // Prefetch instructions for allocation.
+// Must be safe to execute with invalid address (cannot fault).
 
 instruct prefetchAlloc0( memory mem ) %{
   predicate(UseSSE==0 && AllocatePrefetchInstr!=3);

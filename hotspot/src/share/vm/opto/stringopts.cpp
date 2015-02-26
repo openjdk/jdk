@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 #define __ kit.
 
@@ -1507,10 +1508,12 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       }
       case StringConcat::StringMode: {
         const Type* type = kit.gvn().type(arg);
+        Node* count = NULL;
         if (type == TypePtr::NULL_PTR) {
           // replace the argument with the null checked version
           arg = null_string;
           sc->set_argument(argi, arg);
+          count = kit.load_String_length(kit.control(), arg);
         } else if (!type->higher_equal(TypeInstPtr::NOTNULL)) {
           // s = s != null ? s : "null";
           // length = length + (s.count - s.offset);
@@ -1533,10 +1536,13 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           // replace the argument with the null checked version
           arg = phi;
           sc->set_argument(argi, arg);
+          count = kit.load_String_length(kit.control(), arg);
+        } else {
+          // A corresponding nullcheck will be connected during IGVN MemNode::Ideal_common_DU_postCCP
+          // kit.control might be a different test, that can be hoisted above the actual nullcheck
+          // in case, that the control input is not null, Ideal_common_DU_postCCP will not look for a nullcheck.
+          count = kit.load_String_length(NULL, arg);
         }
-
-        Node* count = kit.load_String_length(kit.control(), arg);
-
         length = __ AddI(length, count);
         string_sizes->init_req(argi, NULL);
         break;

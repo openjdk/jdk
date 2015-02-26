@@ -270,8 +270,8 @@ public final class BasisLibrary {
         if (Double.isNaN(start))
             return(EMPTYSTRING);
 
-            final int strlen = value.length();
-            int istart = (int)Math.round(start) - 1;
+        final int strlen = value.length();
+        int istart = (int)Math.round(start) - 1;
 
         if (istart > strlen)
             return(EMPTYSTRING);
@@ -292,10 +292,11 @@ public final class BasisLibrary {
     public static String substringF(String value, double start, double length) {
         if (Double.isInfinite(start) ||
             Double.isNaN(start) ||
-            Double.isNaN(length))
+            Double.isNaN(length) ||
+            length < 0)
             return(EMPTYSTRING);
 
-            int istart = (int)Math.round(start) - 1;
+        int istart = (int)Math.round(start) - 1;
         final int isum;
         if (Double.isInfinite(length))
             isum = Integer.MAX_VALUE;

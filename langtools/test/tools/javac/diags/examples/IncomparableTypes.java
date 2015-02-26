@@ -24,5 +24,5 @@
 // key: compiler.err.incomparable.types
 
 class X {
-    boolean b = (this == 1);
+    boolean b = (this == "");
 }
