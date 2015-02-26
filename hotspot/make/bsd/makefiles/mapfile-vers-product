@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,11 +62,6 @@ SUNWprivate_1.1 {
                 JVM_DefineClassWithSourceCond;
                 JVM_DesiredAssertionStatus;
                 JVM_DoPrivileged;
-                JVM_DTraceGetVersion;
-                JVM_DTraceActivate;
-                JVM_DTraceIsProbeEnabled;
-                JVM_DTraceIsSupported;
-                JVM_DTraceDispose;
                 JVM_DumpAllStacks;
                 JVM_DumpThreads;
                 JVM_FillInStackTrace;
@@ -132,6 +127,7 @@ SUNWprivate_1.1 {
                 JVM_GetMethodIxSignatureUTF;
                 JVM_GetMethodParameters;
                 JVM_GetMethodTypeAnnotations;
+                JVM_GetNanoTimeAdjustment;
                 JVM_GetPrimitiveArrayElement;
                 JVM_GetProtectionDomain;
                 JVM_GetStackAccessControlContext;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,6 +219,30 @@ template <class T, class N> const char* CompactHashtable<T, N>::init(const char*
 
   juint *end = _buckets + _table_end_offset;
   return (const char*)end;
+}
+
+template <class T, class N> void CompactHashtable<T, N>::symbols_do(SymbolClosure *cl) {
+  assert(!DumpSharedSpaces, "run-time only");
+  for (juint i = 0; i < _bucket_count; i ++) {
+    juint bucket_info = _buckets[i];
+    juint bucket_offset = BUCKET_OFFSET(bucket_info);
+    int   bucket_type = BUCKET_TYPE(bucket_info);
+    juint* bucket = _buckets + bucket_offset;
+    juint* bucket_end = _buckets;
+
+    Symbol* sym;
+    if (bucket_type == COMPACT_BUCKET_TYPE) {
+      sym = (Symbol*)((void*)(_base_address + bucket[0]));
+      cl->do_symbol(&sym);
+    } else {
+      bucket_end += BUCKET_OFFSET(_buckets[i + 1]);
+      while (bucket < bucket_end) {
+        sym = (Symbol*)((void*)(_base_address + bucket[1]));
+        cl->do_symbol(&sym);
+        bucket += 2;
+      }
+    }
+  }
 }
 
 // Explicitly instantiate these types

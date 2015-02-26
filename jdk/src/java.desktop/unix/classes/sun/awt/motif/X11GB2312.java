@@ -28,6 +28,7 @@ package sun.awt.motif;
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.*;
+import sun.nio.cs.*;
 import sun.nio.cs.ext.*;
 import static sun.nio.cs.CharsetMapping.*;
 

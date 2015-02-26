@@ -1229,7 +1229,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       TraceCollectorStats tcs(g1mm()->full_collection_counters());
       TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
-      double start = os::elapsedTime();
       g1_policy()->record_full_collection_start();
 
       // Note: When we have a more flexible GC logging framework that
@@ -1436,7 +1435,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       _allocator->init_mutator_alloc_region();
 
-      double end = os::elapsedTime();
       g1_policy()->record_full_collection_end();
 
       if (G1Log::fine()) {
@@ -3527,9 +3525,14 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
         size_t card_index;
         while (hrrs.has_next(card_index)) {
           jbyte* card_ptr = (jbyte*)bs->byte_for_index(card_index);
-          if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
-            *card_ptr = CardTableModRefBS::dirty_card_val();
-            _dcq.enqueue(card_ptr);
+          // The remembered set might contain references to already freed
+          // regions. Filter out such entries to avoid failing card table
+          // verification.
+          if (!g1h->heap_region_containing(bs->addr_for(card_ptr))->is_free()) {
+            if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
+              *card_ptr = CardTableModRefBS::dirty_card_val();
+              _dcq.enqueue(card_ptr);
+            }
           }
         }
         r->rem_set()->clear_locked();

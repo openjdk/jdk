@@ -46,7 +46,7 @@ public class AttachOperationFailedException extends IOException {
      * Constructs an <code>AttachOperationFailedException</code> with
      * the specified detail message.
      *
-     * @param   s   the detail message.
+     * @param message the detail message.
      */
     public AttachOperationFailedException(String message) {
         super(message);

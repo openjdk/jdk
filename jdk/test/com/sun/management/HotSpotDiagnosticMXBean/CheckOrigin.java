@@ -62,7 +62,7 @@ public class CheckOrigin {
                     "-XX:+UseConcMarkSweepGC",  // this will cause UseParNewGC to be FLAG_SET_ERGO
                     "-XX:+PrintGCDetails",
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
-                    "-cp", System.getProperty("test.class.path") + File.pathSeparator + getToolsJarPath(),
+                    "-cp", System.getProperty("test.class.path"),
                     "CheckOrigin",
                     "-runtests");
 
@@ -137,8 +137,4 @@ public class CheckOrigin {
         vm.detach();
     }
 
-    private static String getToolsJarPath() {
-        return System.getProperty("java.home") +
-            "/../lib/tools.jar".replace("/", File.separator);
-    }
 }

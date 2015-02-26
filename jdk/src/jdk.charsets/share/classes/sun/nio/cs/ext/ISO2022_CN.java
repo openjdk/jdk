@@ -35,8 +35,10 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CharacterCodingException;
+import sun.nio.cs.DoubleByte;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.US_ASCII;
+import sun.nio.cs.*;
 
 public class ISO2022_CN
     extends Charset

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1688,15 +1688,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     void clearCurrentFocusCycleRootOnHide() {
         /* do nothing */
-    }
-
-    /*
-     * Delete references from LightweightDispatcher of a heavyweight parent
-     */
-    void clearLightweightDispatcherOnRemove(Component removedComponent) {
-        if (parent != null) {
-            parent.clearLightweightDispatcherOnRemove(removedComponent);
-        }
     }
 
     /**
@@ -6242,7 +6233,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Indicates whether a class or its superclasses override coalesceEvents.
      * Must be called with lock on coalesceMap and privileged.
-     * @see checkCoalsecing
+     * @see checkCoalescing
      */
     private static boolean isCoalesceEventsOverriden(Class<?> clazz) {
         assert Thread.holdsLock(coalesceMap);
@@ -7083,8 +7074,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         synchronized (getTreeLock()) {
-            clearLightweightDispatcherOnRemove(this);
-
             if (isFocusOwner() && KeyboardFocusManager.isAutoFocusTransferEnabledFor(this)) {
                 transferFocus(true);
             }

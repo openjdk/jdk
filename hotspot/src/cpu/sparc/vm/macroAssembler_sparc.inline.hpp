@@ -630,7 +630,12 @@ inline void MacroAssembler::ldf(FloatRegisterImpl::Width w, Register s1, Registe
 
 inline void MacroAssembler::ldf(FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset) {
   relocate(a.rspec(offset));
-  ldf(w, a.base(), a.disp() + offset, d);
+  if (a.has_index()) {
+    assert(offset == 0, "");
+    ldf(w, a.base(), a.index(), d);
+  } else {
+    ldf(w, a.base(), a.disp() + offset, d);
+  }
 }
 
 // returns if membar generates anything, obviously this code should mirror

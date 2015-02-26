@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.time.chrono.Chronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.UnsupportedTemporalTypeException;
 
 import java.util.*;
 
@@ -152,6 +153,44 @@ public class TestFormatter {
             new StringBuilder(), locale).format(fmtStr, dt).out().toString();
         if (verbose) {
             System.out.printf("%-24s  : %s%n", getClassName(dt), out);
+        }
+
+        // expected usually comes from Calendar which only has milliseconds
+        // precision. So we're going to replace it's N:[nanos] stamp with
+        // the correct value for nanos.
+        if ((dt instanceof TemporalAccessor) && expected != null) {
+            try {
+                // Get millis & nanos from the dt
+                final TemporalAccessor ta = (TemporalAccessor) dt;
+                final int nanos = ta.get(ChronoField.NANO_OF_SECOND);
+                final int millis = ta.get(ChronoField.MILLI_OF_SECOND);
+                final String nanstr = String.valueOf(nanos);
+                final String mistr = String.valueOf(millis);
+
+                // Compute the value of the N:[nanos] field that we expect
+                // to find in 'out'
+                final StringBuilder sb = new StringBuilder();
+                sb.append("N:[");
+                for (int i=nanstr.length(); i<9; i++) {
+                    sb.append('0');
+                }
+                sb.append(nanos).append("]");
+
+                // Compute the truncated value of N:[nanos] field that might
+                // be in 'expected' when expected was built from Calendar.
+                final StringBuilder sbm = new StringBuilder();
+                sbm.append("N:[");
+                for (int i=mistr.length(); i<3; i++) {
+                    sbm.append('0');
+                }
+                sbm.append(mistr).append("000000]");
+
+                // if expected contains the truncated value, replace it with
+                // the complete value.
+                expected = expected.replace(sbm.toString(), sb.toString());
+            } catch (UnsupportedTemporalTypeException e) {
+                // nano seconds unsupported - nothing to do...
+            }
         }
         if (expected != null && !out.equals(expected)) {
             System.out.printf("%-24s  actual: %s%n                FAILED; expected: %s%n",

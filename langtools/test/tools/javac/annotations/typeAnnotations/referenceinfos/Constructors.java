@@ -43,7 +43,7 @@ public class Constructors {
 
     @TADescription(annotation = "TA", type = METHOD_RETURN, genericLocation = {1, 0})
     @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0})
-    @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER, paramIndex = 1)
+    @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     @TestClass("%TEST_CLASS_NAME%$Inner")
     public String innerClass() {
         return "class %TEST_CLASS_NAME% { class Inner {" +
@@ -56,7 +56,7 @@ public class Constructors {
     @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0})
     @TADescription(annotation = "TC", type = METHOD_RECEIVER)
     @TADescription(annotation = "TD", type = METHOD_RETURN, genericLocation = {1, 0})
-    @TADescription(annotation = "TE", type = METHOD_FORMAL_PARAMETER, paramIndex = 1)
+    @TADescription(annotation = "TE", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     @TestClass("%TEST_CLASS_NAME%$Inner")
     public String innerClass2() {
         return "class %TEST_CLASS_NAME% { class Inner {" +
@@ -70,7 +70,7 @@ public class Constructors {
     @TADescription(annotation = "TC", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
     @TADescription(annotation = "TD", type = METHOD_RECEIVER, genericLocation = {1, 0})
     @TADescription(annotation = "TE", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
-    @TADescription(annotation = "TF", type = METHOD_FORMAL_PARAMETER, paramIndex = 1)
+    @TADescription(annotation = "TF", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     @TestClass("Outer$Middle$Inner")
     public String innerClass3() {
         return "class Outer { class Middle { class Inner {" +
@@ -89,7 +89,7 @@ public class Constructors {
 
     @TADescription(annotation = "RTAs", type = METHOD_RETURN, genericLocation = {1, 0})
     @TADescription(annotation = "RTBs", type = METHOD_RETURN, genericLocation = {1, 0})
-    @TADescription(annotation = "RTCs", type = METHOD_FORMAL_PARAMETER, paramIndex = 1)
+    @TADescription(annotation = "RTCs", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     @TestClass("%TEST_CLASS_NAME%$Inner")
     public String innerClassRepeatableAnnotation() {
         return "class %TEST_CLASS_NAME% { class Inner {" +
@@ -102,7 +102,7 @@ public class Constructors {
     @TADescription(annotation = "RTBs", type = METHOD_RETURN, genericLocation = {1, 0})
     @TADescription(annotation = "RTCs", type = METHOD_RECEIVER)
     @TADescription(annotation = "RTDs", type = METHOD_RETURN, genericLocation = {1, 0})
-    @TADescription(annotation = "RTEs", type = METHOD_FORMAL_PARAMETER, paramIndex = 1)
+    @TADescription(annotation = "RTEs", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     @TestClass("%TEST_CLASS_NAME%$Inner")
     public String innerClassRepeatableAnnotation2() {
         return "class %TEST_CLASS_NAME% { class Inner {" +
@@ -116,7 +116,7 @@ public class Constructors {
     @TADescription(annotation = "RTCs", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
     @TADescription(annotation = "RTDs", type = METHOD_RECEIVER, genericLocation = {1, 0})
     @TADescription(annotation = "RTEs", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
-    @TADescription(annotation = "RTFs", type = METHOD_FORMAL_PARAMETER, paramIndex = 1)
+    @TADescription(annotation = "RTFs", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     @TestClass("Outer$Middle$Inner")
     public String innerClassRepatableAnnotation3() {
         return "class Outer { class Middle { class Inner {" +

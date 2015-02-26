@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3489,9 +3489,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "GetAndAddL", "GetAndSetL", "GetAndSetN",
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);
-  if( strcmp(_opType,"PrefetchRead")==0 ||
-      strcmp(_opType,"PrefetchWrite")==0 ||
-      strcmp(_opType,"PrefetchAllocation")==0 )
+  if( strcmp(_opType,"PrefetchAllocation")==0 )
     return 1;
   if( _lChild ) {
     const char *opType = _lChild->_opType;

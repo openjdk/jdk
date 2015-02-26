@@ -678,27 +678,41 @@ public class Locations {
                     boolean haveJImageFiles =
                             files.anyMatch(f -> f.getFileName().toString().endsWith(".jimage"));
                     if (haveJImageFiles) {
-                        return Collections.singleton(JRT_MARKER_FILE);
+                        return addAdditionalBootEntries(Collections.singleton(JRT_MARKER_FILE));
                     }
                 }
-            }
-
-            // Temporary: if no .jimage files, return individual modules
-            if (Files.exists(libModules.resolve("java.base"))) {
-                return Files.list(libModules)
-                            .map(d -> d.resolve("classes"))
-                            .collect(Collectors.toList());
             }
 
             // Exploded module image
             Path modules = Paths.get(java_home, "modules");
             if (Files.isDirectory(modules.resolve("java.base"))) {
-                return Files.list(modules)
-                            .collect(Collectors.toList());
+                try (Stream<Path> listedModules = Files.list(modules)) {
+                    return addAdditionalBootEntries(listedModules.collect(Collectors.toList()));
+                }
             }
 
             // not a modular image that we know about
             return null;
+        }
+
+        //ensure bootclasspath prepends/appends are reflected in the systemClasses
+        private Collection<Path> addAdditionalBootEntries(Collection<Path> modules) throws IOException {
+            String files = System.getProperty("sun.boot.class.path");
+
+            if (files == null)
+                return modules;
+
+            Set<Path> paths = new LinkedHashSet<>();
+
+            for (String s : files.split(Pattern.quote(File.pathSeparator))) {
+                if (s.endsWith(".jimage")) {
+                    paths.addAll(modules);
+                } else if (!s.isEmpty()) {
+                    paths.add(Paths.get(s));
+                }
+            }
+
+            return paths;
         }
 
         private void lazy() {
@@ -783,45 +797,4 @@ public class Locations {
                 && (n.endsWith(".jar") || n.endsWith(".zip"));
     }
 
-    /**
-     * Utility method for converting a search path string to an array of directory and JAR file
-     * URLs.
-     *
-     * Note that this method is called by the DocletInvoker.
-     *
-     * @param path the search path string
-     * @return the resulting array of directory and JAR file URLs
-     */
-    public static URL[] pathToURLs(String path) {
-        java.util.List<URL> urls = new ArrayList<>();
-        for (String s: path.split(Pattern.quote(File.pathSeparator))) {
-            if (!s.isEmpty()) {
-                URL url = fileToURL(Paths.get(s));
-                if (url != null) {
-                    urls.add(url);
-                }
-            }
-        }
-        return urls.toArray(new URL[urls.size()]);
-    }
-
-    /**
-     * Returns the directory or JAR file URL corresponding to the specified local file name.
-     *
-     * @param file the Path object
-     * @return the resulting directory or JAR file URL, or null if unknown
-     */
-    private static URL fileToURL(Path file) {
-        Path p;
-        try {
-            p = file.toRealPath();
-        } catch (IOException e) {
-            p = file.toAbsolutePath();
-        }
-        try {
-            return p.normalize().toUri().toURL();
-        } catch (MalformedURLException e) {
-            return null;
-        }
-    }
 }

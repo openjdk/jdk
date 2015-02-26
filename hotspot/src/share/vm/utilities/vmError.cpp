@@ -22,6 +22,7 @@
  *
  */
 
+#include <fcntl.h>
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
@@ -351,6 +352,26 @@ void VMError::report(outputStream* st) {
       st->print_cr("# There is insufficient memory for the Java "
                    "Runtime Environment to continue.");
     }
+
+#ifndef PRODUCT
+  // Error handler self tests
+
+  // test secondary error handling. Test it twice, to test that resetting
+  // error handler after a secondary crash works.
+  STEP(13, "(test secondary crash 1)")
+    if (_verbose && TestCrashInErrorHandler != 0) {
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+        TestCrashInErrorHandler);
+      controlled_crash(TestCrashInErrorHandler);
+    }
+
+  STEP(14, "(test secondary crash 2)")
+    if (_verbose && TestCrashInErrorHandler != 0) {
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+        TestCrashInErrorHandler);
+      controlled_crash(TestCrashInErrorHandler);
+    }
+#endif // PRODUCT
 
   STEP(15, "(printing type of error)")
 
@@ -785,6 +806,15 @@ void VMError::report(outputStream* st) {
        st->cr();
      }
 
+#ifndef PRODUCT
+  // print a defined marker to show that error handling finished correctly.
+  STEP(290, "(printing end marker)" )
+
+     if (_verbose) {
+       st->print_cr("END.");
+     }
+#endif
+
   END
 
 # undef BEGIN
@@ -807,7 +837,8 @@ fdStream VMError::log; // error log used by VMError::report_and_die()
 static int expand_and_open(const char* pattern, char* buf, size_t buflen, size_t pos) {
   int fd = -1;
   if (Arguments::copy_expand_pid(pattern, strlen(pattern), &buf[pos], buflen - pos)) {
-    fd = open(buf, O_RDWR | O_CREAT | O_TRUNC, 0666);
+    // the O_EXCL flag will cause the open to fail if the file exists
+    fd = open(buf, O_RDWR | O_CREAT | O_EXCL, 0666);
   }
   return fd;
 }

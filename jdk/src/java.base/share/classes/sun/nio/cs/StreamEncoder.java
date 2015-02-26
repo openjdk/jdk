@@ -243,8 +243,11 @@ public class StreamEncoder extends Writer
             if (cr.isUnderflow()) {
                 if (lcb.hasRemaining()) {
                     leftoverChar = lcb.get();
-                    if (cb != null && cb.hasRemaining())
-                        flushLeftoverChar(cb, endOfInput);
+                    if (cb != null && cb.hasRemaining()) {
+                        lcb.clear();
+                        lcb.put(leftoverChar).put(cb.get()).flip();
+                        continue;
+                    }
                     return;
                 }
                 break;
@@ -265,24 +268,24 @@ public class StreamEncoder extends Writer
         CharBuffer cb = CharBuffer.wrap(cbuf, off, len);
 
         if (haveLeftoverChar)
-        flushLeftoverChar(cb, false);
+            flushLeftoverChar(cb, false);
 
         while (cb.hasRemaining()) {
-        CoderResult cr = encoder.encode(cb, bb, false);
-        if (cr.isUnderflow()) {
-           assert (cb.remaining() <= 1) : cb.remaining();
-           if (cb.remaining() == 1) {
-                haveLeftoverChar = true;
-                leftoverChar = cb.get();
+            CoderResult cr = encoder.encode(cb, bb, false);
+            if (cr.isUnderflow()) {
+                assert (cb.remaining() <= 1) : cb.remaining();
+                if (cb.remaining() == 1) {
+                    haveLeftoverChar = true;
+                    leftoverChar = cb.get();
+                }
+                break;
             }
-            break;
-        }
-        if (cr.isOverflow()) {
-            assert bb.position() > 0;
-            writeBytes();
-            continue;
-        }
-        cr.throwException();
+            if (cr.isOverflow()) {
+                assert bb.position() > 0;
+                writeBytes();
+                continue;
+            }
+            cr.throwException();
         }
     }
 

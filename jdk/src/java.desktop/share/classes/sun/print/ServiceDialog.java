@@ -1564,7 +1564,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 bmObj = bmTmpObj;
             } else {
                 if (lmObj == null || rmObj == null ||
-                    tmObj == null || rmObj == null) {
+                    tmObj == null || bmObj == null) {
                     return;
                 } else {
                     leftMargin.setValue(lmObj);

@@ -29,6 +29,8 @@
 
 import java.util.NoSuchElementException;
 import java.util.OptionalLong;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.LongStream;
 
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
@@ -48,41 +50,82 @@ public class BasicLong {
         assertTrue(0 == empty.hashCode());
         assertTrue(!empty.toString().isEmpty());
         assertTrue(!empty.isPresent());
+
         empty.ifPresent(v -> { fail(); });
+
+        AtomicBoolean emptyCheck = new AtomicBoolean();
+        empty.ifPresentOrElse(v -> fail(), () -> emptyCheck.set(true));
+        assertTrue(emptyCheck.get());
+
+        try {
+            empty.ifPresentOrElse(v -> fail(), () -> { throw new ObscureException(); });
+            fail();
+        } catch (ObscureException expected) {
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Throwable t) {
+            fail();
+        }
+
         assertEquals(2, empty.orElse(2));
         assertEquals(2, empty.orElseGet(()-> 2));
     }
 
-        @Test(expectedExceptions=NoSuchElementException.class)
-        public void testEmptyGet() {
-            OptionalLong empty = OptionalLong.empty();
+    @Test(groups = "unit")
+    public void testIfPresentAndOrElseAndNull() {
+        OptionalLong empty = OptionalLong.empty();
+        OptionalLong present = OptionalLong.of(1);
 
-            long got = empty.getAsLong();
-        }
+        // No NPE
+        present.ifPresentOrElse(v -> {}, null);
+        empty.ifPresent(null);
+        empty.ifPresentOrElse(null, () -> {});
 
-        @Test(expectedExceptions=NullPointerException.class)
-        public void testEmptyOrElseGetNull() {
-            OptionalLong empty = OptionalLong.empty();
+        // NPE
+        try {
+            present.ifPresent(null);
+            fail();
+        } catch (NullPointerException ex) {}
+        try {
+            present.ifPresentOrElse(null, () -> {});
+            fail();
+        } catch (NullPointerException ex) {}
+        try {
+            empty.ifPresentOrElse(v -> {}, null);
+            fail();
+        } catch (NullPointerException ex) {}
+    }
 
-            long got = empty.orElseGet(null);
-        }
+    @Test(expectedExceptions=NoSuchElementException.class)
+    public void testEmptyGet() {
+        OptionalLong empty = OptionalLong.empty();
 
-        @Test(expectedExceptions=NullPointerException.class)
-        public void testEmptyOrElseThrowNull() throws Throwable {
-            OptionalLong empty = OptionalLong.empty();
+        long got = empty.getAsLong();
+    }
 
-            long got = empty.orElseThrow(null);
-        }
+    @Test(expectedExceptions=NullPointerException.class)
+    public void testEmptyOrElseGetNull() {
+        OptionalLong empty = OptionalLong.empty();
 
-        @Test(expectedExceptions=ObscureException.class)
-        public void testEmptyOrElseThrow() throws Exception {
-            OptionalLong empty = OptionalLong.empty();
+        long got = empty.orElseGet(null);
+    }
 
-            long got = empty.orElseThrow(ObscureException::new);
-        }
+    @Test(expectedExceptions=NullPointerException.class)
+    public void testEmptyOrElseThrowNull() throws Throwable {
+        OptionalLong empty = OptionalLong.empty();
 
-        @Test(groups = "unit")
-        public void testPresent() {
+        long got = empty.orElseThrow(null);
+    }
+
+    @Test(expectedExceptions=ObscureException.class)
+    public void testEmptyOrElseThrow() throws Exception {
+        OptionalLong empty = OptionalLong.empty();
+
+        long got = empty.orElseThrow(ObscureException::new);
+    }
+
+    @Test(groups = "unit")
+    public void testPresent() {
         OptionalLong empty = OptionalLong.empty();
         OptionalLong present = OptionalLong.of(1L);
 
@@ -95,18 +138,59 @@ public class BasicLong {
         assertFalse(present.toString().isEmpty());
         assertTrue(-1 != present.toString().indexOf(Long.toString(present.getAsLong()).toString()));
         assertEquals(1L, present.getAsLong());
+
+        AtomicBoolean presentCheck = new AtomicBoolean();
+        present.ifPresent(v -> presentCheck.set(true));
+        assertTrue(presentCheck.get());
+        presentCheck.set(false);
+        present.ifPresentOrElse(v -> presentCheck.set(true), () -> fail());
+        assertTrue(presentCheck.get());
+
         try {
             present.ifPresent(v -> { throw new ObscureException(); });
             fail();
-        } catch(ObscureException expected) {
-
+        } catch (ObscureException expected) {
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Throwable t) {
+            fail();
         }
+        try {
+            present.ifPresentOrElse(v -> {
+                throw new ObscureException();
+            }, () -> fail());
+            fail();
+        } catch (ObscureException expected) {
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Throwable t) {
+            fail();
+        }
+
         assertEquals(1, present.orElse(2));
         assertEquals(1, present.orElseGet(null));
         assertEquals(1, present.orElseGet(()-> 2));
         assertEquals(1, present.orElseGet(()-> 3));
         assertEquals(1, present.<RuntimeException>orElseThrow(null));
         assertEquals(1, present.<RuntimeException>orElseThrow(ObscureException::new));
+    }
+
+    @Test(groups = "unit")
+    public void testStream() {
+        {
+            LongStream s = OptionalLong.empty().stream();
+
+            long[] es = s.toArray();
+            assertEquals(es.length, 0);
+        }
+
+        {
+            LongStream s = OptionalLong.of(42L).stream();
+
+            long[] es = s.toArray();
+            assertEquals(es.length, 1);
+            assertEquals(es[0], 42L);
+        }
     }
 
     private static class ObscureException extends RuntimeException {

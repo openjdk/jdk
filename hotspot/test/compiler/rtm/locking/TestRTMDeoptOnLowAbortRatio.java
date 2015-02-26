@@ -53,6 +53,7 @@ import sun.misc.Unsafe;
  */
 public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
     private static final long LOCKING_THRESHOLD = 100L;
+    private static final long ABORT_THRESHOLD = LOCKING_THRESHOLD / 2L;
 
     private TestRTMDeoptOnLowAbortRatio() {
         super(new AndPredicate(new SupportedCPU(), new SupportedVM()));
@@ -77,7 +78,8 @@ public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
                         useStackLock),
                 CommandLineOptionTest.prepareNumericFlag("RTMLockingThreshold",
                         TestRTMDeoptOnLowAbortRatio.LOCKING_THRESHOLD),
-                "-XX:RTMAbortThreshold=1",
+                CommandLineOptionTest.prepareNumericFlag("RTMAbortThreshold",
+                        TestRTMDeoptOnLowAbortRatio.ABORT_THRESHOLD),
                 "-XX:RTMAbortRatio=100",
                 "-XX:CompileThreshold=1",
                 "-XX:RTMRetryCount=0",
@@ -107,7 +109,7 @@ public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
 
         for (RTMLockingStatistics s : statistics) {
             if (s.getTotalLocks()
-                    == TestRTMDeoptOnLowAbortRatio.LOCKING_THRESHOLD + 1L) {
+                    == TestRTMDeoptOnLowAbortRatio.LOCKING_THRESHOLD) {
                 Asserts.assertNull(statisticsBeforeDeopt,
                         "Only one abort was expected during test run");
                 statisticsBeforeDeopt = s;
@@ -154,8 +156,7 @@ public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
             }
             for (int i = 0; i < AbortProvoker.DEFAULT_ITERATIONS; i++) {
                 AbortProvoker.verifyMonitorState(t.monitor, shouldBeInflated);
-                t.forceAbort(
-                        i == TestRTMDeoptOnLowAbortRatio.LOCKING_THRESHOLD);
+                t.forceAbort(i >= TestRTMDeoptOnLowAbortRatio.ABORT_THRESHOLD);
             }
         }
     }

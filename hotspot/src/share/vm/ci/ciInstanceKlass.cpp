@@ -501,32 +501,31 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
   return fields;
 }
 
-void ciInstanceKlass::compute_injected_fields_helper() {
+bool ciInstanceKlass::compute_injected_fields_helper() {
   ASSERT_IN_VM;
   InstanceKlass* k = get_instanceKlass();
 
   for (InternalFieldStream fs(k); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static())  continue;
-    _has_injected_fields++;
-    break;
-  }
-}
-
-bool ciInstanceKlass::compute_injected_fields() {
-  assert(_has_injected_fields == -1, "shouldn't be initialized yet");
-  assert(is_loaded(), "must be loaded");
-
-  if (super() != NULL && super()->has_injected_fields()) {
-    _has_injected_fields = 1;
     return true;
   }
+  return false;
+}
 
-  _has_injected_fields = 0;
-  GUARDED_VM_ENTRY({
-      compute_injected_fields_helper();
-    });
+void ciInstanceKlass::compute_injected_fields() {
+  assert(is_loaded(), "must be loaded");
 
-  return _has_injected_fields > 0 ? true : false;
+  int has_injected_fields = 0;
+  if (super() != NULL && super()->has_injected_fields()) {
+    has_injected_fields = 1;
+  } else {
+    GUARDED_VM_ENTRY({
+        has_injected_fields = compute_injected_fields_helper() ? 1 : 0;
+      });
+  }
+  // may be concurrently initialized for shared ciInstanceKlass objects
+  assert(_has_injected_fields == -1 || _has_injected_fields == has_injected_fields, "broken concurrent initialization");
+  _has_injected_fields = has_injected_fields;
 }
 
 // ------------------------------------------------------------------

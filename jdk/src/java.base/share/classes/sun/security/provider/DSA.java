@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,11 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.interfaces.*;
-import java.security.spec.DSAParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 
 import sun.security.util.Debug;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
-import sun.security.x509.AlgIdDSA;
 import sun.security.jca.JCAUtil;
 
 /**
@@ -85,13 +82,28 @@ abstract class DSA extends SignatureSpi {
     /* The message digest object used */
     private final MessageDigest md;
 
+    /* The format. true for the IEEE P1363 format. false (default) for ASN.1 */
+    private final boolean p1363Format;
+
     /**
      * Construct a blank DSA object. It must be
      * initialized before being usable for signing or verifying.
      */
     DSA(MessageDigest md) {
+        this(md, false);
+    }
+
+    /**
+     * Construct a blank DSA object that will use the specified
+     * signature format. {@code p1363Format} should be {@code true} to
+     * use the IEEE P1363 format. If {@code p1363Format} is {@code false},
+     * the DER-encoded ASN.1 format will used. The DSA object must be
+     * initialized before being usable for signing or verifying.
+     */
+    DSA(MessageDigest md, boolean p1363Format) {
         super();
         this.md = md;
+        this.p1363Format = p1363Format;
     }
 
     /**
@@ -178,12 +190,16 @@ abstract class DSA extends SignatureSpi {
 
 
     /**
-     * Sign all the data thus far updated. The signature is formatted
+     * Sign all the data thus far updated. The signature format is
+     * determined by {@code p1363Format}. If {@code p1363Format} is
+     * {@code false} (the default), then the signature is formatted
      * according to the Canonical Encoding Rules, returned as a DER
-     * sequence of Integer, r and s.
+     * sequence of Integers, r and s. If {@code p1363Format} is
+     * {@code false}, the signature is returned in the IEEE P1363
+     * format, which is the concatenation or r and s.
      *
-     * @return a signature block formatted according to the Canonical
-     * Encoding Rules.
+     * @return a signature block formatted according to the format
+     * indicated by {@code p1363Format}
      *
      * @exception SignatureException if the signature object was not
      * properly initialized, or if another exception occurs.
@@ -196,24 +212,48 @@ abstract class DSA extends SignatureSpi {
         BigInteger r = generateR(presetP, presetQ, presetG, k);
         BigInteger s = generateS(presetX, presetQ, r, k);
 
-        try {
-            DerOutputStream outseq = new DerOutputStream(100);
-            outseq.putInteger(r);
-            outseq.putInteger(s);
-            DerValue result = new DerValue(DerValue.tag_Sequence,
-                                           outseq.toByteArray());
+        if (p1363Format) {
+            // Return the concatenation of r and s
+            byte[] rBytes = r.toByteArray();
+            byte[] sBytes = s.toByteArray();
 
-            return result.toByteArray();
+            int size = presetQ.bitLength() / 8;
+            byte[] outseq = new byte[size * 2];
 
-        } catch (IOException e) {
-            throw new SignatureException("error encoding signature");
+            int rLength = rBytes.length;
+            int sLength = sBytes.length;
+            int i;
+            for (i = rLength; i > 0 && rBytes[rLength - i] == 0; i--);
+
+            int j;
+            for (j = sLength;
+                    j > 0 && sBytes[sLength - j] == 0; j--);
+
+            System.arraycopy(rBytes, rLength - i, outseq, size - i, i);
+            System.arraycopy(sBytes, sLength - j, outseq, size * 2 - j, j);
+
+            return outseq;
+        } else {
+            // Return the DER-encoded ASN.1 form
+            try {
+                DerOutputStream outseq = new DerOutputStream(100);
+                outseq.putInteger(r);
+                outseq.putInteger(s);
+                DerValue result = new DerValue(DerValue.tag_Sequence,
+                        outseq.toByteArray());
+
+                return result.toByteArray();
+
+            } catch (IOException e) {
+                throw new SignatureException("error encoding signature");
+            }
         }
     }
 
     /**
      * Verify all the data thus far updated.
      *
-     * @param signature the alledged signature, encoded using the
+     * @param signature the alleged signature, encoded using the
      * Canonical Encoding Rules, as a sequence of integers, r and s.
      *
      * @exception SignatureException if the signature object was not
@@ -230,8 +270,13 @@ abstract class DSA extends SignatureSpi {
     /**
      * Verify all the data thus far updated.
      *
-     * @param signature the alledged signature, encoded using the
-     * Canonical Encoding Rules, as a sequence of integers, r and s.
+     * @param signature the alleged signature, encoded using the
+     * format indicated by {@code p1363Format}. If {@code p1363Format}
+     * is {@code false} (the default), then the signature is formatted
+     * according to the Canonical Encoding Rules, as a DER sequence of
+     * Integers, r and s. If {@code p1363Format} is {@code false},
+     * the signature is in the IEEE P1363 format, which is the
+     * concatenation or r and s.
      *
      * @param offset the offset to start from in the array of bytes.
      *
@@ -248,16 +293,28 @@ abstract class DSA extends SignatureSpi {
 
         BigInteger r = null;
         BigInteger s = null;
-        // first decode the signature.
-        try {
-            DerInputStream in = new DerInputStream(signature, offset, length);
-            DerValue[] values = in.getSequence(2);
 
-            r = values[0].getBigInteger();
-            s = values[1].getBigInteger();
+        if (p1363Format) {
+            if ((length & 1) == 1) {
+                // length of signature byte array should be even
+                throw new SignatureException("invalid signature format");
+            }
+            int mid = length/2;
+            r = new BigInteger(Arrays.copyOfRange(signature, 0, mid));
+            s = new BigInteger(Arrays.copyOfRange(signature, mid, length));
+        } else {
+            // first decode the signature.
+            try {
+                DerInputStream in = new DerInputStream(signature, offset,
+                                                       length);
+                DerValue[] values = in.getSequence(2);
 
-        } catch (IOException e) {
-            throw new SignatureException("invalid encoding for signature");
+                r = values[0].getBigInteger();
+                s = values[1].getBigInteger();
+
+            } catch (IOException e) {
+                throw new SignatureException("invalid encoding for signature");
+            }
         }
 
         // some implementations do not correctly encode values in the ASN.1
@@ -421,11 +478,29 @@ abstract class DSA extends SignatureSpi {
     }
 
     /**
+     * SHA224withDSA implementation that uses the IEEE P1363 format.
+     */
+    public static final class SHA224withDSAinP1363Format extends DSA {
+        public SHA224withDSAinP1363Format() throws NoSuchAlgorithmException {
+            super(MessageDigest.getInstance("SHA-224"), true);
+        }
+    }
+
+    /**
      * Standard SHA256withDSA implementation as defined in FIPS186-3.
      */
     public static final class SHA256withDSA extends DSA {
         public SHA256withDSA() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA-256"));
+        }
+    }
+
+    /**
+     * SHA256withDSA implementation that uses the IEEE P1363 format.
+     */
+    public static final class SHA256withDSAinP1363Format extends DSA {
+        public SHA256withDSAinP1363Format() throws NoSuchAlgorithmException {
+            super(MessageDigest.getInstance("SHA-256"), true);
         }
     }
 
@@ -441,7 +516,12 @@ abstract class DSA extends SignatureSpi {
         private int[] kSeedLast;
 
         public LegacyDSA(MessageDigest md) throws NoSuchAlgorithmException {
-            super(md);
+            this(md, false);
+        }
+
+        private LegacyDSA(MessageDigest md, boolean p1363Format)
+                throws NoSuchAlgorithmException {
+            super(md, p1363Format);
         }
 
         @Deprecated
@@ -636,6 +716,9 @@ abstract class DSA extends SignatureSpi {
         }
     }
 
+    /**
+     * Standard SHA1withDSA implementation.
+     */
     public static final class SHA1withDSA extends LegacyDSA {
         public SHA1withDSA() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA-1"));
@@ -643,13 +726,22 @@ abstract class DSA extends SignatureSpi {
     }
 
     /**
-     * RawDSA implementation.
+     * SHA1withDSA implementation that uses the IEEE P1363 format.
+     */
+    public static final class SHA1withDSAinP1363Format extends LegacyDSA {
+        public SHA1withDSAinP1363Format() throws NoSuchAlgorithmException {
+            super(MessageDigest.getInstance("SHA-1"), true);
+        }
+    }
+
+    /**
+     * Raw DSA.
      *
-     * RawDSA requires the data to be exactly 20 bytes long. If it is
+     * Raw DSA requires the data to be exactly 20 bytes long. If it is
      * not, a SignatureException is thrown when sign()/verify() is called
      * per JCA spec.
      */
-    public static final class RawDSA extends LegacyDSA {
+    static class Raw extends LegacyDSA {
         // Internal special-purpose MessageDigest impl for RawDSA
         // Only override whatever methods used
         // NOTE: no clone support
@@ -719,8 +811,27 @@ abstract class DSA extends SignatureSpi {
             }
         }
 
+        private Raw(boolean p1363Format) throws NoSuchAlgorithmException {
+            super(new NullDigest20(), p1363Format);
+        }
+
+    }
+
+    /**
+     * Standard Raw DSA implementation.
+     */
+    public static final class RawDSA extends Raw {
         public RawDSA() throws NoSuchAlgorithmException {
-            super(new NullDigest20());
+            super(false);
+        }
+    }
+
+    /**
+     * Raw DSA implementation that uses the IEEE P1363 format.
+     */
+    public static final class RawDSAinP1363Format extends Raw {
+        public RawDSAinP1363Format() throws NoSuchAlgorithmException {
+            super(true);
         }
     }
 }

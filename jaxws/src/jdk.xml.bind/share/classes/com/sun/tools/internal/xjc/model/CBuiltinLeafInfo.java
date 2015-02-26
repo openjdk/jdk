@@ -49,6 +49,7 @@ import com.sun.codemodel.internal.JExpr;
 import com.sun.codemodel.internal.JExpression;
 import com.sun.codemodel.internal.JType;
 import com.sun.tools.internal.xjc.model.nav.NClass;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
 import com.sun.xml.internal.bind.v2.model.core.BuiltinLeafInfo;
 import com.sun.xml.internal.bind.v2.model.core.Element;

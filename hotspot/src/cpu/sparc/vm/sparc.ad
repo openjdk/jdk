@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -889,8 +889,6 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, 
           !(n->ideal_Opcode()==Op_LoadD_unaligned && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_ConvI2F   && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_ConvI2D   && ld_op==Op_LoadF) &&
-          !(n->ideal_Opcode()==Op_PrefetchRead  && ld_op==Op_LoadI) &&
-          !(n->ideal_Opcode()==Op_PrefetchWrite && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchAllocation && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_LoadVector && ld_op==Op_LoadD) &&
           !(n->rule() == loadUB_rule)) {
@@ -2996,7 +2994,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
   %}
 
 enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI result) %{
-    Label Lword_loop, Lpost_word, Lchar, Lchar_loop, Ldone;
+    Label Lchar, Lchar_loop, Ldone;
     MacroAssembler _masm(&cbuf);
 
     Register   str1_reg = reg_to_register_object($str1$$reg);
@@ -6316,32 +6314,8 @@ instruct loadConD(regD dst, immD con, o7RegI tmp) %{
   ins_pipe(loadConFD);
 %}
 
-// Prefetch instructions.
-// Must be safe to execute with invalid address (cannot fault).
-
-instruct prefetchr( memory mem ) %{
-  match( PrefetchRead mem );
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-
-  format %{ "PREFETCH $mem,0\t! Prefetch read-many" %}
-  opcode(Assembler::prefetch_op3);
-  ins_encode( form3_mem_prefetch_read( mem ) );
-  ins_pipe(iload_mem);
-%}
-
-instruct prefetchw( memory mem ) %{
-  match( PrefetchWrite mem );
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-
-  format %{ "PREFETCH $mem,2\t! Prefetch write-many (and read)" %}
-  opcode(Assembler::prefetch_op3);
-  ins_encode( form3_mem_prefetch_write( mem ) );
-  ins_pipe(iload_mem);
-%}
-
 // Prefetch instructions for allocation.
+// Must be safe to execute with invalid address (cannot fault).
 
 instruct prefetchAlloc( memory mem ) %{
   predicate(AllocatePrefetchInstr == 0);

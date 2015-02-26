@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 
 package sun.awt.X11;
 
-import sun.awt.EmbeddedFrame;
-import java.awt.*;
 import java.awt.AWTKeyStroke;
-import java.util.logging.Logger;
+import java.awt.Toolkit;
+
+import sun.awt.EmbeddedFrame;
+import sun.util.logging.PlatformLogger;
 
 @SuppressWarnings("serial") // JDK-implementation class
 public class XEmbeddedFrame extends EmbeddedFrame {
 
-    private static final Logger log = Logger.getLogger(XEmbeddedFrame.class.getName());
+    private static final PlatformLogger log =
+            PlatformLogger.getLogger(XEmbeddedFrame.class.getName());
 
     long handle;
     public XEmbeddedFrame() {
