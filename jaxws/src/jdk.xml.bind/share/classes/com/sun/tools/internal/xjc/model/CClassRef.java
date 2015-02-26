@@ -30,6 +30,7 @@ import javax.xml.namespace.QName;
 import com.sun.codemodel.internal.JClass;
 import com.sun.tools.internal.xjc.model.nav.NClass;
 import com.sun.tools.internal.xjc.model.nav.NType;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIClass;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIEnum;

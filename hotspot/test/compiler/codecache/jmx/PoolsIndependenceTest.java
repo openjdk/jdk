@@ -37,6 +37,7 @@ import sun.hotspot.code.BlobType;
 
 /*
  * @test PoolsIndependenceTest
+ * @ignore 8068385
  * @library /testlibrary /../../test/lib
  * @build PoolsIndependenceTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -97,11 +98,13 @@ public class PoolsIndependenceTest implements NotificationListener {
             return false;
         });
         for (BlobType bt : BlobType.getAvailable()) {
-            int expectedNotificationsAmount = bt.equals(btype) ? 1 : 0;
-            Asserts.assertEQ(counters.get(bt.getMemoryPool().getName()).get(),
-                    expectedNotificationsAmount, String.format("Unexpected "
-                            + "amount of notifications for pool: %s",
-                            bt.getMemoryPool().getName()));
+            if (CodeCacheUtils.isCodeHeapPredictable(bt)) {
+                int expectedNotificationsAmount = bt.equals(btype) ? 1 : 0;
+                Asserts.assertEQ(counters.get(bt.getMemoryPool().getName()).get(),
+                        expectedNotificationsAmount, String.format("Unexpected "
+                                + "amount of notifications for pool: %s",
+                                bt.getMemoryPool().getName()));
+            }
         }
         try {
             ((NotificationEmitter) ManagementFactory.getMemoryMXBean()).

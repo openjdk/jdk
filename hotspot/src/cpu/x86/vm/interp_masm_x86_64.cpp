@@ -1426,7 +1426,7 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 
 // Jump if ((*counter_addr += increment) & mask) satisfies the condition.
 void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
-                                                        int increment, int mask,
+                                                        int increment, Address mask,
                                                         Register scratch, bool preloaded,
                                                         Condition cond, Label* where) {
   if (!preloaded) {

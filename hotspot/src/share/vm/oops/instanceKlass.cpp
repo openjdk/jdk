@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1416,34 +1416,46 @@ static int binary_search(Array<Method*>* methods, Symbol* name) {
 
 // find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
-  return find_method_impl(name, signature, false);
+  return find_method_impl(name, signature, find_overpass, find_static);
 }
 
-Method* InstanceKlass::find_method_impl(Symbol* name, Symbol* signature, bool skipping_overpass) const {
-  return InstanceKlass::find_method_impl(methods(), name, signature, skipping_overpass);
+Method* InstanceKlass::find_method_impl(Symbol* name, Symbol* signature,
+                                        OverpassLookupMode overpass_mode, StaticLookupMode static_mode) const {
+  return InstanceKlass::find_method_impl(methods(), name, signature, overpass_mode, static_mode);
 }
 
 // find_instance_method looks up the name/signature in the local methods array
 // and skips over static methods
 Method* InstanceKlass::find_instance_method(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  Method* meth = InstanceKlass::find_method(methods, name, signature);
-  if (meth != NULL && meth->is_static()) {
-      meth = NULL;
-  }
+  Method* meth = InstanceKlass::find_method_impl(methods, name, signature,
+                                                 find_overpass, skip_static);
+  assert(((meth == NULL) || !meth->is_static()), "find_instance_method should have skipped statics");
   return meth;
+}
+
+// find_instance_method looks up the name/signature in the local methods array
+// and skips over static methods
+Method* InstanceKlass::find_instance_method(Symbol* name, Symbol* signature) {
+    return InstanceKlass::find_instance_method(methods(), name, signature);
 }
 
 // find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  return InstanceKlass::find_method_impl(methods, name, signature, false);
+  return InstanceKlass::find_method_impl(methods, name, signature, find_overpass, find_static);
 }
 
 Method* InstanceKlass::find_method_impl(
-    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass) {
-  int hit = find_method_index(methods, name, signature, skipping_overpass);
+    Array<Method*>* methods, Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode, StaticLookupMode static_mode) {
+  int hit = find_method_index(methods, name, signature, overpass_mode, static_mode);
   return hit >= 0 ? methods->at(hit): NULL;
+}
+
+bool InstanceKlass::method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static) {
+    return (m->signature() == signature) &&
+            (!skipping_overpass || !m->is_overpass()) &&
+            (!skipping_static || !m->is_static());
 }
 
 // Used directly for default_methods to find the index into the
@@ -1454,13 +1466,16 @@ Method* InstanceKlass::find_method_impl(
 // is important during method resolution to prefer a static method, for example,
 // over an overpass method.
 int InstanceKlass::find_method_index(
-    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass) {
+    Array<Method*>* methods, Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode, StaticLookupMode static_mode) {
+  bool skipping_overpass = (overpass_mode == skip_overpass);
+  bool skipping_static = (static_mode == skip_static);
   int hit = binary_search(methods, name);
   if (hit != -1) {
     Method* m = methods->at(hit);
+
     // Do linear search to find matching signature.  First, quick check
     // for common case, ignoring overpasses if requested.
-    if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return hit;
+    if (method_matches(m, signature, skipping_overpass, skipping_static)) return hit;
 
     // search downwards through overloaded methods
     int i;
@@ -1468,18 +1483,18 @@ int InstanceKlass::find_method_index(
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return i;
+        if (method_matches(m, signature, skipping_overpass, skipping_static)) return i;
     }
     // search upwards
     for (i = hit + 1; i < methods->length(); ++i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return i;
+        if (method_matches(m, signature, skipping_overpass, skipping_static)) return i;
     }
     // not found
 #ifdef ASSERT
-    int index = skipping_overpass ? -1 : linear_search(methods, name, signature);
+    int index = (skipping_overpass || skipping_static) ? -1 : linear_search(methods, name, signature);
     assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
   }
@@ -1505,16 +1520,16 @@ int InstanceKlass::find_method_by_name(
 
 // uncached_lookup_method searches both the local class methods array and all
 // superclasses methods arrays, skipping any overpass methods in superclasses.
-Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const {
-  MethodLookupMode lookup_mode = mode;
+Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const {
+  OverpassLookupMode overpass_local_mode = overpass_mode;
   Klass* klass = const_cast<InstanceKlass*>(this);
   while (klass != NULL) {
-    Method* method = InstanceKlass::cast(klass)->find_method_impl(name, signature, (lookup_mode == skip_overpass));
+    Method* method = InstanceKlass::cast(klass)->find_method_impl(name, signature, overpass_local_mode, find_static);
     if (method != NULL) {
       return method;
     }
     klass = InstanceKlass::cast(klass)->super();
-    lookup_mode = skip_overpass;   // Always ignore overpass methods in superclasses
+    overpass_local_mode = skip_overpass;   // Always ignore overpass methods in superclasses
   }
   return NULL;
 }
@@ -1544,7 +1559,7 @@ Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
   }
   // Look up interfaces
   if (m == NULL) {
-    m = lookup_method_in_all_interfaces(name, signature, normal);
+    m = lookup_method_in_all_interfaces(name, signature, find_defaults);
   }
   return m;
 }
@@ -1554,7 +1569,7 @@ Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
 // They should only be found in the initial InterfaceMethodRef
 Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
                                                        Symbol* signature,
-                                                       MethodLookupMode mode) const {
+                                                       DefaultsLookupMode defaults_mode) const {
   Array<Klass*>* all_ifs = transitive_interfaces();
   int num_ifs = all_ifs->length();
   InstanceKlass *ik = NULL;
@@ -1562,7 +1577,7 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
     ik = InstanceKlass::cast(all_ifs->at(i));
     Method* m = ik->lookup_method(name, signature);
     if (m != NULL && m->is_public() && !m->is_static() &&
-        ((mode != skip_defaults) || !m->is_default_method())) {
+        ((defaults_mode != skip_defaults) || !m->is_default_method())) {
       return m;
     }
   }

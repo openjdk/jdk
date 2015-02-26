@@ -43,7 +43,7 @@ define SetupRMICompilation
 endef
 
 define SetupRMICompilationInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupRMICompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
 

@@ -26,6 +26,8 @@
 package sun.security.util;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 
 import java.security.Principal;
@@ -148,6 +150,17 @@ public class HostnameChecker {
                 String ipAddress = (String)next.get(1);
                 if (expectedIP.equalsIgnoreCase(ipAddress)) {
                     return;
+                } else {
+                    // compare InetAddress objects in order to ensure
+                    // equality between a long IPv6 address and its
+                    // abbreviated form.
+                    try {
+                        if (InetAddress.getByName(expectedIP).equals(
+                                InetAddress.getByName(ipAddress))) {
+                            return;
+                        }
+                    } catch (UnknownHostException e) {
+                    } catch (SecurityException e) {}
                 }
             }
         }

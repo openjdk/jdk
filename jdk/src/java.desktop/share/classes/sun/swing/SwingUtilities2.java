@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import static java.awt.RenderingHints.*;
 import java.awt.event.*;
 import java.awt.font.*;
 import java.awt.print.PrinterGraphics;
+import java.text.BreakIterator;
 import java.text.CharacterIterator;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
@@ -461,16 +462,15 @@ public class SwingUtilities2 {
             }
         }
         if (needsTextLayout) {
-            FontRenderContext frc = getFontRenderContext(c, fm);
             AttributedString aString = new AttributedString(string);
             if (c != null) {
                 aString.addAttribute(TextAttribute.NUMERIC_SHAPING,
                         c.getClientProperty(TextAttribute.NUMERIC_SHAPING));
             }
-            LineBreakMeasurer measurer =
-                new LineBreakMeasurer(aString.getIterator(), frc);
-            int nChars = measurer.nextOffset(availTextWidth);
-            string = string.substring(0, nChars);
+            LineBreakMeasurer measurer = new LineBreakMeasurer(
+                    aString.getIterator(), BreakIterator.getCharacterInstance(),
+                    getFontRenderContext(c, fm));
+            string = string.substring(0, measurer.nextOffset(availTextWidth));
 
         }
         return string + clipString;

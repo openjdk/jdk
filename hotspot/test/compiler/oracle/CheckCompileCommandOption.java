@@ -21,12 +21,15 @@
  * questions.
  */
 
+import java.io.PrintWriter;
+import java.io.File;
+
 import com.oracle.java.testlibrary.*;
 
 /*
  * @test CheckCompileCommandOption
- * @bug 8055286 8056964 8059847
- * @summary "Checks parsing of -XX:+CompileCommand=option"
+ * @bug 8055286 8056964 8059847 8069035
+ * @summary "Checks parsing of -XX:CompileCommand=option"
  * @library /testlibrary
  * @run main CheckCompileCommandOption
  */
@@ -45,38 +48,69 @@ public class CheckCompileCommandOption {
     // have the the following types: intx, uintx, bool, ccstr,
     // ccstrlist, and double.
 
+    private static final String[][] FILE_ARGUMENTS = {
+        {
+            "-XX:CompileCommandFile=" + new File(System.getProperty("test.src", "."), "command1.txt"),
+            "-version"
+        },
+        {
+            "-XX:CompileCommandFile=" + new File(System.getProperty("test.src", "."), "command2.txt"),
+            "-version"
+        }
+    };
+
+    private static final String[][] FILE_EXPECTED_OUTPUT = {
+        {
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption1 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption2 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption3 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption4 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption5 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption6 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption7 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption8 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption9 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption10 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption11 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption12 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption13 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption14 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption15 = true",
+            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption16 = true"
+        },
+        {
+            "CompileCommand: option Test.test const char* MyListOption = '_foo _bar'",
+            "CompileCommand: option Test.test const char* MyStrOption = '_foo'",
+            "CompileCommand: option Test.test bool MyBoolOption = false",
+            "CompileCommand: option Test.test intx MyIntxOption = -1",
+            "CompileCommand: option Test.test uintx MyUintxOption = 1",
+            "CompileCommand: option Test.test bool MyFlag = true",
+            "CompileCommand: option Test.test double MyDoubleOption = 1.123000"
+        }
+    };
+
     private static final String[][] TYPE_1_ARGUMENTS = {
         {
             "-XX:CompileCommand=option,com/oracle/Test.test,MyBoolOption1",
             "-XX:CompileCommand=option,com/oracle/Test,test,MyBoolOption2",
             "-XX:CompileCommand=option,com.oracle.Test::test,MyBoolOption3",
             "-XX:CompileCommand=option,com/oracle/Test::test,MyBoolOption4",
-            "-version"
-        },
-        {
-            "-XX:CompileCommand=option,com/oracle/Test.test,MyBoolOption1,MyBoolOption2",
-            "-version"
-        },
-        {
-            "-XX:CompileCommand=option,com/oracle/Test,test,MyBoolOption1,MyBoolOption2",
+            "-XX:CompileCommand=option,com/oracle/Test.test,MyBoolOption5,MyBoolOption6",
+            "-XX:CompileCommand=option,com/oracle/Test,test,MyBoolOption7,MyBoolOption8",
             "-version"
         }
     };
 
     private static final String[][] TYPE_1_EXPECTED_OUTPUTS = {
         {
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption1 = true",
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption2 = true",
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption3 = true",
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption4 = true"
-        },
-        {
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption1 = true",
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption2 = true",
-        },
-        {
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption1 = true",
-            "CompilerOracle: option com/oracle/Test.test bool MyBoolOption2 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption1 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption2 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption3 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption4 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption5 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption6 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption7 = true",
+            "CompileCommand: option com/oracle/Test.test bool MyBoolOption8 = true"
         }
     };
 
@@ -88,38 +122,28 @@ public class CheckCompileCommandOption {
             "-XX:CompileCommand=option,Test::test,intx,MyIntxOption,-1",
             "-XX:CompileCommand=option,Test::test,uintx,MyUintxOption,1",
             "-XX:CompileCommand=option,Test::test,MyFlag",
-            "-XX:CompileCommand=option,Test::test,double,MyDoubleOption,1.123",
-            "-version"
-        },
-        {
-            "-XX:CompileCommand=option,Test.test,double,MyDoubleOption,1.123",
-            "-version"
-        },
-        {
-            "-XX:CompileCommand=option,Test::test,bool,MyBoolOption,false,intx,MyIntxOption,-1,uintx,MyUintxOption,1,MyFlag,double,MyDoubleOption,1.123",
+            "-XX:CompileCommand=option,Test::test,double,MyDoubleOption1,1.123",
+            "-XX:CompileCommand=option,Test.test,double,MyDoubleOption2,1.123",
+            "-XX:CompileCommand=option,Test::test,bool,MyBoolOptionX,false,intx,MyIntxOptionX,-1,uintx,MyUintxOptionX,1,MyFlagX,double,MyDoubleOptionX,1.123",
             "-version"
         }
     };
 
     private static final String[][] TYPE_2_EXPECTED_OUTPUTS = {
         {
-            "CompilerOracle: option Test.test const char* MyListOption = '_foo _bar'",
-            "CompilerOracle: option Test.test const char* MyStrOption = '_foo'",
-            "CompilerOracle: option Test.test bool MyBoolOption = false",
-            "CompilerOracle: option Test.test intx MyIntxOption = -1",
-            "CompilerOracle: option Test.test uintx MyUintxOption = 1",
-            "CompilerOracle: option Test.test bool MyFlag = true",
-            "CompilerOracle: option Test.test double MyDoubleOption = 1.123000"
-        },
-        {
-            "CompilerOracle: option Test.test double MyDoubleOption = 1.123000"
-        },
-        {
-            "CompilerOracle: option Test.test bool MyBoolOption = false",
-            "CompilerOracle: option Test.test intx MyIntxOption = -1",
-            "CompilerOracle: option Test.test uintx MyUintxOption = 1",
-            "CompilerOracle: option Test.test bool MyFlag = true",
-            "CompilerOracle: option Test.test double MyDoubleOption = 1.123000",
+            "CompileCommand: option Test.test const char* MyListOption = '_foo _bar'",
+            "CompileCommand: option Test.test const char* MyStrOption = '_foo'",
+            "CompileCommand: option Test.test bool MyBoolOption = false",
+            "CompileCommand: option Test.test intx MyIntxOption = -1",
+            "CompileCommand: option Test.test uintx MyUintxOption = 1",
+            "CompileCommand: option Test.test bool MyFlag = true",
+            "CompileCommand: option Test.test double MyDoubleOption1 = 1.123000",
+            "CompileCommand: option Test.test double MyDoubleOption2 = 1.123000",
+            "CompileCommand: option Test.test bool MyBoolOptionX = false",
+            "CompileCommand: option Test.test intx MyIntxOptionX = -1",
+            "CompileCommand: option Test.test uintx MyUintxOptionX = 1",
+            "CompileCommand: option Test.test bool MyFlagX = true",
+            "CompileCommand: option Test.test double MyDoubleOptionX = 1.123000",
         }
     };
 
@@ -172,7 +196,7 @@ public class CheckCompileCommandOption {
             out.shouldContain(expected_output);
         }
 
-        out.shouldNotContain("CompilerOracle: unrecognized line");
+        out.shouldNotContain("CompileCommand: An error occured during parsing");
         out.shouldHaveExitValue(0);
     }
 
@@ -183,7 +207,7 @@ public class CheckCompileCommandOption {
         pb = ProcessTools.createJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
-        out.shouldContain("CompilerOracle: unrecognized line");
+        out.shouldContain("CompileCommand: An error occured during parsing");
         out.shouldHaveExitValue(0);
     }
 
@@ -211,6 +235,11 @@ public class CheckCompileCommandOption {
         // (flags with type information specified)
         for (String[] arguments: TYPE_2_INVALID_ARGUMENTS) {
             verifyInvalidOption(arguments);
+        }
+
+        // Check if commands in command file are parsed correctly
+        for (int i = 0; i < FILE_ARGUMENTS.length; i++) {
+            verifyValidOption(FILE_ARGUMENTS[i], FILE_EXPECTED_OUTPUT[i]);
         }
     }
 }

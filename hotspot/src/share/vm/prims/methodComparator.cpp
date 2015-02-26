@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,6 +405,8 @@ bool MethodComparator::pool_constants_same(int cpi_old, int cpi_new) {
     if (strcmp(_old_cp->string_at_noresolve(cpi_old),
                _new_cp->string_at_noresolve(cpi_new)) != 0)
       return false;
+    if (_old_cp->is_pseudo_string_at(cpi_old) || _new_cp->is_pseudo_string_at(cpi_new))
+      return (_old_cp->is_pseudo_string_at(cpi_old) == _new_cp->is_pseudo_string_at(cpi_new));
   } else if (tag_old.is_klass() || tag_old.is_unresolved_klass()) {
     // tag_old should be klass - 4881222
     if (! (tag_new.is_unresolved_klass() || tag_new.is_klass()))

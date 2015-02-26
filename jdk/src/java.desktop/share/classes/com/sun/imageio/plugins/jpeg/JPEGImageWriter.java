@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,6 @@ import org.w3c.dom.Node;
 
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.awt.image.SampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
@@ -1048,7 +1046,13 @@ public class JPEGImageWriter extends ImageWriter {
 
         // Call the writer, who will call back for every scanline
 
-        processImageStarted(currentImage);
+        clearAbortRequest();
+        cbLock.lock();
+        try {
+            processImageStarted(currentImage);
+        } finally {
+            cbLock.unlock();
+        }
 
         boolean aborted = false;
 
@@ -1220,6 +1224,23 @@ public class JPEGImageWriter extends ImageWriter {
              */
             super.abort();
             abortWrite(structPointer);
+        } finally {
+            clearThreadLock();
+        }
+    }
+
+    @Override
+    protected synchronized void clearAbortRequest() {
+        setThreadLock();
+        try {
+            cbLock.check();
+            if (abortRequested()) {
+                super.clearAbortRequest();
+                // reset C structures
+                resetWriter(structPointer);
+                // reset the native destination
+                setDest(structPointer);
+            }
         } finally {
             clearThreadLock();
         }
@@ -1652,7 +1673,7 @@ public class JPEGImageWriter extends ImageWriter {
         int vsamp0 = specs[0].VsamplingFactor;
         for (int i = 1; i < specs.length; i++) {
             if ((specs[i].HsamplingFactor != hsamp0) ||
-                (specs[i].HsamplingFactor != hsamp0))
+                (specs[i].VsamplingFactor != vsamp0))
                 return true;
         }
         return false;

@@ -82,11 +82,7 @@ public class WindowsPlacesBar extends JToolBar
         setBackground(bgColor);
         FileSystemView fsv = fc.getFileSystemView();
 
-        files = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
-            public File[] run() {
-                return (File[]) ShellFolder.get("fileChooserShortcutPanelFolders");
-            }
-        });
+        files = (File[]) ShellFolder.get("fileChooserShortcutPanelFolders");
 
         buttons = new JToggleButton[files.length];
         buttonGroup = new ButtonGroup();

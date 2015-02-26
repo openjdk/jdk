@@ -629,6 +629,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+CFLAGS_CCACHE
 CCACHE
 USE_PRECOMPILED_HEADER
 SJAVAC_SERVER_DIR
@@ -645,6 +646,7 @@ NUM_CORES
 ENABLE_INTREE_EC
 SALIB_NAME
 HOTSPOT_MAKE_ARGS
+MSVCP_DLL
 MSVCR_DLL
 LIBCXX
 LLVM_LIBS
@@ -853,6 +855,7 @@ OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
+BASH_ARGS
 CODESIGN
 XATTR
 DSYMUTIL
@@ -990,6 +993,7 @@ CAT
 BASH
 BASENAME
 DATE_WHEN_CONFIGURED
+ORIGINAL_PATH
 CONFIGURE_COMMAND_LINE
 target_alias
 host_alias
@@ -1076,6 +1080,7 @@ with_override_nashorn
 with_override_jdk
 with_import_hotspot
 with_toolchain_type
+with_toolchain_version
 with_jtreg
 with_extra_cflags
 with_extra_cxxflags
@@ -1100,6 +1105,7 @@ with_libpng
 with_zlib
 with_stdc__lib
 with_msvcr_dll
+with_msvcp_dll
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
@@ -1931,6 +1937,10 @@ Optional Packages:
                           source
   --with-toolchain-type   the toolchain type (or family) to use, use '--help'
                           to show possible values [platform dependent]
+  --with-toolchain-version
+                          the version of the toolchain to look for, use
+                          '--help' to show possible values [platform
+                          dependent]
   --with-jtreg            Regression Test Harness [probed]
   --with-extra-cflags     extra flags to be used when compiling jdk c-files
   --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
@@ -1966,8 +1976,10 @@ Optional Packages:
                           force linking of the C++ runtime on Linux to either
                           static or dynamic, default is static with dynamic as
                           fallback
-  --with-msvcr-dll        copy this msvcr100.dll into the built JDK (Windows
-                          only) [probed]
+  --with-msvcr-dll        path to microsoft C runtime dll (msvcr*.dll)
+                          (Windows only) [probed]
+  --with-msvcp-dll        path to microsoft C++ runtime dll (msvcp*.dll)
+                          (Windows only) [probed]
   --with-dxsdk            Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-dxsdk-lib        Deprecated. Option is kept for backwards
@@ -3374,7 +3386,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # Include these first...
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3520,6 +3532,9 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # not be the case in cygwin in certain conditions.
 
 
+
+
+# Check for support for specific options in bash
 
 
 #
@@ -4303,15 +4318,64 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 # questions.
 #
 
+################################################################################
+
+VALID_VS_VERSIONS="2010 2012 2013"
+
+VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
+VS_VERSION_INTERNAL_2010=100
+VS_MSVCR_2010=msvcr100.dll
+# We don't use msvcp on Visual Studio 2010
+#VS_MSVCP_2010=msvcp100.dll
+VS_ENVVAR_2010="VS100COMNTOOLS"
+VS_VS_INSTALLDIR_2010="Microsoft Visual Studio 10.0"
+VS_SDK_INSTALLDIR_2010="Microsoft SDKs/Windows/v7.1"
+VS_VS_PLATFORM_NAME_2010="v100"
+VS_SDK_PLATFORM_NAME_2010="Windows7.1SDK"
+
+VS_DESCRIPTION_2012="Microsoft Visual Studio 2012"
+VS_VERSION_INTERNAL_2012=110
+VS_MSVCR_2012=msvcr110.dll
+VS_MSVCP_2012=msvcp110.dll
+VS_ENVVAR_2012="VS110COMNTOOLS"
+VS_VS_INSTALLDIR_2012="Microsoft Visual Studio 11.0"
+VS_SDK_INSTALLDIR_2012=
+VS_VS_PLATFORM_NAME_2012="v110"
+VS_SDK_PLATFORM_NAME_2012=
+
+VS_DESCRIPTION_2013="Microsoft Visual Studio 2013"
+VS_VERSION_INTERNAL_2013=120
+VS_MSVCR_2013=msvcr120.dll
+VS_MSVCP_2013=msvcp120.dll
+VS_ENVVAR_2013="VS120COMNTOOLS"
+VS_VS_INSTALLDIR_2013="Microsoft Visual Studio 12.0"
+VS_SDK_INSTALLDIR_2013=
+VS_VS_PLATFORM_NAME_2013="v120"
+VS_SDK_PLATFORM_NAME_2013=
+
+################################################################################
 
 
 
+################################################################################
 
 
 
+################################################################################
+# Finds the bat or cmd file in Visual Studio or the SDK that sets up a proper
+# build environment and assigns it to VS_ENV_CMD
+
+
+################################################################################
+
+
+
+################################################################################
 # Check if the VS env variables were setup prior to running configure.
 # If not, then find vcvarsall.bat and run it automatically, and integrate
 # the set env variables into the spec file.
+
+
 
 
 
@@ -4329,7 +4393,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1421796117
+DATE_WHEN_GENERATED=1424976950
 
 ###############################################################################
 #
@@ -4361,6 +4425,9 @@ DATE_WHEN_GENERATED=1421796117
 # Basic initialization that must happen first of all in the normal process.
 
   # Save the original command line. This is passed to us by the wrapper configure script.
+
+  # Save the path variable before it gets changed
+  ORIGINAL_PATH="$PATH"
 
   DATE_WHEN_CONFIGURED=`LANG=C date`
 
@@ -14100,7 +14167,10 @@ $as_echo "$TOPDIR" >&6; }
 
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$CURDIR" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -14161,7 +14231,7 @@ $as_echo "$as_me: The path of CURDIR, which resolves as \"$path\", is invalid." 
 $as_echo "$as_me: Rewriting CURDIR to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$CURDIR"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -14202,27 +14272,31 @@ $as_echo "$as_me: Rewriting CURDIR to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$CURDIR"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CURDIR, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$CURDIR"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CURDIR, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of CURDIR, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of CURDIR, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of CURDIR, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    CURDIR="`cd "$path"; $THEPWDCMD -L`"
+      CURDIR="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$TOPDIR" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -14283,7 +14357,7 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
 $as_echo "$as_me: Rewriting TOPDIR to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$TOPDIR"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -14324,23 +14398,24 @@ $as_echo "$as_me: Rewriting TOPDIR to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$TOPDIR"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of TOPDIR, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$TOPDIR"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of TOPDIR, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of TOPDIR, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of TOPDIR, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    TOPDIR="`cd "$path"; $THEPWDCMD -L`"
+      TOPDIR="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
   # SRC_ROOT is a traditional alias for TOPDIR.
@@ -14745,7 +14820,10 @@ $as_echo "$DEBUG_LEVEL" >&6; }
 if test "${with_devkit+set}" = set; then :
   withval=$with_devkit;
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$with_devkit" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -14806,7 +14884,7 @@ $as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is inval
 $as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$with_devkit"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -14847,23 +14925,24 @@ $as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$with_devkit"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$with_devkit"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of with_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of with_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    with_devkit="`cd "$path"; $THEPWDCMD -L`"
+      with_devkit="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
         DEVKIT_ROOT="$with_devkit"
@@ -15219,7 +15298,10 @@ $as_echo_n "checking what configuration name to use... " >&6; }
 $as_echo "$CONF_NAME" >&6; }
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$OUTPUT_ROOT" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -15280,7 +15362,7 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
 $as_echo "$as_me: Rewriting OUTPUT_ROOT to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$OUTPUT_ROOT"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -15321,23 +15403,24 @@ $as_echo "$as_me: Rewriting OUTPUT_ROOT to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$OUTPUT_ROOT"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OUTPUT_ROOT, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$OUTPUT_ROOT"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OUTPUT_ROOT, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of OUTPUT_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of OUTPUT_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    OUTPUT_ROOT="`cd "$path"; $THEPWDCMD -L`"
+      OUTPUT_ROOT="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -15459,7 +15542,10 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
         else
           FOUND_MAKE=$MAKE_CANDIDATE
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -15573,7 +15659,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -15688,56 +15774,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$FOUND_MAKE"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
   fi
 
         fi
@@ -15832,7 +15919,10 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
         else
           FOUND_MAKE=$MAKE_CANDIDATE
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -15946,7 +16036,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -16061,56 +16151,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$FOUND_MAKE"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
   fi
 
         fi
@@ -16202,7 +16293,10 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
         else
           FOUND_MAKE=$MAKE_CANDIDATE
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -16316,7 +16410,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -16431,56 +16525,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$FOUND_MAKE"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
   fi
 
         fi
@@ -16577,7 +16672,10 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
         else
           FOUND_MAKE=$MAKE_CANDIDATE
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -16691,7 +16789,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -16806,56 +16904,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$FOUND_MAKE"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
   fi
 
         fi
@@ -16946,7 +17045,10 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
         else
           FOUND_MAKE=$MAKE_CANDIDATE
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -17060,7 +17162,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -17175,56 +17277,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$FOUND_MAKE"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
   fi
 
         fi
@@ -18836,202 +18939,6 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-
-
-
-  # Publish this variable in the help.
-
-
-  if test "x$COMM" = x; then
-    # The variable is not set by user, try to locate tool using the code snippet
-    for ac_prog in comm
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_COMM+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $COMM in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-COMM=$ac_cv_path_COMM
-if test -n "$COMM"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
-$as_echo "$COMM" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$COMM" && break
-done
-
-  else
-    # The variable is set, but is it from the command line or the environment?
-
-    # Try to remove the string !COMM! from our list.
-    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!COMM!/}
-    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
-      # If it failed, the variable was not from the command line. Ignore it,
-      # but warn the user (except for BASH, which is always set by the calling BASH).
-      if test "xCOMM" != xBASH; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of COMM from the environment. Use command line variables instead." >&5
-$as_echo "$as_me: WARNING: Ignoring value of COMM from the environment. Use command line variables instead." >&2;}
-      fi
-      # Try to locate tool using the code snippet
-      for ac_prog in comm
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_COMM+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $COMM in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-COMM=$ac_cv_path_COMM
-if test -n "$COMM"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
-$as_echo "$COMM" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$COMM" && break
-done
-
-    else
-      # If it succeeded, then it was overridden by the user. We will use it
-      # for the tool.
-
-      # First remove it from the list of overridden variables, so we can test
-      # for unknown variables in the end.
-      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
-
-      # Check if the provided tool contains a complete path.
-      tool_specified="$COMM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool COMM=$tool_basename" >&5
-$as_echo "$as_me: Will search for user supplied tool COMM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
-set dummy $tool_basename; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_COMM+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $COMM in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-COMM=$ac_cv_path_COMM
-if test -n "$COMM"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
-$as_echo "$COMM" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-        if test "x$COMM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool COMM=$tool_specified" >&5
-$as_echo "$as_me: Will use user supplied tool COMM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
-$as_echo_n "checking for COMM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool COMM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
-$as_echo "$tool_specified" >&6; }
-      fi
-    fi
-  fi
-
-
-
-  if test "x$COMM" = x; then
-    as_fn_error $? "Could not find required tool for COMM" "$LINENO" 5
-  fi
-
-
-  fi
-
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
 
 
@@ -19622,6 +19529,32 @@ $as_echo "yes" >&6; }
       fi
     fi
   fi
+
+
+  # Test if bash supports pipefail.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if bash supports pipefail" >&5
+$as_echo_n "checking if bash supports pipefail... " >&6; }
+  if ${BASH} -c 'set -o pipefail'; then
+    BASH_ARGS="$BASH_ARGS -o pipefail"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if bash supports errexit (-e)" >&5
+$as_echo_n "checking if bash supports errexit (-e)... " >&6; }
+  if ${BASH} -e -c 'true'; then
+    BASH_ARGS="$BASH_ARGS -e"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+
+
 
 
 # Check if pkg-config is available.
@@ -20234,7 +20167,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -20295,7 +20231,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -20336,23 +20272,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -20559,7 +20496,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -20620,7 +20560,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -20661,23 +20601,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -20746,7 +20687,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -20807,7 +20751,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -20848,23 +20792,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -20926,7 +20871,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -20987,7 +20935,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -21028,23 +20976,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -21105,7 +21054,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -21166,7 +21118,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -21207,23 +21159,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -21284,7 +21237,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -21345,7 +21301,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -21386,23 +21342,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -21454,7 +21411,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -21515,7 +21475,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -21556,23 +21516,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -21599,7 +21560,10 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
   if test "x$JAVA_HOME" != x; then
     JAVA_HOME_PROCESSED="$JAVA_HOME"
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$JAVA_HOME_PROCESSED" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -21660,7 +21624,7 @@ $as_echo "$as_me: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", 
 $as_echo "$as_me: Rewriting JAVA_HOME_PROCESSED to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$JAVA_HOME_PROCESSED"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -21701,23 +21665,24 @@ $as_echo "$as_me: Rewriting JAVA_HOME_PROCESSED to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$JAVA_HOME_PROCESSED"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$JAVA_HOME_PROCESSED"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    JAVA_HOME_PROCESSED="`cd "$path"; $THEPWDCMD -L`"
+      JAVA_HOME_PROCESSED="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
     if test ! -d "$JAVA_HOME_PROCESSED"; then
@@ -21765,7 +21730,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -21826,7 +21794,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -21867,23 +21835,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -22086,7 +22055,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -22147,7 +22119,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -22188,23 +22160,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -22294,7 +22267,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -22355,7 +22331,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -22396,23 +22372,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -22467,7 +22444,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -22528,7 +22508,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -22569,23 +22549,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -22668,7 +22649,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -22729,7 +22713,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -22770,23 +22754,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -22841,7 +22826,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -22902,7 +22890,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -22943,23 +22931,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -23042,7 +23031,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -23103,7 +23095,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -23144,23 +23136,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -23215,7 +23208,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -23276,7 +23272,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -23317,23 +23313,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -23416,7 +23413,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -23477,7 +23477,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -23518,23 +23518,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -23589,7 +23590,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -23650,7 +23654,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -23691,23 +23695,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -23777,7 +23782,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -23838,7 +23846,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -23879,23 +23887,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -23948,7 +23957,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -24009,7 +24021,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -24050,23 +24062,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -24137,7 +24150,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -24198,7 +24214,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -24239,23 +24255,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -24308,7 +24325,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -24369,7 +24389,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -24410,23 +24430,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -24496,7 +24517,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -24557,7 +24581,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -24598,23 +24622,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -24667,7 +24692,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -24728,7 +24756,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -24769,23 +24797,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -24856,7 +24885,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -24917,7 +24949,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -24958,23 +24990,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -25027,7 +25060,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -25088,7 +25124,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -25129,23 +25165,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -25197,7 +25234,10 @@ $as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
             # We're done! :-)
             BOOT_JDK_FOUND=yes
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BOOT_JDK" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -25258,7 +25298,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
 $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$BOOT_JDK"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -25299,23 +25339,24 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$BOOT_JDK"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -26680,86 +26721,177 @@ $as_echo "no" >&6; }
 
   # First-hand choice is to locate and run the vsvars bat file.
 
-  if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-    VCVARSFILE="vc/bin/vcvars32.bat"
+
+# Check whether --with-toolchain-version was given.
+if test "${with_toolchain_version+set}" = set; then :
+  withval=$with_toolchain_version;
+fi
+
+
+  if test "x$with_toolchain_version" = xlist; then
+    # List all toolchains
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The following toolchain versions are valid on this platform:" >&5
+$as_echo "$as_me: The following toolchain versions are valid on this platform:" >&6;}
+    for version in $VALID_VS_VERSIONS; do
+      eval VS_DESCRIPTION=\${VS_DESCRIPTION_$version}
+      $PRINTF "  %-10s  %s\n" $version "$VS_DESCRIPTION"
+    done
+
+    exit 0
+  elif test "x$with_toolchain_version" != x; then
+    # User override; check that it is valid
+    if test "x${VALID_VS_VERSIONS/$with_toolchain_version/}" = "x${VALID_VS_VERSIONS}"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Visual Studio version $with_toolchain_version is not valid." >&5
+$as_echo "$as_me: Visual Studio version $with_toolchain_version is not valid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Valid Visual Studio versions: $VALID_VS_VERSIONS." >&5
+$as_echo "$as_me: Valid Visual Studio versions: $VALID_VS_VERSIONS." >&6;}
+      as_fn_error $? "Cannot continue." "$LINENO" 5
+    fi
+    VS_VERSIONS_PROBE_LIST="$with_toolchain_version"
   else
-    VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    # No flag given, use default
+    VS_VERSIONS_PROBE_LIST="$VALID_VS_VERSIONS"
+  fi
+
+  for VS_VERSION in $VS_VERSIONS_PROBE_LIST; do
+
+  VS_VERSION="$VS_VERSION"
+  eval VS_COMNTOOLS_VAR="\${VS_ENVVAR_${VS_VERSION}}"
+  eval VS_COMNTOOLS="\$${VS_COMNTOOLS_VAR}"
+  eval VS_INSTALL_DIR="\${VS_VS_INSTALLDIR_${VS_VERSION}}"
+  eval SDK_INSTALL_DIR="\${VS_SDK_INSTALLDIR_${VS_VERSION}}"
+
+  # When using --with-tools-dir, assume it points to the correct and default
+  # version of Visual Studio or that --with-toolchain-version was also set.
+  if test "x$with_tools_dir" != x; then
+
+  if test "x$VS_ENV_CMD" = x; then
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$with_tools_dir/../.."
+    METHOD="--with-tools-dir"
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    VS_BASE="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    VS_BASE="$unix_path"
+  fi
+
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
+$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+      fi
+    fi
+  fi
+
+
+  if test "x$VS_ENV_CMD" = x; then
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$with_tools_dir/../../.."
+    METHOD="--with-tools-dir"
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    VS_BASE="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    VS_BASE="$unix_path"
+  fi
+
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
+$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+      fi
+    fi
+  fi
+
+    if test "x$VS_ENV_CMD" = x; then
+      # Having specified an argument which is incorrect will produce an instant failure;
+      # we should not go on looking
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path given by --with-tools-dir does not contain a valid" >&5
+$as_echo "$as_me: The path given by --with-tools-dir does not contain a valid" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Visual Studio installation. Please point to the VC/bin or VC/bin/amd64" >&5
+$as_echo "$as_me: Visual Studio installation. Please point to the VC/bin or VC/bin/amd64" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: directory within the Visual Studio installation" >&5
+$as_echo "$as_me: directory within the Visual Studio installation" >&6;}
+      as_fn_error $? "Cannot locate a valid Visual Studio installation" "$LINENO" 5
+    fi
   fi
 
   VS_ENV_CMD=""
   VS_ENV_ARGS=""
-  if test "x$with_toolsdir" != x; then
+
+  if test "x$VS_COMNTOOLS" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="$with_toolsdir/../.."
-    METHOD="--with-tools-dir"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$VS_COMNTOOLS/../.."
+    METHOD="$VS_COMNTOOLS_VAR variable"
 
-  windows_path="$VS100BASE"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
-  fi
-
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
-      fi
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
     fi
-  fi
 
-  fi
 
-  if test "x$with_toolsdir" != x && test "x$VS_ENV_CMD" = x; then
-    # Having specified an argument which is incorrect will produce an instant failure;
-    # we should not go on looking
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path given by --with-tools-dir does not contain a valid Visual Studio installation" >&5
-$as_echo "$as_me: The path given by --with-tools-dir does not contain a valid Visual Studio installation" >&6;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Please point to the VC/bin directory within the Visual Studio installation" >&5
-$as_echo "$as_me: Please point to the VC/bin directory within the Visual Studio installation" >&6;}
-    as_fn_error $? "Cannot locate a valid Visual Studio installation" "$LINENO" 5
-  fi
-
-  if test "x$VS100COMNTOOLS" != x; then
-
-  if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="$VS100COMNTOOLS/../.."
-    METHOD="VS100COMNTOOLS variable"
-
-  windows_path="$VS100BASE"
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26770,30 +26902,80 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   if test "x$PROGRAMFILES" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="$PROGRAMFILES/Microsoft Visual Studio 10.0"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$PROGRAMFILES/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-  windows_path="$VS100BASE"
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
+$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+      fi
+    fi
+  fi
+
+  fi
+  # Work around the insanely named ProgramFiles(x86) env variable
+  PROGRAMFILES_X86="`env | $SED -n 's/^ProgramFiles(x86)=//p'`"
+  if test "x$PROGRAMFILES_X86" != x; then
+
+  if test "x$VS_ENV_CMD" = x; then
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="$PROGRAMFILES_X86/$VS_INSTALL_DIR"
+    METHOD="well-known name"
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    VS_BASE="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    VS_BASE="$unix_path"
+  fi
+
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26803,30 +26985,37 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   fi
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="C:/Program Files/Microsoft Visual Studio 10.0"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="C:/Program Files/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-  windows_path="$VS100BASE"
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26835,30 +27024,37 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
 
 
   if test "x$VS_ENV_CMD" = x; then
-    VS100BASE="C:/Program Files (x86)/Microsoft Visual Studio 10.0"
+    VS_VERSION="${VS_VERSION}"
+    VS_BASE="C:/Program Files (x86)/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-  windows_path="$VS100BASE"
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      VCVARSFILE="vc/bin/vcvars32.bat"
+    else
+      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    fi
+
+
+  windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    VS100BASE="$unix_path"
+    VS_BASE="$unix_path"
   fi
 
-    if test -d "$VS100BASE"; then
-      if test -f "$VS100BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+    if test -d "$VS_BASE"; then
+      if test -f "$VS_BASE/$VCVARSFILE"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
+        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        # TODO: improve detection for other versions of VS
-        PLATFORM_TOOLSET="v100"
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS100BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS100BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
 $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
       fi
@@ -26866,10 +27062,12 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   fi
 
 
-  if test "x$ProgramW6432" != x; then
+  if test "x$SDK_INSTALL_DIR" != x; then
+    if test "x$ProgramW6432" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="$ProgramW6432/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="$ProgramW6432/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -26884,15 +27082,15 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -26901,7 +27099,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -26911,11 +27109,12 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     fi
   fi
 
-  fi
-  if test "x$PROGRAMW6432" != x; then
+    fi
+    if test "x$PROGRAMW6432" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="$PROGRAMW6432/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="$PROGRAMW6432/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -26930,15 +27129,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -26947,7 +27146,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -26957,11 +27156,12 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     fi
   fi
 
-  fi
-  if test "x$PROGRAMFILES" != x; then
+    fi
+    if test "x$PROGRAMFILES" != x; then
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="$PROGRAMFILES/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="$PROGRAMFILES/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -26976,15 +27176,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -26993,7 +27193,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -27003,10 +27203,11 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     fi
   fi
 
-  fi
+    fi
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="C:/Program Files/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="C:/Program Files/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -27021,15 +27222,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -27038,7 +27239,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -27050,7 +27251,8 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
 
 
   if test "x$VS_ENV_CMD" = x; then
-    WIN_SDK_BASE="C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1/Bin"
+    VS_VERSION="${VS_VERSION}"
+    WIN_SDK_BASE="C:/Program Files (x86)/$SDK_INSTALL_DIR"
     METHOD="well-known name"
 
   windows_path="$WIN_SDK_BASE"
@@ -27065,15 +27267,15 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
-      if test ! -d "$WIN_SDK_BASE/../lib"; then
+      if test ! -d "$WIN_SDK_BASE/lib"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
 $as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
-      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -27082,7 +27284,7 @@ $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD"
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
         # TODO: improve detection for other versions of SDK
-        PLATFORM_TOOLSET="Windows7.1SDK"
+        eval PLATFORM_TOOLSET="\${VS_SDK_PLATFORM_NAME_${VS_VERSION}}"
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
@@ -27091,12 +27293,30 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
       fi
     fi
   fi
+
+  fi
+
+    if test "x$VS_ENV_CMD" != x; then
+      TOOLCHAIN_VERSION=$VS_VERSION
+      eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+      eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
+      eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
+      eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
+      # The rest of the variables are already evaled while probing
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found $VS_DESCRIPTION" >&5
+$as_echo "$as_me: Found $VS_DESCRIPTION" >&6;}
+      break
+    fi
+  done
 
 
   if test "x$VS_ENV_CMD" != x; then
     # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$VS_ENV_CMD" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -27210,7 +27430,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -27325,56 +27545,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$VS_ENV_CMD"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$VS_ENV_CMD"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of VS_ENV_CMD, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of VS_ENV_CMD, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of VS_ENV_CMD" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of VS_ENV_CMD, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of VS_ENV_CMD, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of VS_ENV_CMD" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    VS_ENV_CMD="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting VS_ENV_CMD to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      VS_ENV_CMD="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting VS_ENV_CMD to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting VS_ENV_CMD to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -27471,9 +27692,9 @@ $as_echo "present but broken" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      # Remove any trailing "\" and " " from the variables.
-      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED 's/\\\\* *$//'`
-      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\* *$//'`
+      # Remove any trailing "\" ";" and " " from the variables.
+      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED -e 's/\\\\*;* *$//'`
+      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\*;* *$//'`
       VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
       WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
       WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
@@ -27484,6 +27705,310 @@ $as_echo "ok" >&6; }
 
 
 
+
+      # Convert VS_INCLUDE into SYSROOT_CFLAGS
+      OLDIFS="$IFS"
+      IFS=";"
+      for i in $VS_INCLUDE; do
+        ipath=$i
+        # Only process non-empty elements
+        if test "x$ipath" != x; then
+          IFS="$OLDIFS"
+          # Check that directory exists before calling fixup_path
+          testpath=$ipath
+
+  windows_path="$testpath"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    testpath="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    testpath="$unix_path"
+  fi
+
+          if test -d "$testpath"; then
+
+  # Only process if variable expands to non-empty
+
+  if test "x$ipath" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$ipath"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of ipath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of ipath, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of ipath" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    ipath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting ipath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting ipath to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$ipath"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    ipath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting ipath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting ipath to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$ipath"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of ipath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of ipath, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of ipath, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      ipath="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+            SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+          fi
+          IFS=";"
+        fi
+      done
+      # Convert VS_LIB into SYSROOT_LDFLAGS
+      for i in $VS_LIB; do
+        libpath=$i
+        # Only process non-empty elements
+        if test "x$libpath" != x; then
+          IFS="$OLDIFS"
+          # Check that directory exists before calling fixup_path
+          testpath=$libpath
+
+  windows_path="$testpath"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    testpath="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    testpath="$unix_path"
+  fi
+
+          if test -d "$testpath"; then
+
+  # Only process if variable expands to non-empty
+
+  if test "x$libpath" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$libpath"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of libpath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of libpath, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of libpath" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    libpath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting libpath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting libpath to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$libpath"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    libpath="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting libpath to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting libpath to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$libpath"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of libpath, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of libpath, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of libpath, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      libpath="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+            SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+          fi
+          IFS=";"
+        fi
+      done
+      IFS="$OLDIFS"
     fi
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
@@ -27756,7 +28281,10 @@ done
 
   # Now we have a compiler binary in CC. Make sure it's okay.
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$CC" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -27870,7 +28398,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -27985,56 +28513,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$CC"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$CC"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of CC, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of CC" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CC, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of CC, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of CC" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    CC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CC to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      CC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CC to \"$new_complete\"" >&6;}
+    fi
   fi
 
   TEST_COMPILER="$CC"
@@ -28213,7 +28742,10 @@ esac
 fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$PROPER_COMPILER_CC" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -28327,7 +28859,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -28442,56 +28974,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$PROPER_COMPILER_CC"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$PROPER_COMPILER_CC"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of PROPER_COMPILER_CC, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of PROPER_COMPILER_CC" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CC, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of PROPER_COMPILER_CC, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of PROPER_COMPILER_CC" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    PROPER_COMPILER_CC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CC to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      PROPER_COMPILER_CC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting PROPER_COMPILER_CC to \"$new_complete\"" >&6;}
+    fi
   fi
 
     PATH="$RETRY_COMPILER_SAVED_PATH"
@@ -29496,7 +30029,10 @@ done
 
   # Now we have a compiler binary in CXX. Make sure it's okay.
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$CXX" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -29610,7 +30146,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -29725,56 +30261,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$CXX"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$CXX"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXX, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of CXX, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of CXX" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXX, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of CXX, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of CXX" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    CXX="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXX to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      CXX="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXX to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CXX to \"$new_complete\"" >&6;}
+    fi
   fi
 
   TEST_COMPILER="$CXX"
@@ -29953,7 +30490,10 @@ esac
 fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$PROPER_COMPILER_CXX" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -30067,7 +30607,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -30182,56 +30722,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$PROPER_COMPILER_CXX"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$PROPER_COMPILER_CXX"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CXX, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of PROPER_COMPILER_CXX, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of PROPER_COMPILER_CXX" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CXX, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of PROPER_COMPILER_CXX, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of PROPER_COMPILER_CXX" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    PROPER_COMPILER_CXX="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CXX to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      PROPER_COMPILER_CXX="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CXX to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting PROPER_COMPILER_CXX to \"$new_complete\"" >&6;}
+    fi
   fi
 
     PATH="$RETRY_COMPILER_SAVED_PATH"
@@ -30815,7 +31356,10 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$CPP" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -30929,7 +31473,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -31044,56 +31588,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$CPP"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$CPP"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CPP, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of CPP, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of CPP" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CPP, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of CPP, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of CPP" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    CPP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CPP to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      CPP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CPP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CPP to \"$new_complete\"" >&6;}
+    fi
   fi
 
   ac_ext=cpp
@@ -31230,7 +31775,10 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$CXXCPP" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -31344,7 +31892,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -31459,56 +32007,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$CXXCPP"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$CXXCPP"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXXCPP, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of CXXCPP, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of CXXCPP" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXXCPP, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of CXXCPP, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of CXXCPP" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    CXXCPP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXXCPP to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      CXXCPP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXXCPP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CXXCPP to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -31574,7 +32123,10 @@ fi
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$LD" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -31688,7 +32240,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -31803,56 +32355,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$LD"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$LD"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of LD, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of LD, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of LD" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of LD, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of LD, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of LD" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    LD="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting LD to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      LD="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting LD to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting LD to \"$new_complete\"" >&6;}
+    fi
   fi
 
     # Verify that we indeed succeeded with this trick.
@@ -32069,7 +32622,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$AS" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -32183,7 +32739,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -32298,56 +32854,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$AS"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$AS"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AS, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of AS, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of AS" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AS, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of AS, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of AS" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    AS="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AS to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      AS="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AS to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting AS to \"$new_complete\"" >&6;}
+    fi
   fi
 
   else
@@ -32697,7 +33254,10 @@ $as_echo "$tool_specified" >&6; }
 
   fi
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$AR" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -32811,7 +33371,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -32926,56 +33486,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$AR"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$AR"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AR, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of AR, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of AR" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AR, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of AR, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of AR" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    AR="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AR to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      AR="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AR to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting AR to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -33233,7 +33794,10 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$OBJC" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -33347,7 +33911,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -33462,56 +34026,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$OBJC"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$OBJC"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of OBJC, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of OBJC" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of OBJC, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of OBJC" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    OBJC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJC to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      OBJC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting OBJC to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -33701,7 +34266,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$LIPO" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -33815,7 +34383,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -33930,56 +34498,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$LIPO"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$LIPO"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of LIPO, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of LIPO, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of LIPO" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of LIPO, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of LIPO, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of LIPO" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    LIPO="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting LIPO to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      LIPO="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting LIPO to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting LIPO to \"$new_complete\"" >&6;}
+    fi
   fi
 
   else
@@ -34042,7 +34611,10 @@ fi
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$MT" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -34156,7 +34728,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -34271,56 +34843,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$MT"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$MT"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MT, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of MT, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of MT" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MT, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of MT, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of MT" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    MT="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MT to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      MT="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MT to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting MT to \"$new_complete\"" >&6;}
+    fi
   fi
 
     # Setup the resource compiler (RC)
@@ -34379,7 +34952,10 @@ fi
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$RC" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -34493,7 +35069,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -34608,56 +35184,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$RC"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$RC"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of RC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of RC, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of RC" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of RC, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of RC, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of RC" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    RC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting RC to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      RC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting RC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting RC to \"$new_complete\"" >&6;}
+    fi
   fi
 
     # Extract the first word of "dumpbin", so it can be a program name with args.
@@ -34698,7 +35275,10 @@ fi
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$DUMPBIN" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -34812,7 +35392,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -34927,56 +35507,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$DUMPBIN"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$DUMPBIN"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DUMPBIN, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of DUMPBIN, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of DUMPBIN" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DUMPBIN, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of DUMPBIN, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of DUMPBIN" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    DUMPBIN="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DUMPBIN to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      DUMPBIN="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DUMPBIN to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting DUMPBIN to \"$new_complete\"" >&6;}
+    fi
   fi
 
     # We need to check for 'msbuild.exe' because at the place where we expect to
@@ -35213,7 +35794,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$STRIP" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -35327,7 +35911,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -35442,56 +36026,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$STRIP"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$STRIP"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of STRIP, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of STRIP" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of STRIP, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of STRIP" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    STRIP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      STRIP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -35681,7 +36266,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$NM" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -35795,7 +36383,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -35910,56 +36498,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$NM"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$NM"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of NM, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of NM" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of NM, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of NM" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    NM="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      NM="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -36149,7 +36738,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$GNM" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -36263,7 +36855,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -36378,56 +36970,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$GNM"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$GNM"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of GNM, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of GNM, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of GNM" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of GNM, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of GNM, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of GNM" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    GNM="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting GNM to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      GNM="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting GNM to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting GNM to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -36618,7 +37211,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$MCS" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -36732,7 +37328,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -36847,56 +37443,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$MCS"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$MCS"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of MCS, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of MCS" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of MCS, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of MCS" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    MCS="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MCS to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      MCS="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MCS to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting MCS to \"$new_complete\"" >&6;}
+    fi
   fi
 
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
@@ -37198,7 +37795,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$STRIP" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -37312,7 +37912,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -37427,56 +38027,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$STRIP"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$STRIP"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of STRIP, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of STRIP" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of STRIP, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of STRIP" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    STRIP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      STRIP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -37776,7 +38377,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$NM" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -37890,7 +38494,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -38005,56 +38609,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$NM"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$NM"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of NM, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of NM" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of NM, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of NM" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    NM="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      NM="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
+    fi
   fi
 
     GNM="$NM"
@@ -38363,7 +38968,10 @@ $as_echo "$tool_specified" >&6; }
     # Only call fixup if objcopy was found.
     if test -n "$OBJCOPY"; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$OBJCOPY" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -38477,7 +39085,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -38592,56 +39200,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$OBJCOPY"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$OBJCOPY"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJCOPY, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of OBJCOPY, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of OBJCOPY" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJCOPY, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of OBJCOPY, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of OBJCOPY" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    OBJCOPY="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJCOPY to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      OBJCOPY="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJCOPY to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting OBJCOPY to \"$new_complete\"" >&6;}
+    fi
   fi
 
     fi
@@ -38947,7 +39556,10 @@ $as_echo "$tool_specified" >&6; }
     # Only used for compare.sh; we can live without it. BASIC_FIXUP_EXECUTABLE
     # bails if argument is missing.
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$OBJDUMP" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -39061,7 +39673,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -39176,56 +39788,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$OBJDUMP"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$OBJDUMP"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJDUMP, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of OBJDUMP, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of OBJDUMP" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJDUMP, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of OBJDUMP, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of OBJDUMP" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    OBJDUMP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJDUMP to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      OBJDUMP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJDUMP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
+    fi
   fi
 
   fi
@@ -39440,7 +40053,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BUILD_CC" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -39554,7 +40170,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -39669,56 +40285,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$BUILD_CC"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$BUILD_CC"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of BUILD_CC, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of BUILD_CC" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CC, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of BUILD_CC, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of BUILD_CC" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    BUILD_CC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CC to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      BUILD_CC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting BUILD_CC to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -39908,7 +40525,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BUILD_CXX" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -40022,7 +40642,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -40137,56 +40757,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$BUILD_CXX"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$BUILD_CXX"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CXX, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of BUILD_CXX, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of BUILD_CXX" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CXX, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of BUILD_CXX, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of BUILD_CXX" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    BUILD_CXX="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CXX to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      BUILD_CXX="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CXX to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting BUILD_CXX to \"$new_complete\"" >&6;}
+    fi
   fi
 
 
@@ -40376,7 +40997,10 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$BUILD_LD" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -40490,7 +41114,7 @@ $as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" 
   # remove trailing .exe if any
   new_path="${new_path/%.exe/}"
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   # First separate the path from the arguments. This will split at the first
   # space.
@@ -40605,56 +41229,57 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
   fi
 
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="$BUILD_LD"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$BUILD_LD"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      as_fn_error $? "Cannot locate the the path of BUILD_LD" "$LINENO" 5
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of BUILD_LD" "$LINENO" 5
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    BUILD_LD="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_LD to \"$new_complete\"" >&5
+    if test "x$complete" != "x$new_complete"; then
+      BUILD_LD="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_LD to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
+    fi
   fi
 
   else
@@ -40752,8 +41377,8 @@ $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
     CC_VERSION_OUTPUT=`$CC 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_CPU_TEST=`$ECHO $CC_VERSION_OUTPUT | $SED -n "s/^.* \(.*\)$/\1/p"`
     if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
-      if test "x$COMPILER_CPU_TEST" != "x80x86"; then
-        as_fn_error $? "Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for \"$COMPILER_CPU_TEST\"; expected \"80x86\"." "$LINENO" 5
+      if test "x$COMPILER_CPU_TEST" != "x80x86" -a "x$COMPILER_CPU_TEST" != "xx86"; then
+        as_fn_error $? "Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for \"$COMPILER_CPU_TEST\"; expected \"80x86\" or \"x86\"." "$LINENO" 5
       fi
     elif test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       if test "x$COMPILER_CPU_TEST" != "xx64"; then
@@ -40987,7 +41612,10 @@ $as_echo_n "checking for jtreg... " >&6; }
 
       # use JT_HOME enviroment var.
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$JT_HOME" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -41048,7 +41676,7 @@ $as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid."
 $as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$JT_HOME"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -41089,23 +41717,24 @@ $as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$JT_HOME"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$JT_HOME"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of JT_HOME, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of JT_HOME, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    JT_HOME="`cd "$path"; $THEPWDCMD -L`"
+      JT_HOME="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -42401,14 +43030,22 @@ fi
     CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
-    -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
-    -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
-    -DWIN32 -DIAL"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK \
+        -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
+        -DWIN32_LEAN_AND_MEAN \
+        -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
+        -DWIN32 -DIAL"
     if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_AMD64_ -Damd64"
     else
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_X86_ -Dx86"
+    fi
+    # If building with Visual Studio 2010, we can still use _STATIC_CPPLIB to
+    # avoid bundling msvcpNNN.dll. Doesn't work with newer versions of visual
+    # studio.
+    if test "x$TOOLCHAIN_VERSION" = "x2010"; then
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
+          -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
     fi
   fi
 
@@ -44370,7 +45007,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -44431,7 +45071,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -44472,27 +45112,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -44553,7 +45197,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -44594,23 +45238,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -44723,7 +45368,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -44784,7 +45432,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -44825,27 +45473,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -44906,7 +45558,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -44947,23 +45599,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -45337,7 +45990,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -45398,7 +46054,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -45439,27 +46095,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -45520,7 +46180,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -45561,23 +46221,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -45665,7 +46326,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -45726,7 +46390,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -45767,27 +46431,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -45848,7 +46516,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -45889,23 +46557,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -45984,7 +46653,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -46045,7 +46717,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -46086,27 +46758,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -46167,7 +46843,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -46208,23 +46884,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -46303,7 +46980,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -46364,7 +47044,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -46405,27 +47085,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -46486,7 +47170,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -46527,23 +47211,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -46623,7 +47308,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -46684,7 +47372,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -46725,27 +47413,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -46806,7 +47498,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -46847,23 +47539,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -46944,7 +47637,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -47005,7 +47701,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -47046,27 +47742,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -47127,7 +47827,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -47168,23 +47868,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -47261,7 +47962,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -47322,7 +48026,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -47363,27 +48067,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -47444,7 +48152,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -47485,23 +48193,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -47578,7 +48287,10 @@ $as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
 
   if test "x$FOUND_FREETYPE" = xyes; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -47639,7 +48351,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -47680,27 +48392,31 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -47761,7 +48477,7 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
 $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$POTENTIAL_FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -47802,23 +48518,24 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$POTENTIAL_FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
 
@@ -47878,7 +48595,10 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
     # Set FREETYPE_CFLAGS, _LIBS and _LIB_PATH from include and lib dir.
     if test "x$FREETYPE_CFLAGS" = x; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -47939,7 +48659,7 @@ $as_echo "$as_me: The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\"
 $as_echo "$as_me: Rewriting FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$FREETYPE_INCLUDE_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -47980,23 +48700,24 @@ $as_echo "$as_me: Rewriting FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$FREETYPE_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
       if test -d $FREETYPE_INCLUDE_PATH/freetype2/freetype; then
@@ -48008,7 +48729,10 @@ $as_echo "$as_me: The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\"
 
     if test "x$FREETYPE_LIBS" = x; then
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -48069,7 +48793,7 @@ $as_echo "$as_me: The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is
 $as_echo "$as_me: Rewriting FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$FREETYPE_LIB_PATH"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -48110,23 +48834,24 @@ $as_echo "$as_me: Rewriting FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$FREETYPE_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
@@ -49560,16 +50285,17 @@ fi
   if test "x$with_msvcr_dll" != x; then
     # If given explicitely by user, do not probe. If not present, fail directly.
 
-  POSSIBLE_MSVCR_DLL="$with_msvcr_dll"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$with_msvcr_dll"
   METHOD="--with-msvcr-dll"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49585,28 +50311,32 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
-    if test "x$MSVCR_DLL" = x; then
-      as_fn_error $? "Could not find a proper msvcr100.dll as specified by --with-msvcr-dll" "$LINENO" 5
+    if test "x$MSVC_DLL" = x; then
+      as_fn_error $? "Could not find a proper $MSVCR_NAME as specified by --with-msvcr-dll" "$LINENO" 5
     fi
-  fi
+  else
 
-  if test "x$MSVCR_DLL" = x; then
+  VAR_NAME="MSVCR_DLL"
+  DLL_NAME="${MSVCR_NAME}"
+  MSVC_DLL=
+
+  if test "x$MSVC_DLL" = x; then
     # Probe: Using well-known location from Visual Studio 10.0
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
@@ -49621,21 +50351,23 @@ $as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETY
   fi
 
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC100.CRT/msvcr100.dll"
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
       else
-        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC100.CRT/msvcr100.dll"
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
       fi
+      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="well-known location in VCINSTALLDIR"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49651,39 +50383,40 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
     fi
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Check in the Boot JDK directory.
-    POSSIBLE_MSVCR_DLL="$BOOT_JDK/bin/msvcr100.dll"
+    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="well-known location in Boot JDK"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49699,25 +50432,25 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Look in the Windows system32 directory
     CYGWIN_SYSTEMROOT="$SYSTEMROOT"
 
@@ -49730,18 +50463,19 @@ $as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETY
     CYGWIN_SYSTEMROOT="$unix_path"
   fi
 
-    POSSIBLE_MSVCR_DLL="$CYGWIN_SYSTEMROOT/system32/msvcr100.dll"
+    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="well-known location in SYSTEMROOT"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49757,25 +50491,25 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: If Visual Studio Express is installed, there is usually one with the debugger
     if test "x$VS100COMNTOOLS" != x; then
       CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
@@ -49790,21 +50524,24 @@ $as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETY
   fi
 
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x64/ | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x64/ | $HEAD --lines 1`
       else
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x86/ | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x86/ | $HEAD --lines 1`
       fi
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="search of VS100COMNTOOLS"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49820,50 +50557,54 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
     fi
   fi
 
-  if test "x$MSVCR_DLL" = x; then
+  if test "x$MSVC_DLL" = x; then
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
-    # (This was the original behaviour; kept since it might turn up something)
+    # (This was the original behaviour; kept since it might turn something up)
     if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x64 | $HEAD --lines 1`
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x64 | $HEAD --lines 1`
       else
-        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
-        if test "x$POSSIBLE_MSVCR_DLL" = x; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVC_DLL" = x; then
           # We're grasping at straws now...
-          POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $HEAD --lines 1`
+          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	      | $HEAD --lines 1`
         fi
       fi
 
 
-  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
   METHOD="search of VCINSTALLDIR"
-  if test -e "$POSSIBLE_MSVCR_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
-$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
 
     # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
-$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
-    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
       # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
@@ -49879,35 +50620,39 @@ $as_echo_n "checking found msvcr100.dll architecture... " >&6; }
         CORRECT_MSVCR_ARCH=x86-64
       fi
     fi
-    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
 $as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
     fi
   fi
 
     fi
   fi
 
-  if test "x$MSVCR_DLL" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
+  if test "x$MSVC_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    as_fn_error $? "Could not find msvcr100.dll. Please specify using --with-msvcr-dll." "$LINENO" 5
+    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
   fi
 
+  MSVCR_DLL=$MSVC_DLL
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVCR_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
   # Input might be given as Windows format, start by converting to
   # unix format.
@@ -49968,7 +50713,7 @@ $as_echo "$as_me: The path of MSVCR_DLL, which resolves as \"$path\", is invalid
 $as_echo "$as_me: Rewriting MSVCR_DLL to \"$new_path\"" >&6;}
   fi
 
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
 
   path="$MSVCR_DLL"
   has_colon=`$ECHO $path | $GREP ^.:`
@@ -50009,25 +50754,536 @@ $as_echo "$as_me: Rewriting MSVCR_DLL to \"$new_path\"" >&6;}
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
-  else
-    # We're on a unix platform. Hooray! :)
-    path="$MSVCR_DLL"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVCR_DLL, which resolves as \"$path\", is invalid." >&5
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVCR_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVCR_DLL, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of MSVCR_DLL, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of MSVCR_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVCR_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
 
-    MSVCR_DLL="`cd "$path"; $THEPWDCMD -L`"
+      MSVCR_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 
+  MSVCR_DLL=$MSVCR_DLL
+
+
+  fi
+
+
+# Check whether --with-msvcp-dll was given.
+if test "${with_msvcp_dll+set}" = set; then :
+  withval=$with_msvcp_dll;
+fi
+
+
+  if test "x$MSVCP_NAME" != "x"; then
+    if test "x$with_msvcp_dll" != x; then
+      # If given explicitely by user, do not probe. If not present, fail directly.
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$with_msvcp_dll"
+  METHOD="--with-msvcp-dll"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+      if test "x$MSVC_DLL" = x; then
+        as_fn_error $? "Could not find a proper $MSVCP_NAME as specified by --with-msvcp-dll" "$LINENO" 5
+      fi
+    else
+
+  VAR_NAME="MSVCP_DLL"
+  DLL_NAME="${MSVCP_NAME}"
+  MSVC_DLL=
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Using well-known location from Visual Studio 10.0
+    if test "x$VCINSTALLDIR" != x; then
+      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
+
+  windows_path="$CYGWIN_VC_INSTALL_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      else
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      fi
+      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Check in the Boot JDK directory.
+    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in Boot JDK"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Look in the Windows system32 directory
+    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
+
+  windows_path="$CYGWIN_SYSTEMROOT"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  fi
+
+    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in SYSTEMROOT"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
+    if test "x$VS100COMNTOOLS" != x; then
+      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+
+  windows_path="$CYGWIN_VS_TOOLS_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x64/ | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x86/ | $HEAD --lines 1`
+      fi
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VS100COMNTOOLS"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
+    # (This was the original behaviour; kept since it might turn something up)
+    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x64 | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVC_DLL" = x; then
+          # We're grasping at straws now...
+          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	      | $HEAD --lines 1`
+        fi
+      fi
+
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
+  fi
+
+  MSVCP_DLL=$MSVC_DLL
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVCP_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVCP_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVCP_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVCP_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVCP_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVCP_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVCP_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVCP_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVCP_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVCP_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVCP_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVCP_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVCP_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVCP_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+  MSVCP_DLL=$MSVCP_DLL
+
+
+    fi
+  fi
 
 
 
@@ -50057,7 +51313,6 @@ fi
 
 
   fi
-
 
 
 ###############################################################################
@@ -50601,16 +51856,17 @@ fi
 
 
   CCACHE=
+  CCACHE_STATUS=
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking is ccache enabled" >&5
 $as_echo_n "checking is ccache enabled... " >&6; }
-  ENABLE_CCACHE=$enable_ccache
   if test "x$enable_ccache" = xyes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    if test "x$TOOLCHAIN_TYPE" = "xgcc" -o "x$TOOLCHAIN_TYPE" = "xclang"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    OLD_PATH="$PATH"
-    if test "x$TOOLCHAIN_PATH" != x; then
-      PATH=$TOOLCHAIN_PATH:$PATH
-    fi
+      OLD_PATH="$PATH"
+      if test "x$TOOLCHAIN_PATH" != x; then
+        PATH=$TOOLCHAIN_PATH:$PATH
+      fi
 
 
 
@@ -50804,11 +52060,19 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
-    CCACHE_STATUS="enabled"
-    PATH="$OLD_PATH"
+      PATH="$OLD_PATH"
+      CCACHE_VERSION=`$CCACHE --version | head -n1 | $SED 's/[A-Za-z ]*//'`
+      CCACHE_STATUS="Active ($CCACHE_VERSION)"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ccache is not supported with toolchain type $TOOLCHAIN_TYPE" >&5
+$as_echo "$as_me: WARNING: ccache is not supported with toolchain type $TOOLCHAIN_TYPE" >&2;}
+    fi
   elif test "x$enable_ccache" = xno; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, explicitly disabled" >&5
 $as_echo "no, explicitly disabled" >&6; }
+    CCACHE_STATUS="Disabled"
   elif test "x$enable_ccache" = x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -50839,23 +52103,17 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
   if test "x$CCACHE" != x; then
 
   if test "x$CCACHE" != x; then
-    # Only use ccache if it is 3.1.4 or later, which supports
-    # precompiled headers.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ccache supports precompiled headers" >&5
-$as_echo_n "checking if ccache supports precompiled headers... " >&6; }
-    HAS_GOOD_CCACHE=`($CCACHE --version | head -n 1 | grep -E 3.1.[456789]) 2> /dev/null`
-    if test "x$HAS_GOOD_CCACHE" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccache" >&5
-$as_echo "no, disabling ccache" >&6; }
-      CCACHE=
-      CCACHE_STATUS="disabled"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+    if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
+      HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
+          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]'`
+      if test "x$HAS_BAD_CCACHE" != "x"; then
+        as_fn_error $? "Precompiled headers requires ccache 3.1.4 or later, found $CCACHE_VERSION" "$LINENO" 5
+      fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if C-compiler supports ccache precompiled headers" >&5
 $as_echo_n "checking if C-compiler supports ccache precompiled headers... " >&6; }
+      CCACHE_PRECOMP_FLAG="-fpch-preprocess"
       PUSHED_FLAGS="$CXXFLAGS"
-      CXXFLAGS="-fpch-preprocess $CXXFLAGS"
+      CXXFLAGS="$CCACHE_PRECOMP_FLAG $CXXFLAGS"
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -50877,19 +52135,18 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
       if test "x$CC_KNOWS_CCACHE_TRICK" = xyes; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+        CFLAGS_CCACHE="$CCACHE_PRECOMP_FLAG"
+
+        CCACHE_SLOPPINESS=pch_defines,time_macros
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccaching of precompiled headers" >&5
-$as_echo "no, disabling ccaching of precompiled headers" >&6; }
-        CCACHE=
-        CCACHE_STATUS="disabled"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        as_fn_error $? "Cannot use ccache with precompiled headers without compiler support for $CCACHE_PRECOMP_FLAG" "$LINENO" 5
       fi
     fi
-  fi
 
-  if test "x$CCACHE" != x; then
-    CCACHE_SLOPPINESS=time_macros
-    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS $CCACHE"
-    CCACHE_FLAGS=-fpch-preprocess
+    CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR \
+        CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS CCACHE_BASEDIR=$TOPDIR $CCACHE"
 
     if test "x$SET_CCACHE_DIR" != x; then
       mkdir -p $CCACHE_DIR > /dev/null 2>&1
@@ -52186,7 +53443,10 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
     printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION (root at $WINDOWS_ENV_ROOT_PATH)\n"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
-  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
+  if test "x$TOOLCHAIN_VERSION" != "x"; then
+    print_version=" $TOOLCHAIN_VERSION"
+  fi
+  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION$print_version)\n"
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
 

@@ -576,6 +576,9 @@ public class Runtime {
      * of the exception is system-dependent, but it will always be a
      * subclass of {@link IOException}.
      *
+     * <p>If the operating system does not support the creation of
+     * processes, an {@link UnsupportedOperationException} will be thrown.
+     *
      *
      * @param   cmdarray  array containing the command to call and
      *                    its arguments.
@@ -596,6 +599,9 @@ public class Runtime {
      *          If a security manager exists and its
      *          {@link SecurityManager#checkExec checkExec}
      *          method doesn't allow creation of the subprocess
+     *
+     * @throws  UnsupportedOperationException
+     *          If the operating system does not support the creation of processes.
      *
      * @throws  IOException
      *          If an I/O error occurs

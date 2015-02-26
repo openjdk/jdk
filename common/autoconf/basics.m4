@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,26 +77,30 @@ AC_DEFUN([BASIC_PREPEND_TO_PATH],
 # $1: The name of the variable to fix
 AC_DEFUN([BASIC_FIXUP_PATH],
 [
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    BASIC_FIXUP_PATH_CYGWIN($1)
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    BASIC_FIXUP_PATH_MSYS($1)
-  else
-    # We're on a unix platform. Hooray! :)
-    path="[$]$1"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
-      AC_MSG_ERROR([Spaces are not allowed in this path.])
-    fi
+  # Only process if variable expands to non-empty
+  
+  if test "x[$]$1" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+      BASIC_FIXUP_PATH_CYGWIN($1)
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      BASIC_FIXUP_PATH_MSYS($1)
+    else
+      # We're on a unix platform. Hooray! :)
+      path="[$]$1"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
+        AC_MSG_ERROR([Spaces are not allowed in this path.])
+      fi
 
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
-    fi
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
+      fi
 
-    $1="`cd "$path"; $THEPWDCMD -L`"
+      $1="`cd "$path"; $THEPWDCMD -L`"
+    fi
   fi
 ])
 
@@ -113,57 +117,61 @@ AC_DEFUN([BASIC_FIXUP_PATH],
 # $1: The name of the variable to fix
 AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
 [
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    BASIC_FIXUP_EXECUTABLE_CYGWIN($1)
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    BASIC_FIXUP_EXECUTABLE_MSYS($1)
-  else
-    # We're on a unix platform. Hooray! :)
-    # First separate the path from the arguments. This will split at the first
-    # space.
-    complete="[$]$1"
-    path="${complete%% *}"
-    tmp="$complete EOL"
-    arguments="${tmp#* }"
-
-    # Cannot rely on the command "which" here since it doesn't always work.
-    is_absolute_path=`$ECHO "$path" | $GREP ^/`
-    if test -z "$is_absolute_path"; then
-      # Path to executable is not absolute. Find it.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
+  # Only process if variable expands to non-empty
+  
+  if test "x[$]$1" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+      BASIC_FIXUP_EXECUTABLE_CYGWIN($1)
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      BASIC_FIXUP_EXECUTABLE_MSYS($1)
     else
-      # This is an absolute path, we can use it without further modifications.
-      new_path="$path"
-    fi
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="[$]$1"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
 
-    if test "x$new_path" = x; then
-      AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
       fi
-      AC_MSG_ERROR([Cannot locate the the path of $1])
+
+      if test "x$new_path" = x; then
+        AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
+        fi
+        AC_MSG_ERROR([Cannot locate the the path of $1])
+      fi
     fi
-  fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-    new_complete="$new_path ${arguments% *}"
-  else
-    new_complete="$new_path"
-  fi
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
 
-  if test "x$complete" != "x$new_complete"; then
-    $1="$new_complete"
-    AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
+    if test "x$complete" != "x$new_complete"; then
+      $1="$new_complete"
+      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
+    fi
   fi
 ])
 
@@ -242,6 +250,9 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # Save the path variable before it gets changed
+  ORIGINAL_PATH="$PATH"
+  AC_SUBST(ORIGINAL_PATH)
   DATE_WHEN_CONFIGURED=`LANG=C date`
   AC_SUBST(DATE_WHEN_CONFIGURED)
   AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
@@ -896,10 +907,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   fi
   AC_SUBST(IS_GNU_TIME)
 
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    BASIC_REQUIRE_PROGS(COMM, comm)
-  fi
-
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     BASIC_REQUIRE_PROGS(DSYMUTIL, dsymutil)
     BASIC_REQUIRE_PROGS(XATTR, xattr)
@@ -986,4 +993,27 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
   else
     IS_RECONFIGURE=no
   fi
+])
+
+# Check for support for specific options in bash
+AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
+[
+  # Test if bash supports pipefail.
+  AC_MSG_CHECKING([if bash supports pipefail])
+  if ${BASH} -c 'set -o pipefail'; then
+    BASH_ARGS="$BASH_ARGS -o pipefail"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_MSG_CHECKING([if bash supports errexit (-e)])
+  if ${BASH} -e -c 'true'; then
+    BASH_ARGS="$BASH_ARGS -e"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_SUBST(BASH_ARGS)
 ])

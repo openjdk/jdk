@@ -32,7 +32,7 @@ import com.sun.codemodel.internal.JPackage;
 import com.sun.codemodel.internal.fmt.JPropertyFile;
 import com.sun.tools.internal.xjc.model.CElementInfo;
 import com.sun.tools.internal.xjc.model.Model;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.runtime.JAXBContextFactory;
 
 /**

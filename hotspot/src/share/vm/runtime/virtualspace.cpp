@@ -38,7 +38,8 @@ ReservedSpace::ReservedSpace() : _base(NULL), _size(0), _noaccess_prefix(0),
 }
 
 ReservedSpace::ReservedSpace(size_t size) {
-  size_t page_size = os::page_size_for_region(size, 1);
+  // Want to use large pages where possible and pad with small pages.
+  size_t page_size = os::page_size_for_region_unaligned(size, 1);
   bool large_pages = page_size != (size_t)os::vm_page_size();
   // Don't force the alignment to be large page aligned,
   // since that will waste memory.
@@ -502,11 +503,12 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // But leave room for the compressed class pointers, which is allocated above
     // the heap.
     char *zerobased_max = (char *)OopEncodingHeapMax;
+    const size_t class_space = align_size_up(CompressedClassSpaceSize, alignment);
     // For small heaps, save some space for compressed class pointer
     // space so it can be decoded with no base.
     if (UseCompressedClassPointers && !UseSharedSpaces &&
-        OopEncodingHeapMax <= KlassEncodingMetaspaceMax) {
-      const size_t class_space = align_size_up(CompressedClassSpaceSize, alignment);
+        OopEncodingHeapMax <= KlassEncodingMetaspaceMax &&
+        (uint64_t)(aligned_heap_base_min_address + size + class_space) <= KlassEncodingMetaspaceMax) {
       zerobased_max = (char *)OopEncodingHeapMax - class_space;
     }
 
@@ -617,7 +619,7 @@ VirtualSpace::VirtualSpace() {
 
 
 bool VirtualSpace::initialize(ReservedSpace rs, size_t committed_size) {
-  const size_t max_commit_granularity = os::page_size_for_region(rs.size(), 1);
+  const size_t max_commit_granularity = os::page_size_for_region_unaligned(rs.size(), 1);
   return initialize_with_granularity(rs, committed_size, max_commit_granularity);
 }
 
@@ -1239,7 +1241,7 @@ class TestVirtualSpace : AllStatic {
     case Disable:
       return vs.initialize_with_granularity(rs, 0, os::vm_page_size());
     case Commit:
-      return vs.initialize_with_granularity(rs, 0, os::page_size_for_region(rs.size(), 1));
+      return vs.initialize_with_granularity(rs, 0, os::page_size_for_region_unaligned(rs.size(), 1));
     }
   }
 

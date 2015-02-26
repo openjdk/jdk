@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@ import javax.net.ssl.SSLContext;
 
 /*
  * @test
- * @bug 8049432
+ * @bug 8049432 8069038
  * @summary New tests for TLS property jdk.tls.client.protocols
+ * @summary javax/net/ssl/TLS/TLSClientPropertyTest.java needs to be
+ *     updated for JDK-8061210
  * @run main/othervm TLSClientPropertyTest NoProperty
  * @run main/othervm TLSClientPropertyTest SSLv3
  * @run main/othervm TLSClientPropertyTest TLSv1
@@ -46,7 +48,7 @@ import javax.net.ssl.SSLContext;
  * protocols in the SSLContext.
  */
 public class TLSClientPropertyTest {
-    private final String[] expecteSupportedProtos = new String[] {
+    private final String[] expectedSupportedProtos = new String[] {
             "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"
     };
 
@@ -67,31 +69,30 @@ public class TLSClientPropertyTest {
             }
             contextProtocol = null;
             expectedDefaultProtos = new String[] {
-                    "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"
+                    "TLSv1", "TLSv1.1", "TLSv1.2"
             };
             break;
         case "SSLv3":
             contextProtocol = "SSLv3";
             expectedDefaultProtos = new String[] {
-                    "SSLv3"
             };
             break;
         case "TLSv1":
             contextProtocol = "TLSv1";
             expectedDefaultProtos = new String[] {
-                    "SSLv3", "TLSv1"
+                    "TLSv1"
             };
             break;
         case "TLSv11":
             contextProtocol = "TLSv1.1";
             expectedDefaultProtos = new String[] {
-                    "SSLv3", "TLSv1", "TLSv1.1"
+                    "TLSv1", "TLSv1.1"
             };
             break;
         case "TLSv12":
             contextProtocol = "TLSv1.2";
             expectedDefaultProtos = new String[] {
-                    "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"
+                    "TLSv1", "TLSv1.1", "TLSv1.2"
             };
             break;
         case "WrongProperty":
@@ -182,12 +183,12 @@ public class TLSClientPropertyTest {
             expectedProto = "Default";
         }
         if (!context.getProtocol().equals(expectedProto)) {
-            error("Invalid current protocol:" + context.getProtocol()
+            error("Invalid current protocol: " + context.getProtocol()
                     + ", Expected:" + expectedProto, null);
         }
         List<String> actualDefaultProtos = Arrays.asList(context
                 .getDefaultSSLParameters().getProtocols());
-        for (String p: expectedDefaultProtos) {
+        for (String p : expectedDefaultProtos) {
             if (!actualDefaultProtos.contains(p)) {
                 error("Default protocol " + p + "missing", null);
             }
@@ -195,7 +196,7 @@ public class TLSClientPropertyTest {
         List<String> actualSupportedProtos = Arrays.asList(context
                 .getSupportedSSLParameters().getProtocols());
 
-        for (String p: expecteSupportedProtos) {
+        for (String p : expectedSupportedProtos) {
             if (!actualSupportedProtos.contains(p)) {
                 error("Expected to support protocol:" + p, null);
             }
