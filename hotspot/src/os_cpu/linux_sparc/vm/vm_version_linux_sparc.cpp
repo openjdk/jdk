@@ -26,8 +26,8 @@
 #include "runtime/os.hpp"
 #include "vm_version_sparc.hpp"
 
-static bool detect_niagara() {
-  char cpu[128];
+static bool cpuinfo_field_contains(const char* field, const char* value) {
+  char line[1024];
   bool rv = false;
 
   FILE* fp = fopen("/proc/cpuinfo", "r");
@@ -35,9 +35,10 @@ static bool detect_niagara() {
     return rv;
   }
 
-  while (!feof(fp)) {
-    if (fscanf(fp, "cpu\t\t: %100[^\n]", cpu) == 1) {
-      if (strstr(cpu, "Niagara") != NULL) {
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    assert(strlen(line) < sizeof(line) - 1, "buffer line[1024] is too small.");
+    if (strncmp(line, field, strlen(field)) == 0) {
+      if (strstr(line, value) != NULL) {
         rv = true;
       }
       break;
@@ -45,8 +46,15 @@ static bool detect_niagara() {
   }
 
   fclose(fp);
-
   return rv;
+}
+
+static bool detect_niagara() {
+  return cpuinfo_field_contains("cpu", "Niagara");
+}
+
+static bool detect_blkinit() {
+  return cpuinfo_field_contains("cpucaps", "blkinit");
 }
 
 int VM_Version::platform_features(int features) {
@@ -56,6 +64,10 @@ int VM_Version::platform_features(int features) {
   if (detect_niagara()) {
     NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on Niagara");)
     features = niagara1_m | T_family_m;
+  }
+
+  if (detect_blkinit()) {
+    features |= blk_init_instructions_m;
   }
 
   return features;
