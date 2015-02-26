@@ -23,25 +23,78 @@
 package javax.xml.transform.ptests;
 
 import java.io.*;
-import java.io.FileOutputStream;
+
 import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
+
 import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+
 import javax.xml.transform.stream.*;
+
+import jaxp.library.JAXPDataProvider;
 import jaxp.library.JAXPFileBaseTest;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.*;
 
 /**
  * Class containing the test cases for TransformerFactory API's
- * getAssociatedStyleSheet method.
+ * getAssociatedStyleSheet method and TransformerFactory.newInstance(factoryClassName , classLoader).
  */
 public class TransformerFactoryTest extends JAXPFileBaseTest {
+    /**
+     * TransformerFactory implementation class name.
+     */
+    private static final String TRANSFORMER_FACTORY_CLASSNAME = "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
+
+    /**
+     * Provide valid TransformerFactory instantiation parameters.
+     *
+     * @return a data provider contains TransformerFactory instantiation parameters.
+     */
+    @DataProvider(name = "parameters")
+    public Object[][] getValidateParameters() {
+        return new Object[][] { { TRANSFORMER_FACTORY_CLASSNAME, null }, { TRANSFORMER_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    }
+
+    /**
+     * Test for TransformerFactory.newInstance(java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader) factoryClassName
+     * points to correct implementation of
+     * javax.xml.transform.TransformerFactory , should return newInstance of
+     * TransformerFactory
+     *
+     * @param factoryClassName
+     * @param classLoader
+     * @throws TransformerConfigurationException
+     */
+    @Test(dataProvider = "parameters")
+    public void testNewInstance(String factoryClassName, ClassLoader classLoader) throws TransformerConfigurationException {
+        TransformerFactory tf = TransformerFactory.newInstance(factoryClassName, classLoader);
+        Transformer transformer = tf.newTransformer();
+        assertNotNull(transformer);
+    }
+
+    /**
+     * Test for TransformerFactory.newInstance(java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader) factoryClassName is
+     * null , should throw TransformerFactoryConfigurationError
+     *
+     * @param factoryClassName
+     * @param classLoader
+     */
+    @Test(expectedExceptions = TransformerFactoryConfigurationError.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
+    public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) {
+        TransformerFactory.newInstance(factoryClassName, classLoader);
+    }
+
     /**
      * This test case checks for the getAssociatedStylesheet method
      * of TransformerFactory.

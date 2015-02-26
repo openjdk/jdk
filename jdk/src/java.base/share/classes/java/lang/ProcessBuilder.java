@@ -964,6 +964,9 @@ public final class ProcessBuilder
      * of the exception is system-dependent, but it will always be a
      * subclass of {@link IOException}.
      *
+     * <p>If the operating system does not support the creation of
+     * processes, an {@link UnsupportedOperationException} will be thrown.
+     *
      * <p>Subsequent modifications to this process builder will not
      * affect the returned {@link Process}.
      *
@@ -997,6 +1000,9 @@ public final class ProcessBuilder
      *         denies write access to the file
      *
      *         </ul>
+     *
+     * @throws  UnsupportedOperationException
+     *          If the operating system does not support the creation of processes.
      *
      * @throws IOException if an I/O error occurs
      *

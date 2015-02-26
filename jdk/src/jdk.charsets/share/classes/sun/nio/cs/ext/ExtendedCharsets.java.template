@@ -1,0 +1,246 @@
+/*
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ *
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+// -- This file was mechanically generated: Do not edit! -- //
+
+package sun.nio.cs.ext;
+
+import java.lang.ref.SoftReference;
+import java.nio.charset.Charset;
+import java.nio.charset.spi.CharsetProvider;
+import sun.nio.cs.AbstractCharsetProvider;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import sun.nio.cs.AbstractCharsetProvider;
+
+/**
+ * Provider for extended charsets.
+ */
+
+public class ExtendedCharsets extends AbstractCharsetProvider {
+
+    static volatile ExtendedCharsets instance = null;
+
+    public ExtendedCharsets() {
+
+        super("sun.nio.cs.ext");  // identify provider pkg name.
+
+        _CHARSETS_DEF_LIST_
+
+        instance = this;
+
+    }
+
+    private boolean initialized = false;
+
+    // If the sun.nio.cs.map property is defined on the command line we won't
+    // see it in the system-properties table until after the charset subsystem
+    // has been initialized.  We therefore delay the effect of this property
+    // until after the JRE has completely booted.
+    //
+    // At the moment following values for this property are supported, property
+    // value string is case insensitive.
+    //
+    // (1)"Windows-31J/Shift_JIS"
+    // In 1.4.1 we added a correct implementation of the Shift_JIS charset
+    // but in previous releases this charset name had been treated as an alias
+    // for Windows-31J, aka MS932. Users who have existing code that depends
+    // upon this alias can restore the previous behavior by defining this
+    // property to have this value.
+    //
+    // (2)"x-windows-50221/ISO-2022-JP"
+    //    "x-windows-50220/ISO-2022-JP"
+    //    "x-windows-iso2022jp/ISO-2022-JP"
+    // The charset ISO-2022-JP is a "standard based" implementation by default,
+    // which supports ASCII, JIS_X_0201 and JIS_X_0208 mappings based encoding
+    // and decoding only.
+    // There are three Microsoft iso-2022-jp variants, namely x-windows-50220,
+    // x-windows-50221 and x-windows-iso2022jp which behaves "slightly" differently
+    // compared to the "standard based" implementation. See ISO2022_JP.java for
+    // detailed description. Users who prefer the behavior of MS iso-2022-jp
+    // variants should use these names explicitly instead of using "ISO-2022-JP"
+    // and its aliases. However for those who need the ISO-2022-JP charset behaves
+    // exactly the same as MS variants do, above properties can be defined to
+    // switch.
+    //
+    // If we need to define other charset-alias mappings in the future then
+    // this property could be further extended, the general idea being that its
+    // value should be of the form
+    //
+    //     new-charset-1/old-charset-1,new-charset-2/old-charset-2,...
+    //
+    // where each charset named to the left of a slash is intended to replace
+    // (most) uses of the charset named to the right of the slash.
+    //
+    protected void init() {
+        if (initialized)
+            return;
+        if (!sun.misc.VM.isBooted())
+            return;
+
+        String map = getProperty("sun.nio.cs.map");
+        boolean sjisIsMS932 = false;
+        boolean iso2022jpIsMS50221 = false;
+        boolean iso2022jpIsMS50220 = false;
+        boolean iso2022jpIsMSISO2022JP = false;
+        if (map != null) {
+            String[] maps = map.split(",");
+            for (int i = 0; i < maps.length; i++) {
+                if (maps[i].equalsIgnoreCase("Windows-31J/Shift_JIS")) {
+                    sjisIsMS932 = true;
+                } else if (maps[i].equalsIgnoreCase("x-windows-50221/ISO-2022-JP")) {
+                    iso2022jpIsMS50221 = true;
+                } else if (maps[i].equalsIgnoreCase("x-windows-50220/ISO-2022-JP")) {
+                    iso2022jpIsMS50220 = true;
+                } else if (maps[i].equalsIgnoreCase("x-windows-iso2022jp/ISO-2022-JP")) {
+                    iso2022jpIsMSISO2022JP = true;
+                }
+            }
+        }
+        if (sjisIsMS932 && hasCharset("Shift_JIS")) {
+            deleteCharset("Shift_JIS",
+                          new String[] {
+                              // IANA aliases
+                              "sjis", // historical
+                              "shift_jis",
+                              "shift-jis",
+                              "ms_kanji",
+                              "x-sjis",
+                              "csShiftJIS"
+                          });
+            deleteCharset("windows-31j",
+                          new String[] {
+                              "MS932", // JDK historical
+                              "windows-932",
+                              "csWindows31J"
+                          });
+            charset("Shift_JIS", "SJIS",
+                    new String[] {
+                        // IANA aliases
+                        "sjis"          // JDK historical
+                    });
+            charset("windows-31j", "MS932",
+                    new String[] {
+                        "MS932",        // JDK historical
+                        "windows-932",
+                        "csWindows31J",
+                        "shift-jis",
+                        "ms_kanji",
+                        "x-sjis",
+                        "csShiftJIS",
+                        // This alias takes precedence over the actual
+                        // Shift_JIS charset itself since aliases are always
+                        // resolved first, before looking up canonical names.
+                        "shift_jis"
+                    });
+        }
+        if (iso2022jpIsMS50221 ||
+            iso2022jpIsMS50220 ||
+            iso2022jpIsMSISO2022JP) {
+            deleteCharset("ISO-2022-JP",
+                          new String[] {
+                              "iso2022jp",
+                                "jis",
+                                "csISO2022JP",
+                                "jis_encoding",
+                                "csjisencoding"
+                          });
+            if (iso2022jpIsMS50221) {
+                deleteCharset("x-windows-50221",
+                              new String[] {
+                                  "cp50221",
+                                  "ms50221"
+                              });
+                charset("x-windows-50221", "MS50221",
+                        new String[] {
+                            "cp50221",
+                            "ms50221",
+                            "iso-2022-jp",
+                            "iso2022jp",
+                            "jis",
+                            "csISO2022JP",
+                            "jis_encoding",
+                            "csjisencoding"
+                        });
+            } else if (iso2022jpIsMS50220) {
+                deleteCharset("x-windows-50220",
+                              new String[] {
+                                  "cp50220",
+                                  "ms50220"
+                              });
+                charset("x-windows-50220", "MS50220",
+                        new String[] {
+                            "cp50220",
+                            "ms50220",
+                            "iso-2022-jp",
+                            "iso2022jp",
+                            "jis",
+                            "csISO2022JP",
+                            "jis_encoding",
+                            "csjisencoding"
+                        });
+            } else {
+                deleteCharset("x-windows-iso2022jp",
+                              new String[] {
+                                  "windows-iso2022jp"
+                              });
+                charset("x-windows-iso2022jp", "MSISO2022JP",
+                        new String[] {
+                            "windows-iso2022jp",
+                            "iso-2022-jp",
+                            "iso2022jp",
+                            "jis",
+                            "csISO2022JP",
+                            "jis_encoding",
+                            "csjisencoding"
+                        });
+
+
+            }
+        }
+        initialized = true;
+    }
+
+    private static String getProperty(String key) {
+        // this method may be called during initialization of
+        // system class loader and thus not using lambda
+        return AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    return System.getProperty(key);
+                }
+            });
+    }
+
+    public static String[] aliasesFor(String charsetName) {
+        if (instance == null)
+            return null;
+        return instance.aliases(charsetName);
+    }
+
+}

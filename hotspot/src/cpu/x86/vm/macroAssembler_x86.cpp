@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3184,7 +3184,24 @@ void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
     jmp(done);
   } else {
     // Stack: X Y
-    Label x_negative, y_odd;
+    Label x_negative, y_not_2;
+
+    static double two = 2.0;
+    ExternalAddress two_addr((address)&two);
+
+    // constant maybe too far on 64 bit
+    lea(tmp2, two_addr);
+    fld_d(Address(tmp2, 0));    // Stack: 2 X Y
+    fcmp(tmp, 2, true, false);  // Stack: X Y
+    jcc(Assembler::parity, y_not_2);
+    jcc(Assembler::notEqual, y_not_2);
+
+    fxch(); fpop();             // Stack: X
+    fmul(0);                    // Stack: X*X
+
+    jmp(done);
+
+    bind(y_not_2);
 
     fldz();                     // Stack: 0 X Y
     fcmp(tmp, 1, true, false);  // Stack: X Y
@@ -6177,7 +6194,7 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
   ShortBranchVerifier sbv(this);
   assert(UseSSE42Intrinsics, "SSE4.2 is required");
 
-  // This method uses pcmpestri inxtruction with bound registers
+  // This method uses pcmpestri instruction with bound registers
   //   inputs:
   //     xmm - substring
   //     rax - substring length (elements count)
@@ -6338,7 +6355,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
   //
   assert(int_cnt2 == -1 || (0 < int_cnt2 && int_cnt2 < 8), "should be != 0");
 
-  // This method uses pcmpestri inxtruction with bound registers
+  // This method uses pcmpestri instruction with bound registers
   //   inputs:
   //     xmm - substring
   //     rax - substring length (elements count)
@@ -6627,7 +6644,6 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     // start from first character again because it has aligned address.
     int stride2 = 16;
     int adr_stride  = stride  << scale;
-    int adr_stride2 = stride2 << scale;
 
     assert(result == rax && cnt2 == rdx && cnt1 == rcx, "pcmpestri");
     // rax and rdx are used by pcmpestri as elements counters
@@ -6726,7 +6742,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     //   inputs:
     //     vec1- substring
     //     rax - negative string length (elements count)
-    //     mem - scaned string
+    //     mem - scanned string
     //     rdx - string length (elements count)
     //     pcmpmask - cmp mode: 11000 (string compare with negated result)
     //               + 00 (unsigned bytes) or  + 01 (unsigned shorts)

@@ -38,9 +38,20 @@ public class Test4177735 implements Runnable {
     private static final long DELAY = 1000L;
 
     public static void main(String[] args) throws Exception {
+        int hsvIndex = 0;
+        int panelsLength;
+        int finalIndex;
         JColorChooser chooser = new JColorChooser();
         AbstractColorChooserPanel[] panels = chooser.getChooserPanels();
-        chooser.setChooserPanels(new AbstractColorChooserPanel[] { panels[1] });
+        panelsLength = panels.length;
+
+        for(int i = 0; i < panelsLength; i++) {
+            if(panels[i].getDisplayName().equals("HSV")) {
+                hsvIndex = i;
+            }
+        }
+        finalIndex = Math.min(hsvIndex, panelsLength - 1);
+        chooser.setChooserPanels(new AbstractColorChooserPanel[] { panels[finalIndex] });
 
         JDialog dialog = show(chooser);
         pause(DELAY);

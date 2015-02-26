@@ -51,62 +51,6 @@ import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
  *  deletion without notice.</b>
  */
 public class TreeInfo {
-    protected static final Context.Key<TreeInfo> treeInfoKey = new Context.Key<>();
-
-    public static TreeInfo instance(Context context) {
-        TreeInfo instance = context.get(treeInfoKey);
-        if (instance == null)
-            instance = new TreeInfo(context);
-        return instance;
-    }
-
-    /** The names of all operators.
-     */
-    private Name[] opname = new Name[Tag.getNumberOfOperators()];
-
-    private void setOpname(Tag tag, String name, Names names) {
-         setOpname(tag, names.fromString(name));
-     }
-     private void setOpname(Tag tag, Name name) {
-         opname[tag.operatorIndex()] = name;
-     }
-
-    private TreeInfo(Context context) {
-        context.put(treeInfoKey, this);
-
-        Names names = Names.instance(context);
-        /*  Internally we use +++, --- for unary +, - to reduce +, - operators
-         *  overloading
-         */
-        setOpname(POS, "+++", names);
-        setOpname(NEG, "---", names);
-        setOpname(NOT, "!", names);
-        setOpname(COMPL, "~", names);
-        setOpname(PREINC, "++", names);
-        setOpname(PREDEC, "--", names);
-        setOpname(POSTINC, "++", names);
-        setOpname(POSTDEC, "--", names);
-        setOpname(NULLCHK, "<*nullchk*>", names);
-        setOpname(OR, "||", names);
-        setOpname(AND, "&&", names);
-        setOpname(EQ, "==", names);
-        setOpname(NE, "!=", names);
-        setOpname(LT, "<", names);
-        setOpname(GT, ">", names);
-        setOpname(LE, "<=", names);
-        setOpname(GE, ">=", names);
-        setOpname(BITOR, "|", names);
-        setOpname(BITXOR, "^", names);
-        setOpname(BITAND, "&", names);
-        setOpname(SL, "<<", names);
-        setOpname(SR, ">>", names);
-        setOpname(USR, ">>>", names);
-        setOpname(PLUS, "+", names);
-        setOpname(MINUS, names.hyphen);
-        setOpname(MUL, names.asterisk);
-        setOpname(DIV, names.slash);
-        setOpname(MOD, "%", names);
-    }
 
     public static List<JCExpression> args(JCTree t) {
         switch (t.getTag()) {
@@ -117,12 +61,6 @@ public class TreeInfo {
             default:
                 return null;
         }
-    }
-
-    /** Return name of operator with given tree tag.
-     */
-    public Name operatorName(JCTree.Tag tag) {
-        return opname[tag.operatorIndex()];
     }
 
     /** Is tree a constructor declaration?

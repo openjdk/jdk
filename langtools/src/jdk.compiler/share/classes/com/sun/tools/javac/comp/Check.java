@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,6 @@ public class Check {
     private boolean warnOnSyntheticConflicts;
     private boolean suppressAbortOnBadClassFile;
     private boolean enableSunApiLintControl;
-    private final TreeInfo treeinfo;
     private final JavaFileManager fileManager;
     private final Profile profile;
     private final boolean warnOnAccessToSensitiveMembers;
@@ -121,7 +120,6 @@ public class Check {
         diags = JCDiagnostic.Factory.instance(context);
         Options options = Options.instance(context);
         lint = Lint.instance(context);
-        treeinfo = TreeInfo.instance(context);
         fileManager = context.get(JavaFileManager.class);
 
         Source source = Source.instance(context);
@@ -898,7 +896,7 @@ public class Check {
             Type argtype = owntype.getParameterTypes().last();
             if (!types.isReifiable(argtype) &&
                 (!allowSimplifiedVarargs ||
-                 sym.attribute(syms.trustMeType.tsym) == null ||
+                 sym.baseSymbol().attribute(syms.trustMeType.tsym) == null ||
                  !isTrustMeAllowedOnMethod(sym))) {
                 warnUnchecked(env.tree.pos(),
                                   "unchecked.generic.array.creation",
@@ -3263,30 +3261,6 @@ public class Check {
 /* *************************************************************************
  * Miscellaneous
  **************************************************************************/
-
-    /**
-     * Return the opcode of the operator but emit an error if it is an
-     * error.
-     * @param pos        position for error reporting.
-     * @param operator   an operator
-     * @param tag        a tree tag
-     * @param left       type of left hand side
-     * @param right      type of right hand side
-     */
-    int checkOperator(DiagnosticPosition pos,
-                       OperatorSymbol operator,
-                       JCTree.Tag tag,
-                       Type left,
-                       Type right) {
-        if (operator.opcode == ByteCodes.error) {
-            log.error(pos,
-                      "operator.cant.be.applied.1",
-                      treeinfo.operatorName(tag),
-                      left, right);
-        }
-        return operator.opcode;
-    }
-
 
     /**
      *  Check for division by integer constant zero

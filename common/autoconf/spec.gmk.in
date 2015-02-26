@@ -78,6 +78,11 @@ endif
 OUTPUT_SYNC_SUPPORTED:=@OUTPUT_SYNC_SUPPORTED@
 OUTPUT_SYNC:=@OUTPUT_SYNC@
 
+# Override the shell with bash
+BASH:=@BASH@
+BASH_ARGS:=@BASH_ARGS@
+SHELL:=$(BASH) $(BASH_ARGS)
+
 # The "human readable" name of this configuration
 CONF_NAME:=@CONF_NAME@
 
@@ -124,14 +129,12 @@ LIBDL:=@LIBDL@
 # colon or semicolon
 PATH_SEP:=@PATH_SEP@
 
+# Save the original path before replacing it with the Visual Studio tools
+ORIGINAL_PATH:=@ORIGINAL_PATH@
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  # On Windows, the Visual Studio toolchain needs the LIB and INCLUDE
-  # environment variables (in Windows path style), and the PATH needs to
-  # be adjusted to include Visual Studio tools (but this needs to be in
-  # cygwin/msys style).
+  # On Windows, the Visual Studio toolchain needs the PATH to be adjusted
+  # to include Visual Studio tools (this needs to be in cygwin/msys style).
   export PATH:=@VS_PATH@
-  export INCLUDE:=@VS_INCLUDE@
-  export LIB:=@VS_LIB@
 endif
 
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
@@ -243,7 +246,7 @@ MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/makesupport
 HOTSPOT_OUTPUTDIR=$(BUILD_OUTPUT)/hotspot
 JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
 IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
-TESTMAKE_OUTPUTDIR=$(BUILD_OUTPUT)/testmake
+TESTMAKE_OUTPUTDIR=$(BUILD_OUTPUT)/test-make
 MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/make-support
 
 HOTSPOT_DIST=@HOTSPOT_DIST@
@@ -322,6 +325,8 @@ C_FLAG_DEPS:=@C_FLAG_DEPS@
 CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
 
 CFLAGS_WARNINGS_ARE_ERRORS:=@CFLAGS_WARNINGS_ARE_ERRORS@
+
+CFLAGS_CCACHE:=@CFLAGS_CCACHE@
 
 # Tools that potentially need to be cross compilation aware.
 CC:=@FIXPATH@ @CCACHE@ @CC@
@@ -495,7 +500,6 @@ endif
 # Tools adhering to a minimal and common standard of posix compliance.
 AWK:=@AWK@
 BASENAME:=@BASENAME@
-BASH:=@BASH@
 CAT:=@CAT@
 CCACHE:=@CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
@@ -579,6 +583,7 @@ USE_EXTERNAL_LIBGIF:=@USE_EXTERNAL_LIBGIF@
 USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
 LIBZIP_CAN_USE_MMAP:=@LIBZIP_CAN_USE_MMAP@
 MSVCR_DLL:=@MSVCR_DLL@
+MSVCP_DLL:=@MSVCP_DLL@
 
 
 # ADD_SRCS takes a single argument with source roots

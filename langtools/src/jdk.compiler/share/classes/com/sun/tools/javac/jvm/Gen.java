@@ -2145,7 +2145,8 @@ public class Gen extends JCTree.Visitor {
         // For basic types, the coerce(...) in genExpr(...) will do
         // the conversion.
         if (!tree.clazz.type.isPrimitive() &&
-            types.asSuper(tree.expr.type, tree.clazz.type.tsym) == null) {
+           !types.isSameType(tree.expr.type, tree.clazz.type) &&
+           types.asSuper(tree.expr.type, tree.clazz.type.tsym) == null) {
             code.emitop2(checkcast, makeRef(tree.pos(), tree.clazz.type));
         }
     }

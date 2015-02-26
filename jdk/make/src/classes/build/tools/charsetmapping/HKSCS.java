@@ -42,38 +42,52 @@ public class HKSCS {
     private static Pattern hkscs =
         Pattern.compile("(?:0x)?+(\\p{XDigit}++)\\s++(?:0x|U\\+)?+(\\p{XDigit}++)?\\s*+(?:0x|U\\+)?(\\p{XDigit}++)?\\s*+.*");
 
-    static void genClass(String args[]) throws Exception {
-
+    static void genClass2008(String srcDir, String dstDir, String pkgName, File copyright)
+        throws Exception
+    {
         // hkscs2008
-        genClass0(new FileInputStream(new File(args[0], "HKSCS2008.map")),
-                  new FileInputStream(new File(args[0], "HKSCS2008.c2b")),
-                  new PrintStream(new File(args[1], "HKSCSMapping.java"),
+        genClass0(new FileInputStream(new File(srcDir, "HKSCS2008.map")),
+                  new FileInputStream(new File(srcDir, "HKSCS2008.c2b")),
+                  new PrintStream(new File(dstDir, "HKSCSMapping.java"),
                                   "ISO-8859-1"),
+                  pkgName,
                   "HKSCSMapping",
-                  getCopyright(new File(args[3])));
+                  true,
+                  getCopyright(copyright));
 
+    }
 
-        // xp2001
-        genClass0(new FileInputStream(new File(args[0], "HKSCS_XP.map")),
+    static void genClassXP(String srcDir, String dstDir, String pkgName, File copyright)
+        throws Exception
+    {
+        genClass0(new FileInputStream(new File(srcDir, "HKSCS_XP.map")),
                   null,
-                  new PrintStream(new File(args[1], "HKSCS_XPMapping.java"),
+                  new PrintStream(new File(dstDir, "HKSCS_XPMapping.java"),
                                   "ISO-8859-1"),
+                  pkgName,
                   "HKSCS_XPMapping",
-                  getCopyright(new File(args[3])));
+                  false,
+                  getCopyright(copyright));
+    }
 
+    static void genClass2001(String args[]) throws Exception {
         // hkscs2001
         genClass0(new FileInputStream(new File(args[0], "HKSCS2001.map")),
                   new FileInputStream(new File(args[0], "HKSCS2001.c2b")),
                   new PrintStream(new File(args[1], "HKSCS2001Mapping.java"),
                                   "ISO-8859-1"),
+                  "sun.nio.cs.ext",
                   "HKSCS2001Mapping",
+                  false,
                   getCopyright(new File(args[3])));
     }
 
     static void genClass0(InputStream isB2C,
                           InputStream isC2B,
                           PrintStream ps,
+                          String pkgName,
                           String clzName,
+                          boolean isPublic,
                           String copyright)
         throws Exception
     {
@@ -132,8 +146,8 @@ public class HKSCS {
 
             out.format(copyright);
             out.format("%n// -- This file was mechanically generated: Do not edit! -- //%n");
-            out.format("package sun.nio.cs.ext;%n%n");
-            out.format("class %s {%n%n", clzName);
+            out.format("package %s;%n%n", pkgName);
+            out.format("%sclass %s {%n%n", isPublic ? "public " : "", clzName);
 
             /* hardcoded in sun.nio.cs.ext.HKSCS.java
             out.format("    final static int b1Min = 0x%x;%n", b1Min);
@@ -143,7 +157,8 @@ public class HKSCS {
             */
 
             // bmp tables
-            out.format("%n    static final String[] b2cBmpStr = new String[] {%n");
+            out.format("%n    %sstatic final String[] b2cBmpStr = new String[] {%n",
+                       isPublic ? "public " : "");
             for (int i = 0; i < 0x100; i++) {
                 if (b2cBmp[i])
                     out.format(bmp, i, b2Min, b2Max, ",");
@@ -153,7 +168,8 @@ public class HKSCS {
             out.format("        };%n");
 
             // supp tables
-            out.format("%n    static final String[] b2cSuppStr =");
+            out.format("%n    %sstatic final String[] b2cSuppStr =",
+                       isPublic ? "public " : "");
             if (hasSupp) {
                 out.format(" new String[] {%n");
                 for (int i = 0; i < 0x100; i++) {
@@ -168,7 +184,8 @@ public class HKSCS {
             }
 
             // private area tables
-            out.format("%n    final static String pua =");
+            out.format("%n    %sfinal static String pua =",
+                       isPublic ? "public " : "");
             if (hasPua) {
                 out.format("%n");
                 out.format(pua, 0, pua.length, ";");

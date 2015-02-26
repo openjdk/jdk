@@ -174,10 +174,14 @@ class TimSort<T> {
          * large) stack lengths for smaller arrays.  The "magic numbers" in the
          * computation below must be changed if MIN_MERGE is decreased.  See
          * the MIN_MERGE declaration above for more information.
+         * The maximum value of 49 allows for an array up to length
+         * Integer.MAX_VALUE-4, if array is filled by the worst case stack size
+         * increasing scenario. More explanations are given in section 4 of:
+         * http://envisage-project.eu/wp-content/uploads/2015/02/sorting.pdf
          */
         int stackLen = (len <    120  ?  5 :
                         len <   1542  ? 10 :
-                        len < 119151  ? 24 : 40);
+                        len < 119151  ? 24 : 49);
         runBase = new int[stackLen];
         runLen = new int[stackLen];
     }

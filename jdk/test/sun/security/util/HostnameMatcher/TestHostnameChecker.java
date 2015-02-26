@@ -187,6 +187,9 @@ public class TestHostnameChecker {
         in = new FileInputStream(new File(PATH, "cert4.crt"));
         X509Certificate cert4 = (X509Certificate)cf.generateCertificate(in);
         in.close();
+        in = new FileInputStream(new File(PATH, "cert5.crt"));
+        X509Certificate cert5 = (X509Certificate)cf.generateCertificate(in);
+        in.close();
 
         HostnameChecker checker = HostnameChecker.getInstance(
                                         HostnameChecker.TYPE_TLS);
@@ -202,6 +205,9 @@ public class TestHostnameChecker {
         check(checker, "5.6.7.8", cert3, true);
         check(checker, "foo.bar.com", cert4, true);
         check(checker, "altfoo.bar.com", cert4, true);
+        check(checker, "2001:db8:3c4d:15::1a2f:1a2b", cert5, true);
+        check(checker, "2001:0db8:3c4d:0015:0000:0000:1a2f:1a2b", cert5, true);
+        check(checker, "2002:db8:3c4d:15::1a2f:1a2b", cert5, false);
 
         checker = HostnameChecker.getInstance(
                                 HostnameChecker.TYPE_LDAP);

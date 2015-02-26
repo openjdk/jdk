@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -924,6 +924,7 @@ class ServerSocket implements java.io.Closeable {
     /**
      * Sets the value of a socket option.
      *
+     * @param <T> The type of the socket option value
      * @param name The socket option
      * @param value The value of the socket option. A value of {@code null}
      *              may be valid for some options.
@@ -957,6 +958,7 @@ class ServerSocket implements java.io.Closeable {
     /**
      * Returns the value of a socket option.
      *
+     * @param <T> The type of the socket option value
      * @param name The socket option
      *
      * @return The value of the socket option.

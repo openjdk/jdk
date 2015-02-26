@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import java.util.stream.LongStream;
 
 /**
  * A container object which may or may not contain a {@code long} value.
@@ -36,8 +37,8 @@ import java.util.function.Supplier;
  * <p>Additional methods that depend on the presence or absence of a contained
  * value are provided, such as {@link #orElse(long) orElse()}
  * (return a default value if value not present) and
- * {@link #ifPresent(java.util.function.LongConsumer) ifPresent()} (execute a block
- * of code if the value is present).
+ * {@link #ifPresent(java.util.function.LongConsumer) ifPresent()} (perform an
+ * action if the value is present).
  *
  * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
@@ -130,16 +131,59 @@ public final class OptionalLong {
     }
 
     /**
-     * Have the specified consumer accept the value if a value is present,
+     * If a value is present, perform the given action with the value,
      * otherwise do nothing.
      *
-     * @param consumer block to be executed if a value is present
-     * @throws NullPointerException if value is present and {@code consumer} is
+     * @param action the action to be performed if a value is present
+     * @throws NullPointerException if a value is present and {@code action} is
      * null
      */
-    public void ifPresent(LongConsumer consumer) {
-        if (isPresent)
-            consumer.accept(value);
+    public void ifPresent(LongConsumer action) {
+        if (isPresent) {
+            action.accept(value);
+        }
+    }
+
+    /**
+     * If a value is present, perform the given action with the value,
+     * otherwise perform the given empty-based action.
+     *
+     * @param action the action to be performed if a value is present
+     * @param emptyAction the empty-based action to be performed if a value is
+     * not present
+     * @throws NullPointerException if a value is present and {@code action} is
+     * null, or a value is not present and {@code emptyAction} is null.
+     * @since 1.9
+     */
+    public void ifPresentOrElse(LongConsumer action, Runnable emptyAction) {
+        if (isPresent) {
+            action.accept(value);
+        } else {
+            emptyAction.run();
+        }
+    }
+
+    /**
+     * If a value is present return a sequential {@link LongStream} containing
+     * only that value, otherwise return an empty {@code LongStream}.
+     *
+     * @apiNote This method can be used to transform a {@code Stream} of
+     * optional longs to a {@code LongStream} of present longs:
+     *
+     * <pre>{@code
+     *     Stream<OptionalLong> os = ..
+     *     LongStream s = os.flatMapToLong(OptionalLong::stream)
+     * }</pre>
+     *
+     * @return the optional value as a {@code LongStream}
+     * @since 1.9
+     */
+    public LongStream stream() {
+        if (isPresent) {
+            return LongStream.of(value);
+        } else {
+            return LongStream.empty();
+        }
     }
 
     /**
@@ -182,7 +226,7 @@ public final class OptionalLong {
      * @throws NullPointerException if no value is present and
      * {@code exceptionSupplier} is null
      */
-    public<X extends Throwable> long orElseThrow(Supplier<X> exceptionSupplier) throws X {
+    public<X extends Throwable> long orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {

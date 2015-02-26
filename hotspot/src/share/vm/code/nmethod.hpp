@@ -157,9 +157,6 @@ class nmethod : public CodeBlob {
   // Offset of the unwind handler if it exists
   int _unwind_handler_offset;
 
-#ifdef HAVE_DTRACE_H
-  int _trap_offset;
-#endif // def HAVE_DTRACE_H
   int _consts_offset;
   int _stub_offset;
   int _oops_offset;                       // offset to where embedded oop table begins (inside data)
@@ -261,15 +258,6 @@ class nmethod : public CodeBlob {
           ByteSize basic_lock_sp_offset,       /* synchronized natives only */
           OopMapSet* oop_maps);
 
-#ifdef HAVE_DTRACE_H
-  // For native wrappers
-  nmethod(Method* method,
-          int nmethod_size,
-          CodeOffsets* offsets,
-          CodeBuffer *code_buffer,
-          int frame_size);
-#endif // def HAVE_DTRACE_H
-
   // Creation support
   nmethod(Method* method,
           int nmethod_size,
@@ -332,22 +320,6 @@ class nmethod : public CodeBlob {
                                      ByteSize receiver_sp_offset,
                                      ByteSize basic_lock_sp_offset,
                                      OopMapSet* oop_maps);
-
-#ifdef HAVE_DTRACE_H
-  // The method we generate for a dtrace probe has to look
-  // like an nmethod as far as the rest of the system is concerned
-  // which is somewhat unfortunate.
-  static nmethod* new_dtrace_nmethod(methodHandle method,
-                                     CodeBuffer *code_buffer,
-                                     int vep_offset,
-                                     int trap_offset,
-                                     int frame_complete,
-                                     int frame_size);
-
-  int trap_offset() const      { return _trap_offset; }
-  address trap_address() const { return insts_begin() + _trap_offset; }
-
-#endif // def HAVE_DTRACE_H
 
   // accessors
   Method* method() const                          { return _method; }
@@ -729,11 +701,6 @@ public:
   // CICountNative is true.
   int  compile_id() const                         { return _compile_id; }
   const char* compile_kind() const;
-
-  // For debugging
-  // CompiledIC*    IC_at(char* p) const;
-  // PrimitiveIC*   primitiveIC_at(char* p) const;
-  oop embeddedOop_at(address p);
 
   // tells if any of this method's dependencies have been invalidated
   // (this is expensive!)

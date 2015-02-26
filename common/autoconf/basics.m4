@@ -242,6 +242,9 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # Save the path variable before it gets changed
+  ORIGINAL_PATH="$PATH"
+  AC_SUBST(ORIGINAL_PATH)
   DATE_WHEN_CONFIGURED=`LANG=C date`
   AC_SUBST(DATE_WHEN_CONFIGURED)
   AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
@@ -896,10 +899,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   fi
   AC_SUBST(IS_GNU_TIME)
 
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    BASIC_REQUIRE_PROGS(COMM, comm)
-  fi
-
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     BASIC_REQUIRE_PROGS(DSYMUTIL, dsymutil)
     BASIC_REQUIRE_PROGS(XATTR, xattr)
@@ -986,4 +985,27 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
   else
     IS_RECONFIGURE=no
   fi
+])
+
+# Check for support for specific options in bash
+AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
+[
+  # Test if bash supports pipefail.
+  AC_MSG_CHECKING([if bash supports pipefail])
+  if ${BASH} -c 'set -o pipefail'; then
+    BASH_ARGS="$BASH_ARGS -o pipefail"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_MSG_CHECKING([if bash supports errexit (-e)])
+  if ${BASH} -e -c 'true'; then
+    BASH_ARGS="$BASH_ARGS -e"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_SUBST(BASH_ARGS)
 ])

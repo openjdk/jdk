@@ -48,9 +48,11 @@ import sun.misc.Unsafe;
     static final int COMPILE_THRESHOLD;
     static final int DONT_INLINE_THRESHOLD;
     static final int PROFILE_LEVEL;
+    static final boolean PROFILE_GWT;
+    static final int CUSTOMIZE_THRESHOLD;
 
     static {
-        final Object[] values = new Object[7];
+        final Object[] values = new Object[9];
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     values[0] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
@@ -60,6 +62,8 @@ import sun.misc.Unsafe;
                     values[4] = Integer.getInteger("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", 0);
                     values[5] = Integer.getInteger("java.lang.invoke.MethodHandle.DONT_INLINE_THRESHOLD", 30);
                     values[6] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
+                    values[7] = Boolean.parseBoolean(System.getProperty("java.lang.invoke.MethodHandle.PROFILE_GWT", "true"));
+                    values[8] = Integer.getInteger("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", 127);
                     return null;
                 }
             });
@@ -70,6 +74,12 @@ import sun.misc.Unsafe;
         COMPILE_THRESHOLD         = (Integer) values[4];
         DONT_INLINE_THRESHOLD     = (Integer) values[5];
         PROFILE_LEVEL             = (Integer) values[6];
+        PROFILE_GWT               = (Boolean) values[7];
+        CUSTOMIZE_THRESHOLD       = (Integer) values[8];
+
+        if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
+            throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");
+        }
     }
 
     /** Tell if any of the debugging switches are turned on.
