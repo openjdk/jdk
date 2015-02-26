@@ -1660,6 +1660,16 @@ charset IBM290 IBM290
     alias   EBCDIC-JP-kana
     alias   290
 
+charset x-IBM1166 IBM1166
+    package sun.nio.cs.ext
+    type    sbcs
+    hisname Cp1166
+    ascii   false
+    alias   cp1166
+    alias   ibm1166
+    alias   ibm-1166
+    alias   1166
+
 charset x-IBM300 IBM300
     package sun.nio.cs.ext
     type    dbcsonly
