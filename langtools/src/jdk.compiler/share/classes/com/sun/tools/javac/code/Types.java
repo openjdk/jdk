@@ -168,6 +168,18 @@ public class Types {
         }
         else return t;
     }
+
+    /**
+     * Recursively skip type-variables until a class/array type is found; capture conversion is then
+     * (optionally) applied to the resulting type. This is useful for i.e. computing a site that is
+     * suitable for a method lookup.
+     */
+    public Type skipTypeVars(Type site, boolean capture) {
+        while (site.hasTag(TYPEVAR)) {
+            site = site.getUpperBound();
+        }
+        return capture ? capture(site) : site;
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="isUnbounded">
@@ -1787,12 +1799,9 @@ public class Types {
     }
 
     private Type relaxBound(Type t) {
-        if (t.hasTag(TYPEVAR)) {
-            while (t.hasTag(TYPEVAR))
-                t = t.getUpperBound();
-            t = rewriteQuantifiers(t, true, true);
-        }
-        return t;
+        return (t.hasTag(TYPEVAR)) ?
+                rewriteQuantifiers(skipTypeVars(t, false), true, true) :
+                t;
     }
     // </editor-fold>
 
@@ -1872,10 +1881,7 @@ public class Types {
      */
     private Mapping elemTypeFun = new Mapping ("elemTypeFun") {
         public Type apply(Type t) {
-            while (t.hasTag(TYPEVAR)) {
-                t = t.getUpperBound();
-            }
-            return elemtype(t);
+            return elemtype(skipTypeVars(t, false));
         }
     };
 
@@ -2662,8 +2668,7 @@ public class Types {
 
         private MethodSymbol implementationInternal(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Filter<Symbol> implFilter) {
             for (Type t = origin.type; t.hasTag(CLASS) || t.hasTag(TYPEVAR); t = supertype(t)) {
-                while (t.hasTag(TYPEVAR))
-                    t = t.getUpperBound();
+                t = skipTypeVars(t, false);
                 TypeSymbol c = t.tsym;
                 Symbol bestSoFar = null;
                 for (Symbol sym : c.members().getSymbolsByName(ms.name, implFilter)) {
