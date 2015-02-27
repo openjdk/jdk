@@ -343,8 +343,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     // This is called the temporal dead zone (TDZ). See https://gist.github.com/rwaldron/f0807a758aa03bcdd58a
     private void checkTemporalDeadZone(final IdentNode identNode) {
         if (identNode.isDead()) {
-            method.load(identNode.getSymbol().getName());
-            method.invoke(ScriptRuntime.THROW_REFERENCE_ERROR);
+            method.load(identNode.getSymbol().getName()).invoke(ScriptRuntime.THROW_REFERENCE_ERROR);
+        }
+    }
+
+    // Runtime check for assignment to ES6 const
+    private void checkAssignTarget(final Expression expression) {
+        if (expression instanceof IdentNode && ((IdentNode)expression).getSymbol().isConst()) {
+            method.load(((IdentNode)expression).getSymbol().getName()).invoke(ScriptRuntime.THROW_CONST_TYPE_ERROR);
         }
     }
 
@@ -787,72 +793,84 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             public boolean enterASSIGN(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_ADD(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_ADD(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_BIT_AND(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_BIT_AND(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_BIT_OR(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_BIT_OR(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_BIT_XOR(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_BIT_XOR(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_DIV(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_DIV(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_MOD(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_MOD(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_MUL(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_MUL(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_SAR(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_SAR(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_SHL(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_SHL(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_SHR(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_SHR(binaryNode);
                 return false;
             }
 
             @Override
             public boolean enterASSIGN_SUB(final BinaryNode binaryNode) {
+                checkAssignTarget(binaryNode.lhs());
                 loadASSIGN_SUB(binaryNode);
                 return false;
             }
@@ -1062,6 +1080,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             public boolean enterDECINC(final UnaryNode unaryNode) {
+                checkAssignTarget(unaryNode.getExpression());
                 loadDECINC(unaryNode);
                 return false;
             }
