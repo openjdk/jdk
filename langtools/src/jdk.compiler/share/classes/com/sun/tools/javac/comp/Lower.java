@@ -3446,10 +3446,7 @@ public class Lower extends TreeTranslator {
                                               syms.iterableType.tsym);
             if (iterableType.getTypeArguments().nonEmpty())
                 iteratorTarget = types.erasure(iterableType.getTypeArguments().head);
-            Type eType = tree.expr.type;
-            while (eType.hasTag(TYPEVAR)) {
-                eType = eType.getUpperBound();
-            }
+            Type eType = types.skipTypeVars(tree.expr.type, false);
             tree.expr.type = types.erasure(eType);
             if (eType.isCompound())
                 tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
