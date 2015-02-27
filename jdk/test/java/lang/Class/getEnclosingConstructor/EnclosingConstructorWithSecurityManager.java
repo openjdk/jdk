@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,30 @@
  * questions.
  */
 
-package sun.security.acl;
-
-import java.security.Principal;
-import java.security.acl.*;
-
-/**
- * This class implements the principal interface for the set of all permissions.
- * @author Satish Dharmaraj
+/*
+ * @test
+ * @bug 8014678
+ * @run main EnclosingConstructorWithSecurityManager
+ * @run main/othervm EnclosingConstructorWithSecurityManager "WithSecurityManager"
  */
-public class AllPermissionsImpl extends PermissionImpl {
 
-    public AllPermissionsImpl(String s) {
-        super(s);
+public class EnclosingConstructorWithSecurityManager {
+    public static void main(String[] args) {
+        if (args.length == 1) {
+            System.setSecurityManager(new SecurityManager());
+        }
+
+        new Inner();
+        Inner.theInner.getEnclosingConstructor();
     }
 
-    /**
-     * This function returns true if the permission passed matches the permission represented in
-     * this interface.
-     * @param another The Permission object to compare with.
-     * @returns true always
-     */
-    public boolean equals(Permission another) {
-        return true;
+    public static class Inner {
+        public static Class<?> theInner;
+
+        public Inner() {
+            Object o = new Object() {
+            };
+            Inner.theInner = o.getClass();
+        }
     }
 }

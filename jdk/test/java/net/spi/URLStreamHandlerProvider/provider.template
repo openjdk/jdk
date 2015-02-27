@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,30 @@
  * questions.
  */
 
-package sun.security.acl;
+package $package;
 
-import java.security.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.net.spi.URLStreamHandlerProvider;
 
-/**
- * This class implements a group of principals.
- * @author Satish Dharmaraj
- */
-public class WorldGroupImpl extends GroupImpl {
+public class Provider extends URLStreamHandlerProvider {
 
-    public WorldGroupImpl(String s) {
-        super(s);
+    private static final String PROTOCOL = "$protocol";
+
+    @Override
+    public URLStreamHandler createURLStreamHandler(String protocol) {
+        if (!PROTOCOL.equals(protocol))
+            return null;
+
+        return new Handler();
     }
 
-    /**
-     * returns true for all passed principals
-     * @param member The principal whose membership must be checked in this Group.
-     * @return true always since this is the "world" group.
-     */
-    public boolean isMember(Principal member) {
-        return true;
+    static class Handler extends URLStreamHandler {
+        public URLConnection openConnection(URL u) throws java.io.IOException {
+            return null;
+        }
+
+        public String toExternalForm(URL u) { return PROTOCOL; }
     }
 }
