@@ -739,7 +739,7 @@ public abstract class XMLKit {
             if (i >= size) {
                 badIndex(i);
             }
-            e.getClass();  // null check
+            Objects.requireNonNull(e);
             checkNotFrozen();
             Object old = parts[i];
             setRaw(i, e);
@@ -861,7 +861,7 @@ public abstract class XMLKit {
 
         public void add(int i, Object e) {
             // (The shape of this method is tweaked for common cases.)
-            e.getClass();  // force a null check on e
+            Objects.requireNonNull(e);
             if (hasNulls(1 + NEED_SLOP)) {
                 // Common case:  Have some slop space.
                 if (i == size) {
@@ -2943,7 +2943,7 @@ public abstract class XMLKit {
     }
 
     public static Filter elementFilter(final Collection nameSet) {
-        nameSet.getClass();  // null check
+        Objects.requireNonNull(nameSet);
         return new ElementFilter() {
 
             @Override
@@ -3299,7 +3299,7 @@ public abstract class XMLKit {
     }
 
     public static Filter replaceInTree(Filter f) {
-        f.getClass(); // null check
+        Objects.requireNonNull(f);
         return replaceInTree(f, null);
     }
 

@@ -57,6 +57,7 @@ IBM1146		IBM01146	Cp1146		false		sun.nio.cs.ext
 IBM1147		IBM01147	Cp1147		false		sun.nio.cs.ext
 IBM1148		IBM01148	Cp1148		false		sun.nio.cs.ext
 IBM1149		IBM01149	Cp1149		false		sun.nio.cs.ext
+IBM1166		x-IBM1166	Cp1166		false		sun.nio.cs.ext
 IBM273		IBM273		Cp273		false		sun.nio.cs.ext
 IBM277		IBM277		Cp277		false		sun.nio.cs.ext
 IBM278		IBM278		Cp278		false		sun.nio.cs.ext
