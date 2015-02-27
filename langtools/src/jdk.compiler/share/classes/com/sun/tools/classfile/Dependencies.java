@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -43,6 +44,7 @@ import com.sun.tools.classfile.Type.MethodType;
 import com.sun.tools.classfile.Type.SimpleType;
 import com.sun.tools.classfile.Type.TypeParamType;
 import com.sun.tools.classfile.Type.WildcardType;
+
 import static com.sun.tools.classfile.ConstantPool.*;
 
 /**
@@ -165,8 +167,7 @@ public class Dependencies {
      * @param f the finder
      */
     public void setFinder(Finder f) {
-        f.getClass(); // null check
-        finder = f;
+        finder = Objects.requireNonNull(f);
     }
 
     /**
@@ -220,8 +221,7 @@ public class Dependencies {
      * @param f the filter
      */
     public void setFilter(Filter f) {
-        f.getClass(); // null check
-        filter = f;
+        filter = Objects.requireNonNull(f);
     }
 
     /**

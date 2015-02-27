@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.tools.JavaFileManager;
@@ -431,13 +432,12 @@ public abstract class BaseFileManager implements JavaFileManager {
     }
 
     protected static <T> T nullCheck(T o) {
-        o.getClass(); // null check
-        return o;
+        return Objects.requireNonNull(o);
     }
 
     protected static <T> Collection<T> nullCheck(Collection<T> it) {
         for (T t : it)
-            t.getClass(); // null check
+            Objects.requireNonNull(t);
         return it;
     }
 }

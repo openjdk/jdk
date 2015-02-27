@@ -39,6 +39,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Objects;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
@@ -151,10 +152,8 @@ public abstract class PathFileObject implements JavaFileObject {
     }
 
     protected PathFileObject(BaseFileManager fileManager, Path path) {
-        fileManager.getClass(); // null check
-        path.getClass();        // null check
-        this.fileManager = fileManager;
-        this.path = path;
+        this.fileManager = Objects.requireNonNull(fileManager);
+        this.path = Objects.requireNonNull(path);
     }
 
     public abstract String inferBinaryName(Iterable<? extends Path> paths);
@@ -174,7 +173,7 @@ public abstract class PathFileObject implements JavaFileObject {
 
     @Override @DefinedBy(Api.COMPILER)
     public boolean isNameCompatible(String simpleName, Kind kind) {
-        simpleName.getClass();
+        Objects.requireNonNull(simpleName);
         // null check
         if (kind == Kind.OTHER && getKind() != kind) {
             return false;
