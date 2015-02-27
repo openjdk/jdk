@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,11 @@
 #include "ci/ciTypeArray.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.inline2.hpp"
 #include "runtime/fieldType.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS

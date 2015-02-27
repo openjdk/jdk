@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3244,6 +3244,9 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 
   const TypeFunc *tf = OptoRuntime::complete_monitor_exit_Type();
   UnlockNode *unlock = new UnlockNode(C, tf);
+#ifdef ASSERT
+  unlock->set_dbg_jvms(sync_jvms());
+#endif
   uint raw_idx = Compile::AliasIdxRaw;
   unlock->init_req( TypeFunc::Control, control() );
   unlock->init_req( TypeFunc::Memory , memory(raw_idx) );
@@ -3752,6 +3755,17 @@ void GraphKit::sync_kit(IdealKit& ideal) {
 void GraphKit::final_sync(IdealKit& ideal) {
   // Final sync IdealKit and graphKit.
   sync_kit(ideal);
+}
+
+Node* GraphKit::byte_map_base_node() {
+  // Get base of card map
+  CardTableModRefBS* ct = (CardTableModRefBS*)(Universe::heap()->barrier_set());
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust users of this code");
+  if (ct->byte_map_base != NULL) {
+    return makecon(TypeRawPtr::make((address)ct->byte_map_base));
+  } else {
+    return null();
+  }
 }
 
 // vanilla/CMS post barrier
