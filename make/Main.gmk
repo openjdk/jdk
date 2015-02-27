@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -238,12 +238,8 @@ profiles:
 mac-bundles:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
 
-prepare-test-image:
-	$(MKDIR) -p $(TEST_IMAGE_DIR)
-	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
-
 ALL_TARGETS += source-tips bootcycle-images zip-security zip-source strip-binaries \
-    jrtfs-jar jimages profiles mac-bundles prepare-test-image
+    jrtfs-jar jimages profiles mac-bundles
 
 ################################################################################
 # Docs targets
@@ -257,17 +253,50 @@ docs-jvmtidoc:
 ALL_TARGETS += docs-javadoc docs-jvmtidoc
 
 ################################################################################
-# Test target
+# Build tests
+#
 
+prepare-test-image:
+	$(MKDIR) -p $(TEST_IMAGE_DIR)
+	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
+
+build-test-hotspot-jtreg-native:
+	+($(CD) $(HOTSPOT_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
+	    build-test-hotspot-jtreg-native)
+
+test-image-hotspot-jtreg-native:
+	+($(CD) $(HOTSPOT_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
+	    test-image-hotspot-jtreg-native)
+
+build-test-jdk-jtreg-native:
+	+($(CD) $(JDK_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
+	    build-test-jdk-jtreg-native)
+
+test-image-jdk-jtreg-native:
+	+($(CD) $(JDK_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
+	    test-image-jdk-jtreg-native)
+
+ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
+    test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
+    test-image-jdk-jtreg-native
+
+################################################################################
+# Run tests
+
+# Run tests specified by $(TEST), or the default test set.
 test:
-	($(CD) $(SRC_ROOT)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
-	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) \
-	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $(TEST)) || true
+	$(call RunTests, $(TEST))
+
+test-hotspot-jtreg-native:
+	$(call RunTests, "hotspot_native_sanity")
+
+test-jdk-jtreg-native:
+	$(call RunTests, "jdk_native_sanity")
 
 test-make:
 	($(CD) $(SRC_ROOT)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk $(TEST_TARGET))
 
-ALL_TARGETS += test test-make
+ALL_TARGETS += test test-hotspot-jtreg-native test-jdk-jtreg-native test-make
 
 ################################################################################
 # Verification targets
@@ -398,11 +427,15 @@ else
 
   docs-jvmtidoc: hotspot
 
-  test: jimages
+  test: jimages test-image
 
   verify-modules: exploded-image
 
   test-make: clean-test-make
+
+  test-image-hotspot-jtreg-native: build-test-hotspot-jtreg-native
+
+  test-image-jdk-jtreg-native: build-test-jdk-jtreg-native
 
 endif
 
@@ -446,7 +479,7 @@ ALL_MODULE_TARGETS := $(sort $(GENSRC_MODULES) $(JAVA_MODULES) \
 # The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
 exploded-image: $(ALL_MODULE_TARGETS)
 
-# The $(BUILD_OUTPUT)/images directory contain the resulting deliverables, 
+# The $(BUILD_OUTPUT)/images directory contain the resulting deliverables,
 # and in line with this, our targets for creating these are named *-image[s].
 
 # This target builds the product images, e.g. the JRE and JDK image
@@ -461,7 +494,8 @@ endif
 docs-image: docs-javadoc docs-jvmtidoc
 
 # This target builds the test image
-test-image: prepare-test-image
+test-image: prepare-test-image test-image-hotspot-jtreg-native \
+    test-image-jdk-jtreg-native
 
 # all-images is the top-most target, it builds all our deliverables ("images").
 all-images: product-images test-image docs-image
@@ -495,6 +529,8 @@ ALL_TARGETS += default jdk images docs all
 CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
     images make-support test-make
 CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
+CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native
+CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))
 CLEAN_PHASES := gensrc java native include
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))
 CLEAN_MODULE_TARGETS := $(addprefix clean-, $(ALL_MODULES))
@@ -509,6 +545,9 @@ clean: $(CLEAN_DIR_TARGETS)
 
 $(CLEAN_DIR_TARGETS):
 	$(call CleanDir,$(patsubst clean-%, %, $@))
+
+$(CLEAN_TEST_TARGETS):
+	$(call CleanTest,$(patsubst clean-test-%, %, $@))
 
 $(CLEAN_PHASE_TARGETS):
 	$(call Clean-$(patsubst clean-%,%, $@))
@@ -542,8 +581,8 @@ dist-clean: clean
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-ALL_TARGETS += clean dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_PHASE_TARGETS) \
-    $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
+ALL_TARGETS += clean dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_TEST_TARGETS) \
+    $(CLEAN_PHASE_TARGETS) $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 
 ################################################################################
 
