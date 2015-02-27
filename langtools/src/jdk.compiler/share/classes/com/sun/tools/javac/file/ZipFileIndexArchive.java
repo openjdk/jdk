@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.tools.JavaFileObject;
@@ -206,7 +207,7 @@ public class ZipFileIndexArchive implements Archive {
 
         @Override @DefinedBy(Api.COMPILER)
         public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
-            cn.getClass(); // null check
+            Objects.requireNonNull(cn);
             if (k == Kind.OTHER && getKind() != k)
                 return false;
             return name.equals(cn + k.extension);

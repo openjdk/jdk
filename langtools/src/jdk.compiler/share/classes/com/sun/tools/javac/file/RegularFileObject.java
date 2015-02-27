@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
+import java.util.Objects;
 
 import javax.tools.JavaFileObject;
 
@@ -186,7 +187,7 @@ class RegularFileObject extends BaseFileObject {
 
     @Override @DefinedBy(Api.COMPILER)
     public boolean isNameCompatible(String cn, JavaFileObject.Kind kind) {
-        cn.getClass();
+        Objects.requireNonNull(cn);
         // null check
         if (kind == Kind.OTHER && getKind() != kind) {
             return false;

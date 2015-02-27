@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -268,7 +269,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         this.classes = new ArrayList<>();
         if (classes != null) {
             for (String classname: classes) {
-                classname.getClass(); // null-check
+                Objects.requireNonNull(classname);
                 this.classes.add(classname);
             }
         }

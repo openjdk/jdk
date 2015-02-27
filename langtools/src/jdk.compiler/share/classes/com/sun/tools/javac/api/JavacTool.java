@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
@@ -124,7 +125,7 @@ public final class JavacTool implements JavaCompiler {
 
             if (options != null) {
                 for (String option : options)
-                    option.getClass(); // null check
+                    Objects.requireNonNull(option);
             }
 
             if (classes != null) {
@@ -177,7 +178,7 @@ public final class JavacTool implements JavaCompiler {
         if (err == null)
             err = System.err;
         for (String argument : arguments)
-            argument.getClass(); // null check
+            Objects.requireNonNull(argument);
         return com.sun.tools.javac.Main.compile(arguments, new PrintWriter(err, true));
     }
 
