@@ -115,6 +115,11 @@ public final class ScriptRuntime {
     public static final Call THROW_REFERENCE_ERROR = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "throwReferenceError", void.class, String.class);
 
     /**
+     * Throws a reference error for an undefined variable.
+     */
+    public static final Call THROW_CONST_TYPE_ERROR = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "throwConstTypeError", void.class, String.class);
+
+    /**
      * Used to invalidate builtin names, e.g "Function" mapping to all properties in Function.prototype and Function.prototype itself.
      */
     public static final Call INVALIDATE_RESERVED_BUILTIN_NAME = staticCallNoLookup(ScriptRuntime.class, "invalidateReservedBuiltinName", void.class, String.class);
@@ -400,6 +405,15 @@ public final class ScriptRuntime {
      */
     public static void throwReferenceError(final String name) {
         throw referenceError("not.defined", name);
+    }
+
+    /**
+     * Throws a type error for an assignment to a const.
+     *
+     * @param name the const name
+     */
+    public static void throwConstTypeError(final String name) {
+        throw typeError("assign.constant", name);
     }
 
     /**
