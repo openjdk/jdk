@@ -25,8 +25,8 @@
  * @test
  * @bug 6912521
  * @summary small array copy as loads/stores
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestArrayCopyAsLoadsStores::m* -XX:TypeProfileLevel=200 TestArrayCopyAsLoadsStores
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestArrayCopyAsLoadsStores::m* -XX:+IgnoreUnrecognizedVMOptions -XX:+StressArrayCopyMacroNode -XX:TypeProfileLevel=200 TestArrayCopyAsLoadsStores
+ * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestArrayCopyAsLoadsStores::m* -XX:TypeProfileLevel=200 TestArrayCopyAsLoadsStores
+ * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestArrayCopyAsLoadsStores::m* -XX:+IgnoreUnrecognizedVMOptions -XX:+StressArrayCopyMacroNode -XX:TypeProfileLevel=200 TestArrayCopyAsLoadsStores
  *
  */
 
@@ -392,7 +392,6 @@ public class TestArrayCopyAsLoadsStores {
             break;
         }
         case ZERO: {
-            assert isIntArray;
             if (isIntArray) {
                 src = zero_int_src;
             } else {
