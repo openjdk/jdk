@@ -3790,6 +3790,17 @@ public final class Main {
             PublicKey pkey,
             PublicKey akey) throws Exception {
 
+        // By design, inside a CertificateExtensions object, all known
+        // extensions uses name (say, "BasicConstraints") as key and
+        // a child Extension type (say, "BasicConstraintsExtension")
+        // as value, unknown extensions uses OID as key and bare
+        // Extension object as value. This works fine inside JDK.
+        //
+        // However, in keytool, there is no way to prevent people
+        // using OID in -ext, either as a new extension, or in a
+        // honored value. Thus here we (ab)use CertificateExtensions
+        // by always using OID as key and value can be of any type.
+
         if (existingEx != null && requestedEx != null) {
             // This should not happen
             throw new Exception("One of request and original should be null.");
@@ -3805,13 +3816,19 @@ public final class Main {
             // name{:critical}{=value}
             // Honoring requested extensions
             if (requestedEx != null) {
+                // The existing requestedEx might use names as keys,
+                // translate to all-OID first.
+                CertificateExtensions request2 = new CertificateExtensions();
+                for (sun.security.x509.Extension ex: requestedEx.getAllExtensions()) {
+                    request2.set(ex.getId(), ex);
+                }
                 for(String extstr: extstrs) {
                     if (extstr.toLowerCase(Locale.ENGLISH).startsWith("honored=")) {
                         List<String> list = Arrays.asList(
                                 extstr.toLowerCase(Locale.ENGLISH).substring(8).split(","));
                         // First check existence of "all"
                         if (list.contains("all")) {
-                            for (Extension ex: requestedEx.getAllExtensions()) {
+                            for (Extension ex: request2.getAllExtensions()) {
                                 setExt(result, ex);
                             }
                         }
@@ -3844,7 +3861,7 @@ public final class Main {
                             }
                             String n = findOidForExtName(type).toString();
                             if (add) {
-                                Extension e = requestedEx.get(n);
+                                Extension e = request2.get(n);
                                 if (!e.isCritical() && action == 0
                                         || e.isCritical() && action == 1) {
                                     e = Extension.newExtension(
