@@ -27,6 +27,7 @@
 
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/fakeRttiSupport.hpp"
 
 // This class provides the interface between a barrier implementation and
 // the rest of the system.
@@ -34,18 +35,61 @@
 class BarrierSet: public CHeapObj<mtGC> {
   friend class VMStructs;
 public:
-  enum Name {
-    ModRef,
-    CardTableModRef,
-    CardTableExtension,
-    G1SATBCT,
-    G1SATBCTLogging
+  // Fake RTTI support.  For a derived class T to participate
+  // - T must have a corresponding Name entry.
+  // - GetName<T> must be specialized to return the corresponding Name
+  //   entry.
+  // - If T is a base class, the constructor must have a FakeRtti
+  //   parameter and pass it up to its base class, with the tag set
+  //   augmented with the corresponding Name entry.
+  // - If T is a concrete class, the constructor must create a
+  //   FakeRtti object whose tag set includes the corresponding Name
+  //   entry, and pass it up to its base class.
+
+  enum Name {                   // associated class
+    ModRef,                     // ModRefBarrierSet
+    CardTableModRef,            // CardTableModRefBS
+    CardTableForRS,             // CardTableModRefBSForCTRS
+    CardTableExtension,         // CardTableExtension
+    G1SATBCT,                   // G1SATBCardTableModRefBS
+    G1SATBCTLogging             // G1SATBCardTableLoggingModRefBS
   };
 
+protected:
+  typedef FakeRttiSupport<BarrierSet, Name> FakeRtti;
+
+private:
+  FakeRtti _fake_rtti;
+
+  // Metafunction mapping a class derived from BarrierSet to the
+  // corresponding Name enum tag.
+  template<typename T> struct GetName;
+
+  // Downcast argument to a derived barrier set type.
+  // The cast is checked in a debug build.
+  // T must have a specialization for BarrierSet::GetName<T>.
+  template<typename T>
+  friend T* barrier_set_cast(BarrierSet* bs) {
+    assert(bs->is_a(BarrierSet::GetName<T>::value), "wrong type of barrier set");
+    return static_cast<T*>(bs);
+  }
+
+public:
+  // Note: This is not presently the Name corresponding to the
+  // concrete class of this object.
+  BarrierSet::Name kind() const { return _fake_rtti.concrete_tag(); }
+
+  // Test whether this object is of the type corresponding to bsn.
+  bool is_a(BarrierSet::Name bsn) const { return _fake_rtti.has_tag(bsn); }
+
+  // End of fake RTTI support.
+
+public:
   enum Flags {
     None                = 0,
     TargetUninitialized = 1
   };
+
 protected:
   // Some barrier sets create tables whose elements correspond to parts of
   // the heap; the CardTableModRefBS is an example.  Such barrier sets will
@@ -53,16 +97,11 @@ protected:
   // "covering" parts of the heap that are committed. At most one covered
   // region per generation is needed.
   static const int _max_covered_regions = 2;
-  Name _kind;
 
-  BarrierSet(Name kind) : _kind(kind) { }
+  BarrierSet(const FakeRtti& fake_rtti) : _fake_rtti(fake_rtti) { }
   ~BarrierSet() { }
 
 public:
-
-  // To get around prohibition on RTTI.
-  BarrierSet::Name kind() { return _kind; }
-  virtual bool is_a(BarrierSet::Name bsn) = 0;
 
   // These operations indicate what kind of barriers the BarrierSet has.
   virtual bool has_read_ref_barrier() = 0;

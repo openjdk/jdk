@@ -3759,7 +3759,8 @@ void GraphKit::final_sync(IdealKit& ideal) {
 
 Node* GraphKit::byte_map_base_node() {
   // Get base of card map
-  CardTableModRefBS* ct = (CardTableModRefBS*)(Universe::heap()->barrier_set());
+  CardTableModRefBS* ct =
+    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
   assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust users of this code");
   if (ct->byte_map_base != NULL) {
     return makecon(TypeRawPtr::make((address)ct->byte_map_base));

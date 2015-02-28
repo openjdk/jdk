@@ -1274,7 +1274,7 @@ public:
   virtual bool is_in_closed_subset(const void* p) const;
 
   G1SATBCardTableLoggingModRefBS* g1_barrier_set() {
-    return (G1SATBCardTableLoggingModRefBS*) barrier_set();
+    return barrier_set_cast<G1SATBCardTableLoggingModRefBS>(barrier_set());
   }
 
   // This resets the card table to all zeros.  It is used after
