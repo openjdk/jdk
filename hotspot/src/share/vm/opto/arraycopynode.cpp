@@ -121,7 +121,8 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       // length input to ArrayCopyNode is constant, length of input
       // array must be too.
 
-      assert((get_length_if_constant(phase) == -1) == !ary_src->size()->is_con(), "inconsistent");
+      assert((get_length_if_constant(phase) == -1) == !ary_src->size()->is_con() ||
+             phase->is_IterGVN(), "inconsistent");
 
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
