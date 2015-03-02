@@ -1612,7 +1612,7 @@ void Arguments::select_gc_ergonomically() {
 
 void Arguments::select_gc() {
   if (!gc_selected()) {
-    ArgumentsExt::select_gc_ergonomically();
+    select_gc_ergonomically();
   }
 }
 
@@ -2121,7 +2121,7 @@ bool Arguments::verify_MaxHeapFreeRatio(FormatBuffer<80>& err_msg, uintx max_hea
 }
 
 // Check consistency of GC selection
-bool Arguments::check_gc_consistency_user() {
+bool Arguments::check_gc_consistency() {
   check_gclog_consistency();
   // Ensure that the user has not selected conflicting sets
   // of collectors.
@@ -2265,7 +2265,7 @@ bool Arguments::check_vm_args_consistency() {
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);
   }
 
-  status = status && check_gc_consistency_user();
+  status = status && check_gc_consistency();
   status = status && check_stack_pages();
 
   status = status && verify_percentage(CMSIncrementalSafetyFactor,
@@ -3900,7 +3900,7 @@ jint Arguments::apply_ergo() {
   set_shared_spaces_flags();
 
   // Check the GC selections again.
-  if (!ArgumentsExt::check_gc_consistency_ergo()) {
+  if (!check_gc_consistency()) {
     return JNI_EINVAL;
   }
 

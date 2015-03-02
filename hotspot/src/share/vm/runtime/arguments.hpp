@@ -477,8 +477,7 @@ class Arguments : AllStatic {
   static bool verify_MaxHeapFreeRatio(FormatBuffer<80>& err_msg, uintx max_heap_free_ratio);
 
   // Check for consistency in the selection of the garbage collector.
-  static bool check_gc_consistency_user();        // Check user-selected gc
-  static inline bool check_gc_consistency_ergo(); // Check ergonomic-selected gc
+  static bool check_gc_consistency();        // Check user-selected gc
   static void check_deprecated_gc_flags();
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
@@ -616,10 +615,6 @@ class Arguments : AllStatic {
 
 bool Arguments::gc_selected() {
   return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC || UseSerialGC;
-}
-
-bool Arguments::check_gc_consistency_ergo() {
-  return check_gc_consistency_user();
 }
 
 // Disable options not supported in this release, with a warning if they
