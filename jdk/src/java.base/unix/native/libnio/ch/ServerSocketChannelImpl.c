@@ -84,7 +84,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     int alloc_len;
     jobject remote_ia = 0;
     jobject isa;
-    jint remote_port;
+    jint remote_port = 0;
 
     NET_AllocSockaddr(&sa, &alloc_len);
     if (sa == NULL) {

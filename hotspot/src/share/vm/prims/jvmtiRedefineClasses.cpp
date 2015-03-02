@@ -36,6 +36,7 @@
 #include "memory/universe.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/methodComparator.hpp"

@@ -1098,10 +1098,17 @@ public class Resolve {
                     DeferredType.SpeculativeCache.Entry e =
                             dt.speculativeCache.get(deferredAttrContext.msym, deferredAttrContext.phase);
                     if (e != null && e.speculativeTree != deferredAttr.stuckTree) {
-                        return functionalInterfaceMostSpecific(found, req, e.speculativeTree, warn);
+                        return functionalInterfaceMostSpecific(found, req, e.speculativeTree);
                     }
                 }
-                return super.compatible(found, req, warn);
+                return compatibleBySubtyping(found, req);
+            }
+
+            private boolean compatibleBySubtyping(Type found, Type req) {
+                if (!strict && found.isPrimitive() != req.isPrimitive()) {
+                    found = found.isPrimitive() ? types.boxedClass(found).type : types.unboxedType(found);
+                }
+                return types.isSubtypeNoCapture(found, deferredAttrContext.inferenceContext.asUndetVar(req));
             }
 
             /** Whether {@code t} and {@code s} are unrelated functional interface types. */
@@ -1113,8 +1120,8 @@ public class Resolve {
             }
 
             /** Parameters {@code t} and {@code s} are unrelated functional interface types. */
-            private boolean functionalInterfaceMostSpecific(Type t, Type s, JCTree tree, Warner warn) {
-                FunctionalInterfaceMostSpecificChecker msc = new FunctionalInterfaceMostSpecificChecker(t, s, warn);
+            private boolean functionalInterfaceMostSpecific(Type t, Type s, JCTree tree) {
+                FunctionalInterfaceMostSpecificChecker msc = new FunctionalInterfaceMostSpecificChecker(t, s);
                 msc.scan(tree);
                 return msc.result;
             }
@@ -1127,14 +1134,12 @@ public class Resolve {
 
                 final Type t;
                 final Type s;
-                final Warner warn;
                 boolean result;
 
                 /** Parameters {@code t} and {@code s} are unrelated functional interface types. */
-                FunctionalInterfaceMostSpecificChecker(Type t, Type s, Warner warn) {
+                FunctionalInterfaceMostSpecificChecker(Type t, Type s) {
                     this.t = t;
                     this.s = s;
-                    this.warn = warn;
                     result = true;
                 }
 
@@ -1172,7 +1177,7 @@ public class Resolve {
                             result &= (retValIsPrimitive == ret_t.isPrimitive()) &&
                                       (retValIsPrimitive != ret_s.isPrimitive());
                         } else {
-                            result &= MostSpecificCheckContext.super.compatible(ret_t, ret_s, warn);
+                            result &= compatibleBySubtyping(ret_t, ret_s);
                         }
                     }
                 }
@@ -1195,7 +1200,7 @@ public class Resolve {
                             result &= false;
                         } else if (unrelatedFunctionalInterfaces(ret_t, ret_s)) {
                             for (JCExpression expr : lambdaResults(tree)) {
-                                result &= functionalInterfaceMostSpecific(ret_t, ret_s, expr, warn);
+                                result &= functionalInterfaceMostSpecific(ret_t, ret_s, expr);
                             }
                         } else if (ret_t.isPrimitive() != ret_s.isPrimitive()) {
                             for (JCExpression expr : lambdaResults(tree)) {
@@ -1204,7 +1209,7 @@ public class Resolve {
                                           (retValIsPrimitive != ret_s.isPrimitive());
                             }
                         } else {
-                            result &= MostSpecificCheckContext.super.compatible(ret_t, ret_s, warn);
+                            result &= compatibleBySubtyping(ret_t, ret_s);
                         }
                     }
                 }
