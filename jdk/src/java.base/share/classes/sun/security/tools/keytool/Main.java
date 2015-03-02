@@ -3765,55 +3765,70 @@ public final class Main {
         }
     }
 
+    // Add an extension into a CertificateExtensions, always using OID as key
+    private static void setExt(CertificateExtensions result, Extension ex)
+            throws IOException {
+        result.set(ex.getId(), ex);
+    }
+
     /**
      * Create X509v3 extensions from a string representation. Note that the
      * SubjectKeyIdentifierExtension will always be created non-critical besides
      * the extension requested in the <code>extstr</code> argument.
      *
-     * @param reqex the requested extensions, can be null, used for -gencert
-     * @param ext the original extensions, can be null, used for -selfcert
+     * @param requestedEx the requested extensions, can be null, used for -gencert
+     * @param existingEx the original extensions, can be null, used for -selfcert
      * @param extstrs -ext values, Read keytool doc
      * @param pkey the public key for the certificate
      * @param akey the public key for the authority (issuer)
      * @return the created CertificateExtensions
      */
     private CertificateExtensions createV3Extensions(
-            CertificateExtensions reqex,
-            CertificateExtensions ext,
+            CertificateExtensions requestedEx,
+            CertificateExtensions existingEx,
             List <String> extstrs,
             PublicKey pkey,
             PublicKey akey) throws Exception {
 
-        if (ext != null && reqex != null) {
+        if (existingEx != null && requestedEx != null) {
             // This should not happen
             throw new Exception("One of request and original should be null.");
         }
-        if (ext == null) ext = new CertificateExtensions();
+        // A new extensions always using OID as key
+        CertificateExtensions result = new CertificateExtensions();
+        if (existingEx != null) {
+            for (Extension ex: existingEx.getAllExtensions()) {
+                setExt(result, ex);
+            }
+        }
         try {
             // name{:critical}{=value}
             // Honoring requested extensions
-            if (reqex != null) {
+            if (requestedEx != null) {
                 for(String extstr: extstrs) {
                     if (extstr.toLowerCase(Locale.ENGLISH).startsWith("honored=")) {
                         List<String> list = Arrays.asList(
                                 extstr.toLowerCase(Locale.ENGLISH).substring(8).split(","));
                         // First check existence of "all"
                         if (list.contains("all")) {
-                            ext = reqex;    // we know ext was null
+                            for (Extension ex: requestedEx.getAllExtensions()) {
+                                setExt(result, ex);
+                            }
                         }
                         // one by one for others
                         for (String item: list) {
                             if (item.equals("all")) continue;
 
                             // add or remove
-                            boolean add = true;
-                            // -1, unchanged, 0 crtical, 1 non-critical
+                            boolean add;
+                            // -1, unchanged, 0 critical, 1 non-critical
                             int action = -1;
                             String type = null;
                             if (item.startsWith("-")) {
                                 add = false;
                                 type = item.substring(1);
                             } else {
+                                add = true;
                                 int colonpos = item.indexOf(':');
                                 if (colonpos >= 0) {
                                     type = item.substring(0, colonpos);
@@ -3823,21 +3838,23 @@ public final class Main {
                                         throw new Exception(rb.getString
                                             ("Illegal.value.") + item);
                                     }
+                                } else {
+                                    type = item;
                                 }
                             }
-                            String n = reqex.getNameByOid(findOidForExtName(type));
+                            String n = findOidForExtName(type).toString();
                             if (add) {
-                                Extension e = reqex.get(n);
+                                Extension e = requestedEx.get(n);
                                 if (!e.isCritical() && action == 0
                                         || e.isCritical() && action == 1) {
                                     e = Extension.newExtension(
                                             e.getExtensionId(),
                                             !e.isCritical(),
                                             e.getExtensionValue());
-                                    ext.set(n, e);
                                 }
+                                setExt(result, e);
                             } else {
-                                ext.delete(n);
+                                result.delete(n);
                             }
                         }
                         break;
@@ -3899,8 +3916,7 @@ public final class Main {
                                 }
                             }
                         }
-                        ext.set(BasicConstraintsExtension.NAME,
-                                new BasicConstraintsExtension(isCritical, isCA,
+                        setExt(result, new BasicConstraintsExtension(isCritical, isCA,
                                 pathLen));
                         break;
                     case 1:     // KU
@@ -3928,7 +3944,7 @@ public final class Main {
                             KeyUsageExtension kue = new KeyUsageExtension(ok);
                             // The above KeyUsageExtension constructor does not
                             // allow isCritical value, so...
-                            ext.set(KeyUsageExtension.NAME, Extension.newExtension(
+                            setExt(result, Extension.newExtension(
                                     kue.getExtensionId(),
                                     isCritical,
                                     kue.getExtensionValue()));
@@ -3966,8 +3982,7 @@ public final class Main {
                                     v.add(new ObjectIdentifier("1.3.6.1.5.5.7.3." + p));
                                 }
                             }
-                            ext.set(ExtendedKeyUsageExtension.NAME,
-                                    new ExtendedKeyUsageExtension(isCritical, v));
+                            setExt(result, new ExtendedKeyUsageExtension(isCritical, v));
                         } else {
                             throw new Exception(rb.getString
                                     ("Illegal.value.") + extstr);
@@ -3988,13 +4003,11 @@ public final class Main {
                                 gnames.add(createGeneralName(t, v));
                             }
                             if (exttype == 3) {
-                                ext.set(SubjectAlternativeNameExtension.NAME,
-                                        new SubjectAlternativeNameExtension(
-                                            isCritical, gnames));
+                                setExt(result, new SubjectAlternativeNameExtension(
+                                        isCritical, gnames));
                             } else {
-                                ext.set(IssuerAlternativeNameExtension.NAME,
-                                        new IssuerAlternativeNameExtension(
-                                            isCritical, gnames));
+                                setExt(result, new IssuerAlternativeNameExtension(
+                                        isCritical, gnames));
                             }
                         } else {
                             throw new Exception(rb.getString
@@ -4044,11 +4057,9 @@ public final class Main {
                                         oid, createGeneralName(t, v)));
                             }
                             if (exttype == 5) {
-                                ext.set(SubjectInfoAccessExtension.NAME,
-                                        new SubjectInfoAccessExtension(accessDescriptions));
+                                setExt(result, new SubjectInfoAccessExtension(accessDescriptions));
                             } else {
-                                ext.set(AuthorityInfoAccessExtension.NAME,
-                                        new AuthorityInfoAccessExtension(accessDescriptions));
+                                setExt(result, new AuthorityInfoAccessExtension(accessDescriptions));
                             }
                         } else {
                             throw new Exception(rb.getString
@@ -4068,10 +4079,9 @@ public final class Main {
                                 String v = item.substring(colonpos+1);
                                 gnames.add(createGeneralName(t, v));
                             }
-                            ext.set(CRLDistributionPointsExtension.NAME,
-                                    new CRLDistributionPointsExtension(
-                                        isCritical, Collections.singletonList(
-                                        new DistributionPoint(gnames, null, null))));
+                            setExt(result, new CRLDistributionPointsExtension(
+                                    isCritical, Collections.singletonList(
+                                    new DistributionPoint(gnames, null, null))));
                         } else {
                             throw new Exception(rb.getString
                                     ("Illegal.value.") + extstr);
@@ -4109,7 +4119,7 @@ public final class Main {
                         } else {
                             data = new byte[0];
                         }
-                        ext.set(oid.toString(), new Extension(oid, isCritical,
+                        setExt(result, new Extension(oid, isCritical,
                                 new DerValue(DerValue.tag_OctetString, data)
                                         .toByteArray()));
                         break;
@@ -4119,18 +4129,16 @@ public final class Main {
                 }
             }
             // always non-critical
-            ext.set(SubjectKeyIdentifierExtension.NAME,
-                    new SubjectKeyIdentifierExtension(
-                        new KeyIdentifier(pkey).getIdentifier()));
+            setExt(result, new SubjectKeyIdentifierExtension(
+                    new KeyIdentifier(pkey).getIdentifier()));
             if (akey != null && !pkey.equals(akey)) {
-                ext.set(AuthorityKeyIdentifierExtension.NAME,
-                        new AuthorityKeyIdentifierExtension(
-                        new KeyIdentifier(akey), null, null));
+                setExt(result, new AuthorityKeyIdentifierExtension(
+                                new KeyIdentifier(akey), null, null));
             }
         } catch(IOException e) {
             throw new RuntimeException(e);
         }
-        return ext;
+        return result;
     }
 
     /**

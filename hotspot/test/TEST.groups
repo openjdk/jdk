@@ -334,6 +334,9 @@ applicable_cmsgc = \
 hotspot_wbapitest = \
   sanity/
 
+hotspot_native_sanity = \
+  native_sanity
+
 hotspot_compiler_1 = \
   compiler/arraycopy/ \
   compiler/c1/ \
