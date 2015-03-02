@@ -1392,12 +1392,12 @@ void BCEscapeAnalyzer::dump() {
   method()->print_short_name();
   tty->print_cr(has_dependencies() ? " (not stored)" : "");
   tty->print("     non-escaping args:      ");
-  _arg_local.print_on(tty);
+  _arg_local.print();
   tty->print("     stack-allocatable args: ");
-  _arg_stack.print_on(tty);
+  _arg_stack.print();
   if (_return_local) {
     tty->print("     returned args:          ");
-    _arg_returned.print_on(tty);
+    _arg_returned.print();
   } else if (is_return_allocated()) {
     tty->print_cr("     return allocated value");
   } else {
