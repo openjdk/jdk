@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,16 @@
  */
 
 /*
- *
- *
+ * @test
  * @bug     4858522
  * @summary Basic unit test of OperatingSystemMXBean.getTotalSwapSpaceSize()
+ *
+ * @library /lib/testlibrary
+ * @build TestTotalSwap jdk.testlibrary.*
+ * @run main TestTotalSwap
+ *
  * @author  Steve Bohne
+ * @author  Jaroslav Bachorik
  */
 
 /*
@@ -50,9 +55,13 @@
 import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.*;
 
-public class GetTotalSwapSpaceSize {
+import jdk.testlibrary.OSInfo;
+import jdk.testlibrary.ProcessTools;
+import jdk.testlibrary.OutputAnalyzer;
 
-    private static OperatingSystemMXBean mbean =
+public class TestTotalSwap {
+
+    private static final OperatingSystemMXBean mbean =
         (com.sun.management.OperatingSystemMXBean)
         ManagementFactory.getOperatingSystemMXBean();
 
@@ -62,19 +71,9 @@ public class GetTotalSwapSpaceSize {
     private static long       min_size_for_pass = 0;
     private static final long MAX_SIZE_FOR_PASS = Long.MAX_VALUE;
 
-    private static boolean trace = false;
+    public static void main(String args[]) throws Throwable {
 
-    public static void main(String args[]) throws Exception {
-        if (args.length > 1 && args[1].equals("trace")) {
-            trace = true;
-        }
-
-        long expected_swap_size = 0;
-
-        if (args.length < 1 || args.length > 2) {
-           throw new IllegalArgumentException("Unexpected number of args " + args.length);
-        }
-
+        long expected_swap_size = getSwapSizeFromOs();
 
         long min_size = mbean.getFreeSwapSpaceSize();
         if (min_size > 0) {
@@ -83,12 +82,9 @@ public class GetTotalSwapSpaceSize {
 
         long size = mbean.getTotalSwapSpaceSize();
 
-        if (trace) {
-            System.out.println("Total swap space size in bytes: " + size);
-        }
+        System.out.println("Total swap space size in bytes: " + size);
 
-        if (!args[0].matches("sanity-only")) {
-            expected_swap_size = Long.parseLong(args[0]);
+        if (expected_swap_size > -1) {
             if (size != expected_swap_size) {
                 throw new RuntimeException("Expected total swap size      : " +
                                            expected_swap_size +
@@ -97,6 +93,7 @@ public class GetTotalSwapSpaceSize {
             }
         }
 
+        // sanity check
         if (size < min_size_for_pass || size > MAX_SIZE_FOR_PASS) {
             throw new RuntimeException("Total swap space size " +
                                        "illegal value: " + size + " bytes " +
@@ -105,5 +102,61 @@ public class GetTotalSwapSpaceSize {
         }
 
         System.out.println("Test passed.");
+    }
+
+    private static long getSwapSizeFromOs() throws Throwable {
+        OSInfo.OSType os = OSInfo.getOSType();
+
+        switch (os) {
+            // total       used       free     shared    buffers     cached
+            // Mem:    16533540864 13638467584 2895073280  534040576 1630248960 6236909568
+            // -/+ buffers/cache: 5771309056 10762231808
+            // Swap:   15999168512          0 15999168512
+
+            case LINUX: {
+                String swapSizeStr = ProcessTools.executeCommand("free", "-b")
+                                        .firstMatch("Swap:\\s+([0-9]+)\\s+.*", 1);
+                return Long.parseLong(swapSizeStr);
+            }
+            case SOLARIS: {
+                // swapfile             dev   swaplo blocks   free
+                // /dev/dsk/c0t0d0s1   136,1      16 1638608 1600528
+                OutputAnalyzer out= ProcessTools.executeCommand(
+                    "/usr/sbin/swap",
+                    "-l"
+                );
+
+                long swapSize = 0;
+
+                for (String line : out.asLines()) {
+                    if (line.contains("swapfile")) continue;
+
+                    String[] vals = line.split("\\s+");
+                    if (vals.length == 5) {
+                        swapSize += Long.parseLong(vals[3]) * 512; // size is reported in 512b blocks
+                    }
+                }
+
+                return swapSize;
+            }
+            case MACOSX: {
+                // total = 8192.00M used = 7471.11M free = 720.89M (encrypted)
+                String swapSizeStr = ProcessTools.executeCommand(
+                    "/usr/sbin/sysctl",
+                    "-n",
+                    "vm.swapusage"
+                ).firstMatch("total\\s+=\\s+([0-9]+(\\.[0-9]+)?[Mm]?).*", 1);
+                if (swapSizeStr.toLowerCase().endsWith("m")) {
+                    swapSizeStr = swapSizeStr.substring(0, swapSizeStr.length() - 1);
+                    return (long)(Double.parseDouble(swapSizeStr) * 1024 * 1024); // size in MB
+                }
+                return (long)(Double.parseDouble(swapSizeStr) * 1024 * 1024);
+            }
+            default: {
+                System.err.println("Unsupported operating system: " + os);
+            }
+        }
+
+        return -1;
     }
 }

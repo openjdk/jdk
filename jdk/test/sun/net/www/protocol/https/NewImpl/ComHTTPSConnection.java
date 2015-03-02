@@ -188,6 +188,17 @@ public class ComHTTPSConnection {
         }
     }
 
+    private static class ComSunHTTPSHandlerFactory implements URLStreamHandlerFactory {
+        private static String SUPPORTED_PROTOCOL = "https";
+
+        public URLStreamHandler createURLStreamHandler(String protocol) {
+            if (!protocol.equalsIgnoreCase(SUPPORTED_PROTOCOL))
+                return null;
+
+            return new com.sun.net.ssl.internal.www.protocol.https.Handler();
+        }
+    }
+
     /*
      * Define the client side of the test.
      *
@@ -205,8 +216,7 @@ public class ComHTTPSConnection {
         HostnameVerifier reservedHV =
             HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            System.setProperty("java.protocol.handler.pkgs",
-                "com.sun.net.ssl.internal.www.protocol");
+            URL.setURLStreamHandlerFactory(new ComSunHTTPSHandlerFactory());
             HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
 
             URL url = new URL("https://" + "localhost:" + serverPort +

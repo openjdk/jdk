@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -297,10 +297,24 @@ endef
 
 ### Convenience functions from Main.gmk
 
+# Run the tests specified by $1.
+define RunTests
+	($(CD) $(SRC_ROOT)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
+	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) \
+	    TEST_IMAGE_DIR=$(TEST_IMAGE_DIR) \
+	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $1) || true
+endef
+
 # Cleans the dir given as $1
 define CleanDir
 	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
 	@($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
+	@$(PRINTF) " done\n"
+endef
+
+define CleanTest
+	@$(PRINTF) "Cleaning test $(strip $1) ..."
+	@$(RM) -r $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))
 	@$(PRINTF) " done\n"
 endef
 
@@ -382,7 +396,7 @@ define DeclareRecipeForModuleMakefile
 	    && $(MAKE) $(MAKE_ARGS) \
 	          -f $$($1_FILE_PREFIX)-$2.gmk \
 	          $$(addprefix -I, $$(wildcard $$(addprefix $3/, $(MAKE_MAKEDIR_LIST)) \
-	          $$(addsuffix /$3, $$(addprefix $3/, $(MAKE_MAKEDIR_LIST))))) \
+	          $$(addsuffix /$$($1_MAKE_SUBDIR), $$(addprefix $3/, $(MAKE_MAKEDIR_LIST))))) \
 	          MODULE=$2)
         endif
 
