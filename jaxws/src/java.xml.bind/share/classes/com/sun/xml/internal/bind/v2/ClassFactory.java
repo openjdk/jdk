@@ -30,6 +30,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.ref.WeakReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
@@ -85,19 +87,25 @@ public final class ClassFactory {
         if(consRef!=null)
             cons = consRef.get();
         if(cons==null) {
-            try {
-                cons = clazz.getDeclaredConstructor(emptyClass);
-            } catch (NoSuchMethodException e) {
-                logger.log(Level.INFO,"No default constructor found on "+clazz,e);
-                NoSuchMethodError exp;
-                if(clazz.getDeclaringClass()!=null && !Modifier.isStatic(clazz.getModifiers())) {
-                    exp = new NoSuchMethodError(Messages.NO_DEFAULT_CONSTRUCTOR_IN_INNER_CLASS.format(clazz.getName()));
-                } else {
-                    exp = new NoSuchMethodError(e.getMessage());
+            cons = AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>() {
+                @Override
+                public Constructor<T> run() {
+                    try {
+                        return clazz.getDeclaredConstructor(emptyClass);
+                    } catch (NoSuchMethodException e) {
+                        logger.log(Level.INFO,"No default constructor found on "+clazz,e);
+                        NoSuchMethodError exp;
+                        if(clazz.getDeclaringClass()!=null && !Modifier.isStatic(clazz.getModifiers())) {
+                            exp = new NoSuchMethodError(Messages.NO_DEFAULT_CONSTRUCTOR_IN_INNER_CLASS
+                                                                .format(clazz.getName()));
+                        } else {
+                            exp = new NoSuchMethodError(e.getMessage());
+                        }
+                        exp.initCause(e);
+                        throw exp;
+                    }
                 }
-                exp.initCause(e);
-                throw exp;
-            }
+            });
 
             int classMod = clazz.getModifiers();
 

@@ -356,6 +356,8 @@ public final class Method extends Executable {
      * @return a string describing this {@code Method}
      *
      * @jls 8.4.3 Method Modifiers
+     * @jls 9.4   Method Declarations
+     * @jls 9.6.1 Annotation Type Elements
      */
     public String toString() {
         return sharedToString(Modifier.methodModifiers(),
@@ -409,6 +411,8 @@ public final class Method extends Executable {
      * @since 1.5
      *
      * @jls 8.4.3 Method Modifiers
+     * @jls 9.4   Method Declarations
+     * @jls 9.6.1 Annotation Type Elements
      */
     @Override
     public String toGenericString() {

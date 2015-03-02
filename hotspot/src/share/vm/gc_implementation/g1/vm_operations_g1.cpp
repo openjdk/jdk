@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,11 @@
 #include "gc_implementation/g1/vm_operations_g1.hpp"
 #include "runtime/interfaceSupport.hpp"
 
-VM_G1CollectForAllocation::VM_G1CollectForAllocation(
-                                                  unsigned int gc_count_before,
-                                                  size_t word_size)
+VM_G1CollectForAllocation::VM_G1CollectForAllocation(uint gc_count_before,
+                                                     size_t word_size)
   : VM_G1OperationWithAllocRequest(gc_count_before, word_size,
                                    GCCause::_allocation_failure) {
-  guarantee(word_size > 0, "an allocation should always be requested");
+  guarantee(word_size != 0, "An allocation should always be requested with this operation.");
 }
 
 void VM_G1CollectForAllocation::doit() {
@@ -57,12 +56,11 @@ void VM_G1CollectFull::doit() {
   g1h->do_full_collection(false /* clear_all_soft_refs */);
 }
 
-VM_G1IncCollectionPause::VM_G1IncCollectionPause(
-                                      unsigned int   gc_count_before,
-                                      size_t         word_size,
-                                      bool           should_initiate_conc_mark,
-                                      double         target_pause_time_ms,
-                                      GCCause::Cause gc_cause)
+VM_G1IncCollectionPause::VM_G1IncCollectionPause(uint           gc_count_before,
+                                                 size_t         word_size,
+                                                 bool           should_initiate_conc_mark,
+                                                 double         target_pause_time_ms,
+                                                 GCCause::Cause gc_cause)
   : VM_G1OperationWithAllocRequest(gc_count_before, word_size, gc_cause),
     _should_initiate_conc_mark(should_initiate_conc_mark),
     _target_pause_time_ms(target_pause_time_ms),
@@ -75,7 +73,7 @@ VM_G1IncCollectionPause::VM_G1IncCollectionPause(
 }
 
 bool VM_G1IncCollectionPause::doit_prologue() {
-  bool res = VM_GC_Operation::doit_prologue();
+  bool res = VM_G1OperationWithAllocRequest::doit_prologue();
   if (!res) {
     if (_should_initiate_conc_mark) {
       // The prologue can fail for a couple of reasons. The first is that another GC
@@ -165,7 +163,7 @@ void VM_G1IncCollectionPause::doit() {
 }
 
 void VM_G1IncCollectionPause::doit_epilogue() {
-  VM_GC_Operation::doit_epilogue();
+  VM_G1OperationWithAllocRequest::doit_epilogue();
 
   // If the pause was initiated by a System.gc() and
   // +ExplicitGCInvokesConcurrent, we have to wait here for the cycle

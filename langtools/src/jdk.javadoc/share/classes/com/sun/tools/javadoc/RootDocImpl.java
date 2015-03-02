@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,8 +382,9 @@ public class RootDocImpl extends DocImpl implements RootDoc {
     }
 
     public boolean isFunctionalInterface(AnnotationDesc annotationDesc) {
-        return annotationDesc.annotationType().qualifiedName().equals(
-                env.syms.functionalInterfaceType.toString()) && env.source.allowLambda();
+        return env.source.allowLambda()
+            && annotationDesc.annotationType().qualifiedName().equals(
+                env.syms.functionalInterfaceType.toString());
     }
 
     public boolean showTagMessages() {
