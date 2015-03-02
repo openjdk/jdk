@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc_implementation/shared/markSweep.inline.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"

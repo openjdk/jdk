@@ -24,55 +24,51 @@
 /*
  * @test
  * @bug 8072909
- * @run main/othervm -Xmx385m TimSortStackSize2 67108864
- * not for regular execution on all platforms:
+ * @run main/othervm -Xms385m TimSortStackSize2 67108864
+ * @summary Test TimSort stack size on big arrays
+ * big tests not for regular execution on all platforms:
  * run main/othervm -Xmx8g TimSortStackSize2 1073741824
  * run main/othervm -Xmx16g TimSortStackSize2 2147483644
- * @summary Test TimSort stack size on big arrays
  */
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class TimSortStackSize2 {
 
     public static void main(String[] args) {
         int lengthOfTest = Integer.parseInt(args[0]);
-        boolean passed = true;
-        try {
-            Integer [] a = new TimSortStackSize2(lengthOfTest).createArray();
-            long begin = System.nanoTime();
-            Arrays.sort(a, new Comparator<Object>() {
-                    @SuppressWarnings("unchecked")
-                    public int compare(Object first, Object second) {
-                        return ((Comparable<Object>)first).compareTo(second);
-                    }
-                });
-            long end = System.nanoTime();
-            System.out.println("TimSort: " + (end - begin));
-            a = null;
-        } catch (ArrayIndexOutOfBoundsException e){
-            System.out.println("TimSort broken:");
-            e.printStackTrace();
-            passed = false;
-        }
-
-        try {
-            Integer [] a = new TimSortStackSize2(lengthOfTest).createArray();
-            long begin = System.nanoTime();
-            Arrays.sort(a);
-            long end = System.nanoTime();
-            System.out.println("ComparableTimSort: " + (end - begin));
-            a = null;
-        } catch (ArrayIndexOutOfBoundsException e){
-            System.out.println("ComparableTimSort broken:");
-            e.printStackTrace();
-            passed = false;
-        }
+        boolean passed = doTest("TimSort", lengthOfTest,
+            (Integer [] a) -> Arrays.sort(a));
+        passed = doTest("ComparableTimSort", lengthOfTest, (Integer [] a) ->
+            Arrays.sort(a, (Object first, Object second) -> {
+                return ((Comparable<Object>)first).compareTo(second);
+            }))
+            && passed;
         if ( !passed ){
             throw new RuntimeException();
         }
+    }
+
+    private static boolean doTest(final String msg, final int lengthOfTest,
+                                  final  Consumer<Integer[]> c){
+        Integer [] a = null;
+        try {
+            a = new TimSortStackSize2(lengthOfTest).createArray();
+            long begin = System.nanoTime();
+            c.accept(a);
+            long end = System.nanoTime();
+            System.out.println(msg + " OK. Time: " + (end - begin) + "ns");
+        } catch (ArrayIndexOutOfBoundsException e){
+            System.out.println(msg + " broken:");
+            e.printStackTrace();
+            return false;
+        } finally {
+            a = null;
+        }
+        return true;
     }
 
     private static final int MIN_MERGE = 32;
@@ -80,7 +76,7 @@ public class TimSortStackSize2 {
     private final int length;
     private final List<Long> runs = new ArrayList<Long>();
 
-    public TimSortStackSize2(int len) {
+    public TimSortStackSize2(final int len) {
         this.length = len;
         minRun = minRunLength(len);
         fillRunsJDKWorstCase();
@@ -106,24 +102,24 @@ public class TimSortStackSize2 {
      * @param X  The sum of the sequence that should be added to runs.
      */
     private void generateJDKWrongElem(long X) {
-        for(long newTotal; X >= 2*minRun+1; X = newTotal) {
+        for(long newTotal; X >= 2 * minRun + 1; X = newTotal) {
             //Default strategy
-            newTotal = X/2 + 1;
+            newTotal = X / 2 + 1;
             //Specialized strategies
-            if(3*minRun+3 <= X && X <= 4*minRun+1) {
+            if(3 * minRun + 3 <= X && X <= 4*minRun+1) {
                 // add x_1=MIN+1, x_2=MIN, x_3=X-newTotal  to runs
-                newTotal = 2*minRun+1;
-            } else if(5*minRun+5 <= X && X <= 6*minRun+5) {
+                newTotal = 2 * minRun + 1;
+            } else if (5 * minRun + 5 <= X && X <= 6 * minRun + 5) {
                 // add x_1=MIN+1, x_2=MIN, x_3=MIN+2, x_4=X-newTotal  to runs
-                newTotal = 3*minRun+3;
-            } else if(8*minRun+9 <= X && X <= 10*minRun+9) {
+                newTotal = 3 * minRun + 3;
+            } else if (8 * minRun + 9 <= X && X <= 10 * minRun + 9) {
                 // add x_1=MIN+1, x_2=MIN, x_3=MIN+2, x_4=2MIN+2, x_5=X-newTotal  to runs
-                newTotal = 5*minRun+5;
-            } else if(13*minRun+15 <= X && X <= 16*minRun+17) {
+                newTotal = 5 * minRun + 5;
+            } else if (13 * minRun + 15 <= X && X <= 16 * minRun + 17) {
                 // add x_1=MIN+1, x_2=MIN, x_3=MIN+2, x_4=2MIN+2, x_5=3MIN+4, x_6=X-newTotal  to runs
-                newTotal = 8*minRun+9;
+                newTotal = 8 * minRun + 9;
             }
-            runs.add(0, X-newTotal);
+            runs.add(0, X - newTotal);
         }
         runs.add(0, X);
     }
@@ -144,10 +140,10 @@ public class TimSortStackSize2 {
         long Y = minRun + 4;
         long X = minRun;
 
-        while(runningTotal+Y+X <= length) {
+        while (runningTotal + Y + X <= length) {
             runningTotal += X + Y;
             generateJDKWrongElem(X);
-            runs.add(0,Y);
+            runs.add(0, Y);
 
             // X_{i+1} = Y_i + x_{i,1} + 1, since runs.get(1) = x_{i,1}
             X = Y + runs.get(1) + 1;
@@ -156,21 +152,22 @@ public class TimSortStackSize2 {
             Y += X + 1;
         }
 
-        if(runningTotal + X <= length) {
+        if (runningTotal + X <= length) {
             runningTotal += X;
             generateJDKWrongElem(X);
         }
 
-        runs.add(length-runningTotal);
+        runs.add(length - runningTotal);
     }
 
-    private Integer[] createArray() {
-        Integer[] a = new Integer[length];
+    private Integer [] createArray() {
+        Integer [] a = new Integer[length];
         Arrays.fill(a, 0);
         int endRun = -1;
-        for(long len : runs)
-            a[endRun+=len] = 1;
-        a[length-1]=0;
+        for (long len : runs) {
+            a[endRun += len] = 1;
+        }
+        a[length - 1] = 0;
         return a;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,11 +80,13 @@ public class Debug {
         System.err.println("jar           jar verification");
         System.err.println("logincontext  login context results");
         System.err.println("jca           JCA engine class debugging");
+        System.err.println("keystore      KeyStore debugging");
         System.err.println("policy        loading and granting");
         System.err.println("provider      security provider debugging");
         System.err.println("pkcs11        PKCS11 session manager debugging");
         System.err.println("pkcs11keystore");
         System.err.println("              PKCS11 KeyStore debugging");
+        System.err.println("pkcs12        PKCS12 KeyStore debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
         System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("ts            timestamping");
@@ -113,6 +115,10 @@ public class Debug {
         System.err.println("              Cipher, KeyAgreement, KeyGenerator,");
         System.err.println("              KeyPairGenerator, KeyStore, Mac,");
         System.err.println("              MessageDigest, SecureRandom, Signature.");
+        System.err.println();
+        System.err.println("The following can be used with certpath:");
+        System.err.println();
+        System.err.println("ocsp          dump the OCSP protocol exchanges");
         System.err.println();
         System.err.println("Note: Separate multiple options with a comma");
         System.exit(0);

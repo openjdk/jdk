@@ -214,4 +214,8 @@ ResetNoHandleMark::~ResetNoHandleMark() {
   area->_no_handle_mark_nesting = _no_handle_mark_nesting;
 }
 
+bool instanceKlassHandle::is_instanceKlass(const Klass* k) {
+  return k->oop_is_instance();
+}
+
 #endif
