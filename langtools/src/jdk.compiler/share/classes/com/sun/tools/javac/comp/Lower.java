@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1037,7 +1037,7 @@ public class Lower extends TreeTranslator {
         MethodSymbol accessor = accessors[acode];
         if (accessor == null) {
             accessor = new MethodSymbol(
-                STATIC | SYNTHETIC,
+                STATIC | SYNTHETIC | (accOwner.isInterface() ? PUBLIC : 0),
                 accessName(anum.intValue(), acode),
                 new MethodType(argtypes, restype, thrown, syms.methodClass),
                 accOwner);

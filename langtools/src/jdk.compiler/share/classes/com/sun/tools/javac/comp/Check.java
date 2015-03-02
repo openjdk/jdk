@@ -1056,9 +1056,9 @@ public class Check {
                 if ((sym.owner.flags_field & ANNOTATION) != 0) {
                     mask = AnnotationTypeElementMask;
                     implicit = PUBLIC | ABSTRACT;
-                } else if ((flags & (DEFAULT | STATIC)) != 0) {
+                } else if ((flags & (DEFAULT | STATIC | PRIVATE)) != 0) {
                     mask = InterfaceMethodMask;
-                    implicit = PUBLIC;
+                    implicit = (flags & PRIVATE) != 0 ? 0 : PUBLIC;
                     if ((flags & DEFAULT) != 0) {
                         implicit |= ABSTRACT;
                     }
@@ -1128,7 +1128,7 @@ public class Check {
                                 PRIVATE | STATIC | DEFAULT))
                  &&
                  checkDisjoint(pos, flags,
-                                STATIC,
+                                STATIC | PRIVATE,
                                 DEFAULT)
                  &&
                  checkDisjoint(pos, flags,
@@ -1623,8 +1623,7 @@ public class Check {
         }
 
         // Error if overriding method has weaker access (JLS 8.4.6.3).
-        if ((origin.flags() & INTERFACE) == 0 &&
-                 protection(m.flags()) > protection(other.flags())) {
+        if (protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
                       cannotOverride(m, other),
                       (other.flags() & AccessFlags) == 0 ?
