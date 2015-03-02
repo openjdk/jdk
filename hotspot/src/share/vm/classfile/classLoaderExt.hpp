@@ -26,6 +26,8 @@
 #define SHARE_VM_CLASSFILE_CLASSLOADEREXT_HPP
 
 #include "classfile/classLoader.hpp"
+#include "oops/instanceKlass.hpp"
+#include "runtime/handles.hpp"
 
 class ClassLoaderExt: public ClassLoader { // AllStatic
 public:

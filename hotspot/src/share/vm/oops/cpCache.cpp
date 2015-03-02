@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/shared/markSweep.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/universe.inline.hpp"
