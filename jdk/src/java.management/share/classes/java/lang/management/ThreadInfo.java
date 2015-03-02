@@ -31,12 +31,13 @@ import sun.management.ThreadInfoCompositeData;
 import static java.lang.Thread.State.*;
 
 /**
- * Thread information. <tt>ThreadInfo</tt> contains the information
+ * Thread information. {@code ThreadInfo} contains the information
  * about a thread including:
  * <h3>General thread information</h3>
  * <ul>
  *   <li>Thread ID.</li>
  *   <li>Name of the thread.</li>
+ *   <li>Whether a thread is a daemon thread</li>
  * </ul>
  *
  * <h3>Execution information</h3>
@@ -57,6 +58,7 @@ import static java.lang.Thread.State.*;
  *   <li>List of object monitors locked by the thread.</li>
  *   <li>List of <a href="LockInfo.html#OwnableSynchronizer">
  *       ownable synchronizers</a> locked by the thread.</li>
+ *   <li>Thread priority</li>
  * </ul>
  *
  * <h4><a name="SyncStats">Synchronization Statistics</a></h4>
@@ -78,7 +80,7 @@ import static java.lang.Thread.State.*;
  * the system, not for synchronization control.
  *
  * <h4>MXBean Mapping</h4>
- * <tt>ThreadInfo</tt> is mapped to a {@link CompositeData CompositeData}
+ * {@code ThreadInfo} is mapped to a {@link CompositeData CompositeData}
  * with attributes as specified in
  * the {@link #from from} method.
  *
@@ -100,9 +102,11 @@ public class ThreadInfo {
     private String       lockName;
     private long         lockOwnerId;
     private String       lockOwnerName;
+    private boolean      daemon;
     private boolean      inNative;
     private boolean      suspended;
     private Thread.State threadState;
+    private int          priority;
     private StackTraceElement[] stackTrace;
     private MonitorInfo[]       lockedMonitors;
     private LockInfo[]          lockedSynchronizers;
@@ -229,6 +233,8 @@ public class ThreadInfo {
         this.blockedTime = blockedTime;
         this.waitedCount = waitedCount;
         this.waitedTime = waitedTime;
+        this.daemon = t.isDaemon();
+        this.priority = t.getPriority();
 
         if (lockObj == null) {
             this.lock = null;
@@ -256,7 +262,7 @@ public class ThreadInfo {
     }
 
     /*
-     * Constructs a <tt>ThreadInfo</tt> object from a
+     * Constructs a {@code ThreadInfo} object from a
      * {@link CompositeData CompositeData}.
      */
     private ThreadInfo(CompositeData cd) {
@@ -277,7 +283,7 @@ public class ThreadInfo {
         stackTrace = ticd.stackTrace();
 
         // 6.0 attributes
-        if (ticd.isCurrentVersion()) {
+        if (ticd.hasV6()) {
             lock = ticd.lockInfo();
             lockedMonitors = ticd.lockedMonitors();
             lockedSynchronizers = ticd.lockedSynchronizers();
@@ -300,10 +306,20 @@ public class ThreadInfo {
             lockedMonitors = EMPTY_MONITORS;
             lockedSynchronizers = EMPTY_SYNCS;
         }
+
+        // 9.0 attributes
+        if (ticd.isCurrentVersion()) {
+            daemon = ticd.isDaemon();
+            priority = ticd.getPriority();
+        } else {
+            // Not ideal, but unclear what else we can do.
+            daemon = false;
+            priority = Thread.NORM_PRIORITY;
+        }
     }
 
     /**
-     * Returns the ID of the thread associated with this <tt>ThreadInfo</tt>.
+     * Returns the ID of the thread associated with this {@code ThreadInfo}.
      *
      * @return the ID of the associated thread.
      */
@@ -312,7 +328,7 @@ public class ThreadInfo {
     }
 
     /**
-     * Returns the name of the thread associated with this <tt>ThreadInfo</tt>.
+     * Returns the name of the thread associated with this {@code ThreadInfo}.
      *
      * @return the name of the associated thread.
      */
@@ -321,9 +337,9 @@ public class ThreadInfo {
     }
 
     /**
-     * Returns the state of the thread associated with this <tt>ThreadInfo</tt>.
+     * Returns the state of the thread associated with this {@code ThreadInfo}.
      *
-     * @return <tt>Thread.State</tt> of the associated thread.
+     * @return {@code Thread.State} of the associated thread.
      */
     public Thread.State getThreadState() {
          return threadState;
@@ -331,13 +347,13 @@ public class ThreadInfo {
 
     /**
      * Returns the approximate accumulated elapsed time (in milliseconds)
-     * that the thread associated with this <tt>ThreadInfo</tt>
+     * that the thread associated with this {@code ThreadInfo}
      * has blocked to enter or reenter a monitor
      * since thread contention monitoring is enabled.
      * I.e. the total accumulated time the thread has been in the
      * {@link java.lang.Thread.State#BLOCKED BLOCKED} state since thread
      * contention monitoring was last enabled.
-     * This method returns <tt>-1</tt> if thread contention monitoring
+     * This method returns {@code -1} if thread contention monitoring
      * is disabled.
      *
      * <p>The Java virtual machine may measure the time with a high
@@ -345,8 +361,8 @@ public class ThreadInfo {
      * the thread contention monitoring is reenabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
-     * that a thread entered the <tt>BLOCKED</tt> state;
-     * <tt>-1</tt> if thread contention monitoring is disabled.
+     * that a thread entered the {@code BLOCKED} state;
+     * {@code -1} if thread contention monitoring is disabled.
      *
      * @throws java.lang.UnsupportedOperationException if the Java
      * virtual machine does not support this operation.
@@ -360,13 +376,13 @@ public class ThreadInfo {
 
     /**
      * Returns the total number of times that
-     * the thread associated with this <tt>ThreadInfo</tt>
+     * the thread associated with this {@code ThreadInfo}
      * blocked to enter or reenter a monitor.
      * I.e. the number of times a thread has been in the
      * {@link java.lang.Thread.State#BLOCKED BLOCKED} state.
      *
      * @return the total number of times that the thread
-     * entered the <tt>BLOCKED</tt> state.
+     * entered the {@code BLOCKED} state.
      */
     public long getBlockedCount() {
         return blockedCount;
@@ -374,14 +390,14 @@ public class ThreadInfo {
 
     /**
      * Returns the approximate accumulated elapsed time (in milliseconds)
-     * that the thread associated with this <tt>ThreadInfo</tt>
+     * that the thread associated with this {@code ThreadInfo}
      * has waited for notification
      * since thread contention monitoring is enabled.
      * I.e. the total accumulated time the thread has been in the
      * {@link java.lang.Thread.State#WAITING WAITING}
      * or {@link java.lang.Thread.State#TIMED_WAITING TIMED_WAITING} state
      * since thread contention monitoring is enabled.
-     * This method returns <tt>-1</tt> if thread contention monitoring
+     * This method returns {@code -1} if thread contention monitoring
      * is disabled.
      *
      * <p>The Java virtual machine may measure the time with a high
@@ -389,9 +405,9 @@ public class ThreadInfo {
      * the thread contention monitoring is reenabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
-     * that a thread has been in the <tt>WAITING</tt> or
-     * <tt>TIMED_WAITING</tt> state;
-     * <tt>-1</tt> if thread contention monitoring is disabled.
+     * that a thread has been in the {@code WAITING} or
+     * {@code TIMED_WAITING} state;
+     * {@code -1} if thread contention monitoring is disabled.
      *
      * @throws java.lang.UnsupportedOperationException if the Java
      * virtual machine does not support this operation.
@@ -405,29 +421,29 @@ public class ThreadInfo {
 
     /**
      * Returns the total number of times that
-     * the thread associated with this <tt>ThreadInfo</tt>
+     * the thread associated with this {@code ThreadInfo}
      * waited for notification.
      * I.e. the number of times that a thread has been
      * in the {@link java.lang.Thread.State#WAITING WAITING}
      * or {@link java.lang.Thread.State#TIMED_WAITING TIMED_WAITING} state.
      *
      * @return the total number of times that the thread
-     * was in the <tt>WAITING</tt> or <tt>TIMED_WAITING</tt> state.
+     * was in the {@code WAITING} or {@code TIMED_WAITING} state.
      */
     public long getWaitedCount() {
         return waitedCount;
     }
 
     /**
-     * Returns the <tt>LockInfo</tt> of an object for which
-     * the thread associated with this <tt>ThreadInfo</tt>
+     * Returns the {@code LockInfo} of an object for which
+     * the thread associated with this {@code ThreadInfo}
      * is blocked waiting.
      * A thread can be blocked waiting for one of the following:
      * <ul>
      * <li>an object monitor to be acquired for entering or reentering
      *     a synchronization block/method.
      *     <br>The thread is in the {@link java.lang.Thread.State#BLOCKED BLOCKED}
-     *     state waiting to enter the <tt>synchronized</tt> statement
+     *     state waiting to enter the {@code synchronized} statement
      *     or method.
      *     </li>
      * <li>an object monitor to be notified by another thread.
@@ -448,11 +464,11 @@ public class ThreadInfo {
      *     or a {@link java.util.concurrent.locks.Condition Condition}.</li>
      * </ul>
      *
-     * <p>This method returns <tt>null</tt> if the thread is not in any of
+     * <p>This method returns {@code null} if the thread is not in any of
      * the above conditions.
      *
-     * @return <tt>LockInfo</tt> of an object for which the thread
-     *         is blocked waiting if any; <tt>null</tt> otherwise.
+     * @return {@code LockInfo} of an object for which the thread
+     *         is blocked waiting if any; {@code null} otherwise.
      * @since 1.6
      */
     public LockInfo getLockInfo() {
@@ -462,19 +478,19 @@ public class ThreadInfo {
     /**
      * Returns the {@link LockInfo#toString string representation}
      * of an object for which the thread associated with this
-     * <tt>ThreadInfo</tt> is blocked waiting.
+     * {@code ThreadInfo} is blocked waiting.
      * This method is equivalent to calling:
      * <blockquote>
      * <pre>
      * getLockInfo().toString()
      * </pre></blockquote>
      *
-     * <p>This method will return <tt>null</tt> if this thread is not blocked
+     * <p>This method will return {@code null} if this thread is not blocked
      * waiting for any object or if the object is not owned by any thread.
      *
      * @return the string representation of the object on which
      * the thread is blocked if any;
-     * <tt>null</tt> otherwise.
+     * {@code null} otherwise.
      *
      * @see #getLockInfo
      */
@@ -484,14 +500,14 @@ public class ThreadInfo {
 
     /**
      * Returns the ID of the thread which owns the object
-     * for which the thread associated with this <tt>ThreadInfo</tt>
+     * for which the thread associated with this {@code ThreadInfo}
      * is blocked waiting.
-     * This method will return <tt>-1</tt> if this thread is not blocked
+     * This method will return {@code -1} if this thread is not blocked
      * waiting for any object or if the object is not owned by any thread.
      *
      * @return the thread ID of the owner thread of the object
      * this thread is blocked on;
-     * <tt>-1</tt> if this thread is not blocked
+     * {@code -1} if this thread is not blocked
      * or if the object is not owned by any thread.
      *
      * @see #getLockInfo
@@ -502,14 +518,14 @@ public class ThreadInfo {
 
     /**
      * Returns the name of the thread which owns the object
-     * for which the thread associated with this <tt>ThreadInfo</tt>
+     * for which the thread associated with this {@code ThreadInfo}
      * is blocked waiting.
-     * This method will return <tt>null</tt> if this thread is not blocked
+     * This method will return {@code null} if this thread is not blocked
      * waiting for any object or if the object is not owned by any thread.
      *
      * @return the name of the thread that owns the object
      * this thread is blocked on;
-     * <tt>null</tt> if this thread is not blocked
+     * {@code null} if this thread is not blocked
      * or if the object is not owned by any thread.
      *
      * @see #getLockInfo
@@ -520,7 +536,7 @@ public class ThreadInfo {
 
     /**
      * Returns the stack trace of the thread
-     * associated with this <tt>ThreadInfo</tt>.
+     * associated with this {@code ThreadInfo}.
      * If no stack trace was requested for this thread info, this method
      * will return a zero-length array.
      * If the returned array is of non-zero length then the first element of
@@ -532,39 +548,64 @@ public class ThreadInfo {
      * <p>Some Java virtual machines may, under some circumstances, omit one
      * or more stack frames from the stack trace.  In the extreme case,
      * a virtual machine that has no stack trace information concerning
-     * the thread associated with this <tt>ThreadInfo</tt>
+     * the thread associated with this {@code ThreadInfo}
      * is permitted to return a zero-length array from this method.
      *
-     * @return an array of <tt>StackTraceElement</tt> objects of the thread.
+     * @return an array of {@code StackTraceElement} objects of the thread.
      */
     public StackTraceElement[] getStackTrace() {
         return stackTrace;
     }
 
     /**
-     * Tests if the thread associated with this <tt>ThreadInfo</tt>
-     * is suspended.  This method returns <tt>true</tt> if
+     * Tests if the thread associated with this {@code ThreadInfo}
+     * is suspended.  This method returns {@code true} if
      * {@link Thread#suspend} has been called.
      *
-     * @return <tt>true</tt> if the thread is suspended;
-     *         <tt>false</tt> otherwise.
+     * @return {@code true} if the thread is suspended;
+     *         {@code false} otherwise.
      */
     public boolean isSuspended() {
          return suspended;
     }
 
     /**
-     * Tests if the thread associated with this <tt>ThreadInfo</tt>
+     * Tests if the thread associated with this {@code ThreadInfo}
      * is executing native code via the Java Native Interface (JNI).
      * The JNI native code does not include
      * the virtual machine support code or the compiled native
      * code generated by the virtual machine.
      *
-     * @return <tt>true</tt> if the thread is executing native code;
-     *         <tt>false</tt> otherwise.
+     * @return {@code true} if the thread is executing native code;
+     *         {@code false} otherwise.
      */
     public boolean isInNative() {
          return inNative;
+    }
+
+    /**
+     * Tests if the thread associated with this {@code ThreadInfo} is
+     * a {@linkplain Thread#isDaemon daemon thread}.
+     *
+     * @return {@code true} if the thread is a daemon thread,
+     *         {@code false} otherwise.
+     * @see Thread#isDaemon
+     * @since 1.9
+     */
+    public boolean isDaemon() {
+         return daemon;
+    }
+
+    /**
+     * Returns the {@linkplain Thread#getPriority() thread priority} of the
+     * thread associated with this {@code ThreadInfo}.
+     *
+     * @return The priority of the thread associated with this
+     *         {@code ThreadInfo}.
+     * @since 1.9
+     */
+    public int getPriority() {
+         return priority;
     }
 
     /**
@@ -580,6 +621,8 @@ public class ThreadInfo {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder("\"" + getThreadName() + "\"" +
+                                             (daemon ? " daemon" : "") +
+                                             " prio=" + priority +
                                              " Id=" + getThreadId() + " " +
                                              getThreadState());
         if (getLockName() != null) {
@@ -647,9 +690,9 @@ public class ThreadInfo {
     private static final int MAX_FRAMES = 8;
 
     /**
-     * Returns a <tt>ThreadInfo</tt> object represented by the
-     * given <tt>CompositeData</tt>.
-     * The given <tt>CompositeData</tt> must contain the following attributes
+     * Returns a {@code ThreadInfo} object represented by the
+     * given {@code CompositeData}.
+     * The given {@code CompositeData} must contain the following attributes
      * unless otherwise specified below:
      * <blockquote>
      * <table border summary="The attributes and their types the given CompositeData contains">
@@ -659,67 +702,67 @@ public class ThreadInfo {
      * </tr>
      * <tr>
      *   <td>threadId</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>threadName</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>threadState</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>suspended</td>
-     *   <td><tt>java.lang.Boolean</tt></td>
+     *   <td>{@code java.lang.Boolean}</td>
      * </tr>
      * <tr>
      *   <td>inNative</td>
-     *   <td><tt>java.lang.Boolean</tt></td>
+     *   <td>{@code java.lang.Boolean}</td>
      * </tr>
      * <tr>
      *   <td>blockedCount</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>blockedTime</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>waitedCount</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>waitedTime</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>lockInfo</td>
-     *   <td><tt>javax.management.openmbean.CompositeData</tt>
+     *   <td>{@code javax.management.openmbean.CompositeData}
      *       - the mapped type for {@link LockInfo} as specified in the
      *         {@link LockInfo#from} method.
      *       <p>
-     *       If <tt>cd</tt> does not contain this attribute,
-     *       the <tt>LockInfo</tt> object will be constructed from
-     *       the value of the <tt>lockName</tt> attribute. </td>
+     *       If {@code cd} does not contain this attribute,
+     *       the {@code LockInfo} object will be constructed from
+     *       the value of the {@code lockName} attribute. </td>
      * </tr>
      * <tr>
      *   <td>lockName</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>lockOwnerId</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>lockOwnerName</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td><a name="StackTrace">stackTrace</a></td>
-     *   <td><tt>javax.management.openmbean.CompositeData[]</tt>
+     *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       <p>
-     *       Each element is a <tt>CompositeData</tt> representing
+     *       Each element is a {@code CompositeData} representing
      *       StackTraceElement containing the following attributes:
      *       <blockquote>
      *       <table cellspacing=1 cellpadding=0 summary="The attributes and their types the given CompositeData contains">
@@ -729,23 +772,23 @@ public class ThreadInfo {
      *       </tr>
      *       <tr>
      *         <td>className</td>
-     *         <td><tt>java.lang.String</tt></td>
+     *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
      *         <td>methodName</td>
-     *         <td><tt>java.lang.String</tt></td>
+     *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
      *         <td>fileName</td>
-     *         <td><tt>java.lang.String</tt></td>
+     *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
      *         <td>lineNumber</td>
-     *         <td><tt>java.lang.Integer</tt></td>
+     *         <td>{@code java.lang.Integer}</td>
      *       </tr>
      *       <tr>
      *         <td>nativeMethod</td>
-     *         <td><tt>java.lang.Boolean</tt></td>
+     *         <td>{@code java.lang.Boolean}</td>
      *       </tr>
      *       </table>
      *       </blockquote>
@@ -753,35 +796,43 @@ public class ThreadInfo {
      * </tr>
      * <tr>
      *   <td>lockedMonitors</td>
-     *   <td><tt>javax.management.openmbean.CompositeData[]</tt>
+     *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       whose element type is the mapped type for
      *       {@link MonitorInfo} as specified in the
      *       {@link MonitorInfo#from Monitor.from} method.
      *       <p>
-     *       If <tt>cd</tt> does not contain this attribute,
+     *       If {@code cd} does not contain this attribute,
      *       this attribute will be set to an empty array. </td>
      * </tr>
      * <tr>
      *   <td>lockedSynchronizers</td>
-     *   <td><tt>javax.management.openmbean.CompositeData[]</tt>
+     *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       whose element type is the mapped type for
      *       {@link LockInfo} as specified in the {@link LockInfo#from} method.
      *       <p>
-     *       If <tt>cd</tt> does not contain this attribute,
+     *       If {@code cd} does not contain this attribute,
      *       this attribute will be set to an empty array. </td>
+     * </tr>
+     * <tr>
+     *   <td>daemon</td>
+     *   <td>{@code java.lang.Boolean}</td>
+     * </tr>
+     * <tr>
+     *   <td>priority</td>
+     *   <td>{@code java.lang.Integer}</td>
      * </tr>
      * </table>
      * </blockquote>
      *
-     * @param cd <tt>CompositeData</tt> representing a <tt>ThreadInfo</tt>
+     * @param cd {@code CompositeData} representing a {@code ThreadInfo}
      *
-     * @throws IllegalArgumentException if <tt>cd</tt> does not
-     *   represent a <tt>ThreadInfo</tt> with the attributes described
+     * @throws IllegalArgumentException if {@code cd} does not
+     *   represent a {@code ThreadInfo} with the attributes described
      *   above.
      *
-     * @return a <tt>ThreadInfo</tt> object represented
-     *         by <tt>cd</tt> if <tt>cd</tt> is not <tt>null</tt>;
-     *         <tt>null</tt> otherwise.
+     * @return a {@code ThreadInfo} object represented
+     *         by {@code cd} if {@code cd} is not {@code null};
+     *         {@code null} otherwise.
      */
     public static ThreadInfo from(CompositeData cd) {
         if (cd == null) {
@@ -798,12 +849,12 @@ public class ThreadInfo {
     /**
      * Returns an array of {@link MonitorInfo} objects, each of which
      * represents an object monitor currently locked by the thread
-     * associated with this <tt>ThreadInfo</tt>.
+     * associated with this {@code ThreadInfo}.
      * If no locked monitor was requested for this thread info or
      * no monitor is locked by the thread, this method
      * will return a zero-length array.
      *
-     * @return an array of <tt>MonitorInfo</tt> objects representing
+     * @return an array of {@code MonitorInfo} objects representing
      *         the object monitors locked by the thread.
      *
      * @since 1.6
@@ -816,11 +867,11 @@ public class ThreadInfo {
      * Returns an array of {@link LockInfo} objects, each of which
      * represents an <a href="LockInfo.html#OwnableSynchronizer">ownable
      * synchronizer</a> currently locked by the thread associated with
-     * this <tt>ThreadInfo</tt>.  If no locked synchronizer was
+     * this {@code ThreadInfo}.  If no locked synchronizer was
      * requested for this thread info or no synchronizer is locked by
      * the thread, this method will return a zero-length array.
      *
-     * @return an array of <tt>LockInfo</tt> objects representing
+     * @return an array of {@code LockInfo} objects representing
      *         the ownable synchronizers locked by the thread.
      *
      * @since 1.6

@@ -88,6 +88,7 @@ JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_init
     /* SocketFlow fields */
 
     c = (*env)->FindClass(env, "jdk/net/SocketFlow");
+    CHECK_NULL(c);
 
     /* status */
 

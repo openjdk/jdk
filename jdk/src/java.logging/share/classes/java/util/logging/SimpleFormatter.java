@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 package java.util.logging;
 
 import java.io.*;
-import java.text.*;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import sun.util.logging.LoggingSupport;
 
 /**
@@ -59,8 +60,8 @@ import sun.util.logging.LoggingSupport;
 public class SimpleFormatter extends Formatter {
 
     // format string for printing the log record
-    private static final String format = LoggingSupport.getSimpleFormat();
-    private final Date dat = new Date();
+    private final String format = LoggingSupport.getSimpleFormat();
+    private final ZoneId zoneId = ZoneId.systemDefault();
 
     /**
      * Format the given LogRecord.
@@ -79,8 +80,9 @@ public class SimpleFormatter extends Formatter {
      *     java.util.Formatter} format string specified in the
      *     {@code java.util.logging.SimpleFormatter.format} property
      *     or the default format.</li>
-     * <li>{@code date} - a {@link Date} object representing
-     *     {@linkplain LogRecord#getMillis event time} of the log record.</li>
+     * <li>{@code date} - a {@link ZonedDateTime} object representing
+     *     {@linkplain LogRecord#getInstant() event time} of the log record
+     *      in the {@link ZoneId#systemDefault()} system time zone.</li>
      * <li>{@code source} - a string representing the caller, if available;
      *     otherwise, the logger's name.</li>
      * <li>{@code logger} - the logger's name.</li>
@@ -129,6 +131,16 @@ public class SimpleFormatter extends Formatter {
      *     Mar 22, 2011 1:11:31 PM MyClass fatal
      *     SEVERE: several message with an exception
      *     </pre></li>
+     * <li> {@code java.util.logging.SimpleFormatter.format="%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS.%1$tN %1$Tp %2$s%n%4$s: %5$s%6$s%n"}
+     *      <p>Since JDK 1.9, {@code java.util.logging} uses {@link
+     *         java.time.Clock#systemUTC() java.time} to create more precise time
+     *         stamps.
+     *         The format above can be used to add a {@code .%1$tN} to the
+     *         date/time formatting so that nanoseconds will also be printed:
+     *     <pre>
+     *     Feb 06, 2015 5:33:10.279216000 PM example.Main main
+     *     INFO: This is a test
+     *     </pre></li>
      * </ul>
      * <p>This method can also be overridden in a subclass.
      * It is recommended to use the {@link Formatter#formatMessage}
@@ -137,8 +149,10 @@ public class SimpleFormatter extends Formatter {
      * @param record the log record to be formatted.
      * @return a formatted log record
      */
+    @Override
     public synchronized String format(LogRecord record) {
-        dat.setTime(record.getMillis());
+        ZonedDateTime zdt = ZonedDateTime.ofInstant(
+                record.getInstant(), zoneId);
         String source;
         if (record.getSourceClassName() != null) {
             source = record.getSourceClassName();
@@ -159,7 +173,7 @@ public class SimpleFormatter extends Formatter {
             throwable = sw.toString();
         }
         return String.format(format,
-                             dat,
+                             zdt,
                              source,
                              record.getLoggerName(),
                              record.getLevel().getLocalizedLevelName(),

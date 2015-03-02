@@ -31,7 +31,6 @@ import java.nio.channels.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
-import sun.net.www.MessageHeader;
 import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
 

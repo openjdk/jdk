@@ -102,7 +102,18 @@ print(jlist instanceof java.util.List);
 print(jlist);
 
 var obj = new JSObject() {
-    toNumber: function() { return 42; }
+    getMember: function(name) {
+        if (name == "valueOf") {
+            return new JSObject() {
+                isFunction: function() {
+                    return true;
+                },
+                call: function(thiz) {
+                    return 42;
+                }
+            };
+        }
+    }
 };
 
 print(32 + obj);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,9 @@
  * questions.
  */
 
-/*
- * @test
- * @author Gary Ellison
- * @bug 4170635
- * @summary Verify equals()/hashCode() contract honored
- */
+#include <jni.h>
 
-import java.io.*;
-
-import sun.security.acl.*;
-
-
-public class PermissionEqualsHashCode {
-
-    public static void main(String[] args) throws Exception {
-
-        PermissionImpl p1 = new PermissionImpl("permissionPermission");
-        PermissionImpl p2 = new PermissionImpl("permissionPermission");
-
-
-        // the test
-        if ( (p1.equals(p2)) == (p1.hashCode()==p2.hashCode()) )
-            System.out.println("PASSED");
-        else
-            throw new Exception("Failed equals()/hashCode() contract");
-
-    }
+JNIEXPORT jint JNICALL
+Java_JniVersion_getJniVersion(JNIEnv *env, jclass clz) {
+  return (*env)->GetVersion(env);
 }
