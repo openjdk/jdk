@@ -1,0 +1,105 @@
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifndef _TEST_FILES_COMPILATION_GMK
+_TEST_FILES_COMPILATION_GMK := 1
+
+ifeq (,$(_MAKEBASE_GMK))
+  $(error You must include MakeBase.gmk prior to including TestFilesCompilation.gmk)
+endif
+
+
+include NativeCompilation.gmk
+# FIXME: This is a bad fix currently needed due to JDK-8064808 not being resolved.
+include $(JDK_TOPDIR)/make/Tools.gmk
+
+# Setup make rules for creating a set of native test files (libraries or
+# executables). This will locate native files matching a certain pattern,
+# and compile these into libraries or executables.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   TYPE Must be either PROGRAM or LIBRARY.
+#   SOURCE_DIRS A list of source directories to search
+#   OUTPUT_DIR Where to put the resulting files
+define SetupTestFilesCompilation
+  $(if $(27),$(error Internal makefile error: Too many arguments to SetupTestFilesCompilation, please update BuildJTRegNative.gmk))
+  $(call EvalDebugWrapper,$(strip $1),$(call SetupTestFilesCompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26)))
+endef
+
+define SetupTestFilesCompilationInner
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupTestFileCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26))
+  $(if $(27),$(error Internal makefile error: Too many arguments to SetupTestFilesCompilation, please update BuildJTRegNative.gmk))
+
+  # Check for duplicate base file names. That would have failed later anyhow, but
+  # this gives a better error message.
+  $1_DUPLICATED_NAMES := $$(call dups, $$(notdir $$($1_FILE_LIST)))
+  ifneq ($$($1_DUPLICATED_NAMES), )
+    $$(error There are duplicate test file names for $1: $$($1_DUPLICATED_NAMES))
+  endif
+
+  # The list to depend on starts out empty
+  $1 :=
+  ifeq ($$($1_TYPE), LIBRARY)
+    $1_PREFIX = lib
+    $1_OUTPUT_SUBDIR := lib
+    $1_CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
+  else ifeq ($$($1_TYPE), PROGRAM)
+    $1_PREFIX = exe
+    $1_OUTPUT_SUBDIR := bin
+    $1_CFLAGS := $(CFLAGS_JDKEXE) $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_LDFLAGS := $(LDFLAGS_JDKEXE)
+  else
+    $$(error Unknown type: $$($1_TYPE))
+  endif
+
+  # Locate all files with the matching prefix
+  $1_FILE_LIST := \
+      $$(shell $$(FIND) $$($1_SOURCE_DIRS) -type f -name "$$($1_PREFIX)*.c")
+
+  # Setup a compilation for each and every one of them
+  $$(foreach file, $$($1_FILE_LIST),\
+    $$(eval name := $$(strip $$(patsubst $$($1_PREFIX)%, %, $$(basename $$(notdir $$(file)))))) \
+    $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
+        $$($1_TYPE) := $$(name), \
+        SRC := $$(patsubst %/,%,$$(dir $$(file))), \
+        INCLUDE_FILES := $$(notdir $$(file)), \
+        OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$($1_PREFIX)$$(name), \
+        OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
+        LANG := C, \
+        CFLAGS := $$($1_CFLAGS), \
+        LDFLAGS := $$($1_LDFLAGS), \
+        OPTIMIZATION := LOW, \
+        DEBUG_SYMBOLS := true)) \
+    $$(eval $1 += $$(BUILD_TEST_$$(name)) )  \
+  )
+
+endef
+
+endif # _TEST_FILES_COMPILATION_GMK

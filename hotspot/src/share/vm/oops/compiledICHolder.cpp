@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
-#include "oops/oop.inline2.hpp"
 #include "runtime/atomic.inline.hpp"
 
 volatile int CompiledICHolder::_live_count;

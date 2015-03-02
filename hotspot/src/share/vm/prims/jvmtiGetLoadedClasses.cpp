@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/universe.inline.hpp"
 #include "prims/jvmtiGetLoadedClasses.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/stack.inline.hpp"
 
 
 // The closure for GetLoadedClasses

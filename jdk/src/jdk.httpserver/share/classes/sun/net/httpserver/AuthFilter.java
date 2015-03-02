@@ -29,7 +29,6 @@ import com.sun.net.httpserver.*;
 import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
-import sun.net.www.MessageHeader;
 import java.util.*;
 import javax.security.auth.*;
 import javax.security.auth.callback.*;

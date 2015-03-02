@@ -3528,7 +3528,7 @@ public class Check {
 
         for (Symbol sym : tsym.members().getSymbolsByName(name)) {
             if (sym.isStatic() &&
-                staticImportAccessible(sym, packge) &&
+                importAccessible(sym, packge) &&
                 sym.isMemberOf(origin, types)) {
                 return true;
             }
@@ -3538,17 +3538,23 @@ public class Check {
     }
 
     // is the sym accessible everywhere in packge?
-    public boolean staticImportAccessible(Symbol sym, PackageSymbol packge) {
-        int flags = (int)(sym.flags() & AccessFlags);
-        switch (flags) {
-        default:
-        case PUBLIC:
-            return true;
-        case PRIVATE:
+    public boolean importAccessible(Symbol sym, PackageSymbol packge) {
+        try {
+            int flags = (int)(sym.flags() & AccessFlags);
+            switch (flags) {
+            default:
+            case PUBLIC:
+                return true;
+            case PRIVATE:
+                return false;
+            case 0:
+            case PROTECTED:
+                return sym.packge() == packge;
+            }
+        } catch (ClassFinder.BadClassFile err) {
+            throw err;
+        } catch (CompletionFailure ex) {
             return false;
-        case 0:
-        case PROTECTED:
-            return sym.packge() == packge;
         }
     }
 

@@ -28,7 +28,7 @@
 #include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/memRegion.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "utilities/macros.hpp"
 
 class DirtyCardQueueSet;
