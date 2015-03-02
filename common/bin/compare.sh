@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -995,7 +995,7 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
     fi
 fi
 
-THIS="$( cd "$( dirname "$0" )" && pwd )"
+THIS="$( cd "$( dirname "$0" )" > /dev/null && pwd )"
 echo "$THIS"
 THIS_SCRIPT="$0"
 
@@ -1085,8 +1085,8 @@ while [ -n "$1" ]; do
             CMP_EXECS=true
             ;;
         -2dirs)
-            THIS="$(cd "$2" && pwd )"
-            OTHER="$(cd "$3" && pwd )"
+            THIS="$(cd "$2" > /dev/null && pwd )"
+            OTHER="$(cd "$3" > /dev/null && pwd )"
             THIS_BASE_DIR="$THIS"
             OTHER_BASE_DIR="$OTHER"
             SKIP_DEFAULT=true
@@ -1127,9 +1127,9 @@ done
 
 if [ "$CMP_2_ZIPS" = "true" ]; then
     THIS_DIR="$(dirname $THIS_FILE)"
-    THIS_DIR="$(cd "$THIS_DIR" && pwd )"
+    THIS_DIR="$(cd "$THIS_DIR" > /dev/null && pwd )"
     OTHER_DIR="$(dirname $OTHER_FILE)"
-    OTHER_DIR="$(cd "$OTHER_DIR" && pwd )"
+    OTHER_DIR="$(cd "$OTHER_DIR" > /dev/null && pwd )"
     THIS_FILE_NAME="$(basename $THIS_FILE)"
     OTHER_FILE_NAME="$(basename $OTHER_FILE)"
     echo Comparing $THIS_DIR/$THIS_FILE_NAME and $OTHER_DIR/$OTHER_FILE_NAME
@@ -1139,9 +1139,9 @@ fi
 
 if [ "$CMP_2_BINS" = "true" ]; then
     THIS_DIR="$(dirname $THIS_FILE)"
-    THIS_DIR="$(cd "$THIS_DIR" && pwd )"
+    THIS_DIR="$(cd "$THIS_DIR" > /dev/null && pwd )"
     OTHER_DIR="$(dirname $OTHER_FILE)"
-    OTHER_DIR="$(cd "$OTHER_DIR" && pwd )"
+    OTHER_DIR="$(cd "$OTHER_DIR" > /dev/null && pwd )"
     THIS_FILE_NAME="$(basename $THIS_FILE)"
     OTHER_FILE_NAME="$(basename $OTHER_FILE)"
     echo Comparing $THIS_DIR/$THIS_FILE_NAME and $OTHER_DIR/$OTHER_FILE_NAME
@@ -1174,7 +1174,7 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
             echo "$OTHER"
             exit 1
         fi
-        OTHER="$( cd "$OTHER" && pwd )"
+        OTHER="$( cd "$OTHER" > /dev/null && pwd )"
         echo "Comparing to:"
         echo "$OTHER"
         echo
@@ -1222,7 +1222,24 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         exit 1
     fi
 
-    if [ -d "$THIS/images/jdk-bundle" ] && [ -d "$OTHER/images/jdk-bundle" ]; then
+    if [ -d "$THIS/deploy/jdk-bundle" -o -d "$THIS/deploy/images/jdk-bundle" ] \
+	     && [ -d "$OTHER/deploy/jdk-bundle" -o -d "$OTHER/deploy/images/jdk-bundle" ]; then
+	if [ -d "$THIS/deploy/images/jdk-bundle" ]; then
+            THIS_JDK_BUNDLE="$THIS/deploy/images/jdk-bundle"
+            THIS_JRE_BUNDLE="$THIS/deploy/images/jre-bundle"
+	else
+            THIS_JDK_BUNDLE="$THIS/deploy/jdk-bundle"
+            THIS_JRE_BUNDLE="$THIS/deploy/jre-bundle"
+	fi
+	if [ -d "$OTHER/deploy/images/jdk-bundle" ]; then
+            OTHER_JDK_BUNDLE="$OTHER/deploy/images/jdk-bundle"
+            OTHER_JRE_BUNDLE="$OTHER/deploy/images/jre-bundle"
+	else
+            OTHER_JDK_BUNDLE="$OTHER/deploy/jdk-bundle"
+            OTHER_JRE_BUNDLE="$OTHER/deploy/jre-bundle"
+	fi
+        echo "Also comparing deploy macosx bundles"
+    elif [ -d "$THIS/images/jdk-bundle" ] && [ -d "$OTHER/images/jdk-bundle" ]; then
         THIS_JDK_BUNDLE="$THIS/images/jdk-bundle"
         THIS_JRE_BUNDLE="$THIS/images/jre-bundle"
         OTHER_JDK_BUNDLE="$OTHER/images/jdk-bundle"
@@ -1230,15 +1247,34 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         echo "Also comparing macosx bundles"
     fi
 
-    if [ -d "$THIS/deploy" ] && [ -d "$OTHER/deploy" ]; then
-        THIS_DEPLOY_BUNDLE_DIR="$THIS/deploy/images/bundles"
-        OTHER_DEPLOY_BUNDLE_DIR="$OTHER/deploy/bundles"
-        echo "Also comparing deploy/bundles"
-        if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+    if [ -d "$THIS/deploy/bundles" -o -d "$THIS/deploy/images/bundles" ] \
+	     && [ -d "$OTHER/deploy/bundles" -o -d "$OTHER/deploy/images/bundles" ]; then
+	if [ -d "$THIS/deploy/images/bundles" ]; then
+            THIS_DEPLOY_BUNDLE_DIR="$THIS/deploy/images/bundles"
+	else
+            THIS_DEPLOY_BUNDLE_DIR="$THIS/deploy/bundles"
+	fi
+	if [ -d "$OTHER/deploy/images/bundles" ]; then
+            OTHER_DEPLOY_BUNDLE_DIR="$OTHER/deploy/images/bundles"
+	else
+            OTHER_DEPLOY_BUNDLE_DIR="$OTHER/deploy/bundles"
+	fi
+        echo "Also comparing deploy javadoc bundles"
+    fi
+
+    if [ -d "$THIS/deploy/JavaAppletPlugin.plugin" -o -d "$THIS/deploy/images/JavaAppletPlugin.plugin" ] \
+	     && [ -d "$OTHER/deploy/JavaAppletPlugin.plugin" -o -d "$OTHER/deploy/images/JavaAppletPlugin.plugin" ]; then
+	if [ -d "$THIS/deploy/images/bundles" ]; then
             THIS_DEPLOY_APPLET_PLUGIN_DIR="$THIS/deploy/images/JavaAppletPlugin.plugin"
+	else
+            THIS_DEPLOY_APPLET_PLUGIN_DIR="$THIS/deploy/JavaAppletPlugin.plugin"
+	fi
+	if [ -d "$OTHER/deploy/images/bundles" ]; then
+            OTHER_DEPLOY_APPLET_PLUGIN_DIR="$OTHER/deploy/images/JavaAppletPlugin.plugin"
+	else
             OTHER_DEPLOY_APPLET_PLUGIN_DIR="$OTHER/deploy/JavaAppletPlugin.plugin"
-            echo "Also comparing JavaAppletPlugin"
-        fi
+	fi
+        echo "Also comparing deploy applet image"
     fi
 
     if [ -d "$OTHER/images" ]; then
