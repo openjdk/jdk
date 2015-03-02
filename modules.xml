@@ -809,6 +809,10 @@
       <name>sun.management</name>
       <to>jdk.jconsole</to>
     </export>
+    <export>
+      <name>sun.management.spi</name>
+      <to>jdk.management.cmm</to>
+    </export>
   </module>
   <module>
     <name>java.naming</name>
