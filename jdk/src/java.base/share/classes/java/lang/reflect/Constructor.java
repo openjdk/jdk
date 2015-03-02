@@ -296,7 +296,8 @@ public final class Constructor<T> extends Executable {
      * constructor has default (package) access.
      *
      * @return a string describing this {@code Constructor}
-     * @jls 8.8.3. Constructor Modifiers
+     * @jls 8.8.3 Constructor Modifiers
+     * @jls 8.9.2 Enum Body Declarations
      */
     public String toString() {
         return sharedToString(Modifier.constructorModifiers(),
@@ -342,7 +343,8 @@ public final class Constructor<T> extends Executable {
      * include type parameters
      *
      * @since 1.5
-     * @jls 8.8.3. Constructor Modifiers
+     * @jls 8.8.3 Constructor Modifiers
+     * @jls 8.9.2 Enum Body Declarations
      */
     @Override
     public String toGenericString() {

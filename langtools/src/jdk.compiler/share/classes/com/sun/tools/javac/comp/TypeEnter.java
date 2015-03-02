@@ -160,7 +160,7 @@ public class TypeEnter implements Completer {
         // if there remain any unimported toplevels (these must have
         // no classes at all), process their import statements as well.
         for (JCCompilationUnit tree : trees) {
-            if (tree.starImportScope.isEmpty()) {
+            if (!tree.starImportScope.isFilled()) {
                 Env<AttrContext> topEnv = enter.topLevelEnv(tree);
                 finishImports(tree, () -> { completeClass.resolveImports(tree, topEnv); });
             }
@@ -280,12 +280,7 @@ public class TypeEnter implements Completer {
 
         Env<AttrContext> env;
         ImportFilter staticImportFilter;
-        ImportFilter typeImportFilter = new ImportFilter() {
-            @Override
-            public boolean accepts(Scope origin, Symbol t) {
-                return t.kind == TYP;
-            }
-        };
+        ImportFilter typeImportFilter;
 
         @Override
         protected void doRunPhase(Env<AttrContext> env) {
@@ -304,26 +299,26 @@ public class TypeEnter implements Completer {
         }
 
         private void resolveImports(JCCompilationUnit tree, Env<AttrContext> env) {
-            if (!tree.starImportScope.isEmpty()) {
+            if (tree.starImportScope.isFilled()) {
                 // we must have already processed this toplevel
                 return;
             }
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
+            ImportFilter prevTypeImportFilter = typeImportFilter;
             DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
             Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
                 this.env = env;
                 final PackageSymbol packge = env.toplevel.packge;
-                this.staticImportFilter = new ImportFilter() {
-                    @Override
-                    public boolean accepts(Scope origin, Symbol sym) {
-                        return sym.isStatic() &&
-                               chk.staticImportAccessible(sym, packge) &&
-                               sym.isMemberOf((TypeSymbol) origin.owner, types);
-                    }
-                };
+                this.staticImportFilter =
+                        (origin, sym) -> sym.isStatic() &&
+                                         chk.importAccessible(sym, packge) &&
+                                         sym.isMemberOf((TypeSymbol) origin.owner, types);
+                this.typeImportFilter =
+                        (origin, sym) -> sym.kind == TYP &&
+                                         chk.importAccessible(sym, packge);
 
                 // Import-on-demand java.lang.
                 importAll(tree.pos, syms.enterPackage(names.java_lang), env);
@@ -340,6 +335,7 @@ public class TypeEnter implements Completer {
                 chk.setLint(prevLint);
                 deferredLintHandler.setPos(prevLintPos);
                 this.staticImportFilter = prevStaticImportFilter;
+                this.typeImportFilter = prevTypeImportFilter;
             }
         }
 
