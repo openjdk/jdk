@@ -2355,7 +2355,7 @@ public class Attr extends JCTree.Visitor {
 
             @Override
             public Type visitClassType(ClassType t, DiagnosticPosition pos) {
-                return t.isCompound() ?
+                return t.isIntersection() ?
                         visitIntersectionClassType((IntersectionClassType)t, pos) : t;
             }
 
@@ -2386,8 +2386,7 @@ public class Attr extends JCTree.Visitor {
                     }
                     supertypes.append(i.tsym.type);
                 }
-                IntersectionClassType notionalIntf =
-                        (IntersectionClassType)types.makeCompoundType(supertypes.toList());
+                IntersectionClassType notionalIntf = types.makeIntersectionType(supertypes.toList());
                 notionalIntf.allparams_field = targs.toList();
                 notionalIntf.tsym.flags_field |= INTERFACE;
                 return notionalIntf.tsym;
@@ -3947,7 +3946,7 @@ public class Attr extends JCTree.Visitor {
         } else if (bounds.length() == 1) {
             return bounds.head.type;
         } else {
-            Type owntype = types.makeCompoundType(TreeInfo.types(bounds));
+            Type owntype = types.makeIntersectionType(TreeInfo.types(bounds));
             // ... the variable's bound is a class type flagged COMPOUND
             // (see comment for TypeVar.bound).
             // In this case, generate a class tree that represents the

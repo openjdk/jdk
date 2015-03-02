@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,6 +266,34 @@ public:
   }
   static const char* impact() {
     return "High: Depends on Java heap size and content.";
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+
+class ClassHierarchyDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _print_interfaces; // true if inherited interfaces should be printed.
+  DCmdArgument<bool> _print_subclasses; // true if subclasses of the specified classname should be printed.
+  DCmdArgument<char*> _classname; // Optional single class name whose hierarchy should be printed.
+public:
+  ClassHierarchyDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.class_hierarchy";
+  }
+  static const char* description() {
+    return "Print a list of all loaded classes, indented to show the class hiearchy. "
+           "The name of each class is followed by the ClassLoaderData* of its ClassLoader, "
+           "or \"null\" if loaded by the bootstrap class loader.";
+  }
+  static const char* impact() {
+      return "Medium: Depends on number of loaded classes.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
   }
   static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);

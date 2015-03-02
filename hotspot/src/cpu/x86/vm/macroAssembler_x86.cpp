@@ -1718,27 +1718,6 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
       // Force all sync thru slow-path: slow_enter() and slow_exit()
       movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
       cmpptr (rsp, (int32_t)NULL_WORD);
-  } else
-  if (EmitSync & 2) {
-      Label DONE_LABEL ;
-      if (UseBiasedLocking) {
-         // Note: tmpReg maps to the swap_reg argument and scrReg to the tmp_reg argument.
-         biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, counters);
-      }
-
-      movptr(tmpReg, Address(objReg, 0));           // fetch markword
-      orptr (tmpReg, 0x1);
-      movptr(Address(boxReg, 0), tmpReg);           // Anticipate successful CAS
-      if (os::is_MP()) {
-        lock();
-      }
-      cmpxchgptr(boxReg, Address(objReg, 0));       // Updates tmpReg
-      jccb(Assembler::equal, DONE_LABEL);
-      // Recursive locking
-      subptr(tmpReg, rsp);
-      andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
-      movptr(Address(boxReg, 0), tmpReg);
-      bind(DONE_LABEL);
   } else {
     // Possible cases that we'll encounter in fast_lock
     // ------------------------------------------------
@@ -1923,29 +1902,19 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     }
 #else // _LP64
     // It's inflated
+    movq(scrReg, tmpReg);
+    xorq(tmpReg, tmpReg);
 
-    // TODO: someday avoid the ST-before-CAS penalty by
-    // relocating (deferring) the following ST.
-    // We should also think about trying a CAS without having
-    // fetched _owner.  If the CAS is successful we may
-    // avoid an RTO->RTS upgrade on the $line.
-
-    // Without cast to int32_t a movptr will destroy r10 which is typically obj
-    movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
-
-    movptr (boxReg, tmpReg);
-    movptr(tmpReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    testptr(tmpReg, tmpReg);
-    jccb   (Assembler::notZero, DONE_LABEL);
-
-    // It's inflated and appears unlocked
     if (os::is_MP()) {
       lock();
     }
-    cmpxchgptr(r15_thread, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+    cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+    // Unconditionally set box->_displaced_header = markOopDesc::unused_mark().
+    // Without cast to int32_t movptr will destroy r10 which is typically obj.
+    movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
     // Intentional fall-through into DONE_LABEL ...
+    // Propagate ICC.ZF from CAS above into DONE_LABEL.
 #endif // _LP64
-
 #if INCLUDE_RTM_OPT
     } // use_rtm()
 #endif
