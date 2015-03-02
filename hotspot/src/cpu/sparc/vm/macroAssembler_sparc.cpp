@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2943,24 +2943,14 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       }
 
       bind   (IsInflated);
-      if (EmitSync & 64) {
-         // If m->owner != null goto IsLocked
-         // Test-and-CAS vs CAS
-         // Pessimistic form avoids futile (doomed) CAS attempts
-         // The optimistic form avoids RTS->RTO cache line upgrades.
-         ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rscratch);
-         andcc(Rscratch, Rscratch, G0);
-         brx(Assembler::notZero, false, Assembler::pn, done);
-         delayed()->nop();
-         // m->owner == null : it's unlocked.
-      }
 
       // Try to CAS m->owner from null to Self
       // Invariant: if we acquire the lock then _recursions should be 0.
       add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
       mov(G2_thread, Rscratch);
       cas_ptr(Rmark, G0, Rscratch);
-      cmp(Rscratch, G0);
+      andcc(Rscratch, Rscratch, G0);             // set ICCs for done: icc.zf iff success
+      // set icc.zf : 1=success 0=failure
       // ST box->displaced_header = NonZero.
       // Any non-zero value suffices:
       //    markOopDesc::unused_mark(), G2_thread, RBox, RScratch, rsp, etc.

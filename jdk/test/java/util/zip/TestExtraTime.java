@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4759491 6303183 7012868 8015666 8023713
+ * @bug 4759491 6303183 7012868 8015666 8023713 8068790
  * @summary Test ZOS and ZIS timestamp in extra field correctly
  */
 
@@ -69,6 +69,8 @@ public class TestExtraTime {
                 test(mtime, atime, ctime, tz, extra);
             }
         }
+
+        testNullHandling();
     }
 
     static void test(FileTime mtime, FileTime atime, FileTime ctime,
@@ -152,6 +154,28 @@ public class TestExtraTime {
                                extra)) {
                 throw new RuntimeException("Timestamp: storing extra field failed!");
             }
+        }
+    }
+
+    static void testNullHandling() {
+        ZipEntry ze = new ZipEntry("TestExtraTime.java");
+        try {
+            ze.setLastAccessTime(null);
+            throw new RuntimeException("setLastAccessTime(null) should throw NPE");
+        } catch (NullPointerException ignored) {
+            // pass
+        }
+        try {
+            ze.setCreationTime(null);
+            throw new RuntimeException("setCreationTime(null) should throw NPE");
+        } catch (NullPointerException ignored) {
+            // pass
+        }
+        try {
+            ze.setLastModifiedTime(null);
+            throw new RuntimeException("setLastModifiedTime(null) should throw NPE");
+        } catch (NullPointerException ignored) {
+            // pass
         }
     }
 }

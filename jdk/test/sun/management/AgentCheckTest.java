@@ -39,12 +39,6 @@ public class AgentCheckTest {
             {"jmxremote.ConnectorBootstrap.noAuthentication", "", ""},
             {"jmxremote.ConnectorBootstrap.ready", "Phony JMXServiceURL", ""},
             {"jmxremote.ConnectorBootstrap.password.readonly", "Phony passwordFileName", ""},
-            {"jmxremote.AdaptorBootstrap.getTargetList.processing", "", ""},
-            {"jmxremote.AdaptorBootstrap.getTargetList.adding", "Phony target", ""},
-            {"jmxremote.AdaptorBootstrap.getTargetList.starting", "", ""},
-            {"jmxremote.AdaptorBootstrap.getTargetList.initialize1", "", ""},
-            {"jmxremote.AdaptorBootstrap.getTargetList.initialize2", "Phony hostname", "Phony port"},
-            {"jmxremote.AdaptorBootstrap.getTargetList.terminate", "Phony exception", ""},
         };
 
         boolean pass = true;

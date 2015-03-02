@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,19 @@ endif
 #   Should be passed into anything running the vm (java, javac, javadoc, ...).
 ifdef JPRT_PRODUCT_VM_ARGS
   JAVA_VM_ARGS = $(JPRT_PRODUCT_VM_ARGS)
+endif
+
+# jtreg -nativepath <dir>
+#
+# Local make tests will be TEST_IMAGE_DIR and JPRT with jprt.use.reg.test.bundle=true
+# should be JPRT_TESTNATIVE_PATH
+ifdef TEST_IMAGE_DIR
+  TESTNATIVE_DIR = $(TEST_IMAGE_DIR)
+else ifdef JPRT_TESTNATIVE_PATH
+  TESTNATIVE_DIR = $(JPRT_TESTNATIVE_PATH)
+endif
+ifdef TESTNATIVE_DIR
+  JTREG_NATIVE_PATH = -nativepath:$(shell $(GETMIXEDPATH) "$(TESTNATIVE_DIR)/jdk/jtreg/native")
 endif
 
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
@@ -313,6 +326,7 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
               -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport")  \
               -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTwork")    \
               -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                \
+              $(JTREG_NATIVE_PATH)                                           \
               $(JTREG_EXCLUSIONS)                                            \
               $(JTREG_TEST_OPTIONS)                                          \
               $(TEST_SELECTION)                                                    \
