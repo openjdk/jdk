@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@
 
 void BasicLock::print_on(outputStream* st) const {
   st->print("monitor");
+  markOop moop = displaced_header();
+  if (moop != NULL)
+    moop->print_on(st);
 }
 
 void BasicLock::move_to(oop obj, BasicLock* dest) {
