@@ -25,15 +25,9 @@
 
 package sun.security.util;
 
-import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.security.AlgorithmParameters;
-
 import java.security.Key;
-import java.security.Security;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-
 import java.util.Locale;
 import java.util.Set;
 import java.util.Collections;
@@ -49,7 +43,7 @@ import java.util.regex.Matcher;
  * See the "jdk.certpath.disabledAlgorithms" specification in java.security
  * for the syntax of the disabled algorithm string.
  */
-public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
+public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     // the known security property, jdk.certpath.disabledAlgorithms
     public final static String PROPERTY_CERTPATH_DISABLED_ALGS =
@@ -64,8 +58,8 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
     private final static Map<String, KeySizeConstraints> keySizeConstraintsMap =
                                                             new HashMap<>();
 
-    private String[] disabledAlgorithms;
-    private KeySizeConstraints keySizeConstraints;
+    private final String[] disabledAlgorithms;
+    private final KeySizeConstraints keySizeConstraints;
 
     /**
      * Initialize algorithm constraints with the specified security property.
@@ -74,56 +68,27 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
      *        algorithm constraints
      */
     public DisabledAlgorithmConstraints(String propertyName) {
-        // Both disabledAlgorithmsMap and keySizeConstraintsMap are
-        // synchronized with the lock of disabledAlgorithmsMap.
-        synchronized (disabledAlgorithmsMap) {
-            if(!disabledAlgorithmsMap.containsKey(propertyName)) {
-                loadDisabledAlgorithmsMap(propertyName);
-            }
+        this(propertyName, new AlgorithmDecomposer());
+    }
 
-            disabledAlgorithms = disabledAlgorithmsMap.get(propertyName);
-            keySizeConstraints = keySizeConstraintsMap.get(propertyName);
-        }
+    public DisabledAlgorithmConstraints(String propertyName,
+            AlgorithmDecomposer decomposer) {
+        super(decomposer);
+        disabledAlgorithms = getAlgorithms(disabledAlgorithmsMap, propertyName);
+        keySizeConstraints = getKeySizeConstraints(disabledAlgorithms,
+                propertyName);
     }
 
     @Override
     final public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
 
-        if (algorithm == null || algorithm.length() == 0) {
-            throw new IllegalArgumentException("No algorithm name specified");
-        }
-
         if (primitives == null || primitives.isEmpty()) {
             throw new IllegalArgumentException(
                         "No cryptographic primitive specified");
         }
 
-        Set<String> elements = null;
-        for (String disabled : disabledAlgorithms) {
-            if (disabled == null || disabled.isEmpty()) {
-                continue;
-            }
-
-            // check the full name
-            if (disabled.equalsIgnoreCase(algorithm)) {
-                return false;
-            }
-
-            // decompose the algorithm into sub-elements
-            if (elements == null) {
-                elements = decomposes(algorithm);
-            }
-
-            // check the items of the algorithm
-            for (String element : elements) {
-                if (disabled.equalsIgnoreCase(element)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        return checkAlgorithm(disabledAlgorithms, algorithm, decomposer);
     }
 
     @Override
@@ -140,99 +105,6 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         return checkConstraints(primitives, algorithm, key, parameters);
-    }
-
-    /**
-     * Decompose the standard algorithm name into sub-elements.
-     * <p>
-     * For example, we need to decompose "SHA1WithRSA" into "SHA1" and "RSA"
-     * so that we can check the "SHA1" and "RSA" algorithm constraints
-     * separately.
-     * <p>
-     * Please override the method if need to support more name pattern.
-     */
-    protected Set<String> decomposes(String algorithm) {
-        if (algorithm == null || algorithm.length() == 0) {
-            return new HashSet<String>();
-        }
-
-        // algorithm/mode/padding
-        Pattern transPattern = Pattern.compile("/");
-        String[] transTockens = transPattern.split(algorithm);
-
-        Set<String> elements = new HashSet<String>();
-        for (String transTocken : transTockens) {
-            if (transTocken == null || transTocken.length() == 0) {
-                continue;
-            }
-
-            // PBEWith<digest>And<encryption>
-            // PBEWith<prf>And<encryption>
-            // OAEPWith<digest>And<mgf>Padding
-            // <digest>with<encryption>
-            // <digest>with<encryption>and<mgf>
-            // <digest>with<encryption>in<format>
-            Pattern pattern =
-                    Pattern.compile("with|and|in", Pattern.CASE_INSENSITIVE);
-            String[] tokens = pattern.split(transTocken);
-
-            for (String token : tokens) {
-                if (token == null || token.length() == 0) {
-                    continue;
-                }
-
-                elements.add(token);
-            }
-        }
-
-        // In Java standard algorithm name specification, for different
-        // purpose, the SHA-1 and SHA-2 algorithm names are different. For
-        // example, for MessageDigest, the standard name is "SHA-256", while
-        // for Signature, the digest algorithm component is "SHA256" for
-        // signature algorithm "SHA256withRSA". So we need to check both
-        // "SHA-256" and "SHA256" to make the right constraint checking.
-
-        // handle special name: SHA-1 and SHA1
-        if (elements.contains("SHA1") && !elements.contains("SHA-1")) {
-            elements.add("SHA-1");
-        }
-        if (elements.contains("SHA-1") && !elements.contains("SHA1")) {
-            elements.add("SHA1");
-        }
-
-        // handle special name: SHA-224 and SHA224
-        if (elements.contains("SHA224") && !elements.contains("SHA-224")) {
-            elements.add("SHA-224");
-        }
-        if (elements.contains("SHA-224") && !elements.contains("SHA224")) {
-            elements.add("SHA224");
-        }
-
-        // handle special name: SHA-256 and SHA256
-        if (elements.contains("SHA256") && !elements.contains("SHA-256")) {
-            elements.add("SHA-256");
-        }
-        if (elements.contains("SHA-256") && !elements.contains("SHA256")) {
-            elements.add("SHA256");
-        }
-
-        // handle special name: SHA-384 and SHA384
-        if (elements.contains("SHA384") && !elements.contains("SHA-384")) {
-            elements.add("SHA-384");
-        }
-        if (elements.contains("SHA-384") && !elements.contains("SHA384")) {
-            elements.add("SHA384");
-        }
-
-        // handle special name: SHA-512 and SHA512
-        if (elements.contains("SHA512") && !elements.contains("SHA-512")) {
-            elements.add("SHA-512");
-        }
-        if (elements.contains("SHA-512") && !elements.contains("SHA512")) {
-            elements.add("SHA512");
-        }
-
-        return elements;
     }
 
     // Check algorithm constraints
@@ -264,43 +136,18 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
         return true;
     }
 
-    // Get disabled algorithm constraints from the specified security property.
-    private static void loadDisabledAlgorithmsMap(
-            final String propertyName) {
-
-        String property = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return Security.getProperty(propertyName);
-                }
-            });
-
-        String[] algorithmsInProperty = null;
-
-        if (property != null && !property.isEmpty()) {
-
-            // remove double quote marks from beginning/end of the property
-            if (property.charAt(0) == '"' &&
-                    property.charAt(property.length() - 1) == '"') {
-                property = property.substring(1, property.length() - 1);
+    private static KeySizeConstraints getKeySizeConstraints(
+            String[] disabledAlgorithms, String propertyName) {
+        synchronized (keySizeConstraintsMap) {
+            if(!keySizeConstraintsMap.containsKey(propertyName)) {
+                // map the key constraints
+                KeySizeConstraints keySizeConstraints =
+                        new KeySizeConstraints(disabledAlgorithms);
+                keySizeConstraintsMap.put(propertyName, keySizeConstraints);
             }
 
-            algorithmsInProperty = property.split(",");
-            for (int i = 0; i < algorithmsInProperty.length; i++) {
-                algorithmsInProperty[i] = algorithmsInProperty[i].trim();
-            }
+            return keySizeConstraintsMap.get(propertyName);
         }
-
-        // map the disabled algorithms
-        if (algorithmsInProperty == null) {
-            algorithmsInProperty = new String[0];
-        }
-        disabledAlgorithmsMap.put(propertyName, algorithmsInProperty);
-
-        // map the key constraints
-        KeySizeConstraints keySizeConstraints =
-            new KeySizeConstraints(algorithmsInProperty);
-        keySizeConstraintsMap.put(propertyName, keySizeConstraints);
     }
 
     /**
