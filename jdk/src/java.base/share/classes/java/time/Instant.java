@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1229,8 +1229,14 @@ public final class Instant
      * @throws ArithmeticException if numeric overflow occurs
      */
     public long toEpochMilli() {
-        long millis = Math.multiplyExact(seconds, 1000);
-        return millis + nanos / 1000_000;
+        if (seconds < 0 && nanos > 0) {
+            long millis = Math.multiplyExact(seconds+1, 1000);
+            long adjustment = nanos / 1000_000 - 1000;
+            return millis + adjustment;
+        } else {
+            long millis = Math.multiplyExact(seconds, 1000);
+            return millis + nanos / 1000_000;
+        }
     }
 
     //-----------------------------------------------------------------------
