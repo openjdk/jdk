@@ -312,8 +312,6 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   ShouldNotCallThis();
 }
 
-bool NativeInstruction::is_dtrace_trap() { return false; }
-
 address NativeCallTrampolineStub::destination(nmethod *nm) const {
   return ptr_at(data_offset);
 }

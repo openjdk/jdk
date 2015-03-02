@@ -2182,32 +2182,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 }
 
-
-#ifdef HAVE_DTRACE_H
-// ---------------------------------------------------------------------------
-// Generate a dtrace nmethod for a given signature.  The method takes arguments
-// in the Java compiled code convention, marshals them to the native
-// abi and then leaves nops at the position you would expect to call a native
-// function. When the probe is enabled the nops are replaced with a trap
-// instruction that dtrace inserts and the trace will cause a notification
-// to dtrace.
-//
-// The probes are only able to take primitive types and java/lang/String as
-// arguments.  No other java types are allowed. Strings are converted to utf8
-// strings so that from dtrace point of view java strings are converted to C
-// strings. There is an arbitrary fixed limit on the total space that a method
-// can use for converting the strings. (256 chars per string in the signature).
-// So any java string larger then this is truncated.
-
-static int  fp_offset[ConcreteRegisterImpl::number_of_registers] = { 0 };
-static bool offsets_initialized = false;
-
-
-nmethod *SharedRuntime::generate_dtrace_nmethod(MacroAssembler *masm,
-                                                methodHandle method) { Unimplemented(); return 0; }
-
-#endif // HAVE_DTRACE_H
-
 // this function returns the adjust size (in number of words) to a c2i adapter
 // activation for use during deoptimization
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) {

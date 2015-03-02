@@ -56,7 +56,6 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
  public:
   enum { instruction_size = 4 };
   inline bool is_nop();
-  bool is_dtrace_trap();
   inline bool is_illegal();
   inline bool is_return();
   bool is_jump();

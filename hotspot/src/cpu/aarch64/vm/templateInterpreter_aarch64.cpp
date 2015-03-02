@@ -335,7 +335,6 @@ void InterpreterGenerator::generate_counter_incr(
   // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
   if (TieredCompilation) {
     int increment = InvocationCounter::count_increment;
-    int mask = ((1 << Tier0InvokeNotifyFreqLog)  - 1) << InvocationCounter::count_shift;
     Label no_mdo;
     if (ProfileInterpreter) {
       // Are we profiling?
@@ -344,7 +343,8 @@ void InterpreterGenerator::generate_counter_incr(
       // Increment counter in the MDO
       const Address mdo_invocation_counter(r0, in_bytes(MethodData::invocation_counter_offset()) +
                                                 in_bytes(InvocationCounter::counter_offset()));
-      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rscratch1, false, Assembler::EQ, overflow);
+      const Address mask(r0, in_bytes(MethodData::invoke_mask_offset()));
+      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rscratch1, rscratch2, false, Assembler::EQ, overflow);
       __ b(done);
     }
     __ bind(no_mdo);
@@ -353,9 +353,10 @@ void InterpreterGenerator::generate_counter_incr(
                   MethodCounters::invocation_counter_offset() +
                   InvocationCounter::counter_offset());
     __ get_method_counters(rmethod, rscratch2, done);
-    __ increment_mask_and_jump(invocation_counter, increment, mask, rscratch1, false, Assembler::EQ, overflow);
+    const Address mask(rscratch2, in_bytes(MethodCounters::invoke_mask_offset()));
+    __ increment_mask_and_jump(invocation_counter, increment, mask, rscratch1, r1, false, Assembler::EQ, overflow);
     __ bind(done);
-  } else {
+  } else { // not TieredCompilation
     const Address backedge_counter(rscratch2,
                   MethodCounters::backedge_counter_offset() +
                   InvocationCounter::counter_offset());
@@ -385,11 +386,9 @@ void InterpreterGenerator::generate_counter_incr(
 
     if (ProfileInterpreter && profile_method != NULL) {
       // Test to see if we should create a method data oop
-      unsigned long offset;
-      __ adrp(rscratch2, ExternalAddress((address)&InvocationCounter::InterpreterProfileLimit),
-              offset);
-      __ ldrw(rscratch2, Address(rscratch2, offset));
-      __ cmp(r0, rscratch2);
+      __ ldr(rscratch2, Address(rmethod, Method::method_counters_offset()));
+      __ ldrw(rscratch2, Address(rscratch2, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
+      __ cmpw(r0, rscratch2);
       __ br(Assembler::LT, *profile_method_continue);
 
       // if no method data exists, go to profile_method
@@ -397,11 +396,8 @@ void InterpreterGenerator::generate_counter_incr(
     }
 
     {
-      unsigned long offset;
-      __ adrp(rscratch2,
-              ExternalAddress((address)&InvocationCounter::InterpreterInvocationLimit),
-              offset);
-      __ ldrw(rscratch2, Address(rscratch2, offset));
+      __ ldr(rscratch2, Address(rmethod, Method::method_counters_offset()));
+      __ ldrw(rscratch2, Address(rscratch2, in_bytes(MethodCounters::interpreter_invocation_limit_offset())));
       __ cmpw(r0, rscratch2);
       __ br(Assembler::HS, *overflow);
     }

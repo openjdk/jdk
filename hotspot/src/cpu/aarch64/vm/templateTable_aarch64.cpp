@@ -205,7 +205,6 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
       }
       break;
     case BarrierSet::ModRef:
-    case BarrierSet::Other:
       if (val == noreg) {
         __ store_heap_oop_null(obj);
       } else {
@@ -1650,7 +1649,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     if (TieredCompilation) {
       Label no_mdo;
       int increment = InvocationCounter::count_increment;
-      int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
       if (ProfileInterpreter) {
         // Are we profiling?
         __ ldr(r1, Address(rmethod, in_bytes(Method::method_data_offset())));
@@ -1658,16 +1656,18 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         // Increment the MDO backedge counter
         const Address mdo_backedge_counter(r1, in_bytes(MethodData::backedge_counter_offset()) +
                                            in_bytes(InvocationCounter::counter_offset()));
+        const Address mask(r1, in_bytes(MethodData::backedge_mask_offset()));
         __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
-                                   r0, false, Assembler::EQ, &backedge_counter_overflow);
+                                   r0, rscratch1, false, Assembler::EQ, &backedge_counter_overflow);
         __ b(dispatch);
       }
       __ bind(no_mdo);
       // Increment backedge counter in MethodCounters*
       __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
+      const Address mask(rscratch1, in_bytes(MethodCounters::backedge_mask_offset()));
       __ increment_mask_and_jump(Address(rscratch1, be_offset), increment, mask,
-                                 r0, false, Assembler::EQ, &backedge_counter_overflow);
-    } else {
+                                 r0, rscratch2, false, Assembler::EQ, &backedge_counter_overflow);
+    } else { // not TieredCompilation
       // increment counter
       __ ldr(rscratch2, Address(rmethod, Method::method_counters_offset()));
       __ ldrw(r0, Address(rscratch2, be_offset));        // load backedge counter
@@ -1680,8 +1680,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
 
       if (ProfileInterpreter) {
         // Test to see if we should create a method data oop
-        __ lea(rscratch1, ExternalAddress((address) &InvocationCounter::InterpreterProfileLimit));
-        __ ldrw(rscratch1, rscratch1);
+        __ ldrw(rscratch1, Address(rscratch2, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
         __ cmpw(r0, rscratch1);
         __ br(Assembler::LT, dispatch);
 
@@ -1690,8 +1689,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
 
         if (UseOnStackReplacement) {
           // check for overflow against w1 which is the MDO taken count
-          __ lea(rscratch1, ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
-          __ ldrw(rscratch1, rscratch1);
+          __ ldrw(rscratch1, Address(rscratch2, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
           __ cmpw(r1, rscratch1);
           __ br(Assembler::LO, dispatch); // Intel == Assembler::below
 
@@ -1710,8 +1708,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         if (UseOnStackReplacement) {
           // check for overflow against w0, which is the sum of the
           // counters
-          __ lea(rscratch1, ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
-          __ ldrw(rscratch1, rscratch1);
+          __ ldrw(rscratch1, Address(rscratch2, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
           __ cmpw(r0, rscratch1);
           __ br(Assembler::HS, backedge_counter_overflow); // Intel == Assembler::aboveEqual
         }
