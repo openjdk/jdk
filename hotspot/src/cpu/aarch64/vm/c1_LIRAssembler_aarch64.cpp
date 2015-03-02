@@ -1057,12 +1057,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
 }
 
 
-void LIR_Assembler::prefetchr(LIR_Opr src) { Unimplemented(); }
-
-
-void LIR_Assembler::prefetchw(LIR_Opr src) { Unimplemented(); }
-
-
 int LIR_Assembler::array_element_size(BasicType type) const {
   int elem_size = type2aelembytes(type);
   return exact_log2(elem_size);

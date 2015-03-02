@@ -364,16 +364,6 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
   __ b(_continuation);
 }
 
-jbyte* G1PostBarrierStub::_byte_map_base = NULL;
-
-jbyte* G1PostBarrierStub::byte_map_base_slow() {
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->is_a(BarrierSet::G1SATBCTLogging),
-         "Must be if we're using this.");
-  return ((G1SATBCardTableModRefBS*)bs)->byte_map_base;
-}
-
-
 void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   assert(addr()->is_register(), "Precondition.");

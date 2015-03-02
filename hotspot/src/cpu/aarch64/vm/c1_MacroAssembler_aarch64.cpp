@@ -34,6 +34,7 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
 void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,

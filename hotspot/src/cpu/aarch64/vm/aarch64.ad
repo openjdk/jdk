@@ -2341,25 +2341,6 @@ encode %{
 
   // prefetch encodings
 
-  enc_class aarch64_enc_prefetchr(memory mem) %{
-    MacroAssembler _masm(&cbuf);
-    Register base = as_Register($mem$$base);
-    int index = $mem$$index;
-    int scale = $mem$$scale;
-    int disp = $mem$$disp;
-    if (index == -1) {
-      __ prfm(Address(base, disp), PLDL1KEEP);
-    } else {
-      Register index_reg = as_Register(index);
-      if (disp == 0) {
-        __ prfm(Address(base, index_reg, Address::lsl(scale)), PLDL1KEEP);
-      } else {
-        __ lea(rscratch1, Address(base, disp));
-        __ prfm(Address(rscratch1, index_reg, Address::lsl(scale)), PLDL1KEEP);
-      }
-    }
-  %}
-
   enc_class aarch64_enc_prefetchw(memory mem) %{
     MacroAssembler _masm(&cbuf);
     Register base = as_Register($mem$$base);
@@ -2376,26 +2357,6 @@ encode %{
       } else {
         __ lea(rscratch1, Address(base, disp));
 	__ prfm(Address(rscratch1, index_reg, Address::lsl(scale)), PSTL1KEEP);
-      }
-    }
-  %}
-
-  enc_class aarch64_enc_prefetchnta(memory mem) %{
-    MacroAssembler _masm(&cbuf);
-    Register base = as_Register($mem$$base);
-    int index = $mem$$index;
-    int scale = $mem$$scale;
-    int disp = $mem$$disp;
-    if (index == -1) {
-      __ prfm(Address(base, disp), PSTL1STRM);
-    } else {
-      Register index_reg = as_Register(index);
-      if (disp == 0) {
-        __ prfm(Address(base, index_reg, Address::lsl(scale)), PSTL1STRM);
-        __ nop();
-      } else {
-        __ lea(rscratch1, Address(base, disp));
-	__ prfm(Address(rscratch1, index_reg, Address::lsl(scale)), PSTL1STRM);
       }
     }
   %}
@@ -5887,35 +5848,13 @@ instruct storeNKlass(iRegN src, memory mem)
 // prefetch instructions
 // Must be safe to execute with invalid address (cannot fault).
 
-instruct prefetchr( memory mem ) %{
-  match(PrefetchRead mem);
-
-  ins_cost(INSN_COST);
-  format %{ "prfm $mem, PLDL1KEEP\t# Prefetch into level 1 cache read keep" %}
-
-  ins_encode( aarch64_enc_prefetchr(mem) );
-
-  ins_pipe(iload_prefetch);
-%}
-
-instruct prefetchw( memory mem ) %{
+instruct prefetchalloc( memory mem ) %{
   match(PrefetchAllocation mem);
 
   ins_cost(INSN_COST);
   format %{ "prfm $mem, PSTL1KEEP\t# Prefetch into level 1 cache write keep" %}
 
   ins_encode( aarch64_enc_prefetchw(mem) );
-
-  ins_pipe(iload_prefetch);
-%}
-
-instruct prefetchnta( memory mem ) %{
-  match(PrefetchWrite mem);
-
-  ins_cost(INSN_COST);
-  format %{ "prfm $mem, PSTL1STRM\t# Prefetch into level 1 cache write streaming" %}
-
-  ins_encode( aarch64_enc_prefetchnta(mem) );
 
   ins_pipe(iload_prefetch);
 %}
