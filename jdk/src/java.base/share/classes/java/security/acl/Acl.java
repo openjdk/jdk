@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,7 @@ import java.security.Principal;
  *
  * The {@code  java.security.acl } package provides the
  * interfaces to the ACL and related data structures (ACL entries,
- * groups, permissions, etc.), and the {@code  sun.security.acl }
- * classes provide a default implementation of the interfaces. For
- * example, {@code  java.security.acl.Acl } provides the
- * interface to an ACL and the {@code  sun.security.acl.AclImpl }
- * class provides the default implementation of the interface.<p>
+ * groups, permissions, etc.).<p>
  *
  * The {@code  java.security.acl.Acl } interface extends the
  * {@code  java.security.acl.Owner } interface. The Owner

@@ -1223,14 +1223,6 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   const char* home = Arguments::get_java_home();
   int home_len = (int)strlen(home);
 
-  static const char* meta_index_dir_format = "%/lib/";
-  static const char* meta_index_format = "%/lib/meta-index";
-  char* meta_index = format_boot_path(meta_index_format, home, home_len, fileSep, pathSep);
-  if (meta_index == NULL) return false;
-  char* meta_index_dir = format_boot_path(meta_index_dir_format, home, home_len, fileSep, pathSep);
-  if (meta_index_dir == NULL) return false;
-  Arguments::set_meta_index_path(meta_index, meta_index_dir);
-
   char* sysclasspath = NULL;
   struct stat st;
 
@@ -1244,38 +1236,17 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   }
   FREE_C_HEAP_ARRAY(char, jimage);
 
-  // images build if rt.jar exists
-  char* rt_jar = format_boot_path("%/lib/rt.jar", home, home_len, fileSep, pathSep);
-  if (rt_jar == NULL) return false;
-  bool has_rt_jar = (os::stat(rt_jar, &st) == 0);
-  FREE_C_HEAP_ARRAY(char, rt_jar);
-
-  if (has_rt_jar) {
-    // Any modification to the JAR-file list, for the boot classpath must be
-    // aligned with install/install/make/common/Pack.gmk. Note: boot class
-    // path class JARs, are stripped for StackMapTable to reduce download size.
-    static const char classpath_format[] =
-      "%/lib/resources.jar:"
-      "%/lib/rt.jar:"
-      "%/lib/jsse.jar:"
-      "%/lib/jce.jar:"
-      "%/lib/charsets.jar:"
-      "%/lib/jfr.jar:"
-      "%/classes";
-    sysclasspath = format_boot_path(classpath_format, home, home_len, fileSep, pathSep);
-  } else {
-    // no rt.jar, check if developer build with exploded modules
-    char* modules_dir = format_boot_path("%/modules", home, home_len, fileSep, pathSep);
-    if (os::stat(modules_dir, &st) == 0) {
-      if ((st.st_mode & S_IFDIR) == S_IFDIR) {
-        sysclasspath = expand_entries_to_path(modules_dir, fileSep, pathSep);
-      }
+  // check if developer build with exploded modules
+  char* modules_dir = format_boot_path("%/modules", home, home_len, fileSep, pathSep);
+  if (os::stat(modules_dir, &st) == 0) {
+    if ((st.st_mode & S_IFDIR) == S_IFDIR) {
+      sysclasspath = expand_entries_to_path(modules_dir, fileSep, pathSep);
     }
-
-    // fallback to classes
-    if (sysclasspath == NULL)
-      sysclasspath = format_boot_path("%/classes", home, home_len, fileSep, pathSep);
   }
+
+  // fallback to classes
+  if (sysclasspath == NULL)
+    sysclasspath = format_boot_path("%/classes", home, home_len, fileSep, pathSep);
 
   if (sysclasspath == NULL) return false;
   Arguments::set_sysclasspath(sysclasspath);

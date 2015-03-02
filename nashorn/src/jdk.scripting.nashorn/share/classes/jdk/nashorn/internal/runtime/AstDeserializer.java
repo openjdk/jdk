@@ -38,7 +38,6 @@ import jdk.nashorn.internal.ir.FunctionNode;
  */
 final class AstDeserializer {
     static FunctionNode deserialize(final byte[] serializedAst) {
-        // FIXME: do we need this doPrivileged block at all?
         return AccessController.doPrivileged(new PrivilegedAction<FunctionNode>() {
             @Override
             public FunctionNode run() {
