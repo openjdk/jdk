@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.syntaxError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
+import static jdk.nashorn.internal.runtime.JSType.isString;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -55,7 +56,6 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeObject;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-
 
 /**
  * Utilities to be called by JavaScript runtime API and generated classes.
@@ -564,8 +564,7 @@ public final class ScriptRuntime {
         final Object xPrim = JSType.toPrimitive(x);
         final Object yPrim = JSType.toPrimitive(y);
 
-        if (xPrim instanceof String || yPrim instanceof String
-                || xPrim instanceof ConsString || yPrim instanceof ConsString) {
+        if (isString(xPrim) || isString(yPrim)) {
             try {
                 return new ConsString(JSType.toCharSequence(xPrim), JSType.toCharSequence(yPrim));
             } catch (final IllegalArgumentException iae) {
@@ -1010,7 +1009,7 @@ public final class ScriptRuntime {
             px = JSType.toPrimitive(x, Number.class);
         }
 
-        if (JSType.ofNoFunction(px) == JSType.STRING && JSType.ofNoFunction(py) == JSType.STRING) {
+        if (isString(px) && isString(py)) {
             // May be String or ConsString
             return px.toString().compareTo(py.toString()) < 0;
         }
