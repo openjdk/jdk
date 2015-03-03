@@ -87,26 +87,6 @@ public class AgentConfigurationError extends Error {
         "agent.err.connector.server.io.error";
     public static final String INVALID_OPTION =
         "agent.err.invalid.option";
-    public static final String INVALID_SNMP_PORT =
-        "agent.err.invalid.snmp.port";
-    public static final String INVALID_SNMP_TRAP_PORT =
-        "agent.err.invalid.snmp.trap.port";
-    public static final String UNKNOWN_SNMP_INTERFACE =
-        "agent.err.unknown.snmp.interface";
-    public static final String SNMP_ACL_FILE_NOT_SET =
-        "agent.err.acl.file.notset";
-    public static final String SNMP_ACL_FILE_NOT_FOUND =
-        "agent.err.acl.file.notfound";
-    public static final String SNMP_ACL_FILE_NOT_READABLE =
-        "agent.err.acl.file.not.readable";
-    public static final String SNMP_ACL_FILE_READ_FAILED =
-        "agent.err.acl.file.read.failed";
-    public static final String SNMP_ACL_FILE_ACCESS_NOT_RESTRICTED =
-        "agent.err.acl.file.access.notrestricted";
-    public static final String SNMP_ADAPTOR_START_FAILED =
-        "agent.err.snmp.adaptor.start.failed";
-    public static final String SNMP_MIB_INIT_FAILED =
-        "agent.err.snmp.mib.init.failed";
     public static final String INVALID_STATE =
         "agent.err.invalid.state";
 
