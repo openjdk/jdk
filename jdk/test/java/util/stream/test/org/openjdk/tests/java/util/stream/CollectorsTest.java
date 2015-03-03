@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -54,8 +55,10 @@ import java.util.stream.TestData;
 import org.testng.annotations.Test;
 
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.groupingByConcurrent;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
@@ -67,39 +70,72 @@ import static java.util.stream.LambdaTestHelpers.assertContents;
 import static java.util.stream.LambdaTestHelpers.assertContentsUnordered;
 import static java.util.stream.LambdaTestHelpers.mDoubler;
 
-/**
- * TabulatorsTest
- *
- * @author Brian Goetz
+/*
+ * @test
+ * @bug 8071600
+ * @summary Test for collectors.
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
-public class TabulatorsTest extends OpTestCase {
+public class CollectorsTest extends OpTestCase {
 
-    private static abstract class TabulationAssertion<T, U> {
+    private static abstract class CollectorAssertion<T, U> {
         abstract void assertValue(U value,
                                   Supplier<Stream<T>> source,
                                   boolean ordered) throws ReflectiveOperationException;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    static class GroupedMapAssertion<T, K, V, M extends Map<K, ? extends V>> extends TabulationAssertion<T, M> {
+    static class MappingAssertion<T, V, R> extends CollectorAssertion<T, R> {
+        private final Function<T, V> mapper;
+        private final CollectorAssertion<V, R> downstream;
+
+        MappingAssertion(Function<T, V> mapper, CollectorAssertion<V, R> downstream) {
+            this.mapper = mapper;
+            this.downstream = downstream;
+        }
+
+        @Override
+        void assertValue(R value, Supplier<Stream<T>> source, boolean ordered) throws ReflectiveOperationException {
+            downstream.assertValue(value,
+                                   () -> source.get().map(mapper::apply),
+                                   ordered);
+        }
+    }
+
+    static class FlatMappingAssertion<T, V, R> extends CollectorAssertion<T, R> {
+        private final Function<T, Stream<V>> mapper;
+        private final CollectorAssertion<V, R> downstream;
+
+        FlatMappingAssertion(Function<T, Stream<V>> mapper,
+                             CollectorAssertion<V, R> downstream) {
+            this.mapper = mapper;
+            this.downstream = downstream;
+        }
+
+        @Override
+        void assertValue(R value, Supplier<Stream<T>> source, boolean ordered) throws ReflectiveOperationException {
+            downstream.assertValue(value,
+                                   () -> source.get().flatMap(mapper::apply),
+                                   ordered);
+        }
+    }
+
+    static class GroupingByAssertion<T, K, V, M extends Map<K, ? extends V>> extends CollectorAssertion<T, M> {
         private final Class<? extends Map> clazz;
         private final Function<T, K> classifier;
-        private final TabulationAssertion<T,V> downstream;
+        private final CollectorAssertion<T,V> downstream;
 
-        protected GroupedMapAssertion(Function<T, K> classifier,
-                                      Class<? extends Map> clazz,
-                                      TabulationAssertion<T, V> downstream) {
+        GroupingByAssertion(Function<T, K> classifier, Class<? extends Map> clazz,
+                            CollectorAssertion<T, V> downstream) {
             this.clazz = clazz;
             this.classifier = classifier;
             this.downstream = downstream;
         }
 
+        @Override
         void assertValue(M map,
                          Supplier<Stream<T>> source,
                          boolean ordered) throws ReflectiveOperationException {
             if (!clazz.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in GroupedMapAssertion: %s, %s", clazz, map.getClass()));
+                fail(String.format("Class mismatch in GroupingByAssertion: %s, %s", clazz, map.getClass()));
             assertContentsUnordered(map.keySet(), source.get().map(classifier).collect(toSet()));
             for (Map.Entry<K, ? extends V> entry : map.entrySet()) {
                 K key = entry.getKey();
@@ -110,7 +146,7 @@ public class TabulatorsTest extends OpTestCase {
         }
     }
 
-    static class ToMapAssertion<T, K, V, M extends Map<K,V>> extends TabulationAssertion<T, M> {
+    static class ToMapAssertion<T, K, V, M extends Map<K,V>> extends CollectorAssertion<T, M> {
         private final Class<? extends Map> clazz;
         private final Function<T, K> keyFn;
         private final Function<T, V> valueFn;
@@ -128,8 +164,9 @@ public class TabulatorsTest extends OpTestCase {
 
         @Override
         void assertValue(M map, Supplier<Stream<T>> source, boolean ordered) throws ReflectiveOperationException {
+            if (!clazz.isAssignableFrom(map.getClass()))
+                fail(String.format("Class mismatch in ToMapAssertion: %s, %s", clazz, map.getClass()));
             Set<K> uniqueKeys = source.get().map(keyFn).collect(toSet());
-            assertTrue(clazz.isAssignableFrom(map.getClass()));
             assertEquals(uniqueKeys, map.keySet());
             source.get().forEach(t -> {
                 K key = keyFn.apply(t);
@@ -143,34 +180,33 @@ public class TabulatorsTest extends OpTestCase {
         }
     }
 
-    static class PartitionAssertion<T, D> extends TabulationAssertion<T, Map<Boolean,D>> {
+    static class PartitioningByAssertion<T, D> extends CollectorAssertion<T, Map<Boolean,D>> {
         private final Predicate<T> predicate;
-        private final TabulationAssertion<T,D> downstream;
+        private final CollectorAssertion<T,D> downstream;
 
-        protected PartitionAssertion(Predicate<T> predicate,
-                                     TabulationAssertion<T, D> downstream) {
+        PartitioningByAssertion(Predicate<T> predicate, CollectorAssertion<T, D> downstream) {
             this.predicate = predicate;
             this.downstream = downstream;
         }
 
+        @Override
         void assertValue(Map<Boolean, D> map,
                          Supplier<Stream<T>> source,
                          boolean ordered) throws ReflectiveOperationException {
             if (!Map.class.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in PartitionAssertion: %s", map.getClass()));
+                fail(String.format("Class mismatch in PartitioningByAssertion: %s", map.getClass()));
             assertEquals(2, map.size());
             downstream.assertValue(map.get(true), () -> source.get().filter(predicate), ordered);
             downstream.assertValue(map.get(false), () -> source.get().filter(predicate.negate()), ordered);
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    static class ListAssertion<T> extends TabulationAssertion<T, List<T>> {
+    static class ToListAssertion<T> extends CollectorAssertion<T, List<T>> {
         @Override
         void assertValue(List<T> value, Supplier<Stream<T>> source, boolean ordered)
                 throws ReflectiveOperationException {
             if (!List.class.isAssignableFrom(value.getClass()))
-                fail(String.format("Class mismatch in ListAssertion: %s", value.getClass()));
+                fail(String.format("Class mismatch in ToListAssertion: %s", value.getClass()));
             Stream<T> stream = source.get();
             List<T> result = new ArrayList<>();
             for (Iterator<T> it = stream.iterator(); it.hasNext(); ) // avoid capturing result::add
@@ -182,12 +218,11 @@ public class TabulatorsTest extends OpTestCase {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    static class CollectionAssertion<T> extends TabulationAssertion<T, Collection<T>> {
+    static class ToCollectionAssertion<T> extends CollectorAssertion<T, Collection<T>> {
         private final Class<? extends Collection> clazz;
         private final boolean targetOrdered;
 
-        protected CollectionAssertion(Class<? extends Collection> clazz, boolean targetOrdered) {
+        ToCollectionAssertion(Class<? extends Collection> clazz, boolean targetOrdered) {
             this.clazz = clazz;
             this.targetOrdered = targetOrdered;
         }
@@ -196,7 +231,7 @@ public class TabulatorsTest extends OpTestCase {
         void assertValue(Collection<T> value, Supplier<Stream<T>> source, boolean ordered)
                 throws ReflectiveOperationException {
             if (!clazz.isAssignableFrom(value.getClass()))
-                fail(String.format("Class mismatch in CollectionAssertion: %s, %s", clazz, value.getClass()));
+                fail(String.format("Class mismatch in ToCollectionAssertion: %s, %s", clazz, value.getClass()));
             Stream<T> stream = source.get();
             Collection<T> result = clazz.newInstance();
             for (Iterator<T> it = stream.iterator(); it.hasNext(); ) // avoid capturing result::add
@@ -208,12 +243,12 @@ public class TabulatorsTest extends OpTestCase {
         }
     }
 
-    static class ReduceAssertion<T, U> extends TabulationAssertion<T, U> {
+    static class ReducingAssertion<T, U> extends CollectorAssertion<T, U> {
         private final U identity;
         private final Function<T, U> mapper;
         private final BinaryOperator<U> reducer;
 
-        ReduceAssertion(U identity, Function<T, U> mapper, BinaryOperator<U> reducer) {
+        ReducingAssertion(U identity, Function<T, U> mapper, BinaryOperator<U> reducer) {
             this.identity = identity;
             this.mapper = mapper;
             this.reducer = reducer;
@@ -237,7 +272,7 @@ public class TabulatorsTest extends OpTestCase {
     private <T> ResultAsserter<T> mapTabulationAsserter(boolean ordered) {
         return (act, exp, ord, par) -> {
             if (par && (!ordered || !ord)) {
-                TabulatorsTest.nestedMapEqualityAssertion(act, exp);
+                CollectorsTest.nestedMapEqualityAssertion(act, exp);
             }
             else {
                 LambdaTestHelpers.assertContentsEqual(act, exp);
@@ -246,9 +281,9 @@ public class TabulatorsTest extends OpTestCase {
     }
 
     private<T, M extends Map>
-    void exerciseMapTabulation(TestData<T, Stream<T>> data,
+    void exerciseMapCollection(TestData<T, Stream<T>> data,
                                Collector<T, ?, ? extends M> collector,
-                               TabulationAssertion<T, M> assertion)
+                               CollectorAssertion<T, M> assertion)
             throws ReflectiveOperationException {
         boolean ordered = !collector.characteristics().contains(Collector.Characteristics.UNORDERED);
 
@@ -288,7 +323,7 @@ public class TabulatorsTest extends OpTestCase {
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testReduce(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         assertCollect(data, Collectors.reducing(0, Integer::sum),
                       s -> s.reduce(0, Integer::sum));
         assertCollect(data, Collectors.reducing(Integer.MAX_VALUE, Integer::min),
@@ -337,7 +372,7 @@ public class TabulatorsTest extends OpTestCase {
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testJoin(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testJoining(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         withData(data)
                 .terminal(s -> s.map(Object::toString).collect(Collectors.joining()))
                 .expectedResult(join(data, ""))
@@ -410,7 +445,7 @@ public class TabulatorsTest extends OpTestCase {
                                                         (u, v) -> v,
                                                         sum)) {
             try {
-                exerciseMapTabulation(data, toMap(keyFn, valueFn),
+                exerciseMapCollection(data, toMap(keyFn, valueFn),
                                       new ToMapAssertion<>(keyFn, valueFn, op, HashMap.class));
                 if (dataAsList.size() != dataAsSet.size())
                     fail("Expected ISE on input with duplicates");
@@ -420,16 +455,16 @@ public class TabulatorsTest extends OpTestCase {
                     fail("Expected no ISE on input without duplicates");
             }
 
-            exerciseMapTabulation(data, toMap(keyFn, valueFn, op),
+            exerciseMapCollection(data, toMap(keyFn, valueFn, op),
                                   new ToMapAssertion<>(keyFn, valueFn, op, HashMap.class));
 
-            exerciseMapTabulation(data, toMap(keyFn, valueFn, op, TreeMap::new),
+            exerciseMapCollection(data, toMap(keyFn, valueFn, op, TreeMap::new),
                                   new ToMapAssertion<>(keyFn, valueFn, op, TreeMap.class));
         }
 
         // For concurrent maps, only use commutative merge functions
         try {
-            exerciseMapTabulation(data, toConcurrentMap(keyFn, valueFn),
+            exerciseMapCollection(data, toConcurrentMap(keyFn, valueFn),
                                   new ToMapAssertion<>(keyFn, valueFn, sum, ConcurrentHashMap.class));
             if (dataAsList.size() != dataAsSet.size())
                 fail("Expected ISE on input with duplicates");
@@ -439,171 +474,216 @@ public class TabulatorsTest extends OpTestCase {
                 fail("Expected no ISE on input without duplicates");
         }
 
-        exerciseMapTabulation(data, toConcurrentMap(keyFn, valueFn, sum),
+        exerciseMapCollection(data, toConcurrentMap(keyFn, valueFn, sum),
                               new ToMapAssertion<>(keyFn, valueFn, sum, ConcurrentHashMap.class));
 
-        exerciseMapTabulation(data, toConcurrentMap(keyFn, valueFn, sum, ConcurrentSkipListMap::new),
+        exerciseMapCollection(data, toConcurrentMap(keyFn, valueFn, sum, ConcurrentSkipListMap::new),
                               new ToMapAssertion<>(keyFn, valueFn, sum, ConcurrentSkipListMap.class));
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testSimpleGroupBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testSimpleGroupingBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
 
         // Single-level groupBy
-        exerciseMapTabulation(data, groupingBy(classifier),
-                              new GroupedMapAssertion<>(classifier, HashMap.class,
-                                                        new ListAssertion<>()));
-        exerciseMapTabulation(data, groupingByConcurrent(classifier),
-                              new GroupedMapAssertion<>(classifier, ConcurrentHashMap.class,
-                                                        new ListAssertion<>()));
+        exerciseMapCollection(data, groupingBy(classifier),
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new ToListAssertion<>()));
+        exerciseMapCollection(data, groupingByConcurrent(classifier),
+                              new GroupingByAssertion<>(classifier, ConcurrentHashMap.class,
+                                                        new ToListAssertion<>()));
 
         // With explicit constructors
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, TreeMap::new, toCollection(HashSet::new)),
-                              new GroupedMapAssertion<>(classifier, TreeMap.class,
-                                                        new CollectionAssertion<Integer>(HashSet.class, false)));
-        exerciseMapTabulation(data,
+                              new GroupingByAssertion<>(classifier, TreeMap.class,
+                                                        new ToCollectionAssertion<Integer>(HashSet.class, false)));
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, ConcurrentSkipListMap::new,
                                                    toCollection(HashSet::new)),
-                              new GroupedMapAssertion<>(classifier, ConcurrentSkipListMap.class,
-                                                        new CollectionAssertion<Integer>(HashSet.class, false)));
+                              new GroupingByAssertion<>(classifier, ConcurrentSkipListMap.class,
+                                                        new ToCollectionAssertion<Integer>(HashSet.class, false)));
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testTwoLevelGroupBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testGroupingByWithMapping(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+        Function<Integer, Integer> classifier = i -> i % 3;
+        Function<Integer, Integer> mapper = i -> i * 2;
+
+        exerciseMapCollection(data,
+                              groupingBy(classifier, mapping(mapper, toList())),
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new MappingAssertion<>(mapper,
+                                                                               new ToListAssertion<>())));
+    }
+
+    @Test
+    public void testFlatMappingClose() {
+        Function<Integer, Integer> classifier = i -> i;
+        AtomicInteger ai = new AtomicInteger();
+        Function<Integer, Stream<Integer>> flatMapper = i -> Stream.of(i, i).onClose(ai::getAndIncrement);
+        Map<Integer, List<Integer>> m = Stream.of(1, 2).collect(groupingBy(classifier, flatMapping(flatMapper, toList())));
+        assertEquals(m.size(), ai.get());
+    }
+
+    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    public void testGroupingByWithFlatMapping(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+        Function<Integer, Integer> classifier = i -> i % 3;
+        Function<Integer, Stream<Integer>> flatMapperByNull = i -> null;
+        Function<Integer, Stream<Integer>> flatMapperBy0 = i -> Stream.empty();
+        Function<Integer, Stream<Integer>> flatMapperBy2 = i -> Stream.of(i, i);
+
+        exerciseMapCollection(data,
+                              groupingBy(classifier, flatMapping(flatMapperByNull, toList())),
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new FlatMappingAssertion<>(flatMapperBy0,
+                                                                                   new ToListAssertion<>())));
+        exerciseMapCollection(data,
+                              groupingBy(classifier, flatMapping(flatMapperBy0, toList())),
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new FlatMappingAssertion<>(flatMapperBy0,
+                                                                                   new ToListAssertion<>())));
+        exerciseMapCollection(data,
+                              groupingBy(classifier, flatMapping(flatMapperBy2, toList())),
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new FlatMappingAssertion<>(flatMapperBy2,
+                                                                                   new ToListAssertion<>())));
+    }
+
+    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    public void testTwoLevelGroupingBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 6;
         Function<Integer, Integer> classifier2 = i -> i % 23;
 
         // Two-level groupBy
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, groupingBy(classifier2)),
-                              new GroupedMapAssertion<>(classifier, HashMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, HashMap.class,
-                                                                                  new ListAssertion<>())));
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new GroupingByAssertion<>(classifier2, HashMap.class,
+                                                                                  new ToListAssertion<>())));
         // with concurrent as upstream
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, groupingBy(classifier2)),
-                              new GroupedMapAssertion<>(classifier, ConcurrentHashMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, HashMap.class,
-                                                                                  new ListAssertion<>())));
+                              new GroupingByAssertion<>(classifier, ConcurrentHashMap.class,
+                                                        new GroupingByAssertion<>(classifier2, HashMap.class,
+                                                                                  new ToListAssertion<>())));
         // with concurrent as downstream
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, groupingByConcurrent(classifier2)),
-                              new GroupedMapAssertion<>(classifier, HashMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, ConcurrentHashMap.class,
-                                                                                  new ListAssertion<>())));
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new GroupingByAssertion<>(classifier2, ConcurrentHashMap.class,
+                                                                                  new ToListAssertion<>())));
         // with concurrent as upstream and downstream
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, groupingByConcurrent(classifier2)),
-                              new GroupedMapAssertion<>(classifier, ConcurrentHashMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, ConcurrentHashMap.class,
-                                                                                  new ListAssertion<>())));
+                              new GroupingByAssertion<>(classifier, ConcurrentHashMap.class,
+                                                        new GroupingByAssertion<>(classifier2, ConcurrentHashMap.class,
+                                                                                  new ToListAssertion<>())));
 
         // With explicit constructors
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, TreeMap::new, groupingBy(classifier2, TreeMap::new, toCollection(HashSet::new))),
-                              new GroupedMapAssertion<>(classifier, TreeMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, TreeMap.class,
-                                                                                  new CollectionAssertion<Integer>(HashSet.class, false))));
+                              new GroupingByAssertion<>(classifier, TreeMap.class,
+                                                        new GroupingByAssertion<>(classifier2, TreeMap.class,
+                                                                                  new ToCollectionAssertion<Integer>(HashSet.class, false))));
         // with concurrent as upstream
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, ConcurrentSkipListMap::new, groupingBy(classifier2, TreeMap::new, toList())),
-                              new GroupedMapAssertion<>(classifier, ConcurrentSkipListMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, TreeMap.class,
-                                                                                  new ListAssertion<>())));
+                              new GroupingByAssertion<>(classifier, ConcurrentSkipListMap.class,
+                                                        new GroupingByAssertion<>(classifier2, TreeMap.class,
+                                                                                  new ToListAssertion<>())));
         // with concurrent as downstream
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, TreeMap::new, groupingByConcurrent(classifier2, ConcurrentSkipListMap::new, toList())),
-                              new GroupedMapAssertion<>(classifier, TreeMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, ConcurrentSkipListMap.class,
-                                                                                  new ListAssertion<>())));
+                              new GroupingByAssertion<>(classifier, TreeMap.class,
+                                                        new GroupingByAssertion<>(classifier2, ConcurrentSkipListMap.class,
+                                                                                  new ToListAssertion<>())));
         // with concurrent as upstream and downstream
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, ConcurrentSkipListMap::new, groupingByConcurrent(classifier2, ConcurrentSkipListMap::new, toList())),
-                              new GroupedMapAssertion<>(classifier, ConcurrentSkipListMap.class,
-                                                        new GroupedMapAssertion<>(classifier2, ConcurrentSkipListMap.class,
-                                                                                  new ListAssertion<>())));
+                              new GroupingByAssertion<>(classifier, ConcurrentSkipListMap.class,
+                                                        new GroupingByAssertion<>(classifier2, ConcurrentSkipListMap.class,
+                                                                                  new ToListAssertion<>())));
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testGroupedReduce(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testGroupubgByWithReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
 
         // Single-level simple reduce
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, reducing(0, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, HashMap.class,
-                                                        new ReduceAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new ReducingAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
         // with concurrent
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, reducing(0, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, ConcurrentHashMap.class,
-                                                        new ReduceAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
+                              new GroupingByAssertion<>(classifier, ConcurrentHashMap.class,
+                                                        new ReducingAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
 
         // With explicit constructors
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, TreeMap::new, reducing(0, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, TreeMap.class,
-                                                        new ReduceAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
+                              new GroupingByAssertion<>(classifier, TreeMap.class,
+                                                        new ReducingAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
         // with concurrent
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, ConcurrentSkipListMap::new, reducing(0, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, ConcurrentSkipListMap.class,
-                                                        new ReduceAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
+                              new GroupingByAssertion<>(classifier, ConcurrentSkipListMap.class,
+                                                        new ReducingAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
 
         // Single-level map-reduce
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, reducing(0, mDoubler, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, HashMap.class,
-                                                        new ReduceAssertion<>(0, mDoubler, Integer::sum)));
+                              new GroupingByAssertion<>(classifier, HashMap.class,
+                                                        new ReducingAssertion<>(0, mDoubler, Integer::sum)));
         // with concurrent
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, reducing(0, mDoubler, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, ConcurrentHashMap.class,
-                                                        new ReduceAssertion<>(0, mDoubler, Integer::sum)));
+                              new GroupingByAssertion<>(classifier, ConcurrentHashMap.class,
+                                                        new ReducingAssertion<>(0, mDoubler, Integer::sum)));
 
         // With explicit constructors
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingBy(classifier, TreeMap::new, reducing(0, mDoubler, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, TreeMap.class,
-                                                        new ReduceAssertion<>(0, mDoubler, Integer::sum)));
+                              new GroupingByAssertion<>(classifier, TreeMap.class,
+                                                        new ReducingAssertion<>(0, mDoubler, Integer::sum)));
         // with concurrent
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               groupingByConcurrent(classifier, ConcurrentSkipListMap::new, reducing(0, mDoubler, Integer::sum)),
-                              new GroupedMapAssertion<>(classifier, ConcurrentSkipListMap.class,
-                                                        new ReduceAssertion<>(0, mDoubler, Integer::sum)));
+                              new GroupingByAssertion<>(classifier, ConcurrentSkipListMap.class,
+                                                        new ReducingAssertion<>(0, mDoubler, Integer::sum)));
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testSimplePartition(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testSimplePartitioningBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Predicate<Integer> classifier = i -> i % 3 == 0;
 
         // Single-level partition to downstream List
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               partitioningBy(classifier),
-                              new PartitionAssertion<>(classifier, new ListAssertion<>()));
-        exerciseMapTabulation(data,
+                              new PartitioningByAssertion<>(classifier, new ToListAssertion<>()));
+        exerciseMapCollection(data,
                               partitioningBy(classifier, toList()),
-                              new PartitionAssertion<>(classifier, new ListAssertion<>()));
+                              new PartitioningByAssertion<>(classifier, new ToListAssertion<>()));
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testTwoLevelPartition(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testTwoLevelPartitioningBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Predicate<Integer> classifier = i -> i % 3 == 0;
         Predicate<Integer> classifier2 = i -> i % 7 == 0;
 
         // Two level partition
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               partitioningBy(classifier, partitioningBy(classifier2)),
-                              new PartitionAssertion<>(classifier,
-                                                       new PartitionAssertion(classifier2, new ListAssertion<>())));
+                              new PartitioningByAssertion<>(classifier,
+                                                            new PartitioningByAssertion(classifier2, new ToListAssertion<>())));
 
         // Two level partition with reduce
-        exerciseMapTabulation(data,
+        exerciseMapCollection(data,
                               partitioningBy(classifier, reducing(0, Integer::sum)),
-                              new PartitionAssertion<>(classifier,
-                                                       new ReduceAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
+                              new PartitioningByAssertion<>(classifier,
+                                                            new ReducingAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)

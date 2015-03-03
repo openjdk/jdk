@@ -23,13 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
+#include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
@@ -405,7 +409,7 @@ Symbol* MethodHandles::lookup_signature(oop type_str, bool intern_if_not_found, 
     return java_lang_invoke_MethodType::as_signature(type_str, intern_if_not_found, THREAD);
   } else if (java_lang_Class::is_instance(type_str)) {
     return java_lang_Class::as_signature(type_str, false, THREAD);
-  } else if (java_lang_String::is_instance(type_str)) {
+  } else if (java_lang_String::is_instance_inlined(type_str)) {
     if (intern_if_not_found) {
       return java_lang_String::as_symbol(type_str, THREAD);
     } else {

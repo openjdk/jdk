@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ static int getWinTimeZone(char *winZoneName, char *winMapID)
          * Vista uses the different key name.
          */
         if (ret != ERROR_SUCCESS) {
-          bufSize = sizeof(val);
+            bufSize = sizeof(val);
             ret = RegQueryValueExA(hKey, "DynamicDaylightTimeDisabled",
                                    NULL, &valueType, (LPBYTE) &val, &bufSize);
         }
@@ -510,18 +510,49 @@ char *findJavaTZ_md(const char *java_home_dir)
         } else {
             std_timezone = matchJavaTZ(java_home_dir, result,
                                        winZoneName, winMapID);
+            if (std_timezone == NULL) {
+                std_timezone = getGMTOffsetID();
+            }
         }
     }
-
     return std_timezone;
 }
 
 /**
- * Returns a GMT-offset-based time zone ID. On Win32, it always return
- * NULL since the fall back is performed in getWinTimeZone().
+ * Returns a GMT-offset-based time zone ID.
  */
 char *
 getGMTOffsetID()
 {
-    return NULL;
+    LONG bias = 0;
+    LONG ret;
+    HANDLE hKey = NULL;
+    char zonename[32];
+
+    // Obtain the current GMT offset value of ActiveTimeBias.
+    ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, WIN_CURRENT_TZ_KEY, 0,
+                       KEY_READ, (PHKEY)&hKey);
+    if (ret == ERROR_SUCCESS) {
+        DWORD val;
+        DWORD bufSize = sizeof(val);
+        ULONG valueType = 0;
+        ret = RegQueryValueExA(hKey, "ActiveTimeBias",
+                               NULL, &valueType, (LPBYTE) &val, &bufSize);
+        if (ret == ERROR_SUCCESS) {
+            bias = (LONG) val;
+        }
+        (void) RegCloseKey(hKey);
+    }
+
+    // If we can't get the ActiveTimeBias value, use Bias of TimeZoneInformation.
+    // Note: Bias doesn't reflect current daylight saving.
+    if (ret != ERROR_SUCCESS) {
+        TIME_ZONE_INFORMATION tzi;
+        if (GetTimeZoneInformation(&tzi) != TIME_ZONE_ID_INVALID) {
+            bias = tzi.Bias;
+        }
+    }
+
+    customZoneName(bias, zonename);
+    return _strdup(zonename);
 }

@@ -798,6 +798,10 @@ public abstract class Scope {
             prependSubScope(new FilterImportScope(types, origin, null, filter, staticImport));
         }
 
+        public boolean isFilled() {
+            return subScopes.nonEmpty();
+        }
+
     }
 
     public interface ImportFilter {
