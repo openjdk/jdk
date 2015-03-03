@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ public
 class ZipEntry implements ZipConstants, Cloneable {
 
     String name;        // entry name
-    long time = -1;     // last modification time
+    long xdostime = -1; // last modification time (in extended DOS time,
+                        // where milliseconds lost in conversion might
+                        // be encoded into the upper half)
     FileTime mtime;     // last modification time, from extra field data
     FileTime atime;     // last access time, from extra field data
     FileTime ctime;     // creation time, from extra field data
@@ -62,6 +64,28 @@ class ZipEntry implements ZipConstants, Cloneable {
      * Compression method for compressed (deflated) entries.
      */
     public static final int DEFLATED = 8;
+
+    /**
+     * DOS time constant for representing timestamps before 1980.
+     */
+    static final long DOSTIME_BEFORE_1980 = (1 << 21) | (1 << 16);
+
+    /**
+     * Approximately 128 years, in milliseconds (ignoring leap years etc).
+     *
+     * This establish an approximate high-bound value for DOS times in
+     * milliseconds since epoch, used to enable an efficient but
+     * sufficient bounds check to avoid generating extended last modified
+     * time entries.
+     *
+     * Calculating the exact number is locale dependent, would require loading
+     * TimeZone data eagerly, and would make little practical sense. Since DOS
+     * times theoretically go to 2107 - with compatibility not guaranteed
+     * after 2099 - setting this to a time that is before but near 2099
+     * should be sufficient.
+     */
+    private static final long UPPER_DOSTIME_BOUND =
+            128L * 365 * 24 * 60 * 60 * 1000;
 
     /**
      * Creates a new zip entry with the specified name.
@@ -93,7 +117,7 @@ class ZipEntry implements ZipConstants, Cloneable {
     public ZipEntry(ZipEntry e) {
         Objects.requireNonNull(e, "entry");
         name = e.name;
-        time = e.time;
+        xdostime = e.xdostime;
         mtime = e.mtime;
         atime = e.atime;
         ctime = e.ctime;
@@ -137,8 +161,14 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @see #getLastModifiedTime()
      */
     public void setTime(long time) {
-        this.time = time;
-        this.mtime = null;
+        this.xdostime = javaToExtendedDosTime(time);
+        // Avoid setting the mtime field if time is in the valid
+        // range for a DOS time
+        if (xdostime != DOSTIME_BEFORE_1980 && time <= UPPER_DOSTIME_BOUND) {
+            this.mtime = null;
+        } else {
+            this.mtime = FileTime.from(time, TimeUnit.MILLISECONDS);
+        }
     }
 
     /**
@@ -158,7 +188,10 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @see #setLastModifiedTime(FileTime)
      */
     public long getTime() {
-        return time;
+        if (mtime != null) {
+            return mtime.toMillis();
+        }
+        return (xdostime != -1) ? extendedDosToJavaTime(xdostime) : -1;
     }
 
     /**
@@ -181,7 +214,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      */
     public ZipEntry setLastModifiedTime(FileTime time) {
         this.mtime = Objects.requireNonNull(time, "lastModifiedTime");
-        this.time = time.to(TimeUnit.MILLISECONDS);
+        this.xdostime = javaToExtendedDosTime(time.to(TimeUnit.MILLISECONDS));
         return this;
     }
 
@@ -204,9 +237,9 @@ class ZipEntry implements ZipConstants, Cloneable {
     public FileTime getLastModifiedTime() {
         if (mtime != null)
             return mtime;
-        if (time == -1)
+        if (xdostime == -1)
             return null;
-        return FileTime.from(time, TimeUnit.MILLISECONDS);
+        return FileTime.from(getTime(), TimeUnit.MILLISECONDS);
     }
 
     /**

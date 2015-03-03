@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1792,7 +1792,17 @@ JRT_END
 
 
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
-JRT_ENTRY_NO_ASYNC(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
+JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
+  if (!SafepointSynchronize::is_synchronizing()) {
+    // Only try quick_enter() if we're not trying to reach a safepoint
+    // so that the calling thread reaches the safepoint more quickly.
+    if (ObjectSynchronizer::quick_enter(_obj, thread, lock)) return;
+  }
+  // NO_ASYNC required because an async exception on the state transition destructor
+  // would leave you with the lock held and it would never be released.
+  // The normal monitorenter NullPointerException is thrown without acquiring a lock
+  // and the model is that an exception implies the method failed.
+  JRT_BLOCK_NO_ASYNC
   oop obj(_obj);
   if (PrintBiasedLockingStatistics) {
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
@@ -1805,6 +1815,7 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj
     ObjectSynchronizer::slow_enter(h_obj, lock, CHECK);
   }
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
+  JRT_BLOCK_END
 JRT_END
 
 // Handles the uncommon cases of monitor unlocking in compiled code

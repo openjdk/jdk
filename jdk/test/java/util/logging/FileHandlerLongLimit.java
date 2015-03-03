@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,26 +346,29 @@ public class FileHandlerLongLimit {
             assertEquals(0, getWritten(metered), "written");
 
             // now we're going to publish a series of log records
+            // we're using the same log record over and over to make
+            // sure we get the same amount of bytes.
             String msg = "this is at least 10 chars long";
-            fh.publish(new LogRecord(Level.SEVERE, msg));
+            LogRecord record = new LogRecord(Level.SEVERE, msg);
+            fh.publish(record);
             fh.flush();
             long w = getWritten(metered);
             long offset = getWritten(metered);
             System.out.println("first offset is:  " + offset);
 
-            fh.publish(new LogRecord(Level.SEVERE, msg));
+            fh.publish(record);
             fh.flush();
             offset = getWritten(metered) - w;
             w = getWritten(metered);
             System.out.println("second offset is: " + offset);
 
-            fh.publish(new LogRecord(Level.SEVERE, msg));
+            fh.publish(record);
             fh.flush();
             offset = getWritten(metered) - w;
             w = getWritten(metered);
             System.out.println("third offset is:  " + offset);
 
-            fh.publish(new LogRecord(Level.SEVERE, msg));
+            fh.publish(record);
             fh.flush();
             offset = getWritten(metered) - w;
             System.out.println("fourth offset is: " + offset);
@@ -377,7 +380,7 @@ public class FileHandlerLongLimit {
 
             // publish one more log record. we should still be just beneath
             // the limit
-            fh.publish(new LogRecord(Level.SEVERE, msg));
+            fh.publish(record);
             fh.flush();
             assertEquals(w+offset, getWritten(metered), "written");
 
@@ -392,9 +395,9 @@ public class FileHandlerLongLimit {
             // writing the first log record or just before writing the next
             // one. We publich two - so we're sure that the log must have
             // rotated.
-            fh.publish(new LogRecord(Level.SEVERE, msg));
+            fh.publish(record);
             fh.flush();
-            fh.publish(new LogRecord(Level.SEVERE, msg));
+            fh.publish(record);
             fh.flush();
 
             // Check that fh.meter is a different instance of MeteredStream.

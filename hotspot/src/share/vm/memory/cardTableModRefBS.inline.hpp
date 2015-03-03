@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @author Gary Ellison
- * @bug 4170635
- * @summary Verify equals()/hashCode() contract honored
- */
+#ifndef SHARE_VM_MEMORY_CARDTABLEMODREFBS_INLINE_HPP
+#define SHARE_VM_MEMORY_CARDTABLEMODREFBS_INLINE_HPP
 
-import java.io.*;
+#include "memory/cardTableModRefBS.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/orderAccess.inline.hpp"
 
-import sun.security.acl.*;
-
-
-public class PermissionEqualsHashCode {
-
-    public static void main(String[] args) throws Exception {
-
-        PermissionImpl p1 = new PermissionImpl("permissionPermission");
-        PermissionImpl p2 = new PermissionImpl("permissionPermission");
-
-
-        // the test
-        if ( (p1.equals(p2)) == (p1.hashCode()==p2.hashCode()) )
-            System.out.println("PASSED");
-        else
-            throw new Exception("Failed equals()/hashCode() contract");
-
-    }
+template <class T> inline void CardTableModRefBS::inline_write_ref_field(T* field, oop newVal, bool release) {
+  jbyte* byte = byte_for((void*)field);
+  if (release) {
+    // Perform a releasing store if requested.
+    OrderAccess::release_store((volatile jbyte*) byte, dirty_card);
+  } else {
+    *byte = dirty_card;
+  }
 }
+
+#endif // SHARE_VM_MEMORY_CARDTABLEMODREFBS_INLINE_HPP

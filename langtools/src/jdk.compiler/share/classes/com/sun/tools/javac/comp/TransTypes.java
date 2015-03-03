@@ -764,7 +764,7 @@ public class TransTypes extends TreeTranslator {
                 ? typeCast.expr
                 : newExpression;
         }
-        if (originalTarget.isCompound()) {
+        if (originalTarget.isIntersection()) {
             Type.IntersectionClassType ict = (Type.IntersectionClassType)originalTarget;
             for (Type c : ict.getExplicitComponents()) {
                 Type ec = erasure(c);

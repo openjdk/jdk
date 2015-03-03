@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/cardTableModRefBS.hpp"
+#include "memory/cardTableModRefBS.inline.hpp"
 #include "memory/cardTableRS.hpp"
 #include "memory/sharedHeap.hpp"
 #include "memory/space.hpp"

@@ -23,11 +23,8 @@
  * questions.
  */
 
-#include <string.h>
-
 #include "jni.h"
 #include "jni_util.h"
-#include "jlong.h"
 #include "jvm.h"
 #include "jdk_util.h"
 
@@ -43,12 +40,8 @@ Java_sun_misc_VM_latestUserDefinedLoader(JNIEnv *env, jclass cls) {
     return JVM_LatestUserDefinedLoader(env);
 }
 
-typedef void (JNICALL *GetJvmVersionInfo_fp)(JNIEnv*, jvm_version_info*, size_t);
-
 JNIEXPORT void JNICALL
 Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
-    GetJvmVersionInfo_fp func_p;
-
     if (!JDK_InitJvmHandle()) {
         JNU_ThrowInternalError(env, "Handle for JVM not found for symbol lookup");
         return;
@@ -61,15 +54,4 @@ Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
     // introducing a Java_sun_misc_VM_getNanoTimeAdjustment  wrapper
     (*env)->RegisterNatives(env, cls,
                             methods, sizeof(methods)/sizeof(methods[0]));
-
-    func_p = (GetJvmVersionInfo_fp) JDK_FindJvmEntry("JVM_GetVersionInfo");
-     if (func_p != NULL) {
-        jvm_version_info info;
-
-        memset(&info, 0, sizeof(info));
-
-        /* obtain the JVM version info */
-        (*func_p)(env, &info, sizeof(info));
-    }
 }
-

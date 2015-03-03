@@ -24,10 +24,12 @@
  */
 
 package java.util.logging;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
+import java.time.Clock;
 
 import sun.misc.JavaLangAccess;
 import sun.misc.SharedSecrets;
@@ -88,54 +90,93 @@ public class LogRecord implements java.io.Serializable {
     private static final ThreadLocal<Integer> threadIds = new ThreadLocal<>();
 
     /**
-     * @serial Logging message level
+     * Logging message level
      */
     private Level level;
 
     /**
-     * @serial Sequence number
+     * Sequence number
      */
     private long sequenceNumber;
 
     /**
-     * @serial Class that issued logging call
+     * Class that issued logging call
      */
     private String sourceClassName;
 
     /**
-     * @serial Method that issued logging call
+     * Method that issued logging call
      */
     private String sourceMethodName;
 
     /**
-     * @serial Non-localized raw message text
+     * Non-localized raw message text
      */
     private String message;
 
     /**
-     * @serial Thread ID for thread that issued logging call.
+     * Thread ID for thread that issued logging call.
      */
     private int threadID;
 
     /**
-     * @serial Event time in milliseconds since 1970
-     */
-    private long millis;
-
-    /**
-     * @serial The Throwable (if any) associated with log message
+     * The Throwable (if any) associated with log message
      */
     private Throwable thrown;
 
     /**
-     * @serial Name of the source Logger.
+     * Name of the source Logger.
      */
     private String loggerName;
 
     /**
-     * @serial Resource bundle name to localized log message.
+     * Resource bundle name to localized log message.
      */
     private String resourceBundleName;
+
+    /**
+     * Event time.
+     * @since 1.9
+     */
+    private Instant instant;
+
+    /**
+     * @serialField level Level Logging message level
+     * @serialField sequenceNumber long Sequence number
+     * @serialField sourceClassName String Class that issued logging call
+     * @serialField sourceMethodName String Method that issued logging call
+     * @serialField message String Non-localized raw message text
+     * @serialField threadID int Thread ID for thread that issued logging call
+     * @serialField millis long Truncated event time in milliseconds since 1970
+     *              - calculated as getInstant().toEpochMilli().
+     *               The event time instant can be reconstructed using
+     * <code>Instant.ofEpochSecond(millis/1000, (millis % 1000) * 1000_000 + nanoAdjustment)</code>
+     * @serialField nanoAdjustment int Nanoseconds adjustment to the millisecond of
+     *              event time - calculated as getInstant().getNano() % 1000_000
+     *               The event time instant can be reconstructed using
+     * <code>Instant.ofEpochSecond(millis/1000, (millis % 1000) * 1000_000 + nanoAdjustment)</code>
+     *              <p>
+     *              Since: 1.9
+     * @serialField thrown Throwable The Throwable (if any) associated with log
+     *              message
+     * @serialField loggerName String Name of the source Logger
+     * @serialField resourceBundleName String Resource bundle name to localized
+     *              log message
+     */
+    private static final ObjectStreamField[] serialPersistentFields =
+        new ObjectStreamField[] {
+            new ObjectStreamField("level", Level.class),
+            new ObjectStreamField("sequenceNumber", long.class),
+            new ObjectStreamField("sourceClassName", String.class),
+            new ObjectStreamField("sourceMethodName", String.class),
+            new ObjectStreamField("message", String.class),
+            new ObjectStreamField("threadID", int.class),
+            new ObjectStreamField("millis", long.class),
+            new ObjectStreamField("nanoAdjustment", int.class),
+            new ObjectStreamField("thrown", Throwable.class),
+            new ObjectStreamField("loggerName", String.class),
+            new ObjectStreamField("resourceBundleName", String.class),
+        };
 
     private transient boolean needToInferCaller;
     private transient Object parameters[];
@@ -164,7 +205,10 @@ public class LogRecord implements java.io.Serializable {
      * The sequence property will be initialized with a new unique value.
      * These sequence values are allocated in increasing order within a VM.
      * <p>
-     * The millis property will be initialized to the current time.
+     * Since JDK 1.9, the event time is represented by an {@link Instant}.
+     * The instant property will be initialized to the {@linkplain
+     * Instant#now() current instant}, using the best available
+     * {@linkplain Clock#systemUTC() clock} on the system.
      * <p>
      * The thread ID property will be initialized with a unique ID for
      * the current thread.
@@ -173,6 +217,7 @@ public class LogRecord implements java.io.Serializable {
      *
      * @param level  a logging level value
      * @param msg  the raw non-localized logging message (may be null)
+     * @see java.time.Clock#systemUTC()
      */
     public LogRecord(Level level, String msg) {
         this.level = Objects.requireNonNull(level);
@@ -180,7 +225,7 @@ public class LogRecord implements java.io.Serializable {
         // Assign a thread ID and a unique sequence number.
         sequenceNumber = globalSequenceNumber.getAndIncrement();
         threadID = defaultThreadID();
-        millis = System.currentTimeMillis();
+        instant = Instant.now();
         needToInferCaller = true;
    }
 
@@ -416,21 +461,63 @@ public class LogRecord implements java.io.Serializable {
     }
 
     /**
-     * Get event time in milliseconds since 1970.
+     * Get truncated event time in milliseconds since 1970.
      *
-     * @return event time in millis since 1970
+     * @return truncated event time in millis since 1970
+     *
+     * @implSpec This is equivalent to calling
+     *      {@link #getInstant() getInstant().toEpochMilli()}.
+     *
+     * @deprecated To get the full nanosecond resolution event time,
+     *             use {@link #getInstant()}.
+     *
+     * @see #getInstant()
      */
+    @Deprecated
     public long getMillis() {
-        return millis;
+        return instant.toEpochMilli();
     }
 
     /**
      * Set event time.
      *
-     * @param millis event time in millis since 1970
+     * @param millis event time in millis since 1970.
+     *
+     * @implSpec This is equivalent to calling
+     *      {@link #setInstant(java.time.Instant)
+     *      setInstant(Instant.ofEpochMilli(millis))}.
+     *
+     * @deprecated To set event time with nanosecond resolution,
+     *             use {@link #setInstant(java.time.Instant)}.
+     *
+     * @see #setInstant(java.time.Instant)
      */
+    @Deprecated
     public void setMillis(long millis) {
-        this.millis = millis;
+        this.instant = Instant.ofEpochMilli(millis);
+    }
+
+    /**
+     * Gets the instant that the event occurred.
+     *
+     * @return the instant that the event occurred.
+     *
+     * @since 1.9
+     */
+    public Instant getInstant() {
+        return instant;
+    }
+
+    /**
+     * Sets the instant that the event occurred.
+     *
+     * @param instant the instant that the event occurred.
+     *
+     * @throws NullPointerException if {@code instant} is null.
+     * @since 1.9
+     */
+    public void setInstant(Instant instant) {
+        this.instant = Objects.requireNonNull(instant);
     }
 
     /**
@@ -457,7 +544,7 @@ public class LogRecord implements java.io.Serializable {
     private static final long serialVersionUID = 5372048053134512534L;
 
     /**
-     * @serialData Default fields, followed by a two byte version number
+     * @serialData Serialized fields, followed by a two byte version number
      * (major byte, followed by minor byte), followed by information on
      * the log record parameter array.  If there is no parameter array,
      * then -1 is written.  If there is a parameter array (possible of zero
@@ -467,8 +554,20 @@ public class LogRecord implements java.io.Serializable {
      * is written.
      */
     private void writeObject(ObjectOutputStream out) throws IOException {
-        // We have to call defaultWriteObject first.
-        out.defaultWriteObject();
+        // We have to write serialized fields first.
+        ObjectOutputStream.PutField pf = out.putFields();
+        pf.put("level", level);
+        pf.put("sequenceNumber", sequenceNumber);
+        pf.put("sourceClassName", sourceClassName);
+        pf.put("sourceMethodName", sourceMethodName);
+        pf.put("message", message);
+        pf.put("threadID", threadID);
+        pf.put("millis", instant.toEpochMilli());
+        pf.put("nanoAdjustment", instant.getNano() % 1000_000);
+        pf.put("thrown", thrown);
+        pf.put("loggerName", loggerName);
+        pf.put("resourceBundleName", resourceBundleName);
+        out.writeFields();
 
         // Write our version number.
         out.writeByte(1);
@@ -486,8 +585,21 @@ public class LogRecord implements java.io.Serializable {
 
     private void readObject(ObjectInputStream in)
                         throws IOException, ClassNotFoundException {
-        // We have to call defaultReadObject first.
-        in.defaultReadObject();
+        // We have to read serialized fields first.
+        ObjectInputStream.GetField gf = in.readFields();
+        level = (Level) gf.get("level", null);
+        sequenceNumber = gf.get("sequenceNumber", 0L);
+        sourceClassName = (String) gf.get("sourceClassName", null);
+        sourceMethodName = (String) gf.get("sourceMethodName", null);
+        message = (String) gf.get("message", null);
+        threadID = gf.get("threadID", 0);
+        long millis = gf.get("millis", 0L);
+        int nanoOfMilli = gf.get("nanoAdjustment", 0);
+        instant = Instant.ofEpochSecond(
+            millis / 1000L, (millis % 1000L) * 1000_000L + nanoOfMilli);
+        thrown = (Throwable) gf.get("thrown", null);
+        loggerName = (String) gf.get("loggerName", null);
+        resourceBundleName = (String) gf.get("resourceBundleName", null);
 
         // Read version number.
         byte major = in.readByte();

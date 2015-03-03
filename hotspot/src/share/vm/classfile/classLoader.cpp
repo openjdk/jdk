@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,40 +152,6 @@ bool string_ends_with(const char* str, const char* str_to_find) {
 }
 
 
-MetaIndex::MetaIndex(char** meta_package_names, int num_meta_package_names) {
-  if (num_meta_package_names == 0) {
-    _meta_package_names = NULL;
-    _num_meta_package_names = 0;
-  } else {
-    _meta_package_names = NEW_C_HEAP_ARRAY(char*, num_meta_package_names, mtClass);
-    _num_meta_package_names = num_meta_package_names;
-    memcpy(_meta_package_names, meta_package_names, num_meta_package_names * sizeof(char*));
-  }
-}
-
-
-MetaIndex::~MetaIndex() {
-  FREE_C_HEAP_ARRAY(char*, _meta_package_names);
-}
-
-
-bool MetaIndex::may_contain(const char* class_name) {
-  if ( _num_meta_package_names == 0) {
-    return false;
-  }
-  size_t class_name_len = strlen(class_name);
-  for (int i = 0; i < _num_meta_package_names; i++) {
-    char* pkg = _meta_package_names[i];
-    size_t pkg_len = strlen(pkg);
-    size_t min_len = MIN2(class_name_len, pkg_len);
-    if (!strncmp(class_name, pkg, min_len)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
 ClassPathEntry::ClassPathEntry() {
   set_next(NULL);
 }
@@ -315,7 +281,6 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
 LazyClassPathEntry::LazyClassPathEntry(const char* path, const struct stat* st, bool throw_exception) : ClassPathEntry() {
   _path = os::strdup_check_oom(path);
   _st = *st;
-  _meta_index = NULL;
   _resolved_entry = NULL;
   _has_error = false;
   _throw_exception = throw_exception;
@@ -354,10 +319,6 @@ ClassPathEntry* LazyClassPathEntry::resolve_entry(TRAPS) {
 }
 
 ClassFileStream* LazyClassPathEntry::open_stream(const char* name, TRAPS) {
-  if (_meta_index != NULL &&
-      !_meta_index->may_contain(name)) {
-    return NULL;
-  }
   if (_has_error) {
     return NULL;
   }
@@ -463,16 +424,6 @@ bool ClassPathImageEntry::is_jrt() {
 }
 #endif
 
-static void print_meta_index(LazyClassPathEntry* entry,
-                             GrowableArray<char*>& meta_packages) {
-  tty->print("[Meta index for %s=", entry->name());
-  for (int i = 0; i < meta_packages.length(); i++) {
-    if (i > 0) tty->print(" ");
-    tty->print("%s", meta_packages.at(i));
-  }
-  tty->print_cr("]");
-}
-
 #if INCLUDE_CDS
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(DumpSharedSpaces, "only called at dump time");
@@ -505,123 +456,6 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
     tty->print_cr("]");
   } else {
     tty->cr();
-  }
-}
-
-void ClassLoader::setup_bootstrap_meta_index() {
-  // Set up meta index which allows us to open boot jars lazily if
-  // class data sharing is enabled
-  const char* meta_index_path = Arguments::get_meta_index_path();
-  const char* meta_index_dir  = Arguments::get_meta_index_dir();
-  setup_meta_index(meta_index_path, meta_index_dir, 0);
-}
-
-void ClassLoader::setup_meta_index(const char* meta_index_path, const char* meta_index_dir, int start_index) {
-  const char* known_version = "% VERSION 2";
-  FILE* file = fopen(meta_index_path, "r");
-  int line_no = 0;
-#if INCLUDE_CDS
-  if (DumpSharedSpaces) {
-    if (file != NULL) {
-      _shared_paths_misc_info->add_required_file(meta_index_path);
-    } else {
-      _shared_paths_misc_info->add_nonexist_path(meta_index_path);
-    }
-  }
-#endif
-  if (file != NULL) {
-    ResourceMark rm;
-    LazyClassPathEntry* cur_entry = NULL;
-    GrowableArray<char*> boot_class_path_packages(10);
-    char package_name[256];
-    bool skipCurrentJar = false;
-    while (fgets(package_name, sizeof(package_name), file) != NULL) {
-      ++line_no;
-      // Remove trailing newline
-      package_name[strlen(package_name) - 1] = '\0';
-      switch(package_name[0]) {
-        case '%':
-        {
-          if ((line_no == 1) && (strcmp(package_name, known_version) != 0)) {
-            if (TraceClassLoading && Verbose) {
-              tty->print("[Unsupported meta index version]");
-            }
-            fclose(file);
-            return;
-          }
-        }
-
-        // These directives indicate jar files which contain only
-        // classes, only non-classfile resources, or a combination of
-        // the two. See src/share/classes/sun/misc/MetaIndex.java and
-        // make/tools/MetaIndex/BuildMetaIndex.java in the J2SE
-        // workspace.
-        case '#':
-        case '!':
-        case '@':
-        {
-          // Hand off current packages to current lazy entry (if any)
-          if ((cur_entry != NULL) &&
-              (boot_class_path_packages.length() > 0)) {
-            if ((TraceClassLoading || TraceClassPaths) && Verbose) {
-              print_meta_index(cur_entry, boot_class_path_packages);
-            }
-            MetaIndex* index = new MetaIndex(boot_class_path_packages.adr_at(0),
-                                             boot_class_path_packages.length());
-            cur_entry->set_meta_index(index);
-          }
-          cur_entry = NULL;
-          boot_class_path_packages.clear();
-
-          // Find lazy entry corresponding to this jar file
-          int count = 0;
-          for (ClassPathEntry* entry = _first_entry; entry != NULL; entry = entry->next(), count++) {
-            if (count >= start_index &&
-                entry->is_lazy() &&
-                string_starts_with(entry->name(), meta_index_dir) &&
-                string_ends_with(entry->name(), &package_name[2])) {
-              cur_entry = (LazyClassPathEntry*) entry;
-              break;
-            }
-          }
-
-          // If the first character is '@', it indicates the following jar
-          // file is a resource only jar file in which case, we should skip
-          // reading the subsequent entries since the resource loading is
-          // totally handled by J2SE side.
-          if (package_name[0] == '@') {
-            if (cur_entry != NULL) {
-              cur_entry->set_meta_index(new MetaIndex(NULL, 0));
-            }
-            cur_entry = NULL;
-            skipCurrentJar = true;
-          } else {
-            skipCurrentJar = false;
-          }
-
-          break;
-        }
-
-        default:
-        {
-          if (!skipCurrentJar && cur_entry != NULL) {
-            char* new_name = os::strdup_check_oom(package_name);
-            boot_class_path_packages.append(new_name);
-          }
-        }
-      }
-    }
-    // Hand off current packages to current lazy entry (if any)
-    if ((cur_entry != NULL) &&
-        (boot_class_path_packages.length() > 0)) {
-      if ((TraceClassLoading || TraceClassPaths) && Verbose) {
-        print_meta_index(cur_entry, boot_class_path_packages);
-      }
-      MetaIndex* index = new MetaIndex(boot_class_path_packages.adr_at(0),
-                                       boot_class_path_packages.length());
-      cur_entry->set_meta_index(index);
-    }
-    fclose(file);
   }
 }
 
@@ -1315,10 +1149,6 @@ void ClassLoader::initialize() {
   }
 #endif
   setup_bootstrap_search_path();
-  if (LazyBootClassLoader) {
-    // set up meta index which makes boot classpath initialization lazier
-    setup_bootstrap_meta_index();
-  }
 }
 
 #if INCLUDE_CDS
@@ -1486,12 +1316,7 @@ void ClassPathZipEntry::compile_the_world(Handle loader, TRAPS) {
 }
 
 bool ClassPathZipEntry::is_jrt() {
-  real_jzfile* zip = (real_jzfile*) _zip;
-  int len = (int)strlen(zip->name);
-  // Check whether zip name ends in "rt.jar"
-  // This will match other archives named rt.jar as well, but this is
-  // only used for debugging.
-  return string_ends_with(zip->name, "rt.jar");
+  return false;
 }
 
 void LazyClassPathEntry::compile_the_world(Handle loader, TRAPS) {
@@ -1519,7 +1344,7 @@ void ClassLoader::compile_the_world() {
   ClassPathEntry* e = _first_entry;
   jlong start = os::javaTimeMillis();
   while (e != NULL) {
-    // We stop at rt.jar, unless it is the first bootstrap path entry
+    // We stop at bootmodules.jimage, unless it is the first bootstrap path entry
     if (e->is_jrt() && e != _first_entry) break;
     e->compile_the_world(system_class_loader, CATCH);
     e = e->next();
