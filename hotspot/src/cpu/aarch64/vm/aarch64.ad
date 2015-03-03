@@ -5630,7 +5630,7 @@ instruct storeimmCM0(immI0 zero, memory mem)
 %}
 
 // Store Byte
-instruct storeB(iRegI src, memory mem)
+instruct storeB(iRegIorL2I src, memory mem)
 %{
   match(Set mem (StoreB mem src));
   predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
@@ -5658,7 +5658,7 @@ instruct storeimmB0(immI0 zero, memory mem)
 %}
 
 // Store Char/Short
-instruct storeC(iRegI src, memory mem)
+instruct storeC(iRegIorL2I src, memory mem)
 %{
   match(Set mem (StoreC mem src));
   predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
