@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@
   template(PrintCompileQueue)                     \
   template(PrintCodeList)                         \
   template(PrintCodeCache)                        \
+  template(PrintClassHierarchy)                   \
 
 class VM_Operation: public CHeapObj<mtInternal> {
  public:
@@ -457,5 +458,21 @@ class VM_PrintCodeCache: public VM_Operation {
   void doit();
 };
 
+#if INCLUDE_SERVICES
+class VM_PrintClassHierarchy: public VM_Operation {
+ private:
+  outputStream* _out;
+  bool _print_interfaces;
+  bool _print_subclasses;
+  char* _classname;
+
+ public:
+  VM_PrintClassHierarchy(outputStream* st, bool print_interfaces, bool print_subclasses, char* classname) :
+    _out(st), _print_interfaces(print_interfaces), _print_subclasses(print_subclasses),
+    _classname(classname) {}
+  VMOp_Type type() const { return VMOp_PrintClassHierarchy; }
+  void doit();
+};
+#endif // INCLUDE_SERVICES
 
 #endif // SHARE_VM_RUNTIME_VM_OPERATIONS_HPP

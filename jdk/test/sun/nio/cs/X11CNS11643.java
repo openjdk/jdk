@@ -24,7 +24,8 @@
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.*;
-import sun.nio.cs.ext.EUC_TW;
+import sun.nio.cs.*;
+import sun.nio.cs.ext.*;
 
 public abstract class X11CNS11643 extends Charset {
     private final int plane;

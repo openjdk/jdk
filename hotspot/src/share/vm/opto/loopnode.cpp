@@ -436,6 +436,19 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
       return false; // cyclic loop or this loop trips only once
   }
 
+  if (phi_incr != NULL) {
+    // check if there is a possiblity of IV overflowing after the first increment
+    if (stride_con > 0) {
+      if (init_t->_hi > max_jint - stride_con) {
+        return false;
+      }
+    } else {
+      if (init_t->_lo < min_jint - stride_con) {
+        return false;
+      }
+    }
+  }
+
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //

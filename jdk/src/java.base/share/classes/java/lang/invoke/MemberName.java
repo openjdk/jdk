@@ -521,7 +521,7 @@ import java.util.Objects;
     }
     @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Method m, boolean wantSpecial) {
-        m.getClass();  // NPE check
+        Objects.requireNonNull(m);
         // fill in vmtarget, vmindex while we have m in hand:
         MethodHandleNatives.init(this, m);
         if (clazz == null) {  // MHN.init failed
@@ -600,7 +600,7 @@ import java.util.Objects;
     /** Create a name for the given reflected constructor.  The resulting name will be in a resolved state. */
     @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Constructor<?> ctor) {
-        ctor.getClass();  // NPE check
+        Objects.requireNonNull(ctor);
         // fill in vmtarget, vmindex while we have ctor in hand:
         MethodHandleNatives.init(this, ctor);
         assert(isResolved() && this.clazz != null);
@@ -615,7 +615,7 @@ import java.util.Objects;
     }
     @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Field fld, boolean makeSetter) {
-        fld.getClass();  // NPE check
+        Objects.requireNonNull(fld);
         // fill in vmtarget, vmindex while we have fld in hand:
         MethodHandleNatives.init(this, fld);
         assert(isResolved() && this.clazz != null);

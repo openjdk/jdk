@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -438,11 +438,19 @@ else
 endif
 
 # Convenience functions for working around make's limitations with $(filter ).
-containing = $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),$v)))
-not-containing = $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),,$v)))
+containing = \
+    $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),$v)))
+not-containing = \
+    $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),,$v)))
 
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.
-uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+uniq = \
+    $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
+# Return a list of all string elements that are duplicated in $1.
+dups = \
+    $(strip $(foreach v, $(sort $1), $(if $(filter-out 1, \
+        $(words $(filter $v, $1))), $v)))
 
 # String equals
 equals = \
@@ -568,7 +576,7 @@ endef
 ################################################################################
 # ShellQuote
 #
-# Quotes a string with single quotes and replaces single quotes with '\'' so 
+# Quotes a string with single quotes and replaces single quotes with '\'' so
 # that the contents survives being given to the shell.
 
 ShellQuote = \
@@ -590,8 +598,8 @@ WriteFile = \
 ################################################################################
 # DependOnVariable
 #
-# This macro takes a variable name and puts the value in a file only if the 
-# value has changed since last. The name of the file is returned. This can be 
+# This macro takes a variable name and puts the value in a file only if the
+# value has changed since last. The name of the file is returned. This can be
 # used to create rule dependencies on make variable values. The following
 # example would get rebuilt if the value of SOME_VAR was changed:
 #
