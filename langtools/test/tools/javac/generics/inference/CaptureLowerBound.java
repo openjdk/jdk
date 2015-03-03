@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,22 @@
  * questions.
  */
 
-package sun.security.acl;
-
-import java.security.*;
-
-/**
- * This class implements a group of principals.
- * @author Satish Dharmaraj
+/*
+ * @test
+ * @bug 8039214
+ * @summary Capture variable as an inference variable's lower bound
+ * @compile CaptureLowerBound.java
  */
-public class WorldGroupImpl extends GroupImpl {
 
-    public WorldGroupImpl(String s) {
-        super(s);
+public class CaptureLowerBound {
+
+    interface I<X1,X2> {}
+    static class C<T> implements I<T,T> {}
+
+    <X> void m(I<? extends X, X> arg) {}
+
+    void test(C<?> arg) {
+      m(arg);
     }
 
-    /**
-     * returns true for all passed principals
-     * @param member The principal whose membership must be checked in this Group.
-     * @return true always since this is the "world" group.
-     */
-    public boolean isMember(Principal member) {
-        return true;
-    }
 }

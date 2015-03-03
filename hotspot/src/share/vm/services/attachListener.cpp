@@ -27,6 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"

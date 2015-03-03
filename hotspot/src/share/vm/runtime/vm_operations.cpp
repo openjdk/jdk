@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/arguments.hpp"
@@ -486,3 +487,9 @@ void VM_PrintCodeList::doit() {
 void VM_PrintCodeCache::doit() {
   CodeCache::print_layout(_out);
 }
+
+#if INCLUDE_SERVICES
+void VM_PrintClassHierarchy::doit() {
+  KlassHierarchy::print_class_hierarchy(_out, _print_interfaces, _print_subclasses, _classname);
+}
+#endif

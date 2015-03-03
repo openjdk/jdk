@@ -224,3 +224,4 @@ int WriteableFlags::set_flag_from_jvalue(Flag* f, const void* value, Flag::Flags
   }
   return ERR_OTHER;
 }
+

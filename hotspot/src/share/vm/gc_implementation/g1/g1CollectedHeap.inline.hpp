@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,8 +131,8 @@ inline bool G1CollectedHeap::obj_in_cs(oop obj) {
 }
 
 inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
-                                                     unsigned int* gc_count_before_ret,
-                                                     int* gclocker_retry_count_ret) {
+                                                     uint* gc_count_before_ret,
+                                                     uint* gclocker_retry_count_ret) {
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!is_humongous(word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");

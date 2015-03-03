@@ -43,7 +43,6 @@ import java.io.FileInputStream;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.security.action.GetPropertyAction;
 import java.util.Properties;
 
 class GetORBPropertiesFileAction implements PrivilegedAction {

@@ -1063,16 +1063,24 @@ public final class Class<T> implements java.io.Serializable,
                 parameterClasses[i] = toClass(parameterTypes[i]);
 
             // Perform access check
-            Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
+            final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             enclosingCandidate.checkMemberAccess(Member.DECLARED,
                                                  Reflection.getCallerClass(), true);
+            // Client is ok to access declared methods but j.l.Class might not be.
+            Method[] candidates = AccessController.doPrivileged(
+                    new PrivilegedAction<Method[]>() {
+                        @Override
+                        public Method[] run() {
+                            return enclosingCandidate.getDeclaredMethods();
+                        }
+                    });
             /*
              * Loop over all declared methods; match method name,
              * number of and type of parameters, *and* return
              * type.  Matching return type is also necessary
              * because of covariant returns, etc.
              */
-            for(Method m: enclosingCandidate.getDeclaredMethods()) {
+            for(Method m: candidates) {
                 if (m.getName().equals(enclosingInfo.getName()) ) {
                     Class<?>[] candidateParamClasses = m.getParameterTypes();
                     if (candidateParamClasses.length == parameterClasses.length) {
@@ -1215,14 +1223,22 @@ public final class Class<T> implements java.io.Serializable,
                 parameterClasses[i] = toClass(parameterTypes[i]);
 
             // Perform access check
-            Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
+            final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             enclosingCandidate.checkMemberAccess(Member.DECLARED,
                                                  Reflection.getCallerClass(), true);
+            // Client is ok to access declared methods but j.l.Class might not be.
+            Constructor<?>[] candidates = AccessController.doPrivileged(
+                    new PrivilegedAction<Constructor<?>[]>() {
+                        @Override
+                        public Constructor<?>[] run() {
+                            return enclosingCandidate.getDeclaredConstructors();
+                        }
+                    });
             /*
              * Loop over all declared constructors; match number
              * of and type of parameters.
              */
-            for(Constructor<?> c: enclosingCandidate.getDeclaredConstructors()) {
+            for(Constructor<?> c: candidates) {
                 Class<?>[] candidateParamClasses = c.getParameterTypes();
                 if (candidateParamClasses.length == parameterClasses.length) {
                     boolean matches = true;

@@ -147,6 +147,11 @@ public class ThreadInfoCompositeData {
                info.getLockOwnerName() + " expected = " +
                values[LOCK_OWNER_NAME]);
         }
+        if (!values[DAEMON].equals(info.isDaemon())) {
+            throw new RuntimeException("Daemon = " +
+               info.isDaemon() + " expected = " +
+               values[DAEMON]);
+        }
 
         checkStackTrace(info.getStackTrace());
 
@@ -258,8 +263,11 @@ public class ThreadInfoCompositeData {
     private static final int SUSPENDED       = 11;
     private static final int IN_NATIVE       = 12;
     private static final int NUM_V5_ATTS     = 13;
-    // JDK 6.0 ThreadInfo attribtues
+    // JDK 6.0 ThreadInfo attributes
     private static final int LOCK_INFO       = 13;
+    // JDK 9.0 ThreadInfo attributes
+    private static final int DAEMON          = 14;
+    private static final int PRIORITY        = 15;
 
     private static final String[] validItemNames = {
         "threadId",
@@ -276,6 +284,8 @@ public class ThreadInfoCompositeData {
         "suspended",
         "inNative",
         "lockInfo",
+        "daemon",
+        "priority",
     };
 
     private static OpenType[] validItemTypes = {
@@ -293,6 +303,8 @@ public class ThreadInfoCompositeData {
         SimpleType.BOOLEAN,
         SimpleType.BOOLEAN,
         null,  // CompositeType for LockInfo
+        SimpleType.BOOLEAN,
+        SimpleType.INTEGER,
     };
 
     private static Object[] values = {
@@ -310,6 +322,8 @@ public class ThreadInfoCompositeData {
         new Boolean(false),
         new Boolean(false),
         null, // To be initialized to lockInfoCD
+        new Boolean(false),
+        Thread.NORM_PRIORITY,
     };
 
     private static final String[] steItemNames = {
@@ -381,6 +395,8 @@ public class ThreadInfoCompositeData {
         "suspended",
         "inNative",
         "lockInfo",
+        "daemon",
+        "priority",
     };
     private static final OpenType[] badItemTypes = {
         SimpleType.LONG,
@@ -397,6 +413,8 @@ public class ThreadInfoCompositeData {
         SimpleType.BOOLEAN,
         SimpleType.BOOLEAN,
         SimpleType.LONG,  // bad type
+        SimpleType.BOOLEAN,
+        SimpleType.INTEGER,
     };
 
 }

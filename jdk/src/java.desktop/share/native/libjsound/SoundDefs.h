@@ -34,6 +34,7 @@
 #define X_BSD           4
 #define X_MACOSX        5
 
+#define X_AARCH64       9
 // **********************************
 // Make sure you set X_PLATFORM defines correctly.
 // Everything depends upon this flag being setup correctly.
