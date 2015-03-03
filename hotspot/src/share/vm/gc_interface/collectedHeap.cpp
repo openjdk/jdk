@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc_interface/allocTracer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/barrierSet.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -122,6 +123,14 @@ void CollectedHeap::print_heap_after_gc() {
   if (_gc_heap_log != NULL) {
     _gc_heap_log->log_heap_after();
   }
+}
+
+void CollectedHeap::print_on_error(outputStream* st) const {
+  st->print_cr("Heap:");
+  print_extended_on(st);
+  st->cr();
+
+  _barrier_set->print_on(st);
 }
 
 void CollectedHeap::register_nmethod(nmethod* nm) {

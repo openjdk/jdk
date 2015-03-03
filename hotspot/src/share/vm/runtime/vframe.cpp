@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       if (monitor->eliminated() && is_compiled_frame()) { // Eliminated in compiled code
         if (monitor->owner_is_scalar_replaced()) {
           Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
+          // format below for lockbits matches this one.
           st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
         } else {
           oop obj = monitor->owner();
@@ -206,9 +207,10 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
         // see if we have completed the lock or we are blocked trying to
         // acquire it - we can only be blocked if the monitor is inflated
 
+        markOop mark = NULL;
         const char *lock_state = "locked"; // assume we have the monitor locked
         if (!found_first_monitor && frame_count == 0) {
-          markOop mark = monitor->owner()->mark();
+          mark = monitor->owner()->mark();
           if (mark->has_monitor() &&
               ( // we have marked ourself as pending on this monitor
                 mark->monitor() == thread()->current_pending_monitor() ||
@@ -216,11 +218,19 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
                 !mark->monitor()->is_entered(thread())
               )) {
             lock_state = "waiting to lock";
+          } else {
+            mark = NULL; // Disable printing below
           }
+        }
+        print_locked_object_class_name(st, monitor->owner(), lock_state);
+        if (Verbose && mark != NULL) {
+          // match with format above, replacing "-" with " ".
+          st->print("\t  lockbits=");
+          mark->print_on(st);
+          st->cr();
         }
 
         found_first_monitor = true;
-        print_locked_object_class_name(st, monitor->owner(), lock_state);
       }
     }
   }
@@ -577,10 +587,15 @@ void javaVFrame::print() {
       tty->print("( null )");
     } else {
       monitor->owner()->print_value();
-      tty->print("(" INTPTR_FORMAT ")", (address)monitor->owner());
+      tty->print("(owner=" INTPTR_FORMAT ")", (address)monitor->owner());
     }
-    if (monitor->eliminated() && is_compiled_frame())
-      tty->print(" ( lock is eliminated )");
+    if (monitor->eliminated()) {
+      if(is_compiled_frame()) {
+        tty->print(" ( lock is eliminated in compiled frame )");
+      } else {
+        tty->print(" ( lock is eliminated, frame not compiled )");
+      }
+    }
     tty->cr();
     tty->print("\t  ");
     monitor->lock()->print_on(tty);

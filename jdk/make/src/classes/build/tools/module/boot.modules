@@ -22,6 +22,7 @@ jdk.deploy.osx
 jdk.hprof.agent
 jdk.httpserver
 jdk.jfr
+jdk.management.cmm
 jdk.naming.rmi
 jdk.sctp
 jdk.security.auth

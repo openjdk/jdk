@@ -145,7 +145,7 @@ public interface InterfaceType extends ReferenceType {
      * not be done from the client's event handler thread.
      * <p>
      * The resumption of other threads during the invocation can be prevented
-     * by specifying the {@link #INVOKE_SINGLE_THREADED}
+     * by specifying the {@link ClassType#INVOKE_SINGLE_THREADED}
      * bit flag in the <code>options</code> argument; however,
      * there is no protection against or recovery from the deadlocks
      * described above, so this option should be used with great caution.

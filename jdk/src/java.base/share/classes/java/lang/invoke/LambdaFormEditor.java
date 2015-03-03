@@ -436,7 +436,7 @@ class LambdaFormEditor {
     }
 
     private MethodType bindArgumentType(BoundMethodHandle mh, int pos, BasicType bt) {
-        assert(mh.form == lambdaForm);
+        assert(mh.form.uncustomize() == lambdaForm);
         assert(mh.form.names[1+pos].type == bt);
         assert(BasicType.basicType(mh.type().parameterType(pos)) == bt);
         return mh.type().dropParameterTypes(pos, pos+1);
