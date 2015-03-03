@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,9 +131,7 @@ import javax.management.MBeanServer;
  *
  * <p>Every implementation must support the RMI connector protocol with
  * the default RMI transport, specified with string <code>rmi</code>.
- * An implementation may optionally support the RMI connector protocol
- * with the RMI/IIOP transport, specified with the string
- * <code>iiop</code>.</p>
+ * </p>
  *
  * <p>Once a provider is found, the result of the
  * <code>newJMXConnectorServer</code> method is the result of calling
