@@ -26,6 +26,7 @@
 
 package java.util.logging;
 
+import java.util.Objects;
 import java.io.UnsupportedEncodingException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -165,9 +166,7 @@ public abstract class Handler {
      */
     public synchronized void setFormatter(Formatter newFormatter) throws SecurityException {
         checkPermission();
-        // Check for a null pointer:
-        newFormatter.getClass();
-        formatter = newFormatter;
+        formatter = Objects.requireNonNull(newFormatter);
     }
 
     /**

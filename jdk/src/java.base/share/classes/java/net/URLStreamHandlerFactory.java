@@ -44,7 +44,9 @@ public interface URLStreamHandlerFactory {
      *
      * @param   protocol   the protocol ("{@code ftp}",
      *                     "{@code http}", "{@code nntp}", etc.).
-     * @return  a {@code URLStreamHandler} for the specific protocol.
+     * @return  a {@code URLStreamHandler} for the specific protocol, or {@code
+     *          null} if this factory cannot create a handler for the specific
+     *          protocol
      * @see     java.net.URLStreamHandler
      */
     URLStreamHandler createURLStreamHandler(String protocol);

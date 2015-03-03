@@ -27,6 +27,7 @@ package jdk.nashorn.api.scripting;
 
 import java.util.Collection;
 import java.util.Set;
+import jdk.nashorn.internal.runtime.JSType;
 
 /**
  * This interface can be implemented by an arbitrary Java class. Nashorn will
@@ -186,6 +187,22 @@ public interface JSObject {
      * Returns this object's numeric value.
      *
      * @return this object's numeric value.
+     * @deprecated use {@link #getDefaultValue(Class)} with {@link Number} hint instead.
      */
-    public double toNumber();
+    @Deprecated
+    default double toNumber() {
+        return JSType.toNumber(JSType.toPrimitive(this, Number.class));
+    }
+
+    /**
+     * Implements this object's {@code [[DefaultValue]]} method as per ECMAScript 5.1 section 8.6.2.
+     *
+     * @param hint the type hint. Should be either {@code null}, {@code Number.class} or {@code String.class}.
+     * @return this object's default value.
+     * @throws UnsupportedOperationException if the conversion can't be performed. The engine will convert this
+     * exception into a JavaScript {@code TypeError}.
+     */
+    default Object getDefaultValue(final Class<?> hint) throws UnsupportedOperationException {
+        return DefaultValueImpl.getDefaultValue(this, hint);
+    }
 }
