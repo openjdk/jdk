@@ -145,7 +145,6 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   Node* in_mem = in(TypeFunc::Memory);
 
   const Type* src_type = phase->type(src);
-  const Type* dest_type = phase->type(dest);
 
   assert(src->is_AddP(), "should be base + off");
   assert(dest->is_AddP(), "should be base + off");
@@ -483,7 +482,20 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
-  if (in(TypeFunc::Control)->is_top() || in(TypeFunc::Memory)->is_top()) {
+  assert(in(TypeFunc::Control) != NULL &&
+         in(TypeFunc::Memory) != NULL &&
+         in(ArrayCopyNode::Src) != NULL &&
+         in(ArrayCopyNode::Dest) != NULL &&
+         in(ArrayCopyNode::Length) != NULL &&
+         ((in(ArrayCopyNode::SrcPos) != NULL && in(ArrayCopyNode::DestPos) != NULL) ||
+          is_clonebasic()), "broken inputs");
+
+  if (in(TypeFunc::Control)->is_top() ||
+      in(TypeFunc::Memory)->is_top() ||
+      phase->type(in(ArrayCopyNode::Src)) == Type::TOP ||
+      phase->type(in(ArrayCopyNode::Dest)) == Type::TOP ||
+      (in(ArrayCopyNode::SrcPos) != NULL && in(ArrayCopyNode::SrcPos)->is_top()) ||
+      (in(ArrayCopyNode::DestPos) != NULL && in(ArrayCopyNode::DestPos)->is_top())) {
     return NULL;
   }
 
