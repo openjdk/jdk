@@ -3841,12 +3841,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
 #endif
 
-#if INCLUDE_ALL_GCS
-  #if (defined JAVASE_EMBEDDED || defined ARM)
-    UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
-  #endif
-#endif
-
   ArgumentsExt::report_unsupported_options();
 
 #ifndef PRODUCT

@@ -46,7 +46,6 @@
 #include "compiler/oopMap.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc_implementation/shared/immutableSpace.hpp"
-#include "gc_implementation/shared/markSweep.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
@@ -558,8 +557,9 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(GenerationSpec,              _max_size,                                     size_t)                                \
                                                                                                                                      \
     static_field(GenCollectedHeap,             _gch,                                          GenCollectedHeap*)                     \
+  nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
+  nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
  nonstatic_field(GenCollectedHeap,             _n_gens,                                       int)                                   \
- unchecked_nonstatic_field(GenCollectedHeap,   _gens,                                         sizeof(GenCollectedHeap::_gens)) /* NOTE: no type */ \
   nonstatic_field(GenCollectedHeap,            _gen_specs,                                    GenerationSpec**)                      \
                                                                                                                                      \
   nonstatic_field(HeapWord,                    i,                                             char*)                                 \
