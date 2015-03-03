@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ class ScanRSClosure : public HeapRegionClosure {
 
   double _strong_code_root_scan_time_sec;
   uint   _worker_i;
-  int    _block_size;
+  size_t _block_size;
   bool   _try_claimed;
 
 public:
@@ -125,7 +125,7 @@ public:
     _g1h = G1CollectedHeap::heap();
     _bot_shared = _g1h->bot_shared();
     _ct_bs = _g1h->g1_barrier_set();
-    _block_size = MAX2<int>(G1RSetScanBlockSize, 1);
+    _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
   }
 
   void set_try_claimed() { _try_claimed = true; }

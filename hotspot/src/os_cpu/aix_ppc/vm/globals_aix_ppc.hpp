@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,14 +40,14 @@ define_pd_global(intx, VMThreadStackSize,        2048);
 define_pd_global(intx, CompilerThreadStackSize,  4096);
 
 // Allow extra space in DEBUG builds for asserts.
-define_pd_global(uintx,JVMInvokeMethodSlack,     8192);
+define_pd_global(size_t, JVMInvokeMethodSlack,   8192);
 
 define_pd_global(intx, StackYellowPages,         6);
 define_pd_global(intx, StackRedPages,            1);
 define_pd_global(intx, StackShadowPages,         6 DEBUG_ONLY(+2));
 
 // Only used on 64 bit platforms
-define_pd_global(uintx,HeapBaseMinAddress,       2*G);
+define_pd_global(size_t, HeapBaseMinAddress,     2*G);
 // Only used on 64 bit Windows platforms
 define_pd_global(bool, UseVectoredExceptions,    false);
 

@@ -321,7 +321,7 @@ void G1CollectorPolicy::initialize_alignments() {
 
 void G1CollectorPolicy::initialize_flags() {
   if (G1HeapRegionSize != HeapRegion::GrainBytes) {
-    FLAG_SET_ERGO(uintx, G1HeapRegionSize, HeapRegion::GrainBytes);
+    FLAG_SET_ERGO(size_t, G1HeapRegionSize, HeapRegion::GrainBytes);
   }
 
   if (SurvivorRatio < 1) {
@@ -335,7 +335,7 @@ void G1CollectorPolicy::post_heap_initialize() {
   uintx max_regions = G1CollectedHeap::heap()->max_regions();
   size_t max_young_size = (size_t)_young_gen_sizer->max_young_length(max_regions) * HeapRegion::GrainBytes;
   if (max_young_size != MaxNewSize) {
-    FLAG_SET_ERGO(uintx, MaxNewSize, max_young_size);
+    FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
   }
 }
 
