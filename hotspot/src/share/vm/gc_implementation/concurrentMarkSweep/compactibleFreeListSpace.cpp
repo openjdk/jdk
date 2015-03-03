@@ -2662,8 +2662,8 @@ void CFLS_LAB::compute_desired_plab_size() {
       // Need to smooth wrt historical average
       if (ResizeOldPLAB) {
         _blocks_to_claim[i].sample(
-          MAX2((size_t)CMSOldPLABMin,
-          MIN2((size_t)CMSOldPLABMax,
+          MAX2(CMSOldPLABMin,
+          MIN2(CMSOldPLABMax,
                _global_num_blocks[i]/(_global_num_workers[i]*CMSOldPLABNumRefills))));
       }
       // Reset counters for next round

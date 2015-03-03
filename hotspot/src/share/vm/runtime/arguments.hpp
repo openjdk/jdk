@@ -530,8 +530,8 @@ class Arguments : AllStatic {
   static bool has_profile()                 { return _has_profile; }
 
   // -Xms
-  static uintx min_heap_size()              { return _min_heap_size; }
-  static void  set_min_heap_size(uintx v)   { _min_heap_size = v;  }
+  static size_t min_heap_size()             { return _min_heap_size; }
+  static void  set_min_heap_size(size_t v)  { _min_heap_size = v;  }
 
   // Returns the original values of -XX:MinHeapFreeRatio and -XX:MaxHeapFreeRatio
   static uintx min_heap_free_ratio()        { return _min_heap_free_ratio; }
