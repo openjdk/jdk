@@ -68,11 +68,7 @@ private:
   // Downcast argument to a derived barrier set type.
   // The cast is checked in a debug build.
   // T must have a specialization for BarrierSet::GetName<T>.
-  template<typename T>
-  friend T* barrier_set_cast(BarrierSet* bs) {
-    assert(bs->is_a(BarrierSet::GetName<T>::value), "wrong type of barrier set");
-    return static_cast<T*>(bs);
-  }
+  template<typename T> friend T* barrier_set_cast(BarrierSet* bs);
 
 public:
   // Note: This is not presently the Name corresponding to the
@@ -215,5 +211,11 @@ public:
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
 };
+
+template<typename T>
+inline T* barrier_set_cast(BarrierSet* bs) {
+  assert(bs->is_a(BarrierSet::GetName<T>::value), "wrong type of barrier set");
+  return static_cast<T*>(bs);
+}
 
 #endif // SHARE_VM_MEMORY_BARRIERSET_HPP
