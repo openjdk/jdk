@@ -4348,7 +4348,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1425462435
+DATE_WHEN_GENERATED=1425490712
 
 ###############################################################################
 #
@@ -51519,7 +51519,7 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
   if test "x$CCACHE" != x; then
     if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
       HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
-          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]'`
+          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`
       if test "x$HAS_BAD_CCACHE" != "x"; then
         as_fn_error $? "Precompiled headers requires ccache 3.1.4 or later, found $CCACHE_VERSION" "$LINENO" 5
       fi
