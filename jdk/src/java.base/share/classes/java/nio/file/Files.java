@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3427,11 +3427,8 @@ public final class Files {
      * reflect updates to the directory that occur after returning from this
      * method.
      *
-     * <p> The returned stream encapsulates a {@link DirectoryStream}.
-     * If timely disposal of file system resources is required, the
-     * {@code try}-with-resources construct should be used to ensure that the
-     * stream's {@link Stream#close close} method is invoked after the stream
-     * operations are completed.
+     * <p> The returned stream contains a reference to an open directory.
+     * The directory is closed by closing the stream.
      *
      * <p> Operating on a closed stream behaves as if the end of stream
      * has been reached. Due to read-ahead, one or more elements may be
@@ -3441,6 +3438,11 @@ public final class Files {
      * after this method has returned, it is wrapped in an {@link
      * UncheckedIOException} which will be thrown from the method that caused
      * the access to take place.
+     *
+     * @apiNote
+     * This method must be used within a try-with-resources statement or similar
+     * control structure to ensure that the stream's open directory is closed
+     * promptly after the stream's operations have completed.
      *
      * @param   dir  The path to the directory
      *
@@ -3549,17 +3551,18 @@ public final class Files {
      * <p> When a security manager is installed and it denies access to a file
      * (or directory), then it is ignored and not included in the stream.
      *
-     * <p> The returned stream encapsulates one or more {@link DirectoryStream}s.
-     * If timely disposal of file system resources is required, the
-     * {@code try}-with-resources construct should be used to ensure that the
-     * stream's {@link Stream#close close} method is invoked after the stream
-     * operations are completed.  Operating on a closed stream will result in an
-     * {@link java.lang.IllegalStateException}.
+     * <p> The returned stream contains references to one or more open directories.
+     * The directories are closed by closing the stream.
      *
      * <p> If an {@link IOException} is thrown when accessing the directory
      * after this method has returned, it is wrapped in an {@link
      * UncheckedIOException} which will be thrown from the method that caused
      * the access to take place.
+     *
+     * @apiNote
+     * This method must be used within a try-with-resources statement or similar
+     * control structure to ensure that the stream's open directories are closed
+     * promptly after the stream's operations have completed.
      *
      * @param   start
      *          the starting file
@@ -3613,12 +3616,13 @@ public final class Files {
      * </pre></blockquote>
      * In other words, it visits all levels of the file tree.
      *
-     * <p> The returned stream encapsulates one or more {@link DirectoryStream}s.
-     * If timely disposal of file system resources is required, the
-     * {@code try}-with-resources construct should be used to ensure that the
-     * stream's {@link Stream#close close} method is invoked after the stream
-     * operations are completed.  Operating on a closed stream will result in an
-     * {@link java.lang.IllegalStateException}.
+     * <p> The returned stream contains references to one or more open directories.
+     * The directories are closed by closing the stream.
+     *
+     * @apiNote
+     * This method must be used within a try-with-resources statement or similar
+     * control structure to ensure that the stream's open directories are closed
+     * promptly after the stream's operations have completed.
      *
      * @param   start
      *          the starting file
@@ -3658,17 +3662,18 @@ public final class Files {
      * returned by {@code walk} method, this method may be more efficient by
      * avoiding redundant retrieval of the {@code BasicFileAttributes}.
      *
-     * <p> The returned stream encapsulates one or more {@link DirectoryStream}s.
-     * If timely disposal of file system resources is required, the
-     * {@code try}-with-resources construct should be used to ensure that the
-     * stream's {@link Stream#close close} method is invoked after the stream
-     * operations are completed.  Operating on a closed stream will result in an
-     * {@link java.lang.IllegalStateException}.
+     * <p> The returned stream contains references to one or more open directories.
+     * The directories are closed by closing the stream.
      *
      * <p> If an {@link IOException} is thrown when accessing the directory
      * after returned from this method, it is wrapped in an {@link
      * UncheckedIOException} which will be thrown from the method that caused
      * the access to take place.
+     *
+     * @apiNote
+     * This method must be used within a try-with-resources statement or similar
+     * control structure to ensure that the stream's open directories are closed
+     * promptly after the stream's operations have completed.
      *
      * @param   start
      *          the starting file
@@ -3725,6 +3730,9 @@ public final class Files {
      * charset and the same line terminators as specified by {@code
      * readAllLines} are supported.
      *
+     * <p> The returned stream contains a reference to an open file. The file
+     * is closed by closing the stream.
+     *
      * <p> After this method returns, then any subsequent I/O exception that
      * occurs while reading from the file or when a malformed or unmappable byte
      * sequence is read, is wrapped in an {@link UncheckedIOException} that will
@@ -3733,12 +3741,10 @@ public final class Files {
      * place. In case an {@code IOException} is thrown when closing the file,
      * it is also wrapped as an {@code UncheckedIOException}.
      *
-     * <p> The returned stream encapsulates a {@link Reader}.  If timely
-     * disposal of file system resources is required, the try-with-resources
-     * construct should be used to ensure that the stream's
-     * {@link Stream#close close} method is invoked after the stream operations
-     * are completed.
-     *
+     * @apiNote
+     * This method must be used within a try-with-resources statement or similar
+     * control structure to ensure that the stream's open file is closed promptly
+     * after the stream's operations have completed.
      *
      * @param   path
      *          the path to the file
@@ -3780,11 +3786,19 @@ public final class Files {
      * decoded into characters using the {@link StandardCharsets#UTF_8 UTF-8}
      * {@link Charset charset}.
      *
+     * <p> The returned stream contains a reference to an open file. The file
+     * is closed by closing the stream.
+     *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
      * <pre>{@code
      * Files.lines(path, StandardCharsets.UTF_8)
      * }</pre>
+     *
+     * @apiNote
+     * This method must be used within a try-with-resources statement or similar
+     * control structure to ensure that the stream's open file is closed promptly
+     * after the stream's operations have completed.
      *
      * @param   path
      *          the path to the file
