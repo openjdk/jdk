@@ -601,7 +601,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
     HandleMark hm; // Discard any handles allocated in each iteration.
 
     // First allocation attempt is lock-free.
-    Generation *young = gch->get_gen(0);
+    Generation *young = gch->young_gen();
     assert(young->supports_inline_contig_alloc(),
       "Otherwise, must do alloc within heap lock");
     if (young->should_allocate(size, is_tlab)) {
@@ -615,8 +615,8 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
     {
       MutexLocker ml(Heap_lock);
       if (PrintGC && Verbose) {
-        gclog_or_tty->print_cr("TwoGenerationCollectorPolicy::mem_allocate_work:"
-                      " attempting locked slow path allocation");
+        gclog_or_tty->print_cr("GenCollectorPolicy::mem_allocate_work:"
+                               " attempting locked slow path allocation");
       }
       // Note that only large objects get a shot at being
       // allocated in later generations.
@@ -705,7 +705,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-          warning("TwoGenerationCollectorPolicy::mem_allocate_work retries %d times \n\t"
+          warning("GenCollectorPolicy::mem_allocate_work retries %d times \n\t"
                   " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
@@ -715,10 +715,14 @@ HeapWord* GenCollectorPolicy::expand_heap_and_allocate(size_t size,
                                                        bool   is_tlab) {
   GenCollectedHeap *gch = GenCollectedHeap::heap();
   HeapWord* result = NULL;
-  for (int i = number_of_generations() - 1; i >= 0 && result == NULL; i--) {
-    Generation *gen = gch->get_gen(i);
-    if (gen->should_allocate(size, is_tlab)) {
-      result = gen->expand_and_allocate(size, is_tlab);
+  Generation *old = gch->old_gen();
+  if (old->should_allocate(size, is_tlab)) {
+    result = old->expand_and_allocate(size, is_tlab);
+  }
+  if (result == NULL) {
+    Generation *young = gch->young_gen();
+    if (young->should_allocate(size, is_tlab)) {
+      result = young->expand_and_allocate(size, is_tlab);
     }
   }
   assert(result == NULL || gch->is_in_reserved(result), "result not in heap");
@@ -891,7 +895,7 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
 bool GenCollectorPolicy::should_try_older_generation_allocation(
         size_t word_size) const {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  size_t young_capacity = gch->get_gen(0)->capacity_before_gc();
+  size_t young_capacity = gch->young_gen()->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
          || GC_locker::is_active_and_needs_gc()
          || gch->incremental_collection_failed();

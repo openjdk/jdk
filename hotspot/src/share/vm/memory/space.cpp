@@ -379,7 +379,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     cp->space->set_compaction_top(compact_top);
     cp->space = cp->space->next_compaction_space();
     if (cp->space == NULL) {
-      cp->gen = GenCollectedHeap::heap()->prev_gen(cp->gen);
+      cp->gen = GenCollectedHeap::heap()->young_gen();
       assert(cp->gen != NULL, "compaction must succeed");
       cp->space = cp->gen->first_compaction_space();
       assert(cp->space != NULL, "generation must have a first compaction space");

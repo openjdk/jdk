@@ -373,27 +373,6 @@ public:
   // collection.
   virtual bool is_maximal_no_gc() const;
 
-  // Return the generation before "gen".
-  Generation* prev_gen(Generation* gen) const {
-    guarantee(gen->level() == 1, "Out of bounds");
-    return _young_gen;
-  }
-
-  // Return the generation after "gen".
-  Generation* next_gen(Generation* gen) const {
-    guarantee(gen->level() == 0, "Out of bounds");
-    return _old_gen;
-  }
-
-  Generation* get_gen(int i) const {
-    guarantee(i == 0 || i == 1, "Out of bounds");
-    if (i == 0) {
-      return _young_gen;
-    } else {
-      return _old_gen;
-    }
-  }
-
   int n_gens() const {
     assert(_n_gens == gen_policy()->number_of_generations(), "Sanity");
     return _n_gens;
@@ -486,7 +465,7 @@ public:
     assert(heap()->collector_policy()->is_generation_policy(),
            "the following definition may not be suitable for an n(>2)-generation system");
     return incremental_collection_failed() ||
-           (consult_young && !get_gen(0)->collection_attempt_is_safe());
+           (consult_young && !_young_gen->collection_attempt_is_safe());
   }
 
   // If a generation bails out of an incremental collection,
