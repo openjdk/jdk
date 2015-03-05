@@ -1359,8 +1359,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                     final Expression lhs = binaryNode.lhs();
                     final Expression rhs = binaryNode.rhs();
 
-                    Type cmpWidest = Type.widest(lhs.getType(), rhs.getType());
-                    boolean newRuntimeNode = false, finalized = false;
                     final TokenType tt = binaryNode.tokenType();
                     switch (tt) {
                     case EQ_STRICT:
@@ -1373,14 +1371,12 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                         }
                         // Specialize comparison of boolean with non-boolean
                         if (lhs.getType().isBoolean() != rhs.getType().isBoolean()) {
-                            newRuntimeNode = true;
-                            cmpWidest = Type.OBJECT;
-                            finalized = true;
+                            return new RuntimeNode(binaryNode);
                         }
                         // fallthrough
                     default:
-                        if (newRuntimeNode || cmpWidest.isObject()) {
-                            return new RuntimeNode(binaryNode).setIsFinal(finalized);
+                        if (lhs.getType().isObject() && rhs.getType().isObject()) {
+                            return new RuntimeNode(binaryNode);
                         }
                     }
                 } else if(binaryNode.isOptimisticUndecidedType()) {
