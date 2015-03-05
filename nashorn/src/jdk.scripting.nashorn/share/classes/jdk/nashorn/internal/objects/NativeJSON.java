@@ -181,7 +181,7 @@ public final class NativeJSON extends ScriptObject {
                 }
                 gap = sb.toString();
             }
-        } else if (modSpace instanceof String || modSpace instanceof ConsString) {
+        } else if (JSType.isString(modSpace)) {
             final String str = modSpace.toString();
             gap = str.substring(0, Math.min(10, str.length()));
         } else {

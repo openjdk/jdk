@@ -712,19 +712,8 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         return definingFn == function;
     }
 
-    private void checkConstAssignment(final IdentNode ident) {
-        // Check for reassignment of constant
-        final Symbol symbol = ident.getSymbol();
-        if (symbol.isConst()) {
-            throwParserException(ECMAErrors.getMessage("syntax.error.assign.constant", symbol.getName()), ident);
-        }
-    }
-
     @Override
     public Node leaveBinaryNode(final BinaryNode binaryNode) {
-        if (binaryNode.isAssignment() && binaryNode.lhs() instanceof IdentNode) {
-            checkConstAssignment((IdentNode) binaryNode.lhs());
-        }
         switch (binaryNode.tokenType()) {
         case ASSIGN:
             return leaveASSIGN(binaryNode);
@@ -751,9 +740,6 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
     @Override
     public Node leaveUnaryNode(final UnaryNode unaryNode) {
-        if (unaryNode.isAssignment() && unaryNode.getExpression() instanceof IdentNode) {
-            checkConstAssignment((IdentNode) unaryNode.getExpression());
-        }
         switch (unaryNode.tokenType()) {
         case DELETE:
             return leaveDELETE(unaryNode);
