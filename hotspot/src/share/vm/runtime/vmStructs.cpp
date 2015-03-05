@@ -536,7 +536,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(ContiguousSpace,             _concurrent_iteration_safe_limit,              HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(DefNewGeneration,            _next_gen,                                     Generation*)                           \
+  nonstatic_field(DefNewGeneration,            _old_gen,                                      Generation*)                           \
   nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
   nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
   nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \

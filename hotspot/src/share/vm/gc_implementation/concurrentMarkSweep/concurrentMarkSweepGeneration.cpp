@@ -369,7 +369,7 @@ void CMSStats::adjust_cms_free_adjustment_factor(bool fail, size_t free) {
 double CMSStats::time_until_cms_gen_full() const {
   size_t cms_free = _cms_gen->cmsSpace()->free();
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  size_t expected_promotion = MIN2(gch->get_gen(0)->capacity(),
+  size_t expected_promotion = MIN2(gch->young_gen()->capacity(),
                                    (size_t) _cms_gen->gc_stats()->avg_promoted()->padded_average());
   if (cms_free > expected_promotion) {
     // Start a cms collection if there isn't enough space to promote
@@ -626,8 +626,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing young gen rescan
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->prev_gen(_cmsGen)->kind() == Generation::ParNew, "CMS can only be used with ParNew");
-  _young_gen = (ParNewGeneration*)gch->prev_gen(_cmsGen);
+  assert(gch->young_gen()->kind() == Generation::ParNew, "CMS can only be used with ParNew");
+  _young_gen = (ParNewGeneration*)gch->young_gen();
   if (gch->supports_inline_contig_alloc()) {
     _top_addr = gch->top_addr();
     _end_addr = gch->end_addr();
@@ -869,7 +869,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
       if (prev_level >= 0) {
         size_t prev_size = 0;
         GenCollectedHeap* gch = GenCollectedHeap::heap();
-        Generation* prev_gen = gch->get_gen(prev_level);
+        Generation* prev_gen = gch->young_gen();
         prev_size = prev_gen->capacity();
           gclog_or_tty->print_cr("  Younger gen size "SIZE_FORMAT,
                                  prev_size/1000);
@@ -1049,11 +1049,8 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
     // expand and retry
     size_t s = _cmsSpace->expansionSpaceRequired(obj_size);  // HeapWords
     expand_for_gc_cause(s*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_satisfy_promotion);
-    // Since there's currently no next generation, we don't try to promote
+    // Since this is the old generation, we don't try to promote
     // into a more senior generation.
-    assert(next_gen() == NULL, "assumption, based upon which no attempt "
-                               "is made to pass on a possibly failing "
-                               "promotion to next generation");
     res = _cmsSpace->promote(obj, obj_size);
   }
   if (res != NULL) {
