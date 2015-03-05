@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -143,9 +143,22 @@ ifndef PRODUCT_HOME
 endif
 
 # Expect JPRT to set JAVA_ARGS (e.g. -server etc.)
-JAVA_OPTIONS = 
+JAVA_OPTIONS =
 ifdef JAVA_ARGS
   JAVA_OPTIONS = $(JAVA_ARGS)
+endif
+
+# jtreg -nativepath <dir>
+#
+# Local make tests will be TEST_IMAGE_DIR and JPRT with jprt.use.reg.test.bundle=true
+# should be JPRT_TESTNATIVE_PATH
+ifdef TEST_IMAGE_DIR
+  TESTNATIVE_DIR = $(TEST_IMAGE_DIR)
+else ifdef JPRT_TESTNATIVE_PATH
+  TESTNATIVE_DIR = $(JPRT_TESTNATIVE_PATH)
+endif
+ifdef TESTNATIVE_DIR
+  JTREG_NATIVE_PATH = -nativepath:$(shell $(GETMIXEDPATH) "$(TESTNATIVE_DIR)/hotspot/jtreg/native")
 endif
 
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
@@ -303,6 +316,7 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
               -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport")  \
               -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTwork")    \
               -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                \
+              $(JTREG_NATIVE_PATH)                                           \
               $(JTREG_EXCLUSIONS)                                            \
               $(JTREG_TEST_OPTIONS)                                          \
               $(TEST_SELECTION)                                              \
@@ -313,7 +327,7 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
 PHONY_LIST += jtreg_tests
 
 # flags used to execute java in test targets
-TEST_FLAGS += -version -Xinternalversion -X -help 
+TEST_FLAGS += -version -Xinternalversion -X -help
 
 sanitytest: prep $(PRODUCT_HOME)
 	@for flag in $(TEST_FLAGS);                                             \

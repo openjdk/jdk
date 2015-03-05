@@ -26,12 +26,15 @@
 #define SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
 
 #include "classfile/classFileStream.hpp"
-#include "memory/resourceArea.hpp"
+#include "classfile/symbolTable.hpp"
+#include "oops/annotations.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
-#include "classfile/symbolTable.hpp"
 
+class CompressedLineNumberWriteStream;
 class FieldAllocationCount;
+class FieldInfo;
 class FieldLayoutInfo;
 
 
@@ -315,13 +318,13 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     if (!b) { classfile_parse_error(msg, CHECK); }
   }
 
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-inline void assert_property(bool b, const char* msg, TRAPS) {
+  void report_assert_property_failure(const char* msg, TRAPS);
+  void report_assert_property_failure(const char* msg, int index, TRAPS);
+
+  inline void assert_property(bool b, const char* msg, TRAPS) {
 #ifdef ASSERT
     if (!b) {
-      ResourceMark rm(THREAD);
-      fatal(err_msg(msg, _class_name->as_C_string()));
+      report_assert_property_failure(msg, THREAD);
     }
 #endif
   }
@@ -329,12 +332,10 @@ inline void assert_property(bool b, const char* msg, TRAPS) {
   inline void assert_property(bool b, const char* msg, int index, TRAPS) {
 #ifdef ASSERT
     if (!b) {
-      ResourceMark rm(THREAD);
-      fatal(err_msg(msg, index, _class_name->as_C_string()));
+      report_assert_property_failure(msg, index, THREAD);
     }
 #endif
   }
-PRAGMA_DIAG_POP
 
   inline void check_property(bool property, const char* msg, int index, TRAPS) {
     if (_need_verify) {
