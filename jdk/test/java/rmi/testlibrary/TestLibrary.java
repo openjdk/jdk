@@ -413,6 +413,16 @@ public class TestLibrary {
     }
 
     /**
+     * Creates an RMI {@link Registry} on an ephemeral port.
+     *
+     * @returns an RMI Registry
+     * @throws RemoteException if there was a problem creating a Registry.
+     */
+    public static Registry createRegistryOnEphemeralPort() throws RemoteException {
+        return LocateRegistry.createRegistry(0);
+    }
+
+    /**
      * Returns the port number the RMI {@link Registry} is running on.
      *
      * @param registry the registry to find the port of.
