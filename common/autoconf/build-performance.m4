@@ -215,7 +215,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
   if test "x$CCACHE" != x; then
     if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
       HAS_BAD_CCACHE=[`$ECHO $CCACHE_VERSION | \
-          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]'`]
+          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`]
       if test "x$HAS_BAD_CCACHE" != "x"; then
         AC_MSG_ERROR([Precompiled headers requires ccache 3.1.4 or later, found $CCACHE_VERSION])
       fi
