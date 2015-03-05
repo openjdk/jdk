@@ -34,8 +34,7 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-
-
+import com.sun.tools.javac.util.Assert;
 
 /**
  * Provides an implementation of Scope.
@@ -67,8 +66,7 @@ public class JavacScope implements com.sun.source.tree.Scope {
     protected final Env<AttrContext> env;
 
     private JavacScope(Env<AttrContext> env) {
-        env.getClass(); // null-check
-        this.env = env;
+        this.env = Assert.checkNonNull(env);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

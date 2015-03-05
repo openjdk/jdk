@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
@@ -89,7 +90,7 @@ public class JavadocTool implements DocumentationTool {
 
             if (options != null) {
                 for (String option : options)
-                    option.getClass(); // null check
+                    Objects.requireNonNull(option);
             }
 
             if (compilationUnits != null) {

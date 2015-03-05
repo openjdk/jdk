@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.function.Supplier;
+
 /**
  * Simple facility for unconditional assertions.
  * The methods in this class are described in terms of equivalent assert
@@ -94,6 +96,15 @@ public class Assert {
     }
 
     /** Equivalent to
+     *   assert cond : msg.get();
+     *  Note: message string is computed lazily.
+     */
+    public static void check(boolean cond, Supplier<String> msg) {
+        if (!cond)
+            error(msg.get());
+    }
+
+    /** Equivalent to
      *   assert (o == null) : value;
      */
     public static void checkNull(Object o, Object value) {
@@ -110,11 +121,30 @@ public class Assert {
     }
 
     /** Equivalent to
+     *   assert (o == null) : msg.get();
+     *  Note: message string is computed lazily.
+     */
+    public static void checkNull(Object o, Supplier<String> msg) {
+        if (o != null)
+            error(msg.get());
+    }
+
+    /** Equivalent to
      *   assert (o != null) : msg;
      */
     public static <T> T checkNonNull(T t, String msg) {
         if (t == null)
             error(msg);
+        return t;
+    }
+
+    /** Equivalent to
+     *   assert (o != null) : msg.get();
+     *  Note: message string is computed lazily.
+     */
+    public static <T> T checkNonNull(T t, Supplier<String> msg) {
+        if (t == null)
+            error(msg.get());
         return t;
     }
 

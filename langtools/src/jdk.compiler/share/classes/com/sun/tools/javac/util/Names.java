@@ -171,6 +171,7 @@ public class Names {
     public final Name deprecated;
     public final Name ex;
     public final Name package_info;
+    public final Name requireNonNull;
 
     //lambda-related
     public final Name lambda;
@@ -307,6 +308,7 @@ public class Names {
         deprecated = fromString("deprecated");
         ex = fromString("ex");
         package_info = fromString("package-info");
+        requireNonNull = fromString("requireNonNull");
 
         //lambda-related
         lambda = fromString("lambda$");

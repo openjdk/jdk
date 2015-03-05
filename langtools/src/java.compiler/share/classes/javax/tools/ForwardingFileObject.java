@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * Forwards calls to a given file object.  Subclasses of this class
@@ -53,8 +54,7 @@ public class ForwardingFileObject<F extends FileObject> implements FileObject {
      * @param fileObject delegate to this file object
      */
     protected ForwardingFileObject(F fileObject) {
-        fileObject.getClass(); // null check
-        this.fileObject = fileObject;
+        this.fileObject = Objects.requireNonNull(fileObject);
     }
 
     public URI toUri() {

@@ -28,6 +28,7 @@ package com.sun.tools.doclets.internal.toolkit;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Objects;
 
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -112,7 +113,6 @@ public abstract class Content {
      * @return the reference type if not null or else throws a null pointer exception
      */
     protected static <T> T nullCheck(T t) {
-        t.getClass();
-        return t;
+        return Objects.requireNonNull(t);
     }
 }

@@ -30,6 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  *  <p><b>This is NOT part of any supported API.
@@ -39,13 +40,9 @@ import java.io.InputStream;
  */
 public class ClassReader {
     ClassReader(ClassFile classFile, InputStream in, Attribute.Factory attributeFactory) throws IOException {
-        // null checks
-        classFile.getClass();
-        attributeFactory.getClass();
-
-        this.classFile = classFile;
+        this.classFile = Objects.requireNonNull(classFile);
+        this.attributeFactory = Objects.requireNonNull(attributeFactory);
         this.in = new DataInputStream(new BufferedInputStream(in));
-        this.attributeFactory = attributeFactory;
     }
 
     ClassFile getClassFile() {

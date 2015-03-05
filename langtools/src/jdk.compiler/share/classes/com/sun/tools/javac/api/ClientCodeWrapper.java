@@ -45,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.lang.model.element.Modifier;
@@ -211,8 +212,7 @@ public class ClientCodeWrapper {
     protected class WrappedJavaFileManager implements JavaFileManager {
         protected JavaFileManager clientJavaFileManager;
         WrappedJavaFileManager(JavaFileManager clientJavaFileManager) {
-            clientJavaFileManager.getClass(); // null check
-            this.clientJavaFileManager = clientJavaFileManager;
+            this.clientJavaFileManager = Objects.requireNonNull(clientJavaFileManager);
         }
 
         @Override @DefinedBy(Api.COMPILER)
@@ -440,8 +440,7 @@ public class ClientCodeWrapper {
     protected class WrappedFileObject implements FileObject {
         protected FileObject clientFileObject;
         WrappedFileObject(FileObject clientFileObject) {
-            clientFileObject.getClass(); // null check
-            this.clientFileObject = clientFileObject;
+            this.clientFileObject = Objects.requireNonNull(clientFileObject);
         }
 
         @Override @DefinedBy(Api.COMPILER)
@@ -607,8 +606,7 @@ public class ClientCodeWrapper {
     protected class WrappedDiagnosticListener<T /*super JavaFileObject*/> implements DiagnosticListener<T> {
         protected DiagnosticListener<T> clientDiagnosticListener;
         WrappedDiagnosticListener(DiagnosticListener<T> clientDiagnosticListener) {
-            clientDiagnosticListener.getClass(); // null check
-            this.clientDiagnosticListener = clientDiagnosticListener;
+            this.clientDiagnosticListener = Objects.requireNonNull(clientDiagnosticListener);
         }
 
         @Override @DefinedBy(Api.COMPILER)
@@ -689,8 +687,7 @@ public class ClientCodeWrapper {
     protected class WrappedTaskListener implements TaskListener {
         protected TaskListener clientTaskListener;
         WrappedTaskListener(TaskListener clientTaskListener) {
-            clientTaskListener.getClass(); // null check
-            this.clientTaskListener = clientTaskListener;
+            this.clientTaskListener = Objects.requireNonNull(clientTaskListener);
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
