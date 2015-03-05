@@ -27,15 +27,17 @@
   @summary awt Choice doesn't fire ItemStateChange when selecting item after select() call
   @author Oleg Pekhovskiy: area=awt-choice
   @library ../../regtesthelpers
+  @library ../../../../lib/testlibrary
   @build Util
+  @build jdk.testlibrary.OSInfo
   @run main ItemStateChangeTest
 */
 
 import test.java.awt.regtesthelpers.Util;
+import jdk.testlibrary.OSInfo;
 
 import java.awt.*;
 import java.awt.event.*;
-import sun.awt.OSInfo;
 
 public class ItemStateChangeTest extends Frame {
 
