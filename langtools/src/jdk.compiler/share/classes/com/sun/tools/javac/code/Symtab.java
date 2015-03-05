@@ -147,6 +147,7 @@ public class Symtab {
     /** Predefined types.
      */
     public final Type objectType;
+    public final Type objectsType;
     public final Type classType;
     public final Type classLoaderType;
     public final Type stringType;
@@ -408,6 +409,7 @@ public class Symtab {
 
         // Enter predefined classes.
         objectType = enterClass("java.lang.Object");
+        objectsType = enterClass("java.util.Objects");
         classType = enterClass("java.lang.Class");
         stringType = enterClass("java.lang.String");
         stringBufferType = enterClass("java.lang.StringBuffer");
