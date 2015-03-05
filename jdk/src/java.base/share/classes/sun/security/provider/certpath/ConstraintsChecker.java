@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,8 +145,8 @@ class ConstraintsChecker extends PKIXCertPathChecker {
         if (prevNC != null && ((i == certPathLength) ||
                 !X509CertImpl.isSelfIssued(currCert))) {
             if (debug != null) {
-                debug.println("prevNC = " + prevNC);
-                debug.println("currDN = " + currCert.getSubjectX500Principal());
+                debug.println("prevNC = " + prevNC +
+                    ", currDN = " + currCert.getSubjectX500Principal());
             }
 
             try {
@@ -184,8 +184,8 @@ class ConstraintsChecker extends PKIXCertPathChecker {
             currCertImpl.getNameConstraintsExtension();
 
         if (debug != null) {
-            debug.println("prevNC = " + prevNC);
-            debug.println("newNC = " + String.valueOf(newConstraints));
+            debug.println("prevNC = " + prevNC +
+                        ", newNC = " + String.valueOf(newConstraints));
         }
 
         // if there are no previous name constraints, we just return the
@@ -225,8 +225,8 @@ class ConstraintsChecker extends PKIXCertPathChecker {
         String msg = "basic constraints";
         if (debug != null) {
             debug.println("---checking " + msg + "...");
-            debug.println("i = " + i);
-            debug.println("maxPathLength = " + maxPathLength);
+            debug.println("i = " + i +
+                        ", maxPathLength = " + maxPathLength);
         }
 
         /* check if intermediate cert */
