@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,7 +435,12 @@ public abstract class Builder {
             if (selector.match(targetCert) && !X509CertImpl.isSelfSigned
                 (targetCert, buildParams.sigProvider())) {
                 if (debug != null) {
-                    debug.println("Builder.addMatchingCerts: adding target cert");
+                    debug.println("Builder.addMatchingCerts: " +
+                        "adding target cert" +
+                        "\n  SN: " + Debug.toHexString(
+                                            targetCert.getSerialNumber()) +
+                        "\n  Subject: " + targetCert.getSubjectX500Principal() +
+                        "\n  Issuer: " + targetCert.getIssuerX500Principal());
                 }
                 return resultCerts.add(targetCert);
             }

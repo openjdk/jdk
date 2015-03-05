@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,6 @@ final class Platform {
     // SYSTEM CHARACTERISTICS
     // vary according to hardware architecture
 
-    // signed8 (use signed 8-bit values) is true for everything we support except for
-    // the solaris sbpro card.
-    // we'll leave it here as a variable; in the future we may need this in java.
-    // wait, is that true?  i'm not sure.  i think solaris takes unsigned data?
-    // $$kk: 03.11.99: i think solaris takes unsigned 8-bit or signed 16-bit data....
-    private static boolean signed8;
-
     // intel is little-endian.  sparc is big-endian.
     private static boolean bigEndian;
 
@@ -109,14 +102,6 @@ final class Platform {
         return bigEndian;
     }
 
-
-    /**
-     * Determine whether the system takes signed 8-bit data.
-     */
-    static boolean isSigned8() {
-
-        return signed8;
-    }
 
     // PRIVATE METHODS
 
@@ -185,10 +170,8 @@ final class Platform {
 
     // the following native methods are implemented in Platform.c
     private native static boolean nIsBigEndian();
-    private native static boolean nIsSigned8();
     private native static String nGetExtraLibraries();
     private native static int nGetLibraryForFeature(int feature);
-
 
     /**
      * Read the required system properties.
@@ -196,6 +179,5 @@ final class Platform {
     private static void readProperties() {
         // $$fb 2002-03-06: implement check for endianness in native. Facilitates porting !
         bigEndian = nIsBigEndian();
-        signed8 = nIsSigned8(); // Solaris on Sparc: signed, all others unsigned
     }
 }
