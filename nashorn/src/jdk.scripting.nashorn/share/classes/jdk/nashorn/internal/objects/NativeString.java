@@ -90,7 +90,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
 
     private NativeString(final CharSequence value, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
-        assert value instanceof String || value instanceof ConsString;
+        assert JSType.isString(value);
         this.value = value;
     }
 
@@ -155,7 +155,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
         final Object self = request.getReceiver();
         final Class<?> returnType = desc.getMethodType().returnType();
 
-        if (returnType == Object.class && (self instanceof String || self instanceof ConsString)) {
+        if (returnType == Object.class && JSType.isString(self)) {
             try {
                 return new GuardedInvocation(MH.findStatic(MethodHandles.lookup(), NativeString.class, "get", desc.getMethodType()), NashornGuards.getInstanceOf2Guard(String.class, ConsString.class));
             } catch (final LookupException e) {
@@ -1312,7 +1312,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     private static CharSequence getCharSequence(final Object self) {
-        if (self instanceof String || self instanceof ConsString) {
+        if (JSType.isString(self)) {
             return (CharSequence)self;
         } else if (self instanceof NativeString) {
             return ((NativeString)self).getValue();

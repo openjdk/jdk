@@ -48,7 +48,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
-import jdk.nashorn.internal.codegen.RuntimeCallSite;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.objects.ScriptFunctionImpl;
@@ -207,19 +206,6 @@ public final class Bootstrap {
      */
     public static CallSite bootstrap(final Lookup lookup, final String opDesc, final MethodType type, final int flags) {
         return dynamicLinker.link(LinkerCallSite.newLinkerCallSite(lookup, opDesc, type, flags));
-    }
-
-    /**
-     * Bootstrapper for a specialized Runtime call
-     *
-     * @param lookup       lookup
-     * @param initialName  initial name for callsite
-     * @param type         method type for call site
-     *
-     * @return callsite for a runtime node
-     */
-    public static CallSite runtimeBootstrap(final MethodHandles.Lookup lookup, final String initialName, final MethodType type) {
-        return new RuntimeCallSite(type, initialName);
     }
 
     /**
