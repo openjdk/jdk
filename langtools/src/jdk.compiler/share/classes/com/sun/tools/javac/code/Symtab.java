@@ -147,6 +147,7 @@ public class Symtab {
     /** Predefined types.
      */
     public final Type objectType;
+    public final Type objectsType;
     public final Type classType;
     public final Type classLoaderType;
     public final Type stringType;
@@ -184,6 +185,7 @@ public class Symtab {
     public final Type retentionType;
     public final Type deprecatedType;
     public final Type suppressWarningsType;
+    public final Type supplierType;
     public final Type inheritedType;
     public final Type profileType;
     public final Type proprietaryType;
@@ -407,6 +409,7 @@ public class Symtab {
 
         // Enter predefined classes.
         objectType = enterClass("java.lang.Object");
+        objectsType = enterClass("java.util.Objects");
         classType = enterClass("java.lang.Class");
         stringType = enterClass("java.lang.String");
         stringBufferType = enterClass("java.lang.StringBuffer");
@@ -449,6 +452,7 @@ public class Symtab {
         retentionType = enterClass("java.lang.annotation.Retention");
         deprecatedType = enterClass("java.lang.Deprecated");
         suppressWarningsType = enterClass("java.lang.SuppressWarnings");
+        supplierType = enterClass("java.util.function.Supplier");
         inheritedType = enterClass("java.lang.annotation.Inherited");
         repeatableType = enterClass("java.lang.annotation.Repeatable");
         documentedType = enterClass("java.lang.annotation.Documented");

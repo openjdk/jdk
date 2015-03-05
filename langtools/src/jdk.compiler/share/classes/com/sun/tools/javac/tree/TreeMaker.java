@@ -129,7 +129,7 @@ public class TreeMaker implements JCTree.Factory {
                 || node instanceof JCErroneous
                 || (node instanceof JCExpressionStatement
                     && ((JCExpressionStatement)node).expr instanceof JCErroneous),
-                node.getClass().getSimpleName());
+                    () -> node.getClass().getSimpleName());
         JCCompilationUnit tree = new JCCompilationUnit(defs);
         tree.pos = pos;
         return tree;

@@ -108,7 +108,7 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER)
     public void setProcessors(Iterable<? extends Processor> processors) {
-        processors.getClass(); // null check
+        Objects.requireNonNull(processors);
         // not mt-safe
         if (used.get())
             throw new IllegalStateException();

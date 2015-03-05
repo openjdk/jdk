@@ -156,7 +156,7 @@
         <filter targetName="clean" isVisible="true" />
         <filter targetName="jtreg" isVisible="true" />
         <filter targetName="jtreg-debug" isVisible="true" />
-        <filter targetName="checkstyle" isVisible="true" />
+        <filter targetName="crules" isVisible="true" />
       </targetFilters>
       <viewClosedWhenNoErrors value="true" />
       <expanded value="false" />

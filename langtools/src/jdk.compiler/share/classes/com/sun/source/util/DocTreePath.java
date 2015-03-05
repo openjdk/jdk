@@ -27,7 +27,9 @@ package com.sun.source.util;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+
 import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * A path of tree nodes, typically used to represent the sequence of ancestor
@@ -57,8 +59,8 @@ public class DocTreePath implements Iterable<DocTree> {
      * @return a path identifying the target node
      */
     public static DocTreePath getPath(DocTreePath path, DocTree target) {
-        path.getClass();
-        target.getClass();
+        Objects.requireNonNull(path); //null check
+        Objects.requireNonNull(target); //null check
 
         class Result extends Error {
             static final long serialVersionUID = -5942088234594905625L;
@@ -96,11 +98,8 @@ public class DocTreePath implements Iterable<DocTree> {
      * @param t the DocCommentTree to create the path for.
      */
     public DocTreePath(TreePath treePath, DocCommentTree t) {
-        treePath.getClass();
-        t.getClass();
-
-        this.treePath = treePath;
-        this.docComment = t;
+        this.treePath = Objects.requireNonNull(treePath);
+        this.docComment = Objects.requireNonNull(t);
         this.parent = null;
         this.leaf = t;
     }

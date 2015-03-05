@@ -2443,8 +2443,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public TypeBoundKind kind;
         public JCTree inner;
         protected JCWildcard(TypeBoundKind kind, JCTree inner) {
-            kind.getClass(); // null-check
-            this.kind = kind;
+            this.kind = Assert.checkNonNull(kind);
             this.inner = inner;
         }
         @Override
