@@ -1721,7 +1721,8 @@ void Parse::do_one_bytecode() {
     a = pop();                  // the array itself
     const TypeOopPtr* elemtype  = _gvn.type(a)->is_aryptr()->elem()->make_oopptr();
     const TypeAryPtr* adr_type = TypeAryPtr::OOPS;
-    Node* store = store_oop_to_array(control(), a, d, adr_type, c, elemtype, T_OBJECT, MemNode::release);
+    Node* store = store_oop_to_array(control(), a, d, adr_type, c, elemtype, T_OBJECT,
+                                     StoreNode::release_if_reference(T_OBJECT));
     break;
   }
   case Bytecodes::_lastore: {

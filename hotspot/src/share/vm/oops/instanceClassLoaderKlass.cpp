@@ -41,7 +41,6 @@
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parNew/parOopClosures.inline.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 

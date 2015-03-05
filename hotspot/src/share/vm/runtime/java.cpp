@@ -67,7 +67,6 @@
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"

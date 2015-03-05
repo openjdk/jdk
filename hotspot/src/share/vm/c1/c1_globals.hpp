@@ -38,6 +38,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "c1_globals_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "c1_globals_aarch64.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c1_globals_linux.hpp"
 #endif
