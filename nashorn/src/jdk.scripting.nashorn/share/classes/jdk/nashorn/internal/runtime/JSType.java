@@ -761,6 +761,36 @@ public enum JSType {
         return toNumberGeneric(obj);
     }
 
+    /**
+     * Converts an object for a comparison with a number. Almost identical to {@link #toNumber(Object)} but
+     * converts {@code null} to {@code NaN} instead of zero, so it won't compare equal to zero.
+     *
+     * @param obj  an object
+     *
+     * @return a number
+     */
+    public static double toNumberForEq(final Object obj) {
+        return obj == null ? Double.NaN : toNumber(obj);
+    }
+
+    /**
+     * Converts an object for strict comparison with a number. Returns {@code NaN} for any object that is not
+     * a {@link Number}, so only boxed numerics can compare strictly equal to numbers.
+     *
+     * @param obj  an object
+     *
+     * @return a number
+     */
+    public static double toNumberForStrictEq(final Object obj) {
+        if (obj instanceof Double) {
+            return (Double)obj;
+        }
+        if (obj instanceof Number) {
+            return ((Number)obj).doubleValue();
+        }
+        return Double.NaN;
+    }
+
 
     /**
      * JavaScript compliant conversion of Boolean to number
