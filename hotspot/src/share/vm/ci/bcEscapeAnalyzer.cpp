@@ -43,7 +43,7 @@
   #define TRACE_BCEA(level, code)
 #endif
 
-// Maintain a map of which aguments a local variable or
+// Maintain a map of which arguments a local variable or
 // stack slot may contain.  In addition to tracking
 // arguments, it tracks two special values, "allocated"
 // which represents any object allocated in the current
@@ -319,14 +319,16 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
     bool must_record_dependencies = false;
     for (i = arg_size - 1; i >= 0; i--) {
       ArgumentMap arg = state.raw_pop();
-      if (!is_argument(arg))
+      // Check if callee arg is a caller arg or an allocated object
+      bool allocated = arg.contains_allocated();
+      if (!(is_argument(arg) || allocated))
         continue;
       for (int j = 0; j < _arg_size; j++) {
         if (arg.contains(j)) {
           _arg_modified[j] |= analyzer._arg_modified[i];
         }
       }
-      if (!is_arg_stack(arg)) {
+      if (!(is_arg_stack(arg) || allocated)) {
         // arguments have already been recognized as escaping
       } else if (analyzer.is_arg_stack(i) && !analyzer.is_arg_returned(i)) {
         set_method_escape(arg);
@@ -1392,12 +1394,12 @@ void BCEscapeAnalyzer::dump() {
   method()->print_short_name();
   tty->print_cr(has_dependencies() ? " (not stored)" : "");
   tty->print("     non-escaping args:      ");
-  _arg_local.print_on(tty);
+  _arg_local.print();
   tty->print("     stack-allocatable args: ");
-  _arg_stack.print_on(tty);
+  _arg_stack.print();
   if (_return_local) {
     tty->print("     returned args:          ");
-    _arg_returned.print_on(tty);
+    _arg_returned.print();
   } else if (is_return_allocated()) {
     tty->print_cr("     return allocated value");
   } else {
