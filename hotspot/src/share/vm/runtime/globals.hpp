@@ -1080,9 +1080,6 @@ class CommandLineFlags {
   notproduct(bool, ProfilerCheckIntervals, false,                           \
           "Collect and print information on spacing of profiler ticks")     \
                                                                             \
-  develop(bool, PrintJVMWarnings, false,                                    \
-          "Print warnings for unimplemented JVM functions")                 \
-                                                                            \
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
@@ -1206,10 +1203,6 @@ class CommandLineFlags {
   develop(bool, UsePthreads, false,                                         \
           "Use pthread-based instead of libthread-based synchronization "   \
           "(SPARC only)")                                                   \
-                                                                            \
-  product(bool, AdjustConcurrency, false,                                   \
-          "Call thr_setconcurrency at thread creation time to avoid "       \
-          "LWP starvation on MP systems (for Solaris Only)")                \
                                                                             \
   product(bool, ReduceSignalUsage, false,                                   \
           "Reduce the use of OS signals in Java and/or the VM")             \
@@ -1556,11 +1549,6 @@ class CommandLineFlags {
                                                                             \
   product(uintx, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
-                                                                            \
-  diagnostic(bool, ParallelGCRetainPLAB, false,                             \
-          "Retain parallel allocation buffers across scavenges; "           \
-          "it is disabled because this currently conflicts with "           \
-          "parallel card scanning under certain conditions.")               \
                                                                             \
   product(uintx, TargetPLABWastePct, 10,                                    \
           "Target wasted space in last buffer as percent of overall "       \
@@ -2100,9 +2088,6 @@ class CommandLineFlags {
                                                                             \
   product(uintx, AdaptiveSizeThroughPutPolicy, 0,                           \
           "Policy for changing generation size for throughput goals")       \
-                                                                            \
-  product(uintx, AdaptiveSizePausePolicy, 0,                                \
-          "Policy for changing generation size for pause goals")            \
                                                                             \
   develop(bool, PSAdjustTenuredGenForMinorPause, false,                     \
           "Adjust tenured generation to achieve a minor pause goal")        \
