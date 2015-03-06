@@ -360,8 +360,8 @@
       <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.dev</to>
       <to>jdk.jartool</to>
+      <to>jdk.policytool</to>
       <to>jdk.security.auth</to>
     </export>
     <export>
@@ -393,8 +393,8 @@
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.crypto.ucrypto</to>
       <to>jdk.deploy.osx</to>
-      <to>jdk.dev</to>
       <to>jdk.jartool</to>
+      <to>jdk.policytool</to>
       <to>jdk.security.auth</to>
     </export>
     <export>
@@ -1723,6 +1723,11 @@
   <module>
     <name>jdk.pack200</name>
     <depend>java.base</depend>
+  </module>
+  <module>
+    <name>jdk.policytool</name>
+    <depend>java.base</depend>
+    <depend>java.desktop</depend>
   </module>
   <module>
     <name>jdk.rmic</name>
