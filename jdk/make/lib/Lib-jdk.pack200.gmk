@@ -30,14 +30,14 @@ include LibCommon.gmk
 $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
     LIBRARY := unpack, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/jdk.runtime/share/native/libunpack \
-        $(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack, \
+    SRC := $(JDK_TOPDIR)/src/jdk.pack200/share/native/libunpack \
+        $(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack, \
     LANG := C++, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CXXFLAGS_JDKLIB) \
         -DNO_ZLIB -DUNPACK_JNI -DFULL \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-        -I$(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
+        -I$(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
