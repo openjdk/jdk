@@ -188,7 +188,7 @@ public:
 
   void addOffset(size_t offset, LEErrorCode &success) {
     if(hasBounds()) {
-      if(offset > fLength) {
+      if(offset >= fLength) {
         LE_DEBUG_TR("addOffset off end");
         success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
         return;
@@ -203,7 +203,7 @@ public:
     if(atPtr==NULL) return 0;
     if(LE_FAILURE(success)) return LE_UINTPTR_MAX;
     if((atPtr < fStart) ||
-       (hasBounds() && (atPtr > fStart+fLength))) {
+       (hasBounds() && (atPtr >= fStart+fLength))) {
       LE_DEBUG_TR3("ptrToOffset args out of range: %p", atPtr, 0);
       success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
       return LE_UINTPTR_MAX;

@@ -179,12 +179,13 @@ PairPositioningFormat1Subtable::findPairValueRecord(TTGlyphID glyphID, LEReferen
         LEReferenceTo<PairValueRecord> record(records);
 
         for(le_int32 r = 0; r < recordCount; r += 1) {
+          if (r > 0) {
+            record.addOffset(recordSize, success);
+          }
           if(LE_FAILURE(success)) return LEReferenceTo<PairValueRecord>();
           if (SWAPW(record->secondGlyph) == glyphID) {
             return record;
           }
-
-          record.addOffset(recordSize, success);
         }
 #else
   #error dead code - not updated.

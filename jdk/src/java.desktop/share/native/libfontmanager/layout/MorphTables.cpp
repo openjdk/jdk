@@ -52,8 +52,11 @@ void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &gly
     le_uint32 chain;
 
     for (chain = 0; LE_SUCCESS(success) && (chain < chainCount); chain += 1) {
+        if (chain > 0) {
+            le_uint32 chainLength = SWAPL(chainHeader->chainLength);
+            chainHeader.addOffset(chainLength, success);
+        }
         FeatureFlags defaultFlags = SWAPL(chainHeader->defaultFlags);
-        le_uint32 chainLength = SWAPL(chainHeader->chainLength);
         le_int16 nFeatureEntries = SWAPW(chainHeader->nFeatureEntries);
         le_int16 nSubtables = SWAPW(chainHeader->nSubtables);
         LEReferenceTo<MorphSubtableHeader> subtableHeader =
@@ -61,7 +64,10 @@ void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &gly
         le_int16 subtable;
 
         for (subtable = 0; LE_SUCCESS(success) && (subtable < nSubtables); subtable += 1) {
-            le_int16 length = SWAPW(subtableHeader->length);
+            if (subtable > 0) {
+                le_int16 length = SWAPW(subtableHeader->length);
+                subtableHeader.addOffset(length, success);
+            }
             SubtableCoverage coverage = SWAPW(subtableHeader->coverage);
             FeatureFlags subtableFeatures = SWAPL(subtableHeader->subtableFeatures);
 
@@ -69,10 +75,7 @@ void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &gly
             if ((coverage & scfVertical) == 0 && (subtableFeatures & defaultFlags) != 0  && LE_SUCCESS(success)) {
               subtableHeader->process(subtableHeader, glyphStorage, success);
             }
-
-            subtableHeader.addOffset(length, success);
         }
-        chainHeader.addOffset(chainLength, success);
     }
 }
 
