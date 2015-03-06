@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,13 @@
 
 //                Memory Access Ordering Model
 //
-// This interface is based on the JSR-133 Cookbook for Compiler Writers
-// and on the IA64 memory model.  It is the dynamic equivalent of the
-// C/C++ volatile specifier.  I.e., volatility restricts compile-time
-// memory access reordering in a way similar to what we want to occur
-// at runtime.
+// This interface is based on the JSR-133 Cookbook for Compiler Writers.
 //
 // In the following, the terms 'previous', 'subsequent', 'before',
 // 'after', 'preceding' and 'succeeding' refer to program order.  The
 // terms 'down' and 'below' refer to forward load or store motion
 // relative to program order, while 'up' and 'above' refer to backward
 // motion.
-//
 //
 // We define four primitive memory barrier operations.
 //
@@ -69,86 +64,88 @@
 // operations.  Stores before Store1 may *not* float below Load2 and any
 // subsequent load operations.
 //
+// We define two further barriers: acquire and release.
 //
-// We define two further operations, 'release' and 'acquire'.  They are
-// mirror images of each other.
+// Conceptually, acquire/release semantics form unidirectional and
+// asynchronous barriers w.r.t. a synchronizing load(X) and store(X) pair.
+// They should always be used in pairs to publish (release store) and
+// access (load acquire) some implicitly understood shared data between
+// threads in a relatively cheap fashion not requiring storeload. If not
+// used in such a pair, it is advised to use a membar instead:
+// acquire/release only make sense as pairs.
 //
-// Execution by a processor of release makes the effect of all memory
-// accesses issued by it previous to the release visible to all
-// processors *before* the release completes.  The effect of subsequent
-// memory accesses issued by it *may* be made visible *before* the
-// release.  I.e., subsequent memory accesses may float above the
-// release, but prior ones may not float below it.
+// T1: access_shared_data
+// T1: ]release
+// T1: (...)
+// T1: store(X)
 //
-// Execution by a processor of acquire makes the effect of all memory
-// accesses issued by it subsequent to the acquire visible to all
-// processors *after* the acquire completes.  The effect of prior memory
-// accesses issued by it *may* be made visible *after* the acquire.
-// I.e., prior memory accesses may float below the acquire, but
-// subsequent ones may not float above it.
+// T2: load(X)
+// T2: (...)
+// T2: acquire[
+// T2: access_shared_data
 //
-// Finally, we define a 'fence' operation, which conceptually is a
-// release combined with an acquire.  In the real world these operations
-// require one or more machine instructions which can float above and
-// below the release or acquire, so we usually can't just issue the
-// release-acquire back-to-back.  All machines we know of implement some
-// sort of memory fence instruction.
+// It is guaranteed that if T2: load(X) synchronizes with (observes the
+// value written by) T1: store(X), then the memory accesses before the T1:
+// ]release happen before the memory accesses after the T2: acquire[.
+//
+// Total Store Order (TSO) machines can be seen as machines issuing a
+// release store for each store and a load acquire for each load. Therefore
+// there is an inherent resemblence between TSO and acquire/release
+// semantics. TSO can be seen as an abstract machine where loads are
+// executed immediately when encountered (hence loadload reordering not
+// happening) but enqueues stores in a FIFO queue
+// for asynchronous serialization (neither storestore or loadstore
+// reordering happening). The only reordering happening is storeload due to
+// the queue asynchronously serializing stores (yet in order).
+//
+// Acquire/release semantics essentially exploits this asynchronicity: when
+// the load(X) acquire[ observes the store of ]release store(X), the
+// accesses before the release must have happened before the accesses after
+// acquire.
+//
+// The API offers both stand-alone acquire() and release() as well as bound
+// load_acquire() and release_store(). It is guaranteed that these are
+// semantically equivalent w.r.t. the defined model. However, since
+// stand-alone acquire()/release() does not know which previous
+// load/subsequent store is considered the synchronizing load/store, they
+// may be more conservative in implementations. We advise using the bound
+// variants whenever possible.
+//
+// Finally, we define a "fence" operation, as a bidirectional barrier.
+// It guarantees that any memory access preceding the fence is not
+// reordered w.r.t. any memory accesses subsequent to the fence in program
+// order. This may be used to prevent sequences of loads from floating up
+// above sequences of stores.
+//
+// The following table shows the implementations on some architectures:
+//
+//                       Constraint     x86          sparc TSO          ppc
+// ---------------------------------------------------------------------------
+// fence                 LoadStore  |   lock         membar #StoreLoad  sync
+//                       StoreStore |   addl 0,(sp)
+//                       LoadLoad   |
+//                       StoreLoad
+//
+// release               LoadStore  |                                   lwsync
+//                       StoreStore
+//
+// acquire               LoadLoad   |                                   lwsync
+//                       LoadStore
+//
+// release_store                        <store>      <store>            lwsync
+//                                                                      <store>
+//
+// release_store_fence                  xchg         <store>            lwsync
+//                                                   membar #StoreLoad  <store>
+//                                                                      sync
 //
 //
-// The standalone implementations of release and acquire need an associated
-// dummy volatile store or load respectively.  To avoid redundant operations,
-// we can define the composite operators: 'release_store', 'store_fence' and
-// 'load_acquire'.  Here's a summary of the machine instructions corresponding
-// to each operation.
+// load_acquire                         <load>       <load>             <load>
+//                                                                      lwsync
 //
-//               sparc RMO             ia64             x86
-// ---------------------------------------------------------------------
-// fence         membar #LoadStore |   mf               lock addl 0,(sp)
-//                      #StoreStore |
-//                      #LoadLoad |
-//                      #StoreLoad
-//
-// release       membar #LoadStore |   st.rel [sp]=r0   movl $0,<dummy>
-//                      #StoreStore
-//               st %g0,[]
-//
-// acquire       ld [%sp],%g0          ld.acq <r>=[sp]  movl (sp),<r>
-//               membar #LoadLoad |
-//                      #LoadStore
-//
-// release_store membar #LoadStore |   st.rel           <store>
-//                      #StoreStore
-//               st
-//
-// store_fence   st                    st               lock xchg
-//               fence                 mf
-//
-// load_acquire  ld                    ld.acq           <load>
-//               membar #LoadLoad |
-//                      #LoadStore
-//
-// Using only release_store and load_acquire, we can implement the
-// following ordered sequences.
-//
-// 1. load, load   == load_acquire,  load
-//                 or load_acquire,  load_acquire
-// 2. load, store  == load,          release_store
-//                 or load_acquire,  store
-//                 or load_acquire,  release_store
-// 3. store, store == store,         release_store
-//                 or release_store, release_store
-//
-// These require no membar instructions for sparc-TSO and no extra
-// instructions for ia64.
-//
-// Ordering a load relative to preceding stores requires a store_fence,
+// Ordering a load relative to preceding stores requires a StoreLoad,
 // which implies a membar #StoreLoad between the store and load under
-// sparc-TSO.  A fence is required by ia64.  On x86, we use locked xchg.
-//
-// 4. store, load  == store_fence, load
-//
-// Use store_fence to make sure all stores done in an 'interesting'
-// region are made visible prior to both subsequent loads and stores.
+// sparc-TSO. On x86, we use explicitly locked add.
 //
 // Conventional usage is to issue a load_acquire for ordered loads.  Use
 // release_store for ordered stores when you care only that prior stores
@@ -157,27 +154,19 @@
 // release_store_fence to update values like the thread state, where we
 // don't want the current thread to continue until all our prior memory
 // accesses (including the new thread state) are visible to other threads.
+// This is equivalent to the volatile semantics of the Java Memory Model.
 //
+//                    C++ Volatile Semantics
 //
-//                C++ Volatility
-//
-// C++ guarantees ordering at operations termed 'sequence points' (defined
-// to be volatile accesses and calls to library I/O functions).  'Side
-// effects' (defined as volatile accesses, calls to library I/O functions
-// and object modification) previous to a sequence point must be visible
-// at that sequence point.  See the C++ standard, section 1.9, titled
-// "Program Execution".  This means that all barrier implementations,
-// including standalone loadload, storestore, loadstore, storeload, acquire
-// and release must include a sequence point, usually via a volatile memory
-// access.  Other ways to guarantee a sequence point are, e.g., use of
-// indirect calls and linux's __asm__ volatile.
-// Note: as of 6973570, we have replaced the originally static "dummy" field
-// (see above) by a volatile store to the stack. All of the versions of the
-// compilers that we currently use (SunStudio, gcc and VC++) respect the
-// semantics of volatile here. If you build HotSpot using other
-// compilers, you may need to verify that no compiler reordering occurs
-// across the sequence point represented by the volatile access.
-//
+// C++ volatile semantics prevent compiler re-ordering between
+// volatile memory accesses. However, reordering between non-volatile
+// and volatile memory accesses is in general undefined. For compiler
+// reordering constraints taking non-volatile memory accesses into
+// consideration, a compiler barrier has to be used instead.  Some
+// compiler implementations may choose to enforce additional
+// constraints beyond those required by the language. Note also that
+// both volatile semantics and compiler barrier do not prevent
+// hardware reordering.
 //
 //                os::is_MP Considered Redundant
 //
@@ -240,8 +229,32 @@
 // order.  If their implementations change such that these assumptions
 // are violated, a whole lot of code will break.
 
+enum ScopedFenceType {
+    X_ACQUIRE
+  , RELEASE_X
+  , RELEASE_X_FENCE
+};
+
+template <ScopedFenceType T>
+class ScopedFenceGeneral: public StackObj {
+ public:
+  void prefix() {}
+  void postfix() {}
+};
+
+template <ScopedFenceType T>
+class ScopedFence : public ScopedFenceGeneral<T> {
+  void *const _field;
+ public:
+  ScopedFence(void *const field) : _field(field) { prefix(); }
+  ~ScopedFence() { postfix(); }
+  void prefix() { ScopedFenceGeneral<T>::prefix(); }
+  void postfix() { ScopedFenceGeneral<T>::postfix(); }
+};
+
 class OrderAccess : AllStatic {
  public:
+  // barriers
   static void     loadload();
   static void     storestore();
   static void     loadstore();
@@ -280,20 +293,6 @@ class OrderAccess : AllStatic {
   static void     release_store_ptr(volatile intptr_t* p, intptr_t v);
   static void     release_store_ptr(volatile void*     p, void*    v);
 
-  static void     store_fence(jbyte*   p, jbyte   v);
-  static void     store_fence(jshort*  p, jshort  v);
-  static void     store_fence(jint*    p, jint    v);
-  static void     store_fence(jlong*   p, jlong   v);
-  static void     store_fence(jubyte*  p, jubyte  v);
-  static void     store_fence(jushort* p, jushort v);
-  static void     store_fence(juint*   p, juint   v);
-  static void     store_fence(julong*  p, julong  v);
-  static void     store_fence(jfloat*  p, jfloat  v);
-  static void     store_fence(jdouble* p, jdouble v);
-
-  static void     store_ptr_fence(intptr_t* p, intptr_t v);
-  static void     store_ptr_fence(void**    p, void*    v);
-
   static void     release_store_fence(volatile jbyte*   p, jbyte   v);
   static void     release_store_fence(volatile jshort*  p, jshort  v);
   static void     release_store_fence(volatile jint*    p, jint    v);
@@ -313,6 +312,47 @@ class OrderAccess : AllStatic {
   // routine if it exists, It should only be used by platforms that
   // don't have another way to do the inline assembly.
   static void StubRoutines_fence();
+
+  // Give platforms a variation point to specialize.
+  template<typename T> static T    specialized_load_acquire       (volatile T* p     );
+  template<typename T> static void specialized_release_store      (volatile T* p, T v);
+  template<typename T> static void specialized_release_store_fence(volatile T* p, T v);
+
+  template<typename FieldType, ScopedFenceType FenceType>
+  static void ordered_store(volatile FieldType* p, FieldType v);
+
+  template<typename FieldType, ScopedFenceType FenceType>
+  static FieldType ordered_load(volatile FieldType* p);
+
+  static void    store(volatile jbyte*   p, jbyte   v);
+  static void    store(volatile jshort*  p, jshort  v);
+  static void    store(volatile jint*    p, jint    v);
+  static void    store(volatile jlong*   p, jlong   v);
+  static void    store(volatile jdouble* p, jdouble v);
+  static void    store(volatile jfloat*  p, jfloat  v);
+
+  static jbyte   load (volatile jbyte*   p);
+  static jshort  load (volatile jshort*  p);
+  static jint    load (volatile jint*    p);
+  static jlong   load (volatile jlong*   p);
+  static jdouble load (volatile jdouble* p);
+  static jfloat  load (volatile jfloat*  p);
+
+  // The following store_fence methods are deprecated and will be removed
+  // when all repos conform to the new generalized OrderAccess.
+  static void    store_fence(jbyte*   p, jbyte   v);
+  static void    store_fence(jshort*  p, jshort  v);
+  static void    store_fence(jint*    p, jint    v);
+  static void    store_fence(jlong*   p, jlong   v);
+  static void    store_fence(jubyte*  p, jubyte  v);
+  static void    store_fence(jushort* p, jushort v);
+  static void    store_fence(juint*   p, juint   v);
+  static void    store_fence(julong*  p, julong  v);
+  static void    store_fence(jfloat*  p, jfloat  v);
+  static void    store_fence(jdouble* p, jdouble v);
+
+  static void    store_ptr_fence(intptr_t* p, intptr_t v);
+  static void    store_ptr_fence(void**    p, void*    v);
 };
 
 #endif // SHARE_VM_RUNTIME_ORDERACCESS_HPP
