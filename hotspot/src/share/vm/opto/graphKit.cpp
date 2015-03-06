@@ -1660,22 +1660,7 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
 
   // must be correct type for alignment purposes
   Node* base  = basic_plus_adr(ary, header);
-#ifdef _LP64
-  // The scaled index operand to AddP must be a clean 64-bit value.
-  // Java allows a 32-bit int to be incremented to a negative
-  // value, which appears in a 64-bit register as a large
-  // positive number.  Using that large positive number as an
-  // operand in pointer arithmetic has bad consequences.
-  // On the other hand, 32-bit overflow is rare, and the possibility
-  // can often be excluded, if we annotate the ConvI2L node with
-  // a type assertion that its value is known to be a small positive
-  // number.  (The prior range check has ensured this.)
-  // This assertion is used by ConvI2LNode::Ideal.
-  int index_max = max_jint - 1;  // array size is max_jint, index is one less
-  if (sizetype != NULL)  index_max = sizetype->_hi - 1;
-  const TypeLong* lidxtype = TypeLong::make(CONST64(0), index_max, Type::WidenMax);
-  idx = _gvn.transform( new ConvI2LNode(idx, lidxtype) );
-#endif
+  idx = Compile::conv_I2X_index(&_gvn, idx, sizetype);
   Node* scale = _gvn.transform( new LShiftXNode(idx, intcon(shift)) );
   return basic_plus_adr(ary, base, scale);
 }
