@@ -92,15 +92,18 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
     if (actionOffset != 0) {
       LEReferenceTo<LigatureActionEntry> ap(stHeader, success, actionOffset);
         LigatureActionEntry action;
-        le_int32 offset, i = 0;
+        le_int32 offset, i = 0, j = 0;
         le_int32 stack[nComponents];
         le_int16 mm = -1;
 
         do {
             le_uint32 componentGlyph = componentStack[m--];
 
+            if (j++ > 0) {
+                ap.addObject(success);
+            }
+
             action = SWAPL(*ap.getAlias());
-            ap.addObject(success); // ap++
 
             if (m < 0) {
                 m = nComponents - 1;
