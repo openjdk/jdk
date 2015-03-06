@@ -254,7 +254,7 @@
       <to>java.sql</to>
       <to>jdk.charsets</to>
       <to>jdk.deploy.osx</to>
-      <to>jdk.dev</to>
+      <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
       <to>jdk.jvmstat</to>
       <to>jdk.pack200</to>
@@ -279,7 +279,7 @@
       <name>sun.net.www</name>
       <to>java.desktop</to>
       <to>jdk.compiler</to>
-      <to>jdk.dev</to>
+      <to>jdk.jartool</to>
     </export>
     <export>
       <name>sun.net.www.protocol.http</name>
@@ -353,7 +353,7 @@
       <name>sun.security.pkcs</name>
       <to>jdk.crypto.ec</to>
       <to>jdk.deploy.osx</to>
-      <to>jdk.dev</to>
+      <to>jdk.jartool</to>
     </export>
     <export>
       <name>sun.security.provider</name>
@@ -361,6 +361,7 @@
       <to>java.security.jgss</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.dev</to>
+      <to>jdk.jartool</to>
       <to>jdk.security.auth</to>
     </export>
     <export>
@@ -378,7 +379,7 @@
     </export>
     <export>
       <name>sun.security.tools</name>
-      <to>jdk.dev</to>
+      <to>jdk.jartool</to>
     </export>
     <export>
       <name>sun.security.util</name>
@@ -393,6 +394,7 @@
       <to>jdk.crypto.ucrypto</to>
       <to>jdk.deploy.osx</to>
       <to>jdk.dev</to>
+      <to>jdk.jartool</to>
       <to>jdk.security.auth</to>
     </export>
     <export>
@@ -401,7 +403,7 @@
       <to>jdk.crypto.ec</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.deploy.osx</to>
-      <to>jdk.dev</to>
+      <to>jdk.jartool</to>
       <to>jdk.security.auth</to>
     </export>
     <export>
@@ -1591,16 +1593,8 @@
   <module>
     <name>jdk.dev</name>
     <depend>java.base</depend>
-    <depend>java.scripting</depend>
     <depend>java.xml</depend>
-    <depend>java.desktop</depend>
     <depend>jdk.compiler</depend>
-    <depend>jdk.rmic</depend>
-    <depend>jdk.xml.bind</depend>
-    <depend>jdk.xml.ws</depend>
-    <export>
-      <name>com.sun.jarsigner</name>
-    </export>
   </module>
   <module>
     <name>jdk.hotspot.agent</name>
@@ -1624,6 +1618,13 @@
     </export>
     <export>
       <name>com.sun.net.httpserver.spi</name>
+    </export>
+  </module>
+  <module>
+    <name>jdk.jartool</name>
+    <depend>java.base</depend>
+    <export>
+      <name>com.sun.jarsigner</name>
     </export>
   </module>
   <module>
