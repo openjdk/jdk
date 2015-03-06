@@ -257,7 +257,7 @@
       <to>jdk.dev</to>
       <to>jdk.jconsole</to>
       <to>jdk.jvmstat</to>
-      <to>jdk.runtime</to>
+      <to>jdk.pack200</to>
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
     </export>
@@ -1720,15 +1720,15 @@
     <depend>java.rmi</depend>
   </module>
   <module>
+    <name>jdk.pack200</name>
+    <depend>java.base</depend>
+  </module>
+  <module>
     <name>jdk.rmic</name>
     <depend>java.base</depend>
     <depend>java.corba</depend>
     <depend>jdk.compiler</depend>
     <depend>jdk.javadoc</depend>
-  </module>
-  <module>
-    <name>jdk.runtime</name>
-    <depend>java.base</depend>
   </module>
   <module>
     <name>jdk.scripting.nashorn</name>
