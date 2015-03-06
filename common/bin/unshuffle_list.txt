@@ -1300,7 +1300,6 @@ jdk/src/jdk.deploy.osx/macosx/native/libosx/Dispatch.m : jdk/src/macosx/native/c
 jdk/src/jdk.deploy.osx/macosx/native/libosx/JavaAppLauncher.m : jdk/src/macosx/native/apple/launcher/JavaAppLauncher.m
 jdk/src/jdk.deploy.osx/macosx/native/libosx/KeystoreImpl.m : jdk/src/macosx/native/apple/security/KeystoreImpl.m
 jdk/src/jdk.dev/share/classes/com/sun/tools/hat : jdk/src/share/classes/com/sun/tools/hat
-jdk/src/jdk.dev/share/classes/sun/security/tools/policytool : jdk/src/share/classes/sun/security/tools/policytool
 jdk/src/jdk.dev/share/classes/sun/tools/native2ascii : jdk/src/share/classes/sun/tools/native2ascii
 jdk/src/jdk.hprof.agent/share/classes/com/sun/demo/jvmti/hprof : jdk/src/share/classes/com/sun/demo/jvmti/hprof
 jdk/src/jdk.httpserver/share/classes/com/sun/net/httpserver : jdk/src/share/classes/com/sun/net/httpserver
@@ -1453,6 +1452,7 @@ jdk/src/jdk.pack200/share/native/unpack200/main.cpp : jdk/src/share/native/com/s
 jdk/src/jdk.pack200/unix/native/libjsdt/jvm_symbols_md.c : jdk/src/solaris/native/sun/tracing/dtrace/jvm_symbols_md.c
 jdk/src/jdk.pack200/windows/native/libjsdt/jvm_symbols_md.c : jdk/src/windows/native/sun/tracing/dtrace/jvm_symbols_md.c
 jdk/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest : jdk/src/windows/resource/unpack200_proto.exe.manifest
+jdk/src/jdk.policytool/share/classes/sun/security/tools/policytool : jdk/src/share/classes/sun/security/tools/policytool
 jdk/src/jdk.rmic/share/classes/sun/rmi/rmic : jdk/src/share/classes/sun/rmi/rmic
 jdk/src/jdk.rmic/share/classes/sun/rmi/rmic/newrmic : jdk/src/share/classes/sun/rmi/rmic/newrmic
 jdk/src/jdk.rmic/share/classes/sun/rmi/rmic/newrmic/jrmp : jdk/src/share/classes/sun/rmi/rmic/newrmic/jrmp
