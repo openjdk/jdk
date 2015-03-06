@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8074306
+ * @bug 8074306 8073432 8074501
  * @summary NULLCHK is emitted as Object.getClass
  * @compile -source 6 -target 6 TestSyntheticNullChecks.java
  * @run main TestSyntheticNullChecks 6
