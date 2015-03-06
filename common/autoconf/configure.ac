@@ -54,6 +54,7 @@ m4_include([toolchain_windows.m4])
 
 AC_DEFUN_ONCE([CUSTOM_EARLY_HOOK])
 AC_DEFUN_ONCE([CUSTOM_LATE_HOOK])
+AC_DEFUN_ONCE([CUSTOM_CONFIG_OUTPUT_GENERATED_HOOK])
 AC_DEFUN_ONCE([CUSTOM_SUMMARY_AND_WARNINGS_HOOK])
 
 # This line needs to be here, verbatim, after all includes and the dummy hook
@@ -264,6 +265,7 @@ CONFIG_STATUS="$OUTPUT_ROOT/config.status"
 
 # Create the actual output files. Now the main work of configure is done.
 AC_OUTPUT
+CUSTOM_CONFIG_OUTPUT_GENERATED_HOOK
 
 # Try to move the config.log file to the output directory.
 if test -e ./config.log; then
