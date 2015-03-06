@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,8 @@
 
 include LauncherCommon.gmk
 
-ifndef BUILD_HEADLESS_ONLY
-  $(eval $(call SetupLauncher,policytool, \
-      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.policytool.PolicyTool"$(COMMA) }',, \
-      $(XLIBS)))
-endif
+$(eval $(call SetupLauncher,jar, \
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jar.Main"$(COMMA) }'))
 
-$(eval $(call SetupLauncher,jdeps, \
-    -DEXPAND_CLASSPATH_WILDCARDS \
-    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.jdeps.Main"$(COMMA) }'))
-
-$(eval $(call SetupLauncher,jimage,\
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "jdk.tools.jimage.Main"$(COMMA) }'))
-
-$(eval $(call SetupLauncher,jhat, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.hat.Main"$(COMMA) }'))
-
-$(eval $(call SetupLauncher,native2ascii, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.native2ascii.Main"$(COMMA) }'))
-
+$(eval $(call SetupLauncher,jarsigner, \
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.jarsigner.Main"$(COMMA) }'))
