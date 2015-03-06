@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package sun.hotspot.tools.ctw;
 
-import sun.management.ManagementFactoryHelper;
+import java.lang.management.ManagementFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -55,7 +55,7 @@ public class CompileTheWorld {
 
         try {
             try {
-                if (ManagementFactoryHelper.getCompilationMXBean() == null) {
+                if (ManagementFactory.getCompilationMXBean() == null) {
                     throw new RuntimeException(
                             "CTW can not work in interpreted mode");
                 }

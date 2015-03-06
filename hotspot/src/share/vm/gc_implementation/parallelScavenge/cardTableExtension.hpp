@@ -54,10 +54,16 @@ class CardTableExtension : public CardTableModRefBS {
   };
 
   CardTableExtension(MemRegion whole_heap) :
-    CardTableModRefBS(whole_heap, BarrierSet::CardTableModRef) { }
-
-  // Too risky for the 4/10/02 putback
-  // BarrierSet::Name kind() { return BarrierSet::CardTableExtension; }
+    CardTableModRefBS(
+      whole_heap,
+      // Concrete tag should be BarrierSet::CardTableExtension.
+      // That will presently break things in a bunch of places though.
+      // The concrete tag is used as a dispatch key in many places, and
+      // CardTableExtension does not correctly dispatch in some of those
+      // uses. This will be addressed as part of a reorganization of the
+      // BarrierSet hierarchy.
+      BarrierSet::FakeRtti(BarrierSet::CardTableModRef, 0).add_tag(BarrierSet::CardTableExtension))
+    { }
 
   // Scavenge support
   void scavenge_contents_parallel(ObjectStartArray* start_array,
@@ -108,6 +114,11 @@ class CardTableExtension : public CardTableModRefBS {
   }
 
 #endif // ASSERT
+};
+
+template<>
+struct BarrierSet::GetName<CardTableExtension> {
+  static const BarrierSet::Name value = BarrierSet::CardTableExtension;
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_CARDTABLEEXTENSION_HPP

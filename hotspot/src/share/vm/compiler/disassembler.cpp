@@ -343,8 +343,8 @@ void decode_env::print_address(address adr) {
     }
 
     BarrierSet* bs = Universe::heap()->barrier_set();
-    if (bs->kind() == BarrierSet::CardTableModRef &&
-        adr == (address)((CardTableModRefBS*)(bs))->byte_map_base) {
+    if (bs->is_a(BarrierSet::CardTableModRef) &&
+        adr == (address)(barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base)) {
       st->print("word_map_base");
       if (WizardMode) st->print(" " INTPTR_FORMAT, (intptr_t)adr);
       return;
