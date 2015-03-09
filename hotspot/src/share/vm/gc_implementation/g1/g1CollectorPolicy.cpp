@@ -1607,11 +1607,10 @@ void G1CollectorPolicy::add_old_region_to_cset(HeapRegion* hr) {
   assert(hr->is_old(), "the region should be old");
 
   assert(!hr->in_collection_set(), "should not already be in the CSet");
-  hr->set_in_collection_set(true);
+  _g1->register_old_region_with_cset(hr);
   hr->set_next_in_collection_set(_collection_set);
   _collection_set = hr;
   _collection_set_bytes_used_before += hr->used();
-  _g1->register_old_region_with_in_cset_fast_test(hr);
   size_t rs_length = hr->rem_set()->occupied();
   _recorded_rs_lengths += rs_length;
   _old_cset_region_length += 1;
@@ -1741,10 +1740,8 @@ void G1CollectorPolicy::add_region_to_incremental_cset_common(HeapRegion* hr) {
   _inc_cset_max_finger = MAX2(_inc_cset_max_finger, hr_end);
 
   assert(!hr->in_collection_set(), "invariant");
-  hr->set_in_collection_set(true);
-  assert( hr->next_in_collection_set() == NULL, "invariant");
-
-  _g1->register_young_region_with_in_cset_fast_test(hr);
+  _g1->register_young_region_with_cset(hr);
+  assert(hr->next_in_collection_set() == NULL, "invariant");
 }
 
 // Add the region at the RHS of the incremental cset
