@@ -3561,6 +3561,15 @@ void CMTask::reset(CMBitMap* nextMarkBitMap) {
   _termination_start_time_ms     = 0.0;
 
 #if _MARKING_STATS_
+  _aborted                       = 0;
+  _aborted_overflow              = 0;
+  _aborted_cm_aborted            = 0;
+  _aborted_yield                 = 0;
+  _aborted_timed_out             = 0;
+  _aborted_satb                  = 0;
+  _aborted_termination           = 0;
+  _steal_attempts                = 0;
+  _steals                        = 0;
   _local_pushes                  = 0;
   _local_pops                    = 0;
   _local_max_size                = 0;
@@ -3573,15 +3582,6 @@ void CMTask::reset(CMBitMap* nextMarkBitMap) {
   _regions_claimed               = 0;
   _objs_found_on_bitmap          = 0;
   _satb_buffers_processed        = 0;
-  _steal_attempts                = 0;
-  _steals                        = 0;
-  _aborted                       = 0;
-  _aborted_overflow              = 0;
-  _aborted_cm_aborted            = 0;
-  _aborted_yield                 = 0;
-  _aborted_timed_out             = 0;
-  _aborted_satb                  = 0;
-  _aborted_termination           = 0;
 #endif // _MARKING_STATS_
 }
 
@@ -3742,7 +3742,7 @@ void CMTask::move_entries_to_global_stack() {
         gclog_or_tty->print_cr("[%u] pushed %d entries to the global stack",
                                _worker_id, n);
       }
-      statsOnly( int tmp_size = _cm->mark_stack_size();
+      statsOnly( size_t tmp_size = _cm->mark_stack_size();
                  if (tmp_size > _global_max_size) {
                    _global_max_size = tmp_size;
                  }
@@ -3777,7 +3777,7 @@ void CMTask::get_entries_from_global_stack() {
       assert(success, "invariant");
     }
 
-    statsOnly( int tmp_size = _task_queue->size();
+    statsOnly( size_t tmp_size = (size_t)_task_queue->size();
                if (tmp_size > _local_max_size) {
                  _local_max_size = tmp_size;
                }
@@ -3934,24 +3934,24 @@ void CMTask::print_stats() {
   gclog_or_tty->print_cr("                         max = %1.2lfms, total = %1.2lfms",
                          _all_clock_intervals_ms.maximum(),
                          _all_clock_intervals_ms.sum());
-  gclog_or_tty->print_cr("  Clock Causes (cum): scanning = %d, marking = %d",
+  gclog_or_tty->print_cr("  Clock Causes (cum): scanning = " SIZE_FORMAT ", marking = " SIZE_FORMAT,
                          _clock_due_to_scanning, _clock_due_to_marking);
-  gclog_or_tty->print_cr("  Objects: scanned = %d, found on the bitmap = %d",
+  gclog_or_tty->print_cr("  Objects: scanned = " SIZE_FORMAT ", found on the bitmap = " SIZE_FORMAT,
                          _objs_scanned, _objs_found_on_bitmap);
-  gclog_or_tty->print_cr("  Local Queue:  pushes = %d, pops = %d, max size = %d",
+  gclog_or_tty->print_cr("  Local Queue:  pushes = " SIZE_FORMAT ", pops = " SIZE_FORMAT ", max size = " SIZE_FORMAT,
                          _local_pushes, _local_pops, _local_max_size);
-  gclog_or_tty->print_cr("  Global Stack: pushes = %d, pops = %d, max size = %d",
+  gclog_or_tty->print_cr("  Global Stack: pushes = " SIZE_FORMAT ", pops = " SIZE_FORMAT ", max size = " SIZE_FORMAT,
                          _global_pushes, _global_pops, _global_max_size);
-  gclog_or_tty->print_cr("                transfers to = %d, transfers from = %d",
+  gclog_or_tty->print_cr("                transfers to = " SIZE_FORMAT ", transfers from = " SIZE_FORMAT,
                          _global_transfers_to,_global_transfers_from);
-  gclog_or_tty->print_cr("  Regions: claimed = %d", _regions_claimed);
-  gclog_or_tty->print_cr("  SATB buffers: processed = %d", _satb_buffers_processed);
-  gclog_or_tty->print_cr("  Steals: attempts = %d, successes = %d",
+  gclog_or_tty->print_cr("  Regions: claimed = " SIZE_FORMAT, _regions_claimed);
+  gclog_or_tty->print_cr("  SATB buffers: processed = " SIZE_FORMAT, _satb_buffers_processed);
+  gclog_or_tty->print_cr("  Steals: attempts = " SIZE_FORMAT ", successes = " SIZE_FORMAT,
                          _steal_attempts, _steals);
-  gclog_or_tty->print_cr("  Aborted: %d, due to", _aborted);
-  gclog_or_tty->print_cr("    overflow: %d, global abort: %d, yield: %d",
+  gclog_or_tty->print_cr("  Aborted: " SIZE_FORMAT ", due to", _aborted);
+  gclog_or_tty->print_cr("    overflow: " SIZE_FORMAT ", global abort: " SIZE_FORMAT ", yield: " SIZE_FORMAT,
                          _aborted_overflow, _aborted_cm_aborted, _aborted_yield);
-  gclog_or_tty->print_cr("    time out: %d, SATB: %d, termination: %d",
+  gclog_or_tty->print_cr("    time out: " SIZE_FORMAT ", SATB: " SIZE_FORMAT ", termination: " SIZE_FORMAT,
                          _aborted_timed_out, _aborted_satb, _aborted_termination);
 #endif // _MARKING_STATS_
 }
