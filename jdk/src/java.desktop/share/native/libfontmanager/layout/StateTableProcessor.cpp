@@ -85,6 +85,7 @@ void StateTableProcessor::process(LEGlyphStorage &glyphStorage, LEErrorCode &suc
         if (currGlyph == glyphCount) {
             // XXX: How do we handle EOT vs. EOL?
             classCode = classCodeEOT;
+            break;
         } else {
             TTGlyphID glyphCode = (TTGlyphID) LE_GET_GLYPH(glyphStorage[currGlyph]);
 

@@ -73,7 +73,7 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
   const LigatureSubstitutionStateEntry *entry = entryTable.getAlias(index, success);
 
     ByteOffset newState = SWAPW(entry->newStateOffset);
-    le_int16 flags = SWAPW(entry->flags);
+    le_uint16 flags = SWAPW(entry->flags);
 
     if (flags & lsfSetComponent) {
         if (++m >= nComponents) {
