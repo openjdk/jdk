@@ -56,6 +56,7 @@ import java.util.List;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.AccessorProperty;
+import jdk.nashorn.internal.runtime.AllocationStrategy;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.FunctionScope;
 import jdk.nashorn.internal.runtime.JSType;
@@ -826,44 +827,15 @@ public final class ObjectClassGenerator implements Loggable {
     }
 
     /**
-     * Describes the allocator class name and property map for a constructor function with the specified
+     * Creates the allocator class name and property map for a constructor function with the specified
      * number of "this" properties that it initializes.
-     *
+     * @param thisProperties number of properties assigned to "this"
+     * @return the allocation strategy
      */
-    public static class AllocatorDescriptor {
-        private final String allocatorClassName;
-        private final PropertyMap allocatorMap;
-
-        /**
-         * Creates a new allocator descriptor
-         * @param thisProperties the number of "this" properties that the function initializes
-         */
-        public AllocatorDescriptor(final int thisProperties) {
-            final int paddedFieldCount = getPaddedFieldCount(thisProperties);
-            this.allocatorClassName = Compiler.binaryName(getClassName(paddedFieldCount));
-            this.allocatorMap = PropertyMap.newMap(null, allocatorClassName, 0, paddedFieldCount, 0);
-        }
-
-        /**
-         * Returns the name of the class that the function allocates
-         * @return the name of the class that the function allocates
-         */
-        public String getAllocatorClassName() {
-            return allocatorClassName;
-        }
-
-        /**
-         * Returns the allocator map for the function.
-         * @return the allocator map for the function.
-         */
-        public PropertyMap getAllocatorMap() {
-            return allocatorMap;
-        }
-
-        @Override
-        public String toString() {
-            return "AllocatorDescriptor[allocatorClassName=" + allocatorClassName + ", allocatorMap.size=" +
-                    allocatorMap.size() + "]";
-        }
+    static AllocationStrategy createAllocationStrategy(final int thisProperties) {
+        final int paddedFieldCount = getPaddedFieldCount(thisProperties);
+        final String allocatorClassName = Compiler.binaryName(getClassName(paddedFieldCount));
+        final PropertyMap allocatorMap = PropertyMap.newMap(null, allocatorClassName, 0, paddedFieldCount, 0);
+        return new AllocationStrategy(allocatorMap, allocatorClassName);
     }
 }
