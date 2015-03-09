@@ -537,15 +537,12 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
 
   // This is how many young regions we already have (currently: the survivors).
   uint base_min_length = recorded_survivor_regions();
-  // This is the absolute minimum young length, which ensures that we
-  // can allocate one eden region in the worst-case.
-  uint absolute_min_length = base_min_length + 1;
-  uint desired_min_length =
-                     calculate_young_list_desired_min_length(base_min_length);
-  if (desired_min_length < absolute_min_length) {
-    desired_min_length = absolute_min_length;
-  }
-
+  uint desired_min_length = calculate_young_list_desired_min_length(base_min_length);
+  // This is the absolute minimum young length. Ensure that we
+  // will at least have one eden region available for allocation.
+  uint absolute_min_length = base_min_length + MAX2(_g1->young_list()->eden_length(), (uint)1);
+  // If we shrank the young list target it should not shrink below the current size.
+  desired_min_length = MAX2(desired_min_length, absolute_min_length);
   // Calculate the absolute and desired max bounds.
 
   // We will try our best not to "eat" into the reserve.
@@ -1925,7 +1922,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   //   [Newly Young Regions ++ Survivors from last pause].
 
   uint survivor_region_length = young_list->survivor_length();
-  uint eden_region_length = young_list->length() - survivor_region_length;
+  uint eden_region_length = young_list->eden_length();
   init_cset_region_lengths(eden_region_length, survivor_region_length);
 
   HeapRegion* hr = young_list->first_survivor_region();
