@@ -98,7 +98,7 @@
     <fail message="Unsupported Java version: ${ant.java.version}. Please use Java version 1.8 or greater." unless="jdk1.8+">
     </fail>
   </target>
-  
+
   <target name="init" depends="check-ant-version, check-java-version, init-conditions, init-cc">
     <!-- extends jvm args -->
     <property name="run.test.jvmargs" value="${run.test.jvmargs.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
@@ -209,7 +209,7 @@
   </target>
 
   <target name="javadoc" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${src.dir}/overview.html" 
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${src.dir}/overview.html"
         extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true">
       <classpath>
@@ -227,7 +227,7 @@
 
   <!-- generate javadoc only for nashorn extension api classes -->
   <target name="javadocapi" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" extdirs="${nashorn.ext.path}" 
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" extdirs="${nashorn.ext.path}"
         windowtitle="${nashorn.product.name}" additionalparam="-quiet" failonerror="true">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
@@ -314,6 +314,15 @@ grant codeBase "file:/${basedir}/${nashorn.internal.tests.jar}" {
     permission java.security.AllPermission;
 };
 
+grant codeBase "file:/${basedir}/${nashorn.api.tests.jar}" {
+    permission java.util.PropertyPermission "parserapitest.*", "read";
+    permission java.util.PropertyPermission "test.*", "read";
+    permission java.util.PropertyPermission "test262.*", "read";
+    permission java.io.FilePermission "${basedir}/test/-","read";
+    permission java.io.FilePermission "$${user.dir}", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+};
+
 grant codeBase "file:/${basedir}/${file.reference.testng.jar}" {
     permission java.security.AllPermission;
 };
@@ -395,6 +404,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
       <fileset id="test.classes" dir="${build.test.classes.dir}">
           <include name="**/api/javaaccess/*Test.class"/>
           <include name="**/api/scripting/*Test.class"/>
+          <include name="**/api/tree/*Test.class"/>
           <include name="**/codegen/*Test.class"/>
           <include name="**/parser/*Test.class"/>
           <include name="**/runtime/*Test.class"/>
@@ -440,7 +450,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <delete dir="${build.dir}/nashorn_code_cache"/>
     <property name="debug.test.jvmargs" value=""/>
     <testng outputdir="${build.test.results.dir}/${testResultsSubDir}" classfilesetref="test.classes"
-	    verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
+            verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <jvmarg line="${debug.test.jvmargs}"/>
@@ -466,7 +476,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <antcall target="-test-nosecurity" inheritRefs="true">
       <param name="optimistic" value="true"/>
       <param name="testResultsSubDir" value="optimistic"/>
-    </antcall>    
+    </antcall>
     <antcall target="-test-security" inheritRefs="true">
       <param name="optimistic" value="true"/>
       <param name="testResultsSubDir" value="optimistic"/>
@@ -478,7 +488,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <antcall target="-test-nosecurity" inheritRefs="true">
       <param name="optimistic" value="false"/>
       <param name="testResultsSubDir" value="pessimistic"/>
-    </antcall>    
+    </antcall>
     <antcall target="-test-security" inheritRefs="true">
       <param name="optimistic" value="false"/>
       <param name="testResultsSubDir" value="pessimistic"/>
