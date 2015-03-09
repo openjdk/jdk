@@ -168,6 +168,9 @@ jdk_jmx = \
 jdk_jdi = \
     com/sun/jdi
 
+jdk_native_sanity = \
+    native_sanity
+
 # java launcher specific tests, Note: do not include this group into any groups
 # that potentially could be included into a jprt test rule, as the complementary
 # closed  group includes awt SplashScreen and these tests may not run 

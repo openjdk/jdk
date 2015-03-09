@@ -26,6 +26,7 @@
 #define SHARE_VM_CI_CIKLASS_HPP
 
 #include "ci/ciType.hpp"
+#include "oops/klass.hpp"
 
 // ciKlass
 //

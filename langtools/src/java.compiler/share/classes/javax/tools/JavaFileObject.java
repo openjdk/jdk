@@ -27,6 +27,7 @@ package javax.tools;
 
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.Modifier;
+import java.util.Objects;
 
 /**
  * File abstraction for tools operating on Java&trade; programming language
@@ -78,8 +79,7 @@ public interface JavaFileObject extends FileObject {
          */
         public final String extension;
         private Kind(String extension) {
-            extension.getClass(); // null check
-            this.extension = extension;
+            this.extension = Objects.requireNonNull(extension);
         }
     }
 

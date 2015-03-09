@@ -683,6 +683,7 @@ FIXPATH
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
+DISABLE_WARNING_PREFIX
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_CXX_JDK
@@ -761,9 +762,6 @@ DUMPBIN
 RC
 MT
 LIPO
-ac_ct_OBJC
-OBJCFLAGS
-OBJC
 ac_ct_AR
 AR
 AS
@@ -1198,8 +1196,6 @@ CPP
 CXXCPP
 AS
 AR
-OBJC
-OBJCFLAGS
 LIPO
 STRIP
 NM
@@ -2080,8 +2076,6 @@ Some influential environment variables:
   CXXCPP      C++ preprocessor
   AS          Override default value for AS
   AR          Override default value for AR
-  OBJC        Objective C compiler command
-  OBJCFLAGS   Objective C compiler flags
   LIPO        Override default value for LIPO
   STRIP       Override default value for STRIP
   NM          Override default value for NM
@@ -2339,44 +2333,6 @@ fi
   as_fn_set_status $ac_retval
 
 } # ac_fn_cxx_try_cpp
-
-# ac_fn_objc_try_compile LINENO
-# -----------------------------
-# Try to compile conftest.$ac_ext, and return whether this succeeded.
-ac_fn_objc_try_compile ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  rm -f conftest.$ac_objext
-  if { { ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_compile") 2>conftest.err
-  ac_status=$?
-  if test -s conftest.err; then
-    grep -v '^ *+' conftest.err >conftest.er1
-    cat conftest.er1 >&5
-    mv -f conftest.er1 conftest.err
-  fi
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && {
-	 test -z "$ac_objc_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then :
-  ac_retval=0
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_retval=1
-fi
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-  as_fn_set_status $ac_retval
-
-} # ac_fn_objc_try_compile
 
 # ac_fn_c_try_link LINENO
 # -----------------------
@@ -3781,7 +3737,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4183,7 +4139,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4394,7 +4350,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1425649598
+DATE_WHEN_GENERATED=1425893864
 
 ###############################################################################
 #
@@ -26655,7 +26611,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # Store the CFLAGS etc passed to the configure script.
   ORG_CFLAGS="$CFLAGS"
   ORG_CXXFLAGS="$CXXFLAGS"
-  ORG_OBJCFLAGS="$OBJCFLAGS"
 
   # On Windows, we need to detect the visual studio installation first.
   # This will change the PATH, but we need to keep that new PATH even
@@ -33543,543 +33498,6 @@ $as_echo "$as_me: Rewriting AR to \"$new_complete\"" >&6;}
 
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    ac_ext=m
-ac_cpp='$OBJCPP $CPPFLAGS'
-ac_compile='$OBJC -c $OBJCFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$OBJC -o conftest$ac_exeext $OBJCFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_objc_compiler_gnu
-if test -n "$ac_tool_prefix"; then
-  for ac_prog in gcc objcc objc cc CC
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_OBJC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$OBJC"; then
-  ac_cv_prog_OBJC="$OBJC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_OBJC="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-OBJC=$ac_cv_prog_OBJC
-if test -n "$OBJC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OBJC" >&5
-$as_echo "$OBJC" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-    test -n "$OBJC" && break
-  done
-fi
-if test -z "$OBJC"; then
-  ac_ct_OBJC=$OBJC
-  for ac_prog in gcc objcc objc cc CC
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_OBJC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_OBJC"; then
-  ac_cv_prog_ac_ct_OBJC="$ac_ct_OBJC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_OBJC="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_OBJC=$ac_cv_prog_ac_ct_OBJC
-if test -n "$ac_ct_OBJC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_OBJC" >&5
-$as_echo "$ac_ct_OBJC" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ac_ct_OBJC" && break
-done
-
-  if test "x$ac_ct_OBJC" = x; then
-    OBJC="gcc"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    OBJC=$ac_ct_OBJC
-  fi
-fi
-
-# Provide some information about the compiler.
-$as_echo "$as_me:${as_lineno-$LINENO}: checking for Objective C compiler version" >&5
-set X $ac_compile
-ac_compiler=$2
-for ac_option in --version -v -V -qversion; do
-  { { ac_try="$ac_compiler $ac_option >&5"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_compiler $ac_option >&5") 2>conftest.err
-  ac_status=$?
-  if test -s conftest.err; then
-    sed '10a\
-... rest of stderr output deleted ...
-         10q' conftest.err >conftest.er1
-    cat conftest.er1 >&5
-  fi
-  rm -f conftest.er1 conftest.err
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
-done
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we are using the GNU Objective C compiler" >&5
-$as_echo_n "checking whether we are using the GNU Objective C compiler... " >&6; }
-if ${ac_cv_objc_compiler_gnu+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-#ifndef __GNUC__
-       choke me
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_objc_try_compile "$LINENO"; then :
-  ac_compiler_gnu=yes
-else
-  ac_compiler_gnu=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-ac_cv_objc_compiler_gnu=$ac_compiler_gnu
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_objc_compiler_gnu" >&5
-$as_echo "$ac_cv_objc_compiler_gnu" >&6; }
-if test $ac_compiler_gnu = yes; then
-  GOBJC=yes
-else
-  GOBJC=
-fi
-ac_test_OBJCFLAGS=${OBJCFLAGS+set}
-ac_save_OBJCFLAGS=$OBJCFLAGS
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $OBJC accepts -g" >&5
-$as_echo_n "checking whether $OBJC accepts -g... " >&6; }
-if ${ac_cv_prog_objc_g+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_save_objc_werror_flag=$ac_objc_werror_flag
-   ac_objc_werror_flag=yes
-   ac_cv_prog_objc_g=no
-   OBJCFLAGS="-g"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_objc_try_compile "$LINENO"; then :
-  ac_cv_prog_objc_g=yes
-else
-  OBJCFLAGS=""
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_objc_try_compile "$LINENO"; then :
-
-else
-  ac_objc_werror_flag=$ac_save_objc_werror_flag
-	 OBJCFLAGS="-g"
-	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_objc_try_compile "$LINENO"; then :
-  ac_cv_prog_objc_g=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   ac_objc_werror_flag=$ac_save_objc_werror_flag
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_objc_g" >&5
-$as_echo "$ac_cv_prog_objc_g" >&6; }
-if test "$ac_test_OBJCFLAGS" = set; then
-  OBJCFLAGS=$ac_save_OBJCFLAGS
-elif test $ac_cv_prog_objc_g = yes; then
-  if test "$GOBJC" = yes; then
-    OBJCFLAGS="-g -O2"
-  else
-    OBJCFLAGS="-g"
-  fi
-else
-  if test "$GOBJC" = yes; then
-    OBJCFLAGS="-O2"
-  else
-    OBJCFLAGS=
-  fi
-fi
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-
-  # Only process if variable expands to non-empty
-
-  if test "x$OBJC" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$OBJC"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path=`$CYGPATH -u "$path"`
-
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
-  # bat and cmd files are not always considered executable in cygwin causing which
-  # to not find them
-  if test "x$new_path" = x \
-      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-    new_path=`$CYGPATH -u "$path"`
-  fi
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path=`$CYGPATH -u "$path"`
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in cygwin causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path=`$CYGPATH -u "$path"`
-    fi
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of OBJC, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of OBJC" "$LINENO" 5
-    fi
-  fi
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file presence.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    # Short path failed, file does not exist as specified.
-    # Try adding .exe or .cmd
-    if test -f "${new_path}.exe"; then
-      input_to_shortpath="${new_path}.exe"
-    elif test -f "${new_path}.cmd"; then
-      input_to_shortpath="${new_path}.cmd"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$new_path\", is invalid." >&5
-$as_echo "$as_me: The path of OBJC, which resolves as \"$new_path\", is invalid." >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
-$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
-      as_fn_error $? "Cannot locate the the path of OBJC" "$LINENO" 5
-    fi
-  else
-    input_to_shortpath="$new_path"
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-  new_path="$input_to_shortpath"
-
-  input_path="$input_to_shortpath"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-  # remove trailing .exe if any
-  new_path="${new_path/%.exe/}"
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$OBJC"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
-
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in MSYS causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    fi
-
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of OBJC, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of OBJC" "$LINENO" 5
-    fi
-  fi
-
-  # Now new_path has a complete unix path to the binary
-  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
-    # Keep paths in /bin as-is, but remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-    # Do not save /bin paths to all_fixpath_prefixes!
-  else
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $new_path`
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-    # Output is in $new_path
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    # remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-
-    # Save the first 10 bytes of this path to the storage, so fixpath can work.
-    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-  fi
-
-    else
-      # We're on a unix platform. Hooray! :)
-      # First separate the path from the arguments. This will split at the first
-      # space.
-      complete="$OBJC"
-      path="${complete%% *}"
-      tmp="$complete EOL"
-      arguments="${tmp#* }"
-
-      # Cannot rely on the command "which" here since it doesn't always work.
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test -z "$is_absolute_path"; then
-        # Path to executable is not absolute. Find it.
-        IFS_save="$IFS"
-        IFS=:
-        for p in $PATH; do
-          if test -f "$p/$path" && test -x "$p/$path"; then
-            new_path="$p/$path"
-            break
-          fi
-        done
-        IFS="$IFS_save"
-      else
-        # This is an absolute path, we can use it without further modifications.
-        new_path="$path"
-      fi
-
-      if test "x$new_path" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of OBJC, which resolves as \"$complete\", is not found." >&6;}
-        has_space=`$ECHO "$complete" | $GREP " "`
-        if test "x$has_space" != x; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
-        fi
-        as_fn_error $? "Cannot locate the the path of OBJC" "$LINENO" 5
-      fi
-    fi
-
-    # Now join together the path and the arguments once again
-    if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-    else
-      new_complete="$new_path"
-    fi
-
-    if test "x$complete" != "x$new_complete"; then
-      OBJC="$new_complete"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJC to \"$new_complete\"" >&5
-$as_echo "$as_me: Rewriting OBJC to \"$new_complete\"" >&6;}
-    fi
-  fi
-
 
 
   # Publish this variable in the help.
@@ -34552,8 +33970,6 @@ $as_echo "$as_me: Rewriting LIPO to \"$new_complete\"" >&6;}
     fi
   fi
 
-  else
-    OBJC=
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -39852,7 +39268,6 @@ $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
-  OBJCFLAGS="$ORG_OBJCFLAGS"
 
 
 # Finally do some processing after the detection phase
@@ -42936,6 +42351,8 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       CFLAGS_JDKLIB_EXTRA="${CFLAGS_JDKLIB_EXTRA} -xregs=no%appl"
       CXXFLAGS_JDKLIB_EXTRA="${CXXFLAGS_JDKLIB_EXTRA} -xregs=no%appl"
     fi
+    CFLAGS_JDKLIB_EXTRA="${CFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
+    CXXFLAGS_JDKLIB_EXTRA="${CXXFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     LDFLAGS_JDK="${LDFLAGS_JDK} -q64 -brtl -bnolibpath -liconv -bexpall"
     CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
@@ -43002,7 +42419,7 @@ fi
   #    CXXFLAGS_JDK  - C++ Compiler flags
   #    COMMON_CCXXFLAGS_JDK - common to C and C++
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wno-parentheses -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
         -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
     case $OPENJDK_TARGET_CPU_ARCH in
       arm )
@@ -43022,7 +42439,6 @@ fi
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DcpuIntel -Di586 -D$OPENJDK_TARGET_CPU_LEGACY_LIB"
-      CFLAGS_JDK="$CFLAGS_JDK -erroff=E_BAD_PRAGMA_PACK_VALUE"
     fi
 
     CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
@@ -43422,18 +42838,94 @@ $as_echo "$supports" >&6; }
 
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
+      DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
       ;;
     solstudio)
+      DISABLE_WARNING_PREFIX="-erroff="
       CFLAGS_WARNINGS_ARE_ERRORS="-errtags -errwarn=%all"
       ;;
     gcc)
+      # Prior to gcc 4.4, a -Wno-X where X is unknown for that version of gcc will cause an error
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
+$as_echo_n "checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
+  supports=yes
+
+  saved_cflags="$CFLAGS"
+  CFLAGS="$CFLAGS -Wno-this-is-a-warning-that-do-not-exist"
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CFLAGS="$saved_cflags"
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG -Wno-this-is-a-warning-that-do-not-exist"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    GCC_CAN_DISABLE_WARNINGS=true
+  else
+    GCC_CAN_DISABLE_WARNINGS=false
+
+  fi
+
+      if test "x$GCC_CAN_DISABLE_WARNINGS" = "xtrue"; then
+        DISABLE_WARNING_PREFIX="-Wno-"
+      else
+        DISABLE_WARNING_PREFIX=
+      fi
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
       ;;
     clang)
+      DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
       ;;
   esac
+
 
 
 
@@ -52106,7 +51598,7 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
   if test "x$CCACHE" != x; then
     if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
       HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
-          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]'`
+          $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`
       if test "x$HAS_BAD_CCACHE" != "x"; then
         as_fn_error $? "Precompiled headers requires ccache 3.1.4 or later, found $CCACHE_VERSION" "$LINENO" 5
       fi

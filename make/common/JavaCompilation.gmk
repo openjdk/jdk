@@ -330,13 +330,7 @@ define SetupArchiveInner
   $1 += $$($1_JAR)
 endef
 
-    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
-  ifneq ($$($1_EXCLUDE_FILES),)
-    # Cannot precompute ZIP_EXCLUDE_FILES as it is dependent on which src root is being
-    # zipped at the moment.
-    $1_SRC_EXCLUDE_FILES := $$(addprefix %, $$($1_EXCLUDE_FILES)) $$($1_EXCLUDE_FILES)
-    $1_ALL_SRCS := $$(filter-out $$($1_SRC_EXCLUDE_FILES), $$($1_ALL_SRCS))
-  endif
+
 define add_file_to_copy
   # param 1 = BUILD_MYPACKAGE
   # parma 2 = The source file to copy.

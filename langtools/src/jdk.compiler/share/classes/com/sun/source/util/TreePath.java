@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import java.util.Iterator;
+import java.util.Objects;
 
 import com.sun.source.tree.*;
 
@@ -57,8 +58,8 @@ public class TreePath implements Iterable<Tree> {
      * @return the tree path of the target node
      */
     public static TreePath getPath(TreePath path, Tree target) {
-        path.getClass();
-        target.getClass();
+        Objects.requireNonNull(path);
+        Objects.requireNonNull(target);
 
         class Result extends Error {
             static final long serialVersionUID = -5942088234594905625L;

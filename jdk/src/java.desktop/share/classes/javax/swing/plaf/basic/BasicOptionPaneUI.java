@@ -377,15 +377,16 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * Creates the appropriate object to represent {@code msg} and
-     * places it into {@code container}. If {@code msg} is an instance of
-     * {@code Component}, it is added directly, if it is an {@code Icon},
-     * a {@code JLabel} is created to represent it, otherwise a {@code JLabel} is
-     * created for the string, if {@code d} is an Object[], this method
-     * will be recursively invoked for the children. {@code internallyCreated} is
-     * {@code true} if Objc is an instance of {@code Component} and was created
-     * internally by this method (this is used to correctly set
-     * {@code hasCustomComponents} only if {@code internallyCreated} is {@code false}).
+     * Creates the appropriate object to represent {@code msg} and places it
+     * into {@code container}. If {@code msg} is an instance of
+     * {@code Component}, it is added directly; if it is an {@code Icon}, a
+     * {@code JLabel} is created to represent it; otherwise, a {@code JLabel}
+     * is created for the string. If {@code msg} is an Object[], this method
+     * will be recursively invoked for the children. {@code internallyCreated}
+     * is {@code true} if {@code msg} is an instance of {@code Component} and
+     * was created internally by this method (this is used to correctly set
+     * {@code hasCustomComponents} only if {@code internallyCreated} is
+     * {@code false}).
      *
      * @param container a container
      * @param cons an instance of {@code GridBagConstraints}

@@ -247,6 +247,8 @@ static char cpu_arch[] = "sparcv9";
   #else
 static char cpu_arch[] = "sparc";
   #endif
+#elif defined(AARCH64)
+static char cpu_arch[] = "aarch64";
 #else
   #error Add appropriate cpu_arch setting
 #endif
@@ -1903,6 +1905,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #ifndef EM_486
   #define EM_486          6               /* Intel 80486 */
 #endif
+#ifndef EM_AARCH64
+  #define EM_AARCH64    183               /* ARM AARCH64 */
+#endif
 
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -1924,7 +1929,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_MIPS_RS3_LE, EM_MIPS_RS3_LE, ELFCLASS32, ELFDATA2LSB, (char*)"MIPSel"},
     {EM_MIPS,        EM_MIPS,    ELFCLASS32, ELFDATA2MSB, (char*)"MIPS"},
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
-    {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"}
+    {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
+    {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
   };
 
 #if  (defined IA32)
@@ -1955,9 +1961,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_MIPS;
 #elif  (defined M68K)
   static  Elf32_Half running_arch_code=EM_68K;
+#elif  (defined AARCH64)
+  static  Elf32_Half running_arch_code=EM_AARCH64;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
+         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K, AARCH64
 #endif
 
   // Identify compatability class for VM's architecture and library's architecture
@@ -3288,7 +3296,7 @@ size_t os::Linux::find_large_page_size() {
 
 #ifndef ZERO
   large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M)
-                     ARM_ONLY(2 * M) PPC_ONLY(4 * M);
+                     ARM_ONLY(2 * M) PPC_ONLY(4 * M) AARCH64_ONLY(2 * M);
 #endif // ZERO
 
   FILE *fp = fopen("/proc/meminfo", "r");
@@ -5871,11 +5879,11 @@ void Parker::unpark() {
 extern char** environ;
 
 #ifndef __NR_fork
-  #define __NR_fork IA32_ONLY(2) IA64_ONLY(not defined) AMD64_ONLY(57)
+  #define __NR_fork IA32_ONLY(2) IA64_ONLY(not defined) AMD64_ONLY(57) AARCH64_ONLY(1079)
 #endif
 
 #ifndef __NR_execve
-  #define __NR_execve IA32_ONLY(11) IA64_ONLY(1033) AMD64_ONLY(59)
+  #define __NR_execve IA32_ONLY(11) IA64_ONLY(1033) AMD64_ONLY(59) AARCH64_ONLY(221)
 #endif
 
 // Run the specified command in a separate process. Return its exit value,

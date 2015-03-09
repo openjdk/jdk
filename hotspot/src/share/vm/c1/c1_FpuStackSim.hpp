@@ -44,6 +44,9 @@ class FpuStackSim;
 #ifdef TARGET_ARCH_ppc
 # include "c1_FpuStackSim_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "c1_FpuStackSim_aarch64.hpp"
+#endif
 
 
 #endif // SHARE_VM_C1_C1_FPUSTACKSIM_HPP
