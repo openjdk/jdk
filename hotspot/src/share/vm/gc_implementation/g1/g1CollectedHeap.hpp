@@ -110,6 +110,7 @@ public:
   void         empty_list();
   bool         is_empty() { return _length == 0; }
   uint         length() { return _length; }
+  uint         eden_length() { return length() - survivor_length(); }
   uint         survivor_length() { return _survivor_length; }
 
   // Currently we do not keep track of the used byte sum for the
@@ -119,7 +120,7 @@ public:
   // we'll report the more accurate information then.
   size_t       eden_used_bytes() {
     assert(length() >= survivor_length(), "invariant");
-    return (size_t) (length() - survivor_length()) * HeapRegion::GrainBytes;
+    return (size_t) eden_length() * HeapRegion::GrainBytes;
   }
   size_t       survivor_used_bytes() {
     return (size_t) survivor_length() * HeapRegion::GrainBytes;
