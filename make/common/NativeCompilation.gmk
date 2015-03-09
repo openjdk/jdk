@@ -194,15 +194,16 @@ endef
 #   CC the compiler to use, default is $(CC)
 #   LDEXE the linker to use for linking executables, default is $(LDEXE)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
+#   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
 define SetupNativeCompilation
-  $(if $(27),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupNativeCompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26)))
+  $(if $(30),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
+  $(call EvalDebugWrapper,$(strip $1),$(call SetupNativeCompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26),$(27),$(28),$(29)))
 endef
 
 define SetupNativeCompilationInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupNativeCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26))
-  $(if $(27),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupNativeCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26),$(27),$(28),$(29))
+  $(if $(30),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
 
   ifneq (,$$($1_BIN))
     $$(error BIN has been replaced with OBJECT_DIR)
@@ -396,6 +397,12 @@ define SetupNativeCompilationInner
     $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_release)
     $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_TYPE)_release)
     $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_release)
+  endif
+
+  # Pick up disabled warnings, if possible on this platform.
+  ifneq ($(DISABLE_WARNING_PREFIX),)
+    $1_EXTRA_CFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
+    $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
   endif
 
   ifeq ($$($1_DEBUG_SYMBOLS), true)
