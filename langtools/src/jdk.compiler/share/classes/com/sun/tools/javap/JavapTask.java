@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 import javax.lang.model.element.Modifier;
@@ -329,7 +330,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         this.classes = new ArrayList<>();
         for (String classname: classes) {
-            classname.getClass(); // null-check
+            Objects.requireNonNull(classname);
             this.classes.add(classname);
         }
 

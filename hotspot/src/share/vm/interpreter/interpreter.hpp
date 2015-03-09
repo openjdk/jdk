@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/stubs.hpp"
 #include "interpreter/cppInterpreter.hpp"
 #include "interpreter/templateInterpreter.hpp"
+#include "memory/resourceArea.hpp"
 #ifdef ZERO
 #ifdef TARGET_ARCH_zero
 # include "entry_zero.hpp"
@@ -139,6 +140,9 @@ class Interpreter: public CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateI
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "interpreter_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch64
+# include "interpreter_aarch64.hpp"
 #endif
 
 };

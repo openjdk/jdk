@@ -722,6 +722,8 @@ JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* thread, jint trap_request))
 JRT_END
 
 
+#ifndef DEOPTIMIZE_WHEN_PATCHING
+
 static Klass* resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
   Bytecode_field field_access(caller, bci);
   // This can be static or non-static field access
@@ -1209,6 +1211,33 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     Universe::heap()->register_nmethod(nm);
   }
 JRT_END
+
+#else // DEOPTIMIZE_WHEN_PATCHING
+
+JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id ))
+  RegisterMap reg_map(thread, false);
+
+  NOT_PRODUCT(_patch_code_slowcase_cnt++;)
+  if (TracePatching) {
+    tty->print_cr("Deoptimizing because patch is needed");
+  }
+
+  frame runtime_frame = thread->last_frame();
+  frame caller_frame = runtime_frame.sender(&reg_map);
+
+  // It's possible the nmethod was invalidated in the last
+  // safepoint, but if it's still alive then make it not_entrant.
+  nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
+  if (nm != NULL) {
+    nm->make_not_entrant();
+  }
+
+  Deoptimization::deoptimize_frame(thread, caller_frame.id());
+
+  // Return to the now deoptimized frame.
+JRT_END
+
+#endif // DEOPTIMIZE_WHEN_PATCHING
 
 //
 // Entry point for compiled code. We want to patch a nmethod.

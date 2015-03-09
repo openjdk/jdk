@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +37,7 @@ import jdk.nashorn.internal.parser.TokenType;
  * IR representation for a runtime call.
  */
 @Immutable
-public class RuntimeNode extends Expression implements Optimistic {
+public class RuntimeNode extends Expression {
     private static final long serialVersionUID = 1L;
 
     /**
@@ -333,11 +331,6 @@ public class RuntimeNode extends Expression implements Optimistic {
     /** Call arguments. */
     private final List<Expression> args;
 
-    /** is final - i.e. may not be removed again, lower in the code pipeline */
-    private final boolean isFinal;
-
-    private final int programPoint;
-
     /**
      * Constructor
      *
@@ -351,17 +344,13 @@ public class RuntimeNode extends Expression implements Optimistic {
 
         this.request      = request;
         this.args         = args;
-        this.isFinal      = false;
-        this.programPoint = INVALID_PROGRAM_POINT;
     }
 
-    private RuntimeNode(final RuntimeNode runtimeNode, final Request request, final boolean isFinal, final List<Expression> args, final int programPoint) {
+    private RuntimeNode(final RuntimeNode runtimeNode, final Request request, final List<Expression> args) {
         super(runtimeNode);
 
         this.request      = request;
         this.args         = args;
-        this.isFinal      = isFinal;
-        this.programPoint = programPoint;
     }
 
     /**
@@ -399,8 +388,6 @@ public class RuntimeNode extends Expression implements Optimistic {
 
         this.request      = request;
         this.args         = args;
-        this.isFinal      = false;
-        this.programPoint = parent instanceof Optimistic ? ((Optimistic)parent).getProgramPoint() : INVALID_PROGRAM_POINT;
     }
 
     /**
@@ -428,32 +415,11 @@ public class RuntimeNode extends Expression implements Optimistic {
      * @return new runtime node or same if same request
      */
     public RuntimeNode setRequest(final Request request) {
-       if (this.request == request) {
-           return this;
-       }
-       return new RuntimeNode(this, request, isFinal, args, programPoint);
-   }
-
-
-    /**
-     * Is this node final - i.e. it can never be replaced with other nodes again
-     * @return true if final
-     */
-    public boolean isFinal() {
-        return isFinal;
-    }
-
-    /**
-     * Flag this node as final - i.e it may never be replaced with other nodes again
-     * @param isFinal is the node final, i.e. can not be removed and replaced by a less generic one later in codegen
-     * @return same runtime node if already final, otherwise a new one
-     */
-    public RuntimeNode setIsFinal(final boolean isFinal) {
-        if (this.isFinal == isFinal) {
+        if (this.request == request) {
             return this;
         }
-        return new RuntimeNode(this, request, isFinal, args, programPoint);
-    }
+        return new RuntimeNode(this, request, args);
+   }
 
     /**
      * Return type for the ReferenceNode
@@ -510,7 +476,7 @@ public class RuntimeNode extends Expression implements Optimistic {
         if (this.args == args) {
             return this;
         }
-        return new RuntimeNode(this, request, isFinal, args, programPoint);
+        return new RuntimeNode(this, request, args);
     }
 
     /**
@@ -535,40 +501,5 @@ public class RuntimeNode extends Expression implements Optimistic {
             }
         }
         return true;
-    }
-
-//TODO these are blank for now:
-
-    @Override
-    public int getProgramPoint() {
-        return programPoint;
-    }
-
-    @Override
-    public RuntimeNode setProgramPoint(final int programPoint) {
-        if(this.programPoint == programPoint) {
-            return this;
-        }
-        return new RuntimeNode(this, request, isFinal, args, programPoint);
-    }
-
-    @Override
-    public boolean canBeOptimistic() {
-        return false;
-    }
-
-    @Override
-    public Type getMostOptimisticType() {
-        return getType();
-    }
-
-    @Override
-    public Type getMostPessimisticType() {
-        return getType();
-    }
-
-    @Override
-    public RuntimeNode setType(final Type type) {
-        return this;
     }
 }

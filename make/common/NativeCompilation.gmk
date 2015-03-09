@@ -82,8 +82,7 @@ define add_native_source
   # param 5 = the c compiler
   # param 6 = the c++ flags to the compiler
   # param 7 = the c++ compiler
-  # param 8 = the objc compiler
-  # param 9 = the flags to the assembler
+  # param 8 = the flags to the assembler
 
   ifneq (,$$(filter %.c,$2))
     # Compile as a C file
@@ -91,17 +90,17 @@ define add_native_source
     $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.m,$2))
-    # Compile as a objective-c file
+    # Compile as an Objective-C file
     $1_$2_FLAGS=-x objective-c $(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
-    $1_$2_COMP=$8
+    $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.s,$2))
     # Compile as assembler file
-    $1_$2_FLAGS=$9 -DTHIS_FILE='"$$(<F)"'
+    $1_$2_FLAGS=$8 -DTHIS_FILE='"$$(<F)"'
     $1_$2_COMP=$(AS)
     $1_$2_DEP_FLAG:=
   else ifneq (,$$(filter %.cpp,$2)$$(filter %.mm,$2))
-    # Compile as a C++ file
+    # Compile as a C++ or Objective-C++ file
     $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$7
     $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
@@ -324,9 +323,6 @@ define SetupNativeCompilationInner
   ifeq ($$($1_CXX),)
     $1_CXX:=$(CXX)
   endif
-  ifeq ($$($1_OBJC),)
-    $1_OBJC:=$(OBJC)
-  endif
 
   # Make sure the dirs exist.
   $$(call MakeDir,$$($1_OBJECT_DIR) $$($1_OUTPUT_DIR))
@@ -454,7 +450,7 @@ define SetupNativeCompilationInner
   # variables used in the call to add_native_source below.
   $1_COMPILE_VARDEPS := $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $(SYSROOT_CFLAGS) \
       $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) \
-      $$($1_CC) $$($1_CXX) $$($1_OBJC) $$($1_ASFLAGS) \
+      $$($1_CC) $$($1_CXX) $$($1_ASFLAGS) \
       $$(foreach s, $$($1_SRCS), \
           $$($1_$$(notdir $$s)_CFLAGS) $$($1_$$(notdir $$s)_CXXFLAGS))
   $1_COMPILE_VARDEPS_FILE := $$(call DependOnVariable, $1_COMPILE_VARDEPS, \
@@ -466,7 +462,7 @@ define SetupNativeCompilationInner
           $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $(SYSROOT_CFLAGS), \
           $$($1_CC), \
           $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) $(SYSROOT_CFLAGS), \
-          $$($1_CXX),$$($1_OBJC),$$($1_ASFLAGS))))
+          $$($1_CXX), $$($1_ASFLAGS))))
 
   # Setup rule for printing progress info when compiling source files.
   # This is a rough heuristic and may not always print accurate information.

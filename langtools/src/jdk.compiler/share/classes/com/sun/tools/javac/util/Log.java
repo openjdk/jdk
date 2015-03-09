@@ -341,7 +341,7 @@ public class Log extends AbstractLog {
     }
 
     public void setEndPosTable(JavaFileObject name, EndPosTable endPosTable) {
-        name.getClass(); // null check
+        Assert.checkNonNull(name);
         getSource(name).setEndPosTable(endPosTable);
     }
 
@@ -373,7 +373,7 @@ public class Log extends AbstractLog {
     }
 
     public void setWriter(WriterKind kind, PrintWriter pw) {
-        pw.getClass();
+        Assert.checkNonNull(pw);
         switch (kind) {
             case NOTICE:    noticeWriter = pw;  break;
             case WARNING:   warnWriter = pw;    break;
@@ -383,8 +383,7 @@ public class Log extends AbstractLog {
     }
 
     public void setWriters(PrintWriter pw) {
-        pw.getClass();
-        noticeWriter = warnWriter = errWriter = pw;
+        noticeWriter = warnWriter = errWriter = Assert.checkNonNull(pw);
     }
 
     /**

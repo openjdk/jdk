@@ -49,6 +49,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -682,8 +683,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public String inferBinaryName(Location location, JavaFileObject file) {
-        file.getClass(); // null check
-        location.getClass(); // null check
+        Objects.requireNonNull(file);
+        Objects.requireNonNull(location);
         // Need to match the path semantics of list(location, ...)
         Iterable<? extends Path> path = getLocationAsPaths(location);
         if (path == null) {

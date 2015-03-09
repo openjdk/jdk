@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,11 +343,17 @@ class RevocationChecker extends PKIXRevocationChecker {
                        PublicKey pubKey, boolean crlSignFlag)
         throws CertPathValidatorException
     {
+        if (debug != null) {
+            debug.println("RevocationChecker.check: checking cert" +
+                "\n  SN: " + Debug.toHexString(xcert.getSerialNumber()) +
+                "\n  Subject: " + xcert.getSubjectX500Principal() +
+                "\n  Issuer: " + xcert.getIssuerX500Principal());
+        }
         try {
             if (onlyEE && xcert.getBasicConstraints() != -1) {
                 if (debug != null) {
-                    debug.println("Skipping revocation check, not end " +
-                                  "entity cert");
+                    debug.println("Skipping revocation check; cert is not " +
+                                  "an end entity cert");
                 }
                 return;
             }

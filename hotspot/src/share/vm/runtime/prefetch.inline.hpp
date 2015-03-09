@@ -40,6 +40,9 @@
 #ifdef TARGET_OS_ARCH_linux_arm
 # include "prefetch_linux_arm.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_aarch64
+# include "prefetch_linux_aarch64.inline.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "prefetch_linux_ppc.inline.hpp"
 #endif

@@ -49,6 +49,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "depChecker_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "depChecker_aarch64.hpp"
+#endif
 #ifdef SHARK
 #include "shark/sharkEntry.hpp"
 #endif
