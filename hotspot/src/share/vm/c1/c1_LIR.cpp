@@ -67,7 +67,7 @@ FloatRegister LIR_OprDesc::as_double_reg() const {
 
 #endif
 
-#ifdef ARM
+#if defined(ARM) || defined (AARCH64)
 
 FloatRegister LIR_OprDesc::as_float_reg() const {
   return as_FloatRegister(fpu_regnr());
@@ -154,7 +154,11 @@ void LIR_Address::verify() const {
 #endif
 #ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
+#ifndef AARCH64
   assert(index()->is_illegal() || index()->is_double_cpu(), "wrong index operand");
+#else
+  assert(index()->is_illegal() || index()->is_double_cpu() || index()->is_single_cpu(), "wrong index operand");
+#endif
   assert(base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
          "wrong type for addresses");
 #else
@@ -1563,6 +1567,11 @@ void LIR_OprDesc::print(outputStream* out) const {
     out->print("%s", as_xmm_float_reg()->name());
   } else if (is_double_xmm()) {
     out->print("%s", as_xmm_double_reg()->name());
+  } else if (is_single_fpu()) {
+    out->print("fpu%d", fpu_regnr());
+  } else if (is_double_fpu()) {
+    out->print("fpu%d", fpu_regnrLo());
+#elif defined(AARCH64)
   } else if (is_single_fpu()) {
     out->print("fpu%d", fpu_regnr());
   } else if (is_double_fpu()) {

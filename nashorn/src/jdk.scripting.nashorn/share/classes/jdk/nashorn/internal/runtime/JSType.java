@@ -311,7 +311,7 @@ public enum JSType {
             return JSType.BOOLEAN;
         }
 
-        if (obj instanceof String || obj instanceof ConsString) {
+        if (isString(obj)) {
             return JSType.STRING;
         }
 
@@ -349,7 +349,7 @@ public enum JSType {
             return JSType.BOOLEAN;
         }
 
-        if (obj instanceof String || obj instanceof ConsString) {
+        if (isString(obj)) {
             return JSType.STRING;
         }
 
@@ -455,8 +455,7 @@ public enum JSType {
                obj == ScriptRuntime.UNDEFINED ||
                obj instanceof Boolean ||
                obj instanceof Number ||
-               obj instanceof String ||
-               obj instanceof ConsString;
+               isString(obj);
     }
 
    /**
@@ -577,7 +576,7 @@ public enum JSType {
             return num != 0 && !Double.isNaN(num);
         }
 
-        if (obj instanceof String || obj instanceof ConsString) {
+        if (isString(obj)) {
             return ((CharSequence)obj).length() > 0;
         }
 
@@ -625,6 +624,15 @@ public enum JSType {
         } catch (final NumberFormatException e) {
             return false;
         }
+    }
+
+    /**
+     * Returns true if object represents a primitive JavaScript string value.
+     * @param obj the object
+     * @return true if the object represents a primitive JavaScript string value.
+     */
+    public static boolean isString(final Object obj) {
+        return obj instanceof String || obj instanceof ConsString;
     }
 
     /**
@@ -751,6 +759,36 @@ public enum JSType {
             return ((Number)obj).doubleValue();
         }
         return toNumberGeneric(obj);
+    }
+
+    /**
+     * Converts an object for a comparison with a number. Almost identical to {@link #toNumber(Object)} but
+     * converts {@code null} to {@code NaN} instead of zero, so it won't compare equal to zero.
+     *
+     * @param obj  an object
+     *
+     * @return a number
+     */
+    public static double toNumberForEq(final Object obj) {
+        return obj == null ? Double.NaN : toNumber(obj);
+    }
+
+    /**
+     * Converts an object for strict comparison with a number. Returns {@code NaN} for any object that is not
+     * a {@link Number}, so only boxed numerics can compare strictly equal to numbers.
+     *
+     * @param obj  an object
+     *
+     * @return a number
+     */
+    public static double toNumberForStrictEq(final Object obj) {
+        if (obj instanceof Double) {
+            return (Double)obj;
+        }
+        if (obj instanceof Number) {
+            return ((Number)obj).doubleValue();
+        }
+        return Double.NaN;
     }
 
 

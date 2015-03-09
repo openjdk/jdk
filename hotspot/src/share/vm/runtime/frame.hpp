@@ -469,6 +469,9 @@ class frame VALUE_OBJ_CLASS_SPEC {
 #ifdef TARGET_ARCH_ppc
 # include "frame_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "frame_aarch64.hpp"
+#endif
 
 };
 

@@ -124,6 +124,7 @@ public class Gen extends JCTree.Visitor {
         genCrt = options.isSet(XJCOV);
         debugCode = options.isSet("debugcode");
         allowInvokedynamic = target.hasInvokedynamic() || options.isSet("invokedynamic");
+        allowBetterNullChecks = target.hasObjects();
         pool = new Pool(types);
 
         // ignore cldc because we cannot have both stackmap formats
@@ -150,6 +151,7 @@ public class Gen extends JCTree.Visitor {
     private final boolean genCrt;
     private final boolean debugCode;
     private final boolean allowInvokedynamic;
+    private final boolean allowBetterNullChecks;
 
     /** Default limit of (approximate) size of finalizer to inline.
      *  Zero means always use jsr.  100 or greater means never use
@@ -1983,8 +1985,13 @@ public class Gen extends JCTree.Visitor {
 
     /** Generate a null check from the object value at stack top. */
     private void genNullCheck(DiagnosticPosition pos) {
-        callMethod(pos, syms.objectType, names.getClass,
-                   List.<Type>nil(), false);
+        if (allowBetterNullChecks) {
+            callMethod(pos, syms.objectsType, names.requireNonNull,
+                    List.of(syms.objectType), true);
+        } else {
+            callMethod(pos, syms.objectType, names.getClass,
+                    List.<Type>nil(), false);
+        }
         code.emitop0(pop);
     }
 

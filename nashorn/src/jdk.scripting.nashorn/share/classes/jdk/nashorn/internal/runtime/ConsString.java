@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.runtime.JSType.isString;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -52,8 +54,8 @@ public final class ConsString implements CharSequence {
      * @param right right char sequence
      */
     public ConsString(final CharSequence left, final CharSequence right) {
-        assert left instanceof String || left instanceof ConsString;
-        assert right instanceof String || right instanceof ConsString;
+        assert isString(left);
+        assert isString(right);
         this.left = left;
         this.right = right;
         length = left.length() + right.length();

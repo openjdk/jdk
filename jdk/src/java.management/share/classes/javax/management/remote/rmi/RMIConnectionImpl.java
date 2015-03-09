@@ -1254,10 +1254,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             if (serverTerminated) {
                 // we must not call fetchNotifs() if the server is
                 // terminated (timeout elapsed).
-                //
-                return new NotificationResult(0L, 0L,
-                                              new TargetedNotification[0]);
-
+                // returns null to force the client to stop fetching
+                if (logger.debugOn()) logger.debug("fetchNotifications",
+                               "The notification server has been closed, "
+                                       + "returns null to force the client to stop fetching");
+                return null;
             }
             final long csn = clientSequenceNumber;
             final int mn = maxNotifications;

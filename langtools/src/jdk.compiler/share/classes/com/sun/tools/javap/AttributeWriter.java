@@ -62,6 +62,8 @@ import com.sun.tools.classfile.StackMap_attribute;
 import com.sun.tools.classfile.Synthetic_attribute;
 
 import static com.sun.tools.classfile.AccessFlags.*;
+
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.StringUtils;
 
 /*
@@ -93,9 +95,8 @@ public class AttributeWriter extends BasicWriter
 
     public void write(Object owner, Attribute attr, ConstantPool constant_pool) {
         if (attr != null) {
-            // null checks
-            owner.getClass();
-            constant_pool.getClass();
+            Assert.checkNonNull(constant_pool);
+            Assert.checkNonNull(owner);
             this.constant_pool = constant_pool;
             this.owner = owner;
             attr.accept(this, null);
@@ -104,9 +105,8 @@ public class AttributeWriter extends BasicWriter
 
     public void write(Object owner, Attributes attrs, ConstantPool constant_pool) {
         if (attrs != null) {
-            // null checks
-            owner.getClass();
-            constant_pool.getClass();
+            Assert.checkNonNull(constant_pool);
+            Assert.checkNonNull(owner);
             this.constant_pool = constant_pool;
             this.owner = owner;
             for (Attribute attr: attrs)

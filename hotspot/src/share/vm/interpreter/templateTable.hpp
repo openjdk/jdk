@@ -362,6 +362,9 @@ class TemplateTable: AllStatic {
 #ifdef TARGET_ARCH_MODEL_ppc_64
 # include "templateTable_ppc_64.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_aarch64
+# include "templateTable_aarch64.hpp"
+#endif
 
 };
 #endif /* !CC_INTERP */

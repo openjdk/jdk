@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -784,7 +785,7 @@ public class Locations {
     }
 
     protected LocationHandler getHandler(Location location) {
-        location.getClass(); // null check
+        Objects.requireNonNull(location);
         return handlersForLocation.get(location);
     }
 

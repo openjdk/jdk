@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.syntaxError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
+import static jdk.nashorn.internal.runtime.JSType.isString;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -55,7 +56,6 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeObject;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-
 
 /**
  * Utilities to be called by JavaScript runtime API and generated classes.
@@ -113,6 +113,11 @@ public final class ScriptRuntime {
      * Throws a reference error for an undefined variable.
      */
     public static final Call THROW_REFERENCE_ERROR = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "throwReferenceError", void.class, String.class);
+
+    /**
+     * Throws a reference error for an undefined variable.
+     */
+    public static final Call THROW_CONST_TYPE_ERROR = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "throwConstTypeError", void.class, String.class);
 
     /**
      * Used to invalidate builtin names, e.g "Function" mapping to all properties in Function.prototype and Function.prototype itself.
@@ -403,6 +408,15 @@ public final class ScriptRuntime {
     }
 
     /**
+     * Throws a type error for an assignment to a const.
+     *
+     * @param name the const name
+     */
+    public static void throwConstTypeError(final String name) {
+        throw typeError("assign.constant", name);
+    }
+
+    /**
      * Call a script function as a constructor with given args.
      *
      * @param target ScriptFunction object.
@@ -522,8 +536,6 @@ public final class ScriptRuntime {
 
     /**
      * ECMA 11.6.1 - The addition operator (+) - generic implementation
-     * Compiler specializes using {@link jdk.nashorn.internal.codegen.RuntimeCallSite}
-     * if any type information is available for any of the operands
      *
      * @param x  first term
      * @param y  second term
@@ -550,8 +562,7 @@ public final class ScriptRuntime {
         final Object xPrim = JSType.toPrimitive(x);
         final Object yPrim = JSType.toPrimitive(y);
 
-        if (xPrim instanceof String || yPrim instanceof String
-                || xPrim instanceof ConsString || yPrim instanceof ConsString) {
+        if (isString(xPrim) || isString(yPrim)) {
             try {
                 return new ConsString(JSType.toCharSequence(xPrim), JSType.toCharSequence(yPrim));
             } catch (final IllegalArgumentException iae) {
@@ -940,8 +951,15 @@ public final class ScriptRuntime {
      * @return true if x is less than y
      */
     public static boolean LT(final Object x, final Object y) {
-        final Object value = lessThan(x, y, true);
-        return value == UNDEFINED ? false : (Boolean)value;
+        final Object px = JSType.toPrimitive(x, Number.class);
+        final Object py = JSType.toPrimitive(y, Number.class);
+
+        return areBothString(px, py) ? px.toString().compareTo(py.toString()) < 0 :
+            JSType.toNumber(px) < JSType.toNumber(py);
+    }
+
+    private static boolean areBothString(final Object x, final Object y) {
+        return isString(x) && isString(y);
     }
 
     /**
@@ -953,8 +971,11 @@ public final class ScriptRuntime {
      * @return true if x is greater than y
      */
     public static boolean GT(final Object x, final Object y) {
-        final Object value = lessThan(y, x, false);
-        return value == UNDEFINED ? false : (Boolean)value;
+        final Object px = JSType.toPrimitive(x, Number.class);
+        final Object py = JSType.toPrimitive(y, Number.class);
+
+        return areBothString(px, py) ? px.toString().compareTo(py.toString()) > 0 :
+            JSType.toNumber(px) > JSType.toNumber(py);
     }
 
     /**
@@ -966,8 +987,11 @@ public final class ScriptRuntime {
      * @return true if x is less than or equal to y
      */
     public static boolean LE(final Object x, final Object y) {
-        final Object value = lessThan(y, x, false);
-        return !(Boolean.TRUE.equals(value) || value == UNDEFINED);
+        final Object px = JSType.toPrimitive(x, Number.class);
+        final Object py = JSType.toPrimitive(y, Number.class);
+
+        return areBothString(px, py) ? px.toString().compareTo(py.toString()) <= 0 :
+            JSType.toNumber(px) <= JSType.toNumber(py);
     }
 
     /**
@@ -979,48 +1003,11 @@ public final class ScriptRuntime {
      * @return true if x is greater than or equal to y
      */
     public static boolean GE(final Object x, final Object y) {
-        final Object value = lessThan(x, y, true);
-        return !(Boolean.TRUE.equals(value) || value == UNDEFINED);
-    }
+        final Object px = JSType.toPrimitive(x, Number.class);
+        final Object py = JSType.toPrimitive(y, Number.class);
 
-    /** ECMA 11.8.5 The Abstract Relational Comparison Algorithm */
-    private static Object lessThan(final Object x, final Object y, final boolean leftFirst) {
-        Object px, py;
-
-        //support e.g. x < y should throw exception correctly if x or y are not numeric
-        if (leftFirst) {
-            px = JSType.toPrimitive(x, Number.class);
-            py = JSType.toPrimitive(y, Number.class);
-        } else {
-            py = JSType.toPrimitive(y, Number.class);
-            px = JSType.toPrimitive(x, Number.class);
-        }
-
-        if (JSType.ofNoFunction(px) == JSType.STRING && JSType.ofNoFunction(py) == JSType.STRING) {
-            // May be String or ConsString
-            return px.toString().compareTo(py.toString()) < 0;
-        }
-
-        final double nx = JSType.toNumber(px);
-        final double ny = JSType.toNumber(py);
-
-        if (Double.isNaN(nx) || Double.isNaN(ny)) {
-            return UNDEFINED;
-        }
-
-        if (nx == ny) {
-            return false;
-        }
-
-        if (nx > 0 && ny > 0 && Double.isInfinite(nx) && Double.isInfinite(ny)) {
-            return false;
-        }
-
-        if (nx < 0 && ny < 0 && Double.isInfinite(nx) && Double.isInfinite(ny)) {
-            return false;
-        }
-
-        return nx < ny;
+        return areBothString(px, py) ? px.toString().compareTo(py.toString()) >= 0 :
+            JSType.toNumber(px) >= JSType.toNumber(py);
     }
 
     /**
@@ -1033,9 +1020,7 @@ public final class ScriptRuntime {
         final Context context = Context.getContextTrusted();
         final SwitchPoint sp = context.getBuiltinSwitchPoint(name);
         assert sp != null;
-        if (sp != null) {
-            context.getLogger(ApplySpecialization.class).info("Overwrote special name '" + name +"' - invalidating switchpoint");
-            SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
-        }
+        context.getLogger(ApplySpecialization.class).info("Overwrote special name '" + name +"' - invalidating switchpoint");
+        SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
     }
 }

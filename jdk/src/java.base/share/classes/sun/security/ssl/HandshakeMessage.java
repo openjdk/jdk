@@ -492,11 +492,14 @@ class CertificateMsg extends HandshakeMessage
     void print(PrintStream s) throws IOException {
         s.println("*** Certificate chain");
 
-        if (debug != null && Debug.isOn("verbose")) {
-            for (int i = 0; i < chain.length; i++)
+        if (chain.length == 0) {
+            s.println("<Empty>");
+        } else if (debug != null && Debug.isOn("verbose")) {
+            for (int i = 0; i < chain.length; i++) {
                 s.println("chain [" + i + "] = " + chain[i]);
-            s.println("***");
+            }
         }
+        s.println("***");
     }
 
     X509Certificate[] getCertificateChain() {

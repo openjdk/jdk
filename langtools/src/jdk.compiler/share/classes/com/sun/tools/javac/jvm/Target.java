@@ -121,6 +121,12 @@ public enum Target {
         return compareTo(JDK1_7) >= 0;
     }
 
+    /** Does the target JDK contains the java.util.Objects class?
+     */
+    public boolean hasObjects() {
+        return compareTo(JDK1_7) >= 0;
+    }
+
     /** Does the VM support polymorphic method handle invocation?
      *  Affects the linkage information output to the classfile.
      *  An alias for {@code hasInvokedynamic}, since all the JSR 292 features appear together.

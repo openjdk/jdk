@@ -39,6 +39,7 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -170,7 +171,7 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
 
     @SuppressWarnings("unused")
     private static boolean isJavaScriptPrimitive(final Object o) {
-        return o instanceof String || o instanceof Boolean || o instanceof Number || o instanceof ConsString || o == null;
+        return JSType.isString(o) || o instanceof Boolean || o instanceof Number || o == null;
     }
 
     private static final MethodHandle GUARD_PRIMITIVE = findOwnMH("isJavaScriptPrimitive", boolean.class, Object.class);

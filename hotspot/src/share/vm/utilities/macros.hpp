@@ -401,6 +401,14 @@
 #define NOT_ARM(code) code
 #endif
 
+#ifdef AARCH64
+#define AARCH64_ONLY(code) code
+#define NOT_AARCH64(code)
+#else
+#define AARCH64_ONLY(code)
+#define NOT_AARCH64(code) code
+#endif
+
 #ifdef JAVASE_EMBEDDED
 #define EMBEDDED_ONLY(code) code
 #define NOT_EMBEDDED(code)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.parser.Tokens.*;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
+import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
@@ -158,6 +159,7 @@ public class JavacParser implements Parser {
         this.allowTypeAnnotations = source.allowTypeAnnotations();
         this.allowAnnotationsAfterTypeParams = source.allowAnnotationsAfterTypeParams();
         this.allowUnderscoreIdentifier = source.allowUnderscoreIdentifier();
+        this.allowPrivateInterfaceMethods = source.allowPrivateInterfaceMethods();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
@@ -210,6 +212,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow static methods in interfaces?
      */
     boolean allowStaticInterfaceMethods;
+
+    /** Switch: should we allow private (instance) methods in interfaces?
+     */
+    boolean allowPrivateInterfaceMethods;
 
     /** Switch: should we allow intersection types in cast?
      */
@@ -3487,8 +3493,13 @@ public class JavacParser implements Parser {
                               List<JCTypeParameter> typarams,
                               boolean isInterface, boolean isVoid,
                               Comment dc) {
-        if (isInterface && (mods.flags & Flags.STATIC) != 0) {
-            checkStaticInterfaceMethods();
+        if (isInterface) {
+            if ((mods.flags & Flags.STATIC) != 0) {
+                checkStaticInterfaceMethods();
+            }
+            if ((mods.flags & Flags.PRIVATE) != 0) {
+                checkPrivateInterfaceMethods();
+            }
         }
         JCVariableDecl prevReceiverParam = this.receiverParam;
         try {
@@ -4000,6 +4011,12 @@ public class JavacParser implements Parser {
         if (!allowTypeAnnotations) {
             log.error(token.pos, "type.annotations.not.supported.in.source", source.name);
             allowTypeAnnotations = true;
+        }
+    }
+    void checkPrivateInterfaceMethods() {
+        if (!allowPrivateInterfaceMethods) {
+            log.error(token.pos, CompilerProperties.Errors.PrivateIntfMethodsNotSupportedInSource(source.name));
+            allowPrivateInterfaceMethods = true;
         }
     }
     protected void checkAnnotationsAfterTypeParams(int pos) {

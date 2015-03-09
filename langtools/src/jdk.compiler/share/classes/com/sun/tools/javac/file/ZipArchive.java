@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -254,7 +255,7 @@ public class ZipArchive implements Archive {
 
         @Override @DefinedBy(Api.COMPILER)
         public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
-            cn.getClass();
+            Objects.requireNonNull(cn);
             // null check
             if (k == Kind.OTHER && getKind() != k) {
                 return false;
