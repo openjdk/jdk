@@ -476,7 +476,8 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
             }
             // Then the y:
             y = s.height + yOffset;    // Prefer dropping down
-            if (position.y + y + pmSize.height >= screenBounds.height &&
+            if (position.y + y + pmSize.height >= screenBounds.height
+                                                  + screenBounds.y &&
                 // popup doesn't fit - place it wherever there's more room
                 screenBounds.height - s.height < 2*(position.y
                                                   - screenBounds.y)) {

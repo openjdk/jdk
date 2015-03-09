@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -139,8 +140,7 @@ public class Start extends ToolOption.Helper {
     }
 
     public Start(Context context) {
-        context.getClass(); // null check
-        this.context = context;
+        this.context = Objects.requireNonNull(context);
         apiMode = true;
         defaultDocletClassName = standardDocletClassName;
         docletParentClassLoader = null;

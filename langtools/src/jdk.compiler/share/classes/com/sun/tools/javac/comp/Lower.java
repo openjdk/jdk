@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1037,7 +1037,7 @@ public class Lower extends TreeTranslator {
         MethodSymbol accessor = accessors[acode];
         if (accessor == null) {
             accessor = new MethodSymbol(
-                STATIC | SYNTHETIC,
+                STATIC | SYNTHETIC | (accOwner.isInterface() ? PUBLIC : 0),
                 accessName(anum.intValue(), acode),
                 new MethodType(argtypes, restype, thrown, syms.methodClass),
                 accOwner);
@@ -3446,10 +3446,7 @@ public class Lower extends TreeTranslator {
                                               syms.iterableType.tsym);
             if (iterableType.getTypeArguments().nonEmpty())
                 iteratorTarget = types.erasure(iterableType.getTypeArguments().head);
-            Type eType = tree.expr.type;
-            while (eType.hasTag(TYPEVAR)) {
-                eType = eType.getUpperBound();
-            }
+            Type eType = types.skipTypeVars(tree.expr.type, false);
             tree.expr.type = types.erasure(eType);
             if (eType.isCompound())
                 tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);

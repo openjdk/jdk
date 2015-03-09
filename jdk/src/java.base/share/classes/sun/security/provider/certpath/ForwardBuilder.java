@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,8 @@ class ForwardBuilder extends Builder {
              * getMatchingEECerts
              */
             if (debug != null) {
-                debug.println("ForwardBuilder.getMatchingCACerts(): ca is target");
+                debug.println("ForwardBuilder.getMatchingCACerts(): " +
+                              "the target is a CA");
             }
 
             if (caTargetSelector == null) {
@@ -291,8 +292,14 @@ class ForwardBuilder extends Builder {
         for (X509Certificate trustedCert : trustedCerts) {
             if (sel.match(trustedCert)) {
                 if (debug != null) {
-                    debug.println("ForwardBuilder.getMatchingCACerts: "
-                        + "found matching trust anchor");
+                    debug.println("ForwardBuilder.getMatchingCACerts: " +
+                        "found matching trust anchor." +
+                        "\n  SN: " +
+                            Debug.toHexString(trustedCert.getSerialNumber()) +
+                        "\n  Subject: " +
+                            trustedCert.getSubjectX500Principal() +
+                        "\n  Issuer: " +
+                            trustedCert.getIssuerX500Principal());
                 }
                 if (caCerts.add(trustedCert) && !searchAllCertStores) {
                     return;

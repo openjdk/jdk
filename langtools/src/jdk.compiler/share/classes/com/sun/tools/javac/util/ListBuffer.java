@@ -124,7 +124,7 @@ public class ListBuffer<A> extends AbstractQueue<A> {
     /** Append an element to buffer.
      */
     public ListBuffer<A> append(A x) {
-        x.getClass(); // null check
+        Assert.checkNonNull(x);
         if (shared) copy();
         List<A> newLast = List.<A>of(x);
         if (last != null) {

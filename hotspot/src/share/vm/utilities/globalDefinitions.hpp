@@ -422,6 +422,11 @@ enum RTMState {
   ProfileRTM = 0x0  // Use RTM with abort ratio calculation
 };
 
+// The maximum size of the code cache.  Can be overridden by targets.
+#define CODE_CACHE_SIZE_LIMIT (2*G)
+// Allow targets to reduce the default size of the code cache.
+#define CODE_CACHE_DEFAULT_LIMIT CODE_CACHE_SIZE_LIMIT
+
 #ifdef TARGET_ARCH_x86
 # include "globalDefinitions_x86.hpp"
 #endif
@@ -436,6 +441,9 @@ enum RTMState {
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "globalDefinitions_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch64
+# include "globalDefinitions_aarch64.hpp"
 #endif
 
 /*

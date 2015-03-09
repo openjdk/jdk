@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.zip.ZipConstants64.*;
-import static java.util.zip.ZipUtils.*;
 
 /**
  * This class is used to read entries from a zip file.
@@ -567,7 +566,7 @@ class ZipFile implements ZipConstants, Closeable {
                 e.name = zc.toString(bname, bname.length);
             }
         }
-        e.time = dosToJavaTime(getEntryTime(jzentry));
+        e.xdostime = getEntryTime(jzentry);
         e.crc = getEntryCrc(jzentry);
         e.size = getEntrySize(jzentry);
         e.csize = getEntryCSize(jzentry);

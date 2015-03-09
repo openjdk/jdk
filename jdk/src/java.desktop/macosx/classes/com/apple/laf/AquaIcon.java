@@ -195,7 +195,7 @@ public class AquaIcon {
                     AquaPainter.create(JRSUIState.getInstance());
             initIconPainter(painter);
 
-            g.setClip(new Rectangle(x, y, width, height));
+            g.clipRect(x, y, width, height);
             painter.paint(g, c, x, y, width, height);
             g.dispose();
         }

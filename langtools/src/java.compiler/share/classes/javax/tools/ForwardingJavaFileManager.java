@@ -27,6 +27,7 @@ package javax.tools;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 import javax.tools.JavaFileObject.Kind;
 
@@ -51,8 +52,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
      * @param fileManager delegate to this file manager
      */
     protected ForwardingJavaFileManager(M fileManager) {
-        fileManager.getClass(); // null check
-        this.fileManager = fileManager;
+        this.fileManager = Objects.requireNonNull(fileManager);
     }
 
     /**

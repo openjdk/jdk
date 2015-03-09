@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,13 +126,15 @@ import java.util.function.UnaryOperator;
  * operations may return their receiver rather than a new stream object, it may
  * not be possible to detect reuse in all cases.
  *
- * <p>Streams have a {@link #close()} method and implement {@link AutoCloseable},
- * but nearly all stream instances do not actually need to be closed after use.
- * Generally, only streams whose source is an IO channel (such as those returned
- * by {@link Files#lines(Path, Charset)}) will require closing.  Most streams
+ * <p>Streams have a {@link #close()} method and implement {@link AutoCloseable}.
+ * Operating on a stream after it has been closed will throw {@link IllegalStateException}.
+ * Most stream instances do not actually need to be closed after use, as they
  * are backed by collections, arrays, or generating functions, which require no
- * special resource management.  (If a stream does require closing, it can be
- * declared as a resource in a {@code try}-with-resources statement.)
+ * special resource management. Generally, only streams whose source is an IO channel,
+ * such as those returned by {@link Files#lines(Path)}, will require closing. If a
+ * stream does require closing, it must be opened as a resource within a try-with-resources
+ * statement or similar control structure to ensure that it is closed promptly after its
+ * operations have completed.
  *
  * <p>Stream pipelines may execute either sequentially or in
  * <a href="package-summary.html#Parallelism">parallel</a>.  This

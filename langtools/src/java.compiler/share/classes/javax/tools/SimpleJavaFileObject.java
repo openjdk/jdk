@@ -28,6 +28,7 @@ package javax.tools;
 import java.io.*;
 import java.net.URI;
 import java.nio.CharBuffer;
+import java.util.Objects;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject.Kind;
@@ -61,9 +62,8 @@ public class SimpleJavaFileObject implements JavaFileObject {
      * @param kind the kind of this file object
      */
     protected SimpleJavaFileObject(URI uri, Kind kind) {
-        // null checks
-        uri.getClass();
-        kind.getClass();
+        Objects.requireNonNull(uri);
+        Objects.requireNonNull(kind);
         if (uri.getPath() == null)
             throw new IllegalArgumentException("URI must have a path: " + uri);
         this.uri = uri;

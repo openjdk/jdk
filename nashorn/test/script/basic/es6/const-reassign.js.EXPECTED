@@ -1,16 +1,18 @@
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
-SyntaxError
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+TypeError: Assignment to constant "x"
+SyntaxError: cannot delete "x" in strict mode
+TypeError: Assignment to constant "c"
+TypeError: Assignment to constant "c"

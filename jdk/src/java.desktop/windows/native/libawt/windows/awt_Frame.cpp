@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,15 @@ struct BlockedThreadStruct {
     HHOOK mouseHook;
     HHOOK modalHook;
 };
+
+
+// Communication with plugin control
+
+// The value must be the same as in AxControl.h
+#define WM_AX_REQUEST_FOCUS_TO_EMBEDDER (WM_USER + 197)
+
+static bool SetFocusToPluginControl(HWND hwndPlugin);
+
 /************************************************************************
  * AwtFrame fields
  */
@@ -93,6 +102,7 @@ jmethodID AwtFrame::getExtendedStateMID;
 jmethodID AwtFrame::setExtendedStateMID;
 
 jmethodID AwtFrame::activateEmbeddingTopLevelMID;
+jfieldID AwtFrame::isEmbeddedInIEID;
 
 Hashtable AwtFrame::sm_BlockedThreads("AWTBlockedThreads");
 
@@ -104,6 +114,7 @@ AwtFrame::AwtFrame() {
     m_parentWnd = NULL;
     menuBar = NULL;
     m_isEmbedded = FALSE;
+    m_isEmbeddedInIE = FALSE;
     m_isLightweight = FALSE;
     m_ignoreWmSize = FALSE;
     m_isMenuDropped = FALSE;
@@ -199,6 +210,13 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
 
             if (isEmbedded) {
                 hwndParent = (HWND)handle;
+
+                // JDK-8056915: Handle focus communication between plugin and frame
+                frame->m_isEmbeddedInIE = IsEmbeddedInIE(hwndParent);
+                if (frame->m_isEmbeddedInIE) {
+                    env->SetBooleanField(target, isEmbeddedInIEID, JNI_TRUE);
+                }
+
                 RECT rect;
                 ::GetClientRect(hwndParent, &rect);
                 //Fix for 6328675: SWT_AWT.new_Frame doesn't occupy client area under JDK6
@@ -337,6 +355,21 @@ done:
 
     return frame;
 }
+
+/*
+ * Returns true if the frame is embedded into Internet Explorer.
+ * The function checks the class name of the parent window of the embedded frame.
+ */
+BOOL AwtFrame::IsEmbeddedInIE(HWND hwndParent)
+{
+    const char *pluginClass = "Java Plug-in Control Window";
+    #define PARENT_CLASS_BUFFER_SIZE 64
+    char parentClass[PARENT_CLASS_BUFFER_SIZE];
+
+    return (::GetClassNameA(hwndParent, parentClass, PARENT_CLASS_BUFFER_SIZE) > 0)
+           && (strncmp(parentClass, pluginClass, PARENT_CLASS_BUFFER_SIZE) == 0);
+}
+
 
 LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, MsgRouting &mr)
 {
@@ -1038,6 +1071,19 @@ BOOL AwtFrame::AwtSetActiveWindow(BOOL isMouseEventCause, UINT hittest)
     }
     if (IsLightweightFrame()) {
         return TRUE;
+    }
+    if (isMouseEventCause && IsEmbeddedFrame() && m_isEmbeddedInIE) {
+        HWND hwndProxy = GetProxyFocusOwner();
+        // Do nothing if this frame is focused already
+        if (::GetFocus() != hwndProxy) {
+            // Fix for JDK-8056915:
+            // If window activated with mouse, set focus to plugin control window
+            // first to preserve focus owner inside browser window
+            if (SetFocusToPluginControl(::GetParent(GetHWnd()))) {
+                return TRUE;
+            }
+            // Plugin control window is already focused, so do normal processing
+        }
     }
     return AwtWindow::AwtSetActiveWindow(isMouseEventCause);
 }
@@ -1819,6 +1865,9 @@ Java_sun_awt_windows_WEmbeddedFrame_initIDs(JNIEnv *env, jclass cls)
     AwtFrame::activateEmbeddingTopLevelMID = env->GetMethodID(cls, "activateEmbeddingTopLevel", "()V");
     DASSERT(AwtFrame::activateEmbeddingTopLevelMID != NULL);
 
+    AwtFrame::isEmbeddedInIEID = env->GetFieldID(cls, "isEmbeddedInIE", "Z");
+    DASSERT(AwtFrame::isEmbeddedInIEID != NULL);
+
     CATCH_BAD_ALLOC;
 }
 
@@ -1911,4 +1960,44 @@ Java_sun_awt_windows_WFramePeer_synthesizeWmActivate(JNIEnv *env, jobject self, 
     CATCH_BAD_ALLOC;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_awt_windows_WEmbeddedFramePeer_requestFocusToEmbedder(JNIEnv *env, jobject self)
+{
+    jboolean result = JNI_FALSE;
+
+    TRY;
+
+    AwtFrame *frame = NULL;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    frame = (AwtFrame *)pData;
+
+    // JDK-8056915: During initial applet activation, set focus to plugin control window
+    HWND hwndParent = ::GetParent(frame->GetHWnd());
+
+    result = SetFocusToPluginControl(hwndParent);
+
+    CATCH_BAD_ALLOC_RET(JNI_FALSE);
+ret:
+    return result;
+}
+
 } /* extern "C" */
+
+static bool SetFocusToPluginControl(HWND hwndPlugin)
+{
+    HWND hwndFocus = ::GetFocus();
+
+    if (hwndFocus == hwndPlugin) {
+        return false;
+    }
+
+    ::SetFocus(hwndPlugin);
+    DWORD dwError = ::GetLastError();
+    if (dwError != ERROR_SUCCESS) {
+        // If direct call failed, use a special message to set focus
+        return (::SendMessage(hwndPlugin, WM_AX_REQUEST_FOCUS_TO_EMBEDDER, 0, 0) == 0);
+    }
+    return true;
+}

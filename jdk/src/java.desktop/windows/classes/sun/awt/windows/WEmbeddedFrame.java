@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,11 @@ public class WEmbeddedFrame extends EmbeddedFrame {
 
     private static int pScale = 0;
     private static final int MAX_BAND_SIZE = (1024*30);
+
+    /**
+     * This flag is set to {@code true} if this embedded frame is hosted by Internet Explorer.
+     */
+    private boolean isEmbeddedInIE = false;
 
     private static String printScale = AccessController.doPrivileged(
         new GetPropertyAction("sun.java2d.print.pluginscalefactor"));
@@ -242,6 +247,14 @@ public class WEmbeddedFrame extends EmbeddedFrame {
             WToolkit.postEvent(WToolkit.targetToAppContext(this),
                                new InvocationEvent(this, r));
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    public boolean requestFocusToEmbedder() {
+        if (isEmbeddedInIE) {
+            return ((WEmbeddedFramePeer) getPeer()).requestFocusToEmbedder();
+        }
+        return false;
     }
 
     public void registerAccelerator(AWTKeyStroke stroke) {}
