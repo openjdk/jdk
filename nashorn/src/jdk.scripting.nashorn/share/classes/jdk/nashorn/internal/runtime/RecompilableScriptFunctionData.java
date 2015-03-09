@@ -43,7 +43,6 @@ import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
 import jdk.nashorn.internal.codegen.Namespace;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator.AllocatorDescriptor;
 import jdk.nashorn.internal.codegen.OptimisticTypesPersistence;
 import jdk.nashorn.internal.codegen.TypeMap;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -126,7 +125,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      *
      * @param functionNode        functionNode that represents this function code
      * @param installer           installer for code regeneration versions of this function
-     * @param allocationDescriptor descriptor for the allocation behavior when this function is used as a constructor
+     * @param allocationStrategy  strategy for the allocation behavior when this function is used as a constructor
      * @param nestedFunctions     nested function map
      * @param externalScopeDepths external scope depths
      * @param internalSymbols     internal symbols to method, defined in its scope
@@ -135,7 +134,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,
         final CodeInstaller<ScriptEnvironment> installer,
-        final AllocatorDescriptor allocationDescriptor,
+        final AllocationStrategy allocationStrategy,
         final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
         final Map<String, Integer> externalScopeDepths,
         final Set<String> internalSymbols,
@@ -153,7 +152,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         this.endParserState      = functionNode.getEndParserState();
         this.token               = tokenFor(functionNode);
         this.installer           = installer;
-        this.allocationStrategy  = AllocationStrategy.get(allocationDescriptor);
+        this.allocationStrategy  = allocationStrategy;
         this.nestedFunctions     = smallMap(nestedFunctions);
         this.externalScopeDepths = smallMap(externalScopeDepths);
         this.internalSymbols     = smallSet(new HashSet<>(internalSymbols));
