@@ -82,8 +82,12 @@ import java.security.Principal;
  * @see java.security.acl.Acl#getPermissions
  *
  * @author Satish Dharmaraj
+ *
+ * @deprecated This package has been replaced by {@code java.security.Policy}
+ *      and related classes since 1.2.
  */
 
+@Deprecated
 public interface Acl extends Owner {
 
     /**
