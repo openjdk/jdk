@@ -32,15 +32,28 @@ import sun.hotspot.WhiteBox;
 
 public enum BlobType {
     // Execution level 1 and 4 (non-profiled) nmethods (including native nmethods)
-    MethodNonProfiled(0, "CodeHeap 'non-profiled nmethods'", "NonProfiledCodeHeapSize"),
+    MethodNonProfiled(0, "CodeHeap 'non-profiled nmethods'", "NonProfiledCodeHeapSize") {
+        @Override
+        public boolean allowTypeWhenOverflow(BlobType type) {
+            return super.allowTypeWhenOverflow(type)
+                    || type == BlobType.MethodProfiled;
+        }
+    },
     // Execution level 2 and 3 (profiled) nmethods
-    MethodProfiled(1, "CodeHeap 'profiled nmethods'", "ProfiledCodeHeapSize"),
+    MethodProfiled(1, "CodeHeap 'profiled nmethods'", "ProfiledCodeHeapSize") {
+        @Override
+        public boolean allowTypeWhenOverflow(BlobType type) {
+            return super.allowTypeWhenOverflow(type)
+                    || type == BlobType.MethodNonProfiled;
+        }
+    },
     // Non-nmethods like Buffers, Adapters and Runtime Stubs
     NonNMethod(2, "CodeHeap 'non-nmethods'", "NonNMethodCodeHeapSize") {
         @Override
         public boolean allowTypeWhenOverflow(BlobType type) {
             return super.allowTypeWhenOverflow(type)
-                    || type == BlobType.MethodNonProfiled;
+                    || type == BlobType.MethodNonProfiled
+                    || type == BlobType.MethodProfiled;
         }
     },
     // All types (No code cache segmentation)
