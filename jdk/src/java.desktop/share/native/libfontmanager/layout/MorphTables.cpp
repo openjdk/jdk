@@ -54,6 +54,10 @@ void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &gly
     for (chain = 0; LE_SUCCESS(success) && (chain < chainCount); chain += 1) {
         if (chain > 0) {
             le_uint32 chainLength = SWAPL(chainHeader->chainLength);
+            if (chainLength & 0x03) { // incorrect alignment for 32 bit tables
+                success = LE_MEMORY_ALLOCATION_ERROR; // as good a choice as any
+                return;
+            }
             chainHeader.addOffset(chainLength, success);
         }
         FeatureFlags defaultFlags = SWAPL(chainHeader->defaultFlags);
@@ -66,6 +70,10 @@ void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &gly
         for (subtable = 0; LE_SUCCESS(success) && (subtable < nSubtables); subtable += 1) {
             if (subtable > 0) {
                 le_int16 length = SWAPW(subtableHeader->length);
+                if (length & 0x03) { // incorrect alignment for 32 bit tables
+                    success = LE_MEMORY_ALLOCATION_ERROR; // as good a choice as any
+                    return;
+                }
                 subtableHeader.addOffset(length, success);
             }
             SubtableCoverage coverage = SWAPW(subtableHeader->coverage);
