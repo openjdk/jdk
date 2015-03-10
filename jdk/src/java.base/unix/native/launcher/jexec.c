@@ -323,7 +323,7 @@ const char * isJar(const char * path) {
             result = BAD_MAGIC_MSG;
 
             // be sure the file is at least a ZIP file
-            if (GETSIG(buf) == LOCSIG) {
+            if (LOCSIG_AT(buf)) {
 
                 off_t flen  = LOCNAM(buf);
                 off_t xlen  = LOCEXT(buf);
