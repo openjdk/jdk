@@ -531,7 +531,7 @@ ALL_TARGETS += default jdk images docs all
 # file.
 
 CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
-    images make-support test-make
+    images make-support test-make bundles
 CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
 CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native
 CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))

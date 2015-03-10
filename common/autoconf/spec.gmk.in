@@ -292,6 +292,8 @@ UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
 # Enable RMIConnector IIOP transport
 RMICONNECTOR_IIOP=@RMICONNECTOR_IIOP@
 
+GCOV_ENABLED=@GCOV_ENABLED@
+
 # Necessary additional compiler flags to compile X11
 X_CFLAGS:=@X_CFLAGS@
 X_LIBS:=@X_LIBS@
@@ -379,6 +381,16 @@ LIBCXX:=@LIBCXX@
 
 # Sometimes a different linker is needed for c++ executables
 LDEXECXX:=@FIXPATH@ @LDEXECXX@
+
+# Compiler and linker flags used when building native tests
+CFLAGS_TESTLIB:=@CFLAGS_TESTLIB@
+CXXFLAGS_TESTLIB:=@CXXFLAGS_TESTLIB@
+CFLAGS_TESTEXE:=@CFLAGS_TESTEXE@
+CXXFLAGS_TESTEXE:=@CXXFLAGS_TESTEXE@
+LDFLAGS_TESTLIB:=@LDFLAGS_TESTLIB@
+LDFLAGS_TESTLIB_SUFFIX:=@LDFLAGS_TESTLIB_SUFFIX@
+LDFLAGS_TESTEXE:=@LDFLAGS_TESTEXE@
+LDFLAGS_TESTEXE_SUFFIX:=@LDFLAGS_TESTEXE_SUFFIX@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
@@ -701,6 +713,10 @@ JRE_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
 # Test image, as above
 TEST_IMAGE_SUBDIR:=test
 TEST_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(TEST_IMAGE_SUBDIR)
+
+# Symbols image
+SYMBOLS_IMAGE_SUBDIR:=symbols
+SYMBOLS_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(SYMBOLS_IMAGE_SUBDIR)
 
 # Macosx bundles directory definitions
 JDK_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents
