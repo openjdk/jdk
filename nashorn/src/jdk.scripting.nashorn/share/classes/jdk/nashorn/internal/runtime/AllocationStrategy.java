@@ -29,7 +29,9 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
  * Encapsulates the allocation strategy for a function when used as a constructor.
@@ -39,34 +41,40 @@ final public class AllocationStrategy implements Serializable {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    /** Allocator map from allocator descriptor */
-    private final PropertyMap allocatorMap;
+    /** Number of fields in the allocated object */
+    private final int fieldCount;
 
     /** Name of class where allocator function resides */
-    private final String allocatorClassName;
+    private transient String allocatorClassName;
 
     /** lazily generated allocator */
     private transient MethodHandle allocator;
 
     /**
      * Construct an allocation strategy with the given map and class name.
-     * @param allocatorMap the property map
-     * @param className the class name
+     * @param fieldCount number of fields in the allocated object
      */
-    public AllocationStrategy(final PropertyMap allocatorMap, final String className) {
-        this.allocatorMap = allocatorMap;
-        // These classes get loaded, so an interned variant of their name is most likely around anyway.
-        this.allocatorClassName = className.intern();
+    public AllocationStrategy(final int fieldCount) {
+        this.fieldCount = fieldCount;
+    }
+
+    private String getAllocatorClassName() {
+        if (allocatorClassName == null) {
+            // These classes get loaded, so an interned variant of their name is most likely around anyway.
+            allocatorClassName = Compiler.binaryName(ObjectClassGenerator.getClassName(fieldCount)).intern();
+        }
+        return allocatorClassName;
     }
 
     PropertyMap getAllocatorMap() {
-        return allocatorMap;
+        // Create a new map for each function instance
+        return PropertyMap.newMap(null, getAllocatorClassName(), 0, fieldCount, 0);
     }
 
     ScriptObject allocate(final PropertyMap map) {
         try {
             if (allocator == null) {
-                allocator = MH.findStatic(LOOKUP, Context.forStructureClass(allocatorClassName),
+                allocator = MH.findStatic(LOOKUP, Context.forStructureClass(getAllocatorClassName()),
                         CompilerConstants.ALLOCATE.symbolName(), MH.type(ScriptObject.class, PropertyMap.class));
             }
             return (ScriptObject)allocator.invokeExact(map);
@@ -79,7 +87,6 @@ final public class AllocationStrategy implements Serializable {
 
     @Override
     public String toString() {
-        return "AllocationStrategy[allocatorClassName=" + allocatorClassName + ", allocatorMap.size=" +
-                allocatorMap.size() + "]";
+        return "AllocationStrategy[fieldCount=" + fieldCount + "]";
     }
 }
