@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.regex.Pattern;
 
 import javax.lang.model.element.Name;
 import javax.tools.StandardLocation;
@@ -79,7 +80,8 @@ public class DocLint implements Plugin {
     private static final String STATS = "-stats";
     public static final String XIMPLICIT_HEADERS = "-XimplicitHeaders:";
     public static final String XCUSTOM_TAGS_PREFIX = "-XcustomTags:";
-    public static final String TAGS_SEPARATOR = ",";
+    public static final String XCHECK_PACKAGE = "-XcheckPackage:";
+    public static final String SEPARATOR = ",";
 
     // <editor-fold defaultstate="collapsed" desc="Command-line entry point">
     public static void main(String... args) {
@@ -156,7 +158,7 @@ public class DocLint implements Plugin {
         env.init(task);
         checker = new Checker(env);
 
-        DeclScanner ds = new DeclScanner() {
+        DeclScanner ds = new DeclScanner(env) {
             @Override
             void visitDecl(Tree tree, Name name) {
                 TreePath p = getCurrentPath();
@@ -272,6 +274,8 @@ public class DocLint implements Plugin {
                 env.setImplicitHeaders(Character.digit(ch, 10));
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
+            } else if (arg.startsWith(XCHECK_PACKAGE)) {
+                env.setCheckPackages(arg.substring(arg.indexOf(":") + 1));
             } else
                 throw new IllegalArgumentException(arg);
         }
@@ -280,7 +284,7 @@ public class DocLint implements Plugin {
         checker = new Checker(env);
 
         if (addTaskListener) {
-            final DeclScanner ds = new DeclScanner() {
+            final DeclScanner ds = new DeclScanner(env) {
                 @Override
                 void visitDecl(Tree tree, Name name) {
                     TreePath p = getCurrentPath();
@@ -337,6 +341,9 @@ public class DocLint implements Plugin {
            return true;
         if (opt.startsWith(XMSGS_CUSTOM_PREFIX))
            return Messages.Options.isValidOptions(opt.substring(XMSGS_CUSTOM_PREFIX.length()));
+        if (opt.startsWith(XCHECK_PACKAGE)) {
+            return Env.validatePackages(opt.substring(opt.indexOf(":") + 1));
+        }
         return false;
     }
 
@@ -348,6 +355,12 @@ public class DocLint implements Plugin {
     // <editor-fold defaultstate="collapsed" desc="DeclScanner">
 
     static abstract class DeclScanner extends TreePathScanner<Void, Void> {
+        final Env env;
+
+        public DeclScanner(Env env) {
+            this.env = env;
+        }
+
         abstract void visitDecl(Tree tree, Name name);
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -373,6 +386,33 @@ public class DocLint implements Plugin {
             visitDecl(tree, tree.getName());
             return super.visitVariable(tree, ignore);
         }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Void visitCompilationUnit(CompilationUnitTree node, Void p) {
+            if (env.includePackages != null) {
+                String packageName =   node.getPackageName() != null
+                                     ? node.getPackageName().toString()
+                                     : "";
+                if (!env.includePackages.isEmpty()) {
+                    boolean included = false;
+                    for (Pattern pack : env.includePackages) {
+                        if (pack.matcher(packageName).matches()) {
+                            included = true;
+                            break;
+                        }
+                    }
+                    if (!included)
+                        return null;
+                }
+                for (Pattern pack : env.excludePackages) {
+                    if (pack.matcher(packageName).matches()) {
+                        return null;
+                    }
+                }
+            }
+            return super.visitCompilationUnit(node, p);
+        }
+
     }
 
     // </editor-fold>
