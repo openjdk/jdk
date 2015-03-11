@@ -143,7 +143,7 @@ print_inline_info_record(jvmtiCompiledMethodLoadInlineRecord* record,
 
         for (i = 0; i < numpcs; i++) {
             PCStackInfo pcrecord = (record->pcinfo[i]);
-            fprintf(fp, "PcDescriptor(pc=0x%lx):\n", (jint)(pcrecord.pc));
+            fprintf(fp, "PcDescriptor(pc=%p):\n", pcrecord.pc);
             print_stack_frames(&pcrecord, jvmti, fp);
         }
     }
