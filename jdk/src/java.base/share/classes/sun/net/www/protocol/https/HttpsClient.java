@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -699,7 +699,12 @@ final class HttpsClient extends HttpClient
     /**
      * Returns the X.509 certificate chain with which the server
      * authenticated itself, or null if the server did not authenticate.
+     *
+     * @deprecated This method returns the deprecated
+     *  {@code javax.security.cert.X509Certificate} type.
+     *  Use {@code getServerCertificates()} instead.
      */
+    @Deprecated
     javax.security.cert.X509Certificate [] getServerCertificateChain()
             throws SSLPeerUnverifiedException
     {
