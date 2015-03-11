@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,8 +295,8 @@ public class FormatData_fi extends ParallelListResourceBundle {
             },
             { "DatePatterns",
                 new String[] {
-                    "d. MMMM'ta 'yyyy", // full date pattern
-                    "d. MMMM'ta 'yyyy", // long date pattern
+                    "d. MMMM yyyy", // full date pattern
+                    "d. MMMM yyyy", // long date pattern
                     "d.M.yyyy", // medium date pattern
                     "d.M.yyyy", // short date pattern
                 }
