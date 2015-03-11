@@ -31,7 +31,6 @@ import java.awt.image.*;
 import java.security.AccessController;
 import sun.security.action.GetIntegerAction;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
-import sun.awt.X11.XToolkit;
 import sun.java2d.opengl.OGLRenderQueue;
 
 public abstract class UNIXToolkit extends SunToolkit
@@ -98,12 +97,7 @@ public abstract class UNIXToolkit extends SunToolkit
     public boolean loadGTK() {
         synchronized (GTK_LOCK) {
             if (nativeGTKLoaded == null) {
-                XToolkit.awtLock();
-                try {
-                    nativeGTKLoaded = load_gtk();
-                } finally {
-                    XToolkit.awtUnlock();
-                }
+                nativeGTKLoaded = load_gtk();
             }
         }
         return nativeGTKLoaded;
