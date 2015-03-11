@@ -26,6 +26,9 @@
 
 usage() {
       echo "usage: $0 [-h|--help] [-q|--quiet] [-v|--verbose] [-s|--sequential] [--] <command> [commands...]" > ${status_output}
+      echo "command format : mercurial-command [ "jdk" ] [ extra-url ]"
+      echo "command option: jdk : used only with clone command to request just the extra repos for JDK-only builds"
+      echo "command option : extra-url : server hosting the extra repositories"
       echo "Environment variables which modify behaviour:"
       echo "   HGFOREST_QUIET      : (boolean) If 'true' then standard output is redirected to /dev/null"
       echo "   HGFOREST_VERBOSE    : (boolean) If 'true' then Mercurial asked to produce verbose output"
@@ -179,7 +182,8 @@ trap 'safe_interrupt' INT QUIT
 trap 'nice_exit' EXIT
 
 subrepos="corba jaxp jaxws langtools jdk hotspot nashorn"
-subrepos_extra="closed jdk/src/closed jdk/make/closed jdk/test/closed hotspot/make/closed hotspot/src/closed hotspot/test/closed deploy install sponsors pubs"
+jdk_subrepos_extra="closed jdk/src/closed jdk/make/closed jdk/test/closed hotspot/make/closed hotspot/src/closed hotspot/test/closed"
+subrepos_extra="$jdk_subrepos_extra deploy install sponsors pubs"
 
 # Only look in specific locations for possible forests (avoids long searches)
 pull_default=""
@@ -209,6 +213,11 @@ if [ "${command}" = "clone" -o "${command}" = "fclone" -o "${command}" = "tclone
   pull_default_tail=`echo ${pull_default} | sed -e 's@^.*://[^/]*/\(.*\)@\1@'`
 
   if [ $# -gt 0 ] ; then
+    if [ "x${1}" = "xjdk" ] ; then
+       subrepos_extra=$jdk_subrepos_extra
+       echo "subrepos being cloned are $subrepos_extra"
+       shift
+    fi
     # if there is an "extra sources" path then reparent "extra" repos to that path
     if [ "x${pull_default}" = "x${pull_default_tail}" ] ; then
       echo "ERROR: Need initial clone from non-local source" > ${status_output}
