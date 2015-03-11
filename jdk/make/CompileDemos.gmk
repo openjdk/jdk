@@ -316,13 +316,13 @@ define SetupJVMTIDemo
   endif
 endef
 
-$(eval $(call SetupJVMTIDemo,compiledMethodLoad, agent_util, , , , , , , , pointer-to-int-cast format, , format))
+$(eval $(call SetupJVMTIDemo,compiledMethodLoad, agent_util))
 $(eval $(call SetupJVMTIDemo,gctest, agent_util))
 $(eval $(call SetupJVMTIDemo,heapTracker, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,heapViewer, agent_util))
 $(eval $(call SetupJVMTIDemo,minst, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,mtrace, agent_util java_crw_demo))
-$(eval $(call SetupJVMTIDemo,waiters, agent_util, , C++, , , , , , , 4101))
+$(eval $(call SetupJVMTIDemo,waiters, agent_util, , C++))
 $(eval $(call SetupJVMTIDemo,versionCheck, agent_util))
 
 ##################################################################################################
