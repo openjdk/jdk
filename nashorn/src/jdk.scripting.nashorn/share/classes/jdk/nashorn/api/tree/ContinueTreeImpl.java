@@ -26,7 +26,6 @@
 package jdk.nashorn.api.tree;
 
 import jdk.nashorn.internal.ir.ContinueNode;
-import jdk.nashorn.internal.ir.IdentNode;
 
 final class ContinueTreeImpl extends StatementTreeImpl implements ContinueTree {
     private final String label;

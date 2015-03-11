@@ -25,8 +25,6 @@
 
 package jdk.nashorn.api.tree;
 
-import java.util.List;
-
 /**
  * A tree node to declare a new instance of a class.
  *

@@ -45,5 +45,6 @@ public interface BreakTree extends GotoTree {
      *
      * @return label associated with this break statement.
      */
+    @Override
     String getLabel();
 }

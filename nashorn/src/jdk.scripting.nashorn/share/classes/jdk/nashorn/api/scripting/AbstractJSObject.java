@@ -250,6 +250,7 @@ public abstract class AbstractJSObject implements JSObject {
      *
      * @return this object's numeric value.
      */
+    @SuppressWarnings("deprecation")
     @Override
     public double toNumber() {
         return Double.NaN;

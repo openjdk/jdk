@@ -27,7 +27,6 @@ package jdk.nashorn.api.tree;
 
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.runtime.ParserException;
-import jdk.nashorn.internal.runtime.Source;
 
 final class DiagnosticImpl implements Diagnostic {
     private final ParserException exp;
