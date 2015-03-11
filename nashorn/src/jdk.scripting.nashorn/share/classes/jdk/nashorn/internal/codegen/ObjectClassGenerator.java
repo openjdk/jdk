@@ -834,8 +834,6 @@ public final class ObjectClassGenerator implements Loggable {
      */
     static AllocationStrategy createAllocationStrategy(final int thisProperties) {
         final int paddedFieldCount = getPaddedFieldCount(thisProperties);
-        final String allocatorClassName = Compiler.binaryName(getClassName(paddedFieldCount));
-        final PropertyMap allocatorMap = PropertyMap.newMap(null, allocatorClassName, 0, paddedFieldCount, 0);
-        return new AllocationStrategy(allocatorMap, allocatorClassName);
+        return new AllocationStrategy(paddedFieldCount);
     }
 }
