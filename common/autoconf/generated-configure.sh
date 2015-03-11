@@ -680,17 +680,26 @@ X_PRE_LIBS
 X_CFLAGS
 XMKMF
 FIXPATH
+GCOV_ENABLED
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
 DISABLE_WARNING_PREFIX
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
+LDFLAGS_TESTEXE_SUFFIX
+LDFLAGS_TESTLIB_SUFFIX
+LDFLAGS_TESTEXE
+LDFLAGS_TESTLIB
 LDFLAGS_CXX_JDK
 LDFLAGS_JDKEXE_SUFFIX
 LDFLAGS_JDKLIB_SUFFIX
 LDFLAGS_JDKEXE
 LDFLAGS_JDKLIB
+CXXFLAGS_TESTEXE
+CXXFLAGS_TESTLIB
+CFLAGS_TESTEXE
+CFLAGS_TESTLIB
 CXXFLAGS_JDKEXE
 CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
@@ -1085,6 +1094,7 @@ with_extra_cxxflags
 with_extra_ldflags
 enable_debug_symbols
 enable_zip_debug_info
+enable_native_coverage
 with_x
 with_cups
 with_cups_include
@@ -1853,6 +1863,9 @@ Optional Features:
   --disable-debug-symbols disable generation of debug symbols [enabled]
   --disable-zip-debug-info
                           disable zipping of debug-info files [enabled]
+  --enable-native-coverage
+                          enable native compilation with code coverage
+                          data[disabled]
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
@@ -3994,6 +4007,12 @@ pkgadd_help() {
 
 
 
+################################################################################
+#
+# Gcov coverage data for hotspot
+#
+
+
 #
 # Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4350,7 +4369,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1425893864
+DATE_WHEN_GENERATED=1425994551
 
 ###############################################################################
 #
@@ -42565,11 +42584,24 @@ fi
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
-  CXXFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA "
+  CXXFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA"
 
   # Executable flags
   CFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK"
   CXXFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK"
+
+
+
+
+
+
+  # Flags for compiling test libraries
+  CFLAGS_TESTLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
+  CXXFLAGS_TESTLIB="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA"
+
+  # Flags for compiling test executables
+  CFLAGS_TESTEXE="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK"
+  CXXFLAGS_TESTEXE="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK"
 
 
 
@@ -42684,6 +42716,16 @@ fi
     fi
   fi
 
+
+
+
+
+
+
+  LDFLAGS_TESTLIB="$LDFLAGS_JDKLIB"
+  LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE"
+  LDFLAGS_TESTLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX"
+  LDFLAGS_TESTEXE_SUFFIX="$LDFLAGS_JDKEXE_SUFFIX"
 
 
 
@@ -42990,6 +43032,45 @@ $as_echo "${enable_zip_debug_info}" >&6; }
     ZIP_DEBUGINFO_FILES=true
   fi
 
+
+
+
+
+  # Check whether --enable-native-coverage was given.
+if test "${enable_native_coverage+set}" = set; then :
+  enableval=$enable_native_coverage;
+fi
+
+  GCOV_ENABLED="false"
+  if test "x$enable_native_coverage" = "xyes"; then
+    if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if native coverage is enabled" >&5
+$as_echo_n "checking if native coverage is enabled... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      GCOV_CFLAGS="-fprofile-arcs -ftest-coverage -fno-inline"
+      GCOV_LDFLAGS="-fprofile-arcs"
+      LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $GCOV_CFLAGS"
+      LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $GCOV_CFLAGS"
+      LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $GCOV_LDFLAGS"
+      CFLAGS_JDKLIB="$CFLAGS_JDKLIB $GCOV_CFLAGS"
+      CFLAGS_JDKEXE="$CFLAGS_JDKEXE $GCOV_CFLAGS"
+      CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $GCOV_CFLAGS"
+      CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $GCOV_CFLAGS"
+      LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $GCOV_LDFLAGS"
+      LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $GCOV_LDFLAGS"
+      GCOV_ENABLED="true"
+    else
+      as_fn_error $? "--enable-native-coverage only works with toolchain type gcc" "$LINENO" 5
+    fi
+  elif test "x$enable_native_coverage" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if native coverage is enabled" >&5
+$as_echo_n "checking if native coverage is enabled... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  elif test "x$enable_native_coverage" != "x"; then
+    as_fn_error $? "--enable-native-coverage can only be assigned \"yes\" or \"no\"" "$LINENO" 5
+  fi
 
 
 
