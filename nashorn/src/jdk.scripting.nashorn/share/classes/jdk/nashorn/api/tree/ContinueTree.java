@@ -44,5 +44,6 @@ public interface ContinueTree extends GotoTree {
      *
      * @return label associated with this continue statement.
      */
+    @Override
     String getLabel();
 }

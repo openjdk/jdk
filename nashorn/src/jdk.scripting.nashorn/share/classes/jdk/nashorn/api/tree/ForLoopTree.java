@@ -50,6 +50,7 @@ public interface ForLoopTree extends ConditionalLoopTree {
      *
      * @return the condition expression
      */
+    @Override
     ExpressionTree getCondition();
 
     /**
@@ -64,5 +65,6 @@ public interface ForLoopTree extends ConditionalLoopTree {
      *
      * @return the statement
      */
+    @Override
     StatementTree getStatement();
 }

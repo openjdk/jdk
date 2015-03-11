@@ -530,6 +530,10 @@ public interface Tree {
             associatedInterface = intf;
         }
 
+       /**
+        * Returns the associated interface type that uses this kind.
+        * @return the associated interface
+        */
         public Class<? extends Tree> asInterface() {
             return associatedInterface;
         }

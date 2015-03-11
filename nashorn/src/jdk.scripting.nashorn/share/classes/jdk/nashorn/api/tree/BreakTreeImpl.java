@@ -26,7 +26,6 @@
 package jdk.nashorn.api.tree;
 
 import jdk.nashorn.internal.ir.BreakNode;
-import jdk.nashorn.internal.ir.IdentNode;
 
 final class BreakTreeImpl extends StatementTreeImpl implements BreakTree {
     private final String label;

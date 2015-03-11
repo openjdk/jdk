@@ -25,7 +25,6 @@
 
 package jdk.nashorn.api.tree;
 
-import java.util.List;
 import jdk.nashorn.internal.ir.ForNode;
 
 final class ForLoopTreeImpl extends StatementTreeImpl implements ForLoopTree {
