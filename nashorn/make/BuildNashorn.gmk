@@ -105,8 +105,8 @@ MANIFEST_ATTRIBUTES := Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\
 
 # Create nashorn.jar from the final classes dir
 $(eval $(call SetupArchive,BUILD_NASHORN_JAR, \
-    $(NASGEN_RUN_FILE) \
-    $(VERSION_FILE), \
+    DEPENDENCIES := $(NASGEN_RUN_FILE) \
+        $(VERSION_FILE), \
     SRCS := $(NASHORN_CLASSES_DIR), \
     SUFFIXES := .class .js .properties Factory, \
     MANIFEST := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes/META-INF/MANIFEST.MF, \
