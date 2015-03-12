@@ -109,7 +109,15 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   }
   thr_sigsetmask(SIG_UNBLOCK, &newset, NULL);
 
-  VMError err(NULL, sig, NULL, info, ucVoid);
+  // support safefetch faults in error handling
+  ucontext_t* const uc = (ucontext_t*) ucVoid;
+  address const pc = uc ? os::Solaris::ucontext_get_pc(uc) : NULL;
+  if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
+    os::Solaris::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+    return;
+  }
+
+  VMError err(NULL, sig, pc, info, ucVoid);
   err.report_and_die();
 }
 
