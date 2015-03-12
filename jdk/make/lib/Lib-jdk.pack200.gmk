@@ -42,7 +42,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
     CFLAGS_release := -DPRODUCT, \
     DISABLED_WARNINGS_gcc := conversion-null sign-compare format-security \
         format-nonliteral parentheses, \
-    DISABLED_WARNINGS_clang := bool-conversion format-security, \
     DISABLED_WARNINGS_solstudio := truncwarn, \
     DISABLED_WARNINGS_microsoft := 4267 4018, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
