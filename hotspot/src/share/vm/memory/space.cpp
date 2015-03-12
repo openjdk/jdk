@@ -353,15 +353,6 @@ void ContiguousSpace::mangle_unused_area() {
 void ContiguousSpace::mangle_unused_area_complete() {
   mangler()->mangle_unused_area_complete();
 }
-void ContiguousSpace::mangle_region(MemRegion mr) {
-  // Although this method uses SpaceMangler::mangle_region() which
-  // is not specific to a space, the when the ContiguousSpace version
-  // is called, it is always with regard to a space and this
-  // bounds checking is appropriate.
-  MemRegion space_mr(bottom(), end());
-  assert(space_mr.contains(mr), "Mangling outside space");
-  SpaceMangler::mangle_region(mr);
-}
 #endif  // NOT_PRODUCT
 
 void CompactibleSpace::initialize(MemRegion mr,
