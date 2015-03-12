@@ -64,6 +64,17 @@ public class TestStylesheet extends JavadocTester {
                 + "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;\n"
                 + "    font-size:14px;\n"
                 + "    margin:0;\n"
+                + "    padding:0;\n"
+                + "    height:100%;\n"
+                + "    width:100%;\n"
+                + "}",
+                "iframe {\n"
+                + "    margin:0;\n"
+                + "    padding:0;\n"
+                + "    height:100%;\n"
+                + "    width:100%;\n"
+                + "    overflow-y:scroll;\n"
+                + "    border:none;\n"
                 + "}",
                 "ul {\n"
                 + "    list-style-type:disc;\n"
@@ -148,6 +159,9 @@ public class TestStylesheet extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 "<link rel=\"stylesheet\" type=\"text/css\" "
                 + "href=\"../stylesheet.css\" title=\"Style\">");
+
+        checkOutput("index.html", true,
+                "<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" title=\"Style\">");
 
         checkOutput("stylesheet.css", false,
                 "* {\n"
