@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
 
 /*
  * @test
- * @bug 4275630 4749453 4625400 4753048 4415270
- * @summary  Generated HTML is invalid with frameset DTD.
+ * @bug 4275630 4749453 4625400 4753048 4415270 8074521
+ * @summary  Generated HTML is invalid with frames.
  *           Displays unnecessary horizontal scroll bars.
  *           Missing whitespace in DOCTYPE declaration
- *           <NOFRAMES> not allowed outside <FRAMESET> element
  *           HTML table tags inserted in wrong place in pakcage use page
  * @author dkramer
  * @library ../lib
@@ -55,7 +54,7 @@ public class ValidHtml extends JavadocTester {
         checkExit(Exit.OK);
 
         // Test the proper DOCTYPE element are present:
-        checkOutput("index.html",              true, FRAMESET);
+        checkOutput("index.html",              true, LOOSE);
         checkOutput("overview-summary.html",   true, LOOSE);
         checkOutput("p1/package-summary.html", true, LOOSE);
         checkOutput("p1/C.html",               true, LOOSE);
@@ -63,10 +62,9 @@ public class ValidHtml extends JavadocTester {
         checkOutput("allclasses-frame.html",   true, LOOSE);
         checkOutput("p1/package-frame.html",   true, LOOSE);
 
-        // Test that <NOFRAMES> is inside <FRAMESET> element:
+        // Test for IFRAME element:
         checkOutput("index.html", true,
-                "</noframes>\n"
-                + "</frameset>");
+                "<iframe");
 
         // Test the table elements are in the correct order:
         checkOutput("p1/package-use.html", true,
@@ -74,8 +72,6 @@ public class ValidHtml extends JavadocTester {
                 + "</tr>");
     }
 
-    private static final String FRAMESET =
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\" \"http://www.w3.org/TR/html4/frameset.dtd\">";
     private static final String LOOSE =
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
 }

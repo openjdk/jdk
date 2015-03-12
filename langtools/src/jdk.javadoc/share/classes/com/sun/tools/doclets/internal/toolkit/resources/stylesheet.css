@@ -11,6 +11,17 @@ body {
     font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
     font-size:14px;
     margin:0;
+    padding:0;
+    height:100%;
+    width:100%;
+}
+iframe {
+    margin:0;
+    padding:0;
+    height:100%;
+    width:100%;
+    overflow-y:scroll;
+    border:none;
 }
 a:link, a:visited {
     text-decoration:none;
@@ -569,6 +580,61 @@ div.block div.block span.interfaceName {
     font-style:normal;
 }
 
-div.contentContainer ul.blockList li.blockList h2{
+div.contentContainer ul.blockList li.blockList h2 {
     padding-bottom:0px;
+}
+/*
+IFRAME specific styles
+*/
+.mainContainer {
+    margin:0 auto; 
+    padding:0; 
+    height:100%; 
+    width:100%; 
+    position:fixed; 
+    top:0; 
+    left:0;
+}
+.leftContainer {
+    height:100%;
+    position:fixed;
+    width:320px;
+}
+.leftTop {
+    position:relative;
+    float:left;
+    width:315px;
+    top:0;
+    left:0;
+    height:30%;
+    border-right:6px solid #ccc;
+    border-bottom:6px solid #ccc;
+}
+.leftBottom {
+    position:relative;
+    float:left;
+    width:315px;
+    bottom:0;
+    left:0;
+    height:70%;
+    border-right:6px solid #ccc;
+    border-top:1px solid #000;
+}
+.rightContainer {
+    position:absolute;
+    left:320px;
+    top:0;
+    bottom:0;
+    height:100%;
+    right:0;
+    border-left:1px solid #000;
+}
+.rightIframe {
+    margin:0;
+    padding:0;
+    height:100%;
+    right:30px;
+    width:100%;
+    overflow:visible;
+    margin-bottom:30px;
 }
