@@ -155,6 +155,9 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   void set_bottom(HeapWord* value);
   void set_end(HeapWord* value);
 
+  void mangle_unused_area() PRODUCT_RETURN;
+  void mangle_unused_area_complete() PRODUCT_RETURN;
+
   HeapWord* scan_top() const;
   void record_timestamp();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
