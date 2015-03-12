@@ -91,6 +91,7 @@ class BoolObjectClosure;
 class ThreadClosure;
 class outputStream;
 class G1StringDedupTable;
+class G1GCPhaseTimes;
 
 //
 // Main interface for interacting with string deduplication.
@@ -131,7 +132,7 @@ public:
   static void oops_do(OopClosure* keep_alive);
   static void unlink(BoolObjectClosure* is_alive);
   static void unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive,
-                                bool allow_resize_and_rehash = true);
+                                bool allow_resize_and_rehash, G1GCPhaseTimes* phase_times = NULL);
 
   static void threads_do(ThreadClosure* tc);
   static void print_worker_threads_on(outputStream* st);
