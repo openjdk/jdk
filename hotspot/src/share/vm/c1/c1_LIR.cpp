@@ -142,15 +142,10 @@ LIR_Address::Scale LIR_Address::scale(BasicType type) {
 
 
 #ifndef PRODUCT
-void LIR_Address::verify() const {
+void LIR_Address::verify0() const {
 #if defined(SPARC) || defined(PPC)
   assert(scale() == times_1, "Scaled addressing mode not available on SPARC/PPC and should not be used");
   assert(disp() == 0 || index()->is_illegal(), "can't have both");
-#endif
-#ifdef ARM
-  assert(disp() == 0 || index()->is_illegal(), "can't have both");
-  // Note: offsets higher than 4096 must not be rejected here. They can
-  // be handled by the back-end or will be rejected if not.
 #endif
 #ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");

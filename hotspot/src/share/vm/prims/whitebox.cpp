@@ -1133,6 +1133,75 @@ WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
   VMThread::execute(&force_safepoint_op);
 WB_END
 
+template <typename T>
+static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jstring name, T* value) {
+  assert(value != NULL, "sanity");
+  if (method == NULL || name == NULL) {
+    return false;
+  }
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, false);
+  methodHandle mh(thread, Method::checked_resolve_jmethod_id(jmid));
+  // can't be in VM when we call JNI
+  ThreadToNativeFromVM ttnfv(thread);
+  const char* flag_name = env->GetStringUTFChars(name, NULL);
+  bool result =  CompilerOracle::has_option_value(mh, flag_name, *value);
+  env->ReleaseStringUTFChars(name, flag_name);
+  return result;
+}
+
+WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+  bool result;
+  if (GetMethodOption<bool> (thread, env, method, name, &result)) {
+    // can't be in VM when we call JNI
+    ThreadToNativeFromVM ttnfv(thread);
+    return booleanBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetMethodIntxOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+  intx result;
+  if (GetMethodOption <intx> (thread, env, method, name, &result)) {
+    // can't be in VM when we call JNI
+    ThreadToNativeFromVM ttnfv(thread);
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetMethodUintxOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+  uintx result;
+  if (GetMethodOption <uintx> (thread, env, method, name, &result)) {
+    // can't be in VM when we call JNI
+    ThreadToNativeFromVM ttnfv(thread);
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetMethodDoubleOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+  double result;
+  if (GetMethodOption <double> (thread, env, method, name, &result)) {
+    // can't be in VM when we call JNI
+    ThreadToNativeFromVM ttnfv(thread);
+    return doubleBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+  ccstr ccstrResult;
+  if (GetMethodOption <ccstr> (thread, env, method, name, &ccstrResult)) {
+    // can't be in VM when we call JNI
+    ThreadToNativeFromVM ttnfv(thread);
+    jstring result = env->NewStringUTF(ccstrResult);
+    CHECK_JNI_EXCEPTION_(env, NULL);
+    return result;
+  }
+  return NULL;
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -1333,6 +1402,21 @@ static JNINativeMethod methods[] = {
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
   {CC"isMonitorInflated",  CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
+  {CC"getMethodBooleanOption",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
+                                                      (void*)&WB_GetMethodBooleaneOption},
+  {CC"getMethodIntxOption",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetMethodIntxOption},
+  {CC"getMethodUintxOption",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetMethodUintxOption},
+  {CC"getMethodDoubleOption",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Double;",
+                                                      (void*)&WB_GetMethodDoubleOption},
+  {CC"getMethodStringOption",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/String;",
+                                                      (void*)&WB_GetMethodStringOption},
 };
 
 #undef CC
