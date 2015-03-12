@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1211,10 +1211,8 @@ public class Attr extends JCTree.Visitor {
                             if (pattype.constValue() == null) {
                                 log.error(c.pat.pos(),
                                           (stringSwitch ? "string.const.req" : "const.expr.req"));
-                            } else if (labels.contains(pattype.constValue())) {
+                            } else if (!labels.add(pattype.constValue())) {
                                 log.error(c.pos(), "duplicate.case.label");
-                            } else {
-                                labels.add(pattype.constValue());
                             }
                         }
                     }
@@ -1251,19 +1249,17 @@ public class Attr extends JCTree.Visitor {
     // where
     /** Return the selected enumeration constant symbol, or null. */
     private Symbol enumConstant(JCTree tree, Type enumType) {
-        if (!tree.hasTag(IDENT)) {
-            log.error(tree.pos(), "enum.label.must.be.unqualified.enum");
-            return syms.errSymbol;
-        }
-        JCIdent ident = (JCIdent)tree;
-        Name name = ident.name;
-        for (Symbol sym : enumType.tsym.members().getSymbolsByName(name)) {
-            if (sym.kind == VAR) {
-                Symbol s = ident.sym = sym;
-                ((VarSymbol)s).getConstValue(); // ensure initializer is evaluated
-                ident.type = s.type;
-                return ((s.flags_field & Flags.ENUM) == 0)
-                    ? null : s;
+        if (tree.hasTag(IDENT)) {
+            JCIdent ident = (JCIdent)tree;
+            Name name = ident.name;
+            for (Symbol sym : enumType.tsym.members().getSymbolsByName(name)) {
+                if (sym.kind == VAR) {
+                    Symbol s = ident.sym = sym;
+                    ((VarSymbol)s).getConstValue(); // ensure initializer is evaluated
+                    ident.type = s.type;
+                    return ((s.flags_field & Flags.ENUM) == 0)
+                        ? null : s;
+                }
             }
         }
         return null;
