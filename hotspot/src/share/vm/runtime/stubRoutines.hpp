@@ -458,4 +458,9 @@ inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
   return StubRoutines::SafeFetchN_stub()(adr, errValue);
 }
 
+
+// returns true if SafeFetch32 and SafeFetchN can be used safely (stubroutines are already generated)
+inline bool CanUseSafeFetch32() { return StubRoutines::SafeFetch32_stub() ? true : false; }
+inline bool CanUseSafeFetchN()  { return StubRoutines::SafeFetchN_stub() ? true : false; }
+
 #endif // SHARE_VM_RUNTIME_STUBROUTINES_HPP
