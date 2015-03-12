@@ -131,11 +131,7 @@ char* SplashGetScaledImageName(const char* jar, const char* file,
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
     *scaleFactor = 1;
     char* scaledFile = nil;
-    __block float screenScaleFactor = 1;
-
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        screenScaleFactor = [SplashNSScreen() backingScaleFactor];
-    }];
+    float screenScaleFactor = 1;
 
     if (screenScaleFactor > 1) {
         NSString *fileName = [NSString stringWithUTF8String: file];

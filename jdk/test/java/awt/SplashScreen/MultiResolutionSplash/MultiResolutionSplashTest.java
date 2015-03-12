@@ -36,7 +36,7 @@ import javax.imageio.ImageIO;
 import sun.java2d.SunGraphics2D;
 
 /**
- * @test
+ * test
  * @bug 8043869
  * @author Alexander Scherbatiy
  * @summary [macosx] java -splash does not honor 2x hi dpi notation for retina
