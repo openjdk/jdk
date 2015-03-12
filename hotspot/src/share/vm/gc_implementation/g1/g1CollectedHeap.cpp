@@ -2206,11 +2206,11 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
   hot_card_cache->drain(worker_i, g1_rem_set(), into_cset_dcq);
 
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  int n_completed_buffers = 0;
+  size_t n_completed_buffers = 0;
   while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
     n_completed_buffers++;
   }
-  g1_policy()->phase_times()->record_update_rs_processed_buffers(worker_i, n_completed_buffers);
+  g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers);
   dcqs.clear_n_completed_buffers();
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
 }
@@ -3751,9 +3751,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
-    int active_workers = workers()->active_workers();
+    uint active_workers = workers()->active_workers();
     double pause_start_sec = os::elapsedTime();
-    g1_policy()->phase_times()->note_gc_start(active_workers);
+    g1_policy()->phase_times()->note_gc_start(active_workers, mark_in_progress());
     log_gc_header();
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
@@ -4486,8 +4486,7 @@ public:
   void work(uint worker_id) {
     if (worker_id >= _n_workers) return;  // no work needed this round
 
-    double start_time_ms = os::elapsedTime() * 1000.0;
-    _g1h->g1_policy()->phase_times()->record_gc_worker_start_time(worker_id, start_time_ms);
+    _g1h->g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::GCWorkerStart, worker_id, os::elapsedTime());
 
     {
       ResourceMark rm;
@@ -4567,10 +4566,11 @@ public:
         double start = os::elapsedTime();
         G1ParEvacuateFollowersClosure evac(_g1h, &pss, _queues, &_terminator);
         evac.do_void();
-        double elapsed_ms = (os::elapsedTime()-start)*1000.0;
-        double term_ms = pss.term_time()*1000.0;
-        _g1h->g1_policy()->phase_times()->add_obj_copy_time(worker_id, elapsed_ms-term_ms);
-        _g1h->g1_policy()->phase_times()->record_termination(worker_id, term_ms, pss.term_attempts());
+        double elapsed_sec = os::elapsedTime() - start;
+        double term_sec = pss.term_time();
+        _g1h->g1_policy()->phase_times()->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_id, elapsed_sec - term_sec);
+        _g1h->g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::Termination, worker_id, term_sec);
+        _g1h->g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::Termination, worker_id, pss.term_attempts());
       }
       _g1h->g1_policy()->record_thread_age_table(pss.age_table());
       _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
@@ -4586,9 +4586,7 @@ public:
       // destructors are executed here and are included as part of the
       // "GC Worker Time".
     }
-
-    double end_time_ms = os::elapsedTime() * 1000.0;
-    _g1h->g1_policy()->phase_times()->record_gc_worker_end_time(worker_id, end_time_ms);
+    _g1h->g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::GCWorkerEnd, worker_id, os::elapsedTime());
   }
 };
 
@@ -4650,27 +4648,20 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
   double obj_copy_time_sec = buf_scan_non_heap_roots.closure_app_seconds()
       + buf_scan_non_heap_weak_roots.closure_app_seconds();
 
-  g1_policy()->phase_times()->record_obj_copy_time(worker_i, obj_copy_time_sec * 1000.0);
+  g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::ObjCopy, worker_i, obj_copy_time_sec);
 
-  double ext_root_time_ms =
-    ((os::elapsedTime() - ext_roots_start) - obj_copy_time_sec) * 1000.0;
-
-  g1_policy()->phase_times()->record_ext_root_scan_time(worker_i, ext_root_time_ms);
+  double ext_root_time_sec = os::elapsedTime() - ext_roots_start - obj_copy_time_sec;
+  g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::ExtRootScan, worker_i, ext_root_time_sec);
 
   // During conc marking we have to filter the per-thread SATB buffers
   // to make sure we remove any oops into the CSet (which will show up
   // as implicitly live).
-  double satb_filtering_ms = 0.0;
-  if (!_process_strong_tasks->is_task_claimed(G1H_PS_filter_satb_buffers)) {
-    if (mark_in_progress()) {
-      double satb_filter_start = os::elapsedTime();
-
+  {
+    G1GCParPhaseTimesTracker x(g1_policy()->phase_times(), G1GCPhaseTimes::SATBFiltering, worker_i);
+    if (!_process_strong_tasks->is_task_claimed(G1H_PS_filter_satb_buffers) && mark_in_progress()) {
       JavaThread::satb_mark_queue_set().filter_thread_buffers();
-
-      satb_filtering_ms = (os::elapsedTime() - satb_filter_start) * 1000.0;
     }
   }
-  g1_policy()->phase_times()->record_satb_filtering_time(worker_i, satb_filtering_ms);
 
   // Now scan the complement of the collection set.
   G1CodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots);
@@ -5073,14 +5064,13 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
   G1RedirtyLoggedCardsTask(DirtyCardQueueSet* queue) : AbstractGangTask("Redirty Cards"), _queue(queue) { }
 
   virtual void work(uint worker_id) {
-    double start_time = os::elapsedTime();
+    G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->g1_policy()->phase_times();
+    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RedirtyCards, worker_id);
 
     RedirtyLoggedCardTableEntryClosure cl;
     _queue->par_apply_closure_to_all_completed_buffers(&cl);
 
-    G1GCPhaseTimes* timer = G1CollectedHeap::heap()->g1_policy()->phase_times();
-    timer->record_redirty_logged_cards_time_ms(worker_id, (os::elapsedTime() - start_time) * 1000.0);
-    timer->record_redirty_logged_cards_processed_cards(worker_id, cl.num_processed());
+    phase_times->record_thread_work_item(G1GCPhaseTimes::RedirtyCards, worker_id, cl.num_processed());
   }
 };
 
@@ -5658,12 +5648,14 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
     // reported parallel time.
   }
 
+  G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
+
   double par_time_ms = (end_par_time_sec - start_par_time_sec) * 1000.0;
-  g1_policy()->phase_times()->record_par_time(par_time_ms);
+  phase_times->record_par_time(par_time_ms);
 
   double code_root_fixup_time_ms =
         (os::elapsedTime() - end_par_time_sec) * 1000.0;
-  g1_policy()->phase_times()->record_code_root_fixup_time(code_root_fixup_time_ms);
+  phase_times->record_code_root_fixup_time(code_root_fixup_time_ms);
 
   set_par_threads(0);
 
@@ -5675,9 +5667,14 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   process_discovered_references(n_workers);
 
   if (G1StringDedup::is_enabled()) {
+    double fixup_start = os::elapsedTime();
+
     G1STWIsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
-    G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive);
+    G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive, true, phase_times);
+
+    double fixup_time_ms = (os::elapsedTime() - fixup_start) * 1000.0;
+    phase_times->record_string_dedup_fixup_time(fixup_time_ms);
   }
 
   _allocator->release_gc_alloc_regions(n_workers, evacuation_info);

@@ -248,9 +248,8 @@ void G1RemSet::scanRS(G1ParPushHeapRSClosure* oc,
   assert(_cards_scanned != NULL, "invariant");
   _cards_scanned[worker_i] = scanRScl.cards_done();
 
-  _g1p->phase_times()->record_scan_rs_time(worker_i, scan_rs_time_sec * 1000.0);
-  _g1p->phase_times()->record_strong_code_root_scan_time(worker_i,
-                                                         scanRScl.strong_code_root_scan_time_sec() * 1000.0);
+  _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
+  _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, scanRScl.strong_code_root_scan_time_sec());
 }
 
 // Closure used for updating RSets and recording references that
@@ -287,13 +286,11 @@ public:
 };
 
 void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i) {
-  double start = os::elapsedTime();
+  G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
   // Apply the given closure to all remaining log entries.
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
 
   _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
-
-  _g1p->phase_times()->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
 }
 
 void G1RemSet::cleanupHRRS() {
