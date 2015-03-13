@@ -161,9 +161,8 @@ public abstract class AbstractJSObject implements JSObject {
      * @return set of property names
      */
     @Override
-    @SuppressWarnings("unchecked")
     public Set<String> keySet() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     /**
@@ -172,9 +171,8 @@ public abstract class AbstractJSObject implements JSObject {
      * @return set of property values.
      */
     @Override
-    @SuppressWarnings("unchecked")
     public Collection<Object> values() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     // JavaScript instanceof check
@@ -249,9 +247,27 @@ public abstract class AbstractJSObject implements JSObject {
      * Returns this object's numeric value.
      *
      * @return this object's numeric value.
+     * @deprecated use {@link #getDefaultValue(Class)} with {@link Number} hint instead.
      */
-    @Override
+    @Override @Deprecated
     public double toNumber() {
         return Double.NaN;
+    }
+
+    /**
+     * When passed an {@link AbstractJSObject}, invokes its {@link #getDefaultValue(Class)} method. When passed any
+     * other {@link JSObject}, it will obtain its {@code [[DefaultValue]]} method as per ECMAScript 5.1 section
+     * 8.6.2.
+     *
+     * @param jsobj the {@link JSObject} whose {@code [[DefaultValue]]} is obtained.
+     * @param hint the type hint. Should be either {@code null}, {@code Number.class} or {@code String.class}.
+     * @return this object's default value.
+     * @throws UnsupportedOperationException if the conversion can't be performed. The engine will convert this
+     * exception into a JavaScript {@code TypeError}.
+     * @deprecated use {@link JSObject#getDefaultValue(Class)} instead.
+     */
+    @Deprecated
+    public static Object getDefaultValue(final JSObject jsobj, final Class<?> hint) {
+        return jsobj.getDefaultValue(hint);
     }
 }

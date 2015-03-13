@@ -833,7 +833,7 @@ public class DocEnv {
         for (String customTag : customTagNames) {
             customTags.append(sep);
             customTags.append(customTag);
-            sep = DocLint.TAGS_SEPARATOR;
+            sep = DocLint.SEPARATOR;
         }
         doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags.toString());
 

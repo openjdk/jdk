@@ -70,6 +70,7 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.MatchingUtils;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
@@ -1431,7 +1432,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return specifiedPackages;
     }
 
-    private static final Pattern allMatches = Pattern.compile(".*");
     public static final Pattern noMatches  = Pattern.compile("(\\P{all})+");
 
     /**
@@ -1440,59 +1440,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * import-style string, return a regex that won't match anything.
      */
     private static Pattern importStringToPattern(String s, Processor p, Log log) {
-        if (isValidImportString(s)) {
-            return validImportStringToPattern(s);
+        if (MatchingUtils.isValidImportString(s)) {
+            return MatchingUtils.validImportStringToPattern(s);
         } else {
             log.warning("proc.malformed.supported.string", s, p.getClass().getName());
             return noMatches; // won't match any valid identifier
-        }
-    }
-
-    /**
-     * Return true if the argument string is a valid import-style
-     * string specifying claimed annotations; return false otherwise.
-     */
-    public static boolean isValidImportString(String s) {
-        if (s.equals("*"))
-            return true;
-
-        boolean valid = true;
-        String t = s;
-        int index = t.indexOf('*');
-
-        if (index != -1) {
-            // '*' must be last character...
-            if (index == t.length() -1) {
-                // ... any and preceding character must be '.'
-                if ( index-1 >= 0 ) {
-                    valid = t.charAt(index-1) == '.';
-                    // Strip off ".*$" for identifier checks
-                    t = t.substring(0, t.length()-2);
-                }
-            } else
-                return false;
-        }
-
-        // Verify string is off the form (javaId \.)+ or javaId
-        if (valid) {
-            String[] javaIds = t.split("\\.", t.length()+2);
-            for(String javaId: javaIds)
-                valid &= SourceVersion.isIdentifier(javaId);
-        }
-        return valid;
-    }
-
-    public static Pattern validImportStringToPattern(String s) {
-        if (s.equals("*")) {
-            return allMatches;
-        } else {
-            String s_prime = s.replace(".", "\\.");
-
-            if (s_prime.endsWith("*")) {
-                s_prime =  s_prime.substring(0, s_prime.length() - 1) + ".+";
-            }
-
-            return Pattern.compile(s_prime);
         }
     }
 
