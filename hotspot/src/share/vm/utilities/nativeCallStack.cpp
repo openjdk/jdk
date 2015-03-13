@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,6 @@ const NativeCallStack NativeCallStack::EMPTY_STACK(0, false);
 
 NativeCallStack::NativeCallStack(int toSkip, bool fillStack) :
   _hash_value(0) {
-
-#if !PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
-  fillStack = false;
-#endif
 
   if (fillStack) {
     os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
@@ -95,11 +91,7 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
   int     offset;
   if (is_empty()) {
     for (int index = 0; index < indent; index ++) out->print(" ");
-#if PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
     out->print("[BOOTSTRAP]");
-#else
-    out->print("[No stack]");
-#endif
   } else {
     for (int frame = 0; frame < NMT_TrackingStackDepth; frame ++) {
       pc = get_frame(frame);
