@@ -90,12 +90,16 @@ endif
 
 ################################################################################
 
+java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
 java.datatransfer_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
 java.datatransfer_COPY := flavormap.properties
 
 ################################################################################
 
-java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-missing,-reference '-Xdoclint/package:java.*,javax.*' 
+java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-missing,-reference '-Xdoclint/package:java.*,javax.*'
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
@@ -336,6 +340,7 @@ jdk.charsets_COPY := .dat
 
 ################################################################################
 
+jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*'
 jdk.compiler_COPY := javax.tools.JavaCompilerTool
 jdk.compiler_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
