@@ -467,6 +467,12 @@ void ClassLoaderData::free_deallocate_list() {
       } else {
         ShouldNotReachHere();
       }
+    } else {
+      // Metadata is alive.
+      // If scratch_class is on stack then it shouldn't be on this list!
+      assert(!m->is_klass() || !((InstanceKlass*)m)->is_scratch_class(),
+             "scratch classes on this list should be dead");
+      // Also should assert that other metadata on the list was found in handles.
     }
   }
 }
@@ -737,10 +743,21 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
-bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure, bool clean_alive) {
+bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
+                                        bool clean_previous_versions) {
+
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
   bool seen_dead_loader = false;
+
+  // Mark metadata seen on the stack only so we can delete unneeded entries.
+  // Only walk all metadata, including the expensive code cache walk, for Full GC
+  // and only if class redefinition and if there's previous versions of
+  // Klasses to delete.
+  bool walk_all_metadata = clean_previous_versions &&
+                           JvmtiExport::has_redefined_a_class() &&
+                           InstanceKlass::has_previous_versions();
+  MetadataOnStackMark md_on_stack(walk_all_metadata);
 
   // Save previous _unloading pointer for CMS which may add to unloading list before
   // purging and we don't want to rewalk the previously unloaded class loader data.
@@ -749,6 +766,11 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure, boo
   data = _head;
   while (data != NULL) {
     if (data->is_alive(is_alive_closure)) {
+      // clean metaspace
+      if (walk_all_metadata) {
+        data->classes_do(InstanceKlass::purge_previous_versions);
+      }
+      data->free_deallocate_list();
       prev = data;
       data = data->next();
       continue;
@@ -770,31 +792,11 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure, boo
     _unloading = dead;
   }
 
-  if (clean_alive) {
-    // Clean previous versions and the deallocate list.
-    ClassLoaderDataGraph::clean_metaspaces();
-  }
-
   if (seen_dead_loader) {
     post_class_unload_events();
   }
 
   return seen_dead_loader;
-}
-
-void ClassLoaderDataGraph::clean_metaspaces() {
-  // mark metadata seen on the stack and code cache so we can delete unneeded entries.
-  bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();
-  MetadataOnStackMark md_on_stack(has_redefined_a_class);
-
-  if (has_redefined_a_class) {
-    for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
-      data->classes_do(InstanceKlass::purge_previous_versions);
-    }
-  }
-
-  // Should purge the previous version before deallocating.
-  free_deallocate_lists();
 }
 
 void ClassLoaderDataGraph::purge() {
@@ -827,12 +829,6 @@ void ClassLoaderDataGraph::post_class_unload_events(void) {
     Tracing::on_unloading_classes();
   }
 #endif
-}
-
-void ClassLoaderDataGraph::free_deallocate_lists() {
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    cld->free_deallocate_list();
-  }
 }
 
 // CDS support
