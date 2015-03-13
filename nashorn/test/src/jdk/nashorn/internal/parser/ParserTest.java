@@ -62,7 +62,6 @@ public class ParserTest {
     @BeforeClass
     public void setupTest() {
         final Options options = new Options("nashorn");
-        options.set("anon.functions", true);
         options.set("parse.only", true);
         options.set("scripting", true);
         options.set("const.as.var", true);
