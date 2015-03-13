@@ -289,7 +289,12 @@ bool AdvancedThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 
 // Create MDO if necessary.
 void AdvancedThresholdPolicy::create_mdo(methodHandle mh, JavaThread* THREAD) {
-  if (mh->is_native() || mh->is_abstract() || mh->is_accessor()) return;
+  if (mh->is_native() ||
+      mh->is_abstract() ||
+      mh->is_accessor() ||
+      mh->is_constant_getter()) {
+    return;
+  }
   if (mh->method_data() == NULL) {
     Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
   }

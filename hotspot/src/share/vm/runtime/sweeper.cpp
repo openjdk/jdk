@@ -724,6 +724,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
 // state of the code cache if it's requested.
 void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
   if (PrintMethodFlushing) {
+    ResourceMark rm;
     stringStream s;
     // Dump code cache state into a buffer before locking the tty,
     // because log_state() will use locks causing lock conflicts.
@@ -741,6 +742,7 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
   }
 
   if (LogCompilation && (xtty != NULL)) {
+    ResourceMark rm;
     stringStream s;
     // Dump code cache state into a buffer before locking the tty,
     // because log_state() will use locks causing lock conflicts.

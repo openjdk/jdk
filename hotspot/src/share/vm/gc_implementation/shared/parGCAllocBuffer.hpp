@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,37 +24,43 @@
 
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
-#include "gc_interface/collectedHeap.hpp"
+
+#include "gc_implementation/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
-#include "memory/blockOffsetTable.hpp"
-#include "memory/threadLocalAllocBuffer.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// Forward decl.
-
+// Forward declarations.
 class PLABStats;
 
 // A per-thread allocation buffer used during GC.
 class ParGCAllocBuffer: public CHeapObj<mtGC> {
 protected:
-  char head[32];
-  size_t _word_sz;          // in HeapWord units
+  char      head[32];
+  size_t    _word_sz;          // In HeapWord units
   HeapWord* _bottom;
   HeapWord* _top;
-  HeapWord* _end;       // last allocatable address + 1
-  HeapWord* _hard_end;  // _end + AlignmentReserve
-  bool      _retained;  // whether we hold a _retained_filler
-  MemRegion _retained_filler;
+  HeapWord* _end;           // Last allocatable address + 1
+  HeapWord* _hard_end;      // _end + AlignmentReserve
   // In support of ergonomic sizing of PLAB's
   size_t    _allocated;     // in HeapWord units
   size_t    _wasted;        // in HeapWord units
-  char tail[32];
-  static size_t FillerHeaderSize;
+  char      tail[32];
   static size_t AlignmentReserve;
 
-  // Flush the stats supporting ergonomic sizing of PLAB's
-  // Should not be called directly
-  void flush_stats(PLABStats* stats);
+  // Force future allocations to fail and queries for contains()
+  // to return false. Returns the amount of unused space in this PLAB.
+  size_t invalidate() {
+    _end    = _hard_end;
+    size_t remaining = pointer_delta(_end, _top);  // Calculate remaining space.
+    _top    = _end;      // Force future allocations to fail.
+    _bottom = _end;      // Force future contains() queries to return false.
+    return remaining;
+  }
+
+  // Fill in remaining space with a dummy object and invalidate the PLAB. Returns
+  // the amount of remaining space.
+  size_t retire_internal();
 
 public:
   // Initializes the buffer to be empty, but with the given "word_sz".
@@ -62,14 +68,10 @@ public:
   ParGCAllocBuffer(size_t word_sz);
   virtual ~ParGCAllocBuffer() {}
 
-  static const size_t min_size() {
-    // Make sure that we return something that is larger than AlignmentReserve
-    return align_object_size(MAX2(MinTLABSize / HeapWordSize, (uintx)oopDesc::header_size())) + AlignmentReserve;
-  }
-
-  static const size_t max_size() {
-    return ThreadLocalAllocBuffer::max_size();
-  }
+  // Minimum PLAB size.
+  static size_t min_size();
+  // Maximum PLAB size.
+  static size_t max_size();
 
   // If an allocation of the given "word_sz" can be satisfied within the
   // buffer, do the allocation, returning a pointer to the start of the
@@ -128,62 +130,37 @@ public:
     _allocated += word_sz();
   }
 
-  // Flush the stats supporting ergonomic sizing of PLAB's
-  // and retire the current buffer.
-  void flush_stats_and_retire(PLABStats* stats, bool end_of_gc, bool retain) {
-    // We flush the stats first in order to get a reading of
-    // unused space in the last buffer.
-    if (ResizePLAB) {
-      flush_stats(stats);
+  // Flush allocation statistics into the given PLABStats supporting ergonomic
+  // sizing of PLAB's and retire the current buffer. To be called at the end of
+  // GC.
+  void flush_and_retire_stats(PLABStats* stats);
 
-      // Since we have flushed the stats we need to clear
-      // the _allocated and _wasted fields. Not doing so
-      // will artifically inflate the values in the stats
-      // to which we add them.
-      // The next time we flush these values, we will add
-      // what we have just flushed in addition to the size
-      // of the buffers allocated between now and then.
-      _allocated = 0;
-      _wasted = 0;
-    }
-    // Retire the last allocation buffer.
-    retire(end_of_gc, retain);
-  }
-
-  // Force future allocations to fail and queries for contains()
-  // to return false
-  void invalidate() {
-    assert(!_retained, "Shouldn't retain an invalidated buffer.");
-    _end    = _hard_end;
-    _wasted += pointer_delta(_end, _top);  // unused  space
-    _top    = _end;      // force future allocations to fail
-    _bottom = _end;      // force future contains() queries to return false
-  }
-
-  // Fills in the unallocated portion of the buffer with a garbage object.
-  // If "end_of_gc" is TRUE, is after the last use in the GC.  IF "retain"
-  // is true, attempt to re-use the unused portion in the next GC.
-  virtual void retire(bool end_of_gc, bool retain);
+  // Fills in the unallocated portion of the buffer with a garbage object and updates
+  // statistics. To be called during GC.
+  virtual void retire();
 
   void print() PRODUCT_RETURN;
 };
 
-// PLAB stats book-keeping
+// PLAB book-keeping.
 class PLABStats VALUE_OBJ_CLASS_SPEC {
-  size_t _allocated;      // total allocated
+  size_t _allocated;      // Total allocated
   size_t _wasted;         // of which wasted (internal fragmentation)
   size_t _unused;         // Unused in last buffer
-  size_t _used;           // derived = allocated - wasted - unused
-  size_t _desired_plab_sz;// output of filter (below), suitably trimmed and quantized
+  size_t _desired_plab_sz;// Output of filter (below), suitably trimmed and quantized
   AdaptiveWeightedAverage
-         _filter;         // integrator with decay
+         _filter;         // Integrator with decay
 
+  void reset() {
+    _allocated = 0;
+    _wasted    = 0;
+    _unused    = 0;
+  }
  public:
   PLABStats(size_t desired_plab_sz_, unsigned wt) :
     _allocated(0),
     _wasted(0),
     _unused(0),
-    _used(0),
     _desired_plab_sz(desired_plab_sz_),
     _filter(wt)
   { }
@@ -200,9 +177,9 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     return _desired_plab_sz;
   }
 
+  // Updates the current desired PLAB size. Computes the new desired PLAB size,
+  // updates _desired_plab_sz and clears sensor accumulators.
   void adjust_desired_plab_sz(uint no_of_gc_workers);
-                                 // filter computation, latches output to
-                                 // _desired_plab_sz, clears sensor accumulators
 
   void add_allocated(size_t v) {
     Atomic::add_ptr(v, &_allocated);

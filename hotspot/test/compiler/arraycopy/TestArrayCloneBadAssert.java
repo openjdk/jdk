@@ -19,40 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/**
+/*
  * @test
- * @bug 8072753
- * @summary Inner loop induction variable increment occurs before compare which causes integer overflow
- * @run main/othervm CountedLoopProblem
+ * @bug 8073792
+ * @summary assert broken when array size becomes known during igvn
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestArrayCloneBadAssert.m TestArrayCloneBadAssert
  *
  */
 
-import java.util.*;
+public class TestArrayCloneBadAssert {
 
-public class CountedLoopProblem {
-    public static void main(String[] args) throws Exception {
-        Random r = new Random(42);
-        int x = 0;
-        try {
-            StringBuilder sb = new StringBuilder();
-            for(int i = 0; i < 1000000; ++i) {
-                int v = Math.abs(r.nextInt());
-                sb.append('+').append(v).append('\n');
-                x += v;
-                // To trigger the problem we must OSR in the following loop
-                // To make the problem 100% reproducible run with -XX:-TieredCompilation -XX:OSROnlyBCI=62
-                while(x < 0) x += 1000000000;
-                sb.append('=').append(x).append('\n');
-            }
-            if (sb.toString().hashCode() != 0xaba94591) {
-                throw new Exception("Unexpected result");
-            }
-        } catch(OutOfMemoryError e) {
-            // small heap, ignore
+    static final int[] array = new int[5];
+
+    static int[] m(int[] arr) {
+        int i = 0;
+        for (; i < 2; i++) {
         }
+        if (i == 2) {
+            arr = array;
+        }
+        return arr.clone();
+    }
+
+    static public void main(String[] args) {
+        int[] arr = new int[5];
+        m(arr);
     }
 }
-

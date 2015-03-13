@@ -114,7 +114,9 @@ needs_jre = \
   compiler/c2/7047069/Test7047069.java \
   runtime/6294277/SourceDebugExtension.java \
   runtime/ClassFile/JsrRewriting.java \
-  runtime/ClassFile/OomWhileParsingRepeatedJsr.java
+  runtime/ClassFile/OomWhileParsingRepeatedJsr.java \
+  runtime/SharedArchiveFile/LimitSharedSizes.java \
+  runtime/SharedArchiveFile/SpaceUtilizationCheck.java
 
 # Compact 3 adds further tests to compact2
 #
@@ -387,35 +389,7 @@ hotspot_compiler_3 = \
   -compiler/runtime/6826736
 
 hotspot_compiler_closed = \
-  closed/compiler/c1/ \
-  closed/compiler/c2/ \
-  closed/compiler/codegen/ \
-  closed/compiler/escapeAnalysis/ \
-  closed/compiler/interpreter/ \
-  closed/compiler/jsr292/ \
-  closed/compiler/loopopts/ \
-  closed/compiler/oracle/ \
-  closed/compiler/runtime/ \
-  closed/compiler/symantec/ \
-  -closed/compiler/c1/4477197 \
-  -closed/compiler/c1/5040872 \
-  -closed/compiler/c1/6507107 \
-  -closed/compiler/c2/4344895 \
-  -closed/compiler/c2/4485006 \
-  -closed/compiler/c2/4523683 \
-  -closed/compiler/c2/4620290 \
-  -closed/compiler/c2/4998314 \
-  -closed/compiler/c2/6329104 \
-  -closed/compiler/c2/6434117 \
-  -closed/compiler/c2/6547163 \
-  -closed/compiler/c2/6563987 \
-  -closed/compiler/c2/6595044 \
-  -closed/compiler/codegen/6440479 \
-  -closed/compiler/codegen/6603011 \
-  -closed/compiler/interpreter/5034475 \
-  -closed/compiler/jsr292/LongLambdaFormDynamicStackDepth.java \
-  -closed/compiler/loopopts/4463485 \
-  -closed/compiler/loopopts/8021898
+  sanity/ExecuteInternalVMTests.java
 
 hotspot_gc = \
   sanity/ExecuteInternalVMTests.java \

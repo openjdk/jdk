@@ -37,10 +37,6 @@ class Generation;
 class ModRefBarrierSet: public BarrierSet {
 public:
 
-  bool is_a(BarrierSet::Name bsn) {
-    return bsn == BarrierSet::ModRef;
-  }
-
   // Barriers only on ref writes.
   bool has_read_ref_barrier() { return false; }
   bool has_read_prim_barrier() { return false; }
@@ -60,7 +56,8 @@ public:
 
 protected:
 
-  ModRefBarrierSet(BarrierSet::Name kind) : BarrierSet(kind) { }
+  ModRefBarrierSet(const BarrierSet::FakeRtti& fake_rtti)
+    : BarrierSet(fake_rtti.add_tag(BarrierSet::ModRef)) { }
   ~ModRefBarrierSet() { }
 
   virtual void write_ref_field_work(void* field, oop new_val, bool release = false) = 0;
@@ -98,6 +95,11 @@ public:
   // The caller guarantees that "mr" contains no references.  (Perhaps it's
   // objects have been moved elsewhere.)
   virtual void clear(MemRegion mr) = 0;
+};
+
+template<>
+struct BarrierSet::GetName<ModRefBarrierSet> {
+  static const BarrierSet::Name value = BarrierSet::ModRef;
 };
 
 #endif // SHARE_VM_MEMORY_MODREFBARRIERSET_HPP

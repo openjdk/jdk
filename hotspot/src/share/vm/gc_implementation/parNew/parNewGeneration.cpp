@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
     if (word_sz * 100 <
         ParallelGCBufferWastePct * plab->word_sz()) {
       // Is small enough; abandon this buffer and start a new one.
-      plab->retire(false, false);
+      plab->retire();
       size_t buf_size = plab->word_sz();
       HeapWord* buf_space = sp->par_allocate(buf_size);
       if (buf_space == NULL) {
@@ -463,10 +463,7 @@ void ParScanThreadStateSet::flush()
 
     // Flush stats related to To-space PLAB activity and
     // retire the last buffer.
-    par_scan_state.to_space_alloc_buffer()->
-      flush_stats_and_retire(_gen.plab_stats(),
-                             true /* end_of_gc */,
-                             false /* retain */);
+    par_scan_state.to_space_alloc_buffer()->flush_and_retire_stats(_gen.plab_stats());
 
     // Every thread has its own age table.  We need to merge
     // them all into one.
