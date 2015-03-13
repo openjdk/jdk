@@ -86,9 +86,6 @@ public class GenerateEnumSchema {
 
     private static String getSchemagen() {
         String javaHome = System.getProperty("java.home");
-        if (javaHome.endsWith("jre")) {
-            javaHome = new File(javaHome).getParent();
-        }
         String schemagen = javaHome + File.separator + "bin" + File.separator + "schemagen";
         if (System.getProperty("os.name").startsWith("Windows")) {
             schemagen = schemagen.concat(".exe");
