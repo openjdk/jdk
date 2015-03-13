@@ -24,35 +24,23 @@
 
 /**
  * @test
- * @bug 8072753
- * @summary Inner loop induction variable increment occurs before compare which causes integer overflow
- * @run main/othervm CountedLoopProblem
+ * @bug 8073184
+ * @summary CastII that guards counted loops confuses range check elimination with LoopLimitCheck off
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-LoopLimitCheck -XX:CompileOnly=TestCastIINoLoopLimitCheck.m -Xcomp  TestCastIINoLoopLimitCheck
  *
  */
 
-import java.util.*;
+public class TestCastIINoLoopLimitCheck {
 
-public class CountedLoopProblem {
-    public static void main(String[] args) throws Exception {
-        Random r = new Random(42);
-        int x = 0;
-        try {
-            StringBuilder sb = new StringBuilder();
-            for(int i = 0; i < 1000000; ++i) {
-                int v = Math.abs(r.nextInt());
-                sb.append('+').append(v).append('\n');
-                x += v;
-                // To trigger the problem we must OSR in the following loop
-                // To make the problem 100% reproducible run with -XX:-TieredCompilation -XX:OSROnlyBCI=62
-                while(x < 0) x += 1000000000;
-                sb.append('=').append(x).append('\n');
-            }
-            if (sb.toString().hashCode() != 0xaba94591) {
-                throw new Exception("Unexpected result");
-            }
-        } catch(OutOfMemoryError e) {
-            // small heap, ignore
+    static void m(int i, int index, char[] buf) {
+        while (i >= 65536) {
+            i = i / 100;
+            buf [--index] = 0;
+            buf [--index] = 1;
         }
     }
-}
 
+    static public void main(String[] args) {
+        m(0, 0, null);
+    }
+}

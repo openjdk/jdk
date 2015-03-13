@@ -43,7 +43,7 @@ protected:
     g1_young_gen = CT_MR_BS_last_reserved << 1
   };
 
-  G1SATBCardTableModRefBS(MemRegion whole_heap, BarrierSet::Name kind);
+  G1SATBCardTableModRefBS(MemRegion whole_heap, const BarrierSet::FakeRtti& fake_rtti);
   ~G1SATBCardTableModRefBS() { }
 
 public:
@@ -52,10 +52,6 @@ public:
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);
-
-  bool is_a(BarrierSet::Name bsn) {
-    return bsn == BarrierSet::G1SATBCT || CardTableModRefBS::is_a(bsn);
-  }
 
   virtual bool has_write_ref_pre_barrier() { return true; }
 
@@ -128,6 +124,11 @@ public:
   }
 };
 
+template<>
+struct BarrierSet::GetName<G1SATBCardTableModRefBS> {
+  static const BarrierSet::Name value = BarrierSet::G1SATBCT;
+};
+
 class G1SATBCardTableLoggingModRefBSChangedListener : public G1MappingChangedListener {
  private:
   G1SATBCardTableLoggingModRefBS* _card_table;
@@ -159,11 +160,6 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 
   virtual void resize_covered_region(MemRegion new_region) { ShouldNotReachHere(); }
 
-  bool is_a(BarrierSet::Name bsn) {
-    return bsn == BarrierSet::G1SATBCTLogging ||
-      G1SATBCardTableModRefBS::is_a(bsn);
-  }
-
   void write_ref_field_work(void* field, oop new_val, bool release = false);
 
   // Can be called from static contexts.
@@ -175,6 +171,11 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 
   void write_region_work(MemRegion mr)    { invalidate(mr); }
   void write_ref_array_work(MemRegion mr) { invalidate(mr); }
+};
+
+template<>
+struct BarrierSet::GetName<G1SATBCardTableLoggingModRefBS> {
+  static const BarrierSet::Name value = BarrierSet::G1SATBCTLogging;
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP

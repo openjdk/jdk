@@ -360,7 +360,7 @@ CodeBlob* CodeCache::next_blob(CodeBlob* cb) {
  * run the constructor for the CodeBlob subclass he is busy
  * instantiating.
  */
-CodeBlob* CodeCache::allocate(int size, int code_blob_type) {
+CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool strict) {
   // Possibly wakes up the sweeper thread.
   NMethodSweeper::notify(code_blob_type);
   assert_locked_or_safepoint(CodeCache_lock);
@@ -379,11 +379,28 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type) {
     if (cb != NULL) break;
     if (!heap->expand_by(CodeCacheExpansionSize)) {
       // Expansion failed
-      if (SegmentedCodeCache && (code_blob_type == CodeBlobType::NonNMethod)) {
-        // Fallback solution: Store non-nmethod code in the non-profiled code heap.
-        // Note that at in the sweeper, we check the reverse_free_ratio of the non-profiled
-        // code heap and force stack scanning if less than 10% if the code heap are free.
-        return allocate(size, CodeBlobType::MethodNonProfiled);
+      if (SegmentedCodeCache && !strict) {
+        // Fallback solution: Try to store code in another code heap.
+        // Note that in the sweeper, we check the reverse_free_ratio of the code heap
+        // and force stack scanning if less than 10% of the code heap are free.
+        int type = code_blob_type;
+        switch (type) {
+        case CodeBlobType::NonNMethod:
+          type = CodeBlobType::MethodNonProfiled;
+          strict = false;   // Allow recursive search for other heaps
+          break;
+        case CodeBlobType::MethodProfiled:
+          type = CodeBlobType::MethodNonProfiled;
+          strict = true;
+          break;
+        case CodeBlobType::MethodNonProfiled:
+          type = CodeBlobType::MethodProfiled;
+          strict = true;
+          break;
+        }
+        if (heap_available(type)) {
+          return allocate(size, type, strict);
+        }
       }
       MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       CompileBroker::handle_full_code_cache(code_blob_type);

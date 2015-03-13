@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,8 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
   Universe::heap()->barrier_set()->resize_covered_region(cmr);
 
-  CardTableModRefBS* _ct = (CardTableModRefBS*)Universe::heap()->barrier_set();
-  assert (_ct->kind() == BarrierSet::CardTableModRef, "Sanity");
+  CardTableModRefBS* _ct =
+    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
 
   // Verify that the start and end of this generation is the start of a card.
   // If this wasn't true, a single card could span more than one generation,
