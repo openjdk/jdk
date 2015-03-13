@@ -34,6 +34,7 @@ import java.util.Map;
 import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
@@ -59,9 +60,11 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
     /** Method emitter stack - every time we start a sub method (e.g. a split) we push one */
     private final Deque<MethodEmitter> methodEmitters = new ArrayDeque<>();
 
-    /** The discard stack - whenever we enter a discard node we keep track of its return value status -
-     *  i.e. should we keep it or throw it away */
-    private final Deque<Node> discard = new ArrayDeque<>();
+    /** The discard stack - whenever we evaluate an expression that will be discarded, we push it on this stack. Various
+     * implementations of expression code emitter can choose to emit code that'll discard the expression themselves, or
+     * ignore it in which case CodeGenerator.loadAndDiscard() will explicitly emit a pop instruction. */
+    private final Deque<Expression> discard = new ArrayDeque<>();
+
 
     private final Deque<Map<String, Collection<Label>>> unwarrantedOptimismHandlers = new ArrayDeque<>();
     private final Deque<StringBuilder> slotTypesDescriptors = new ArrayDeque<>();
@@ -270,16 +273,20 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         }
     }
 
-    void pushDiscard(final Node node) {
-        discard.push(node);
+    void pushDiscard(final Expression expr) {
+        discard.push(expr);
     }
 
-    Node popDiscard() {
-        return discard.pop();
+    boolean popDiscardIfCurrent(final Expression expr) {
+        if (isCurrentDiscard(expr)) {
+            discard.pop();
+            return true;
+        }
+        return false;
     }
 
-    Node getCurrentDiscard() {
-        return discard.peek();
+    boolean isCurrentDiscard(final Expression expr) {
+        return discard.peek() == expr;
     }
 
     int quickSlot(final Type type) {
