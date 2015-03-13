@@ -2942,7 +2942,7 @@ public class Attr extends JCTree.Visitor {
     public void visitBinary(JCBinary tree) {
         // Attribute arguments.
         Type left = chk.checkNonVoid(tree.lhs.pos(), attribExpr(tree.lhs, env));
-        Type right = chk.checkNonVoid(tree.lhs.pos(), attribExpr(tree.rhs, env));
+        Type right = chk.checkNonVoid(tree.rhs.pos(), attribExpr(tree.rhs, env));
         // Find operator.
         Symbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag(), left, right);
         Type owntype = types.createErrorType(tree.type);
