@@ -60,7 +60,7 @@ WINDOWS_SHOWINCLUDE_SED_PATTERN := \
     -e 's|Note: including file: *||' \
     -e 's|\\|/|g' \
     -e 's|^\([a-zA-Z]\):|$(UNIX_PATH_PREFIX)/\1|g' \
-    -e '/$(subst /,\/,$(TOPDIR))/!d' \
+    -e '\|$(TOPDIR)|I !d' \
     -e 's|$$$$| \\|g' \
     #
 
@@ -153,7 +153,7 @@ define add_native_source
 	      exit `cat $$($1_$2_DEP).exitvalue`
 	  $(RM) $$($1_$2_DEP).exitvalue
 	  ($(ECHO) $$@: \\ \
-	  && $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_DEP).raw) > $$($1_$2_DEP)
+	  && $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_DEP).raw) | $(SORT) -u > $$($1_$2_DEP)
         endif
         # Create a dependency target file from the dependency file.
         # Solution suggested by http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
