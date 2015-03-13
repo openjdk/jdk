@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -219,6 +219,9 @@ define SetupJVMTIDemo
   # Param 7 = libs for solaris
   # Param 8 = libs for linux
   # Param 9 = extra directories with required sources
+  # Param 10 = DISABLED_WARNINGS_gcc
+  # Param 11 = DISABLED_WARNINGS_microsoft
+  # Param 12 = DISABLED_WARNINGS_clang
   BUILD_DEMO_JVMTI_$1_EXTRA_SRC := \
       $$(wildcard $(DEMO_OS_TYPE_SRC)/jvmti/$1) \
       $$(wildcard $$(addprefix $(DEMO_SHARE_SRC)/jvmti/, $2)) \
@@ -254,6 +257,9 @@ define SetupJVMTIDemo
       LANG := $$(BUILD_DEMO_JVMTI_$1_LANG), \
       OPTIMIZATION := LOW, \
       CXXFLAGS := $$($1_CXXFLAGS), \
+      DISABLED_WARNINGS_gcc := $(10), \
+      DISABLED_WARNINGS_clang := $(12), \
+      DISABLED_WARNINGS_microsoft := $(11), \
       LDFLAGS := $(filter-out -incremental:no -opt:ref, $(LDFLAGS_JDKLIB)), \
       LDFLAGS_macosx := $(call SET_EXECUTABLE_ORIGIN), \
       LDFLAGS_SUFFIX := $$($1_EXTRA_CXX), \
