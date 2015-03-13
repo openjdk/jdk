@@ -142,14 +142,11 @@ void VM_RedefineClasses::doit() {
 
   for (int i = 0; i < _class_count; i++) {
     redefine_single_class(_class_defs[i].klass, _scratch_classes[i], thread);
-    ClassLoaderData* cld = _scratch_classes[i]->class_loader_data();
-    // Free the memory for this class at class unloading time.  Not before
-    // because CMS might think this is still live.
-    cld->add_to_deallocate_list((InstanceKlass*)_scratch_classes[i]);
-    _scratch_classes[i] = NULL;
   }
 
   // Clean out MethodData pointing to old Method*
+  // Have to do this after all classes are redefined and all methods that
+  // are redefined are marked as old.
   MethodDataCleaner clean_weak_method_links;
   ClassLoaderDataGraph::classes_do(&clean_weak_method_links);
 
