@@ -4416,11 +4416,11 @@ operand immF() %{
   interface(CONST_INTER);
 %}
 
-// constant 'float +0.0'.
+// Float Immediate: +0.0f.
 operand immF_0() %{
-  predicate((n->getf() == 0) &&
-            (fpclassify(n->getf()) == FP_ZERO) && (signbit(n->getf()) == 0));
+  predicate(jint_cast(n->getf()) == 0);
   match(ConF);
+
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
