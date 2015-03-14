@@ -2902,18 +2902,13 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     // }
 
     assert(stackmap_p + 1 <= stackmap_end, "no room for frame_type");
-    // The Linux compiler does not like frame_type to be u1 or u2. It
-    // issues the following warning for the first if-statement below:
-    //
-    // "warning: comparison is always true due to limited range of data type"
-    //
-    u4 frame_type = *stackmap_p;
+    u1 frame_type = *stackmap_p;
     stackmap_p++;
 
     // same_frame {
     //   u1 frame_type = SAME; /* 0-63 */
     // }
-    if (frame_type >= 0 && frame_type <= 63) {
+    if (frame_type <= 63) {
       // nothing more to do for same_frame
     }
 

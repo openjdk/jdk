@@ -41,14 +41,6 @@
 #include <wchar.h>
 
 #include <math.h>
-#ifndef FP_PZERO
-// Linux doesn't have positive/negative zero
-#define FP_PZERO FP_ZERO
-#endif
-#if (!defined fpclass)
-#define fpclass fpclassify
-#endif
-
 #include <time.h>
 #include <fcntl.h>
 #include <dlfcn.h>
