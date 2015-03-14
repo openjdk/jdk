@@ -2170,12 +2170,13 @@ void ConcurrentMark::completeCleanup() {
         g1h->secondary_free_list_add(&tmp_free_list);
         SecondaryFreeList_lock->notify_all();
       }
-
+#ifndef PRODUCT
       if (G1StressConcRegionFreeing) {
         for (uintx i = 0; i < G1StressConcRegionFreeingDelayMillis; ++i) {
           os::sleep(Thread::current(), (jlong) 1, false);
         }
       }
+#endif
     }
   }
   assert(tmp_free_list.is_empty(), "post-condition");
