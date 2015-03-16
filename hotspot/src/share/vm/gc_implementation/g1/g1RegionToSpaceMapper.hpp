@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,9 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   void fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled);
  public:
   MemRegion reserved() { return _storage.reserved(); }
+
+  size_t reserved_size() { return _storage.reserved_size(); }
+  size_t committed_size() { return _storage.committed_size(); }
 
   void set_mapping_changed_listener(G1MappingChangedListener* listener) { _listener = listener; }
 

@@ -295,6 +295,12 @@ WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   return hr->is_humongous();
 WB_END
 
+WB_ENTRY(jlong, WB_G1NumMaxRegions(JNIEnv* env, jobject o))
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  size_t nr = g1->max_regions();
+  return (jlong)nr;
+WB_END
+
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   size_t nr = g1->num_free_regions();
@@ -317,6 +323,14 @@ WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
   return (jint)HeapRegion::GrainBytes;
+WB_END
+
+WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
+  ResourceMark rm(THREAD);
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  MemoryUsage usage = g1h->get_auxiliary_data_memory_usage();
+  Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
+  return JNIHandles::make_local(env, h());
 WB_END
 #endif // INCLUDE_ALL_GCS
 
@@ -1240,9 +1254,12 @@ static JNINativeMethod methods[] = {
 #if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
+  {CC"g1NumMaxRegions",    CC"()J",                   (void*)&WB_G1NumMaxRegions  },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
   {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
+  {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
+                                                      (void*)&WB_G1AuxiliaryMemoryUsage  },
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
