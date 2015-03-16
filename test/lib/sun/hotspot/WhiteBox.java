@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package sun.hotspot;
 
+import java.lang.management.MemoryUsage;
 import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.List;
@@ -94,8 +95,10 @@ public class WhiteBox {
   // G1
   public native boolean g1InConcurrentMark();
   public native boolean g1IsHumongous(Object o);
+  public native long    g1NumMaxRegions();
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
+  public native MemoryUsage g1AuxiliaryMemoryUsage();
   public native Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args);
 
   // NMT
