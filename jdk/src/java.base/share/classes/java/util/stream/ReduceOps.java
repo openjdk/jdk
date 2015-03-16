@@ -414,7 +414,7 @@ final class ReduceOps {
      */
     public static TerminalOp<Integer, Long>
     makeIntCounting() {
-        return new ReduceOp<Integer, Long, CountingSink<Integer>>(StreamShape.REFERENCE) {
+        return new ReduceOp<Integer, Long, CountingSink<Integer>>(StreamShape.INT_VALUE) {
             @Override
             public CountingSink<Integer> makeSink() { return new CountingSink.OfInt(); }
 
@@ -583,7 +583,7 @@ final class ReduceOps {
      */
     public static TerminalOp<Long, Long>
     makeLongCounting() {
-        return new ReduceOp<Long, Long, CountingSink<Long>>(StreamShape.REFERENCE) {
+        return new ReduceOp<Long, Long, CountingSink<Long>>(StreamShape.LONG_VALUE) {
             @Override
             public CountingSink<Long> makeSink() { return new CountingSink.OfLong(); }
 
@@ -752,7 +752,7 @@ final class ReduceOps {
      */
     public static TerminalOp<Double, Long>
     makeDoubleCounting() {
-        return new ReduceOp<Double, Long, CountingSink<Double>>(StreamShape.REFERENCE) {
+        return new ReduceOp<Double, Long, CountingSink<Double>>(StreamShape.DOUBLE_VALUE) {
             @Override
             public CountingSink<Double> makeSink() { return new CountingSink.OfDouble(); }
 
