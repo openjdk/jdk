@@ -1118,6 +1118,10 @@ public:
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm.num_free_regions(); }
 
+  MemoryUsage get_auxiliary_data_memory_usage() const {
+    return _hrm.get_auxiliary_data_memory_usage();
+  }
+
   // The number of regions that are not completely free.
   uint num_used_regions() const { return num_regions() - num_free_regions(); }
 

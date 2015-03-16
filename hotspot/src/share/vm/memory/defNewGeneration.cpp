@@ -226,7 +226,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 
   compute_space_boundaries(0, SpaceDecorator::Clear, SpaceDecorator::Mangle);
   update_counters();
-  _next_gen = NULL;
+  _old_gen = NULL;
   _tenuring_threshold = MaxTenuringThreshold;
   _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
@@ -383,8 +383,8 @@ void DefNewGeneration::compute_new_size() {
   assert(next_level < gch->_n_gens,
          "DefNewGeneration cannot be an oldest gen");
 
-  Generation* next_gen = gch->get_gen(next_level);
-  size_t old_size = next_gen->capacity();
+  Generation* old_gen = gch->old_gen();
+  size_t old_size = old_gen->capacity();
   size_t new_size_before = _virtual_space.committed_size();
   size_t min_new_size = spec()->init_size();
   size_t max_new_size = reserved().byte_size();
@@ -568,7 +568,7 @@ void DefNewGeneration::collect(bool   full,
   DefNewTracer gc_tracer;
   gc_tracer.report_gc_start(gch->gc_cause(), _gc_timer->gc_start());
 
-  _next_gen = gch->next_gen(this);
+  _old_gen = gch->old_gen();
 
   // If the next generation is too full to accommodate promotion
   // from this generation, pass on collection; let the next generation
@@ -688,7 +688,7 @@ void DefNewGeneration::collect(bool   full,
     gch->set_incremental_collection_failed();
 
     // Inform the next generation that a promotion failure occurred.
-    _next_gen->promotion_failure_occurred();
+    _old_gen->promotion_failure_occurred();
     gc_tracer.report_promotion_failed(_promotion_failed_info);
 
     // Reset the PromotionFailureALot counters.
@@ -793,7 +793,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
   // Otherwise try allocating obj tenured
   if (obj == NULL) {
-    obj = _next_gen->promote(old, s);
+    obj = _old_gen->promote(old, s);
     if (obj == NULL) {
       handle_promotion_failure(old);
       return old;
@@ -898,11 +898,11 @@ bool DefNewGeneration::collection_attempt_is_safe() {
     }
     return false;
   }
-  if (_next_gen == NULL) {
+  if (_old_gen == NULL) {
     GenCollectedHeap* gch = GenCollectedHeap::heap();
-    _next_gen = gch->next_gen(this);
+    _old_gen = gch->old_gen();
   }
-  return _next_gen->promotion_attempt_is_safe(used());
+  return _old_gen->promotion_attempt_is_safe(used());
 }
 
 void DefNewGeneration::gc_epilogue(bool full) {
@@ -1022,8 +1022,7 @@ CompactibleSpace* DefNewGeneration::first_compaction_space() const {
   return eden();
 }
 
-HeapWord* DefNewGeneration::allocate(size_t word_size,
-                                     bool is_tlab) {
+HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
   // We try to allocate from the eden.  If that works, we are happy.
@@ -1031,8 +1030,8 @@ HeapWord* DefNewGeneration::allocate(size_t word_size,
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
   if (result != NULL) {
-    if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
-      _next_gen->sample_eden_chunk();
+    if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
+      _old_gen->sample_eden_chunk();
     }
   } else {
     // If the eden is full and the last collection bailed out, we are running
@@ -1047,8 +1046,8 @@ HeapWord* DefNewGeneration::allocate(size_t word_size,
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
   HeapWord* res = eden()->par_allocate(word_size);
-  if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
-    _next_gen->sample_eden_chunk();
+  if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
+    _old_gen->sample_eden_chunk();
   }
   return res;
 }

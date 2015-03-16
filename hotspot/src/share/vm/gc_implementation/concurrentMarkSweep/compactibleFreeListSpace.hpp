@@ -396,6 +396,10 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Resizing support
   void set_end(HeapWord* value);  // override
 
+  // Never mangle CompactibleFreeListSpace
+  void mangle_unused_area() {}
+  void mangle_unused_area_complete() {}
+
   // Mutual exclusion support
   Mutex* freelistLock() const { return &_freelistLock; }
 

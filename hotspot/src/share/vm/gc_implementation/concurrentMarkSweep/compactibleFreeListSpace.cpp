@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ HeapWord* CompactibleFreeListSpace::forward(oop q, size_t size,
       cp->space->set_compaction_top(compact_top);
       cp->space = cp->space->next_compaction_space();
       if (cp->space == NULL) {
-        cp->gen = GenCollectedHeap::heap()->prev_gen(cp->gen);
+        cp->gen = GenCollectedHeap::heap()->young_gen();
         assert(cp->gen != NULL, "compaction must succeed");
         cp->space = cp->gen->first_compaction_space();
         assert(cp->space != NULL, "generation must have a first compaction space");
@@ -899,7 +899,6 @@ void CompactibleFreeListSpace::object_iterate_mem(MemRegion mr,
     cl->set_previous(blk_start_addr); // min address for next time
   }
 }
-
 
 // Callers of this iterator beware: The closure application should
 // be robust in the face of uninitialized objects and should (always)

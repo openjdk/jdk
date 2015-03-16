@@ -934,6 +934,16 @@ void G1OffsetTableContigSpace::set_end(HeapWord* new_end) {
   _offsets.resize(new_end - bottom());
 }
 
+#ifndef PRODUCT
+void G1OffsetTableContigSpace::mangle_unused_area() {
+  mangle_unused_area_complete();
+}
+
+void G1OffsetTableContigSpace::mangle_unused_area_complete() {
+  SpaceMangler::mangle_region(MemRegion(top(), end()));
+}
+#endif
+
 void G1OffsetTableContigSpace::print() const {
   print_short();
   gclog_or_tty->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", "
