@@ -63,8 +63,8 @@ Generation::Generation(ReservedSpace rs, size_t initial_size, int level) :
 
 GenerationSpec* Generation::spec() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(0 <= level() && level() < gch->_n_gens, "Bad gen level");
-  return gch->_gen_specs[level()];
+  assert(level() == 0 || level() == 1, "Bad gen level");
+  return level() == 0 ? gch->gen_policy()->young_gen_spec() : gch->gen_policy()->old_gen_spec();
 }
 
 size_t Generation::max_capacity() const {
