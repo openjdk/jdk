@@ -109,20 +109,16 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
 
   deallocate_stacks();
 
-  // If compaction completely evacuated all generations younger than this
-  // one, then we can clear the card table.  Otherwise, we must invalidate
+  // If compaction completely evacuated the young generation then we
+  // can clear the card table.  Otherwise, we must invalidate
   // it (consider all cards dirty).  In the future, we might consider doing
   // compaction within generations only, and doing card-table sliding.
-  bool all_empty = true;
-  for (int i = 0; all_empty && i < level; i++) {
-    Generation* g = gch->get_gen(i);
-    all_empty = all_empty && gch->get_gen(i)->used() == 0;
-  }
   GenRemSet* rs = gch->rem_set();
-  Generation* old_gen = gch->get_gen(level);
+  Generation* old_gen = gch->old_gen();
+
   // Clear/invalidate below make use of the "prev_used_regions" saved earlier.
-  if (all_empty) {
-    // We've evacuated all generations below us.
+  if (gch->young_gen()->used() == 0) {
+    // We've evacuated the young generation.
     rs->clear_into_younger(old_gen);
   } else {
     // Invalidate the cards corresponding to the currently used
@@ -157,9 +153,8 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
 
 void GenMarkSweep::allocate_stacks() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  // Scratch request on behalf of oldest generation; will do no
-  // allocation.
-  ScratchBlock* scratch = gch->gather_scratch(gch->get_gen(gch->_n_gens-1), 0);
+  // Scratch request on behalf of old generation; will do no allocation.
+  ScratchBlock* scratch = gch->gather_scratch(gch->old_gen(), 0);
 
   // $$$ To cut a corner, we'll only use the first scratch block, and then
   // revert to malloc.
@@ -188,7 +183,7 @@ void GenMarkSweep::deallocate_stacks() {
 }
 
 void GenMarkSweep::mark_sweep_phase1(int level,
-                                  bool clear_all_softrefs) {
+                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
   GCTraceTime tm("phase 1", PrintGC && Verbose, true, _gc_timer, _gc_tracer->gc_id());
   trace(" 1");
@@ -199,7 +194,8 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   // use OopsInGenClosure constructor which takes a generation,
   // as the Universe has not been created when the static constructors
   // are run.
-  follow_root_closure.set_orig_generation(gch->get_gen(level));
+  assert(level == 1, "We don't use mark-sweep on young generations");
+  follow_root_closure.set_orig_generation(gch->old_gen());
 
   // Need new claim bits before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -287,7 +283,8 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   // use OopsInGenClosure constructor which takes a generation,
   // as the Universe has not been created when the static constructors
   // are run.
-  adjust_pointer_closure.set_orig_generation(gch->get_gen(level));
+  assert(level == 1, "We don't use mark-sweep on young generations.");
+  adjust_pointer_closure.set_orig_generation(gch->old_gen());
 
   gch->gen_process_roots(level,
                          false, // Younger gens are not roots.

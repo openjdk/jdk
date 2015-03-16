@@ -128,11 +128,10 @@ class Space: public CHeapObj<mtGC> {
 
   // For detecting GC bugs.  Should only be called at GC boundaries, since
   // some unused space may be used as scratch space during GC's.
-  // Default implementation does nothing. We also call this when expanding
-  // a space to satisfy an allocation request. See bug #4668531
-  virtual void mangle_unused_area() {}
-  virtual void mangle_unused_area_complete() {}
-  virtual void mangle_region(MemRegion mr) {}
+  // We also call this when expanding a space to satisfy an allocation
+  // request. See bug #4668531
+  virtual void mangle_unused_area() = 0;
+  virtual void mangle_unused_area_complete() = 0;
 
   // Testers
   bool is_empty() const              { return used() == 0; }
@@ -559,8 +558,6 @@ class ContiguousSpace: public CompactibleSpace {
   void mangle_unused_area() PRODUCT_RETURN;
   // Mangle [top, end)
   void mangle_unused_area_complete() PRODUCT_RETURN;
-  // Mangle the given MemRegion.
-  void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
   // Do some sparse checking on the area that should have been mangled.
   void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;

@@ -177,18 +177,17 @@ void GenCollectedHeap::post_initialize() {
   SharedHeap::post_initialize();
   GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
   guarantee(policy->is_generation_policy(), "Illegal policy type");
-  assert((get_gen(0)->kind() == Generation::DefNew) ||
-         (get_gen(0)->kind() == Generation::ParNew),
+  assert((_young_gen->kind() == Generation::DefNew) ||
+         (_young_gen->kind() == Generation::ParNew),
     "Wrong youngest generation type");
-  DefNewGeneration* def_new_gen = (DefNewGeneration*)get_gen(0);
+  DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
 
-  Generation* old_gen = get_gen(1);
-  assert(old_gen->kind() == Generation::ConcurrentMarkSweep ||
-         old_gen->kind() == Generation::MarkSweepCompact,
+  assert(_old_gen->kind() == Generation::ConcurrentMarkSweep ||
+         _old_gen->kind() == Generation::MarkSweepCompact,
     "Wrong generation kind");
 
   policy->initialize_size_policy(def_new_gen->eden()->capacity(),
-                                 old_gen->capacity(),
+                                 _old_gen->capacity(),
                                  def_new_gen->from()->capacity());
   policy->initialize_gc_policy_counters();
 }
@@ -1113,10 +1112,10 @@ void GenCollectedHeap::print_on_error(outputStream* st) const {
 
 void GenCollectedHeap::print_tracing_info() const {
   if (TraceYoungGenTime) {
-    get_gen(0)->print_summary_info();
+    _young_gen->print_summary_info();
   }
   if (TraceOldGenTime) {
-    get_gen(1)->print_summary_info();
+    _old_gen->print_summary_info();
   }
 }
 

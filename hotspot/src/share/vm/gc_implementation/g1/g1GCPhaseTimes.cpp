@@ -22,13 +22,13 @@
  *
  */
 
-
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1StringDedup.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 
 // Helper class for avoiding interleaved logging
 class LineBuffer: public StackObj {
@@ -71,184 +71,243 @@ public:
     va_end(ap);
   }
 
+  void print_cr() {
+    gclog_or_tty->print_cr("%s", _buffer);
+    _cur = _indent_level * INDENT_CHARS;
+  }
+
   void append_and_print_cr(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3) {
     va_list ap;
     va_start(ap, format);
     vappend(format, ap);
     va_end(ap);
-    gclog_or_tty->print_cr("%s", _buffer);
-    _cur = _indent_level * INDENT_CHARS;
+    print_cr();
   }
 };
 
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
 template <class T>
-void WorkerDataArray<T>::print(int level, const char* title) {
-  if (_length == 1) {
-    // No need for min, max, average and sum for only one worker
-    LineBuffer buf(level);
-    buf.append("[%s:  ", title);
-    buf.append(_print_format, _data[0]);
-    buf.append_and_print_cr("]");
-    return;
+class WorkerDataArray  : public CHeapObj<mtGC> {
+  friend class G1GCParPhasePrinter;
+  T*          _data;
+  uint        _length;
+  const char* _title;
+  bool        _print_sum;
+  int         _log_level;
+  uint        _indent_level;
+  bool        _enabled;
+
+  WorkerDataArray<size_t>* _thread_work_items;
+
+  NOT_PRODUCT(T uninitialized();)
+
+  // We are caching the sum and average to only have to calculate them once.
+  // This is not done in an MT-safe way. It is intended to allow single
+  // threaded code to call sum() and average() multiple times in any order
+  // without having to worry about the cost.
+  bool   _has_new_data;
+  T      _sum;
+  T      _min;
+  T      _max;
+  double _average;
+
+ public:
+  WorkerDataArray(uint length, const char* title, bool print_sum, int log_level, uint indent_level) :
+    _title(title), _length(0), _print_sum(print_sum), _log_level(log_level), _indent_level(indent_level),
+    _has_new_data(true), _thread_work_items(NULL), _enabled(true) {
+    assert(length > 0, "Must have some workers to store data for");
+    _length = length;
+    _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
   }
 
-  T min = _data[0];
-  T max = _data[0];
-  T sum = 0;
+  ~WorkerDataArray() {
+    FREE_C_HEAP_ARRAY(T, _data);
+  }
 
-  LineBuffer buf(level);
-  buf.append("[%s:", title);
-  for (uint i = 0; i < _length; ++i) {
-    T val = _data[i];
-    min = MIN2(val, min);
-    max = MAX2(val, max);
-    sum += val;
-    if (G1Log::finest()) {
-      buf.append("  ");
-      buf.append(_print_format, val);
+  void link_thread_work_items(WorkerDataArray<size_t>* thread_work_items) {
+    _thread_work_items = thread_work_items;
+  }
+
+  WorkerDataArray<size_t>* thread_work_items() { return _thread_work_items; }
+
+  void set(uint worker_i, T value) {
+    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
+    assert(_data[worker_i] == WorkerDataArray<T>::uninitialized(), err_msg("Overwriting data for worker %d in %s", worker_i, _title));
+    _data[worker_i] = value;
+    _has_new_data = true;
+  }
+
+  void set_thread_work_item(uint worker_i, size_t value) {
+    assert(_thread_work_items != NULL, "No sub count");
+    _thread_work_items->set(worker_i, value);
+  }
+
+  T get(uint worker_i) {
+    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
+    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), err_msg("No data added for worker %d", worker_i));
+    return _data[worker_i];
+  }
+
+  void add(uint worker_i, T value) {
+    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
+    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), err_msg("No data to add to for worker %d", worker_i));
+    _data[worker_i] += value;
+    _has_new_data = true;
+  }
+
+  double average(){
+    calculate_totals();
+    return _average;
+  }
+
+  T sum() {
+    calculate_totals();
+    return _sum;
+  }
+
+  T minimum() {
+    calculate_totals();
+    return _min;
+  }
+
+  T maximum() {
+    calculate_totals();
+    return _max;
+  }
+
+  void reset() PRODUCT_RETURN;
+  void verify() PRODUCT_RETURN;
+
+  void set_enabled(bool enabled) { _enabled = enabled; }
+
+  int log_level() { return _log_level;  }
+
+ private:
+
+  void calculate_totals(){
+    if (!_has_new_data) {
+      return;
     }
-  }
 
-  if (G1Log::finest()) {
-    buf.append_and_print_cr("%s", "");
+    _sum = (T)0;
+    _min = _data[0];
+    _max = _min;
+    for (uint i = 0; i < _length; ++i) {
+      T val = _data[i];
+      _sum += val;
+      _min = MIN2(_min, val);
+      _max = MAX2(_max, val);
+    }
+    _average = (double)_sum / (double)_length;
+    _has_new_data = false;
   }
+};
 
-  double avg = (double)sum / (double)_length;
-  buf.append(" Min: ");
-  buf.append(_print_format, min);
-  buf.append(", Avg: ");
-  buf.append("%.1lf", avg); // Always print average as a double
-  buf.append(", Max: ");
-  buf.append(_print_format, max);
-  buf.append(", Diff: ");
-  buf.append(_print_format, max - min);
-  if (_print_sum) {
-    // for things like the start and end times the sum is not
-    // that relevant
-    buf.append(", Sum: ");
-    buf.append(_print_format, sum);
-  }
-  buf.append_and_print_cr("]");
-}
-PRAGMA_DIAG_POP
 
 #ifndef PRODUCT
 
-template <> const int WorkerDataArray<int>::_uninitialized = -1;
-template <> const double WorkerDataArray<double>::_uninitialized = -1.0;
-template <> const size_t WorkerDataArray<size_t>::_uninitialized = (size_t)-1;
+template <>
+size_t WorkerDataArray<size_t>::uninitialized() {
+  return (size_t)-1;
+}
+
+template <>
+double WorkerDataArray<double>::uninitialized() {
+  return -1.0;
+}
 
 template <class T>
 void WorkerDataArray<T>::reset() {
   for (uint i = 0; i < _length; i++) {
-    _data[i] = (T)_uninitialized;
+    _data[i] = WorkerDataArray<T>::uninitialized();
+  }
+  if (_thread_work_items != NULL) {
+    _thread_work_items->reset();
   }
 }
 
 template <class T>
 void WorkerDataArray<T>::verify() {
+  if (!_enabled) {
+    return;
+  }
+
   for (uint i = 0; i < _length; i++) {
-    assert(_data[i] != _uninitialized,
-        err_msg("Invalid data for worker %u, data: %lf, uninitialized: %lf",
-            i, (double)_data[i], (double)_uninitialized));
+    assert(_data[i] != WorkerDataArray<T>::uninitialized(),
+        err_msg("Invalid data for worker %u in '%s'", i, _title));
+  }
+  if (_thread_work_items != NULL) {
+    _thread_work_items->verify();
   }
 }
 
 #endif
 
 G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
-  _max_gc_threads(max_gc_threads),
-  _last_gc_worker_start_times_ms(_max_gc_threads, "%.1lf", false),
-  _last_ext_root_scan_times_ms(_max_gc_threads, "%.1lf"),
-  _last_satb_filtering_times_ms(_max_gc_threads, "%.1lf"),
-  _last_update_rs_times_ms(_max_gc_threads, "%.1lf"),
-  _last_update_rs_processed_buffers(_max_gc_threads, "%d"),
-  _last_scan_rs_times_ms(_max_gc_threads, "%.1lf"),
-  _last_strong_code_root_scan_times_ms(_max_gc_threads, "%.1lf"),
-  _last_obj_copy_times_ms(_max_gc_threads, "%.1lf"),
-  _last_termination_times_ms(_max_gc_threads, "%.1lf"),
-  _last_termination_attempts(_max_gc_threads, SIZE_FORMAT),
-  _last_gc_worker_end_times_ms(_max_gc_threads, "%.1lf", false),
-  _last_gc_worker_times_ms(_max_gc_threads, "%.1lf"),
-  _last_gc_worker_other_times_ms(_max_gc_threads, "%.1lf"),
-  _last_redirty_logged_cards_time_ms(_max_gc_threads, "%.1lf"),
-  _last_redirty_logged_cards_processed_cards(_max_gc_threads, SIZE_FORMAT),
-  _cur_string_dedup_queue_fixup_worker_times_ms(_max_gc_threads, "%.1lf"),
-  _cur_string_dedup_table_fixup_worker_times_ms(_max_gc_threads, "%.1lf")
+  _max_gc_threads(max_gc_threads)
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
+
+  _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Start (ms)", false, G1Log::LevelFiner, 2);
+  _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>(max_gc_threads, "Ext Root Scanning (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>(max_gc_threads, "GC Worker End (ms)", false, G1Log::LevelFiner, 2);
+  _gc_par_phases[Other] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Other (ms)", true, G1Log::LevelFiner, 2);
+
+  _update_rs_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers", true, G1Log::LevelFiner, 3);
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers);
+
+  _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[Termination]->link_thread_work_items(_termination_attempts);
+
+  _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>(max_gc_threads, "Queue Fixup (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>(max_gc_threads, "Table Fixup (ms)", true, G1Log::LevelFiner, 2);
+
+  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty", true, G1Log::LevelFinest, 3);
+  _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
 }
 
-void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
+void G1GCPhaseTimes::note_gc_start(uint active_gc_threads, bool mark_in_progress) {
   assert(active_gc_threads > 0, "The number of threads must be > 0");
-  assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max nubmer of threads");
+  assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max number of threads");
   _active_gc_threads = active_gc_threads;
 
-  _last_gc_worker_start_times_ms.reset();
-  _last_ext_root_scan_times_ms.reset();
-  _last_satb_filtering_times_ms.reset();
-  _last_update_rs_times_ms.reset();
-  _last_update_rs_processed_buffers.reset();
-  _last_scan_rs_times_ms.reset();
-  _last_strong_code_root_scan_times_ms.reset();
-  _last_obj_copy_times_ms.reset();
-  _last_termination_times_ms.reset();
-  _last_termination_attempts.reset();
-  _last_gc_worker_end_times_ms.reset();
-  _last_gc_worker_times_ms.reset();
-  _last_gc_worker_other_times_ms.reset();
+  for (int i = 0; i < GCParPhasesSentinel; i++) {
+    _gc_par_phases[i]->reset();
+  }
 
-  _last_redirty_logged_cards_time_ms.reset();
-  _last_redirty_logged_cards_processed_cards.reset();
+  _gc_par_phases[SATBFiltering]->set_enabled(mark_in_progress);
 
+  _gc_par_phases[StringDedupQueueFixup]->set_enabled(G1StringDedup::is_enabled());
+  _gc_par_phases[StringDedupTableFixup]->set_enabled(G1StringDedup::is_enabled());
 }
 
 void G1GCPhaseTimes::note_gc_end() {
-  _last_gc_worker_start_times_ms.verify();
-  _last_ext_root_scan_times_ms.verify();
-  _last_satb_filtering_times_ms.verify();
-  _last_update_rs_times_ms.verify();
-  _last_update_rs_processed_buffers.verify();
-  _last_scan_rs_times_ms.verify();
-  _last_strong_code_root_scan_times_ms.verify();
-  _last_obj_copy_times_ms.verify();
-  _last_termination_times_ms.verify();
-  _last_termination_attempts.verify();
-  _last_gc_worker_end_times_ms.verify();
-
   for (uint i = 0; i < _active_gc_threads; i++) {
-    double worker_time = _last_gc_worker_end_times_ms.get(i) - _last_gc_worker_start_times_ms.get(i);
-    _last_gc_worker_times_ms.set(i, worker_time);
+    double worker_time = _gc_par_phases[GCWorkerEnd]->get(i) - _gc_par_phases[GCWorkerStart]->get(i);
+    record_time_secs(GCWorkerTotal, i , worker_time);
 
-    double worker_known_time = _last_ext_root_scan_times_ms.get(i) +
-                               _last_satb_filtering_times_ms.get(i) +
-                               _last_update_rs_times_ms.get(i) +
-                               _last_scan_rs_times_ms.get(i) +
-                               _last_strong_code_root_scan_times_ms.get(i) +
-                               _last_obj_copy_times_ms.get(i) +
-                               _last_termination_times_ms.get(i);
+    double worker_known_time =
+        _gc_par_phases[ExtRootScan]->get(i) +
+        _gc_par_phases[SATBFiltering]->get(i) +
+        _gc_par_phases[UpdateRS]->get(i) +
+        _gc_par_phases[ScanRS]->get(i) +
+        _gc_par_phases[CodeRoots]->get(i) +
+        _gc_par_phases[ObjCopy]->get(i) +
+        _gc_par_phases[Termination]->get(i);
 
-    double worker_other_time = worker_time - worker_known_time;
-    _last_gc_worker_other_times_ms.set(i, worker_other_time);
+    record_time_secs(Other, i, worker_time - worker_known_time);
   }
 
-  _last_gc_worker_times_ms.verify();
-  _last_gc_worker_other_times_ms.verify();
-
-  _last_redirty_logged_cards_time_ms.verify();
-  _last_redirty_logged_cards_processed_cards.verify();
-}
-
-void G1GCPhaseTimes::note_string_dedup_fixup_start() {
-  _cur_string_dedup_queue_fixup_worker_times_ms.reset();
-  _cur_string_dedup_table_fixup_worker_times_ms.reset();
-}
-
-void G1GCPhaseTimes::note_string_dedup_fixup_end() {
-  _cur_string_dedup_queue_fixup_worker_times_ms.verify();
-  _cur_string_dedup_table_fixup_worker_times_ms.verify();
+  for (int i = 0; i < GCParPhasesSentinel; i++) {
+    _gc_par_phases[i]->verify();
+  }
 }
 
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
@@ -288,35 +347,172 @@ double G1GCPhaseTimes::accounted_time_ms() {
     return misc_time_ms;
 }
 
+// record the time a phase took in seconds
+void G1GCPhaseTimes::record_time_secs(GCParPhases phase, uint worker_i, double secs) {
+  _gc_par_phases[phase]->set(worker_i, secs);
+}
+
+// add a number of seconds to a phase
+void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_i, double secs) {
+  _gc_par_phases[phase]->add(worker_i, secs);
+}
+
+void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count) {
+  _gc_par_phases[phase]->set_thread_work_item(worker_i, count);
+}
+
+// return the average time for a phase in milliseconds
+double G1GCPhaseTimes::average_time_ms(GCParPhases phase) {
+  return _gc_par_phases[phase]->average() * 1000.0;
+}
+
+double G1GCPhaseTimes::get_time_ms(GCParPhases phase, uint worker_i) {
+  return _gc_par_phases[phase]->get(worker_i) * 1000.0;
+}
+
+double G1GCPhaseTimes::sum_time_ms(GCParPhases phase) {
+  return _gc_par_phases[phase]->sum() * 1000.0;
+}
+
+double G1GCPhaseTimes::min_time_ms(GCParPhases phase) {
+  return _gc_par_phases[phase]->minimum() * 1000.0;
+}
+
+double G1GCPhaseTimes::max_time_ms(GCParPhases phase) {
+  return _gc_par_phases[phase]->maximum() * 1000.0;
+}
+
+size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_i) {
+  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
+  return _gc_par_phases[phase]->thread_work_items()->get(worker_i);
+}
+
+size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase) {
+  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
+  return _gc_par_phases[phase]->thread_work_items()->sum();
+}
+
+double G1GCPhaseTimes::average_thread_work_items(GCParPhases phase) {
+  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
+  return _gc_par_phases[phase]->thread_work_items()->average();
+}
+
+size_t G1GCPhaseTimes::min_thread_work_items(GCParPhases phase) {
+  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
+  return _gc_par_phases[phase]->thread_work_items()->minimum();
+}
+
+size_t G1GCPhaseTimes::max_thread_work_items(GCParPhases phase) {
+  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
+  return _gc_par_phases[phase]->thread_work_items()->maximum();
+}
+
+class G1GCParPhasePrinter : public StackObj {
+  G1GCPhaseTimes* _phase_times;
+ public:
+  G1GCParPhasePrinter(G1GCPhaseTimes* phase_times) : _phase_times(phase_times) {}
+
+  void print(G1GCPhaseTimes::GCParPhases phase_id) {
+    WorkerDataArray<double>* phase = _phase_times->_gc_par_phases[phase_id];
+
+    if (phase->_log_level > G1Log::level() || !phase->_enabled) {
+      return;
+    }
+
+    if (phase->_length == 1) {
+      print_single_length(phase_id, phase);
+    } else {
+      print_multi_length(phase_id, phase);
+    }
+  }
+
+ private:
+
+  void print_single_length(G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<double>* phase) {
+    // No need for min, max, average and sum for only one worker
+    LineBuffer buf(phase->_indent_level);
+    buf.append_and_print_cr("[%s:  %.1lf]", phase->_title, _phase_times->get_time_ms(phase_id, 0));
+
+    if (phase->_thread_work_items != NULL) {
+      LineBuffer buf2(phase->_thread_work_items->_indent_level);
+      buf2.append_and_print_cr("[%s:  "SIZE_FORMAT"]", phase->_thread_work_items->_title, _phase_times->sum_thread_work_items(phase_id));
+    }
+  }
+
+  void print_time_values(LineBuffer& buf, G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<double>* phase) {
+    for (uint i = 0; i < phase->_length; ++i) {
+      buf.append("  %.1lf", _phase_times->get_time_ms(phase_id, i));
+    }
+    buf.print_cr();
+  }
+
+  void print_count_values(LineBuffer& buf, G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<size_t>* thread_work_items) {
+    for (uint i = 0; i < thread_work_items->_length; ++i) {
+      buf.append("  " SIZE_FORMAT, _phase_times->get_thread_work_item(phase_id, i));
+    }
+    buf.print_cr();
+  }
+
+  void print_thread_work_items(G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<size_t>* thread_work_items) {
+    LineBuffer buf(thread_work_items->_indent_level);
+    buf.append("[%s:", thread_work_items->_title);
+
+    if (G1Log::finest()) {
+      print_count_values(buf, phase_id, thread_work_items);
+    }
+
+    assert(thread_work_items->_print_sum, err_msg("%s does not have print sum true even though it is a count", thread_work_items->_title));
+
+    buf.append_and_print_cr(" Min: " SIZE_FORMAT ", Avg: %.1lf, Max: " SIZE_FORMAT ", Diff: " SIZE_FORMAT ", Sum: " SIZE_FORMAT "]",
+        _phase_times->min_thread_work_items(phase_id), _phase_times->average_thread_work_items(phase_id), _phase_times->max_thread_work_items(phase_id),
+        _phase_times->max_thread_work_items(phase_id) - _phase_times->min_thread_work_items(phase_id), _phase_times->sum_thread_work_items(phase_id));
+  }
+
+  void print_multi_length(G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<double>* phase) {
+    LineBuffer buf(phase->_indent_level);
+    buf.append("[%s:", phase->_title);
+
+    if (G1Log::finest()) {
+      print_time_values(buf, phase_id, phase);
+    }
+
+    buf.append(" Min: %.1lf, Avg: %.1lf, Max: %.1lf, Diff: %.1lf",
+        _phase_times->min_time_ms(phase_id), _phase_times->average_time_ms(phase_id), _phase_times->max_time_ms(phase_id),
+        _phase_times->max_time_ms(phase_id) - _phase_times->min_time_ms(phase_id));
+
+    if (phase->_print_sum) {
+      // for things like the start and end times the sum is not
+      // that relevant
+      buf.append(", Sum: %.1lf", _phase_times->sum_time_ms(phase_id));
+    }
+
+    buf.append_and_print_cr("]");
+
+    if (phase->_thread_work_items != NULL) {
+      print_thread_work_items(phase_id, phase->_thread_work_items);
+    }
+  }
+};
+
 void G1GCPhaseTimes::print(double pause_time_sec) {
+  G1GCParPhasePrinter par_phase_printer(this);
+
   if (_root_region_scan_wait_time_ms > 0.0) {
     print_stats(1, "Root Region Scan Waiting", _root_region_scan_wait_time_ms);
   }
+
   print_stats(1, "Parallel Time", _cur_collection_par_time_ms, _active_gc_threads);
-  _last_gc_worker_start_times_ms.print(2, "GC Worker Start (ms)");
-  _last_ext_root_scan_times_ms.print(2, "Ext Root Scanning (ms)");
-  if (_last_satb_filtering_times_ms.sum() > 0.0) {
-    _last_satb_filtering_times_ms.print(2, "SATB Filtering (ms)");
+  for (int i = 0; i <= GCMainParPhasesLast; i++) {
+    par_phase_printer.print((GCParPhases) i);
   }
-  _last_update_rs_times_ms.print(2, "Update RS (ms)");
-    _last_update_rs_processed_buffers.print(3, "Processed Buffers");
-  _last_scan_rs_times_ms.print(2, "Scan RS (ms)");
-  _last_strong_code_root_scan_times_ms.print(2, "Code Root Scanning (ms)");
-  _last_obj_copy_times_ms.print(2, "Object Copy (ms)");
-  _last_termination_times_ms.print(2, "Termination (ms)");
-  if (G1Log::finest()) {
-    _last_termination_attempts.print(3, "Termination Attempts");
-  }
-  _last_gc_worker_other_times_ms.print(2, "GC Worker Other (ms)");
-  _last_gc_worker_times_ms.print(2, "GC Worker Total (ms)");
-  _last_gc_worker_end_times_ms.print(2, "GC Worker End (ms)");
 
   print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
   print_stats(1, "Code Root Purge", _cur_strong_code_root_purge_time_ms);
   if (G1StringDedup::is_enabled()) {
     print_stats(1, "String Dedup Fixup", _cur_string_dedup_fixup_time_ms, _active_gc_threads);
-    _cur_string_dedup_queue_fixup_worker_times_ms.print(2, "Queue Fixup (ms)");
-    _cur_string_dedup_table_fixup_worker_times_ms.print(2, "Table Fixup (ms)");
+    for (int i = StringDedupPhasesFirst; i <= StringDedupPhasesLast; i++) {
+      par_phase_printer.print((GCParPhases) i);
+    }
   }
   print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
   double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
@@ -340,10 +536,7 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   print_stats(2, "Ref Proc", _cur_ref_proc_time_ms);
   print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
   print_stats(2, "Redirty Cards", _recorded_redirty_logged_cards_time_ms);
-  if (G1Log::finest()) {
-    _last_redirty_logged_cards_time_ms.print(3, "Parallel Redirty");
-    _last_redirty_logged_cards_processed_cards.print(3, "Redirtied Cards");
-  }
+  par_phase_printer.print(RedirtyCards);
   if (G1EagerReclaimHumongousObjects) {
     print_stats(2, "Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
     if (G1Log::finest()) {
@@ -366,3 +559,17 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     print_stats(2, "Verify After", _cur_verify_after_time_ms);
   }
 }
+
+G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id) :
+    _phase_times(phase_times), _phase(phase), _worker_id(worker_id) {
+  if (_phase_times != NULL) {
+    _start_time = os::elapsedTime();
+  }
+}
+
+G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
+  if (_phase_times != NULL) {
+    _phase_times->record_time_secs(_phase, _worker_id, os::elapsedTime() - _start_time);
+  }
+}
+
