@@ -380,7 +380,7 @@ void DefNewGeneration::compute_new_size() {
 
   int next_level = level() + 1;
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(next_level < gch->_n_gens,
+  assert(next_level < gch->n_gens(),
          "DefNewGeneration cannot be an oldest gen");
 
   Generation* old_gen = gch->old_gen();

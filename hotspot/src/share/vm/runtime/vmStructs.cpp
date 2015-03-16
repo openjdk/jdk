@@ -527,10 +527,10 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(CollectedHeap,               _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
+                                                                                                                                     \
   nonstatic_field(CompactibleSpace,            _compaction_top,                               HeapWord*)                             \
   nonstatic_field(CompactibleSpace,            _first_dead,                                   HeapWord*)                             \
   nonstatic_field(CompactibleSpace,            _end_of_live,                                  HeapWord*)                             \
-                                                                                                                                     \
                                                                                                                                      \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _concurrent_iteration_safe_limit,              HeapWord*)                             \
@@ -559,7 +559,9 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
   nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
  nonstatic_field(GenCollectedHeap,             _n_gens,                                       int)                                   \
-  nonstatic_field(GenCollectedHeap,            _gen_specs,                                    GenerationSpec**)                      \
+                                                                                                                                     \
+  nonstatic_field(GenCollectorPolicy,          _young_gen_spec,                               GenerationSpec*)                       \
+  nonstatic_field(GenCollectorPolicy,          _old_gen_spec,                                 GenerationSpec*)                       \
                                                                                                                                      \
   nonstatic_field(HeapWord,                    i,                                             char*)                                 \
                                                                                                                                      \
@@ -1505,6 +1507,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
            declare_type(TenuredGeneration,            CardGeneration)     \
+  declare_toplevel_type(GenCollectorPolicy)                               \
   declare_toplevel_type(Space)                                            \
   declare_toplevel_type(BitMap)                                           \
            declare_type(CompactibleSpace,             Space)              \
