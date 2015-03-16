@@ -29,7 +29,8 @@
  * @build TestArrayCopyNoInitDeopt
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ClassFileInstaller com.oracle.java.testlibrary.Platform
- * @run main/othervm -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm -Xmixed -XX:Tier4InvocationThreshold=5000 -XX:Tier3InvokeNotifyFreqLog=10
+ *                    -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020
  *                   TestArrayCopyNoInitDeopt
  *
