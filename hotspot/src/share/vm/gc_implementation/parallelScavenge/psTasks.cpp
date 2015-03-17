@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,8 @@ void OldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
 
     assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-    CardTableExtension* card_table = (CardTableExtension *)Universe::heap()->barrier_set();
-    // FIX ME! Assert that card_table is the type we believe it to be.
+    CardTableExtension* card_table =
+      barrier_set_cast<CardTableExtension>(Universe::heap()->barrier_set());
 
     card_table->scavenge_contents_parallel(_gen->start_array(),
                                            _gen->object_space(),

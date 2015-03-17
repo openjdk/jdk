@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBNIO_CFLAGS), \
+    DISABLED_WARNINGS_gcc := type-limits, \
+    DISABLED_WARNINGS_clang := tautological-compare, \
+    DISABLED_WARNINGS_microsoft := 4244, \
     MAPFILE := $(BUILD_LIBNIO_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(BUILD_LIBNIO_LDFLAGS) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -92,4 +95,3 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
 TARGETS += $(BUILD_LIBNIO)
 
 $(BUILD_LIBNIO): $(BUILD_LIBNET)
-

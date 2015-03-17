@@ -1,0 +1,43 @@
+cond_catch.js:4:11 Expected ) but found if
+} catch (e if e instanceof ReferenceError) {}
+           ^
+func_closure.js:2:19 Expected { but found x
+
+function square(x) x*x;
+                   ^
+for_each.js:2:4 Expected ( but found each
+
+for each (arg in arguments) print(arg);
+    ^
+anon_new.js:2:33 Expected ; but found {
+
+var r = new java.lang.Runnable() {
+                                 ^
+anon_new.js:3:18 Expected ident but found (
+     run: function() { print("hello") }
+                  ^
+anon_new.js:4:0 Expected eof but found }
+};
+^
+anon_func_stat.js:2:9 Expected ident but found (
+
+function () { print("hello") }
+         ^
+backquote.js:1:0 Expected an operand but found error
+`ls`
+^
+backquote1.js:1:0 Expected an operand but found error
+`ls`
+^
+heredoc.js:1:10 Expected an operand but found <<
+var str = <<EOF
+          ^
+heredoc1.js:1:10 Expected an operand but found <<
+var str = <<EOF
+          ^
+hashcomment.js:1:0 Expected an operand but found error
+#comment
+^
+hashcomment1.js:1:0 Expected an operand but found error
+#comment
+^

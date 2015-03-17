@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,20 @@
 
 /*
  * @test
- * @bug 4103117 4331084 4488017 4490929 6255285 6268365
- * @summary Tests the BigDecimal string constructor.
+ * @library ..
+ * @bug 4103117 4331084 4488017 4490929 6255285 6268365 8074460
+ * @summary Tests the BigDecimal string constructor (use -Dseed=X to set PRNG seed).
  */
 
 import java.math.*;
-import java.util.Random;
 
 public class StringConstructor {
 
-    private static int seed = new Random().nextInt();
-    private static Random rnd = new Random(seed);
+    private static RandomSeed rndSeed = new RandomSeed(false);
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Random number generator seed = " + rndSeed.getSeed());
+
         constructWithError("");
         constructWithError("+");
         constructWithError("-");
@@ -71,19 +72,18 @@ public class StringConstructor {
 
         // Roundtrip tests
         for (int i=0; i<100; i++) {
-            int size = rnd.nextInt(100) + 1;
-            BigInteger bi = new BigInteger(size, rnd);
-            if (rnd.nextBoolean())
+            int size = rndSeed.getRandom().nextInt(100) + 1;
+            BigInteger bi = new BigInteger(size, rndSeed.getRandom());
+            if (rndSeed.getRandom().nextBoolean())
                 bi = bi.negate();
             int decimalLength = bi.toString().length();
-            int scale = rnd.nextInt(decimalLength);
+            int scale = rndSeed.getRandom().nextInt(decimalLength);
             BigDecimal bd = new BigDecimal(bi, scale);
             String bdString = bd.toString();
             // System.err.println("bi" + bi.toString() + "\tscale " + scale);
             // System.err.println("bd string: " + bdString);
             BigDecimal bdDoppel = new BigDecimal(bdString);
             if (!bd.equals(bdDoppel)) {
-                System.err.println("Random number seed = " + seed);
                 System.err.println("bd string: scale: " + bd.scale() +
                                    "\t" + bdString);
                 System.err.println("bd doppel: scale: " + bdDoppel.scale() +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class TestProfiles extends JavadocTester {
                 "<div class=\"subTitle\">compact1, compact2, compact3</div>");
 
         checkOutput("index.html", true,
-                "<frame src=\"overview-frame.html\" name=\"packageListFrame\" "
+                "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" "
                 + "title=\"All Packages\">");
 
         // Test for "overview-summary.html" showing the profile list.

@@ -496,6 +496,14 @@ public class Arguments {
         if (doclintOpts.equals(Collections.singleton(DocLint.XMSGS_CUSTOM_PREFIX + "none")))
             return List.nil();
 
+        String checkPackages = options.get(Option.XDOCLINT_PACKAGE);
+
+        if (checkPackages != null) {
+            for (String s : checkPackages.split("\\s+")) {
+                doclintOpts.add(s.replace(Option.XDOCLINT_PACKAGE.text, DocLint.XCHECK_PACKAGE));
+            }
+        }
+
         // standard doclet normally generates H1, H2,
         // so for now, allow user comments to assume that
         doclintOpts.add(DocLint.XIMPLICIT_HEADERS + "2");

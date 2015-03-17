@@ -65,7 +65,7 @@ import javax.xml.crypto.XMLStructure;
  * <pre>
  *   XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
  *   Manifest manifest = fac.newManifest(references);
- *   List<XMLStructure> content = Collections.singletonList(manifest);
+ *   List&lt;XMLStructure&gt; content = Collections.singletonList(manifest);
  *   XMLObject object = factory.newXMLObject(content, "object-1", null, null);
  * </pre>
  *
