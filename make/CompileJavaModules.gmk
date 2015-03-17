@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ java.activation_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
 ################################################################################
 
+java.base_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
 java.base_COPY := .icu .dat .spp content-types.properties hijrah-config-islamic-umalqura.properties
 java.base_CLEAN := intrinsic.properties
 
@@ -89,10 +90,16 @@ endif
 
 ################################################################################
 
+java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.datatransfer_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
 java.datatransfer_COPY := flavormap.properties
 
 ################################################################################
 
+java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-missing,-reference '-Xdoclint/package:java.*,javax.*'
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
@@ -239,15 +246,18 @@ endif
 
 ################################################################################
 
+java.scripting_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.scripting_COPY := .js
 java.scripting_CLEAN := .properties
 
 ################################################################################
 
+java.sql_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
 ################################################################################
 
+java.sql.rowset_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.sql.rowset_CLEAN_FILES := $(wildcard \
     $(JDK_TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
     $(JDK_TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
@@ -261,6 +271,7 @@ endif
 
 ################################################################################
 
+java.rmi_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.rmi_CLEAN_FILES := $(wildcard \
     $(JDK_TOPDIR)/src/java.rmi/share/classes/sun/rmi/registry/resources/*.properties \
     $(JDK_TOPDIR)/src/java.rmi/share/classes/sun/rmi/server/resources/*.properties)
@@ -309,14 +320,17 @@ java.xml.ws_CLEAN := .properties
 
 ################################################################################
 
+java.naming_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.naming_CLEAN := jndiprovider.properties
 
 ################################################################################
 
+java.security.saaj_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.security.saaj_CLEAN := .properties
 
 ################################################################################
 
+java.xml.crypto_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.xml.crypto_COPY := .dtd .xml
 java.xml.crypto_CLEAN := .properties
 
@@ -326,6 +340,7 @@ jdk.charsets_COPY := .dat
 
 ################################################################################
 
+jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*'
 jdk.compiler_COPY := javax.tools.JavaCompilerTool
 jdk.compiler_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
@@ -485,7 +500,7 @@ define SetupModuleCompilation
     $1_CLASSPATH := $$($1_CLASSPATH) $$(addprefix $(JDK_OUTPUTDIR)/modules/,jdk.hotspot.agent)
   endif
   $1_CLASSPATH := $$(subst $$(SPACE),$$(PATH_SEP),$$($1_CLASSPATH))
-  $1_JAVAC_FLAGS := -bootclasspath "$$($1_CLASSPATH)"
+  $1_JAVAC_FLAGS := -bootclasspath "$$($1_CLASSPATH)" $$($1_ADD_JAVAC_FLAGS)
 
   $$(eval $$(call SetupJavaCompilation,$1, \
       SETUP := $$(if $$($1_SETUP), $$($1_SETUP), GENERATE_JDKBYTECODE), \

@@ -1582,9 +1582,9 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
 ////////////////////////////////////////////////////////////////////////
 
 void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
-
-  assert(sizeof(*((CardTableModRefBS*)_bs)->byte_map_base) == sizeof(jbyte), "adjust this code");
-  LIR_Const* card_table_base = new LIR_Const(((CardTableModRefBS*)_bs)->byte_map_base);
+  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(_bs);
+  assert(sizeof(*(ct->byte_map_base)) == sizeof(jbyte), "adjust this code");
+  LIR_Const* card_table_base = new LIR_Const(ct->byte_map_base);
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
     // ptr cannot be an object because we use this barrier for array card marks
@@ -1609,7 +1609,6 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
     __ move(new LIR_Address(FrameMap::Rthread_opr, in_bytes(JavaThread::card_table_base_offset()), T_ADDRESS), tmp);
   }
 
-  CardTableModRefBS* ct = (CardTableModRefBS*)_bs;
   LIR_Address *card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTableModRefBS::card_shift, 0, T_BYTE);
   if(((int)ct->byte_map_base & 0xff) == 0) {
     __ move(tmp, card_addr);

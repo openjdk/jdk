@@ -66,7 +66,6 @@ public class CompilerTest {
     @BeforeClass
     public void setupTest() {
         final Options options = new Options("nashorn");
-        options.set("anon.functions", true);
         options.set("compile.only", true);
         options.set("print.ast", true);
         options.set("print.parse", true);

@@ -77,7 +77,9 @@ import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
+import jdk.nashorn.internal.ir.DebuggerNode;
 import jdk.nashorn.internal.ir.EmptyNode;
+import jdk.nashorn.internal.ir.ErrorNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
@@ -356,7 +358,8 @@ public class Parser extends AbstractParser implements Loggable {
             restoreBlock(body);
             body.setFlag(Block.NEEDS_SCOPE);
 
-            final Block functionBody = new Block(functionToken, source.getLength() - 1, body.getFlags(), body.getStatements());
+            final Block functionBody = new Block(functionToken, source.getLength() - 1,
+                body.getFlags() | Block.IS_SYNTHETIC, body.getStatements());
             lc.pop(function);
 
             expect(EOF);
@@ -540,7 +543,8 @@ loop:
             expect(RBRACE);
         }
 
-        return new Block(blockToken, finish, newBlock.getFlags(), newBlock.getStatements());
+        final int flags = newBlock.getFlags() | (needsBraces? 0 : Block.IS_SYNTHETIC);
+        return new Block(blockToken, finish, flags, newBlock.getStatements());
     }
 
 
@@ -559,7 +563,7 @@ loop:
         } finally {
             restoreBlock(newBlock);
         }
-        return new Block(newBlock.getToken(), finish, newBlock.getFlags(), newBlock.getStatements());
+        return new Block(newBlock.getToken(), finish, newBlock.getFlags() | Block.IS_SYNTHETIC, newBlock.getStatements());
     }
 
     /**
@@ -712,7 +716,7 @@ loop:
 
         restoreBlock(body);
         body.setFlag(Block.NEEDS_SCOPE);
-        final Block programBody = new Block(functionToken, functionLine, body.getFlags(), body.getStatements());
+        final Block programBody = new Block(functionToken, functionLine, body.getFlags() | Block.IS_SYNTHETIC, body.getStatements());
         lc.pop(script);
         script.setLastToken(token);
 
@@ -826,8 +830,13 @@ loop:
                         }
                     }
                 } catch (final Exception e) {
+                    final int errorLine = line;
+                    final long errorToken = token;
                     //recover parsing
                     recover(e);
+                    final ErrorNode errorExpr = new ErrorNode(errorToken, finish);
+                    final ExpressionStatement expressionStatement = new ExpressionStatement(errorLine, errorToken, finish, errorExpr);
+                    appendStatement(expressionStatement);
                 }
 
                 // No backtracking from here on.
@@ -1853,7 +1862,7 @@ loop:
                     appendStatement(catchNode);
                 } finally {
                     restoreBlock(catchBlock);
-                    catchBlocks.add(new Block(catchBlock.getToken(), finish, catchBlock.getFlags(), catchBlock.getStatements()));
+                    catchBlocks.add(new Block(catchBlock.getToken(), finish, catchBlock.getFlags() | Block.IS_SYNTHETIC, catchBlock.getStatements()));
                 }
 
                 // If unconditional catch then should to be the end.
@@ -1883,7 +1892,7 @@ loop:
             restoreBlock(outer);
         }
 
-        appendStatement(new BlockStatement(startLine, new Block(tryToken, finish, outer.getFlags(), outer.getStatements())));
+        appendStatement(new BlockStatement(startLine, new Block(tryToken, finish, outer.getFlags() | Block.IS_SYNTHETIC, outer.getStatements())));
     }
 
     /**
@@ -1901,7 +1910,7 @@ loop:
         // DEBUGGER tested in caller.
         next();
         endOfLine();
-        appendStatement(new ExpressionStatement(debuggerLine, debuggerToken, finish, new RuntimeNode(debuggerToken, finish, RuntimeNode.Request.DEBUGGER, Collections.<Expression>emptyList())));
+        appendStatement(new DebuggerNode(debuggerLine, debuggerToken, finish));
     }
 
     /**
@@ -2881,7 +2890,6 @@ loop:
         final long bodyToken = token;
         Block functionBody;
         int bodyFinish = 0;
-
 
         final boolean parseBody;
         Object endParserState = null;

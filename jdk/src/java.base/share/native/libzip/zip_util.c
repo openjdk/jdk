@@ -281,9 +281,9 @@ static jboolean verifyEND(jzfile *zip, jlong endpos, char *endbuf) {
     return (cenpos >= 0 &&
             locpos >= 0 &&
             readFullyAt(zip->zfd, buf, sizeof(buf), cenpos) != -1 &&
-            GETSIG(buf) == CENSIG &&
+            CENSIG_AT(buf) &&
             readFullyAt(zip->zfd, buf, sizeof(buf), locpos) != -1 &&
-            GETSIG(buf) == LOCSIG);
+            LOCSIG_AT(buf));
 }
 
 /*
@@ -674,7 +674,7 @@ readCEN(jzfile *zip, jint knownTotal)
         method = CENHOW(cp);
         nlen   = CENNAM(cp);
 
-        if (GETSIG(cp) != CENSIG)
+        if (!CENSIG_AT(cp))
             ZIP_FORMAT_ERROR("invalid CEN header (bad signature)");
         if (CENFLG(cp) & 1)
             ZIP_FORMAT_ERROR("invalid CEN header (encrypted entry)");
@@ -827,10 +827,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
 
     // Assumption, zfd refers to start of file. Trivially, reuse errbuf.
     if (readFully(zfd, errbuf, 4) != -1) {  // errors will be handled later
-        if (GETSIG(errbuf) == LOCSIG)
-            zip->locsig = JNI_TRUE;
-        else
-            zip->locsig = JNI_FALSE;
+        zip->locsig = LOCSIG_AT(errbuf) ? JNI_TRUE : JNI_FALSE;
     }
 
     len = zip->len = IO_Lseek(zfd, 0, SEEK_END);
@@ -1284,7 +1281,7 @@ ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
             zip->msg = "error reading zip file";
             return -1;
         }
-        if (GETSIG(loc) != LOCSIG) {
+        if (!LOCSIG_AT(loc)) {
             zip->msg = "invalid LOC header (bad signature)";
             return -1;
         }

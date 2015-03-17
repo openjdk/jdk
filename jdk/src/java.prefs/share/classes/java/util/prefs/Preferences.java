@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,6 +489,8 @@ public abstract class Preferences {
      *       <tt>MAX_VALUE_LENGTH</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if either the key or the value contain
+     *         the null control character, code point U+0000.
      */
     public abstract void put(String key, String value);
 

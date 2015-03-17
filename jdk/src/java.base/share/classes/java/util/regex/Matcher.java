@@ -1183,7 +1183,7 @@ public final class Matcher implements MatchResult {
      *
      * <p> Given the regular expression <tt>dog</tt>, the input
      * <tt>"zzzdogzzzdogzzz"</tt>, and the function
-     * <tt>mr -> mr.group().toUpperCase()</tt>, an invocation of this method on
+     * {@code mr -> mr.group().toUpperCase()}, an invocation of this method on
      * a matcher for that expression would yield the string
      * <tt>"zzzDOGzzzDOGzzz"</tt>.
      *
@@ -1405,7 +1405,7 @@ public final class Matcher implements MatchResult {
      *
      * <p> Given the regular expression <tt>dog</tt>, the input
      * <tt>"zzzdogzzzdogzzz"</tt>, and the function
-     * <tt>mr -> mr.group().toUpperCase()</tt>, an invocation of this method on
+     * {@code mr -> mr.group().toUpperCase()}, an invocation of this method on
      * a matcher for that expression would yield the string
      * <tt>"zzzDOGzzzdogzzz"</tt>.
      *
