@@ -4204,8 +4204,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
                                        PtrQueue::byte_offset_of_buf()));
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  CardTableModRefBS* ct =
+    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
   assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
   Label done;
@@ -4305,7 +4305,7 @@ void MacroAssembler::store_check_part_1(Register obj) {
 void MacroAssembler::store_check_part_2(Register obj) {
   BarrierSet* bs = Universe::heap()->barrier_set();
   assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
   assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
   // The calculation for byte_map_base is as follows:

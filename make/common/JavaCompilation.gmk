@@ -59,16 +59,8 @@ FALSE_FIND_PATTERN:=-name FILE_NAME_THAT_DOESNT_EXIST
 #   FLAGS:=Flags to be supplied to javac
 #   SERVER_DIR:=Use a javac server (-XDserver) and store the server related files here
 #   SERVER_JVM:=Use this JVM for the server. Defaults to the JVM above.
-define SetupJavaCompiler
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompiler, please update JavaCompilation.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupJavaCompilerInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
-endef
-
-define SetupJavaCompilerInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupJavaCompiler($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompiler, please update JavaCompilation.gmk))
-
+SetupJavaCompiler = $(NamedParamsMacroTemplate)
+define SetupJavaCompilerBody
   # The port file contains the tcp/ip on which the server listens
   # and the cookie necessary to talk to the server.
   $1_SJAVAC_PORTFILE:=$$($1_SERVER_DIR)/server.port
@@ -84,10 +76,11 @@ endef
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name.
 #
-# Parameter 2 is a list of dependencies for the jar target. If left empty,
-# dependencies are searched using SRCS, which should not be empty.
-#
 # Remaining parameters are named arguments. These include:
+#   DEPENDENCIES:=List of dependencies for the jar target. If left empty,
+#       dependencies are calculated automatically from the source files found.
+#       For this to work, the source files must exist when the makefile is
+#       parsed.
 #   SRCS:=List of directories in where to find files to add to archive
 #   SUFFIXES:=File suffixes to include in jar
 #   INCLUDES:=List of directories/packages in SRCS that should be included
@@ -102,17 +95,8 @@ endef
 #       added to the archive.
 #   EXTRA_MANIFEST_ATTR:=Extra attribute to add to manifest.
 #   CHECK_COMPRESS_JAR Check the COMPRESS_JAR variable
-define SetupArchive
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupArchive, please update JavaCompilation.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupArchiveInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
-endef
-
-define SetupArchiveInner
-  # NOTE: $2 is dependencies, not a named argument!
-  $(foreach i,3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupArchive($1),<dependencies>,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-  $(if $(findstring $(LOG_LEVEL),trace), $(info *[2] <dependencies> = $(strip $2)))
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupArchive, please update JavaCompilation.gmk))
+SetupArchive = $(NamedParamsMacroTemplate)
+define SetupArchiveBody
 
   $1_JARMAIN:=$(strip $$($1_JARMAIN))
   $1_JARNAME:=$$(notdir $$($1_JAR))
@@ -171,29 +155,27 @@ define SetupArchiveInner
   # When this macro is run in the same makefile as the java compilation, dependencies are
   # transfered in make variables. When the macro is run in a different makefile than the
   # java compilation, the dependencies need to be found in the filesystem.
-  ifneq (,$2)
-    $1_DEPS:=$2
-  else
+  ifeq ($$($1_DEPENDENCIES), )
     # Add all source roots to the find cache since we are likely going to run find
     # on these more than once. The cache will only be updated if necessary.
     $$(eval $$(call FillCacheFind, $$($1_FIND_LIST)))
-    $1_DEPS:=$$(filter $$(addprefix %,$$($1_SUFFIXES)), \
+    $1_DEPENDENCIES:=$$(filter $$(addprefix %,$$($1_SUFFIXES)), \
         $$(call CacheFind,$$($1_SRCS)))
     ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
-      $1_DEPS:=$$(filter $$(addsuffix %,$$($1_GREP_INCLUDE_PATTERNS)),$$($1_DEPS))
+      $1_DEPENDENCIES:=$$(filter $$(addsuffix %,$$($1_GREP_INCLUDE_PATTERNS)),$$($1_DEPENDENCIES))
     endif
     ifneq (,$$($1_GREP_EXCLUDE_PATTERNS))
-      $1_DEPS:=$$(filter-out $$(addsuffix %,$$($1_GREP_EXCLUDE_PATTERNS)),$$($1_DEPS))
+      $1_DEPENDENCIES:=$$(filter-out $$(addsuffix %,$$($1_GREP_EXCLUDE_PATTERNS)),$$($1_DEPENDENCIES))
     endif
     # Look for EXTRA_FILES in all SRCS dirs and as absolute paths.
-    $1_DEPS+=$$(wildcard $$(foreach src, $$($1_SRCS), \
+    $1_DEPENDENCIES+=$$(wildcard $$(foreach src, $$($1_SRCS), \
         $$(addprefix $$(src)/, $$($1_EXTRA_FILES))) $$($1_EXTRA_FILES))
     ifeq (,$$($1_SKIP_METAINF))
-      $1_DEPS+=$$(call CacheFind,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
+      $1_DEPENDENCIES+=$$(call CacheFind,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
     endif
   endif
   # The dependency list should never be empty
-  ifeq ($$(strip $$($1_DEPS)), )
+  ifeq ($$(strip $$($1_DEPENDENCIES)), )
     $$(warning No dependencies found for $1)
   endif
 
@@ -288,7 +270,7 @@ define SetupArchiveInner
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$(dir $$($1_JAR))_the.$$($1_JARNAME).vardeps)
 
   # Here is the rule that creates/updates the jar file.
-  $$($1_JAR) : $$($1_DEPS) $$($1_MANIFEST) $$($1_VARDEPS_FILE)
+  $$($1_JAR) : $$($1_DEPENDENCIES) $$($1_MANIFEST) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$($1_BIN)
 	$$($1_GREP_INCLUDE_OUTPUT)
 	$$($1_GREP_EXCLUDE_OUTPUT)
@@ -387,7 +369,7 @@ define add_file_to_clean
 	$(MKDIR) -p $$(@D)
 	export LC_ALL=C ; ( $(CAT) $$< && $(ECHO) "" ) \
 	    | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
-	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/#.*/#/g' \
+	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/^[ 	]*#.*/#/g' \
 	    | $(SED) -f "$(SRC_ROOT)/make/common/support/unicode2x.sed" \
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
@@ -429,15 +411,8 @@ endef
 #   HEADERS:=path to directory where all generated c-headers are written.
 #   DEPENDS:=Extra dependecy
 #   DISABLE_SJAVAC:=Explicitly disable the use of sjavac for this compilation unit.
-define SetupJavaCompilation
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompilation, please update JavaCompilation.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupJavaCompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
-endef
-
-define SetupJavaCompilationInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupJavaCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompilation, please update JavaCompilation.gmk))
+SetupJavaCompilation = $(NamedParamsMacroTemplate)
+define SetupJavaCompilationBody
 
   # Verify arguments
   ifeq ($$($1_BIN),)
@@ -653,7 +628,8 @@ define SetupJavaCompilationInner
       $1_SUFFIXES:=.class $$($1_CLEAN) $$($1_COPY)
     endif
 
-    $$(eval $$(call SetupArchive,ARCHIVE_$1,$$($1), \
+    $$(eval $$(call SetupArchive,ARCHIVE_$1, \
+        DEPENDENCIES:=$$($1), \
         SRCS:=$$($1_BIN), \
         SUFFIXES:=$$($1_SUFFIXES), \
         EXCLUDE:=$$($1_EXCLUDES), \

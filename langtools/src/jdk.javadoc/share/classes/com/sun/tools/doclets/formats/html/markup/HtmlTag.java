@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ public enum HtmlTag {
     DT,
     EM(BlockType.INLINE, EndTag.END),
     FONT(BlockType.INLINE, EndTag.END),
-    FRAME(BlockType.OTHER, EndTag.NOEND),
-    FRAMESET(BlockType.OTHER, EndTag.END),
     H1,
     H2,
     H3,
@@ -64,6 +62,7 @@ public enum HtmlTag {
     HR(BlockType.BLOCK, EndTag.NOEND),
     HTML(BlockType.OTHER, EndTag.END),
     I(BlockType.INLINE, EndTag.END),
+    IFRAME(BlockType.OTHER, EndTag.END),
     IMG(BlockType.INLINE, EndTag.NOEND),
     LI,
     LISTING,

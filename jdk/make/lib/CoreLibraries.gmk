@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 WIN_VERIFY_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify/verify.lib
 
 ##########################################################################################
-# libfdlibm is statically linked with libjava below and not delivered into the 
+# libfdlibm is statically linked with libjava below and not delivered into the
 # product on its own.
 
 BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
@@ -48,6 +48,8 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
       CFLAGS_windows_debug := -DLOGGING, \
       CFLAGS_aix := -qfloat=nomaf, \
+      DISABLED_WARNINGS_gcc := sign-compare, \
+      DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
@@ -94,6 +96,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
     LANG := C, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
+    DISABLED_WARNINGS_microsoft := 4244 4267, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -147,6 +150,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
+    DISABLED_WARNINGS_gcc := type-limits format-nonliteral, \
+    DISABLED_WARNINGS_clang := int-conversion, \
+    DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
+    DISABLED_WARNINGS_microsoft := 4022 4267, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -209,6 +216,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
+    DISABLED_WARNINGS_gcc := parentheses, \
+    DISABLED_WARNINGS_clang := dangling-else, \
+    DISABLED_WARNINGS_microsoft := 4267, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
     REORDER := $(BUILD_LIBZIP_REORDER), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -307,6 +317,12 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS), \
+    DISABLED_WARNINGS_gcc := pointer-to-int-cast sign-compare format-nonliteral \
+        parentheses, \
+    DISABLED_WARNINGS_clang := implicit-function-declaration parentheses \
+        int-conversion, \
+    DISABLED_WARNINGS_solstudio := E_ASM_DISABLES_OPTIMIZATION E_NEWLINE_NOT_LAST, \
+    DISABLED_WARNINGS_microsoft := 4244 4047 4267, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjli/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -355,6 +371,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS), \
+      DISABLED_WARNINGS_microsoft := 4244 4047 4267, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
@@ -375,6 +392,8 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
+      DISABLED_WARNINGS_clang := implicit-function-declaration parentheses \
+          int-conversion, \
       LDFLAGS := -nostdlib -r, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
@@ -401,4 +420,3 @@ else ifeq ($(OPENJDK_TARGET_OS), aix)
   TARGETS += $(BUILD_LIBJLI_STATIC)
 
 endif
-

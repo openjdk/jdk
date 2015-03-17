@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7124089 7131021 8042469 8066185
+ * @bug 7124089 7131021 8042469 8066185 8074373
  * @summary Checks for Launcher special flags, such as MacOSX specific flags,
  *          and JVM NativeMemoryTracking flags.
  * @compile -XDignore.symbol.file TestSpecialArgs.java EnvironmentVariables.java
@@ -270,10 +270,28 @@ public class TestSpecialArgs extends TestHelper {
         tr = doExec(envMap, javaCmd, "Foo", "-XX:NativeMemoryTracking=summary");
         checkTestResult(tr);
 
+        // should accept with no warnings
+        tr = doExec(javaCmd, "-cp", jarFile.getName(),
+                    "-XX:NativeMemoryTracking=summary", "Foo");
+        ensureNoWarnings(tr);
+
+        // should accept with no warnings
+        tr = doExec(javaCmd, "-classpath", jarFile.getName(),
+                    "-XX:NativeMemoryTracking=summary", "Foo");
+        ensureNoWarnings(tr);
+
         // make sure a missing class is handled correctly, because the class
         // resolution is performed by the JVM.
         tr = doExec(javaCmd, "AbsentClass", "-XX:NativeMemoryTracking=summary");
         if (!tr.contains("Error: Could not find or load main class AbsentClass")) {
+            throw new RuntimeException("Test Fails");
+        }
+    }
+
+    void ensureNoWarnings(TestResult tr) {
+        checkTestResult(tr);
+        if (tr.contains("warning: Native Memory Tracking")) {
+            System.err.println(tr.toString());
             throw new RuntimeException("Test Fails");
         }
     }
