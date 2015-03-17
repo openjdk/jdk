@@ -813,7 +813,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         }
     }
 
-    @Override
+    @Override @Deprecated
     public double toNumber() {
         return inGlobal(new Callable<Double>() {
             @Override public Double call() {
@@ -823,7 +823,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     }
 
     @Override
-    public Object getDefaultValue(Class<?> hint) {
+    public Object getDefaultValue(final Class<?> hint) {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
                 try {

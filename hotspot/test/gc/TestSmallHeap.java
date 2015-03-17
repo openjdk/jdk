@@ -26,6 +26,7 @@
  * @bug 8067438
  * @requires vm.gc=="null"
  * @requires (vm.opt.AggressiveOpts=="null") | (vm.opt.AggressiveOpts=="false")
+ * @requires vm.compMode != "Xcomp"
  * @summary Verify that starting the VM with a small heap works
  * @library /testlibrary /../../test/lib
  * @build TestSmallHeap

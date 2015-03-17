@@ -56,7 +56,7 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     /** Break label. */
     private final Label breakLabel;
 
-    /** Does the block/function need a new scope? */
+    /** Does the block/function need a new scope? Is this synthetic? */
     protected final int flags;
 
     /**
@@ -78,6 +78,11 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
      * outermost level of recompiles
      */
     public static final int IS_GLOBAL_SCOPE = 1 << 3;
+
+    /**
+     * Is this block a synthetic one introduced by Parser?
+     */
+    public static final int IS_SYNTHETIC = 1 << 4;
 
     /**
      * Constructor
@@ -108,7 +113,7 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
      * @param statements All statements in the block
      */
     public Block(final long token, final int finish, final Statement...statements){
-        this(token, finish, 0, statements);
+        this(token, finish, IS_SYNTHETIC, statements);
     }
 
     /**
@@ -119,7 +124,7 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
      * @param statements All statements in the block
      */
     public Block(final long token, final int finish, final List<Statement> statements){
-        this(token, finish, 0, statements);
+        this(token, finish, IS_SYNTHETIC, statements);
     }
 
     /**
@@ -364,6 +369,15 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
      */
     public boolean needsScope() {
         return (flags & NEEDS_SCOPE) == NEEDS_SCOPE;
+    }
+
+    /**
+     * Check whether this block is synthetic or not.
+     *
+     * @return true if this is a synthetic block
+     */
+    public boolean isSynthetic() {
+        return (flags & IS_SYNTHETIC) == IS_SYNTHETIC;
     }
 
     @Override

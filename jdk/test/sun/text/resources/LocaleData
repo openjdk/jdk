@@ -8273,3 +8273,9 @@ FormatData/zh/MonthNarrows/9=10
 FormatData/zh/MonthNarrows/10=11
 FormatData/zh/MonthNarrows/11=12
 FormatData/zh/MonthNarrows/12=
+
+# bug #8074791
+FormatData/fi/DatePatterns/0=d. MMMM yyyy
+FormatData/fi/DatePatterns/1=d. MMMM yyyy
+FormatData/fi/DatePatterns/2=d.M.yyyy
+FormatData/fi/DatePatterns/3=d.M.yyyy
