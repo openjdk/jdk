@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/referenceType.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/fieldInfo.hpp"

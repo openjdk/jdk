@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_INSTANCEMIRRORKLASS_HPP
 
 #include "classfile/systemDictionary.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"

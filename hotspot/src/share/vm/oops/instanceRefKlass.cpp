@@ -30,6 +30,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genOopClosures.inline.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/preserveException.hpp"

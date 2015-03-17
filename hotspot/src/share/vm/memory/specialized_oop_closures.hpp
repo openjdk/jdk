@@ -69,12 +69,6 @@ class NoHeaderExtendedOopClosure;
 // This is split into several because of a Visual C++ 6.0 compiler bug
 // where very long macros cause the compiler to crash
 
-// Some other heap might define further specialized closures.
-#ifndef FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES
-#define FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES(f) \
-        /* None */
-#endif
-
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)       \
   f(ScanClosure,_nv)                                    \
   f(FastScanClosure,_nv)                                \
@@ -94,7 +88,7 @@ class NoHeaderExtendedOopClosure;
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f)
 
 #if INCLUDE_ALL_GCS
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)       \
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f)     \
   f(MarkRefsIntoAndScanClosure,_nv)                     \
   f(Par_MarkRefsIntoAndScanClosure,_nv)                 \
   f(PushAndMarkClosure,_nv)                             \
@@ -102,8 +96,13 @@ class NoHeaderExtendedOopClosure;
   f(PushOrMarkClosure,_nv)                              \
   f(Par_PushOrMarkClosure,_nv)                          \
   f(CMSKeepAliveClosure,_nv)                            \
-  f(CMSInnerParMarkAndPushClosure,_nv)                  \
-  FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES(f)
+  f(CMSInnerParMarkAndPushClosure,_nv)
+#endif
+
+#if INCLUDE_ALL_GCS
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)       \
+  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f)           \
+  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f)
 #else  // INCLUDE_ALL_GCS
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)
 #endif // INCLUDE_ALL_GCS
@@ -144,13 +143,6 @@ class NoHeaderExtendedOopClosure;
 // The "root_class" is the most general class to define; this may be
 // "OopClosure" in some applications and "OopsInGenClosure" in others.
 
-
-// Some other heap might define further specialized closures.
-#ifndef FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES
-#define FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f) \
-        /* None */
-#endif
-
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f) \
   f(ScanClosure,_nv)                                     \
   f(FastScanClosure,_nv)
@@ -158,8 +150,7 @@ class NoHeaderExtendedOopClosure;
 #if INCLUDE_ALL_GCS
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f) \
   f(ParScanWithBarrierClosure,_nv)                       \
-  f(ParScanWithoutBarrierClosure,_nv)                    \
-  FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)
+  f(ParScanWithoutBarrierClosure,_nv)
 #else  // INCLUDE_ALL_GCS
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f)
 #endif // INCLUDE_ALL_GCS

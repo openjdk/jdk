@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_OOPS_OBJARRAYOOP_HPP
 #define SHARE_VM_OOPS_OBJARRAYOOP_HPP
 
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/arrayOop.hpp"
 
 // An objArrayOop is an array containing oops.

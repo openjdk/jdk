@@ -30,6 +30,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"

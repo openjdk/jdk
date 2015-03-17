@@ -27,7 +27,6 @@
 
 #include "gc_implementation/g1/g1AllocationContext.hpp"
 #include "gc_implementation/g1/g1BlockOffsetTable.hpp"
-#include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
 #include "gc_implementation/g1/heapRegionType.hpp"
 #include "gc_implementation/g1/survRateGroup.hpp"
 #include "gc_implementation/shared/ageTable.hpp"
