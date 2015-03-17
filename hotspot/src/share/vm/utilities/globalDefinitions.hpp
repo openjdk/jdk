@@ -1354,6 +1354,13 @@ inline intptr_t p2i(const void * p) {
   return (intptr_t) p;
 }
 
+// swap a & b
+template<class T> static void swap(T& a, T& b) {
+  T tmp = a;
+  a = b;
+  b = tmp;
+}
+
 // Printf-style formatters for fixed- and variable-width types as pointers and
 // integers.  These are derived from the definitions in inttypes.h.  If the platform
 // doesn't provide appropriate definitions, they should be provided in

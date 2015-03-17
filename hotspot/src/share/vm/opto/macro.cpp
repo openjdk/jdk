@@ -2535,7 +2535,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
                (bol->_test._test == BoolTest::ne), "");
         IfNode* ifn = bol->unique_out()->as_If();
         assert((ifn->outcnt() == 2) &&
-               ifn->proj_out(1)->is_uncommon_trap_proj(Deoptimization::Reason_rtm_state_change), "");
+               ifn->proj_out(1)->is_uncommon_trap_proj(Deoptimization::Reason_rtm_state_change) != NULL, "");
 #endif
         Node* repl = n->in(1);
         if (!_has_locks) {
