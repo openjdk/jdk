@@ -144,9 +144,19 @@ java.desktop_EXCLUDE_FILES += \
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   # exclude all X11 on Mac.
-  java.desktop_EXCLUDES += sun/awt/X11
+  java.desktop_EXCLUDES += \
+      sun/awt/X11 \
+      sun/java2d/x11 \
+      sun/java2d/jules \
+      sun/java2d/xr \
+      com/sun/java/swing/plaf/gtk \
+      #
   java.desktop_EXCLUDE_FILES += \
-      $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/BackBufferCapsProvider.java \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/opengl/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/awt/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/awt/motif/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/font/*.java) \
       #
 else
   # TBD: figure out how to eliminate this long list
