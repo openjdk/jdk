@@ -34,7 +34,9 @@ import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
+import jdk.nashorn.internal.ir.DebuggerNode;
 import jdk.nashorn.internal.ir.EmptyNode;
+import jdk.nashorn.internal.ir.ErrorNode;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -293,6 +295,27 @@ public abstract class NodeVisitor<T extends LexicalContext> {
         return leaveDefault(continueNode);
     }
 
+
+    /**
+     * Callback for entering a DebuggerNode
+     *
+     * @param  debuggerNode the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
+     */
+    public boolean enterDebuggerNode(final DebuggerNode debuggerNode) {
+        return enterDefault(debuggerNode);
+    }
+
+    /**
+     * Callback for leaving a DebuggerNode
+     *
+     * @param  debuggerNode the node
+     * @return processed node, which will replace the original one, or the original node
+     */
+    public Node leaveDebuggerNode(final DebuggerNode debuggerNode) {
+        return leaveDefault(debuggerNode);
+    }
+
     /**
      * Callback for entering an EmptyNode
      *
@@ -311,6 +334,26 @@ public abstract class NodeVisitor<T extends LexicalContext> {
      */
     public Node leaveEmptyNode(final EmptyNode emptyNode) {
         return leaveDefault(emptyNode);
+    }
+
+    /**
+     * Callback for entering an ErrorNode
+     *
+     * @param  errorNode   the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
+     */
+    public boolean enterErrorNode(final ErrorNode errorNode) {
+        return enterDefault(errorNode);
+    }
+
+    /**
+     * Callback for leaving an ErrorNode
+     *
+     * @param  errorNode the node
+     * @return processed node, which will replace the original one, or the original node
+     */
+    public Node leaveErrorNode(final ErrorNode errorNode) {
+        return leaveDefault(errorNode);
     }
 
     /**

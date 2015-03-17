@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import com.sun.tools.sjavac.Transformer;
+import com.sun.tools.sjavac.Util;
 
 /**
  * Instances of this class represent values for sjavac command line options.
@@ -358,21 +359,25 @@ public class Options {
 
         @Override
         public void exclude(String exclPattern) {
+            exclPattern = Util.normalizeDriveLetter(exclPattern);
             excludes.add(exclPattern);
         }
 
         @Override
         public void include(String inclPattern) {
+            inclPattern = Util.normalizeDriveLetter(inclPattern);
             includes.add(inclPattern);
         }
 
         @Override
         public void excludeFile(String exclFilePattern) {
+            exclFilePattern = Util.normalizeDriveLetter(exclFilePattern);
             excludeFiles.add(exclFilePattern);
         }
 
         @Override
         public void includeFile(String inclFilePattern) {
+            inclFilePattern = Util.normalizeDriveLetter(inclFilePattern);
             includeFiles.add(inclFilePattern);
         }
 

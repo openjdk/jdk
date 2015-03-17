@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,6 @@ public final class Subject implements java.io.Serializable {
     /**
      * A {@code Set} that provides a view of all of this
      * Subject's Principals
-     *
-     * <p>
      *
      * @serial Each element in this set is a
      *          {@code java.security.Principal}.
