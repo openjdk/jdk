@@ -1122,14 +1122,6 @@ oop ParNewGeneration::real_forwardee_slow(oop obj) {
   return forward_ptr;
 }
 
-#ifdef ASSERT
-bool ParNewGeneration::is_legal_forward_ptr(oop p) {
-  return
-    (p == ClaimedForwardPtr)
-    || Universe::heap()->is_in_reserved(p);
-}
-#endif
-
 void ParNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
   if (m->must_be_preserved_for_promotion_failure(obj)) {
     // We should really have separate per-worker stacks, rather
@@ -1204,6 +1196,7 @@ oop ParNewGeneration::copy_to_survivor_space(
   } else {
     // Is in to-space; do copying ourselves.
     Copy::aligned_disjoint_words((HeapWord*)old, (HeapWord*)new_obj, sz);
+    assert(Universe::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
     forward_ptr = old->forward_to_atomic(new_obj);
     // Restore the mark word copied above.
     new_obj->set_mark(m);
