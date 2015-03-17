@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 
 /*
  * @test
- * @bug 8026236
- * @summary test primality verification methods in BigInteger
+ * @library ..
+ * @bug 8026236 8074460
+ * @summary test primality verification methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @author bpb
  */
 import java.math.BigInteger;
 import java.util.BitSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
@@ -178,7 +178,9 @@ public class PrimeTest {
         }
 
         // Create a list of non-prime BigIntegers.
-        List<BigInteger> nonPrimeBigInts = (new SplittableRandom())
+        RandomSeed rndSeed = new RandomSeed(true);
+        System.out.println("Random number generator seed = " + rndSeed.getSeed());
+        List<BigInteger> nonPrimeBigInts = (rndSeed.getSplittableRandom())
                 .ints(NUM_NON_PRIMES, 2, maxPrime).mapToObj(BigInteger::valueOf)
                 .filter(b -> !b.isProbablePrime(certainty)).collect(toList());
 
