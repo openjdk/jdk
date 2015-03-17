@@ -164,7 +164,14 @@ public class SpillProperty extends AccessorProperty {
         assert !OBJECT_FIELDS_ONLY || getLocalType() == Object.class;
     }
 
-    SpillProperty(final String key, final int flags, final int slot, final Class<?> initialType) {
+    /**
+     * Constructor for spill properties with an initial type.
+     * @param key         the property key
+     * @param flags       the property flags
+     * @param slot        spill slot
+     * @param initialType initial type
+     */
+    public SpillProperty(final String key, final int flags, final int slot, final Class<?> initialType) {
         this(key, flags, slot);
         setType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
     }

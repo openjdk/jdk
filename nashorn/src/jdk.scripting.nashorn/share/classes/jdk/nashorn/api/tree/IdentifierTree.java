@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,10 +23,24 @@
  * questions.
  */
 
-package pkg;
+package jdk.nashorn.api.tree;
 
 /**
- * Source file for C
+ * A tree node for an identifier expression.
+ *
+ * For example:
+ * <pre>
+ *   <em>name</em>
+ * </pre>
+ *
+ * @since 1.9
  */
-public class C {
+@jdk.Exported
+public interface IdentifierTree extends ExpressionTree {
+    /**
+     * Returns the name of this identifier.
+     *
+     * @return the name of this identifier
+     */
+    String getName();
 }

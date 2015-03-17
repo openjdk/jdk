@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,10 +157,8 @@ public final class PrivateCredentialPermission extends Permission {
      * with the specified {@code name}.  The {@code name}
      * specifies both a Credential class and a {@code Principal} Set.
      *
-     * <p>
-     *
      * @param name the name specifying the Credential class and
-     *          {@code Principal} Set. <p>
+     *          {@code Principal} Set.
      *
      * @param actions the actions specifying that the Credential can be read.
      *
@@ -179,8 +177,6 @@ public final class PrivateCredentialPermission extends Permission {
     /**
      * Returns the Class name of the Credential associated with this
      * {@code PrivateCredentialPermission}.
-     *
-     * <p>
      *
      * @return the Class name of the Credential associated with this
      *          {@code PrivateCredentialPermission}.
@@ -201,8 +197,6 @@ public final class PrivateCredentialPermission extends Permission {
      * the first {@code Principal} in the array.  array[0][1]
      * corresponds to the {@code Principal} name of the
      * first {@code Principal} in the array.
-     *
-     * <p>
      *
      * @return the {@code Principal} class and names associated
      *          with this {@code PrivateCredentialPermission}.
@@ -229,8 +223,8 @@ public final class PrivateCredentialPermission extends Permission {
      *
      * This method returns true if:
      * <ul>
-     * <li> <i>p</i> is an instanceof PrivateCredentialPermission and
-     * <li> the target name for <i>p</i> is implied by this object's
+     * <li> {@code p} is an instanceof PrivateCredentialPermission and
+     * <li> the target name for {@code p} is implied by this object's
      *          target name.  For example:
      * <pre>
      *  [* P1 "duke"] implies [a.b.Credential P1 "duke"].
@@ -238,8 +232,6 @@ public final class PrivateCredentialPermission extends Permission {
      *  [C1 P2 "dukette"] implies [C1 P1 "duke" P2 "dukette"].
      * </pre>
      * </ul>
-     *
-     * <p>
      *
      * @param p the {@code Permission} to check against.
      *
@@ -261,14 +253,12 @@ public final class PrivateCredentialPermission extends Permission {
 
     /**
      * Checks two {@code PrivateCredentialPermission} objects for
-     * equality.  Checks that <i>obj</i> is a
+     * equality.  Checks that {@code obj} is a
      * {@code PrivateCredentialPermission},
      * and has the same credential class as this object,
      * as well as the same Principals as this object.
      * The order of the Principals in the respective Permission's
      * target names is not relevant.
-     *
-     * <p>
      *
      * @param obj the object we are testing for equality with this object.
      *
@@ -301,8 +291,6 @@ public final class PrivateCredentialPermission extends Permission {
      * Returns the "canonical string representation" of the actions.
      * This method always returns the String, "read".
      *
-     * <p>
-     *
      * @return the actions (always returns "read").
      */
     public String getActions() {
@@ -314,8 +302,6 @@ public final class PrivateCredentialPermission extends Permission {
      * in a {@code PermissionCollection}.
      * No such {@code PermissionCollection} is defined,
      * so this method always returns {@code null}.
-     *
-     * <p>
      *
      * @return null in all cases.
      */

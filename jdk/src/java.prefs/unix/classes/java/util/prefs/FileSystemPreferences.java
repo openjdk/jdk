@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,13 @@ import sun.util.logging.PlatformLogger;
  * @since   1.4
  */
 class FileSystemPreferences extends AbstractPreferences {
+
+    /**
+     * The code point U+0000, assigned to the null control character, is the
+     * only character encoded in Unicode and ISO/IEC 10646 that is always
+     * invalid in any XML 1.0 and 1.1 document.
+     */
+    private static final String CODE_POINT_U0000 = String.valueOf('\u0000');
 
     static {
         PrivilegedAction<Void> load = () -> {
@@ -525,6 +532,11 @@ class FileSystemPreferences extends AbstractPreferences {
     }
 
     protected void putSpi(String key, String value) {
+        if (key.indexOf(CODE_POINT_U0000) != -1) {
+            throw new IllegalArgumentException("Key contains code point U+0000");
+        } else if (value.indexOf(CODE_POINT_U0000) != -1) {
+            throw new IllegalArgumentException("Value contains code point U+0000");
+        }
         initCacheIfNecessary();
         changeLog.add(new Put(key, value));
         prefsCache.put(key, value);

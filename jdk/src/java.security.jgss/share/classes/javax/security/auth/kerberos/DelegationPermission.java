@@ -74,8 +74,6 @@ public final class DelegationPermission extends BasicPermission
      * Create a new {@code DelegationPermission}
      * with the specified subordinate and target principals.
      *
-     * <p>
-     *
      * @param principals the name of the subordinate and target principals
      *
      * @throws NullPointerException if {@code principals} is {@code null}.
@@ -89,10 +87,9 @@ public final class DelegationPermission extends BasicPermission
     /**
      * Create a new {@code DelegationPermission}
      * with the specified subordinate and target principals.
-     * <p>
      *
      * @param principals the name of the subordinate and target principals
-     * <p>
+     *
      * @param actions should be null.
      *
      * @throws NullPointerException if {@code principals} is {@code null}.
@@ -155,10 +152,10 @@ public final class DelegationPermission extends BasicPermission
 
     /**
      * Checks two DelegationPermission objects for equality.
-     * <P>
+     *
      * @param obj the object to test for equality with this object.
      *
-     * @return true if <i>obj</i> is a DelegationPermission, and
+     * @return true if {@code obj} is a DelegationPermission, and
      *  has the same subordinate and service principal as this.
      *  DelegationPermission object.
      */

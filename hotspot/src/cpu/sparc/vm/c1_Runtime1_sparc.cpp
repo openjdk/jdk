@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -916,7 +916,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register cardtable = G5;
         Register tmp  = G1_scratch;
         Register tmp2 = G3_scratch;
-        jbyte* byte_map_base = ((CardTableModRefBS*)bs)->byte_map_base;
+        jbyte* byte_map_base = barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base;
 
         Label not_already_dirty, restart, refill, young_card;
 

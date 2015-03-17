@@ -46,15 +46,8 @@ include $(JDK_TOPDIR)/make/Tools.gmk
 #   TYPE Must be either PROGRAM or LIBRARY.
 #   SOURCE_DIRS A list of source directories to search
 #   OUTPUT_DIR Where to put the resulting files
-define SetupTestFilesCompilation
-  $(if $(27),$(error Internal makefile error: Too many arguments to SetupTestFilesCompilation, please update BuildJTRegNative.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupTestFilesCompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26)))
-endef
-
-define SetupTestFilesCompilationInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupTestFileCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26))
-  $(if $(27),$(error Internal makefile error: Too many arguments to SetupTestFilesCompilation, please update BuildJTRegNative.gmk))
+SetupTestFilesCompilation = $(NamedParamsMacroTemplate)
+define SetupTestFilesCompilationBody
 
   # Check for duplicate base file names. That would have failed later anyhow, but
   # this gives a better error message.
@@ -68,13 +61,13 @@ define SetupTestFilesCompilationInner
   ifeq ($$($1_TYPE), LIBRARY)
     $1_PREFIX = lib
     $1_OUTPUT_SUBDIR := lib
-    $1_CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS)
-    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
+    $1_CFLAGS := $(CFLAGS_TESTLIB) $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_LDFLAGS := $(LDFLAGS_TESTLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
-    $1_CFLAGS := $(CFLAGS_JDKEXE) $(CFLAGS_WARNINGS_ARE_ERRORS)
-    $1_LDFLAGS := $(LDFLAGS_JDKEXE)
+    $1_CFLAGS := $(CFLAGS_TESTEXE) $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_LDFLAGS := $(LDFLAGS_TESTEXE)
   else
     $$(error Unknown type: $$($1_TYPE))
   endif
