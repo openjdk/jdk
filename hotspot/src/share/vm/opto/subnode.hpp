@@ -275,6 +275,8 @@ struct BoolTest VALUE_OBJ_CLASS_SPEC {
   mask commute( ) const { return mask("032147658"[_test]-'0'); }
   mask negate( ) const { return mask(_test^4); }
   bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le || _test == BoolTest::overflow); }
+  bool is_less( )  const { return _test == BoolTest::lt || _test == BoolTest::le; }
+  bool is_greater( ) const { return _test == BoolTest::gt || _test == BoolTest::ge; }
   void dump_on(outputStream *st) const;
 };
 

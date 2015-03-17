@@ -2069,7 +2069,7 @@ Node* Node::find_similar(int opc) {
 
 //--------------------------unique_ctrl_out------------------------------
 // Return the unique control out if only one. Null if none or more than one.
-Node* Node::unique_ctrl_out() {
+Node* Node::unique_ctrl_out() const {
   Node* found = NULL;
   for (uint i = 0; i < outcnt(); i++) {
     Node* use = raw_out(i);

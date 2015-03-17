@@ -931,7 +931,7 @@ public:
   Node* find_similar(int opc);
 
   // Return the unique control out if only one. Null if none or more than one.
-  Node* unique_ctrl_out();
+  Node* unique_ctrl_out() const;
 
 //----------------- Code Generation
 
