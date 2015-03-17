@@ -46,7 +46,6 @@ oop objArrayOopDesc::atomic_compare_exchange_oop(int index, oop exchange_value,
 #define ObjArrayOop_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                    \
                                                                                    \
 int objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {  \
-  SpecializationStats::record_call();                                              \
   return ((ObjArrayKlass*)klass())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
 }
 

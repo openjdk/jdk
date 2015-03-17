@@ -692,12 +692,10 @@ inline int oopDesc::adjust_pointers() {
 #define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                        \
                                                                            \
 inline int oopDesc::oop_iterate(OopClosureType* blk) {                     \
-  SpecializationStats::record_call();                                      \
   return klass()->oop_oop_iterate##nv_suffix(this, blk);               \
 }                                                                          \
                                                                            \
 inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {       \
-  SpecializationStats::record_call();                                      \
   return klass()->oop_oop_iterate##nv_suffix##_m(this, blk, mr);       \
 }
 
@@ -721,7 +719,6 @@ ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DEFN)
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
                                                                            \
 inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
-  SpecializationStats::record_call();                                      \
   return klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);     \
 }
 

@@ -2997,7 +2997,6 @@ void CMSCollector::checkpointRootsInitial() {
   report_heap_summary(GCWhen::BeforeGC);
 
   ReferenceProcessor* rp = ref_processor();
-  SpecializationStats::clear();
   assert(_restart_addr == NULL, "Control point invariant");
   {
     // acquire locks for subsequent manipulations
@@ -3008,7 +3007,6 @@ void CMSCollector::checkpointRootsInitial() {
     rp->enable_discovery();
     _collectorState = Marking;
   }
-  SpecializationStats::print();
 }
 
 void CMSCollector::checkpointRootsInitialWork() {
@@ -4326,7 +4324,6 @@ void CMSCollector::checkpointRootsFinal() {
   verify_work_stacks_empty();
   verify_overflow_empty();
 
-  SpecializationStats::clear();
   if (PrintGCDetails) {
     gclog_or_tty->print("[YG occupancy: "SIZE_FORMAT" K ("SIZE_FORMAT" K)]",
                         _young_gen->used() / K,
@@ -4357,7 +4354,6 @@ void CMSCollector::checkpointRootsFinal() {
   }
   verify_work_stacks_empty();
   verify_overflow_empty();
-  SpecializationStats::print();
 }
 
 void CMSCollector::checkpointRootsFinalWork() {

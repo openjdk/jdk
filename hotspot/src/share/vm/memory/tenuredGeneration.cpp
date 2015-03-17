@@ -178,7 +178,6 @@ void TenuredGeneration::collect(bool   full,
                                 bool   is_tlab) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  SpecializationStats::clear();
   // Temporarily expand the span of our ref processor, so
   // refs discovery is over the entire heap, not just this generation
   ReferenceProcessorSpanMutator
@@ -195,8 +194,6 @@ void TenuredGeneration::collect(bool   full,
   gc_timer->register_gc_end();
 
   gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
-
-  SpecializationStats::print();
 }
 
 HeapWord*
