@@ -3712,7 +3712,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
-    uint active_workers = workers()->active_workers();
+    uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
+                                                                  workers()->active_workers(),
+                                                                  Threads::number_of_non_daemon_threads());
+    assert(UseDynamicNumberOfGCThreads ||
+           active_workers == workers()->total_workers(),
+           "If not dynamic should be using all the  workers");
+    workers()->set_active_workers(active_workers);
+
     double pause_start_sec = os::elapsedTime();
     g1_policy()->phase_times()->note_gc_start(active_workers, mark_in_progress());
     log_gc_header();
@@ -5410,15 +5417,10 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   hot_card_cache->reset_hot_cache_claimed_index();
   hot_card_cache->set_use_cache(false);
 
-  uint n_workers;
-  n_workers =
-    AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
-                                   workers()->active_workers(),
-                                   Threads::number_of_non_daemon_threads());
+  const uint n_workers = workers()->active_workers();
   assert(UseDynamicNumberOfGCThreads ||
          n_workers == workers()->total_workers(),
          "If not dynamic should be using all the  workers");
-  workers()->set_active_workers(n_workers);
   set_par_threads(n_workers);
 
 
