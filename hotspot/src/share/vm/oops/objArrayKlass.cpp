@@ -32,6 +32,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"

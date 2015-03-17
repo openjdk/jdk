@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
