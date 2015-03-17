@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,7 +376,7 @@ public class HtmlWriter {
      *
      * @return a content for the SCRIPT tag
      */
-    protected Content getFramesetJavaScript() {
+    protected Content getFramesJavaScript() {
         HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
         script.addAttr(HtmlAttr.TYPE, "text/javascript");
         String scriptCode = DocletConstants.NL +
@@ -425,10 +425,6 @@ public class HtmlWriter {
                 "            }" + DocletConstants.NL +
                 "        }" + DocletConstants.NL +
                 "        return true;" + DocletConstants.NL +
-                "    }" + DocletConstants.NL +
-                "    function loadFrames() {" + DocletConstants.NL +
-                "        if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
-                "             top.classFrame.location = top.targetPage;" + DocletConstants.NL +
                 "    }" + DocletConstants.NL;
         RawHtml scriptContent = new RawHtml(scriptCode);
         script.addContent(scriptContent);

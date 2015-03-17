@@ -244,20 +244,15 @@ public class JSONParser {
     private static PropertyMap addObjectProperty(final PropertyMap propertyMap, final List<Object> values,
                                                  final String id, final Object value) {
         final Property oldProperty = propertyMap.findProperty(id);
-        final Property newProperty;
         final PropertyMap newMap;
         final Class<?> type = ObjectClassGenerator.OBJECT_FIELDS_ONLY ? Object.class : getType(value);
 
         if (oldProperty != null) {
             values.set(oldProperty.getSlot(), value);
-            newProperty = new SpillProperty(id, 0, oldProperty.getSlot());
-            newProperty.setType(type);
-            newMap = propertyMap.replaceProperty(oldProperty, newProperty);;
+            newMap = propertyMap.replaceProperty(oldProperty, new SpillProperty(id, 0, oldProperty.getSlot(), type));;
         } else {
             values.add(value);
-            newProperty = new SpillProperty(id, 0, propertyMap.size());
-            newProperty.setType(type);
-            newMap = propertyMap.addProperty(newProperty);
+            newMap = propertyMap.addProperty(new SpillProperty(id, 0, propertyMap.size(), type));
         }
 
         return newMap;

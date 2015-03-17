@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ class PeriodicTask: public CHeapObj<mtInternal> {
 
   static int _num_tasks;
   static PeriodicTask* _tasks[PeriodicTask::max_tasks];
+  // Can only be called by the WatcherThread
   static void real_time_tick(int delay_time);
 
 #ifndef PRODUCT
@@ -98,6 +99,7 @@ class PeriodicTask: public CHeapObj<mtInternal> {
 
   // Calculate when the next periodic task will fire.
   // Called by the WatcherThread's run method.
+  // Requires the PeriodicTask_lock.
   static int time_to_wait();
 
   // The task to perform at each period

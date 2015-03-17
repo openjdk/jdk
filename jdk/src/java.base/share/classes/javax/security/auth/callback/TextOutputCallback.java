@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,10 @@ public class TextOutputCallback implements Callback, java.io.Serializable {
      * Construct a TextOutputCallback with a message type and message
      * to be displayed.
      *
-     * <p>
-     *
      * @param messageType the message type ({@code INFORMATION},
-     *                  {@code WARNING} or {@code ERROR}). <p>
+     *                  {@code WARNING} or {@code ERROR}).
      *
-     * @param message the message to be displayed. <p>
+     * @param message the message to be displayed.
      *
      * @exception IllegalArgumentException if {@code messageType}
      *                  is not either {@code INFORMATION},
@@ -85,8 +83,6 @@ public class TextOutputCallback implements Callback, java.io.Serializable {
     /**
      * Get the message type.
      *
-     * <p>
-     *
      * @return the message type ({@code INFORMATION},
      *                  {@code WARNING} or {@code ERROR}).
      */
@@ -96,8 +92,6 @@ public class TextOutputCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the message to be displayed.
-     *
-     * <p>
      *
      * @return the message to be displayed.
      */

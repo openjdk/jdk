@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,14 +159,12 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      * they require either a YES/NO, YES/NO/CANCEL or OK/CANCEL
      * confirmation.
      *
-     * <p>
-     *
      * @param messageType the message type ({@code INFORMATION},
-     *                  {@code WARNING} or {@code ERROR}). <p>
+     *                  {@code WARNING} or {@code ERROR}).
      *
      * @param optionType the option type ({@code YES_NO_OPTION},
      *                  {@code YES_NO_CANCEL_OPTION} or
-     *                  {@code OK_CANCEL_OPTION}). <p>
+     *                  {@code OK_CANCEL_OPTION}).
      *
      * @param defaultOption the default option
      *                  from the provided optionType ({@code YES},
@@ -222,12 +220,10 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      * and are displayed by the {@code CallbackHandler} implementation
      * in a manner consistent with the way preset options are displayed.
      *
-     * <p>
-     *
      * @param messageType the message type ({@code INFORMATION},
-     *                  {@code WARNING} or {@code ERROR}). <p>
+     *                  {@code WARNING} or {@code ERROR}).
      *
-     * @param options the list of confirmation options. <p>
+     * @param options the list of confirmation options.
      *
      * @param defaultOption the default option, represented as an index
      *                  into the {@code options} array.
@@ -268,16 +264,14 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      * they require either a YES/NO, YES/NO/CANCEL or OK/CANCEL
      * confirmation.
      *
-     * <p>
-     *
-     * @param prompt the prompt used to describe the list of options. <p>
+     * @param prompt the prompt used to describe the list of options.
      *
      * @param messageType the message type ({@code INFORMATION},
-     *                  {@code WARNING} or {@code ERROR}). <p>
+     *                  {@code WARNING} or {@code ERROR}).
      *
      * @param optionType the option type ({@code YES_NO_OPTION},
      *                  {@code YES_NO_CANCEL_OPTION} or
-     *                  {@code OK_CANCEL_OPTION}). <p>
+     *                  {@code OK_CANCEL_OPTION}).
      *
      * @param defaultOption the default option
      *                  from the provided optionType ({@code YES},
@@ -337,14 +331,12 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      * and are displayed by the {@code CallbackHandler} implementation
      * in a manner consistent with the way preset options are displayed.
      *
-     * <p>
-     *
-     * @param prompt the prompt used to describe the list of options. <p>
+     * @param prompt the prompt used to describe the list of options.
      *
      * @param messageType the message type ({@code INFORMATION},
-     *                  {@code WARNING} or {@code ERROR}). <p>
+     *                  {@code WARNING} or {@code ERROR}).
      *
-     * @param options the list of confirmation options. <p>
+     * @param options the list of confirmation options.
      *
      * @param defaultOption the default option, represented as an index
      *                  into the {@code options} array.
@@ -384,8 +376,6 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     /**
      * Get the prompt.
      *
-     * <p>
-     *
      * @return the prompt, or null if this {@code ConfirmationCallback}
      *          was instantiated without a {@code prompt}.
      */
@@ -395,8 +385,6 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the message type.
-     *
-     * <p>
      *
      * @return the message type ({@code INFORMATION},
      *          {@code WARNING} or {@code ERROR}).
@@ -414,8 +402,6 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      * In this case, invoke the {@code getOptions} method
      * to determine which confirmation options to display.
      *
-     * <p>
-     *
      * @return the option type ({@code YES_NO_OPTION},
      *          {@code YES_NO_CANCEL_OPTION} or
      *          {@code OK_CANCEL_OPTION}), or
@@ -430,8 +416,6 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     /**
      * Get the confirmation options.
      *
-     * <p>
-     *
      * @return the list of confirmation options, or null if this
      *          {@code ConfirmationCallback} was instantiated with
      *          an {@code optionType} instead of {@code options}.
@@ -442,8 +426,6 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the default option.
-     *
-     * <p>
      *
      * @return the default option, represented as
      *          {@code YES}, {@code NO}, {@code OK} or
@@ -462,8 +444,6 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     /**
      * Set the selected confirmation option.
      *
-     * <p>
-     *
      * @param selection the selection represented as {@code YES},
      *          {@code NO}, {@code OK} or {@code CANCEL}
      *          if an {@code optionType} was specified to the constructor
@@ -480,8 +460,6 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the selected confirmation option.
-     *
-     * <p>
      *
      * @return the selected confirmation option represented as
      *          {@code YES}, {@code NO}, {@code OK} or

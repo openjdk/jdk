@@ -36,18 +36,22 @@ public class CountedLoopProblem {
     public static void main(String[] args) throws Exception {
         Random r = new Random(42);
         int x = 0;
-        StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < 1000000; ++i) {
-            int v = Math.abs(r.nextInt());
-            sb.append('+').append(v).append('\n');
-            x += v;
-            // To trigger the problem we must OSR in the following loop
-            // To make the problem 100% reproducible run with -XX:-TieredCompilation -XX:OSROnlyBCI=62
-            while(x < 0) x += 1000000000;
-            sb.append('=').append(x).append('\n');
-        }
-        if (sb.toString().hashCode() != 0xaba94591) {
-            throw new Exception("Unexpected result");
+        try {
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i < 1000000; ++i) {
+                int v = Math.abs(r.nextInt());
+                sb.append('+').append(v).append('\n');
+                x += v;
+                // To trigger the problem we must OSR in the following loop
+                // To make the problem 100% reproducible run with -XX:-TieredCompilation -XX:OSROnlyBCI=62
+                while(x < 0) x += 1000000000;
+                sb.append('=').append(x).append('\n');
+            }
+            if (sb.toString().hashCode() != 0xaba94591) {
+                throw new Exception("Unexpected result");
+            }
+        } catch(OutOfMemoryError e) {
+            // small heap, ignore
         }
     }
 }
