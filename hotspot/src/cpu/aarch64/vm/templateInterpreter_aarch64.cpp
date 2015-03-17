@@ -858,7 +858,7 @@ void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
     const int page_size = os::vm_page_size();
     for (int pages = start_page; pages <= StackShadowPages ; pages++) {
       __ sub(rscratch2, sp, pages*page_size);
-      __ ldr(zr, Address(rscratch2));
+      __ str(zr, Address(rscratch2));
     }
   }
 }
