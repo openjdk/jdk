@@ -429,6 +429,7 @@ public final class Options {
 
         while (!argList.isEmpty()) {
             final String arg = argList.remove(0);
+            Objects.requireNonNull(arg);
 
             // skip empty args
             if (arg.isEmpty()) {

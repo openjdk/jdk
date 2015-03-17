@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,53 +326,18 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a FRAME tag.
+     * Generates a IFRAME tag.
      *
      * @param src the url of the document to be shown in the frame
      * @param name specifies the name of the frame
      * @param title the title for the frame
-     * @param scrolling specifies whether to display scrollbars in the frame
-     * @return an HtmlTree object for the FRAME tag
+     * @return an HtmlTree object for the IFRAME tag
      */
-    public static HtmlTree FRAME(String src, String name, String title, String scrolling) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.FRAME);
+    public static HtmlTree IFRAME(String src, String name, String title) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.IFRAME);
         htmltree.addAttr(HtmlAttr.SRC, nullCheck(src));
         htmltree.addAttr(HtmlAttr.NAME, nullCheck(name));
         htmltree.addAttr(HtmlAttr.TITLE, nullCheck(title));
-        if (scrolling != null)
-            htmltree.addAttr(HtmlAttr.SCROLLING, scrolling);
-        return htmltree;
-    }
-
-    /**
-     * Generates a Frame tag.
-     *
-     * @param src the url of the document to be shown in the frame
-     * @param name specifies the name of the frame
-     * @param title the title for the frame
-     * @return an HtmlTree object for the SPAN tag
-     */
-    public static HtmlTree FRAME(String src, String name, String title) {
-        return FRAME(src, name, title, null);
-    }
-
-    /**
-     * Generates a FRAMESET tag.
-     *
-     * @param cols the size of columns in the frameset
-     * @param rows the size of rows in the frameset
-     * @param title the title for the frameset
-     * @param onload the script to run when the document loads
-     * @return an HtmlTree object for the FRAMESET tag
-     */
-    public static HtmlTree FRAMESET(String cols, String rows, String title, String onload) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.FRAMESET);
-        if (cols != null)
-            htmltree.addAttr(HtmlAttr.COLS, cols);
-        if (rows != null)
-            htmltree.addAttr(HtmlAttr.ROWS, rows);
-        htmltree.addAttr(HtmlAttr.TITLE, nullCheck(title));
-        htmltree.addAttr(HtmlAttr.ONLOAD, nullCheck(onload));
         return htmltree;
     }
 
@@ -779,7 +744,7 @@ public class HtmlTree extends Content {
                 return (hasAttr(HtmlAttr.NAME) || (hasAttr(HtmlAttr.HREF) && hasContent()));
             case BR :
                 return (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
-            case FRAME :
+            case IFRAME :
                 return (hasAttr(HtmlAttr.SRC) && !hasContent());
             case HR :
                 return (!hasContent());

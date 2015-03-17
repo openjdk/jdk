@@ -60,7 +60,7 @@ WINDOWS_SHOWINCLUDE_SED_PATTERN := \
     -e 's|Note: including file: *||' \
     -e 's|\\|/|g' \
     -e 's|^\([a-zA-Z]\):|$(UNIX_PATH_PREFIX)/\1|g' \
-    -e '/$(subst /,\/,$(TOPDIR))/!d' \
+    -e '\|$(TOPDIR)|I !d' \
     -e 's|$$$$| \\|g' \
     #
 
@@ -153,7 +153,7 @@ define add_native_source
 	      exit `cat $$($1_$2_DEP).exitvalue`
 	  $(RM) $$($1_$2_DEP).exitvalue
 	  ($(ECHO) $$@: \\ \
-	  && $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_DEP).raw) > $$($1_$2_DEP)
+	  && $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_DEP).raw) | $(SORT) -u > $$($1_$2_DEP)
         endif
         # Create a dependency target file from the dependency file.
         # Solution suggested by http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
@@ -195,15 +195,8 @@ endef
 #   LDEXE the linker to use for linking executables, default is $(LDEXE)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
-define SetupNativeCompilation
-  $(if $(30),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupNativeCompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26),$(27),$(28),$(29)))
-endef
-
-define SetupNativeCompilationInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupNativeCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26),$(27),$(28),$(29))
-  $(if $(30),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
+SetupNativeCompilation = $(NamedParamsMacroTemplate)
+define SetupNativeCompilationBody
 
   ifneq (,$$($1_BIN))
     $$(error BIN has been replaced with OBJECT_DIR)
@@ -399,12 +392,6 @@ define SetupNativeCompilationInner
     $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_release)
   endif
 
-  # Pick up disabled warnings, if possible on this platform.
-  ifneq ($(DISABLE_WARNING_PREFIX),)
-    $1_EXTRA_CFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
-    $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
-  endif
-
   ifeq ($$($1_DEBUG_SYMBOLS), true)
     ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
       ifdef OPENJDK
@@ -422,6 +409,9 @@ define SetupNativeCompilationInner
     endif
   endif
 
+  # If no C++ flags are explicitly set, default to using the C flags.
+  # After that, we can set additional C++ flags that should not interfere
+  # with the mechanism for copying the C flags by default.
   ifeq ($$($1_CXXFLAGS),)
     $1_CXXFLAGS:=$$($1_CFLAGS)
   endif
@@ -432,6 +422,12 @@ define SetupNativeCompilationInner
   ifneq (,$$($1_REORDER))
     $1_EXTRA_CFLAGS += $$(C_FLAG_REORDER)
     $1_EXTRA_CXXFLAGS += $$(CXX_FLAG_REORDER)
+  endif
+
+  # Pick up disabled warnings, if possible on this platform.
+  ifneq ($(DISABLE_WARNING_PREFIX),)
+    $1_EXTRA_CFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
+    $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
   endif
 
   ifeq (NONE, $$($1_OPTIMIZATION))

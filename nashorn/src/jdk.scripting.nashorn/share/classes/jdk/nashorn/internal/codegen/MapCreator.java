@@ -100,15 +100,16 @@ public class MapCreator<T> {
         for (final MapTuple<T> tuple : tuples) {
             final String key    = tuple.key;
             final Symbol symbol = tuple.symbol;
+            final Class<?> initialType = tuple.getValueType();
 
-            //TODO initial type is object here no matter what. Is that right?
             if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
                 final int flags = getPropertyFlags(symbol, hasArguments, false);
                 properties.add(
                         new SpillProperty(
                                 key,
                                 flags,
-                                spillIndex++));
+                                spillIndex++,
+                                initialType));
             }
         }
 

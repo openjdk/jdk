@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug 4891312
- * @summary verify that modPow() not broken by the special case for 65537
+ * @library ..
+ * @bug 4891312 8074460
+ * @summary verify that modPow() not broken by the special case for 65537 (use -Dseed=X to set PRNG seed)
  * @author Andreas Sterbenz
  */
 
 import java.math.BigInteger;
-import java.util.*;
 
 import java.security.*;
 import java.security.spec.*;
@@ -78,7 +78,9 @@ public class ModPow65537 {
     private static void testSigning(KeyPair kp) throws Exception {
         System.out.println(kp.getPublic());
         byte[] data = new byte[1024];
-        new Random().nextBytes(data);
+        RandomSeed rndSeed = new RandomSeed(false);
+        System.out.println("Random number generator seed = " + rndSeed.getSeed());
+        rndSeed.getRandom().nextBytes(data);
 
         Signature sig = Signature.getInstance("SHA1withRSA", "SunRsaSign");
         sig.initSign(kp.getPrivate());

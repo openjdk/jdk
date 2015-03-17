@@ -937,8 +937,7 @@ class InstanceKlass: public Klass {
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
 #if INCLUDE_JVMTI
-  void adjust_default_methods(Method** old_methods, Method** new_methods,
-                              int methods_length, bool* trace_name_printed);
+  void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
   // Garbage collection
