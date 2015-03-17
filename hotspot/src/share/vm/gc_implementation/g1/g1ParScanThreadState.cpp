@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,8 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
   }
 
   assert(obj_ptr != NULL, "when we get here, allocation should have succeeded");
+  assert(_g1h->is_in_reserved(obj_ptr), "Allocated memory should be in the heap");
+
 #ifndef PRODUCT
   // Should this evacuation fail?
   if (_g1h->evacuation_should_fail()) {
