@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator.AllocatorDescriptor;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
@@ -208,7 +207,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         final RecompilableScriptFunctionData data = new RecompilableScriptFunctionData(
                 newFunctionNode,
                 compiler.getCodeInstaller(),
-                new AllocatorDescriptor(newFunctionNode.getThisProperties()),
+                ObjectClassGenerator.createAllocationStrategy(newFunctionNode.getThisProperties()),
                 nestedFunctions,
                 externalSymbolDepths.get(fnId),
                 internalSymbols.get(fnId),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import java.net.MalformedURLException;
 import java.util.StringTokenizer;
 import sun.net.www.ParseUtil;
 
+/**
+ * Supporting class for the serialver tool.
+ */
 public class SerialVer {
 
     /*
@@ -117,6 +120,10 @@ public class SerialVer {
         }
     }
 
+    /**
+     * Entry point for serialver tool.
+     * @param args the arguments
+     */
     public static void main(String[] args) {
         String envcp = null;
         int i = 0;

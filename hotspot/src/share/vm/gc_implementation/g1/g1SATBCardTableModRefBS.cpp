@@ -33,8 +33,11 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap, BarrierSet::Name kind) :
-  CardTableModRefBS(whole_heap, kind) { }
+G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(
+  MemRegion whole_heap,
+  const BarrierSet::FakeRtti& fake_rtti) :
+  CardTableModRefBS(whole_heap, fake_rtti.add_tag(BarrierSet::G1SATBCT))
+{ }
 
 void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
   // Nulls should have been already filtered.
@@ -130,7 +133,7 @@ void G1SATBCardTableLoggingModRefBSChangedListener::on_commit(uint start_idx, si
 
 G1SATBCardTableLoggingModRefBS::
 G1SATBCardTableLoggingModRefBS(MemRegion whole_heap) :
-  G1SATBCardTableModRefBS(whole_heap, BarrierSet::G1SATBCTLogging),
+  G1SATBCardTableModRefBS(whole_heap, BarrierSet::FakeRtti(G1SATBCTLogging)),
   _dcqs(JavaThread::dirty_card_queue_set()),
   _listener()
 {
@@ -203,7 +206,7 @@ G1SATBCardTableLoggingModRefBS::write_ref_field_static(void* field,
   if (new_val == NULL) return;
   // Otherwise, log it.
   G1SATBCardTableLoggingModRefBS* g1_bs =
-    (G1SATBCardTableLoggingModRefBS*)Universe::heap()->barrier_set();
+    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
   g1_bs->write_ref_field_work(field, new_val);
 }
 

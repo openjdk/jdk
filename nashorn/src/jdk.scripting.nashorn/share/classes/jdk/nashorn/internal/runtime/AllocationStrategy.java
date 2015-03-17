@@ -29,55 +29,52 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator.AllocatorDescriptor;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
- * Encapsulates the allocation strategy for a function when used as a constructor. Basically the same as
- * {@link AllocatorDescriptor}, but with an additionally cached resolved method handle. There is also a
- * canonical default allocation strategy for functions that don't assign any "this" properties (vast majority
- * of all functions), therefore saving some storage space in {@link RecompilableScriptFunctionData} that would
- * otherwise be lost to identical tuples of (map, className, handle) fields.
+ * Encapsulates the allocation strategy for a function when used as a constructor.
  */
-final class AllocationStrategy implements Serializable {
+final public class AllocationStrategy implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static final AllocationStrategy DEFAULT_STRATEGY = new AllocationStrategy(new AllocatorDescriptor(0));
-
-    /** Allocator map from allocator descriptor */
-    private final PropertyMap allocatorMap;
+    /** Number of fields in the allocated object */
+    private final int fieldCount;
 
     /** Name of class where allocator function resides */
-    private final String allocatorClassName;
+    private transient String allocatorClassName;
 
     /** lazily generated allocator */
     private transient MethodHandle allocator;
 
-    private AllocationStrategy(final AllocatorDescriptor desc) {
-        this.allocatorMap = desc.getAllocatorMap();
-        // These classes get loaded, so an interned variant of their name is most likely around anyway.
-        this.allocatorClassName = desc.getAllocatorClassName().intern();
+    /**
+     * Construct an allocation strategy with the given map and class name.
+     * @param fieldCount number of fields in the allocated object
+     */
+    public AllocationStrategy(final int fieldCount) {
+        this.fieldCount = fieldCount;
     }
 
-    private boolean matches(final AllocatorDescriptor desc) {
-        return desc.getAllocatorMap().size() == allocatorMap.size() &&
-                desc.getAllocatorClassName().equals(allocatorClassName);
-    }
-
-    static AllocationStrategy get(final AllocatorDescriptor desc) {
-        return DEFAULT_STRATEGY.matches(desc) ? DEFAULT_STRATEGY : new AllocationStrategy(desc);
+    private String getAllocatorClassName() {
+        if (allocatorClassName == null) {
+            // These classes get loaded, so an interned variant of their name is most likely around anyway.
+            allocatorClassName = Compiler.binaryName(ObjectClassGenerator.getClassName(fieldCount)).intern();
+        }
+        return allocatorClassName;
     }
 
     PropertyMap getAllocatorMap() {
-        return allocatorMap;
+        // Create a new map for each function instance
+        return PropertyMap.newMap(null, getAllocatorClassName(), 0, fieldCount, 0);
     }
 
     ScriptObject allocate(final PropertyMap map) {
         try {
             if (allocator == null) {
-                allocator = MH.findStatic(LOOKUP, Context.forStructureClass(allocatorClassName),
+                allocator = MH.findStatic(LOOKUP, Context.forStructureClass(getAllocatorClassName()),
                         CompilerConstants.ALLOCATE.symbolName(), MH.type(ScriptObject.class, PropertyMap.class));
             }
             return (ScriptObject)allocator.invokeExact(map);
@@ -88,17 +85,8 @@ final class AllocationStrategy implements Serializable {
         }
     }
 
-    private Object readResolve() {
-        if(allocatorMap.size() == DEFAULT_STRATEGY.allocatorMap.size() &&
-                allocatorClassName.equals(DEFAULT_STRATEGY.allocatorClassName)) {
-            return DEFAULT_STRATEGY;
-        }
-        return this;
-    }
-
     @Override
     public String toString() {
-        return "AllocationStrategy[allocatorClassName=" + allocatorClassName + ", allocatorMap.size=" +
-                allocatorMap.size() + "]";
+        return "AllocationStrategy[fieldCount=" + fieldCount + "]";
     }
 }

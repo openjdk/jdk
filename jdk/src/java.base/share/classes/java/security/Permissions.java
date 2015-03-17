@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ implements Serializable
      *
      * This method creates
      * a new PermissionCollection object (and adds the permission to it)
-     * if an appropriate collection does not yet exist. <p>
+     * if an appropriate collection does not yet exist.
      *
      * @param permission the Permission object to add.
      *
@@ -162,7 +162,7 @@ implements Serializable
      *
      * <p>Additionally, if this PermissionCollection contains the
      * AllPermission, this method will always return true.
-     * <p>
+     *
      * @param permission the Permission object to check.
      *
      * @return true if "permission" is implied by the permissions in the

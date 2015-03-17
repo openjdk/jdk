@@ -51,7 +51,6 @@ import sun.misc.SharedSecrets;
  * ProtectionDomain can also be constructed such that it is dynamically
  * mapped to a set of permissions by the current Policy whenever a permission
  * is checked.
- * <p>
  *
  * @author Li Gong
  * @author Roland Schemers
@@ -168,7 +167,6 @@ public class ProtectionDomain {
      * this domain. This constructor affords the
      * Policy provider the opportunity to augment the supplied
      * PermissionCollection to reflect policy changes.
-     * <p>
      *
      * @param codesource the CodeSource associated with this domain
      * @param permissions the permissions granted to this domain
@@ -263,7 +261,6 @@ public class ProtectionDomain {
      * permissions, then the permission will be checked against the
      * combination of the PermissionCollection supplied at construction and
      * the current Policy binding.
-     * <p>
      *
      * @param permission the Permission object to check.
      *

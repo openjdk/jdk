@@ -836,7 +836,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          */
         final CodeGenerator codegen = this;
 
-        final Node currentDiscard = codegen.lc.getCurrentDiscard();
+        final boolean isCurrentDiscard = codegen.lc.isCurrentDiscard(expr);
         expr.accept(new NodeOperatorVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public boolean enterIdentNode(final IdentNode identNode) {
@@ -1192,7 +1192,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             public boolean enterJoinPredecessorExpression(final JoinPredecessorExpression joinExpr) {
-                loadExpression(joinExpr.getExpression(), resultBounds);
+                loadMaybeDiscard(joinExpr, joinExpr.getExpression(), resultBounds);
                 return false;
             }
 
@@ -1209,7 +1209,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 throw new AssertionError(otherNode.getClass().getName());
             }
         });
-        if(currentDiscard != expr) {
+        if(!isCurrentDiscard) {
             coerceStackTop(resultBounds);
         }
         return method;
@@ -3648,7 +3648,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // TODO: move checks for discarding to actual expression load code (e.g. as we do with void). That way we might
         // be able to eliminate even more checks.
         if(expr instanceof PrimitiveLiteralNode | isLocalVariable(expr)) {
-            assert lc.getCurrentDiscard() != expr;
+            assert !lc.isCurrentDiscard(expr);
             // Don't bother evaluating expressions without side effects. Typical usage is "void 0" for reliably generating
             // undefined.
             return;
@@ -3656,11 +3656,37 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         lc.pushDiscard(expr);
         loadExpression(expr, TypeBounds.UNBOUNDED);
-        if (lc.getCurrentDiscard() == expr) {
+        if (lc.popDiscardIfCurrent(expr)) {
             assert !expr.isAssignment();
             // NOTE: if we had a way to load with type void, we could avoid popping
             method.pop();
-            lc.popDiscard();
+        }
+    }
+
+    /**
+     * Loads the expression with the specified type bounds, but if the parent expression is the current discard,
+     * then instead loads and discards the expression.
+     * @param parent the parent expression that's tested for being the current discard
+     * @param expr the expression that's either normally loaded or discard-loaded
+     * @param resultBounds result bounds for when loading the expression normally
+     */
+    private void loadMaybeDiscard(final Expression parent, final Expression expr, final TypeBounds resultBounds) {
+        loadMaybeDiscard(lc.popDiscardIfCurrent(parent), expr, resultBounds);
+    }
+
+    /**
+     * Loads the expression with the specified type bounds, or loads and discards the expression, depending on the
+     * value of the discard flag. Useful as a helper for expressions with control flow where you often can't combine
+     * testing for being the current discard and loading the subexpressions.
+     * @param discard if true, the expression is loaded and discarded
+     * @param expr the expression that's either normally loaded or discard-loaded
+     * @param resultBounds result bounds for when loading the expression normally
+     */
+    private void loadMaybeDiscard(final boolean discard, final Expression expr, final TypeBounds resultBounds) {
+        if (discard) {
+            loadAndDiscard(expr);
+        } else {
+            loadExpression(expr, resultBounds);
         }
     }
 
@@ -3717,9 +3743,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     public void loadVOID(final UnaryNode unaryNode, final TypeBounds resultBounds) {
         loadAndDiscard(unaryNode.getExpression());
-        if(lc.getCurrentDiscard() == unaryNode) {
-            lc.popDiscard();
-        } else {
+        if (!lc.popDiscardIfCurrent(unaryNode)) {
             method.loadUndefined(resultBounds.widest);
         }
     }
@@ -3752,16 +3776,23 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private void loadAND_OR(final BinaryNode binaryNode, final TypeBounds resultBounds, final boolean isAnd) {
         final Type narrowestOperandType = Type.widestReturnType(binaryNode.lhs().getType(), binaryNode.rhs().getType());
 
+        final boolean isCurrentDiscard = lc.popDiscardIfCurrent(binaryNode);
+
         final Label skip = new Label("skip");
         if(narrowestOperandType == Type.BOOLEAN) {
             // optimize all-boolean logical expressions
             final Label onTrue = new Label("andor_true");
             emitBranch(binaryNode, onTrue, true);
-            method.load(false);
-            method._goto(skip);
-            method.label(onTrue);
-            method.load(true);
-            method.label(skip);
+            if (isCurrentDiscard) {
+                method.label(onTrue);
+                method.pop();
+            } else {
+                method.load(false);
+                method._goto(skip);
+                method.label(onTrue);
+                method.load(true);
+                method.label(skip);
+            }
             return;
         }
 
@@ -3770,7 +3801,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final boolean lhsConvert = LocalVariableConversion.hasLiveConversion(lhs);
         final Label evalRhs = lhsConvert ? new Label("eval_rhs") : null;
 
-        loadExpression(lhs, outBounds).dup().convert(Type.BOOLEAN);
+        loadExpression(lhs, outBounds);
+        if (!isCurrentDiscard) {
+            method.dup();
+        }
+        method.convert(Type.BOOLEAN);
         if (isAnd) {
             if(lhsConvert) {
                 method.ifne(evalRhs);
@@ -3789,9 +3824,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             method.label(evalRhs);
         }
 
-        method.pop();
+        if (!isCurrentDiscard) {
+            method.pop();
+        }
         final JoinPredecessorExpression rhs = (JoinPredecessorExpression)binaryNode.rhs();
-        loadExpression(rhs, outBounds);
+        loadMaybeDiscard(isCurrentDiscard, rhs, outBounds);
         method.beforeJoinPoint(rhs);
         method.label(skip);
     }
@@ -3813,9 +3850,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // Detect dead assignments
         if(lhs instanceof IdentNode) {
             final Symbol symbol = ((IdentNode)lhs).getSymbol();
-            if(!symbol.isScope() && !symbol.hasSlotFor(rhsType) && lc.getCurrentDiscard() == binaryNode) {
+            if(!symbol.isScope() && !symbol.hasSlotFor(rhsType) && lc.popDiscardIfCurrent(binaryNode)) {
                 loadAndDiscard(rhs);
-                lc.popDiscard();
                 method.markDeadLocalVariable(symbol);
                 return;
             }
@@ -4069,11 +4105,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private void loadCOMMARIGHT(final BinaryNode binaryNode, final TypeBounds resultBounds) {
         loadAndDiscard(binaryNode.lhs());
-        loadExpression(binaryNode.rhs(), resultBounds);
+        loadMaybeDiscard(binaryNode, binaryNode.rhs(), resultBounds);
     }
 
     private void loadCOMMALEFT(final BinaryNode binaryNode, final TypeBounds resultBounds) {
-        loadExpression(binaryNode.lhs(), resultBounds);
+        loadMaybeDiscard(binaryNode, binaryNode.lhs(), resultBounds);
         loadAndDiscard(binaryNode.rhs());
     }
 
@@ -4173,13 +4209,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         emitBranch(test, falseLabel, false);
 
-        loadExpression(trueExpr.getExpression(), outBounds);
-        assert Type.generic(method.peekType()) == outBounds.narrowest;
+        final boolean isCurrentDiscard = lc.popDiscardIfCurrent(ternaryNode);
+        loadMaybeDiscard(isCurrentDiscard, trueExpr.getExpression(), outBounds);
+        assert isCurrentDiscard || Type.generic(method.peekType()) == outBounds.narrowest;
         method.beforeJoinPoint(trueExpr);
         method._goto(exitLabel);
         method.label(falseLabel);
-        loadExpression(falseExpr.getExpression(), outBounds);
-        assert Type.generic(method.peekType()) == outBounds.narrowest;
+        loadMaybeDiscard(isCurrentDiscard, falseExpr.getExpression(), outBounds);
+        assert isCurrentDiscard || Type.generic(method.peekType()) == outBounds.narrowest;
         method.beforeJoinPoint(falseExpr);
         method.label(exitLabel);
     }
@@ -4365,9 +4402,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         // store the result that "lives on" after the op, e.g. "i" in i++ postfix.
         protected void storeNonDiscard() {
-            if (lc.getCurrentDiscard() == assignNode) {
+            if (lc.popDiscardIfCurrent(assignNode)) {
                 assert assignNode.isAssignment();
-                lc.popDiscard();
                 return;
             }
 

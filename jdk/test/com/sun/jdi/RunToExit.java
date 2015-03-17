@@ -24,74 +24,29 @@
 /* @test
  * @bug 4997445
  * @summary Test that with server=y, when VM runs to System.exit() no error happens
- *
- * @build VMConnection RunToExit Exit0
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.* VMConnection RunToExit Exit0
  * @run driver RunToExit
  */
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.File;
-import java.io.BufferedInputStream;
 import java.net.ServerSocket;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.*;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.AttachingConnector;
+import java.net.ConnectException;
 import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import jdk.testlibrary.ProcessTools;
 
 public class RunToExit {
 
     /* Increment this when ERROR: seen */
-    static int error_seen = 0;
+    static volatile int error_seen = 0;
     static volatile boolean ready = false;
-    /*
-     * Helper class to direct process output to a StringBuffer
-     */
-    static class IOHandler implements Runnable {
-        private String              name;
-        private BufferedInputStream in;
-        private StringBuffer        buffer;
-
-        IOHandler(String name, InputStream in) {
-            this.name = name;
-            this.in = new BufferedInputStream(in);
-            this.buffer = new StringBuffer();
-        }
-
-        static void handle(String name, InputStream in) {
-            IOHandler handler = new IOHandler(name, in);
-            Thread thr = new Thread(handler);
-            thr.setDaemon(true);
-            thr.start();
-        }
-
-        public void run() {
-            try {
-                byte b[] = new byte[100];
-                for (;;) {
-                    int n = in.read(b, 0, 100);
-                    // The first thing that will get read is
-                    //    Listening for transport dt_socket at address: xxxxx
-                    // which shows the debuggee is ready to accept connections.
-                    ready = true;
-                    if (n < 0) {
-                        break;
-                    }
-                    buffer.append(new String(b, 0, n));
-                }
-            } catch (IOException ioe) { }
-
-            String str = buffer.toString();
-            if ( str.contains("ERROR:") ) {
-                error_seen++;
-            }
-            System.out.println(name + ": " + str);
-        }
-
-    }
 
     /*
      * Find a connector by name
@@ -111,22 +66,38 @@ public class RunToExit {
     /*
      * Launch a server debuggee with the given address
      */
-    private static Process launch(String address, String class_name) throws IOException {
-        String exe =   System.getProperty("java.home")
-                     + File.separator + "bin" + File.separator + "java";
-        String cmd = exe + " " + VMConnection.getDebuggeeVMOptions() +
-            " -agentlib:jdwp=transport=dt_socket" +
-            ",server=y" + ",suspend=y" + ",address=" + address +
-            " " + class_name;
+    private static Process launch(String address, String class_name) throws Exception {
+        String args[] = new String[]{
+            "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address="
+                + address,
+            class_name
+        };
+        args = VMConnection.insertDebuggeeVMOptions(args);
 
-        System.out.println("Starting: " + cmd);
+        ProcessBuilder launcher = ProcessTools.createJavaProcessBuilder(args);
 
-        Process p = Runtime.getRuntime().exec(cmd);
+        System.out.println(launcher.command().stream().collect(Collectors.joining(" ", "Starting: ", "")));
 
-        IOHandler.handle("Input Stream", p.getInputStream());
-        IOHandler.handle("Error Stream", p.getErrorStream());
+        Process p = ProcessTools.startProcess(
+            class_name,
+            launcher,
+            RunToExit::checkForError,
+            RunToExit::isTransportListening,
+            0,
+            TimeUnit.NANOSECONDS
+        );
 
         return p;
+    }
+
+    private static boolean isTransportListening(String line) {
+        return line.startsWith("Listening for transport dt_socket");
+    }
+
+    private static void checkForError(String line) {
+        if (line.contains("ERROR:")) {
+            error_seen++;
+        }
     }
 
     /*
@@ -146,15 +117,6 @@ public class RunToExit {
         // launch the server debuggee
         Process process = launch(address, "Exit0");
 
-        // wait for the debugge to be ready
-        while (!ready) {
-            try {
-                Thread.sleep(1000);
-            } catch(Exception ee) {
-                throw ee;
-            }
-        }
-
         // attach to server debuggee and resume it so it can exit
         AttachingConnector conn = (AttachingConnector)findConnector("com.sun.jdi.SocketAttach");
         Map conn_args = conn.defaultArguments();
@@ -164,7 +126,16 @@ public class RunToExit {
 
         System.out.println("Connection arguments: " + conn_args);
 
-        VirtualMachine vm = conn.attach(conn_args);
+        VirtualMachine vm = null;
+        while (vm == null) {
+            try {
+                vm = conn.attach(conn_args);
+            } catch (ConnectException e) {
+                e.printStackTrace(System.out);
+                System.out.println("--- Debugee not ready. Retrying in 500ms. ---");
+                Thread.sleep(500);
+            }
+        }
 
         // The first event is always a VMStartEvent, and it is always in
         // an EventSet by itself.  Wait for it.

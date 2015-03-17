@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public final class ServicePermission extends Permission
      *
      * @param servicePrincipal the name of the service principal.
      * An asterisk may appear by itself, to signify any service principal.
-     * <p>
+     *
      * @param action the action string
      */
     public ServicePermission(String servicePrincipal, String action) {
@@ -193,10 +193,10 @@ public final class ServicePermission extends Permission
 
     /**
      * Checks two ServicePermission objects for equality.
-     * <P>
+     *
      * @param obj the object to test for equality with this object.
      *
-     * @return true if <i>obj</i> is a ServicePermission, and has the
+     * @return true if {@code obj} is a ServicePermission, and has the
      *  same service principal, and actions as this
      * ServicePermission object.
      */
