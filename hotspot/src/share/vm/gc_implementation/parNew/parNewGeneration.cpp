@@ -951,8 +951,6 @@ void ParNewGeneration::collect(bool   full,
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
-  SpecializationStats::clear();
-
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
 
@@ -1071,8 +1069,6 @@ void ParNewGeneration::collect(bool   full,
   // does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   update_time_of_last_gc(now);
-
-  SpecializationStats::print();
 
   rp->set_enqueuing_is_done(true);
   if (rp->processing_is_mt()) {

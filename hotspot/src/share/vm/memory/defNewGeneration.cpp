@@ -590,8 +590,6 @@ void DefNewGeneration::collect(bool   full,
 
   gch->trace_heap_before_gc(&gc_tracer);
 
-  SpecializationStats::clear();
-
   // These can be shared for all code paths
   IsAliveClosure is_alive(this);
   ScanWeakRefClosure scan_weak_ref(this);
@@ -700,7 +698,6 @@ void DefNewGeneration::collect(bool   full,
   // set new iteration safe limit for the survivor spaces
   from()->set_concurrent_iteration_safe_limit(from()->top());
   to()->set_concurrent_iteration_safe_limit(to()->top());
-  SpecializationStats::print();
 
   // We need to use a monotonically non-decreasing time in ms
   // or we will see time-warp warnings and os::javaTimeMillis()

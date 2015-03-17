@@ -2026,10 +2026,6 @@ jint G1CollectedHeap::initialize() {
                                              Shared_DirtyCardQ_lock,
                                              &JavaThread::dirty_card_queue_set());
 
-  // In case we're keeping closure specialization stats, initialize those
-  // counts and that mechanism.
-  SpecializationStats::clear();
-
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
   HeapRegion* dummy_region = _hrm.get_dummy_region();
@@ -3321,7 +3317,6 @@ void G1CollectedHeap::print_tracing_info() const {
     concurrent_mark()->print_summary_info();
   }
   g1_policy()->print_yg_surv_rate_info();
-  SpecializationStats::print();
 }
 
 #ifndef PRODUCT

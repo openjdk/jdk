@@ -479,7 +479,6 @@ void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm,
                                                                                 \
 int ObjArrayKlass::oop_oop_iterate##nv_suffix(oop obj,                          \
                                               OopClosureType* closure) {        \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::oa); \
   assert (obj->is_array(), "obj must be array");                                \
   objArrayOop a = objArrayOop(obj);                                             \
   /* Get size before changing pointers. */                                      \
@@ -497,7 +496,6 @@ int ObjArrayKlass::oop_oop_iterate##nv_suffix(oop obj,                          
 int ObjArrayKlass::oop_oop_iterate##nv_suffix##_m(oop obj,                      \
                                                   OopClosureType* closure,      \
                                                   MemRegion mr) {               \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::oa); \
   assert(obj->is_array(), "obj must be array");                                 \
   objArrayOop a  = objArrayOop(obj);                                            \
   /* Get size before changing pointers. */                                      \
@@ -519,7 +517,6 @@ int ObjArrayKlass::oop_oop_iterate##nv_suffix##_m(oop obj,                      
 int ObjArrayKlass::oop_oop_iterate_range##nv_suffix(oop obj,                    \
                                                   OopClosureType* closure,      \
                                                   int start, int end) {         \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::oa); \
   assert(obj->is_array(), "obj must be array");                                 \
   objArrayOop a  = objArrayOop(obj);                                            \
   /* Get size before changing pointers. */                                      \
