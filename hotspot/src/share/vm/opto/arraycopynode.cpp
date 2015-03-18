@@ -79,9 +79,14 @@ void ArrayCopyNode::connect_outputs(GraphKit* kit) {
 
 #ifndef PRODUCT
 const char* ArrayCopyNode::_kind_names[] = {"arraycopy", "arraycopy, validated arguments", "clone", "oop array clone", "CopyOf", "CopyOfRange"};
+
 void ArrayCopyNode::dump_spec(outputStream *st) const {
   CallNode::dump_spec(st);
   st->print(" (%s%s)", _kind_names[_kind], _alloc_tightly_coupled ? ", tightly coupled allocation" : "");
+}
+
+void ArrayCopyNode::dump_compact_spec(outputStream* st) const {
+  st->print("%s%s", _kind_names[_kind], _alloc_tightly_coupled ? ",tight" : "");
 }
 #endif
 
