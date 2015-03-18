@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,3 +396,17 @@ const Type *MoveD2LNode::Value( PhaseTransform *phase ) const {
   return TypeLong::make( v.get_jlong() );
 }
 
+#ifndef PRODUCT
+//----------------------------BinaryNode---------------------------------------
+// The set of related nodes for a BinaryNode is all data inputs and all outputs
+// till level 2 (i.e., one beyond the associated CMoveNode). In compact mode,
+// it's the inputs till level 1 and the outputs till level 2.
+void BinaryNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  if (compact) {
+    this->collect_nodes(in_rel, 1, false, true);
+  } else {
+    this->collect_nodes_in_all_data(in_rel, false);
+  }
+  this->collect_nodes(out_rel, -2, false, false);
+}
+#endif

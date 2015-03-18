@@ -52,6 +52,7 @@ const Type *StartNode::bottom_type() const { return _domain; }
 const Type *StartNode::Value(PhaseTransform *phase) const { return _domain; }
 #ifndef PRODUCT
 void StartNode::dump_spec(outputStream *st) const { st->print(" #"); _domain->dump_on(st);}
+void StartNode::dump_compact_spec(outputStream *st) const { /* empty */ }
 #endif
 
 //------------------------------Ideal------------------------------------------
@@ -120,6 +121,23 @@ void ParmNode::dump_spec(outputStream *st) const {
     // Verbose and WizardMode dump bottom_type for all nodes
     if( !Verbose && !WizardMode )   bottom_type()->dump_on(st);
   }
+}
+
+void ParmNode::dump_compact_spec(outputStream *st) const {
+  if (_con < TypeFunc::Parms) {
+    st->print("%s", names[_con]);
+  } else {
+    st->print("%d:", _con-TypeFunc::Parms);
+    // unconditionally dump bottom_type
+    bottom_type()->dump_on(st);
+  }
+}
+
+// For a ParmNode, all immediate inputs and outputs are considered relevant
+// both in compact and standard representation.
+void ParmNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  this->collect_nodes(in_rel, 1, false, false);
+  this->collect_nodes(out_rel, -1, false, false);
 }
 #endif
 
@@ -948,6 +966,14 @@ void CallJavaNode::dump_spec(outputStream *st) const {
   if( _method ) _method->print_short_name(st);
   CallNode::dump_spec(st);
 }
+
+void CallJavaNode::dump_compact_spec(outputStream* st) const {
+  if (_method) {
+    _method->print_short_name(st);
+  } else {
+    st->print("<?>");
+  }
+}
 #endif
 
 //=============================================================================
@@ -994,6 +1020,16 @@ void CallStaticJavaNode::dump_spec(outputStream *st) const {
     st->print(" ");
   }
   CallJavaNode::dump_spec(st);
+}
+
+void CallStaticJavaNode::dump_compact_spec(outputStream* st) const {
+  if (_method) {
+    _method->print_short_name(st);
+  } else if (_name) {
+    st->print("%s", _name);
+  } else {
+    st->print("<?>");
+  }
 }
 #endif
 
@@ -1129,6 +1165,19 @@ const Type *SafePointNode::Value( PhaseTransform *phase ) const {
 void SafePointNode::dump_spec(outputStream *st) const {
   st->print(" SafePoint ");
   _replaced_nodes.dump(st);
+}
+
+// The related nodes of a SafepointNode are all data inputs, excluding the
+// control boundary, as well as all outputs till level 2 (to include projection
+// nodes and targets). In compact mode, just include inputs till level 1 and
+// outputs as before.
+void SafePointNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  if (compact) {
+    this->collect_nodes(in_rel, 1, false, false);
+  } else {
+    this->collect_nodes_in_all_data(in_rel, false);
+  }
+  this->collect_nodes(out_rel, -2, false, false);
 }
 #endif
 
@@ -1675,6 +1724,27 @@ void AbstractLockNode::set_eliminated_lock_counter() {
     // optimizer will eliminate the lock operation itself.
     _counter->set_tag(NamedCounter::EliminatedLockCounter);
   }
+}
+
+const char* AbstractLockNode::_kind_names[] = {"Regular", "NonEscObj", "Coarsened", "Nested"};
+
+void AbstractLockNode::dump_spec(outputStream* st) const {
+  st->print("%s ", _kind_names[_kind]);
+  CallNode::dump_spec(st);
+}
+
+void AbstractLockNode::dump_compact_spec(outputStream* st) const {
+  st->print("%s", _kind_names[_kind]);
+}
+
+// The related set of lock nodes includes the control boundary.
+void AbstractLockNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  if (compact) {
+      this->collect_nodes(in_rel, 1, false, false);
+    } else {
+      this->collect_nodes_in_all_data(in_rel, true);
+    }
+    this->collect_nodes(out_rel, -2, false, false);
 }
 #endif
 
