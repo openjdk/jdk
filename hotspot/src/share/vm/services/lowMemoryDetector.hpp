@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
+#include "services/memoryUsage.hpp"
 
 // Low Memory Detection Support
 // Two memory alarms in the JDK (we called them sensors).

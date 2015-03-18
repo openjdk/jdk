@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/parNew/parOopClosures.inline.hpp"
