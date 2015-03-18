@@ -183,6 +183,17 @@ public abstract class Node implements Cloneable, Serializable {
         return start;
     }
 
+    /**
+     * Integer to sort nodes in source order. This order is
+     * used by parser API to sort statements in correct order.
+     * By default, this is the start position of this node.
+     *
+     * @return int code to sort this node.
+     */
+    public int getSourceOrder() {
+        return getStart();
+    }
+
     @Override
     protected Object clone() {
         try {

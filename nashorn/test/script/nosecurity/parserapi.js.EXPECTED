@@ -5543,6 +5543,12 @@
                 }
               },
               {
+                "endPosition": "2170",
+                "kind": "VARIABLE",
+                "name": "i",
+                "startPosition": "2169"
+              },
+              {
                 "expression": {
                   "endPosition": "2177",
                   "kind": "IDENTIFIER",
@@ -6132,12 +6138,6 @@
                 "startPosition": "2160"
               },
               {
-                "endPosition": "2170",
-                "kind": "VARIABLE",
-                "name": "i",
-                "startPosition": "2169"
-              },
-              {
                 "expression": {
                   "endPosition": "2862",
                   "kind": "IDENTIFIER",
@@ -6321,6 +6321,12 @@
             "endPosition": "3026",
             "kind": "EXPRESSION_STATEMENT",
             "startPosition": "2998"
+          },
+          {
+            "endPosition": "3049",
+            "kind": "VARIABLE",
+            "name": "file",
+            "startPosition": "3045"
           },
           {
             "expression": {
@@ -6726,12 +6732,6 @@
               "startPosition": "3060"
             },
             "startPosition": "3031"
-          },
-          {
-            "endPosition": "3049",
-            "kind": "VARIABLE",
-            "name": "file",
-            "startPosition": "3045"
           }
         ],
         "startPosition": "2897"
