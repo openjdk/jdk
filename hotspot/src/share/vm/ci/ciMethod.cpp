@@ -48,6 +48,7 @@
 #include "runtime/deoptimization.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/xmlstream.hpp"
+#include "trace/tracing.hpp"
 #ifdef COMPILER2
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciTypeFlow.hpp"
@@ -1466,3 +1467,13 @@ void ciMethod::print_impl(outputStream* st) {
     st->print(" loaded=false");
   }
 }
+
+#if INCLUDE_TRACE
+TraceStructCiMethod ciMethod::to_trace_struct() const {
+  TraceStructCiMethod result;
+  result.set_class(holder()->name()->as_utf8());
+  result.set_name(name()->as_utf8());
+  result.set_signature(signature()->as_symbol()->as_utf8());
+  return result;
+}
+#endif

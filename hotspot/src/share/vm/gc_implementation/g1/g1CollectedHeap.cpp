@@ -5406,7 +5406,7 @@ public:
     // limit is set using max_num_q() - which was set using ParallelGCThreads.
     // So this must be true - but assert just in case someone decides to
     // change the worker ids.
-    assert(0 <= worker_id && worker_id < limit, "sanity");
+    assert(worker_id < limit, "sanity");
     assert(!rp->discovery_is_atomic(), "check this code");
 
     // Select discovered lists [i, i+stride, i+2*stride,...,limit)
