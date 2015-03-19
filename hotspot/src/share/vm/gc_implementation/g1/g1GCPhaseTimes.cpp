@@ -249,7 +249,24 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
 
   _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Start (ms)", false, G1Log::LevelFiner, 2);
   _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>(max_gc_threads, "Ext Root Scanning (ms)", true, G1Log::LevelFiner, 2);
-  _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms)", true, G1Log::LevelFiner, 2);
+
+  // Root scanning phases
+  _gc_par_phases[ThreadRoots] = new WorkerDataArray<double>(max_gc_threads, "Thread Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[StringTableRoots] = new WorkerDataArray<double>(max_gc_threads, "StringTable Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[UniverseRoots] = new WorkerDataArray<double>(max_gc_threads, "Universe Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[JNIRoots] = new WorkerDataArray<double>(max_gc_threads, "JNI Handles Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>(max_gc_threads, "ObjectSynchronizer Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[FlatProfilerRoots] = new WorkerDataArray<double>(max_gc_threads, "FlatProfiler Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[ManagementRoots] = new WorkerDataArray<double>(max_gc_threads, "Management Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>(max_gc_threads, "SystemDictionary Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>(max_gc_threads, "CLDG Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[CodeCacheRoots] = new WorkerDataArray<double>(max_gc_threads, "CodeCache Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms)", true, G1Log::LevelFinest, 3);
+  _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms)", true, G1Log::LevelFinest, 3);
+
   _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS (ms)", true, G1Log::LevelFiner, 2);
   _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms)", true, G1Log::LevelFiner, 2);
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms)", true, G1Log::LevelFiner, 2);
@@ -281,8 +298,6 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads, bool mark_in_progress
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     _gc_par_phases[i]->reset();
   }
-
-  _gc_par_phases[SATBFiltering]->set_enabled(mark_in_progress);
 
   _gc_par_phases[StringDedupQueueFixup]->set_enabled(G1StringDedup::is_enabled());
   _gc_par_phases[StringDedupTableFixup]->set_enabled(G1StringDedup::is_enabled());
