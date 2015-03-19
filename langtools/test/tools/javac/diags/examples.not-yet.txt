@@ -87,6 +87,7 @@ compiler.misc.type.req.exact
 compiler.misc.unable.to.access.file                     # ClassFile
 compiler.misc.undecl.type.var                           # ClassReader
 compiler.misc.unicode.str.not.supported                 # ClassReader
+compiler.misc.malformed.vararg.method                   # ClassReader
 compiler.misc.verbose.retro                             # UNUSED
 compiler.misc.verbose.retro.with                        # UNUSED
 compiler.misc.verbose.retro.with.list                   # UNUSED

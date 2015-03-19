@@ -32,6 +32,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.function.BiPredicate;
+import java.util.stream.Collector;
 
 import javax.tools.JavaFileObject;
 
@@ -1766,10 +1768,11 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="cvarLowerBounds">
     public List<Type> cvarLowerBounds(List<Type> ts) {
-        return map(ts, cvarLowerBoundMapping);
+        return ts.map(cvarLowerBoundMapping);
     }
-    private final Mapping cvarLowerBoundMapping = new Mapping("cvarLowerBound") {
-            public Type apply(Type t) {
+        private final TypeMapping<Void> cvarLowerBoundMapping = new TypeMapping<Void>() {
+            @Override
+            public Type visitCapturedType(CapturedType t, Void _unused) {
                 return cvarLowerBound(t);
             }
         };
@@ -1879,9 +1882,15 @@ public class Types {
     /**
      * Mapping to take element type of an arraytype
      */
-    private Mapping elemTypeFun = new Mapping ("elemTypeFun") {
-        public Type apply(Type t) {
-            return elemtype(skipTypeVars(t, false));
+    private TypeMapping<Void> elemTypeFun = new TypeMapping<Void>() {
+        @Override
+        public Type visitArrayType(ArrayType t, Void _unused) {
+            return t.elemtype;
+        }
+
+        @Override
+        public Type visitTypeVar(TypeVar t, Void _unused) {
+            return visit(skipTypeVars(t, false));
         }
     };
 
@@ -2177,7 +2186,7 @@ public class Types {
         }
         }
     // where
-        private SimpleVisitor<Type, Boolean> erasure = new SimpleVisitor<Type, Boolean>() {
+        private TypeMapping<Boolean> erasure = new TypeMapping<Boolean>() {
             private Type combineMetadata(final Type ty,
                                          final TypeMetadata md) {
                 if (!md.isEmpty()) {
@@ -2202,8 +2211,8 @@ public class Types {
                 if (t.isPrimitive())
                     return t; /*fast special case*/
                 else {
-                    Type erased = t.map(recurse ? erasureRecFun : erasureFun);
-                    return combineMetadata(erased, t.getMetadata());
+                    //other cases already handled
+                    return combineMetadata(t, t.getMetadata());
                 }
             }
 
@@ -2223,23 +2232,10 @@ public class Types {
                 Type erased = erasure(t.bound, recurse);
                 return combineMetadata(erased, t.getMetadata());
             }
-
-            @Override
-            public Type visitErrorType(ErrorType t, Boolean recurse) {
-                return t;
-            }
         };
-
-    private Mapping erasureFun = new Mapping ("erasure") {
-            public Type apply(Type t) { return erasure(t); }
-        };
-
-    private Mapping erasureRecFun = new Mapping ("erasureRecursive") {
-        public Type apply(Type t) { return erasureRecursive(t); }
-    };
 
     public List<Type> erasure(List<Type> ts) {
-        return Type.map(ts, erasureFun);
+        return erasure.visit(ts, false);
     }
 
     public Type erasureRecursive(Type t) {
@@ -2247,7 +2243,7 @@ public class Types {
     }
 
     public List<Type> erasureRecursive(List<Type> ts) {
-        return Type.map(ts, erasureRecFun);
+        return erasure.visit(ts, true);
     }
     // </editor-fold>
 
@@ -3177,15 +3173,18 @@ public class Types {
      *  changing all recursive bounds from old to new list.
      */
     public List<Type> newInstances(List<Type> tvars) {
-        List<Type> tvars1 = Type.map(tvars, newInstanceFun);
+        List<Type> tvars1 = tvars.map(newInstanceFun);
         for (List<Type> l = tvars1; l.nonEmpty(); l = l.tail) {
             TypeVar tv = (TypeVar) l.head;
             tv.bound = subst(tv.bound, tvars, tvars1);
         }
         return tvars1;
     }
-    private static final Mapping newInstanceFun = new Mapping("newInstanceFun") {
-            public Type apply(Type t) { return new TypeVar(t.tsym, t.getUpperBound(), t.getLowerBound(), t.getMetadata()); }
+        private static final TypeMapping<Void> newInstanceFun = new TypeMapping<Void>() {
+            @Override
+            public TypeVar visitTypeVar(TypeVar t, Void _unused) {
+                return new TypeVar(t.tsym, t.getUpperBound(), t.getLowerBound(), t.getMetadata());
+            }
         };
     // </editor-fold>
 
@@ -3409,39 +3408,84 @@ public class Types {
     }
 
     /**
+     * Collect types into a new closure (using a @code{ClosureHolder})
+     */
+    public Collector<Type, ClosureHolder, List<Type>> closureCollector(boolean minClosure, BiPredicate<Type, Type> shouldSkip) {
+        return Collector.of(() -> new ClosureHolder(minClosure, shouldSkip),
+                ClosureHolder::add,
+                ClosureHolder::merge,
+                ClosureHolder::closure);
+    }
+    //where
+        class ClosureHolder {
+            List<Type> closure;
+            final boolean minClosure;
+            final BiPredicate<Type, Type> shouldSkip;
+
+            ClosureHolder(boolean minClosure, BiPredicate<Type, Type> shouldSkip) {
+                this.closure = List.nil();
+                this.minClosure = minClosure;
+                this.shouldSkip = shouldSkip;
+            }
+
+            void add(Type type) {
+                closure = insert(closure, type, shouldSkip);
+            }
+
+            ClosureHolder merge(ClosureHolder other) {
+                closure = union(closure, other.closure, shouldSkip);
+                return this;
+            }
+
+            List<Type> closure() {
+                return minClosure ? closureMin(closure) : closure;
+            }
+        }
+
+    BiPredicate<Type, Type> basicClosureSkip = (t1, t2) -> t1.tsym == t2.tsym;
+
+    /**
      * Insert a type in a closure
      */
-    public List<Type> insert(List<Type> cl, Type t) {
+    public List<Type> insert(List<Type> cl, Type t, BiPredicate<Type, Type> shouldSkip) {
         if (cl.isEmpty()) {
             return cl.prepend(t);
-        } else if (t.tsym == cl.head.tsym) {
+        } else if (shouldSkip.test(t, cl.head)) {
             return cl;
         } else if (t.tsym.precedes(cl.head.tsym, this)) {
             return cl.prepend(t);
         } else {
             // t comes after head, or the two are unrelated
-            return insert(cl.tail, t).prepend(cl.head);
+            return insert(cl.tail, t, shouldSkip).prepend(cl.head);
         }
+    }
+
+    public List<Type> insert(List<Type> cl, Type t) {
+        return insert(cl, t, basicClosureSkip);
     }
 
     /**
      * Form the union of two closures
      */
-    public List<Type> union(List<Type> cl1, List<Type> cl2) {
+    public List<Type> union(List<Type> cl1, List<Type> cl2, BiPredicate<Type, Type> shouldSkip) {
         if (cl1.isEmpty()) {
             return cl2;
         } else if (cl2.isEmpty()) {
             return cl1;
-        } else if (cl1.head.tsym == cl2.head.tsym) {
-            return union(cl1.tail, cl2.tail).prepend(cl1.head);
+        } else if (shouldSkip.test(cl1.head, cl2.head)) {
+            return union(cl1.tail, cl2.tail, shouldSkip).prepend(cl1.head);
         } else if (cl1.head.tsym.precedes(cl2.head.tsym, this)) {
-            return union(cl1.tail, cl2).prepend(cl1.head);
+            return union(cl1.tail, cl2, shouldSkip).prepend(cl1.head);
         } else if (cl2.head.tsym.precedes(cl1.head.tsym, this)) {
-            return union(cl1, cl2.tail).prepend(cl2.head);
+            return union(cl1, cl2.tail, shouldSkip).prepend(cl2.head);
         } else {
             // unrelated types
-            return union(cl1.tail, cl2).prepend(cl1.head);
+            return union(cl1.tail, cl2, shouldSkip).prepend(cl1.head);
         }
+    }
+
+    public List<Type> union(List<Type> cl1, List<Type> cl2) {
+        return union(cl1, cl2, basicClosureSkip);
     }
 
     /**
