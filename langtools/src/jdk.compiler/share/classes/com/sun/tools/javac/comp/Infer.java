@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.code.Type.TypeMapping;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -477,7 +478,7 @@ public class Infer {
                 restype = syms.objectType;
         }
 
-        List<Type> paramtypes = Type.map(argtypes, new ImplicitArgType(spMethod, resolveContext.step));
+        List<Type> paramtypes = argtypes.map(new ImplicitArgType(spMethod, resolveContext.step));
         List<Type> exType = spMethod != null ?
             spMethod.getThrownTypes() :
             List.of(syms.throwableType); // make it throw all exceptions
@@ -495,9 +496,16 @@ public class Infer {
                 (rs.deferredAttr).super(AttrMode.SPECULATIVE, msym, phase);
             }
 
-            public Type apply(Type t) {
-                t = types.erasure(super.apply(t));
-                if (t.hasTag(BOT))
+            @Override
+            public Type visitClassType(ClassType t, Void aVoid) {
+                return types.erasure(t);
+            }
+
+            @Override
+            public Type visitType(Type t, Void _unused) {
+                if (t.hasTag(DEFERRED)) {
+                    return visit(super.visitType(t, null));
+                } else if (t.hasTag(BOT))
                     // nulls type as the marker type Null (which has no instances)
                     // infer as java.lang.Void for now
                     t = types.boxedClass(syms.voidType).type;
@@ -2046,23 +2054,19 @@ public class Infer {
         List<FreeTypeListener> freetypeListeners = List.nil();
 
         public InferenceContext(List<Type> inferencevars) {
-            this.undetvars = Type.map(inferencevars, fromTypeVarFun);
+            this.undetvars = inferencevars.map(fromTypeVarFun);
             this.inferencevars = inferencevars;
         }
         //where
-            Mapping fromTypeVarFun = new Mapping("fromTypeVarFunWithBounds") {
-                // mapping that turns inference variables into undet vars
-                public Type apply(Type t) {
-                    if (t.hasTag(TYPEVAR)) {
-                        TypeVar tv = (TypeVar)t;
-                        if (tv.isCaptured()) {
-                            return new CapturedUndetVar((CapturedType)tv, types);
-                        } else {
-                            return new UndetVar(tv, types);
-                        }
-                    } else {
-                        return t.map(this);
-                    }
+            TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
+                @Override
+                public Type visitTypeVar(TypeVar tv, Void aVoid) {
+                    return new UndetVar(tv, types);
+                }
+
+                @Override
+                public Type visitCapturedType(CapturedType t, Void aVoid) {
+                    return new CapturedUndetVar(t, types);
                 }
             };
 

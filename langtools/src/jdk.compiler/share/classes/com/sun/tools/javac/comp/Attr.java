@@ -3734,7 +3734,7 @@ public class Attr extends JCTree.Visitor {
             DeferredAttr.DeferredTypeMap checkDeferredMap =
                 deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
 
-            argtypes = Type.map(argtypes, checkDeferredMap);
+            argtypes = argtypes.map(checkDeferredMap);
 
             if (noteWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
                 chk.warnUnchecked(env.tree.pos(),
@@ -3742,7 +3742,7 @@ public class Attr extends JCTree.Visitor {
                         kindName(sym),
                         sym.name,
                         rs.methodArguments(sym.type.getParameterTypes()),
-                        rs.methodArguments(Type.map(argtypes, checkDeferredMap)),
+                        rs.methodArguments(argtypes.map(checkDeferredMap)),
                         kindName(sym.location()),
                         sym.location());
                owntype = new MethodType(owntype.getParameterTypes(),
@@ -3766,7 +3766,7 @@ public class Attr extends JCTree.Visitor {
                     return new Pair<>(sym, diag);
                 }
             };
-            List<Type> argtypes2 = Type.map(argtypes,
+            List<Type> argtypes2 = argtypes.map(
                     rs.new ResolveDeferredRecoveryMap(AttrMode.CHECK, sym, env.info.pendingResolutionPhase));
             JCDiagnostic errDiag = errSym.getDiagnostic(JCDiagnostic.DiagnosticType.ERROR,
                     env.tree, sym, site, sym.name, argtypes2, typeargtypes);
