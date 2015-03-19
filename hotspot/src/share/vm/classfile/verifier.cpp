@@ -2236,14 +2236,20 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
 }
 
 // Look at the method's handlers.  If the bci is in the handler's try block
-// then check if the handler_pc is already on the stack.  If not, push it.
+// then check if the handler_pc is already on the stack.  If not, push it
+// unless the handler has already been scanned.
 void ClassVerifier::push_handlers(ExceptionTable* exhandlers,
+                                  GrowableArray<u4>* handler_list,
                                   GrowableArray<u4>* handler_stack,
                                   u4 bci) {
   int exlength = exhandlers->length();
   for(int x = 0; x < exlength; x++) {
     if (bci >= exhandlers->start_pc(x) && bci < exhandlers->end_pc(x)) {
-      handler_stack->append_if_missing(exhandlers->handler_pc(x));
+      u4 exhandler_pc = exhandlers->handler_pc(x);
+      if (!handler_list->contains(exhandler_pc)) {
+        handler_stack->append_if_missing(exhandler_pc);
+        handler_list->append(exhandler_pc);
+      }
     }
   }
 }
@@ -2261,6 +2267,10 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
   GrowableArray<u4>* bci_stack = new GrowableArray<u4>(30);
   // Create stack for handlers for try blocks containing this handler.
   GrowableArray<u4>* handler_stack = new GrowableArray<u4>(30);
+  // Create list of handlers that have been pushed onto the handler_stack
+  // so that handlers embedded inside of their own TRY blocks only get
+  // scanned once.
+  GrowableArray<u4>* handler_list = new GrowableArray<u4>(30);
   // Create list of visited branch opcodes (goto* and if*).
   GrowableArray<u4>* visited_branches = new GrowableArray<u4>(30);
   ExceptionTable exhandlers(_method());
@@ -2279,7 +2289,7 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
 
     // If the bytecode is in a TRY block, push its handlers so they
     // will get parsed.
-    push_handlers(&exhandlers, handler_stack, bci);
+    push_handlers(&exhandlers, handler_list, handler_stack, bci);
 
     switch (opcode) {
       case Bytecodes::_if_icmpeq:
