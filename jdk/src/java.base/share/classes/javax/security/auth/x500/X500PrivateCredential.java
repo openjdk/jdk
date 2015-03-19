@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public final class X500PrivateCredential implements Destroyable {
     /**
      * Creates an X500PrivateCredential that associates an X.509 certificate,
      * a private key and the KeyStore alias.
-     * <p>
+     *
      * @param cert X509Certificate
      * @param key  PrivateKey for the certificate
      * @exception IllegalArgumentException if either {@code cert} or
@@ -64,7 +64,7 @@ public final class X500PrivateCredential implements Destroyable {
     /**
      * Creates an X500PrivateCredential that associates an X.509 certificate,
      * a private key and the KeyStore alias.
-     * <p>
+     *
      * @param cert X509Certificate
      * @param key  PrivateKey for the certificate
      * @param alias KeyStore alias
@@ -83,7 +83,7 @@ public final class X500PrivateCredential implements Destroyable {
 
     /**
      * Returns the X.509 certificate.
-     * <p>
+     *
      * @return the X509Certificate
      */
 
@@ -93,7 +93,7 @@ public final class X500PrivateCredential implements Destroyable {
 
     /**
      * Returns the PrivateKey.
-     * <p>
+     *
      * @return the PrivateKey
      */
     public PrivateKey getPrivateKey() {
@@ -102,7 +102,7 @@ public final class X500PrivateCredential implements Destroyable {
 
     /**
      * Returns the KeyStore alias.
-     * <p>
+     *
      * @return the KeyStore alias
      */
 
@@ -124,7 +124,7 @@ public final class X500PrivateCredential implements Destroyable {
     /**
      * Determines if the references to the X.509 certificate and private key
      * in this object have been cleared.
-     * <p>
+     *
      * @return true if X509Certificate and the PrivateKey are null
 
      */

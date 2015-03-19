@@ -497,7 +497,7 @@ static char* mergePaths(char **p1, char **p2, char **p3, jboolean noType1) {
  * This also frees us from X11 APIs as JRE is required to function in
  * a "headless" mode where there is no Xserver.
  */
-static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
+static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1, jboolean isX11) {
 
     char **fcdirs = NULL, **x11dirs = NULL, **knowndirs = NULL, *path = NULL;
 
@@ -519,6 +519,7 @@ static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
      * be initialised.
      */
 #ifndef HEADLESS
+    if (isX11) { // The following only works in an x11 environment.
 #if defined(__linux__)
     /* There's no headless build on linux ... */
     if (!AWTIsHeadless()) { /* .. so need to call a function to check */
@@ -538,6 +539,7 @@ static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
 #if defined(__linux__)
     }
 #endif
+    }
 #endif /* !HEADLESS */
     path = mergePaths(fcdirs, x11dirs, knowndirs, noType1);
     if (fcdirs != NULL) {
@@ -555,13 +557,13 @@ static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
     return path;
 }
 
-JNIEXPORT jstring JNICALL Java_sun_awt_X11FontManager_getFontPathNative
-(JNIEnv *env, jobject thiz, jboolean noType1) {
+JNIEXPORT jstring JNICALL Java_sun_awt_FcFontManager_getFontPathNative
+(JNIEnv *env, jobject thiz, jboolean noType1, jboolean isX11) {
     jstring ret;
     static char *ptr = NULL; /* retain result across calls */
 
     if (ptr == NULL) {
-        ptr = getPlatformFontPathChars(env, noType1);
+        ptr = getPlatformFontPathChars(env, noType1, isX11);
     }
     ret = (*env)->NewStringUTF(env, ptr);
     return ret;

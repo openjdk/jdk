@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import sun.security.util.Debug;
  * The {@code Policy} object consults the local policy and returns
  * and appropriate {@code Permissions} object with the
  * Permissions granted to the Principals associated with the
- * provided <i>subject</i>, and granted to the code specified
- * by the provided <i>codeSource</i>.
+ * provided {@code subject}, and granted to the code specified
+ * by the provided {@code codeSource}.
  *
  * <p> A {@code Policy} contains the following information.
  * Note that this example only represents the syntax for the default
@@ -181,8 +181,6 @@ public abstract class Policy {
      * {@code AuthPermission("getPolicy")} permission
      * to ensure the caller has permission to get the Policy object.
      *
-     * <p>
-     *
      * @return the installed Policy.  The return value cannot be
      *          {@code null}.
      *
@@ -263,8 +261,6 @@ public abstract class Policy {
      * {@code AuthPermission("setPolicy")}
      * permission to ensure the caller has permission to set the Policy.
      *
-     * <p>
-     *
      * @param policy the new system Policy object.
      *
      * @exception java.lang.SecurityException if the current thread does not
@@ -321,8 +317,6 @@ public abstract class Policy {
      * Retrieve the Permissions granted to the Principals associated with
      * the specified {@code CodeSource}.
      *
-     * <p>
-     *
      * @param subject the {@code Subject}
      *                  whose associated Principals,
      *                  in conjunction with the provided
@@ -352,8 +346,6 @@ public abstract class Policy {
      * Policy. This is implementation-dependent.
      * For example, if the Policy object is stored in
      * a file, calling {@code refresh} will cause the file to be re-read.
-     *
-     * <p>
      *
      * @exception SecurityException if the caller does not have permission
      *                          to refresh the Policy.

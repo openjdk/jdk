@@ -32,7 +32,7 @@
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
- * 8027645 8035076 8039124 8035975
+ * 8027645 8035076 8039124 8035975 8074678
  */
 
 import java.util.function.Function;
@@ -138,6 +138,7 @@ public class RegExTest {
         wordSearchTest();
         hitEndTest();
         toMatchResultTest();
+        toMatchResultTest2();
         surrogatesInClassTest();
         removeQEQuotingTest();
         namedGroupCaptureTest();
@@ -369,6 +370,47 @@ public class RegExTest {
         if (mr2.start() != matcherStart2)
             failCount++;
         report("toMatchResult is a copy");
+    }
+
+    private static void checkExpectedISE(Runnable test) {
+        try {
+            test.run();
+            failCount++;
+        } catch (IllegalStateException x) {
+        } catch (IndexOutOfBoundsException xx) {
+            failCount++;
+        }
+    }
+
+    private static void checkExpectedIOOE(Runnable test) {
+        try {
+            test.run();
+            failCount++;
+        } catch (IndexOutOfBoundsException x) {}
+    }
+
+    // This is for bug 8074678
+    // Test the result of toMatchResult throws ISE if no match is availble
+    private static void toMatchResultTest2() throws Exception {
+        Matcher matcher = Pattern.compile("nomatch").matcher("hello world");
+        matcher.find();
+        MatchResult mr = matcher.toMatchResult();
+
+        checkExpectedISE(() -> mr.start());
+        checkExpectedISE(() -> mr.start(2));
+        checkExpectedISE(() -> mr.end());
+        checkExpectedISE(() -> mr.end(2));
+        checkExpectedISE(() -> mr.group());
+        checkExpectedISE(() -> mr.group(2));
+
+        matcher = Pattern.compile("(match)").matcher("there is a match");
+        matcher.find();
+        MatchResult mr2 = matcher.toMatchResult();
+        checkExpectedIOOE(() -> mr2.start(2));
+        checkExpectedIOOE(() -> mr2.end(2));
+        checkExpectedIOOE(() -> mr2.group(2));
+
+        report("toMatchResult2 appropriate exceptions");
     }
 
     // This is for bug 5013885

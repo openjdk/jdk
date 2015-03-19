@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ package javax.security.auth;
  *
  *      createLoginContext.{name} -  allow code to instantiate a
  *                              {@code LoginContext} with the
- *                              specified <i>name</i>.  <i>name</i>
+ *                              specified {@code name}.  {@code name}
  *                              is used as the index into the installed login
  *                              {@code Configuration}
  *                              (that returned by
@@ -135,8 +135,6 @@ java.security.BasicPermission {
      * Creates a new AuthPermission with the specified name.
      * The name is the symbolic name of the AuthPermission.
      *
-     * <p>
-     *
      * @param name the name of the AuthPermission
      *
      * @throws NullPointerException if {@code name} is {@code null}.
@@ -154,9 +152,7 @@ java.security.BasicPermission {
      * The name is the symbolic name of the AuthPermission, and the
      * actions String is currently unused and should be null.
      *
-     * <p>
-     *
-     * @param name the name of the AuthPermission <p>
+     * @param name the name of the AuthPermission
      *
      * @param actions should be null.
      *

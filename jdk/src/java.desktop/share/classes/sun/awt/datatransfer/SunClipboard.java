@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import java.util.Objects;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -74,12 +74,11 @@ public abstract class SunClipboard extends Clipboard
     private volatile int numberOfFlavorListeners = 0;
 
     /**
-     * A set of <code>DataFlavor</code>s that is available on
-     * this clipboard. It is used for tracking changes
-     * of <code>DataFlavor</code>s available on this clipboard.
+     * A set of {@code DataFlavor}s that is available on this clipboard. It is
+     * used for tracking changes of {@code DataFlavor}s available on this
+     * clipboard. Can be {@code null}.
      */
-    private volatile Set<DataFlavor> currentDataFlavors;
-
+    private volatile long[] currentFormats;
 
     public SunClipboard(String name) {
         super(name);
@@ -362,11 +361,11 @@ public abstract class SunClipboard extends Clipboard
             try {
                 openClipboard(null);
                 currentFormats = getClipboardFormats();
-            } catch (IllegalStateException exc) {
+            } catch (final IllegalStateException ignored) {
             } finally {
                 closeClipboard();
             }
-            currentDataFlavors = formatArrayAsDataFlavorSet(currentFormats);
+            this.currentFormats = currentFormats;
 
             registerClipboardViewerChecked();
         }
@@ -383,7 +382,7 @@ public abstract class SunClipboard extends Clipboard
         }
         if (flavorListeners.remove(listener) && --numberOfFlavorListeners == 0) {
             unregisterClipboardViewerChecked();
-            currentDataFlavors = null;
+            currentFormats = null;
         }
     }
 
@@ -416,18 +415,16 @@ public abstract class SunClipboard extends Clipboard
      * @param formats data formats that have just been retrieved from
      *        this clipboard
      */
-    public void checkChange(long[] formats) {
-        Set<DataFlavor> prevDataFlavors = currentDataFlavors;
-        currentDataFlavors = formatArrayAsDataFlavorSet(formats);
-
-        if (Objects.equals(prevDataFlavors, currentDataFlavors)) {
+    public final void checkChange(final long[] formats) {
+        if (Arrays.equals(formats, currentFormats)) {
             // we've been able to successfully get available on the clipboard
             // DataFlavors this and previous time and they are coincident;
             // don't notify
             return;
         }
+        currentFormats = formats;
 
-        for (AppContext appContext : AppContext.getAppContexts()) {
+        for (final AppContext appContext : AppContext.getAppContexts()) {
             if (appContext == null || appContext.isDisposed()) {
                 continue;
             }
