@@ -1368,8 +1368,6 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
   ClassLoaderData* loader_data = k->class_loader_data();
   Handle class_loader_h(THREAD, loader_data->class_loader());
 
-  for (uintx it = 0; it < GCExpandToAllocateDelayMillis; it++){}
-
  // for bootstrap and other parallel classloaders don't acquire lock,
  // use placeholder token
  // If a parallelCapable class loader calls define_instance_class instead of
