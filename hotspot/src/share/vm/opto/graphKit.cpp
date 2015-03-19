@@ -3027,12 +3027,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
     // We may not have profiling here or it may not help us. If we have
     // a speculative type use it to perform an exact cast.
     ciKlass* spec_obj_type = obj_type->speculative_type();
-    if (spec_obj_type != NULL ||
-        (data != NULL &&
-         // Counter has never been decremented (due to cast failure).
-         // ...This is a reasonable thing to expect.  It is true of
-         // all casts inserted by javac to implement generic types.
-         data->as_CounterData()->count() >= 0)) {
+    if (spec_obj_type != NULL || data != NULL) {
       cast_obj = maybe_cast_profiled_receiver(not_null_obj, tk->klass(), spec_obj_type, safe_for_replace);
       if (cast_obj != NULL) {
         if (failure_control != NULL) // failure is now impossible
