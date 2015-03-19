@@ -873,7 +873,8 @@ public class Infer {
             @Override
             public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
                 Infer infer = inferenceContext.infer();
-                List<Type> boundList = uv.getBounds(InferenceBound.UPPER);
+                List<Type> boundList = uv.getBounds(InferenceBound.UPPER).stream()
+                        .collect(infer.types.closureCollector(true, infer.types::isSameType));
                 List<Type> boundListTail = boundList.tail;
                 while (boundList.nonEmpty()) {
                     List<Type> tmpTail = boundListTail;
