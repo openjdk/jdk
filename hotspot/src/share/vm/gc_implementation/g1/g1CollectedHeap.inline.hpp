@@ -234,6 +234,10 @@ inline bool G1CollectedHeap::is_in_cset(oop obj) {
   return ret;
 }
 
+bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) {
+  return _in_cset_fast_test.is_in_cset(hr);
+}
+
 bool G1CollectedHeap::is_in_cset_or_humongous(const oop obj) {
   return _in_cset_fast_test.is_in_cset_or_humongous((HeapWord*)obj);
 }
@@ -242,7 +246,7 @@ InCSetState G1CollectedHeap::in_cset_state(const oop obj) {
   return _in_cset_fast_test.at((HeapWord*)obj);
 }
 
-void G1CollectedHeap::register_humongous_region_with_in_cset_fast_test(uint index) {
+void G1CollectedHeap::register_humongous_region_with_cset(uint index) {
   _in_cset_fast_test.set_humongous(index);
 }
 

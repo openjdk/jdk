@@ -3538,7 +3538,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
         r->rem_set()->clear_locked();
       }
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
-      g1h->register_humongous_region_with_in_cset_fast_test(region_idx);
+      g1h->register_humongous_region_with_cset(region_idx);
       _candidate_humongous++;
     }
     _total_humongous++;
@@ -3552,7 +3552,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
   void flush_rem_set_entries() { _dcq.flush(); }
 };
 
-void G1CollectedHeap::register_humongous_regions_with_in_cset_fast_test() {
+void G1CollectedHeap::register_humongous_regions_with_cset() {
   if (!G1EagerReclaimHumongousObjects) {
     g1_policy()->phase_times()->record_fast_reclaim_humongous_stats(0.0, 0, 0);
     return;
@@ -3859,7 +3859,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         g1_policy()->finalize_cset(target_pause_time_ms, evacuation_info);
 
-        register_humongous_regions_with_in_cset_fast_test();
+        register_humongous_regions_with_cset();
 
         assert(check_cset_fast_test(), "Inconsistency in the InCSetState table.");
 
@@ -6077,7 +6077,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
     HeapRegion* next = cur->next_in_collection_set();
     assert(cur->in_collection_set(), "bad CS");
     cur->set_next_in_collection_set(NULL);
-    cur->set_in_collection_set(false);
+    clear_in_cset(cur);
 
     if (cur->is_young()) {
       int index = cur->young_index_in_cset();
@@ -6303,7 +6303,7 @@ void G1CollectedHeap::abandon_collection_set(HeapRegion* cs_head) {
     HeapRegion* next = cur->next_in_collection_set();
     assert(cur->in_collection_set(), "bad CS");
     cur->set_next_in_collection_set(NULL);
-    cur->set_in_collection_set(false);
+    clear_in_cset(cur);
     cur->set_young_index_in_cset(-1);
     cur = next;
   }

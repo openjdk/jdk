@@ -902,7 +902,7 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass_in_cldg(Klass* klass)
 }
 
 Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
-  Klass* head = (Klass*)_next_klass;
+  Klass* head = _next_klass;
 
   while (head != NULL) {
     Klass* next = next_klass_in_cldg(head);
