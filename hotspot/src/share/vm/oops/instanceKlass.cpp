@@ -716,23 +716,6 @@ void InstanceKlass::link_methods(TRAPS) {
 
     // Set up method entry points for compiler and interpreter    .
     m->link_method(m, CHECK);
-
-    // This is for JVMTI and unrelated to relocator but the last thing we do
-#ifdef ASSERT
-    if (StressMethodComparator) {
-      ResourceMark rm(THREAD);
-      static int nmc = 0;
-      for (int j = i; j >= 0 && j >= i-4; j--) {
-        if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
-        bool z = MethodComparator::methods_EMCP(m(),
-                   methods()->at(j));
-        if (j == i && !z) {
-          tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
-          assert(z, "method must compare equal to itself");
-        }
-      }
-    }
-#endif //ASSERT
   }
 }
 
