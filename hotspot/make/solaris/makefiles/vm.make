@@ -288,6 +288,8 @@ else
 endif
 endif
 
+LFLAGS_VM += $(EXTRA_LDFLAGS)
+
 ifdef USE_GCC
 LINK_VM = $(LINK_LIB.CC)
 else
