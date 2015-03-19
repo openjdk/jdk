@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import java.io.IOException;
  * named permission or you don't.)
  * Subclasses may implement actions on top of BasicPermission,
  * if desired.
- * <p>
+ *
  * @see java.security.Permission
  * @see java.security.Permissions
  * @see java.security.PermissionCollection
@@ -154,8 +154,8 @@ public abstract class BasicPermission extends Permission
      * <P>
      * More specifically, this method returns true if:
      * <ul>
-     * <li> <i>p</i>'s class is the same as this object's class, and
-     * <li> <i>p</i>'s name equals or (in the case of wildcards)
+     * <li> {@code p}'s class is the same as this object's class, and
+     * <li> {@code p}'s name equals or (in the case of wildcards)
      *      is implied by this object's
      *      name. For example, "a.b.*" implies "a.b.c".
      * </ul>
@@ -193,11 +193,11 @@ public abstract class BasicPermission extends Permission
 
     /**
      * Checks two BasicPermission objects for equality.
-     * Checks that <i>obj</i>'s class is the same as this object's class
+     * Checks that {@code obj}'s class is the same as this object's class
      * and has the same name as this object.
-     * <P>
+     *
      * @param obj the object we are testing for equality with this object.
-     * @return true if <i>obj</i>'s class is the same as this object's class
+     * @return true if {@code obj}'s class is the same as this object's class
      *  and has the same name as this BasicPermission object, false otherwise.
      */
     public boolean equals(Object obj) {

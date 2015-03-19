@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class PropertiesTest {
         keys = p.stringPropertyNames();
         Pattern propertiesPattern =
             Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
-                "([0-3])\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
+                "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
                 "\\d{2}:\\d{2})?");
         for (String key: keys) {
             String val = p.getProperty(key);
@@ -135,14 +135,20 @@ public class PropertiesTest {
                 // ignore this
                 continue;
             }
+
+            String code = m.group(1);
+            int numeric = Integer.parseInt(m.group(2));
+            int fraction = Integer.parseInt(m.group(3));
+            if (fraction > 9) {
+                System.out.println("Skipping since the fraction is greater than 9");
+                continue;
+            }
+
             Matcher mAfter = propertiesPattern.matcher(afterVal);
             mAfter.find();
 
-            String code = m.group(1);
             String codeAfter = mAfter.group(1);
-            int numeric = Integer.parseInt(m.group(2));
             int numericAfter = Integer.parseInt(mAfter.group(2));
-            int fraction = Integer.parseInt(m.group(3));
             int fractionAfter = Integer.parseInt(mAfter.group(3));
             if (code.equals(codeAfter) &&
                 (numeric == numericAfter)&&
