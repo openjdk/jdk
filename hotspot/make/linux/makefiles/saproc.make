@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,13 @@ endif
 endif
 
 ifneq ($(ALT_SASRCDIR),)
-ALT_SAINCDIR=-I$(ALT_SASRCDIR)
+ALT_SAINCDIR=-I$(ALT_SASRCDIR) -DALT_SASRCDIR
 else
 ALT_SAINCDIR=
 endif
 SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE)) $(LDFLAGS_HASH_STYLE)
+
+SAARCH ?= $(BUILDARCH)
 
 $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
@@ -81,7 +83,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	  exit 1; \
 	fi
 	@echo $(LOG_INFO) Making SA debugger back-end...
-	$(QUIETLY) $(CC) -D$(BUILDARCH) -D_GNU_SOURCE                   \
+	$(QUIETLY) $(CC) -D$(SAARCH) -D_GNU_SOURCE                      \
 		   -D_FILE_OFFSET_BITS=64                               \
                    $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
 	           -I$(SASRCDIR)                                        \

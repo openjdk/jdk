@@ -537,15 +537,12 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
 
   // This is how many young regions we already have (currently: the survivors).
   uint base_min_length = recorded_survivor_regions();
-  // This is the absolute minimum young length, which ensures that we
-  // can allocate one eden region in the worst-case.
-  uint absolute_min_length = base_min_length + 1;
-  uint desired_min_length =
-                     calculate_young_list_desired_min_length(base_min_length);
-  if (desired_min_length < absolute_min_length) {
-    desired_min_length = absolute_min_length;
-  }
-
+  uint desired_min_length = calculate_young_list_desired_min_length(base_min_length);
+  // This is the absolute minimum young length. Ensure that we
+  // will at least have one eden region available for allocation.
+  uint absolute_min_length = base_min_length + MAX2(_g1->young_list()->eden_length(), (uint)1);
+  // If we shrank the young list target it should not shrink below the current size.
+  desired_min_length = MAX2(desired_min_length, absolute_min_length);
   // Calculate the absolute and desired max bounds.
 
   // We will try our best not to "eat" into the reserve.
@@ -1610,11 +1607,10 @@ void G1CollectorPolicy::add_old_region_to_cset(HeapRegion* hr) {
   assert(hr->is_old(), "the region should be old");
 
   assert(!hr->in_collection_set(), "should not already be in the CSet");
-  hr->set_in_collection_set(true);
+  _g1->register_old_region_with_cset(hr);
   hr->set_next_in_collection_set(_collection_set);
   _collection_set = hr;
   _collection_set_bytes_used_before += hr->used();
-  _g1->register_old_region_with_in_cset_fast_test(hr);
   size_t rs_length = hr->rem_set()->occupied();
   _recorded_rs_lengths += rs_length;
   _old_cset_region_length += 1;
@@ -1744,10 +1740,8 @@ void G1CollectorPolicy::add_region_to_incremental_cset_common(HeapRegion* hr) {
   _inc_cset_max_finger = MAX2(_inc_cset_max_finger, hr_end);
 
   assert(!hr->in_collection_set(), "invariant");
-  hr->set_in_collection_set(true);
-  assert( hr->next_in_collection_set() == NULL, "invariant");
-
-  _g1->register_young_region_with_in_cset_fast_test(hr);
+  _g1->register_young_region_with_cset(hr);
+  assert(hr->next_in_collection_set() == NULL, "invariant");
 }
 
 // Add the region at the RHS of the incremental cset
@@ -1925,7 +1919,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   //   [Newly Young Regions ++ Survivors from last pause].
 
   uint survivor_region_length = young_list->survivor_length();
-  uint eden_region_length = young_list->length() - survivor_region_length;
+  uint eden_region_length = young_list->eden_length();
   init_cset_region_lengths(eden_region_length, survivor_region_length);
 
   HeapRegion* hr = young_list->first_survivor_region();
