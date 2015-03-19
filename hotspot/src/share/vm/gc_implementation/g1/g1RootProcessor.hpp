@@ -32,6 +32,7 @@
 class CLDClosure;
 class CodeBlobClosure;
 class G1CollectedHeap;
+class G1GCPhaseTimes;
 class G1ParPushHeapRSClosure;
 class Monitor;
 class OopClosure;
@@ -74,10 +75,14 @@ class G1RootProcessor : public StackObj {
                           CLDClosure* thread_stack_clds,
                           CLDClosure* scan_strong_clds,
                           CLDClosure* scan_weak_clds,
-                          CodeBlobClosure* scan_strong_code);
+                          CodeBlobClosure* scan_strong_code,
+                          G1GCPhaseTimes* phase_times,
+                          uint worker_i);
 
   void process_vm_roots(OopClosure* scan_non_heap_roots,
-                        OopClosure* scan_non_heap_weak_roots);
+                        OopClosure* scan_non_heap_weak_roots,
+                        G1GCPhaseTimes* phase_times,
+                        uint worker_i);
 
 public:
   G1RootProcessor(G1CollectedHeap* g1h);
