@@ -79,9 +79,6 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     CFLAGS_linux := -fPIC, \
     CFLAGS_solaris := -KPIC, \
     CFLAGS_macosx := -fPIC, \
-    DISABLED_WARNINGS_gcc := sign-compare unused-result format-nonliteral \
-        format-security parentheses, \
-    DISABLED_WARNINGS_microsoft := 4267 4018, \
     MAPFILE := $(UNPACK_MAPFILE),\
     LDFLAGS := $(UNPACKEXE_ZIPOBJS) \
         $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
