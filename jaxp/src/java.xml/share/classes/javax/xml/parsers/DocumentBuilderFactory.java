@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,31 +55,34 @@ public abstract class DocumentBuilderFactory {
 
     /**
      * Obtain a new instance of a
-     * <code>DocumentBuilderFactory</code>. This static method creates
+     * {@code DocumentBuilderFactory}. This static method creates
      * a new factory instance.
      * This method uses the following ordered lookup procedure to determine
-     * the <code>DocumentBuilderFactory</code> implementation class to
+     * the {@code DocumentBuilderFactory} implementation class to
      * load:
+     * <p>
      * <ul>
      * <li>
-     * Use the <code>javax.xml.parsers.DocumentBuilderFactory</code> system
+     * Use the {@code javax.xml.parsers.DocumentBuilderFactory} system
      * property.
      * </li>
      * <li>
-     * Use the properties file "conf/jaxp.properties" in the JRE directory.
-     * This configuration file is in standard <code>java.util.Properties
-     * </code> format and contains the fully qualified name of the
-     * implementation class with the key being the system property defined
-     * above.
-     *
+     * <p>
+     * Use the configuration file "jaxp.properties". The file is in standard
+     * {@link java.util.Properties} format and typically located in the
+     * {@code conf} directory of the Java installation. It contains the fully qualified
+     * name of the implementation class with the key being the system property
+     * defined above.
+     * <p>
      * The jaxp.properties file is read only once by the JAXP implementation
-     * and it's values are then cached for future use.  If the file does not exist
+     * and its values are then cached for future use.  If the file does not exist
      * when the first attempt is made to read from it, no further attempts are
      * made to check for its existence.  It is not possible to change the value
      * of any property in jaxp.properties after it has been read for the first time.
      * </li>
      * <li>
-     * Uses the service-provider loading facilities, defined by the
+     * <p>
+     * Use the service-provider loading facility, defined by the
      * {@link java.util.ServiceLoader} class, to attempt to locate and load an
      * implementation of the service using the {@linkplain
      * java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
@@ -90,26 +93,30 @@ public abstract class DocumentBuilderFactory {
      * ClassLoader#getSystemClassLoader() system class loader} will be used.
      * </li>
      * <li>
+     * <p>
      * Otherwise, the system-default implementation is returned.
      * </li>
      * </ul>
      *
+     * <p>
      * Once an application has obtained a reference to a
-     * <code>DocumentBuilderFactory</code> it can use the factory to
+     * {@code DocumentBuilderFactory} it can use the factory to
      * configure and obtain parser instances.
      *
      *
      * <h2>Tip for Trouble-shooting</h2>
-     * <p>Setting the <code>jaxp.debug</code> system property will cause
+     * <p>
+     * Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
-     * to <code>System.err</code> about what it is doing and where it is looking at.</p>
+     * to {@code System.err} about what it is doing and where it is looking at.
      *
-     * <p> If you have problems loading {@link DocumentBuilder}s, try:</p>
+     * <p>
+     * If you have problems loading {@link DocumentBuilder}s, try:
      * <pre>
      * java -Djaxp.debug=1 YourProgram ....
      * </pre>
      *
-     * @return New instance of a <code>DocumentBuilderFactory</code>
+     * @return New instance of a {@code DocumentBuilderFactory}
      *
      * @throws FactoryConfigurationError in case of {@linkplain
      * java.util.ServiceConfigurationError service configuration error} or if
@@ -124,31 +131,31 @@ public abstract class DocumentBuilderFactory {
     }
 
     /**
-     * <p>Obtain a new instance of a <code>DocumentBuilderFactory</code> from class name.
+     * <p>Obtain a new instance of a {@code DocumentBuilderFactory} from class name.
      * This function is useful when there are multiple providers in the classpath.
      * It gives more control to the application as it can specify which provider
-     * should be loaded.</p>
+     * should be loaded.
      *
-     * <p>Once an application has obtained a reference to a <code>DocumentBuilderFactory</code>
-     * it can use the factory to configure and obtain parser instances.</p>
+     * <p>Once an application has obtained a reference to a {@code DocumentBuilderFactory}
+     * it can use the factory to configure and obtain parser instances.
      *
      *
      * <h2>Tip for Trouble-shooting</h2>
-     * <p>Setting the <code>jaxp.debug</code> system property will cause
+     * <p>Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
-     * to <code>System.err</code> about what it is doing and where it is looking at.</p>
+     * to {@code System.err} about what it is doing and where it is looking at.</p>
      *
      * <p> If you have problems try:</p>
      * <pre>
      * java -Djaxp.debug=1 YourProgram ....
      * </pre>
      *
-     * @param factoryClassName fully qualified factory class name that provides implementation of <code>javax.xml.parsers.DocumentBuilderFactory</code>.
+     * @param factoryClassName fully qualified factory class name that provides implementation of {@code javax.xml.parsers.DocumentBuilderFactory}.
      *
      * @param classLoader <code>ClassLoader</code> used to load the factory class. If <code>null</code>
      *                     current <code>Thread</code>'s context classLoader is used to load the factory class.
      *
-     * @return New instance of a <code>DocumentBuilderFactory</code>
+     * @return New instance of a {@code DocumentBuilderFactory}
      *
      * @throws FactoryConfigurationError if <code>factoryClassName</code> is <code>null</code>, or
      *                                   the factory class cannot be loaded, instantiated.
@@ -406,14 +413,14 @@ public abstract class DocumentBuilderFactory {
                 throws IllegalArgumentException;
 
     /**
-     * <p>Set a feature for this <code>DocumentBuilderFactory</code> and <code>DocumentBuilder</code>s created by this factory.</p>
+     * <p>Set a feature for this {@code DocumentBuilderFactory} and <code>DocumentBuilder</code>s created by this factory.</p>
      *
      * <p>
      * Feature names are fully qualified {@link java.net.URI}s.
      * Implementations may define their own features.
-     * A {@link ParserConfigurationException} is thrown if this <code>DocumentBuilderFactory</code> or the
+     * A {@link ParserConfigurationException} is thrown if this {@code DocumentBuilderFactory} or the
      * <code>DocumentBuilder</code>s it creates cannot support the feature.
-     * It is possible for a <code>DocumentBuilderFactory</code> to expose a feature value but be unable to change its state.
+     * It is possible for a {@code DocumentBuilderFactory} to expose a feature value but be unable to change its state.
      * </p>
      *
      * <p>
@@ -436,7 +443,7 @@ public abstract class DocumentBuilderFactory {
      * @param name Feature name.
      * @param value Is feature state <code>true</code> or <code>false</code>.
      *
-     * @throws ParserConfigurationException if this <code>DocumentBuilderFactory</code> or the <code>DocumentBuilder</code>s
+     * @throws ParserConfigurationException if this {@code DocumentBuilderFactory} or the <code>DocumentBuilder</code>s
      *   it creates cannot support this feature.
      * @throws NullPointerException If the <code>name</code> parameter is null.
      * @since 1.5
@@ -450,16 +457,16 @@ public abstract class DocumentBuilderFactory {
      * <p>
      * Feature names are fully qualified {@link java.net.URI}s.
      * Implementations may define their own features.
-     * An {@link ParserConfigurationException} is thrown if this <code>DocumentBuilderFactory</code> or the
+     * An {@link ParserConfigurationException} is thrown if this {@code DocumentBuilderFactory} or the
      * <code>DocumentBuilder</code>s it creates cannot support the feature.
-     * It is possible for an <code>DocumentBuilderFactory</code> to expose a feature value but be unable to change its state.
+     * It is possible for an {@code DocumentBuilderFactory} to expose a feature value but be unable to change its state.
      * </p>
      *
      * @param name Feature name.
      *
      * @return State of the named feature.
      *
-     * @throws ParserConfigurationException if this <code>DocumentBuilderFactory</code>
+     * @throws ParserConfigurationException if this {@code DocumentBuilderFactory}
      *   or the <code>DocumentBuilder</code>s it creates cannot support this feature.
      * @since 1.5
      */

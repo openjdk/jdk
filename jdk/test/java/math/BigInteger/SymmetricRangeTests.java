@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 1025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 /*
  * @test
  * @ignore This test has huge memory requirements
+ * @library ..
  * @run main/timeout=180/othervm -Xmx8g SymmetricRangeTests
- * @bug 6910473 8021204 8021203 9005933
- * @summary Test range of BigInteger values
+ * @bug 6910473 8021204 8021203 9005933 8074460
+ * @summary Test range of BigInteger values (use -Dseed=X to set PRNG seed)
  * @author Dmitry Nadezhin
  */
 import java.io.ByteArrayInputStream;
@@ -35,7 +36,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
-import java.util.Random;
 import java.math.BigInteger;
 
 public class SymmetricRangeTests {
@@ -114,8 +114,9 @@ public class SymmetricRangeTests {
         System.out.println("Testing overflow in BitSieve.sieveSingle");
         int bitLength = (5 << 27) - 1;
         try {
-            Random rnd = new Random();
-            BigInteger actual = new BigInteger(bitLength, 0, rnd);
+            RandomSeed rndSeed = new RandomSeed(false);
+            System.out.println("Random number generator seed = " + rndSeed.getSeed());
+            BigInteger actual = new BigInteger(bitLength, 0, rndSeed.getRandom());
             throw new RuntimeException("new BigInteger(bitLength, 0, null).bitLength()=" + actual.bitLength());
         } catch (ArithmeticException e) {
             // expected

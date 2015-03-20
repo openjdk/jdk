@@ -266,16 +266,15 @@ public abstract class Charset$Coder$ {
      * method, passing the new replacement, after checking that the new
      * replacement is acceptable.  </p>
      *
-     * @param  newReplacement  The replacement value
-     *
+     * @param  newReplacement  The new replacement; must not be
+     *         <tt>null</tt>, must have non-zero length,
 #if[decoder]
-     *         The new replacement; must not be <tt>null</tt>
-     *         and must have non-zero length
+     *         and must not be longer than the value returned by the
+     *         {@link #max$ItypesPerOtype$() max$ItypesPerOtype$} method
 #end[decoder]
 #if[encoder]
-     *         The new replacement; must not be <tt>null</tt>, must have
-     *         non-zero length, must not be longer than the value returned by
-     *         the {@link #max$ItypesPerOtype$() max$ItypesPerOtype$} method, and
+     *         must not be longer than the value returned by the
+     *         {@link #max$ItypesPerOtype$() max$ItypesPerOtype$} method, and
      *         must be {@link #isLegalReplacement legal}
 #end[encoder]
      *

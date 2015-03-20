@@ -2776,7 +2776,6 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
           __ stop("unexpected profiling mismatch");
           __ bind(ok);
-          __ pop(tmp);
         }
 #endif
         // first time here. Set profile type.

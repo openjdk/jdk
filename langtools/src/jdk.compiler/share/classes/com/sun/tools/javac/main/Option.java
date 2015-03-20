@@ -129,6 +129,22 @@ public enum Option {
         }
     },
 
+    XDOCLINT_PACKAGE("-Xdoclint/package:", "opt.Xdoclint.package.args", "opt.Xdoclint.package.desc", EXTENDED, BASIC) {
+        @Override
+        public boolean matches(String option) {
+            return DocLint.isValidOption(
+                    option.replace(XDOCLINT_PACKAGE.text, DocLint.XCHECK_PACKAGE));
+        }
+
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            String prev = helper.get(XDOCLINT_PACKAGE);
+            String next = (prev == null) ? option : (prev + " " + option);
+            helper.put(XDOCLINT_PACKAGE.text, next);
+            return false;
+        }
+    },
+
     // -nowarn is retained for command-line backward compatibility
     NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC) {
         @Override
