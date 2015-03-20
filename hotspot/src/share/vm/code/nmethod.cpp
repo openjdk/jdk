@@ -504,7 +504,7 @@ nmethod* nmethod::new_native_nmethod(methodHandle method,
                                             basic_lock_owner_sp_offset,
                                             basic_lock_sp_offset, oop_maps);
     NOT_PRODUCT(if (nm != NULL)  nmethod_stats.note_native_nmethod(nm));
-    if (PrintAssembly && nm != NULL) {
+    if ((PrintAssembly || CompilerOracle::should_print(method)) && nm != NULL) {
       Disassembler::decode(nm);
     }
   }
