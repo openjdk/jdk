@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,6 @@ public class PPC64Frame extends Frame {
   // Entry frames
   private static int ENTRY_FRAME_CALL_WRAPPER_OFFSET;
 
-  // Native frames
-  private static int NATIVE_FRAME_INITIAL_PARAM_OFFSET;
-
-
   static {
     VM.registerVMInitializedObserver(new Observer() {
       public void update(Observable o, Object data) {
@@ -76,10 +72,8 @@ public class PPC64Frame extends Frame {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    int abi_minframe_size = db.lookupIntConstant("frame::abi_minframe_size").intValue();
     int entry_frame_locals_size = db.lookupIntConstant("frame::entry_frame_locals_size").intValue();
     int wordLength = (int) VM.getVM().getAddressSize();
-    NATIVE_FRAME_INITIAL_PARAM_OFFSET = -abi_minframe_size/wordLength;
     ENTRY_FRAME_CALL_WRAPPER_OFFSET = -entry_frame_locals_size/wordLength;
   }
 
@@ -388,13 +382,6 @@ public class PPC64Frame extends Frame {
 
   // Return address:
   public Address getSenderPC()     { return getSenderSP().getAddressAt(2 * VM.getVM().getAddressSize()); }
-
-  // return address of param, zero origin index.
-  // MPJ note:   Appears to be unused.
-  public Address getNativeParamAddr(int idx) {
-    return null;
-    // return addressOfStackSlot(NATIVE_FRAME_INITIAL_PARAM_OFFSET + idx);
-  }
 
   public Address getSenderSP()     { return getFP(); }
   public Address addressOfInterpreterFrameLocals() {

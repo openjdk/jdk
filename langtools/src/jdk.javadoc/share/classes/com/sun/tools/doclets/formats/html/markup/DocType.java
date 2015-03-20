@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,6 @@ public class DocType extends Content {
 
     public static final DocType TRANSITIONAL =
             new DocType("Transitional", "http://www.w3.org/TR/html4/loose.dtd");
-
-    public static final DocType FRAMESET =
-            new DocType("Frameset", "http://www.w3.org/TR/html4/frameset.dtd");
 
     /**
      * Constructor to construct a DocType object.

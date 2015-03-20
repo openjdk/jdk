@@ -26,8 +26,12 @@
 package com.sun.tools.doclint;
 
 
-import java.util.Set;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -36,6 +40,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic.Kind;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.util.DocTrees;
@@ -44,6 +49,7 @@ import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.MatchingUtils;
 import com.sun.tools.javac.util.StringUtils;
 
 /**
@@ -90,6 +96,9 @@ public class Env {
 
     Set<String> customTags;
 
+    Set<Pattern> includePackages;
+    Set<Pattern> excludePackages;
+
     // Utility classes
     DocTrees trees;
     Elements elements;
@@ -129,6 +138,12 @@ public class Env {
         this.trees = trees;
         this.elements = elements;
         this.types = types;
+    }
+
+    void initTypes() {
+        if (java_lang_Error != null)
+            return ;
+
         java_lang_Error = elements.getTypeElement("java.lang.Error").asType();
         java_lang_RuntimeException = elements.getTypeElement("java.lang.RuntimeException").asType();
         java_lang_Throwable = elements.getTypeElement("java.lang.Throwable").asType();
@@ -141,10 +156,41 @@ public class Env {
 
     void setCustomTags(String cTags) {
         customTags = new LinkedHashSet<>();
-        for (String s : cTags.split(DocLint.TAGS_SEPARATOR)) {
+        for (String s : cTags.split(DocLint.SEPARATOR)) {
             if (!s.isEmpty())
                 customTags.add(s);
         }
+    }
+
+    void setCheckPackages(String packages) {
+        includePackages = new HashSet<>();
+        excludePackages = new HashSet<>();
+        for (String pack : packages.split(DocLint.SEPARATOR)) {
+            boolean excluded = false;
+            if (pack.startsWith("-")) {
+                pack = pack.substring(1);
+                excluded = true;
+            }
+            if (pack.isEmpty())
+                continue;
+            Pattern pattern = MatchingUtils.validImportStringToPattern(pack);
+            if (excluded) {
+                excludePackages.add(pattern);
+            } else {
+                includePackages.add(pattern);
+            }
+        }
+    }
+
+    static boolean validatePackages(String packages) {
+        for (String pack : packages.split(DocLint.SEPARATOR)) {
+            if (pack.startsWith("-")) {
+                pack = pack.substring(1);
+            }
+            if (!pack.isEmpty() && !MatchingUtils.isValidImportString(pack))
+                return false;
+        }
+        return true;
     }
 
     /** Set the current declaration and its doc comment. */

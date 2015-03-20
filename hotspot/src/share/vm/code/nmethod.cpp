@@ -1572,16 +1572,11 @@ void nmethod::post_compiled_method_unload() {
   set_unload_reported();
 }
 
-void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_alive, bool mark_on_stack) {
+void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_alive) {
   if (ic->is_icholder_call()) {
     // The only exception is compiledICHolder oops which may
     // yet be marked below. (We check this further below).
     CompiledICHolder* cichk_oop = ic->cached_icholder();
-
-    if (mark_on_stack) {
-      Metadata::mark_on_stack(cichk_oop->holder_method());
-      Metadata::mark_on_stack(cichk_oop->holder_klass());
-    }
 
     if (cichk_oop->holder_method()->method_holder()->is_loader_alive(is_alive) &&
         cichk_oop->holder_klass()->is_loader_alive(is_alive)) {
@@ -1590,10 +1585,6 @@ void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_a
   } else {
     Metadata* ic_oop = ic->cached_metadata();
     if (ic_oop != NULL) {
-      if (mark_on_stack) {
-        Metadata::mark_on_stack(ic_oop);
-      }
-
       if (ic_oop->is_klass()) {
         if (((Klass*)ic_oop)->is_loader_alive(is_alive)) {
           return;
@@ -1634,8 +1625,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
   // The RedefineClasses() API can cause the class unloading invariant
   // to no longer be true. See jvmtiExport.hpp for details.
   // Also, leave a debugging breadcrumb in local flag.
-  bool a_class_was_redefined = JvmtiExport::has_redefined_a_class();
-  if (a_class_was_redefined) {
+  if (JvmtiExport::has_redefined_a_class()) {
     // This set of the unloading_occurred flag is done before the
     // call to post_compiled_method_unload() so that the unloading
     // of this nmethod is reported.
@@ -1654,7 +1644,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
     while(iter.next()) {
       if (iter.type() == relocInfo::virtual_call_type) {
         CompiledIC *ic = CompiledIC_at(&iter);
-        clean_ic_if_metadata_is_dead(ic, is_alive, false);
+        clean_ic_if_metadata_is_dead(ic, is_alive);
       }
     }
   }
@@ -1741,33 +1731,6 @@ bool nmethod::unload_if_dead_at(RelocIterator* iter_at_oop, BoolObjectClosure *i
   return false;
 }
 
-void nmethod::mark_metadata_on_stack_at(RelocIterator* iter_at_metadata) {
-  assert(iter_at_metadata->type() == relocInfo::metadata_type, "Wrong relocation type");
-
-  metadata_Relocation* r = iter_at_metadata->metadata_reloc();
-  // In this metadata, we must only follow those metadatas directly embedded in
-  // the code.  Other metadatas (oop_index>0) are seen as part of
-  // the metadata section below.
-  assert(1 == (r->metadata_is_immediate()) +
-         (r->metadata_addr() >= metadata_begin() && r->metadata_addr() < metadata_end()),
-         "metadata must be found in exactly one place");
-  if (r->metadata_is_immediate() && r->metadata_value() != NULL) {
-    Metadata* md = r->metadata_value();
-    if (md != _method) Metadata::mark_on_stack(md);
-  }
-}
-
-void nmethod::mark_metadata_on_stack_non_relocs() {
-    // Visit the metadata section
-    for (Metadata** p = metadata_begin(); p < metadata_end(); p++) {
-      if (*p == Universe::non_oop_word() || *p == NULL)  continue;  // skip non-oops
-      Metadata* md = *p;
-      Metadata::mark_on_stack(md);
-    }
-
-    // Visit metadata not embedded in the other places.
-    if (_method != NULL) Metadata::mark_on_stack(_method);
-}
 
 bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred) {
   ResourceMark rm;
@@ -1790,18 +1753,12 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
   // The RedefineClasses() API can cause the class unloading invariant
   // to no longer be true. See jvmtiExport.hpp for details.
   // Also, leave a debugging breadcrumb in local flag.
-  bool a_class_was_redefined = JvmtiExport::has_redefined_a_class();
-  if (a_class_was_redefined) {
+  if (JvmtiExport::has_redefined_a_class()) {
     // This set of the unloading_occurred flag is done before the
     // call to post_compiled_method_unload() so that the unloading
     // of this nmethod is reported.
     unloading_occurred = true;
   }
-
-  // When class redefinition is used all metadata in the CodeCache has to be recorded,
-  // so that unused "previous versions" can be purged. Since walking the CodeCache can
-  // be expensive, the "mark on stack" is piggy-backed on this parallel unloading code.
-  bool mark_metadata_on_stack = a_class_was_redefined;
 
   // Exception cache
   clean_exception_cache(is_alive);
@@ -1818,7 +1775,7 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
       if (unloading_occurred) {
         // If class unloading occurred we first iterate over all inline caches and
         // clear ICs where the cached oop is referring to an unloaded klass or method.
-        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter), is_alive, mark_metadata_on_stack);
+        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter), is_alive);
       }
 
       postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
@@ -1839,14 +1796,8 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
       break;
 
     case relocInfo::metadata_type:
-      if (mark_metadata_on_stack) {
-        mark_metadata_on_stack_at(&iter);
-      }
+      break; // nothing to do.
     }
-  }
-
-  if (mark_metadata_on_stack) {
-    mark_metadata_on_stack_non_relocs();
   }
 
   if (is_unloaded) {
