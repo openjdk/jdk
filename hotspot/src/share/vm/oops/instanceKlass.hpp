@@ -329,6 +329,8 @@ class InstanceKlass: public Klass {
   Array<Method*>* methods() const          { return _methods; }
   void set_methods(Array<Method*>* a)      { _methods = a; }
   Method* method_with_idnum(int idnum);
+  Method* method_with_orig_idnum(int idnum);
+  Method* method_with_orig_idnum(int idnum, int version);
 
   // method ordering
   Array<int>* method_ordering() const     { return _method_ordering; }
@@ -619,6 +621,15 @@ class InstanceKlass: public Klass {
   void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
 
   InstanceKlass* previous_versions() const { return _previous_versions; }
+
+  InstanceKlass* get_klass_version(int version) {
+    for (InstanceKlass* ik = this; ik != NULL; ik = ik->previous_versions()) {
+      if (ik->constants()->version() == version) {
+        return ik;
+      }
+    }
+    return NULL;
+  }
 
   bool has_been_redefined() const {
     return (_misc_flags & _misc_has_been_redefined) != 0;

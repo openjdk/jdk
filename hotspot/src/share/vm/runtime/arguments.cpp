@@ -240,6 +240,9 @@ void Arguments::init_version_specific_system_properties() {
  * and ignoring the value.  Once the JDK version reaches the 'accept_until'
  * limit, we flatly refuse to admit the existence of the flag.  This allows
  * a flag to die correctly over JDK releases using HSX.
+ * But now that HSX is no longer supported only options with a future
+ * accept_until value need to be listed, and the list can be pruned
+ * on each major release.
  */
 typedef struct {
   const char* name;
@@ -248,63 +251,8 @@ typedef struct {
 } ObsoleteFlag;
 
 static ObsoleteFlag obsolete_jvm_flags[] = {
-  { "UseTrainGC",                    JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "UseSpecialLargeObjectHandling", JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "UseOversizedCarHandling",       JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "TraceCarAllocation",            JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "PrintTrainGCProcessingStats",   JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "LogOfCarSpaceSize",             JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "OversizedCarThreshold",         JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "MinTickInterval",               JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "DefaultTickInterval",           JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "MaxTickInterval",               JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "DelayTickAdjustment",           JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "ProcessingToTenuringRatio",     JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "MinTrainLength",                JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "AppendRatio",         JDK_Version::jdk_update(6,10), JDK_Version::jdk(7) },
-  { "DefaultMaxRAM",       JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
-  { "DefaultInitialRAMFraction",
-                           JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
-  { "UseDepthFirstScavengeOrder",
-                           JDK_Version::jdk_update(6,22), JDK_Version::jdk(7) },
-  { "HandlePromotionFailure",
-                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
-  { "MaxLiveObjectEvacuationRatio",
-                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
-  { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
-  { "UseParallelOldGCCompacting",
-                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
-  { "UseParallelDensePrefixUpdate",
-                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
-  { "UseParallelOldGCDensePrefix",
-                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
-  { "AllowTransitionalJSR292",       JDK_Version::jdk(7), JDK_Version::jdk(8) },
-  { "UseCompressedStrings",          JDK_Version::jdk(7), JDK_Version::jdk(8) },
-  { "CMSPermGenPrecleaningEnabled", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "CMSTriggerPermRatio", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "CMSInitiatingPermOccupancyFraction", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "AdaptivePermSizeWeight", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "PermGenPadding", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "PermMarkSweepDeadRatio", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "PermSize", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "MaxPermSize", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "MinPermHeapExpansion", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "MaxPermHeapExpansion", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "CMSRevisitStackSize",           JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "PrintRevisitStats",             JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseVectoredExceptions",         JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseSplitVerifier",              JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseISM",                        JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UsePermISM",                    JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseMPSS",                       JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseStringCache",                JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseOldInlining",                JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "SafepointPollOffset",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
-#ifdef PRODUCT
-  { "DesiredMethodLimit",
-                           JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
-#endif // PRODUCT
-  { "UseVMInterruptibleIO",          JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseBoundThreads",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "DefaultThreadPriority",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "NoYieldsInMicrolock",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
