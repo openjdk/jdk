@@ -394,6 +394,7 @@ class Invokers {
     @ForceInline
     void checkCustomized(Object o) {
         MethodHandle mh = (MethodHandle)o;
+        if (MethodHandleImpl.isCompileConstant(mh)) return;
         if (mh.form.customized == null) {
             maybeCustomize(mh);
         }
