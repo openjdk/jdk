@@ -716,23 +716,6 @@ void InstanceKlass::link_methods(TRAPS) {
 
     // Set up method entry points for compiler and interpreter    .
     m->link_method(m, CHECK);
-
-    // This is for JVMTI and unrelated to relocator but the last thing we do
-#ifdef ASSERT
-    if (StressMethodComparator) {
-      ResourceMark rm(THREAD);
-      static int nmc = 0;
-      for (int j = i; j >= 0 && j >= i-4; j--) {
-        if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
-        bool z = MethodComparator::methods_EMCP(m(),
-                   methods()->at(j));
-        if (j == i && !z) {
-          tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
-          assert(z, "method must compare equal to itself");
-        }
-      }
-    }
-#endif //ASSERT
   }
 }
 
@@ -3724,6 +3707,37 @@ Method* InstanceKlass::method_with_idnum(int idnum) {
   }
   return m;
 }
+
+
+Method* InstanceKlass::method_with_orig_idnum(int idnum) {
+  if (idnum >= methods()->length()) {
+    return NULL;
+  }
+  Method* m = methods()->at(idnum);
+  if (m != NULL && m->orig_method_idnum() == idnum) {
+    return m;
+  }
+  // Obsolete method idnum does not match the original idnum
+  for (int index = 0; index < methods()->length(); ++index) {
+    m = methods()->at(index);
+    if (m->orig_method_idnum() == idnum) {
+      return m;
+    }
+  }
+  // None found, return null for the caller to handle.
+  return NULL;
+}
+
+
+Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
+  InstanceKlass* holder = get_klass_version(version);
+  if (holder == NULL) {
+    return NULL; // The version of klass is gone, no method is found
+  }
+  Method* method = holder->method_with_orig_idnum(idnum);
+  return method;
+}
+
 
 jint InstanceKlass::get_cached_class_file_len() {
   return VM_RedefineClasses::get_cached_class_file_len(_cached_class_file);

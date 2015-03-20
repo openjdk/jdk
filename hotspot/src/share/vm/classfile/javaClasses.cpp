@@ -1313,7 +1313,8 @@ static inline int version_at(unsigned int merged) {
 }
 
 static inline bool version_matches(Method* method, int version) {
-  return (method->constants()->version() == version && version < MAX_VERSION);
+  assert(version < MAX_VERSION, "version is too big");
+  return method != NULL && (method->constants()->version() == version);
 }
 
 static inline int get_line_number(Method* method, int bci) {
@@ -1343,6 +1344,7 @@ class BacktraceBuilder: public StackObj {
   typeArrayOop    _methods;
   typeArrayOop    _bcis;
   objArrayOop     _mirrors;
+  typeArrayOop    _cprefs; // needed to insulate method name against redefinition
   int             _index;
   No_Safepoint_Verifier _nsv;
 
@@ -1350,8 +1352,9 @@ class BacktraceBuilder: public StackObj {
 
   enum {
     trace_methods_offset = java_lang_Throwable::trace_methods_offset,
-    trace_bcis_offset = java_lang_Throwable::trace_bcis_offset,
+    trace_bcis_offset    = java_lang_Throwable::trace_bcis_offset,
     trace_mirrors_offset = java_lang_Throwable::trace_mirrors_offset,
+    trace_cprefs_offset  = java_lang_Throwable::trace_cprefs_offset,
     trace_next_offset    = java_lang_Throwable::trace_next_offset,
     trace_size           = java_lang_Throwable::trace_size,
     trace_chunk_size     = java_lang_Throwable::trace_chunk_size
@@ -1373,9 +1376,14 @@ class BacktraceBuilder: public StackObj {
     assert(mirrors != NULL, "mirror array should be initialized in backtrace");
     return mirrors;
   }
+  static typeArrayOop get_cprefs(objArrayHandle chunk) {
+    typeArrayOop cprefs = typeArrayOop(chunk->obj_at(trace_cprefs_offset));
+    assert(cprefs != NULL, "cprefs array should be initialized in backtrace");
+    return cprefs;
+  }
 
   // constructor for new backtrace
-  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _mirrors(NULL) {
+  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _mirrors(NULL), _cprefs(NULL) {
     expand(CHECK);
     _backtrace = _head;
     _index = 0;
@@ -1385,6 +1393,7 @@ class BacktraceBuilder: public StackObj {
     _methods = get_methods(backtrace);
     _bcis = get_bcis(backtrace);
     _mirrors = get_mirrors(backtrace);
+    _cprefs = get_cprefs(backtrace);
     assert(_methods->length() == _bcis->length() &&
            _methods->length() == _mirrors->length(),
            "method and source information arrays should match");
@@ -1410,17 +1419,22 @@ class BacktraceBuilder: public StackObj {
     objArrayOop mirrors = oopFactory::new_objectArray(trace_chunk_size, CHECK);
     objArrayHandle new_mirrors(THREAD, mirrors);
 
+    typeArrayOop cprefs = oopFactory::new_shortArray(trace_chunk_size, CHECK);
+    typeArrayHandle new_cprefs(THREAD, cprefs);
+
     if (!old_head.is_null()) {
       old_head->obj_at_put(trace_next_offset, new_head());
     }
     new_head->obj_at_put(trace_methods_offset, new_methods());
     new_head->obj_at_put(trace_bcis_offset, new_bcis());
     new_head->obj_at_put(trace_mirrors_offset, new_mirrors());
+    new_head->obj_at_put(trace_cprefs_offset, new_cprefs());
 
     _head    = new_head();
     _methods = new_methods();
     _bcis = new_bcis();
     _mirrors = new_mirrors();
+    _cprefs  = new_cprefs();
     _index = 0;
   }
 
@@ -1440,8 +1454,9 @@ class BacktraceBuilder: public StackObj {
       method = mhandle();
     }
 
-    _methods->short_at_put(_index, method->method_idnum());
+    _methods->short_at_put(_index, method->orig_method_idnum());
     _bcis->int_at_put(_index, merge_bci_and_version(bci, method->constants()->version()));
+    _cprefs->short_at_put(_index, method->name_index());
 
     // We need to save the mirrors in the backtrace to keep the class
     // from being unloaded while we still have this stack trace.
@@ -1454,27 +1469,26 @@ class BacktraceBuilder: public StackObj {
 
 // Print stack trace element to resource allocated buffer
 char* java_lang_Throwable::print_stack_element_to_buffer(Handle mirror,
-                                  int method_id, int version, int bci) {
+                                  int method_id, int version, int bci, int cpref) {
 
   // Get strings and string lengths
   InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
   const char* klass_name  = holder->external_name();
   int buf_len = (int)strlen(klass_name);
 
-  // The method id may point to an obsolete method, can't get more stack information
-  Method* method = holder->method_with_idnum(method_id);
-  if (method == NULL) {
-    char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
-    // This is what the java code prints in this case - added Redefined
-    sprintf(buf, "\tat %s.null (Redefined)", klass_name);
-    return buf;
-  }
+  Method* method = holder->method_with_orig_idnum(method_id, version);
 
-  char* method_name = method->name()->as_C_string();
+  // The method can be NULL if the requested class version is gone
+  Symbol* sym = (method != NULL) ? method->name() : holder->constants()->symbol_at(cpref);
+  char* method_name = sym->as_C_string();
   buf_len += (int)strlen(method_name);
 
+  // Use specific ik version as a holder since the mirror might
+  // refer to version that is now obsolete and no longer accessible
+  // via the previous versions list.
+  holder = holder->get_klass_version(version);
   char* source_file_name = NULL;
-  if (version_matches(method, version)) {
+  if (holder != NULL) {
     Symbol* source = holder->source_file_name();
     if (source != NULL) {
       source_file_name = source->as_C_string();
@@ -1516,17 +1530,18 @@ char* java_lang_Throwable::print_stack_element_to_buffer(Handle mirror,
 }
 
 void java_lang_Throwable::print_stack_element(outputStream *st, Handle mirror,
-                                              int method_id, int version, int bci) {
+                                              int method_id, int version, int bci, int cpref) {
   ResourceMark rm;
-  char* buf = print_stack_element_to_buffer(mirror, method_id, version, bci);
+  char* buf = print_stack_element_to_buffer(mirror, method_id, version, bci, cpref);
   st->print_cr("%s", buf);
 }
 
 void java_lang_Throwable::print_stack_element(outputStream *st, methodHandle method, int bci) {
   Handle mirror = method->method_holder()->java_mirror();
-  int method_id = method->method_idnum();
+  int method_id = method->orig_method_idnum();
   int version = method->constants()->version();
-  print_stack_element(st, mirror, method_id, version, bci);
+  int cpref = method->name_index();
+  print_stack_element(st, mirror, method_id, version, bci, cpref);
 }
 
 const char* java_lang_Throwable::no_stack_trace_message() {
@@ -1551,6 +1566,7 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
       typeArrayHandle methods (THREAD, BacktraceBuilder::get_methods(result));
       typeArrayHandle bcis (THREAD, BacktraceBuilder::get_bcis(result));
       objArrayHandle mirrors (THREAD, BacktraceBuilder::get_mirrors(result));
+      typeArrayHandle cprefs (THREAD, BacktraceBuilder::get_cprefs(result));
 
       int length = methods()->length();
       for (int index = 0; index < length; index++) {
@@ -1560,7 +1576,8 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
         int method = methods->short_at(index);
         int version = version_at(bcis->int_at(index));
         int bci = bci_at(bcis->int_at(index));
-        print_stack_element(st, mirror, method, version, bci);
+        int cpref = cprefs->short_at(index);
+        print_stack_element(st, mirror, method, version, bci, cpref);
       }
       result = objArrayHandle(THREAD, objArrayOop(result->obj_at(trace_next_offset)));
     }
@@ -1837,29 +1854,30 @@ oop java_lang_Throwable::get_stack_trace_element(oop throwable, int index, TRAPS
   if (chunk == NULL) {
     THROW_(vmSymbols::java_lang_IndexOutOfBoundsException(), NULL);
   }
-  // Get method id, bci, version and mirror from chunk
+  // Get method id, bci, version, mirror and cpref from chunk
   typeArrayOop methods = BacktraceBuilder::get_methods(chunk);
   typeArrayOop bcis = BacktraceBuilder::get_bcis(chunk);
   objArrayOop mirrors = BacktraceBuilder::get_mirrors(chunk);
+  typeArrayOop cprefs = BacktraceBuilder::get_cprefs(chunk);
 
   assert(methods != NULL && bcis != NULL && mirrors != NULL, "sanity check");
 
   int method = methods->short_at(chunk_index);
   int version = version_at(bcis->int_at(chunk_index));
   int bci = bci_at(bcis->int_at(chunk_index));
+  int cpref = cprefs->short_at(chunk_index);
   Handle mirror(THREAD, mirrors->obj_at(chunk_index));
 
   // Chunk can be partial full
   if (mirror.is_null()) {
     THROW_(vmSymbols::java_lang_IndexOutOfBoundsException(), NULL);
   }
-
-  oop element = java_lang_StackTraceElement::create(mirror, method, version, bci, CHECK_0);
+  oop element = java_lang_StackTraceElement::create(mirror, method, version, bci, cpref, CHECK_0);
   return element;
 }
 
 oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
-                                        int version, int bci, TRAPS) {
+                                        int version, int bci, int cpref, TRAPS) {
   // Allocate java.lang.StackTraceElement instance
   Klass* k = SystemDictionary::StackTraceElement_klass();
   assert(k != NULL, "must be loaded in 1.4+");
@@ -1876,17 +1894,13 @@ oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
   oop classname = StringTable::intern((char*) str, CHECK_0);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
 
-  Method* method = holder->method_with_idnum(method_id);
-  // Method on stack may be obsolete because it was redefined so cannot be
-  // found by idnum.
-  if (method == NULL) {
-    // leave name and fileName null
-    java_lang_StackTraceElement::set_lineNumber(element(), -1);
-    return element();
-  }
+  Method* method = holder->method_with_orig_idnum(method_id, version);
+
+  // The method can be NULL if the requested class version is gone
+  Symbol* sym = (method != NULL) ? method->name() : holder->constants()->symbol_at(cpref);
 
   // Fill in method name
-  oop methodname = StringTable::intern(method->name(), CHECK_0);
+  oop methodname = StringTable::intern(sym, CHECK_0);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
 
   if (!version_matches(method, version)) {
@@ -1895,6 +1909,11 @@ oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
     java_lang_StackTraceElement::set_lineNumber(element(), -1);
   } else {
     // Fill in source file name and line number.
+    // Use specific ik version as a holder since the mirror might
+    // refer to version that is now obsolete and no longer accessible
+    // via the previous versions list.
+    holder = holder->get_klass_version(version);
+    assert(holder != NULL, "sanity check");
     Symbol* source = holder->source_file_name();
     if (ShowHiddenFrames && source == NULL)
       source = vmSymbols::unknown_class_name();
@@ -1909,8 +1928,9 @@ oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
 
 oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
   Handle mirror (THREAD, method->method_holder()->java_mirror());
-  int method_id = method->method_idnum();
-  return create(mirror, method_id, method->constants()->version(), bci, THREAD);
+  int method_id = method->orig_method_idnum();
+  int cpref = method->name_index();
+  return create(mirror, method_id, method->constants()->version(), bci, cpref, THREAD);
 }
 
 void java_lang_reflect_AccessibleObject::compute_offsets() {

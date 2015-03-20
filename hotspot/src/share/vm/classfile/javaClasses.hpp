@@ -485,8 +485,9 @@ class java_lang_Throwable: AllStatic {
     trace_methods_offset = 0,
     trace_bcis_offset    = 1,
     trace_mirrors_offset = 2,
-    trace_next_offset    = 3,
-    trace_size           = 4,
+    trace_cprefs_offset  = 3,
+    trace_next_offset    = 4,
+    trace_size           = 5,
     trace_chunk_size     = 32
   };
 
@@ -497,7 +498,7 @@ class java_lang_Throwable: AllStatic {
   static int static_unassigned_stacktrace_offset;
 
   // Printing
-  static char* print_stack_element_to_buffer(Handle mirror, int method, int version, int bci);
+  static char* print_stack_element_to_buffer(Handle mirror, int method, int version, int bci, int cpref);
   // StackTrace (programmatic access, new since 1.4)
   static void clear_stacktrace(oop throwable);
   // No stack trace available
@@ -519,7 +520,7 @@ class java_lang_Throwable: AllStatic {
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, Handle mirror, int method,
-                                  int version, int bci);
+                                  int version, int bci, int cpref);
   static void print_stack_element(outputStream *st, methodHandle method, int bci);
   static void print_stack_usage(Handle stream);
 
@@ -1314,7 +1315,7 @@ class java_lang_StackTraceElement: AllStatic {
   static void set_lineNumber(oop element, int value);
 
   // Create an instance of StackTraceElement
-  static oop create(Handle mirror, int method, int version, int bci, TRAPS);
+  static oop create(Handle mirror, int method, int version, int bci, int cpref, TRAPS);
   static oop create(methodHandle method, int bci, TRAPS);
 
   // Debugging
