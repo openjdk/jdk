@@ -2837,11 +2837,21 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           st.print(")");
           return st.as_string();
         }
+        case relocInfo::runtime_call_type: {
+          stringStream st;
+          st.print("runtime_call");
+          runtime_call_Relocation* r = iter.runtime_call_reloc();
+          address dest = r->destination();
+          CodeBlob* cb = CodeCache::find_blob(dest);
+          if (cb != NULL) {
+            st.print(" %s", cb->name());
+          }
+          return st.as_string();
+        }
         case relocInfo::virtual_call_type:     return "virtual_call";
         case relocInfo::opt_virtual_call_type: return "optimized virtual_call";
         case relocInfo::static_call_type:      return "static_call";
         case relocInfo::static_stub_type:      return "static_stub";
-        case relocInfo::runtime_call_type:     return "runtime_call";
         case relocInfo::external_word_type:    return "external_word";
         case relocInfo::internal_word_type:    return "internal_word";
         case relocInfo::section_word_type:     return "section_word";
