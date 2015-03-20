@@ -290,6 +290,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_multiplyToLen();
 
   bool inline_profileBoolean();
+  bool inline_isCompileConstant();
 };
 
 
@@ -900,6 +901,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_profileBoolean:
     return inline_profileBoolean();
+  case vmIntrinsics::_isCompileConstant:
+    return inline_isCompileConstant();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -5887,4 +5890,10 @@ bool LibraryCallKit::inline_profileBoolean() {
     // isn't a compile-time constant.
     return false;
   }
+}
+
+bool LibraryCallKit::inline_isCompileConstant() {
+  Node* n = argument(0);
+  set_result(n->is_Con() ? intcon(1) : intcon(0));
+  return true;
 }
