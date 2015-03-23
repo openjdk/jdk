@@ -988,14 +988,14 @@ public final class ProcessBuilder
      *         <li>the standard input to the subprocess was
      *         {@linkplain #redirectInput redirected from a file}
      *         and the security manager's
-     *         {@link SecurityManager#checkRead checkRead} method
+     *         {@link SecurityManager#checkRead(String) checkRead} method
      *         denies read access to the file, or
      *
      *         <li>the standard output or standard error of the
      *         subprocess was
      *         {@linkplain #redirectOutput redirected to a file}
      *         and the security manager's
-     *         {@link SecurityManager#checkWrite checkWrite} method
+     *         {@link SecurityManager#checkWrite(String) checkWrite} method
      *         denies write access to the file
      *
      *         </ul>
