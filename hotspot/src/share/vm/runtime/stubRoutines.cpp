@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,31 +213,35 @@ static void test_arraycopy_func(address func, int alignment) {
 
 // simple test for SafeFetch32
 static void test_safefetch32() {
-  int dummy = 17;
-  int* const p_invalid = (int*) get_segfault_address();
-  int* const p_valid = &dummy;
-  int result_invalid = SafeFetch32(p_invalid, 0xABC);
-  assert(result_invalid == 0xABC, "SafeFetch32 error");
-  int result_valid = SafeFetch32(p_valid, 0xABC);
-  assert(result_valid == 17, "SafeFetch32 error");
+  if (CanUseSafeFetch32()) {
+    int dummy = 17;
+    int* const p_invalid = (int*) get_segfault_address();
+    int* const p_valid = &dummy;
+    int result_invalid = SafeFetch32(p_invalid, 0xABC);
+    assert(result_invalid == 0xABC, "SafeFetch32 error");
+    int result_valid = SafeFetch32(p_valid, 0xABC);
+    assert(result_valid == 17, "SafeFetch32 error");
+  }
 }
 
 // simple test for SafeFetchN
 static void test_safefetchN() {
+  if (CanUseSafeFetchN()) {
 #ifdef _LP64
-  const intptr_t v1 = UCONST64(0xABCD00000000ABCD);
-  const intptr_t v2 = UCONST64(0xDEFD00000000DEFD);
+    const intptr_t v1 = UCONST64(0xABCD00000000ABCD);
+    const intptr_t v2 = UCONST64(0xDEFD00000000DEFD);
 #else
-  const intptr_t v1 = 0xABCDABCD;
-  const intptr_t v2 = 0xDEFDDEFD;
+    const intptr_t v1 = 0xABCDABCD;
+    const intptr_t v2 = 0xDEFDDEFD;
 #endif
-  intptr_t dummy = v1;
-  intptr_t* const p_invalid = (intptr_t*) get_segfault_address();
-  intptr_t* const p_valid = &dummy;
-  intptr_t result_invalid = SafeFetchN(p_invalid, v2);
-  assert(result_invalid == v2, "SafeFetchN error");
-  intptr_t result_valid = SafeFetchN(p_valid, v2);
-  assert(result_valid == v1, "SafeFetchN error");
+    intptr_t dummy = v1;
+    intptr_t* const p_invalid = (intptr_t*) get_segfault_address();
+    intptr_t* const p_valid = &dummy;
+    intptr_t result_invalid = SafeFetchN(p_invalid, v2);
+    assert(result_invalid == v2, "SafeFetchN error");
+    intptr_t result_valid = SafeFetchN(p_valid, v2);
+    assert(result_valid == v1, "SafeFetchN error");
+  }
 }
 #endif
 

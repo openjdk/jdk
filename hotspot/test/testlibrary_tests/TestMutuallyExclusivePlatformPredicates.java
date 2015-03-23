@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         ARCH("isARM", "isPPC", "isSparc", "isX86", "isX64"),
         BITNESS("is32bit", "is64bit"),
         OS("isAix", "isLinux", "isOSX", "isSolaris", "isWindows"),
-        VM_TYPE("isClient", "isServer", "isGraal", "isMinimal"),
+        VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero"),
         IGNORED("isEmbedded", "isDebugBuild", "shouldSAAttach",
                 "canPtraceAttachLinux", "canAttachOSX", "isTieredSupported");
 
