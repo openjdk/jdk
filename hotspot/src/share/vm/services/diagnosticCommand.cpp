@@ -32,6 +32,7 @@
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
 #include "utilities/macros.hpp"
@@ -50,6 +51,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export, true, false));
@@ -62,6 +64,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
 #endif // INCLUDE_SERVICES
+#if INCLUDE_JVMTI
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
+#endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RotateGCLogDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -195,6 +200,46 @@ int PrintVMFlagsDCmd::num_arguments() {
     } else {
       return 0;
     }
+}
+
+SetVMFlagDCmd::SetVMFlagDCmd(outputStream* output, bool heap) :
+                                   DCmdWithParser(output, heap),
+  _flag("flag name", "The name of the flag we want to set",
+        "STRING", true),
+  _value("string value", "The value we want to set", "STRING", false) {
+  _dcmdparser.add_dcmd_argument(&_flag);
+  _dcmdparser.add_dcmd_argument(&_value);
+}
+
+void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
+  const char* val = NULL;
+  if (_value.value() != NULL) {
+    val = _value.value();
+  }
+
+  FormatBuffer<80> err_msg("%s", "");
+  int ret = WriteableFlags::set_flag(_flag.value(), val, Flag::MANAGEMENT, err_msg);
+
+  if (ret != WriteableFlags::SUCCESS) {
+    output()->print_cr("%s", err_msg.buffer());
+  }
+}
+
+int SetVMFlagDCmd::num_arguments() {
+  ResourceMark rm;
+  SetVMFlagDCmd* dcmd = new SetVMFlagDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
+
+void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
+  if (JvmtiExport::should_post_data_dump()) {
+    JvmtiExport::post_data_dump();
+  }
 }
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
