@@ -1518,7 +1518,6 @@ void GraphKit::pre_barrier(bool do_load,
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
-    case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       g1_write_barrier_pre(do_load, obj, adr, adr_idx, val, val_type, pre_val, bt);
       break;
@@ -1537,7 +1536,6 @@ void GraphKit::pre_barrier(bool do_load,
 bool GraphKit::can_move_pre_barrier() const {
   BarrierSet* bs = Universe::heap()->barrier_set();
   switch (bs->kind()) {
-    case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       return true; // Can move it if no safepoint
 
@@ -1563,7 +1561,6 @@ void GraphKit::post_barrier(Node* ctl,
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
-    case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
       break;
