@@ -4324,7 +4324,7 @@ operand indOffI(iRegP reg, immIOffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
-  op_cost(INSN_COST);
+  op_cost(0);
   format %{ "[$reg, $off]" %}
   interface(MEMORY_INTER) %{
     base($reg);
