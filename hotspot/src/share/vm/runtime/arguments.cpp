@@ -92,6 +92,8 @@ bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
 bool   Arguments::_UseOnStackReplacement        = UseOnStackReplacement;
 bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
+intx   Arguments::_Tier3InvokeNotifyFreqLog     = Tier3InvokeNotifyFreqLog;
+intx   Arguments::_Tier4InvocationThreshold     = Tier4InvocationThreshold;
 
 char*  Arguments::SharedArchivePath             = NULL;
 
@@ -1069,6 +1071,14 @@ void Arguments::set_mode_flags(Mode mode) {
   AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
+  if (TieredCompilation) {
+    if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
+      Tier3InvokeNotifyFreqLog = Arguments::_Tier3InvokeNotifyFreqLog;
+    }
+    if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
+      Tier4InvocationThreshold = Arguments::_Tier4InvocationThreshold;
+    }
+  }
 
   // Change from defaults based on mode
   switch (mode) {
@@ -2589,6 +2599,10 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
+  if (TieredCompilation) {
+    Arguments::_Tier3InvokeNotifyFreqLog = Tier3InvokeNotifyFreqLog;
+    Arguments::_Tier4InvocationThreshold = Tier4InvocationThreshold;
+  }
 
   // Setup flags for mixed which is the default
   set_mode_flags(_mixed);
