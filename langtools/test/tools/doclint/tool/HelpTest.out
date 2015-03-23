@@ -30,6 +30,13 @@ Options:
     equivalent to -Xmsgs:all/protected, meaning that
     all messages are reported for protected and public
     declarations only. 
+  -XcheckPackage:<packages>
+    Enable or disable checks in specific packages.
+    <packages> is a comma separated list of package specifiers.
+    Package specifier is either a qualified name of a package
+    or a package name prefix followed by '.*', which expands to
+    all sub-packages of the given package. Prefix the package specifier
+    with '-' to disable checks for the specified packages.
   -stats
     Report statistics on the reported issues.
   -h -help --help -usage -?
