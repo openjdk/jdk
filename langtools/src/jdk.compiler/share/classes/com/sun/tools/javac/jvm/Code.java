@@ -497,13 +497,9 @@ public class Code {
         case aaload: {
             state.pop(1);// index
             Type a = state.stack[state.stacksize-1];
+            Assert.check(!a.hasTag(BOT)); // null type as is cannot be indexed.
             state.pop(1);
-            //sometimes 'null type' is treated as a one-dimensional array type
-            //see Gen.visitLiteral - we should handle this case accordingly
-            Type stackType = a.hasTag(BOT) ?
-                syms.objectType :
-                types.erasure(types.elemtype(a));
-            state.push(stackType); }
+            state.push(types.erasure(types.elemtype(a))); }
             break;
         case goto_:
             markDead();
