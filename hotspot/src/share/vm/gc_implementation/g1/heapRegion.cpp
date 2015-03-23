@@ -324,9 +324,8 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
 void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
                                                   bool during_conc_mark,
                                                   size_t marked_bytes) {
-  assert(0 <= marked_bytes && marked_bytes <= used(),
-         err_msg("marked: "SIZE_FORMAT" used: "SIZE_FORMAT,
-                 marked_bytes, used()));
+  assert(marked_bytes <= used(),
+         err_msg("marked: "SIZE_FORMAT" used: "SIZE_FORMAT, marked_bytes, used()));
   _prev_top_at_mark_start = top();
   _prev_marked_bytes = marked_bytes;
 }

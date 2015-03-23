@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ void PtrQueue::flush_impl() {
 
 
 void PtrQueue::enqueue_known_active(void* ptr) {
-  assert(0 <= _index && _index <= _sz, "Invariant.");
+  assert(_index <= _sz, "Invariant.");
   assert(_index == 0 || _buf != NULL, "invariant");
 
   while (_index == 0) {
@@ -68,7 +68,7 @@ void PtrQueue::enqueue_known_active(void* ptr) {
   assert(_index > 0, "postcondition");
   _index -= oopSize;
   _buf[byte_index_to_index((int)_index)] = ptr;
-  assert(0 <= _index && _index <= _sz, "Invariant.");
+  assert(_index <= _sz, "Invariant.");
 }
 
 void PtrQueue::locking_enqueue_completed_buffer(void** buf) {
@@ -194,7 +194,6 @@ void PtrQueue::handle_zero_index() {
   _buf = qset()->allocate_buffer();
   _sz = qset()->buffer_size();
   _index = _sz;
-  assert(0 <= _index && _index <= _sz, "Invariant.");
 }
 
 bool PtrQueueSet::process_or_enqueue_complete_buffer(void** buf) {
