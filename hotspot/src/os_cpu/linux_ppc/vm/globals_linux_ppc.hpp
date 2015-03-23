@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,5 @@ define_pd_global(intx, StackShadowPages,         6 DEBUG_ONLY(+2));
 
 // Only used on 64 bit platforms
 define_pd_global(size_t, HeapBaseMinAddress,     2*G);
-// Only used on 64 bit Windows platforms
-define_pd_global(bool, UseVectoredExceptions,    false);
 
 #endif // OS_CPU_LINUX_PPC_VM_GLOBALS_LINUX_PPC_HPP

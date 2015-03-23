@@ -203,8 +203,6 @@ Thread::Thread() {
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
 
-  _metadata_on_stack_buffer = NULL;
-
   // the handle mark links itself to last_handle_mark
   new HandleMark(this);
 
@@ -776,7 +774,8 @@ void Thread::nmethods_do(CodeBlobClosure* cf) {
   // no nmethods in a generic thread...
 }
 
-void Thread::metadata_do(void f(Metadata*)) {
+void Thread::metadata_handles_do(void f(Metadata*)) {
+  // Only walk the Handles in Thread.
   if (metadata_handles() != NULL) {
     for (int i = 0; i< metadata_handles()->length(); i++) {
       f(metadata_handles()->at(i));
@@ -2713,7 +2712,6 @@ void JavaThread::nmethods_do(CodeBlobClosure* cf) {
 }
 
 void JavaThread::metadata_do(void f(Metadata*)) {
-  Thread::metadata_do(f);
   if (has_last_Java_frame()) {
     // Traverse the execution stack to call f() on the methods in the stack
     for (StackFrameStream fst(this); !fst.is_done(); fst.next()) {
@@ -4102,6 +4100,21 @@ void Threads::metadata_do(void f(Metadata*)) {
   ALL_JAVA_THREADS(p) {
     p->metadata_do(f);
   }
+}
+
+class ThreadHandlesClosure : public ThreadClosure {
+  void (*_f)(Metadata*);
+ public:
+  ThreadHandlesClosure(void f(Metadata*)) : _f(f) {}
+  virtual void do_thread(Thread* thread) {
+    thread->metadata_handles_do(_f);
+  }
+};
+
+void Threads::metadata_handles_do(void f(Metadata*)) {
+  // Only walk the Handles in Thread.
+  ThreadHandlesClosure handles_closure(f);
+  threads_do(&handles_closure);
 }
 
 void Threads::deoptimized_wrt_marked_nmethods() {

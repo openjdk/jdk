@@ -378,10 +378,6 @@ WB_ENTRY(void, WB_NMTReleaseMemory(JNIEnv* env, jobject o, jlong addr, jlong siz
   os::release_memory((char *)(uintptr_t)addr, size);
 WB_END
 
-WB_ENTRY(jboolean, WB_NMTIsDetailSupported(JNIEnv* env))
-  return MemTracker::tracking_level() == NMT_detail;
-WB_END
-
 WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
   // Test that we can downgrade NMT levels but not upgrade them.
   if (MemTracker::tracking_level() == NMT_off) {
@@ -1338,7 +1334,6 @@ static JNINativeMethod methods[] = {
   {CC"NMTCommitMemory",     CC"(JJ)V",                (void*)&WB_NMTCommitMemory    },
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
-  {CC"NMTIsDetailSupported",CC"()Z",                  (void*)&WB_NMTIsDetailSupported},
   {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
   {CC"NMTGetHashSize",      CC"()I",                  (void*)&WB_NMTGetHashSize     },
 #endif // INCLUDE_NMT

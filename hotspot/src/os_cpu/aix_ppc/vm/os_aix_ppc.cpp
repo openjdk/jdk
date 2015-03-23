@@ -397,7 +397,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
           // continue at the next instruction after the faulting read. Returning
           // garbage from this read is ok.
           thread->set_pending_unsafe_access_error();
-          uc->uc_mcontext.jmp_context.iar = ((unsigned long)pc) + 4;
+          os::Aix::ucontext_set_pc(uc, pc + 4);
           return 1;
         }
       }
@@ -420,7 +420,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         // continue at the next instruction after the faulting read. Returning
         // garbage from this read is ok.
         thread->set_pending_unsafe_access_error();
-        uc->uc_mcontext.jmp_context.iar = ((unsigned long)pc) + 4;
+        os::Aix::ucontext_set_pc(uc, pc + 4);
         return 1;
       }
     }
@@ -445,7 +445,7 @@ run_stub:
   if (stub != NULL) {
     // Save all thread context in case we need to restore it.
     if (thread != NULL) thread->set_saved_exception_pc(pc);
-    uc->uc_mcontext.jmp_context.iar = (unsigned long)stub;
+    os::Aix::ucontext_set_pc(uc, stub);
     return 1;
   }
 

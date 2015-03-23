@@ -562,7 +562,6 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
 
 // Reallocate storage in Arena.
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
-  assert(new_size >= 0, "bad size");
   if (new_size == 0) return NULL;
 #ifdef ASSERT
   if (UseMallocOnly) {

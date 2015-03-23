@@ -144,6 +144,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     public Void scan(DocCommentTree tree, TreePath p) {
+        env.initTypes();
         env.setCurrent(p, tree);
 
         boolean isOverridingMethod = !env.currOverriddenMethods.isEmpty();

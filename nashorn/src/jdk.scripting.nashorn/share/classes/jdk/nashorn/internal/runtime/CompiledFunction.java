@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -594,7 +595,7 @@ final class CompiledFunction {
      * switchpoint has been invalidated by a {@code RewriteException} triggered on another thread for this function.
      * This is not a problem, though, as these switch points are always used to produce call sites that fall back to
      * relinking when they are invalidated, and in this case the execution will end up here again. What this method
-     * basically does is minimize such busy-loop relinking while the function is being recompiled on a different thread.
+     * basically does is reduce such busy-loop relinking while the function is being recompiled on a different thread.
      * @param invocationSupplier the supplier that constructs the actual invocation method handle; should use the
      * {@code CompiledFunction} method itself in some capacity.
      * @return a tuple object containing the method handle as created by the supplier and an optimistic assumptions
@@ -602,20 +603,27 @@ final class CompiledFunction {
      * function can't be further deoptimized).
      */
     private synchronized HandleAndAssumptions getValidOptimisticInvocation(final Supplier<MethodHandle> invocationSupplier) {
-        for(;;) {
+        for(int i = 0; i < 2; ++i) {
             final MethodHandle handle = invocationSupplier.get();
             final SwitchPoint assumptions = canBeDeoptimized() ? optimismInfo.optimisticAssumptions : null;
-            if(assumptions != null && assumptions.hasBeenInvalidated()) {
+            if(i == 0 && assumptions != null && assumptions.hasBeenInvalidated()) {
                 // We can be in a situation where one thread is in the middle of a deoptimizing compilation when we hit
                 // this and thus, it has invalidated the old switch point, but hasn't created the new one yet. Note that
                 // the behavior of invalidating the old switch point before recompilation, and only creating the new one
-                // after recompilation is by design. If we didn't wait here for the recompilation to complete, we would
-                // be busy looping through the fallback path of the invalidated switch point, relinking the call site
-                // again with the same invalidated switch point, invoking the fallback, etc. stealing CPU cycles from
-                // the recompilation task we're dependent on. This can still happen if the switch point gets invalidated
-                // after we grabbed it here, in which case we'll indeed do one busy relink immediately.
+                // after recompilation is by design. If we didn't wait here, we would be busy looping through the
+                // fallback path of the invalidated switch point, relinking the call site again with the same
+                // invalidated switch point, invoking the fallback, etc. stealing CPU cycles from the recompilation
+                // task we're dependent on. This can still happen if the switch point gets invalidated after we grabbed
+                // it here, in which case we'll indeed do one busy relink immediately.
+                // On the other hand, in order to avoid a rare livelock, we aren't doing an infinite loop, and we
+                // aren't wait()-ing indefinitely. We'll do at most one, at most 1000ms long wait after which we'll
+                // return the current handle even if it's invalidated (and which'll then trigger one loop through the
+                // relink mechanism). We therefore strike a balance between busy looping and a livelock risk by making
+                // sure that there's at most one iteration of busy loop per second. It is theoretically possible to
+                // correctly implement this without ever risking a livelock, but using this heuristic we eliminate the
+                // chance of the livelock, while still maintaining a good enough busy-looping prevention.
                 try {
-                    wait();
+                    wait(1000L);
                 } catch (final InterruptedException e) {
                     // Intentionally ignored. There's nothing meaningful we can do if we're interrupted
                 }
@@ -623,6 +631,7 @@ final class CompiledFunction {
                 return new HandleAndAssumptions(handle, assumptions);
             }
         }
+        throw new AssertionError(); // never reached
     }
 
     private static void relinkComposableInvoker(final CallSite cs, final CompiledFunction inv, final boolean constructor) {

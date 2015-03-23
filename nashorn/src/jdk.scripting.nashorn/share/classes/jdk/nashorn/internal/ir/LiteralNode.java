@@ -181,6 +181,28 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     }
 
     /**
+     * Test if the value is an array
+     *
+     * @return True if value is an array
+     */
+    public boolean isArray() {
+        return false;
+    }
+
+    public List<Expression> getElementExpressions() {
+        return null;
+    }
+
+    /**
+     * Test if the value is a boolean.
+     *
+     * @return True if value is a boolean.
+     */
+    public boolean isBoolean() {
+        return value instanceof Boolean;
+    }
+
+    /**
      * Test if the value is a string.
      *
      * @return True if value is a string.
@@ -607,6 +629,12 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         /** Sub units with indexes ranges, in which to split up code generation, for large literals */
         private final List<ArrayUnit> units;
 
+        @Override
+        public boolean isArray() {
+            return true;
+        }
+
+
         /**
          * An ArrayUnit is a range in an ArrayLiteral. ArrayLiterals can
          * be split if they are too large, for bytecode generation reasons
@@ -834,6 +862,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * null.
          * @return a list of array element expressions.
          */
+        @Override
         public List<Expression> getElementExpressions() {
             return Collections.unmodifiableList(Arrays.asList(value));
         }
