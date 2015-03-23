@@ -131,6 +131,48 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class SetVMFlagDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _flag;
+  DCmdArgument<char*> _value;
+
+public:
+  SetVMFlagDCmd(outputStream* output, bool heap);
+  static const char* name() { return "VM.set_flag"; }
+  static const char* description() {
+    return "Sets VM flag option using the provided value.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "control", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class JVMTIDataDumpDCmd : public DCmd {
+public:
+  JVMTIDataDumpDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() { return "JVMTI.data_dump"; }
+  static const char* description() {
+    return "Signal the JVM to do a data-dump request for JVMTI.";
+  }
+  static const char* impact() {
+    return "High";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class VMDynamicLibrariesDCmd : public DCmd {
 public:
   VMDynamicLibrariesDCmd(outputStream* output, bool heap);
