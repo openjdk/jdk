@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2010 Red Hat, Inc.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,19 +176,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_oop_arraycopy;
   }
 
-  static int SafeFetch32(int *adr, int errValue) {
-    int value = errValue;
-    value = *adr;
-    return value;
-  }
-
-  static intptr_t SafeFetchN(intptr_t *adr, intptr_t errValue) {
-    intptr_t value = errValue;
-    value = *adr;
-    return value;
-  }
-
-
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -241,11 +228,11 @@ class StubGenerator: public StubCodeGenerator {
     generate_arraycopy_stubs();
 
     // Safefetch stubs.
-    StubRoutines::_safefetch32_entry = CAST_FROM_FN_PTR(address, StubGenerator::SafeFetch32);
+    StubRoutines::_safefetch32_entry = NULL;
     StubRoutines::_safefetch32_fault_pc = NULL;
     StubRoutines::_safefetch32_continuation_pc = NULL;
 
-    StubRoutines::_safefetchN_entry = CAST_FROM_FN_PTR(address, StubGenerator::SafeFetchN);
+    StubRoutines::_safefetchN_entry = NULL;
     StubRoutines::_safefetchN_fault_pc = NULL;
     StubRoutines::_safefetchN_continuation_pc = NULL;
   }

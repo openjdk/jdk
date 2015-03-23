@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,20 +38,10 @@ public class NumCompilerThreadsCheck {
     String expectedOutput = "CICompilerCount of -1 is invalid";
     out.shouldContain(expectedOutput);
 
-    if (isZeroVm()) {
+    if (Platform.isZero()) {
       String expectedLowWaterMarkText = "must be at least 0";
       out.shouldContain(expectedLowWaterMarkText);
     }
   }
 
-  private static boolean isZeroVm() {
-    String vmName = System.getProperty("java.vm.name");
-    if (vmName == null) {
-      throw new RuntimeException("No VM name");
-    }
-    if (vmName.toLowerCase().contains("zero")) {
-      return true;
-    }
-    return false;
-  }
 }
