@@ -309,6 +309,10 @@ address os::Bsd::ucontext_get_pc(ucontext_t * uc) {
   return (address)uc->context_pc;
 }
 
+void os::Bsd::ucontext_set_pc(ucontext_t * uc, address pc) {
+  uc->context_pc = (intptr_t)pc ;
+}
+
 intptr_t* os::Bsd::ucontext_get_sp(ucontext_t * uc) {
   return (intptr_t*)uc->context_sp;
 }
@@ -463,7 +467,7 @@ JVM_handle_bsd_signal(int sig,
     pc = (address) os::Bsd::ucontext_get_pc(uc);
 
     if (StubRoutines::is_safefetch_fault(pc)) {
-      uc->context_pc = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      os::Bsd::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
       return 1;
     }
 
@@ -703,7 +707,7 @@ JVM_handle_bsd_signal(int sig,
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
 
-    uc->context_pc = (intptr_t)stub;
+    os::Bsd::ucontext_set_pc(uc, stub);
     return true;
   }
 

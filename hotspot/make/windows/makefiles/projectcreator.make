@@ -69,6 +69,7 @@ ProjectCreatorIncludesPRIVATE=\
         -ignorePath ppc \
         -ignorePath zero \
         -ignorePath aix \
+        -ignorePath aarch64 \
         -hidePath .hg
 
 

@@ -3735,12 +3735,12 @@ operand immD()
   interface(CONST_INTER);
 %}
 
-// constant 'double +0.0'.
+// Double Immediate: +0.0d
 operand immD0()
 %{
-  predicate((n->getd() == 0) &&
-            (fpclassify(n->getd()) == FP_ZERO) && (signbit(n->getd()) == 0));
+  predicate(jlong_cast(n->getd()) == 0);
   match(ConD);
+
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -3765,12 +3765,12 @@ operand immF()
   interface(CONST_INTER);
 %}
 
-// constant 'float +0.0'.
+// Float Immediate: +0.0f.
 operand immF0()
 %{
-  predicate((n->getf() == 0) &&
-            (fpclassify(n->getf()) == FP_ZERO) && (signbit(n->getf()) == 0));
+  predicate(jint_cast(n->getf()) == 0);
   match(ConF);
+
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);

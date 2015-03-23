@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -166,7 +166,6 @@ inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL &&
 
 
 inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
-inline void      frame::set_link(intptr_t* addr)  { *(intptr_t **)addr_at(link_offset) = addr; }
 
 
 inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
@@ -175,9 +174,6 @@ inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 
 inline address* frame::sender_pc_addr()      const { return (address*) addr_at( return_addr_offset); }
 inline address  frame::sender_pc()           const { return *sender_pc_addr(); }
-
-// return address of param, zero origin index.
-inline address* frame::native_param_addr(int idx) const { return (address*) addr_at( native_frame_initial_param_offset+idx); }
 
 #ifdef CC_INTERP
 
