@@ -87,8 +87,9 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
-#include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/preserveException.hpp"
+#include "utilities/workgroup.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
