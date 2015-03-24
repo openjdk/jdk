@@ -45,6 +45,13 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     /** Is this a var statement (as opposed to a "var" in a for loop statement) */
     private final int flags;
 
+    /**
+     * source order id to be used for this node. If this is -1, then we
+     * the default which is start position of this node. See also the
+     * method Node::getSourceOrder.
+     */
+    private final int sourceOrder;
+
     /** Flag for ES6 LET declaration */
     public static final int IS_LET                       = 1 << 0;
 
@@ -71,6 +78,7 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
 
     private VarNode(final VarNode varNode, final IdentNode name, final Expression init, final int flags) {
         super(varNode);
+        this.sourceOrder = -1;
         this.name = init == null ? name : name.setIsInitializedHere();
         this.init = init;
         this.flags = flags;
@@ -79,19 +87,39 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     /**
      * Constructor
      *
-     * @param lineNumber line number
-     * @param token      token
-     * @param finish     finish
-     * @param name       name of variable
-     * @param init       init node or null if just a declaration
-     * @param flags      flags
+     * @param lineNumber  line number
+     * @param token       token
+     * @param finish      finish
+     * @param name        name of variable
+     * @param init        init node or null if just a declaration
+     * @param flags       flags
      */
     public VarNode(final int lineNumber, final long token, final int finish, final IdentNode name, final Expression init, final int flags) {
-        super(lineNumber, token, finish);
+        this(lineNumber, token, -1, finish, name, init, flags);
+    }
 
+    /**
+     * Constructor
+     *
+     * @param lineNumber  line number
+     * @param token       token
+     * @param sourceOrder source order
+     * @param finish      finish
+     * @param name        name of variable
+     * @param init        init node or null if just a declaration
+     * @param flags       flags
+     */
+    public VarNode(final int lineNumber, final long token, final int sourceOrder, final int finish, final IdentNode name, final Expression init, final int flags) {
+        super(lineNumber, token, finish);
+        this.sourceOrder = sourceOrder;
         this.name  = init == null ? name : name.setIsInitializedHere();
         this.init  = init;
         this.flags = flags;
+    }
+
+    @Override
+    public int getSourceOrder() {
+        return sourceOrder == -1? super.getSourceOrder() : sourceOrder;
     }
 
     @Override

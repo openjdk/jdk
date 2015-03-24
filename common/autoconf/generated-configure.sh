@@ -4369,7 +4369,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1425994551
+DATE_WHEN_GENERATED=1427220001
 
 ###############################################################################
 #
@@ -41174,7 +41174,7 @@ $as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid."
 
 
       # jtreg win32 script works for everybody
-      JTREGEXE="$JT_HOME/win32/bin/jtreg"
+      JTREGEXE="$JT_HOME/bin/jtreg"
 
       if test ! -f "$JTREGEXE"; then
         as_fn_error $? "JTReg executable does not exist: $JTREGEXE" "$LINENO" 5
@@ -42373,9 +42373,8 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     CFLAGS_JDKLIB_EXTRA="${CFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
     CXXFLAGS_JDKLIB_EXTRA="${CXXFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_JDK="${LDFLAGS_JDK} -q64 -brtl -bnolibpath -liconv -bexpall"
-    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
-    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
   if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
@@ -42669,6 +42668,8 @@ fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -liconv -bexpall -bernotok"
   fi
 
   # Customize LDFLAGS for executables

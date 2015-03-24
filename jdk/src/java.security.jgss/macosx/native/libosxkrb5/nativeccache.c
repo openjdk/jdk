@@ -25,6 +25,8 @@
 
 #import "sun_security_krb5_Credentials.h"
 #import <Kerberos/Kerberos.h>
+#import <string.h>
+#import <time.h>
 
 /*
  * Based largely on klist.c,

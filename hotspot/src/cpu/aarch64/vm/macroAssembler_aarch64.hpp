@@ -872,7 +872,7 @@ public:
     // stack grows down, caller passes positive offset
     assert(offset > 0, "must bang with negative offset");
     mov(rscratch2, -offset);
-    ldr(zr, Address(sp, rscratch2));
+    str(zr, Address(sp, rscratch2));
   }
 
   // Writes to stack successive pages until offset reached to check for

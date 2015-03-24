@@ -41,7 +41,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
           $(LIBJAVA_HEADER_FLAGS) \
           -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
-      DISABLED_WARNINGS_gcc := pointer-to-int-cast, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2gss/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -74,6 +73,8 @@ ifneq ($(BUILD_CRYPTO), no)
   endif
 
   ifneq ($(BUILD_LIBKRB5_NAME), )
+    # libosxkrb5 needs to call deprecated krb5 APIs so that java
+    # can use the native credentials cache.
     $(eval $(call SetupNativeCompilation,BUILD_LIBKRB5, \
         LIBRARY := $(BUILD_LIBKRB5_NAME), \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -83,7 +84,7 @@ ifneq ($(BUILD_CRYPTO), no)
         CFLAGS := $(CFLAGS_JDKLIB) \
             $(addprefix -I, $(BUILD_LIBKRB5_SRC)) \
             -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
-        DISABLED_WARNINGS_clang := implicit-function-declaration, \
+        DISABLED_WARNINGS_clang := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LDFLAGS_SUFFIX := $(BUILD_LIBKRB5_LIBS), \

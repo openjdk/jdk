@@ -1,0 +1,230 @@
+[
+  {
+    "endPosition": "22",
+    "kind": "TRY",
+    "catches": [
+      {
+        "condition": "null",
+        "endPosition": "22",
+        "kind": "CATCH",
+        "parameter": {
+          "endPosition": "17",
+          "kind": "IDENTIFIER",
+          "name": "e",
+          "startPosition": "16"
+        },
+        "block": {
+          "endPosition": "22",
+          "kind": "BLOCK",
+          "statements": [],
+          "startPosition": "19"
+        },
+        "startPosition": "9"
+      }
+    ],
+    "block": {
+      "endPosition": "8",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "5"
+    },
+    "finallyBlock": "null",
+    "startPosition": "1"
+  },
+  {
+    "endPosition": "55",
+    "kind": "TRY",
+    "catches": [
+      {
+        "condition": "null",
+        "endPosition": "44",
+        "kind": "CATCH",
+        "parameter": {
+          "endPosition": "39",
+          "kind": "IDENTIFIER",
+          "name": "e",
+          "startPosition": "38"
+        },
+        "block": {
+          "endPosition": "44",
+          "kind": "BLOCK",
+          "statements": [],
+          "startPosition": "41"
+        },
+        "startPosition": "31"
+      }
+    ],
+    "block": {
+      "endPosition": "30",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "27"
+    },
+    "finallyBlock": {
+      "endPosition": "55",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "53"
+    },
+    "startPosition": "23"
+  },
+  {
+    "endPosition": "74",
+    "kind": "TRY",
+    "catches": [],
+    "block": {
+      "endPosition": "63",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "60"
+    },
+    "finallyBlock": {
+      "endPosition": "74",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "72"
+    },
+    "startPosition": "56"
+  },
+  {
+    "endPosition": "105",
+    "kind": "TRY",
+    "catches": [
+      {
+        "condition": "null",
+        "endPosition": "105",
+        "kind": "CATCH",
+        "parameter": {
+          "endPosition": "91",
+          "kind": "IDENTIFIER",
+          "name": "e",
+          "startPosition": "90"
+        },
+        "block": {
+          "endPosition": "105",
+          "kind": "BLOCK",
+          "statements": [
+            {
+              "expression": {
+                "endPosition": "103",
+                "kind": "FUNCTION_INVOCATION",
+                "functionSelect": {
+                  "endPosition": "101",
+                  "kind": "IDENTIFIER",
+                  "name": "handle",
+                  "startPosition": "95"
+                },
+                "arguments": [],
+                "startPosition": "95"
+              },
+              "endPosition": "103",
+              "kind": "EXPRESSION_STATEMENT",
+              "startPosition": "95"
+            }
+          ],
+          "startPosition": "93"
+        },
+        "startPosition": "83"
+      }
+    ],
+    "block": {
+      "endPosition": "82",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "79"
+    },
+    "finallyBlock": "null",
+    "startPosition": "75"
+  },
+  {
+    "endPosition": "163",
+    "kind": "TRY",
+    "catches": [
+      {
+        "condition": "null",
+        "endPosition": "143",
+        "kind": "CATCH",
+        "parameter": {
+          "endPosition": "129",
+          "kind": "IDENTIFIER",
+          "name": "e",
+          "startPosition": "128"
+        },
+        "block": {
+          "endPosition": "143",
+          "kind": "BLOCK",
+          "statements": [
+            {
+              "expression": {
+                "endPosition": "141",
+                "kind": "FUNCTION_INVOCATION",
+                "functionSelect": {
+                  "endPosition": "139",
+                  "kind": "IDENTIFIER",
+                  "name": "handle",
+                  "startPosition": "133"
+                },
+                "arguments": [],
+                "startPosition": "133"
+              },
+              "endPosition": "141",
+              "kind": "EXPRESSION_STATEMENT",
+              "startPosition": "133"
+            }
+          ],
+          "startPosition": "131"
+        },
+        "startPosition": "121"
+      }
+    ],
+    "block": {
+      "endPosition": "120",
+      "kind": "BLOCK",
+      "statements": [
+        {
+          "expression": {
+            "endPosition": "118",
+            "kind": "FUNCTION_INVOCATION",
+            "functionSelect": {
+              "endPosition": "116",
+              "kind": "IDENTIFIER",
+              "name": "that",
+              "startPosition": "112"
+            },
+            "arguments": [],
+            "startPosition": "112"
+          },
+          "endPosition": "118",
+          "kind": "EXPRESSION_STATEMENT",
+          "startPosition": "112"
+        }
+      ],
+      "startPosition": "110"
+    },
+    "finallyBlock": {
+      "endPosition": "163",
+      "kind": "BLOCK",
+      "statements": [
+        {
+          "expression": {
+            "endPosition": "161",
+            "kind": "FUNCTION_INVOCATION",
+            "functionSelect": {
+              "endPosition": "159",
+              "kind": "IDENTIFIER",
+              "name": "clean",
+              "startPosition": "154"
+            },
+            "arguments": [],
+            "startPosition": "154"
+          },
+          "endPosition": "161",
+          "kind": "EXPRESSION_STATEMENT",
+          "startPosition": "154"
+        }
+      ],
+      "startPosition": "152"
+    },
+    "startPosition": "106"
+  }
+]

@@ -517,7 +517,7 @@ public class CollectorsTest extends OpTestCase {
                                                                                new ToListAssertion<>())));
     }
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testFlatMappingClose() {
         Function<Integer, Integer> classifier = i -> i;
         AtomicInteger ai = new AtomicInteger();

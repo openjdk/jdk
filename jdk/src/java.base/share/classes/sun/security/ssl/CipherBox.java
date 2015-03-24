@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,7 @@ final class CipherBox {
             throw new NoSuchAlgorithmException("Unsupported cipher " + cipher);
         }
 
-        if (cipher == B_NULL) {
+        if (cipher == BulkCipher.B_NULL) {
             return NULL;
         } else {
             return new CipherBox(version, cipher, key, iv, random, encrypt);
