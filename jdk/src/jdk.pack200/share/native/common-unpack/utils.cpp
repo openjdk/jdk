@@ -81,7 +81,7 @@ void breakpoint() { }  // hook for debugger
 int assert_failed(const char* p) {
   char message[1<<12];
   sprintf(message, "@assert failed: %s\n", p);
-  fprintf(stdout, 1+message);
+  fprintf(stdout, "%s", 1+message);
   breakpoint();
   unpack_abort(message);
   return 0;

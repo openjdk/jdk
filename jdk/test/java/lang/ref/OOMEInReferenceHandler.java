@@ -27,6 +27,7 @@
  * @summary Verify that the reference handler does not die after an OOME allocating the InterruptedException object
  * @run main/othervm -XX:-UseGCOverheadLimit -Xmx24M -XX:-UseTLAB OOMEInReferenceHandler
  * @author peter.levart@gmail.com
+ * @key intermittent
  */
 
 import java.lang.ref.*;
