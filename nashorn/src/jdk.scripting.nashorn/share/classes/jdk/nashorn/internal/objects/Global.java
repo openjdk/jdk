@@ -77,6 +77,7 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
 import jdk.nashorn.internal.scripts.JO;
+import jdk.nashorn.tools.ShellFunctions;
 
 /**
  * Representation of global scope.
@@ -1814,6 +1815,17 @@ public final class Global extends ScriptObject implements Scope {
         }
 
         return invocation;
+    }
+
+    /**
+     * Adds jjs shell interactive mode builtin functions to global scope.
+     */
+    public void addShellBuiltins() {
+        Object value = ScriptFunctionImpl.makeFunction("input", ShellFunctions.INPUT);
+        addOwnProperty("input", Attribute.NOT_ENUMERABLE, value);
+
+        value = ScriptFunctionImpl.makeFunction("evalinput", ShellFunctions.EVALINPUT);
+        addOwnProperty("evalinput", Attribute.NOT_ENUMERABLE, value);
     }
 
     private synchronized SwitchPoint getLexicalScopeSwitchPoint() {
