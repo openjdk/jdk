@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 // Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 // or visit www.oracle.com if you need additional information or have any
 // questions.
-//  
+//
 //
 
 
@@ -34,19 +34,19 @@
 
   // Get the raw thread ID from %gs:0
       .inline _raw_thread_id,0
-      movl     %gs:0, %eax 
+      movl     %gs:0, %eax
       .end
 
   // Get current sp
       .inline _get_current_sp,0
       .volatile
-      movl     %esp, %eax 
+      movl     %esp, %eax
       .end
 
   // Get current fp
       .inline _get_current_fp,0
       .volatile
-      movl     %ebp, %eax 
+      movl     %ebp, %eax
       .end
 
   // Support for os::rdtsc()
@@ -76,8 +76,8 @@
       xchgl    (%ecx), %eax
       .end
 
-  // Support for jbyte Atomic::cmpxchg(jbyte exchange_value, 
-  //                                   volatile jbyte *dest, 
+  // Support for jbyte Atomic::cmpxchg(jbyte exchange_value,
+  //                                   volatile jbyte *dest,
   //                                   jbyte compare_value)
   // An additional bool (os::is_MP()) is passed as the last argument.
       .inline _Atomic_cmpxchg_byte,4
@@ -93,8 +93,8 @@
 2:
       .end
 
-  // Support for jint Atomic::cmpxchg(jint exchange_value, 
-  //                                  volatile jint *dest, 
+  // Support for jint Atomic::cmpxchg(jint exchange_value,
+  //                                  volatile jint *dest,
   //                                  jint compare_value)
   // An additional bool (os::is_MP()) is passed as the last argument.
       .inline _Atomic_cmpxchg,4
@@ -139,17 +139,6 @@
       fildll    (%eax)
       movl     4(%esp), %eax   // dest
       fistpll   (%eax)
-      .end
-
-  // Support for OrderAccess::acquire()
-      .inline _OrderAccess_acquire,0
-      movl     0(%esp), %eax
-      .end
-
-  // Support for OrderAccess::fence()
-      .inline _OrderAccess_fence,0
-      lock
-      addl     $0, (%esp)
       .end
 
   // Support for u2 Bytes::swap_u2(u2 x)

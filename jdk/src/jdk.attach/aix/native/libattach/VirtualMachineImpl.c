@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "jni.h"
 #include "jni_util.h"
+#include "jvm.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -184,15 +185,26 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
             res = errno;
         }
 
-        /* release p here before we throw an I/O exception */
-        if (isCopy) {
-            JNU_ReleaseStringPlatformChars(env, path, p);
-        }
-
         if (res == 0) {
-            if ( (sb.st_uid != uid) || (sb.st_gid != gid) ||
-                 ((sb.st_mode & (S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)) != 0) ) {
-                JNU_ThrowIOException(env, "well-known file is not secure");
+            char msg[100];
+            jboolean isError = JNI_FALSE;
+            if (sb.st_uid != uid) {
+                jio_snprintf(msg, sizeof(msg)-1,
+                    "file should be owned by the current user (which is %d) but is owned by %d", uid, sb.st_uid);
+                isError = JNI_TRUE;
+            } else if (sb.st_gid != gid) {
+                jio_snprintf(msg, sizeof(msg)-1,
+                    "file's group should be the current group (which is %d) but the group is %d", gid, sb.st_gid);
+                isError = JNI_TRUE;
+            } else if ((sb.st_mode & (S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)) != 0) {
+                jio_snprintf(msg, sizeof(msg)-1,
+                    "file should only be readable and writable by the owner but has 0%03o access", sb.st_mode & 0777);
+                isError = JNI_TRUE;
+            }
+            if (isError) {
+                char buf[256];
+                jio_snprintf(buf, sizeof(buf)-1, "well-known file %s is not secure: %s", p, msg);
+                JNU_ThrowIOException(env, buf);
             }
         } else {
             char* msg = strdup(strerror(res));
@@ -200,6 +212,10 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
             if (msg != NULL) {
                 free(msg);
             }
+        }
+
+        if (isCopy) {
+            JNU_ReleaseStringPlatformChars(env, path, p);
         }
     }
 }
@@ -238,14 +254,14 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_read
         len = remaining;
     }
 
-    RESTARTABLE(read(fd, buf+off, len), n);
+    RESTARTABLE(read(fd, buf, len), n);
     if (n == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "read");
     } else {
         if (n == 0) {
             n = -1;     // EOF
         } else {
-            (*env)->SetByteArrayRegion(env, ba, off, (jint)n, (jbyte *)(buf+off));
+            (*env)->SetByteArrayRegion(env, ba, off, (jint)n, (jbyte *)(buf));
         }
     }
     return n;

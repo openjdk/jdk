@@ -275,6 +275,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
   void CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
+#ifdef CARDTABLEMODREF_POST_BARRIER_HELPER
+  void CardTableModRef_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
+#endif
 
 
   static LIR_Opr result_register_for(ValueType* type, bool callee = false);
@@ -545,6 +548,10 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x);
 #ifdef ASSERT
   virtual void do_Assert         (Assert*          x);
+#endif
+
+#ifdef C1_LIRGENERATOR_MD_HPP
+#include C1_LIRGENERATOR_MD_HPP
 #endif
 };
 
