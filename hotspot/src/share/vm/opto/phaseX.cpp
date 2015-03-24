@@ -1605,21 +1605,6 @@ void PhaseCCP::do_transform() {
   C->set_root( transform(C->root())->as_Root() );
   assert( C->top(),  "missing TOP node" );
   assert( C->root(), "missing root" );
-
-  // Eagerly remove castPP nodes here. CastPP nodes might not be
-  // removed in the subsequent IGVN phase if a node that changes
-  // in(1) of a castPP is processed prior to the castPP node.
-  for (uint i = 0; i < _worklist.size(); i++) {
-    Node* n = _worklist.at(i);
-
-    if (n->is_ConstraintCast()) {
-      Node* nn = n->Identity(this);
-      if (nn != n) {
-        replace_node(n, nn);
-        --i;
-      }
-    }
-  }
 }
 
 //------------------------------transform--------------------------------------
@@ -1700,11 +1685,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
     _worklist.push(n);          // n re-enters the hash table via the worklist
   }
 
-  // Idealize graph using DU info.  Must clone() into new-space.
-  // DU info is generally used to show profitability, progress or safety
-  // (but generally not needed for correctness).
-  Node *nn = n->Ideal_DU_postCCP(this);
-
   // TEMPORARY fix to ensure that 2nd GVN pass eliminates NULL checks
   switch( n->Opcode() ) {
   case Op_FastLock:      // Revisit FastLocks for lock coarsening
@@ -1720,12 +1700,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
     break;
   default:
     break;
-  }
-  if( nn ) {
-    _worklist.push(n);
-    // Put users of 'n' onto worklist for second igvn transform
-    add_users_to_worklist(n);
-    return nn;
   }
 
   return  n;
