@@ -57,6 +57,7 @@ public interface ForInLoopTree extends LoopTree {
      *
      * @return the statement
      */
+    @Override
     StatementTree getStatement();
 
     /**

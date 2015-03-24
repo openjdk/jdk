@@ -3947,12 +3947,10 @@ void LIR_Assembler::membar() {
 
 void LIR_Assembler::membar_acquire() {
   // No x86 machines currently require load fences
-  // __ load_fence();
 }
 
 void LIR_Assembler::membar_release() {
   // No x86 machines currently require store fences
-  // __ store_fence();
 }
 
 void LIR_Assembler::membar_loadload() {

@@ -25,6 +25,7 @@
  * @bug 6405995
  * @summary Unit test for selector wakeup and interruption
  * @library ..
+ * @key intermittent
  */
 
 import java.io.*;

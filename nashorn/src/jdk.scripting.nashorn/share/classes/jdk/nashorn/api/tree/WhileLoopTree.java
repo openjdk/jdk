@@ -43,6 +43,7 @@ public interface WhileLoopTree extends ConditionalLoopTree {
      *
      * @return the condition expression
      */
+    @Override
     ExpressionTree getCondition();
 
     /**
@@ -50,5 +51,6 @@ public interface WhileLoopTree extends ConditionalLoopTree {
      *
      * @return the statement contained
      */
+    @Override
     StatementTree getStatement();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "jvm_md.h"
 #include "sizecalc.h"
 #include <jni_util.h>
+#include "awt.h"
 
 #define GTK2_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gtk-x11-2.0", "0")
 #define GTK2_LIB JNI_LIB_NAME("gtk-x11-2.0")
@@ -890,6 +891,7 @@ gboolean gtk2_load(JNIEnv *env)
      * BadMatch errors which we would normally ignore. The IO error handler
      * is preserved here, too, just for consistency.
     */
+    AWT_LOCK();
     handler = XSetErrorHandler(NULL);
     io_handler = XSetIOErrorHandler(NULL);
 
@@ -926,6 +928,7 @@ gboolean gtk2_load(JNIEnv *env)
 
     XSetErrorHandler(handler);
     XSetIOErrorHandler(io_handler);
+    AWT_UNLOCK();
 
     /* Initialize widget array. */
     for (i = 0; i < _GTK_WIDGET_TYPE_SIZE; i++)

@@ -56,6 +56,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ClassFile.*;
@@ -2006,6 +2007,15 @@ public class ClassReader {
         }
         if (saveParameterNames)
             setParameterNames(m, type);
+
+        if ((flags & VARARGS) != 0) {
+            final Type last = type.getParameterTypes().last();
+            if (last == null || !last.hasTag(ARRAY)) {
+                m.flags_field &= ~VARARGS;
+                throw badClassFile("malformed.vararg.method", m);
+            }
+        }
+
         return m;
     }
 

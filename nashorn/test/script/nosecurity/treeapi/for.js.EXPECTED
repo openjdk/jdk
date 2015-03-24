@@ -1,0 +1,281 @@
+[
+  {
+    "condition": {
+      "endPosition": "19",
+      "kind": "IDENTIFIER",
+      "name": "someExpr",
+      "startPosition": "11"
+    },
+    "endPosition": "24",
+    "kind": "FOR_LOOP",
+    "statement": {
+      "endPosition": "24",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "22"
+    },
+    "update": "null",
+    "startPosition": "1",
+    "initializer": {
+      "expression": {
+        "endPosition": "9",
+        "kind": "NUMBER_LITERAL",
+        "value": "0",
+        "startPosition": "8"
+      },
+      "endPosition": "9",
+      "kind": "ASSIGNMENT",
+      "variable": {
+        "endPosition": "7",
+        "kind": "IDENTIFIER",
+        "name": "i",
+        "startPosition": "6"
+      },
+      "startPosition": "6"
+    }
+  },
+  {
+    "condition": "null",
+    "endPosition": "34",
+    "kind": "FOR_LOOP",
+    "statement": {
+      "endPosition": "34",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "32"
+    },
+    "update": "null",
+    "startPosition": "25",
+    "initializer": "null"
+  },
+  {
+    "condition": {
+      "leftOperand": {
+        "endPosition": "49",
+        "kind": "IDENTIFIER",
+        "name": "i",
+        "startPosition": "48"
+      },
+      "endPosition": "53",
+      "kind": "LESS_THAN",
+      "rightOperand": {
+        "endPosition": "53",
+        "kind": "NUMBER_LITERAL",
+        "value": "4",
+        "startPosition": "52"
+      },
+      "startPosition": "48"
+    },
+    "endPosition": "63",
+    "kind": "FOR_LOOP",
+    "statement": {
+      "endPosition": "63",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "61"
+    },
+    "update": {
+      "expression": {
+        "endPosition": "59",
+        "kind": "NUMBER_LITERAL",
+        "value": "5",
+        "startPosition": "58"
+      },
+      "endPosition": "59",
+      "kind": "PLUS_ASSIGNMENT",
+      "variable": {
+        "endPosition": "56",
+        "kind": "IDENTIFIER",
+        "name": "i",
+        "startPosition": "55"
+      },
+      "startPosition": "55"
+    },
+    "startPosition": "35",
+    "initializer": "null"
+  },
+  {
+    "condition": {
+      "leftOperand": {
+        "endPosition": "78",
+        "kind": "IDENTIFIER",
+        "name": "i",
+        "startPosition": "77"
+      },
+      "endPosition": "82",
+      "kind": "LESS_THAN",
+      "rightOperand": {
+        "endPosition": "82",
+        "kind": "NUMBER_LITERAL",
+        "value": "4",
+        "startPosition": "81"
+      },
+      "startPosition": "77"
+    },
+    "endPosition": "91",
+    "kind": "FOR_LOOP",
+    "statement": {
+      "endPosition": "91",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "89"
+    },
+    "update": {
+      "expression": {
+        "endPosition": "85",
+        "kind": "IDENTIFIER",
+        "name": "i",
+        "startPosition": "84"
+      },
+      "endPosition": "87",
+      "kind": "POSTFIX_INCREMENT",
+      "startPosition": "84"
+    },
+    "startPosition": "64",
+    "initializer": "null"
+  },
+  {
+    "condition": {
+      "leftOperand": {
+        "endPosition": "112",
+        "kind": "IDENTIFIER",
+        "name": "x",
+        "startPosition": "111"
+      },
+      "endPosition": "116",
+      "kind": "LESS_THAN",
+      "rightOperand": {
+        "endPosition": "116",
+        "kind": "NUMBER_LITERAL",
+        "value": "6",
+        "startPosition": "115"
+      },
+      "startPosition": "111"
+    },
+    "endPosition": "137",
+    "kind": "FOR_LOOP",
+    "statement": {
+      "endPosition": "137",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "135"
+    },
+    "update": {
+      "leftOperand": {
+        "leftOperand": {
+          "expression": {
+            "endPosition": "119",
+            "kind": "IDENTIFIER",
+            "name": "j",
+            "startPosition": "118"
+          },
+          "endPosition": "121",
+          "kind": "POSTFIX_INCREMENT",
+          "startPosition": "118"
+        },
+        "endPosition": "127",
+        "kind": "COMMA",
+        "rightOperand": {
+          "expression": {
+            "endPosition": "127",
+            "kind": "NUMBER_LITERAL",
+            "value": "2",
+            "startPosition": "126"
+          },
+          "endPosition": "127",
+          "kind": "PLUS_ASSIGNMENT",
+          "variable": {
+            "endPosition": "124",
+            "kind": "IDENTIFIER",
+            "name": "x",
+            "startPosition": "123"
+          },
+          "startPosition": "123"
+        },
+        "startPosition": "118"
+      },
+      "endPosition": "133",
+      "kind": "COMMA",
+      "rightOperand": {
+        "expression": {
+          "endPosition": "133",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "132"
+        },
+        "endPosition": "133",
+        "kind": "MULTIPLY_ASSIGNMENT",
+        "variable": {
+          "endPosition": "130",
+          "kind": "IDENTIFIER",
+          "name": "i",
+          "startPosition": "129"
+        },
+        "startPosition": "129"
+      },
+      "startPosition": "118"
+    },
+    "startPosition": "92",
+    "initializer": {
+      "leftOperand": {
+        "leftOperand": {
+          "expression": {
+            "endPosition": "99",
+            "kind": "NUMBER_LITERAL",
+            "value": "0",
+            "startPosition": "98"
+          },
+          "endPosition": "99",
+          "kind": "ASSIGNMENT",
+          "variable": {
+            "endPosition": "97",
+            "kind": "IDENTIFIER",
+            "name": "i",
+            "startPosition": "96"
+          },
+          "startPosition": "96"
+        },
+        "endPosition": "104",
+        "kind": "COMMA",
+        "rightOperand": {
+          "expression": {
+            "endPosition": "104",
+            "kind": "NUMBER_LITERAL",
+            "value": "2",
+            "startPosition": "103"
+          },
+          "endPosition": "104",
+          "kind": "ASSIGNMENT",
+          "variable": {
+            "endPosition": "102",
+            "kind": "IDENTIFIER",
+            "name": "j",
+            "startPosition": "101"
+          },
+          "startPosition": "101"
+        },
+        "startPosition": "96"
+      },
+      "endPosition": "109",
+      "kind": "COMMA",
+      "rightOperand": {
+        "expression": {
+          "endPosition": "109",
+          "kind": "NUMBER_LITERAL",
+          "value": "4",
+          "startPosition": "108"
+        },
+        "endPosition": "109",
+        "kind": "ASSIGNMENT",
+        "variable": {
+          "endPosition": "107",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "106"
+        },
+        "startPosition": "106"
+      },
+      "startPosition": "96"
+    }
+  }
+]

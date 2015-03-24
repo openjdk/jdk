@@ -549,7 +549,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
       FLAG_SET_DEFAULT(ConcGCThreads, (ParallelGCThreads + 3)/4);
     }
     if (ConcGCThreads > 1) {
-      _conc_workers = new YieldingFlexibleWorkGang("Parallel CMS Threads",
+      _conc_workers = new YieldingFlexibleWorkGang("CMS Thread",
                                  ConcGCThreads, true);
       if (_conc_workers == NULL) {
         warning("GC/CMS: _conc_workers allocation failure: "
