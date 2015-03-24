@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARNEWGENERATION_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARNEWGENERATION_HPP
 
+#include "gc_implementation/parNew/parOopClosures.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"

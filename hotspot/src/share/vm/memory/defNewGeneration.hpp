@@ -29,11 +29,14 @@
 #include "gc_implementation/shared/cSpaceCounters.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
+#include "memory/generation.hpp"
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
 class ScanClosure;
 class STWGCTimer;
+class CSpaceCounters;
+class ScanWeakRefClosure;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
