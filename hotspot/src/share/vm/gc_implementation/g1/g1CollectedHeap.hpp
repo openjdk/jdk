@@ -56,6 +56,7 @@ class HRRSCleanupTask;
 class GenerationSpec;
 class OopsInHeapRegionClosure;
 class G1KlassScanClosure;
+class G1ParScanThreadState;
 class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;

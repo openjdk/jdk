@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSMARKSWEEP_HPP
 
 #include "gc_implementation/shared/collectorCounters.hpp"
-#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_implementation/shared/markSweep.hpp"
 #include "utilities/stack.hpp"
 
 class PSAdaptiveSizePolicy;

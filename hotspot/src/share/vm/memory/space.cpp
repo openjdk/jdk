@@ -26,7 +26,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc_implementation/shared/liveRange.hpp"
-#include "gc_implementation/shared/markSweep.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
