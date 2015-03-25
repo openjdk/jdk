@@ -657,6 +657,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
 
 
     bool this_uninit = false;  // Set to true when invokespecial <init> initialized 'this'
+    bool verified_exc_handlers = false;
 
     // Merge with the next instruction
     {
@@ -686,6 +687,18 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           verify_error(ErrorContext::bad_code(bci), "Bad wide instruction");
           return;
         }
+      }
+
+      // Look for possible jump target in exception handlers and see if it
+      // matches current_frame.  Do this check here for astore*, dstore*,
+      // fstore*, istore*, and lstore* opcodes because they can change the type
+      // state by adding a local.  JVM Spec says that the incoming type state
+      // should be used for this check.  So, do the check here before a possible
+      // local is added to the type state.
+      if (Bytecodes::is_store_into_local(opcode) && bci >= ex_min && bci < ex_max) {
+        verify_exception_handler_targets(
+          bci, this_uninit, &current_frame, &stackmap_table, CHECK_VERIFY(this));
+        verified_exc_handlers = true;
       }
 
       switch (opcode) {
@@ -1669,9 +1682,13 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
       }  // end switch
     }  // end Merge with the next instruction
 
-    // Look for possible jump target in exception handlers and see if it
-    // matches current_frame
-    if (bci >= ex_min && bci < ex_max) {
+    // Look for possible jump target in exception handlers and see if it matches
+    // current_frame.  Don't do this check if it has already been done (for
+    // ([a,d,f,i,l]store* opcodes).  This check cannot be done earlier because
+    // opcodes, such as invokespecial, may set the this_uninit flag.
+    assert(!(verified_exc_handlers && this_uninit),
+      "Exception handler targets got verified before this_uninit got set");
+    if (!verified_exc_handlers && bci >= ex_min && bci < ex_max) {
       verify_exception_handler_targets(
         bci, this_uninit, &current_frame, &stackmap_table, CHECK_VERIFY(this));
     }
