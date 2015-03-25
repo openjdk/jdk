@@ -23,21 +23,24 @@
 
 import java.awt.Color;
 import java.awt.Dialog;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Panel;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.SplashScreen;
+import java.awt.TextField;
 import java.awt.Window;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 import sun.java2d.SunGraphics2D;
 
 /**
- * test
- * @bug 8043869
+ * @test
+ * @bug 8043869 8075244
  * @author Alexander Scherbatiy
  * @summary [macosx] java -splash does not honor 2x hi dpi notation for retina
  * support
@@ -45,6 +48,7 @@ import sun.java2d.SunGraphics2D;
  * @run main/othervm -splash:splash1.png MultiResolutionSplashTest TEST_SPLASH 0
  * @run main/othervm -splash:splash2 MultiResolutionSplashTest TEST_SPLASH 1
  * @run main/othervm -splash:splash3. MultiResolutionSplashTest TEST_SPLASH 2
+ * @run main/othervm -splash:splash1.png MultiResolutionSplashTest TEST_FOCUS
  */
 public class MultiResolutionSplashTest {
 
@@ -69,6 +73,9 @@ public class MultiResolutionSplashTest {
                 int index = Integer.parseInt(args[1]);
                 testSplash(tests[index]);
                 break;
+            case "TEST_FOCUS":
+                testFocus();
+                break;
             default:
                 throw new RuntimeException("Unknown test: " + test);
         }
@@ -92,10 +99,47 @@ public class MultiResolutionSplashTest {
         float scaleFactor = getScaleFactor();
         Color testColor = (1 < scaleFactor) ? test.color2x : test.color1x;
 
-        if (!testColor.equals(splashScreenColor)) {
+        if (!compare(testColor, splashScreenColor)) {
             throw new RuntimeException(
                     "Image with wrong resolution is used for splash screen!");
         }
+    }
+
+    static void testFocus() throws Exception {
+
+        System.out.println("Focus Test!");
+        Robot robot = new Robot();
+        robot.setAutoDelay(50);
+
+        Frame frame = new Frame();
+        frame.setSize(100, 100);
+        String test = "123";
+        TextField textField = new TextField(test);
+        frame.add(textField);
+        frame.setVisible(true);
+        robot.waitForIdle();
+
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyRelease(KeyEvent.VK_A);
+        robot.keyPress(KeyEvent.VK_B);
+        robot.keyRelease(KeyEvent.VK_B);
+        robot.waitForIdle();
+
+        frame.dispose();
+
+        if(!textField.getText().equals("ab")){
+            throw new RuntimeException("Focus is lost!");
+        }
+    }
+
+    static boolean compare(Color c1, Color c2){
+        return compare(c1.getRed(), c2.getRed())
+                && compare(c1.getGreen(), c2.getGreen())
+                && compare(c1.getBlue(), c2.getBlue());
+    }
+
+    static boolean compare(int n, int m){
+        return Math.abs(n - m) <= 50;
     }
 
     static float getScaleFactor() {
