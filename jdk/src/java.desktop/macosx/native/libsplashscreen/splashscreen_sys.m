@@ -126,12 +126,30 @@ done:
     return buf;
 }
 
+BOOL isSWTRunning() {
+    char envVar[80];
+    // If this property is present we are running SWT
+    snprintf(envVar, sizeof(envVar), "JAVA_STARTED_ON_FIRST_THREAD_%d", getpid());
+    return getenv(envVar) != NULL;
+}
+
 char* SplashGetScaledImageName(const char* jar, const char* file,
                                float *scaleFactor) {
-    NSAutoreleasePool *pool = [NSAutoreleasePool new];
     *scaleFactor = 1;
+
+    if(isSWTRunning()){
+        return nil;
+    }
+
+    NSAutoreleasePool *pool = [NSAutoreleasePool new];
     char* scaledFile = nil;
-    float screenScaleFactor = 1;
+    __block float screenScaleFactor = 1;
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        // initialize NSApplication and AWT stuff
+        [NSApplicationAWT sharedApplication];
+        screenScaleFactor = [SplashNSScreen() backingScaleFactor];
+    }];
 
     if (screenScaleFactor > 1) {
         NSString *fileName = [NSString stringWithUTF8String: file];
@@ -176,12 +194,8 @@ SplashInitPlatform(Splash * splash) {
     splash->screenFormat.byteOrder = 1 ?  BYTE_ORDER_LSBFIRST : BYTE_ORDER_MSBFIRST;
     splash->screenFormat.depthBytes = 4;
 
-    // If this property is present we are running SWT and should not start a runLoop
-    // Can't check if running SWT in webstart, so splash screen in webstart SWT
-    // applications is not supported
-    char envVar[80];
-    snprintf(envVar, sizeof(envVar), "JAVA_STARTED_ON_FIRST_THREAD_%d", getpid());
-    if (getenv(envVar) == NULL) {
+    // If we are running SWT we should not start a runLoop
+    if (!isSWTRunning()) {
         [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^() {
             [NSApplicationAWT runAWTLoopWithApp:[NSApplicationAWT sharedApplication]];
         }];
