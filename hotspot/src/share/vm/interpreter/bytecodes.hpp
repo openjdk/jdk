@@ -285,7 +285,20 @@ class Bytecodes: AllStatic {
     // special handling of signature-polymorphic methods:
     _invokehandle         ,
 
-    _shouldnotreachhere,      // For debugging
+    // These bytecodes are rewritten at CDS dump time, so that we can prevent them from being
+    // rewritten at run time. This way, the ConstMethods can be placed in the CDS ReadOnly
+    // section, and RewriteByteCodes/RewriteFrequentPairs can rewrite non-CDS bytecodes
+    // at run time.
+    //
+    // Rewritten at CDS dump time to | Original bytecode
+    // _invoke_virtual rewritten on sparc, will be disabled if UseSharedSpaces turned on.
+    // ------------------------------+------------------
+    _nofast_getfield      ,          //  <- _getfield
+    _nofast_putfield      ,          //  <- _putfield
+    _nofast_aload_0       ,          //  <- _aload_0
+    _nofast_iload         ,          //  <- _iload
+
+    _shouldnotreachhere   ,          // For debugging
 
 
     number_of_codes
