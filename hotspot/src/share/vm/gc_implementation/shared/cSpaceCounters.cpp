@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,4 +62,21 @@ CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
                                      _space->capacity(), CHECK);
   }
+}
+
+void CSpaceCounters::update_capacity() {
+  _capacity->set_value(_space->capacity());
+}
+
+void CSpaceCounters::update_used() {
+  _used->set_value(_space->used());
+}
+
+void CSpaceCounters::update_all() {
+  update_used();
+  update_capacity();
+}
+
+jlong ContiguousSpaceUsedHelper::take_sample(){
+  return _space->used();
 }

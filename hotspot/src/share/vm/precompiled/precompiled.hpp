@@ -135,7 +135,6 @@
 # include "memory/resourceArea.hpp"
 # include "memory/sharedHeap.hpp"
 # include "memory/space.hpp"
-# include "memory/space.inline.hpp"
 # include "memory/threadLocalAllocBuffer.hpp"
 # include "memory/threadLocalAllocBuffer.inline.hpp"
 # include "memory/universe.hpp"
