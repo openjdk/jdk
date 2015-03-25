@@ -50,6 +50,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/stack.inline.hpp"
 
 void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool clear_all_softrefs) {
   guarantee(level == 1, "We always collect both old and young.");
