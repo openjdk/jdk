@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,6 +401,7 @@ class Bytecodes: AllStatic {
   static bool        is_astore      (Code code)    { return (code == _astore || code == _astore_0 || code == _astore_1
                                                                              || code == _astore_2 || code == _astore_3); }
 
+  static bool        is_store_into_local(Code code){ return (_istore <= code && code <= _astore_3); }
   static bool        is_const       (Code code)    { return (_aconst_null <= code && code <= _ldc2_w); }
   static bool        is_zero_const  (Code code)    { return (code == _aconst_null || code == _iconst_0
                                                            || code == _fconst_0 || code == _dconst_0); }
