@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,32 @@
  * questions.
  */
 
-import java.io.IOException;
-import jdk.testlibrary.ProcessTools;
+import java.util.Random;
 
-public class JMXStartStopDoSomething {
-    public static void doSomething() throws IOException{
-        int r = System.in.read();
-        System.out.println("read: " + r);
-    }
+/**
+ * Dynamically allocates distinct ports from the ephemeral range 49152-65535
+ */
+class PortAllocator {
+    private final static int LOWER_BOUND = 49152;
+    private final static int UPPER_BOUND = 65535;
 
-    public static void main(String args[]) throws Exception {
-        System.out.println("main enter");
-        System.out.flush();
-        doSomething();
-        System.out.println("main exit");
+    private final static Random RND = new Random(System.currentTimeMillis());
+
+    static int[] allocatePorts(final int numPorts) {
+        int[] ports = new int[numPorts];
+        for (int i = 0; i < numPorts; i++) {
+            int port = -1;
+            while (port == -1) {
+                port = RND.nextInt(UPPER_BOUND - LOWER_BOUND + 1) + LOWER_BOUND;
+                for (int j = 0; j < i; j++) {
+                    if (ports[j] == port) {
+                        port = -1;
+                        break;
+                    }
+                }
+            }
+            ports[i] = port;
+        }
+        return ports;
     }
 }
