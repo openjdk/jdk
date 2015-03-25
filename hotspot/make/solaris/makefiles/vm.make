@@ -148,7 +148,7 @@ LIBS += -lkstat
 # By default, link the *.o into the library, not the executable.
 LINK_INTO$(LINK_INTO) = LIBJVM
 
-JDK_LIBDIR = $(JAVA_HOME)/jre/lib/$(LIBARCH)
+JDK_LIBDIR = $(JAVA_HOME)/lib/$(LIBARCH)
 
 #----------------------------------------------------------------------
 # jvm_db & dtrace
