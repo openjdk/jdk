@@ -32,11 +32,11 @@ include MakeBase.gmk
 
 # Put the libraries here. Different locations for different target OS types.
 ifneq ($(OPENJDK_TARGET_OS), windows)
-  HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+  HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
   BASE_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)
   SA_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent$(OPENJDK_TARGET_CPU_LIBDIR)
 else
-  HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/jre/bin
+  HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/bin
   BASE_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
   SA_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent
 endif
@@ -80,11 +80,11 @@ SA_TARGETS := $(COPY_HOTSPOT_SA)
 ################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig$(SHARED_LIBRARY_SUFFIX).dSYM) \
-      $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig$(SHARED_LIBRARY_SUFFIX).dSYM) \
+      $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
 else
-  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
-      $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
+      $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
 endif
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
