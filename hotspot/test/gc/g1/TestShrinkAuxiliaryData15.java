@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /../../test/lib
+ * @modules java.base/sun.misc
+ *          java.management
  * @build TestShrinkAuxiliaryData TestShrinkAuxiliaryData15
  * @run driver/timeout=720 TestShrinkAuxiliaryData15
  */

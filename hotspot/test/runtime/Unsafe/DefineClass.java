@@ -25,6 +25,9 @@
  * @test
  * @summary Verifies the behaviour of Unsafe.defineClass
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
  * @run main DefineClass
  */
 

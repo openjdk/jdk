@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import static com.oracle.java.testlibrary.Asserts.*;
  * @requires vm.gc=="Serial" | vm.gc=="null"
  * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
  *          report the same data.
+ * @modules java.base/sun.misc
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
  */
