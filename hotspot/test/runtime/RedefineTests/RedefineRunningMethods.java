@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 8055008
  * @summary Redefine EMCP and non-EMCP methods that are running in an infinite loop
  * @library /testlibrary
+ * @modules java.compiler
+ *          java.instrument
+ *          jdk.jartool/sun.tools.jar
  * @build RedefineClassHelper
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar -XX:TraceRedefineClasses=0x600 RedefineRunningMethods

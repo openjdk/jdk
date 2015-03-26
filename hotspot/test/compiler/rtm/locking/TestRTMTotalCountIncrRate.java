@@ -28,6 +28,8 @@
  * @summary Verify that RTMTotalCountIncrRate option affects
  *          RTM locking statistics.
  * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @build TestRTMTotalCountIncrRate
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

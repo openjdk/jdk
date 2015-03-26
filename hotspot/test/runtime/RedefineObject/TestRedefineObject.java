@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import com.oracle.java.testlibrary.*;
  * @bug 8005056
  * @bug 8009728
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.instrument
+ *          java.management
  * @build Agent
  * @run main ClassFileInstaller Agent
  * @run main TestRedefineObject
