@@ -64,18 +64,22 @@ void MarkSweep::follow_class_loader(ClassLoaderData* cld) {
   MarkSweep::follow_cld_closure.do_cld(cld);
 }
 
+void MarkSweep::follow_array(objArrayOop array, int index) {
+  ObjArrayKlass* k = (ObjArrayKlass*)array->klass();
+  k->oop_follow_contents(array, index);
+}
+
 void MarkSweep::follow_stack() {
   do {
     while (!_marking_stack.is_empty()) {
       oop obj = _marking_stack.pop();
       assert (obj->is_gc_marked(), "p must be marked");
-      obj->follow_contents();
+      follow_object(obj);
     }
     // Process ObjArrays one at a time to avoid marking stack bloat.
     if (!_objarray_stack.is_empty()) {
       ObjArrayTask task = _objarray_stack.pop();
-      ObjArrayKlass* k = (ObjArrayKlass*)task.obj()->klass();
-      k->oop_follow_contents(task.obj(), task.index());
+      follow_array(objArrayOop(task.obj()), task.index());
     }
   } while (!_marking_stack.is_empty() || !_objarray_stack.is_empty());
 }

@@ -50,7 +50,6 @@
 #include "memory/referenceProcessor.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/safepoint.hpp"
@@ -2776,6 +2775,11 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 }
 #endif  // #ifdef ASSERT
 
+inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
+  _start_array->allocate_block(addr);
+  compaction_manager()->update_contents(oop(addr));
+}
+
 // Update interior oops in the ranges of regions [beg_region, end_region).
 void
 PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
@@ -2876,7 +2880,7 @@ void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
       if (start_array != NULL) {
         start_array->allocate_block(addr);
       }
-      oop(addr)->update_contents(cm);
+      cm->update_contents(oop(addr));
       assert(oop(addr)->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(oop(addr))));
     }
   }
@@ -3360,7 +3364,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   }
 
   oop moved_oop = (oop) destination();
-  moved_oop->update_contents(compaction_manager());
+  compaction_manager()->update_contents(moved_oop);
   assert(moved_oop->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop)));
 
   update_state(words);

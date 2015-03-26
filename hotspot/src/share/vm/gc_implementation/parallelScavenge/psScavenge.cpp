@@ -46,7 +46,6 @@
 #include "memory/referenceProcessor.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.psgc.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
