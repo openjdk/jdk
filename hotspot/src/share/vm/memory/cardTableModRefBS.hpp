@@ -279,11 +279,6 @@ public:
   static int precleaned_card_val() { return precleaned_card; }
   static int deferred_card_val()   { return deferred_card; }
 
-  // For RTTI simulation.
-  bool is_a(BarrierSet::Name bsn) {
-    return bsn == BarrierSet::CardTableModRef || ModRefBarrierSet::is_a(bsn);
-  }
-
   virtual void initialize();
 
   // *** Barrier set functions.
@@ -292,7 +287,7 @@ public:
 
 protected:
 
-  CardTableModRefBS(MemRegion whole_heap, BarrierSet::Name kind);
+  CardTableModRefBS(MemRegion whole_heap, const BarrierSet::FakeRtti& fake_rtti);
   ~CardTableModRefBS();
 
   // Record a reference update. Note that these versions are precise!
@@ -462,6 +457,11 @@ public:
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
 };
 
+template<>
+struct BarrierSet::GetName<CardTableModRefBS> {
+  static const BarrierSet::Name value = BarrierSet::CardTableModRef;
+};
+
 class CardTableRS;
 
 // A specialization for the CardTableRS gen rem set.
@@ -472,9 +472,23 @@ protected:
   bool card_may_have_been_dirty(jbyte cv);
 public:
   CardTableModRefBSForCTRS(MemRegion whole_heap) :
-    CardTableModRefBS(whole_heap, BarrierSet::CardTableModRef) {}
+    CardTableModRefBS(
+      whole_heap,
+      // Concrete tag should be BarrierSet::CardTableForRS.
+      // That will presently break things in a bunch of places though.
+      // The concrete tag is used as a dispatch key in many places, and
+      // CardTableForRS does not correctly dispatch in some of those
+      // uses. This will be addressed as part of a reorganization of the
+      // BarrierSet hierarchy.
+      BarrierSet::FakeRtti(BarrierSet::CardTableModRef, 0).add_tag(BarrierSet::CardTableForRS))
+    {}
 
   void set_CTRS(CardTableRS* rs) { _rs = rs; }
+};
+
+template<>
+struct BarrierSet::GetName<CardTableModRefBSForCTRS> {
+  static const BarrierSet::Name value = BarrierSet::CardTableForRS;
 };
 
 

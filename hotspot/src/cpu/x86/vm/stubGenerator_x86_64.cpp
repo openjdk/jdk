@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1272,7 +1272,7 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::CardTableModRef:
       case BarrierSet::CardTableExtension:
         {
-          CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+          CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
           assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
           Label L_loop;

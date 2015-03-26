@@ -90,6 +90,15 @@ public class BlockStatement extends Statement {
         return block.isTerminal();
     }
 
+    /**
+     * Tells if this is a synthetic block statement or not.
+     *
+     * @return true if this is a synthetic statement
+     */
+    public boolean isSynthetic() {
+        return block.isSynthetic();
+    }
+
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterBlockStatement(this)) {

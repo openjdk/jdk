@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -446,7 +446,7 @@ void SharkBuilder::CreateUpdateBarrierSet(BarrierSet* bs, Value* field) {
     CreateIntToPtr(
       CreateAdd(
         LLVMValue::intptr_constant(
-          (intptr_t) ((CardTableModRefBS *) bs)->byte_map_base),
+          (intptr_t) (barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base)),
         CreateLShr(
           CreatePtrToInt(field, SharkType::intptr_type()),
           LLVMValue::intptr_constant(CardTableModRefBS::card_shift))),

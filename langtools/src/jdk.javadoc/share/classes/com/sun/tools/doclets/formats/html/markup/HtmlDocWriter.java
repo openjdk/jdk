@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.DocFile;
 import com.sun.tools.doclets.internal.toolkit.util.DocLink;
 import com.sun.tools.doclets.internal.toolkit.util.DocPath;
+import com.sun.tools.doclets.internal.toolkit.util.DocPaths;
 
 
 /**
@@ -56,6 +57,8 @@ public abstract class HtmlDocWriter extends HtmlWriter {
 
     public static final String CONTENT_TYPE = "text/html";
 
+    DocPath pathToRoot;
+
     /**
      * Constructor. Initializes the destination file name through the super
      * class HtmlWriter.
@@ -65,6 +68,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     public HtmlDocWriter(Configuration configuration, DocPath filename)
             throws IOException {
         super(configuration, filename);
+        this.pathToRoot = filename.parent().invert();
         configuration.message.notice("doclet.Generating_0",
             DocFile.createFileForOutput(configuration, filename).getPath());
     }
@@ -298,31 +302,52 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     }
 
     /**
-     * Print the frameset version of the Html file header.
-     * Called only when generating an HTML frameset file.
+     * Print the frames version of the Html file header.
+     * Called only when generating an HTML frames file.
      *
      * @param title Title of this HTML document
-     * @param noTimeStamp If true, don't print time stamp in header
-     * @param frameset the frameset to be added to the HTML document
+     * @param configuration the configuration object
+     * @param frame the frame content tree to be added to the HTML document
      */
-    public void printFramesetDocument(String title, boolean noTimeStamp,
-            Content frameset) throws IOException {
-        Content htmlDocType = DocType.FRAMESET;
+    public void printFramesDocument(String title, ConfigurationImpl configuration,
+            HtmlTree body) throws IOException {
+        Content htmlDocType = DocType.TRANSITIONAL;
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!noTimeStamp));
+        head.addContent(getGeneratedBy(!configuration.notimestamp));
         Content windowTitle = HtmlTree.TITLE(new StringContent(title));
         head.addContent(windowTitle);
         Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
                 (configuration.charset.length() > 0) ?
                         configuration.charset : HtmlConstants.HTML_DEFAULT_CHARSET);
         head.addContent(meta);
-        head.addContent(getFramesetJavaScript());
+        head.addContent(getStyleSheetProperties(configuration));
+        head.addContent(getFramesJavaScript());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, frameset);
+                head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
         write(htmlDocument);
+    }
+
+    /**
+     * Returns a link to the stylesheet file.
+     *
+     * @return an HtmlTree for the lINK tag which provides the stylesheet location
+     */
+    public HtmlTree getStyleSheetProperties(ConfigurationImpl configuration) {
+        String stylesheetfile = configuration.stylesheetfile;
+        DocPath stylesheet;
+        if (stylesheetfile.isEmpty()) {
+            stylesheet = DocPaths.STYLESHEET;
+        } else {
+            DocFile file = DocFile.createFileForInput(configuration, stylesheetfile);
+            stylesheet = DocPath.create(file.getName());
+        }
+        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css",
+                pathToRoot.resolve(stylesheet).getPath(),
+                "Style");
+        return link;
     }
 
     protected Comment getGeneratedBy(boolean timestamp) {

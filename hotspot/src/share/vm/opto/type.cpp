@@ -974,21 +974,10 @@ const Type *TypeF::xdual() const {
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
-bool TypeF::eq( const Type *t ) const {
-  if( g_isnan(_f) ||
-      g_isnan(t->getf()) ) {
-    // One or both are NANs.  If both are NANs return true, else false.
-    return (g_isnan(_f) && g_isnan(t->getf()));
-  }
-  if (_f == t->getf()) {
-    // (NaN is impossible at this point, since it is not equal even to itself)
-    if (_f == 0.0) {
-      // difference between positive and negative zero
-      if (jint_cast(_f) != jint_cast(t->getf()))  return false;
-    }
-    return true;
-  }
-  return false;
+bool TypeF::eq(const Type *t) const {
+  // Bitwise comparison to distinguish between +/-0. These values must be treated
+  // as different to be consistent with C1 and the interpreter.
+  return (jint_cast(_f) == jint_cast(t->getf()));
 }
 
 //------------------------------hash-------------------------------------------
@@ -1089,21 +1078,10 @@ const Type *TypeD::xdual() const {
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
-bool TypeD::eq( const Type *t ) const {
-  if( g_isnan(_d) ||
-      g_isnan(t->getd()) ) {
-    // One or both are NANs.  If both are NANs return true, else false.
-    return (g_isnan(_d) && g_isnan(t->getd()));
-  }
-  if (_d == t->getd()) {
-    // (NaN is impossible at this point, since it is not equal even to itself)
-    if (_d == 0.0) {
-      // difference between positive and negative zero
-      if (jlong_cast(_d) != jlong_cast(t->getd()))  return false;
-    }
-    return true;
-  }
-  return false;
+bool TypeD::eq(const Type *t) const {
+  // Bitwise comparison to distinguish between +/-0. These values must be treated
+  // as different to be consistent with C1 and the interpreter.
+  return (jlong_cast(_d) == jlong_cast(t->getd()));
 }
 
 //------------------------------hash-------------------------------------------

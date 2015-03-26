@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(LIBAPPLESCRIPTENGINE_SRC) \
           -I$(SUPPORT_OUTPUTDIR)/headers/jdk.deploy.osx, \
+      DISABLED_WARNINGS_clang := implicit-function-declaration format, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := -framework Cocoa \
@@ -71,6 +72,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBOSX_CFLAGS), \
+      DISABLED_WARNINGS_clang := deprecated-declarations, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
