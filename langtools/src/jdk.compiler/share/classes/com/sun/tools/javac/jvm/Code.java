@@ -2166,7 +2166,11 @@ public class Code {
         boolean keepLocalVariables = varDebugInfo ||
             (var.sym.isExceptionParameter() && var.sym.hasTypeAnnotations());
         if (!keepLocalVariables) return;
-        if ((var.sym.flags() & Flags.SYNTHETIC) != 0) return;
+        //don't keep synthetic vars, unless they are lambda method parameters
+        boolean ignoredSyntheticVar = (var.sym.flags() & Flags.SYNTHETIC) != 0 &&
+                ((var.sym.owner.flags() & Flags.LAMBDA_METHOD) == 0 ||
+                 (var.sym.flags() & Flags.PARAMETER) == 0);
+        if (ignoredSyntheticVar) return;
         if (varBuffer == null)
             varBuffer = new LocalVar[20];
         else
