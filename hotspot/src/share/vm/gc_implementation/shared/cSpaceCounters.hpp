@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_CSPACECOUNTERS_HPP
 
 #include "gc_implementation/shared/generationCounters.hpp"
-#include "memory/space.inline.hpp"
+#include "memory/space.hpp"
 #include "runtime/perfData.hpp"
 
 // A CSpaceCounters is a holder class for performance counters
@@ -56,18 +56,9 @@ class CSpaceCounters: public CHeapObj<mtGC> {
       if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
   }
 
-  virtual inline void update_capacity() {
-    _capacity->set_value(_space->capacity());
-  }
-
-  virtual inline void update_used() {
-    _used->set_value(_space->used());
-  }
-
-  virtual inline void update_all() {
-    update_used();
-    update_capacity();
-  }
+  virtual void update_capacity();
+  virtual void update_used();
+  virtual void update_all();
 
   const char* name_space() const        { return _name_space; }
 };
@@ -79,9 +70,7 @@ class ContiguousSpaceUsedHelper : public PerfLongSampleHelper {
   public:
     ContiguousSpaceUsedHelper(ContiguousSpace* space) : _space(space) { }
 
-    inline jlong take_sample() {
-      return _space->used();
-    }
+    jlong take_sample();
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_CSPACECOUNTERS_HPP
