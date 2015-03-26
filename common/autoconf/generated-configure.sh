@@ -907,9 +907,6 @@ JVM_VARIANTS
 JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
-BUILD_LOG_WRAPPER
-BUILD_LOG_PREVIOUS
-BUILD_LOG
 TOPDIR
 PATH_SEP
 ZERO_ARCHDEF
@@ -3471,9 +3468,6 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-
-
-
 #%%% Simple tools %%%
 
 # Check if we have found a usable version of make
@@ -4369,7 +4363,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1426774983
+DATE_WHEN_GENERATED=1427382753
 
 ###############################################################################
 #
@@ -14399,15 +14393,6 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
-
-
-  # Setup default logging of stdout and stderr to build.log in the output root.
-  BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-  BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-  BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
-
-
-
 
 
 # Check if it's a pure open build or if custom sources are to be used.

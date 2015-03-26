@@ -1,0 +1,319 @@
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains helper functions for Init.gmk.
+# It is divided in two parts, depending on if a SPEC is present or not
+# (HAS_SPEC is true or not).
+################################################################################
+
+ifndef _INITSUPPORT_GMK
+_INITSUPPORT_GMK := 1
+
+# Setup information about available configurations, if any.
+build_dir=$(topdir)/build
+all_spec_files=$(wildcard $(build_dir)/*/spec.gmk)
+# Extract the configuration names from the path
+all_confs=$(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
+any_spec_file=$(firstword $(all_spec_files))
+
+ifeq ($(HAS_SPEC),)
+  ##############################################################################
+  # Helper functions for the initial part of Init.gmk, before the spec file is
+  # loaded. Most of these functions provide parsing and setting up make options
+  # from the command-line.
+  ##############################################################################
+
+  # Make control variables, handled by Init.gmk
+  INIT_CONTROL_VARIABLES := LOG CONF SPEC JOBS CONF_CHECK
+
+  # All known make control variables
+  MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER
+
+  # Define a simple reverse function.
+  # Should maybe move to MakeBase.gmk, but we can't include that file now.
+  reverse = \
+      $(if $(strip $(1)), $(call reverse, $(wordlist 2, $(words $(1)), $(1)))) \
+          $(firstword $(1))
+
+  # The variable MAKEOVERRIDES contains variable assignments from the command
+  # line, but in reverse order to what the user entered.
+  COMMAND_LINE_VARIABLES := $(subst \#,\ , $(call reverse, $(subst \ ,\#,$(MAKEOVERRIDES))))
+
+  # A list like FOO="val1" BAR="val2" containing all user-supplied make variables
+  # that we should propagate.
+  USER_MAKE_VARS := $(filter-out $(addsuffix =%, $(INIT_CONTROL_VARIABLES)), \
+      $(MAKEOVERRIDES))
+
+  # Check for unknown command-line variables
+  define CheckControlVariables
+    command_line_variables := $$(strip $$(foreach var, \
+        $$(subst \ ,_,$$(MAKEOVERRIDES)), \
+        $$(firstword $$(subst =, , $$(var)))))
+    unknown_command_line_variables := $$(strip $$(filter-out $$(MAKE_CONTROL_VARIABLES), $$(command_line_variables)))
+    ifneq ($$(unknown_command_line_variables), )
+      $$(info Note: Command line contains non-control variables:)
+      $$(foreach var, $$(unknown_command_line_variables), $$(info * $$(var)=$$($$(var))))
+      $$(info Make sure it is not mistyped, and that you intend to override this variable.)
+      $$(info 'make help' will list known control variables.)
+      $$(info )
+    endif
+  endef
+
+  # Check for deprecated ALT_ variables
+  define CheckDeprecatedEnvironment
+    defined_alt_variables := $$(filter ALT_%, $$(.VARIABLES))
+    ifneq ($$(defined_alt_variables), )
+      $$(info Warning: You have the following ALT_ variables set:)
+      $$(foreach var, $$(defined_alt_variables), $$(info * $$(var)=$$($$(var))))
+      $$(info ALT_ variables are deprecated, and may result in a failed build.)
+      $$(info Please clean your environment.)
+      $$(info )
+    endif
+  endef
+
+  # Check for invalid make flags like -j
+  define CheckInvalidMakeFlags
+    # This is a trick to get this rule to execute before any other rules
+    # MAKEFLAGS only indicate -j if read in a recipe (!)
+    $$(topdir)/make/Init.gmk: .FORCE
+	$$(if $$(findstring --jobserver, $$(MAKEFLAGS)), \
+	    $$(info Error: 'make -jN' is not supported, use 'make JOBS=N') \
+	    $$(error Cannot continue) \
+	)
+    .FORCE:
+    .PHONY: .FORCE
+  endef
+
+  # Check that the CONF_CHECK option is valid and set up handling
+  define ParseConfCheckOption
+    ifeq ($$(CONF_CHECK), )
+      # Default behavior is fail
+      CONF_CHECK := fail
+    else ifneq ($$(filter-out auto fail ignore, $$(CONF_CHECK)),)
+      $$(info Error: CONF_CHECK must be one of: auto, fail or ignore.)
+      $$(error Cannot continue)
+    endif
+  endef
+
+  define ParseLogLevel
+    # Catch old-style VERBOSE= command lines.
+    ifneq ($$(origin VERBOSE), undefined)
+      $$(info Error: VERBOSE is deprecated. Use LOG=<warn|info|debug|trace> instead.)
+      $$(error Cannot continue)
+    endif
+
+    # Setup logging according to LOG
+
+    # If the "nofile" argument is given, act on it and strip it away
+    ifneq ($$(findstring nofile, $$(LOG)),)
+      LOG_NOFILE := true
+      # COMMA is defined in spec.gmk, but that is not included yet
+      COMMA := ,
+      # First try to remove ",nofile" if it exists, otherwise just remove "nofile"
+      LOG_STRIPPED := $$(subst nofile,, $$(subst $$(COMMA)nofile,, $$(LOG)))
+      # We might have ended up with a leading comma. Remove it
+      LOG_LEVEL := $$(strip $$(patsubst $$(COMMA)%, %, $$(LOG_STRIPPED)))
+    else
+      LOG_LEVEL := $$(LOG)
+    endif
+
+    ifeq ($$(LOG_LEVEL),)
+      # Set LOG to "warn" as default if not set
+      LOG_LEVEL := warn
+    endif
+
+    ifeq ($$(LOG_LEVEL), warn)
+      MAKE_LOG_FLAGS := -s
+    else ifeq ($$(LOG_LEVEL), info)
+      MAKE_LOG_FLAGS := -s
+    else ifeq ($$(LOG_LEVEL), debug)
+      MAKE_LOG_FLAGS :=
+    else ifeq ($$(LOG_LEVEL), trace)
+      MAKE_LOG_FLAGS := -d
+    else
+      $$(info Error: LOG must be one of: warn, info, debug or trace.)
+      $$(error Cannot continue)
+    endif
+  endef
+
+  define ParseConfAndSpec
+    ifneq ($$(origin SPEC), undefined)
+      # We have been given a SPEC, check that it works out properly
+      ifneq ($$(origin CONF), undefined)
+        # We also have a CONF argument. We can't have both.
+        $$(info Error: Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
+        $$(error Cannot continue)
+      endif
+      ifeq ($$(wildcard $$(SPEC)),)
+        $$(info Error: Cannot locate spec.gmk, given by SPEC=$$(SPEC).)
+        $$(error Cannot continue)
+      endif
+      ifeq ($$(filter /%, $$(SPEC)),)
+        # If given with relative path, make it absolute
+        SPECS := $$(CURDIR)/$$(strip $$(SPEC))
+      else
+        SPECS := $$(SPEC)
+      endif
+
+      # For now, unset this SPEC variable.
+      override SPEC :=
+    else
+      # Use spec.gmk files in the build output directory
+      ifeq ($$(any_spec_file),)
+        $$(info Error: No configurations found for $$(topdir).)
+        $$(info Please run 'bash configure' to create a configuration.)
+        $$(info )
+        $$(error Cannot continue)
+      endif
+
+      ifneq ($$(origin CONF), undefined)
+        # User have given a CONF= argument.
+        ifeq ($$(CONF),)
+          # If given CONF=, match all configurations
+          matching_confs := $$(strip $$(all_confs))
+        else
+          # Otherwise select those that contain the given CONF string
+          matching_confs := $$(strip $$(foreach var, $$(all_confs), $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+        endif
+        ifeq ($$(matching_confs),)
+          $$(info Error: No configurations found matching CONF=$$(CONF).)
+          $$(info Available configurations in $$(build_dir):)
+          $$(foreach var, $$(all_confs), $$(info * $$(var)))
+          $$(error Cannot continue)
+        else
+          ifeq ($$(words $$(matching_confs)), 1)
+            $$(info Building configuration '$$(matching_confs)' (matching CONF=$$(CONF)))
+          else
+            $$(info Building these configurations (matching CONF=$$(CONF)):)
+            $$(foreach var, $$(matching_confs), $$(info * $$(var)))
+          endif
+        endif
+
+        # Create a SPEC definition. This will contain the path to one or more spec.gmk files.
+        SPECS := $$(addsuffix /spec.gmk, $$(addprefix $$(build_dir)/, $$(matching_confs)))
+      else
+        # No CONF or SPEC given, check the available configurations
+        ifneq ($$(words $$(all_spec_files)), 1)
+          $$(info Error: No CONF given, but more than one configuration found.)
+          $$(info Available configurations in $$(build_dir):)
+          $$(foreach var, $$(all_confs), $$(info * $$(var)))
+          $$(info Please retry building with CONF=<config pattern> (or SPEC=<spec file>).)
+          $$(info )
+          $$(error Cannot continue)
+        endif
+
+        # We found exactly one configuration, use it
+        SPECS := $$(strip $$(all_spec_files))
+      endif
+    endif
+  endef
+
+  define PrintConfCheckFailed
+	@echo ' '
+	@echo "Please rerun configure! Easiest way to do this is by running"
+	@echo "'make reconfigure'."
+	@echo "This behavior may also be changed using CONF_CHECK=<ignore|auto>."
+	@echo ' '
+  endef
+
+else # $(HAS_SPEC)=true
+  ##############################################################################
+  # Helper functions for the 'main' target. These functions assume a single,
+  # proper and existing SPEC is provided, and will load it.
+  ##############################################################################
+
+  include $(SPEC)
+  include $(SRC_ROOT)/make/common/MakeBase.gmk
+
+  # Define basic logging setup
+  BUILD_LOG := $(OUTPUT_ROOT)/build.log
+  BUILD_TRACE_LOG := $(OUTPUT_ROOT)/build-trace-time.log
+
+  BUILD_LOG_WRAPPER := $(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)
+
+  # Disable the build log wrapper on sjavac+windows until
+  # we have solved how to prevent the log wrapper to wait
+  # for the background sjavac server process.
+  ifeq ($(ENABLE_SJAVAC)X$(OPENJDK_BUILD_OS),yesXwindows)
+    LOG_NOFILE := true
+  endif
+
+  # Sanity check the spec file, so it matches this source code
+  define CheckSpecSanity
+    ifneq ($$(topdir), $$(TOPDIR))
+      $$(info Error: SPEC mismatch. $$$$(TOPDIR) does not match current directory.)
+      $$(error Cannot continue)
+    endif
+  endef
+
+  define RotateLogFiles
+	$(RM) $(BUILD_LOG).old 2> /dev/null
+	$(MV) $(BUILD_LOG) $(BUILD_LOG).old 2> /dev/null || true
+	$(if $(findstring trace, $(LOG_LEVEL)), \
+	  $(RM) $(BUILD_TRACE_LOG).old 2> /dev/null && \
+	  $(MV) $(BUILD_TRACE_LOG) $(BUILD_TRACE_LOG).old 2> /dev/null || true \
+	)
+  endef
+
+  # Remove any javac server logs and port files. This
+  # prevents a new make run to reuse the previous servers.
+  define PrepareSmartJavac
+	$(if $(SJAVAC_SERVER_DIR), \
+	  $(RM) -r $(SJAVAC_SERVER_DIR) 2> /dev/null && \
+	  $(MKDIR) -p $(SJAVAC_SERVER_DIR) \
+	)
+  endef
+
+  define CleanupSmartJavac
+	[ -f $(SJAVAC_SERVER_DIR)/server.port ] && $(ECHO) Stopping sjavac server && \
+	    $(TOUCH) $(SJAVAC_SERVER_DIR)/server.port.stop; true
+  endef
+
+  define StartGlobalTimer
+	$(RM) -r $(BUILDTIMESDIR) 2> /dev/null
+	$(MKDIR) -p $(BUILDTIMESDIR)
+	$(call RecordStartTime,TOTAL)
+  endef
+
+  define StopGlobalTimer
+	$(call RecordEndTime,TOTAL)
+  endef
+
+  # Find all build_time_* files and print their contents in a list sorted
+  # on the name of the sub repository.
+  define ReportBuildTimes
+	$(BUILD_LOG_WRAPPER) $(PRINTF) $(LOG_INFO) -- \
+	    "----- Build times -------\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_start_TOTAL_human_readable`" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_end_TOTAL_human_readable`" \
+	    "`$(LS) $(BUILDTIMESDIR)/build_time_diff_* | $(GREP) -v _TOTAL | \
+	    $(XARGS) $(CAT) | $(SORT) -k 2`" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_TOTAL`"
+  endef
+
+endif # HAS_SPEC
+
+endif # _INITSUPPORT_GMK
