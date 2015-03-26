@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549
+ * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -64,6 +64,17 @@ public class TestStylesheet extends JavadocTester {
                 + "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;\n"
                 + "    font-size:14px;\n"
                 + "    margin:0;\n"
+                + "    padding:0;\n"
+                + "    height:100%;\n"
+                + "    width:100%;\n"
+                + "}",
+                "iframe {\n"
+                + "    margin:0;\n"
+                + "    padding:0;\n"
+                + "    height:100%;\n"
+                + "    width:100%;\n"
+                + "    overflow-y:scroll;\n"
+                + "    border:none;\n"
                 + "}",
                 "ul {\n"
                 + "    list-style-type:disc;\n"
@@ -118,6 +129,21 @@ public class TestStylesheet extends JavadocTester {
                 + "    background-color:#4D7A97;\n"
                 + "    height:16px;\n"
                 + "}",
+                // Test the formatting styles for proper content display in use and constant values pages.
+                ".overviewSummary td.colFirst, .overviewSummary th.colFirst,\n"
+                + ".useSummary td.colFirst, .useSummary th.colFirst,\n"
+                + ".overviewSummary td.colOne, .overviewSummary th.colOne,\n"
+                + ".memberSummary td.colFirst, .memberSummary th.colFirst,\n"
+                + ".memberSummary td.colOne, .memberSummary th.colOne,\n"
+                + ".typeSummary td.colFirst{\n"
+                + "    width:25%;\n"
+                + "    vertical-align:top;\n"
+                + "}",
+                ".overviewSummary td, .memberSummary td, .typeSummary td,\n"
+                + ".useSummary td, .constantsSummary td, .deprecatedSummary td {\n"
+                + "    text-align:left;\n"
+                + "    padding:0px 0px 12px 10px;\n"
+                + "}",
                 ".memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {\n"
                 + "    padding-top:0px;\n"
                 + "    padding-left:0px;\n"
@@ -133,6 +159,9 @@ public class TestStylesheet extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 "<link rel=\"stylesheet\" type=\"text/css\" "
                 + "href=\"../stylesheet.css\" title=\"Style\">");
+
+        checkOutput("index.html", true,
+                "<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" title=\"Style\">");
 
         checkOutput("stylesheet.css", false,
                 "* {\n"

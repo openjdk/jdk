@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,6 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      */
     int noOfPackages;
 
-    private final String SCROLL_YES = "yes";
-
     /**
      * Constructor to construct FrameOutputWriter object.
      *
@@ -96,35 +94,16 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * as well as warning if browser is not supporting the Html frames.
      */
     protected void generateFrameFile() throws IOException {
-        Content frameset = getFrameDetails();
+        Content frame = getFrameDetails();
+        HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        body.addContent(frame);
         if (configuration.windowtitle.length() > 0) {
-            printFramesetDocument(configuration.windowtitle, configuration.notimestamp,
-                    frameset);
+            printFramesDocument(configuration.windowtitle, configuration,
+                    body);
         } else {
-            printFramesetDocument(configuration.getText("doclet.Generated_Docs_Untitled"),
-                    configuration.notimestamp, frameset);
+            printFramesDocument(configuration.getText("doclet.Generated_Docs_Untitled"),
+                    configuration, body);
         }
-    }
-
-    /**
-     * Add the code for issueing the warning for a non-frame capable web
-     * client. Also provide links to the non-frame version documentation.
-     *
-     * @param contentTree the content tree to which the non-frames information will be added
-     */
-    protected void addFrameWarning(Content contentTree) {
-        Content noframes = new HtmlTree(HtmlTag.NOFRAMES);
-        Content noScript = HtmlTree.NOSCRIPT(
-                HtmlTree.DIV(getResource("doclet.No_Script_Message")));
-        noframes.addContent(noScript);
-        Content noframesHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
-                getResource("doclet.Frame_Alert"));
-        noframes.addContent(noframesHead);
-        Content p = HtmlTree.P(getResource("doclet.Frame_Warning_Message",
-                getHyperLink(configuration.topFile,
-                configuration.getText("doclet.Non_Frame_Version"))));
-        noframes.addContent(p);
-        contentTree.addContent(noframes);
     }
 
     /**
@@ -133,53 +112,55 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @return a content tree for the frame details
      */
     protected Content getFrameDetails() {
-        HtmlTree frameset = HtmlTree.FRAMESET("20%,80%", null, "Documentation frame",
-                "top.loadFrames()");
+        HtmlTree leftContainerDiv = new HtmlTree(HtmlTag.DIV);
+        HtmlTree rightContainerDiv = new HtmlTree(HtmlTag.DIV);
+        leftContainerDiv.addStyle(HtmlStyle.leftContainer);
+        rightContainerDiv.addStyle(HtmlStyle.rightContainer);
         if (noOfPackages <= 1) {
-            addAllClassesFrameTag(frameset);
+            addAllClassesFrameTag(leftContainerDiv);
         } else if (noOfPackages > 1) {
-            HtmlTree leftFrameset = HtmlTree.FRAMESET(null, "30%,70%", "Left frames",
-                "top.loadFrames()");
-            addAllPackagesFrameTag(leftFrameset);
-            addAllClassesFrameTag(leftFrameset);
-            frameset.addContent(leftFrameset);
+            addAllPackagesFrameTag(leftContainerDiv);
+            addAllClassesFrameTag(leftContainerDiv);
         }
-        addClassFrameTag(frameset);
-        addFrameWarning(frameset);
-        return frameset;
+        addClassFrameTag(rightContainerDiv);
+        HtmlTree mainContainer = HtmlTree.DIV(HtmlStyle.mainContainer, leftContainerDiv);
+        mainContainer.addContent(rightContainerDiv);
+        return mainContainer;
     }
 
     /**
-     * Add the FRAME tag for the frame that lists all packages.
+     * Add the IFRAME tag for the frame that lists all packages.
      *
      * @param contentTree the content tree to which the information will be added
      */
     private void addAllPackagesFrameTag(Content contentTree) {
-        HtmlTree frame = HtmlTree.FRAME(DocPaths.OVERVIEW_FRAME.getPath(),
+        HtmlTree frame = HtmlTree.IFRAME(DocPaths.OVERVIEW_FRAME.getPath(),
                 "packageListFrame", configuration.getText("doclet.All_Packages"));
-        contentTree.addContent(frame);
+        HtmlTree leftTop = HtmlTree.DIV(HtmlStyle.leftTop, frame);
+        contentTree.addContent(leftTop);
     }
 
     /**
-     * Add the FRAME tag for the frame that lists all classes.
+     * Add the IFRAME tag for the frame that lists all classes.
      *
      * @param contentTree the content tree to which the information will be added
      */
     private void addAllClassesFrameTag(Content contentTree) {
-        HtmlTree frame = HtmlTree.FRAME(DocPaths.ALLCLASSES_FRAME.getPath(),
+        HtmlTree frame = HtmlTree.IFRAME(DocPaths.ALLCLASSES_FRAME.getPath(),
                 "packageFrame", configuration.getText("doclet.All_classes_and_interfaces"));
-        contentTree.addContent(frame);
+        HtmlTree leftBottom = HtmlTree.DIV(HtmlStyle.leftBottom, frame);
+        contentTree.addContent(leftBottom);
     }
 
     /**
-     * Add the FRAME tag for the frame that describes the class in detail.
+     * Add the IFRAME tag for the frame that describes the class in detail.
      *
      * @param contentTree the content tree to which the information will be added
      */
     private void addClassFrameTag(Content contentTree) {
-        HtmlTree frame = HtmlTree.FRAME(configuration.topFile.getPath(), "classFrame",
-                configuration.getText("doclet.Package_class_and_interface_descriptions"),
-                SCROLL_YES);
+        HtmlTree frame = HtmlTree.IFRAME(configuration.topFile.getPath(), "classFrame",
+                configuration.getText("doclet.Package_class_and_interface_descriptions"));
+        frame.addStyle(HtmlStyle.rightIframe);
         contentTree.addContent(frame);
     }
 }

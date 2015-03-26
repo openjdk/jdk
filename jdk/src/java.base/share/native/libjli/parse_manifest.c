@@ -138,7 +138,7 @@ find_end64(int fd, Byte *ep, jlong pos)
         return -1;
     if ((bytes = read(fd, ep, ZIP64_LOCHDR)) < 0)
         return -1;
-    if (GETSIG(ep) == ZIP64_LOCSIG)
+    if (ZIP64_LOCSIG_AT(ep))
        return end64pos;
     return -1;
 }
@@ -176,7 +176,7 @@ find_end(int fd, Byte *eb)
         return (-1);
     if ((bytes = read(fd, eb, ENDHDR)) < 0)
         return (-1);
-    if (GETSIG(eb) == ENDSIG) {
+    if (ENDSIG_AT(eb)) {
         return haveZIP64(eb) ? find_end64(fd, eb, pos) : pos;
     }
 
@@ -200,14 +200,11 @@ find_end(int fd, Byte *eb)
 
     /*
      * Search backwards from the end of file stopping when the END header
-     * signature is found. (The first condition of the "if" is just a
-     * fast fail, because the GETSIG macro isn't always cheap.  The
-     * final condition protects against false positives.)
+     * signature is found.
      */
     endpos = &buffer[bytes];
     for (cp = &buffer[bytes - ENDHDR]; cp >= &buffer[0]; cp--)
-        if ((*cp == (ENDSIG & 0xFF)) && (GETSIG(cp) == ENDSIG) &&
-          (cp + ENDHDR + ENDCOM(cp) == endpos)) {
+        if (ENDSIG_AT(cp) && (cp + ENDHDR + ENDCOM(cp) == endpos)) {
             (void) memcpy(eb, cp, ENDHDR);
             free(buffer);
             pos = flen - (endpos - cp);
@@ -267,7 +264,7 @@ compute_cen(int fd, Byte *bp)
         if ((bytes = read(fd, buffer, MINREAD)) < 0) {
             return (-1);
         }
-        if (GETSIG(buffer) != ZIP64_ENDSIG) {
+        if (!ZIP64_ENDSIG_AT(buffer)) {
             return -1;
         }
         if ((offset = ZIP64_ENDOFF(buffer)) < (jlong)0) {
@@ -356,7 +353,7 @@ find_file(int fd, zentry *entry, const char *file_name)
      * Loop through the Central Directory Headers. Note that a valid zip/jar
      * must have an ENDHDR (with ENDSIG) after the Central Directory.
      */
-    while (GETSIG(p) == CENSIG) {
+    while (CENSIG_AT(p)) {
 
         /*
          * If a complete header isn't in the buffer, shift the contents
@@ -403,7 +400,7 @@ find_file(int fd, zentry *entry, const char *file_name)
                 free(buffer);
                 return (-1);
             }
-            if (GETSIG(locbuf) != LOCSIG) {
+            if (!LOCSIG_AT(locbuf)) {
                 free(buffer);
                 return (-1);
             }

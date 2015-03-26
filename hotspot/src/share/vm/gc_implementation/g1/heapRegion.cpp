@@ -193,7 +193,7 @@ void HeapRegion::par_clear() {
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->clear();
   CardTableModRefBS* ct_bs =
-                   (CardTableModRefBS*)G1CollectedHeap::heap()->barrier_set();
+    barrier_set_cast<CardTableModRefBS>(G1CollectedHeap::heap()->barrier_set());
   ct_bs->clear(MemRegion(bottom(), end()));
 }
 
@@ -643,13 +643,9 @@ public:
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseMarkWord    -> use mark word from object header.
   VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) :
-    _g1h(g1h), _bs(NULL), _containing_obj(NULL),
-    _failures(false), _n_failures(0), _vo(vo)
-  {
-    BarrierSet* bs = _g1h->barrier_set();
-    if (bs->is_a(BarrierSet::CardTableModRef))
-      _bs = (CardTableModRefBS*)bs;
-  }
+    _g1h(g1h), _bs(barrier_set_cast<CardTableModRefBS>(g1h->barrier_set())),
+    _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo)
+  { }
 
   void set_containing_obj(oop obj) {
     _containing_obj = obj;
