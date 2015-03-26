@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,9 @@ inline void PSPromotionManager::promotion_trace_event(oop new_obj, oop old_obj,
   }
 }
 
+inline void PSPromotionManager::push_contents(oop obj) {
+  obj->push_contents(this);
+}
 //
 // This method is pretty bulky. It would be nice to split it up
 // into smaller submethods, but we need to be careful not to hurt
@@ -227,7 +230,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
         TASKQUEUE_STATS_ONLY(++_arrays_chunked; ++_masked_pushes);
       } else {
         // we'll just push its contents
-        new_obj->push_contents(this);
+        push_contents(new_obj);
       }
     }  else {
       // We lost, someone else "owns" this object

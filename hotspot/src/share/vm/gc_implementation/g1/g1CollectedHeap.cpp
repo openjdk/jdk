@@ -66,7 +66,6 @@
 #include "memory/iterator.hpp"
 #include "memory/referenceProcessor.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"

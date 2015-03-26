@@ -27,6 +27,7 @@
 #include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/pcTasks.hpp"
+#include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTraceTime.hpp"
@@ -34,7 +35,6 @@
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/jniHandles.hpp"
@@ -221,12 +221,11 @@ void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
   int random_seed = 17;
   do {
     while (ParCompactionManager::steal_objarray(which, &random_seed, task)) {
-      ObjArrayKlass* k = (ObjArrayKlass*)task.obj()->klass();
-      k->oop_follow_contents(cm, task.obj(), task.index());
+      cm->follow_contents((objArrayOop)task.obj(), task.index());
       cm->follow_marking_stacks();
     }
     while (ParCompactionManager::steal(which, &random_seed, obj)) {
-      obj->follow_contents(cm);
+      cm->follow_contents(obj);
       cm->follow_marking_stacks();
     }
   } while (!terminator()->offer_termination());
