@@ -3164,7 +3164,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
          FLAG_SET_CMDLINE(size_t, MaxNewSize, NewSize);
       }
 
-#ifndef _ALLBSD_SOURCE  // UseLargePages is not yet supported on BSD.
+#if !defined(_ALLBSD_SOURCE) && !defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
       FLAG_SET_DEFAULT(UseLargePages, true);
 #endif
 
@@ -3853,7 +3853,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
             hotspotrc, hotspotrc);
   }
 
-#ifdef _ALLBSD_SOURCE  // UseLargePages is not yet supported on BSD.
+#if defined(_ALLBSD_SOURCE) || defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
   UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
 #endif
 
