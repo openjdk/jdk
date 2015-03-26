@@ -450,7 +450,15 @@ inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
 
 
 // returns true if SafeFetch32 and SafeFetchN can be used safely (stubroutines are already generated)
-inline bool CanUseSafeFetch32() { return StubRoutines::SafeFetch32_stub() ? true : false; }
-inline bool CanUseSafeFetchN()  { return StubRoutines::SafeFetchN_stub() ? true : false; }
+inline bool CanUseSafeFetch32() {
+  // All platforms have the stub but ZERO isn't safe.
+  assert(StubRoutines::SafeFetch32_stub() != NULL, "should have generated stub");
+  return NOT_ZERO(true) ZERO_ONLY(false);
+}
 
+inline bool CanUseSafeFetchN()  {
+  // All platforms have the stub but ZERO isn't safe.
+  assert(StubRoutines::SafeFetchN_stub() != NULL, "should have generated stub");
+  return NOT_ZERO(true) ZERO_ONLY(false);
+}
 #endif // SHARE_VM_RUNTIME_STUBROUTINES_HPP
