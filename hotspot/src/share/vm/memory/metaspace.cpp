@@ -3131,7 +3131,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
 void Metaspace::initialize_class_space(ReservedSpace rs) {
   // The reserved space size may be bigger because of alignment, esp with UseLargePages
   assert(rs.size() >= CompressedClassSpaceSize,
-         err_msg(SIZE_FORMAT " != " UINTX_FORMAT, rs.size(), CompressedClassSpaceSize));
+         err_msg(SIZE_FORMAT " != " SIZE_FORMAT, rs.size(), CompressedClassSpaceSize));
   assert(using_class_space(), "Must be using class space");
   _class_space_list = new VirtualSpaceList(rs);
   _chunk_manager_class = new ChunkManager(SpecializedChunk, ClassSmallChunk, ClassMediumChunk);
