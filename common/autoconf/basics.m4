@@ -78,7 +78,7 @@ AC_DEFUN([BASIC_PREPEND_TO_PATH],
 AC_DEFUN([BASIC_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
-  
+
   if test "x[$]$1" != x; then
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
       BASIC_FIXUP_PATH_CYGWIN($1)
@@ -118,7 +118,7 @@ AC_DEFUN([BASIC_FIXUP_PATH],
 AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
 [
   # Only process if variable expands to non-empty
-  
+
   if test "x[$]$1" != x; then
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
       BASIC_FIXUP_EXECUTABLE_CYGWIN($1)
@@ -708,18 +708,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   # which will look for generated configurations
   AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
 ])
-
-AC_DEFUN_ONCE([BASIC_SETUP_LOGGING],
-[
-  # Setup default logging of stdout and stderr to build.log in the output root.
-  BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-  BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-  BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
-  AC_SUBST(BUILD_LOG)
-  AC_SUBST(BUILD_LOG_PREVIOUS)
-  AC_SUBST(BUILD_LOG_WRAPPER)
-])
-
 
 #%%% Simple tools %%%
 

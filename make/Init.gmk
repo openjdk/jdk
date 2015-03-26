@@ -1,0 +1,229 @@
+#
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This is the bootstrapping part of the build. This file is included from the
+# top level Makefile, and is responsible for launching the Main.gmk file with
+# the proper make and the proper make arguments.
+################################################################################
+
+# This must be the first rule
+default:
+.PHONY: default
+
+# Inclusion of this pseudo-target will cause make to execute this file
+# serially, regardless of -j.
+.NOTPARALLEL:
+
+# If included from the top-level Makefile then topdir is set, but not when
+# recursively calling ourself with a spec.
+ifeq ($(topdir),)
+  topdir := $(strip $(patsubst %/make/, %, $(dir $(lastword $(MAKEFILE_LIST)))))
+endif
+
+# Our helper functions. Will include $(SPEC) if $(HAS_SPEC) is true.
+include $(topdir)/make/InitSupport.gmk
+
+# Here are "global" targets, i.e. targets that can be executed without having a configuration.
+# This will define ALL_GLOBAL_TARGETS.
+include $(topdir)/make/Help.gmk
+
+# Extract main targets from Main.gmk.
+ifneq ($(any_spec_file), )
+  ifeq ($(wildcard $(dir $(any_spec_file))/make-support),)
+    # If make-support does not exist, we need to build the genmodules java tool first.
+    $(info Creating data for first make execution in new configuration...)
+    ignore_output := $(shell $(MAKE) -r -R -f $(topdir)/make/Main.gmk \
+        -I $(topdir)/make/common SPEC=$(any_spec_file) NO_RECIPES=true FRC)
+    $(info Done)
+  endif
+  ALL_MAIN_TARGETS := $(shell $(MAKE) -r -R -f $(topdir)/make/Main.gmk \
+      -I $(topdir)/make/common SPEC=$(any_spec_file) NO_RECIPES=true print-targets)
+else
+  # Without at least a single valid configuration, we cannot extract any real
+  # targets. To provide a helpful error message about the missing configuration
+  # later on, accept whatever targets the user has provided for now.
+  ALL_MAIN_TARGETS := $(if $(MAKECMDGOALS), $(MAKECMDGOALS), default)
+endif
+
+# Targets provided by this file.
+ALL_INIT_TARGETS := reconfigure
+
+ALL_TARGETS := $(sort $(ALL_GLOBAL_TARGETS) $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS))
+
+ifneq ($(findstring qp, $(MAKEFLAGS)),)
+  ##############################################################################
+  # When called with -qp, assume an external part (e.g. bash completion) is trying
+  # to understand our targets. Just list our targets and do no more checking.
+  ##############################################################################
+
+  $(ALL_TARGETS):
+
+  .PHONY: $(ALL_TARGETS)
+
+else ifeq ($(HAS_SPEC),)
+
+  ##############################################################################
+  # This is the normal case, we have been called from the command line by the
+  # user and we need to call ourself back with a proper SPEC.
+  ##############################################################################
+
+  $(eval $(call CheckControlVariables))
+  $(eval $(call CheckDeprecatedEnvironment))
+  $(eval $(call CheckInvalidMakeFlags))
+
+  $(eval $(call ParseConfCheckOption))
+
+  # Check that the LOG given is valid, and set LOG_LEVEL, LOG_NOFILE and MAKE_LOG_FLAGS.
+  $(eval $(call ParseLogLevel))
+
+  ifneq ($(findstring $(LOG_LEVEL),info debug trace),)
+    $(info Running make as '$(strip $(MAKE) $(MFLAGS) $(COMMAND_LINE_VARIABLES) $(MAKECMDGOALS))')
+  endif
+
+  # CALLED_TARGETS is the list of targets that the user provided,
+  # or "default" if unspecified.
+  CALLED_TARGETS := $(if $(MAKECMDGOALS), $(MAKECMDGOALS), default)
+  CALLED_SPEC_TARGETS := $(filter $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS), $(CALLED_TARGETS))
+  ifneq ($(CALLED_SPEC_TARGETS),)
+    # We have at least one non-global target, which need a SPEC
+    $(eval $(call ParseConfAndSpec))
+    # Now SPECS contain 1..N spec files (otherwise ParseConfAndSpec fails)
+
+    INIT_TARGETS := $(filter $(ALL_INIT_TARGETS), $(CALLED_SPEC_TARGETS))
+    SEQUENTIAL_TARGETS := $(filter dist-clean clean%, $(CALLED_SPEC_TARGETS))
+    PARALLEL_TARGETS := $(filter-out $(INIT_TARGETS) $(SEQUENTIAL_TARGETS), $(CALLED_SPEC_TARGETS))
+
+    # The spec files depend on the autoconf source code. This check makes sure
+    # the configuration is up to date after changes to configure.
+    $(SPECS): $(wildcard $(topdir)/common/autoconf/*)
+        ifeq ($(CONF_CHECK), fail)
+	  @echo "Error: The configuration is not up to date for '$(lastword $(subst /, , $(dir $@)))'."
+	  $(call PrintConfCheckFailed)
+	  @exit 2
+        else ifeq ($(CONF_CHECK), auto)
+	  @echo "Note: The configuration is not up to date for '$(lastword $(subst /, , $(dir $@)))'."
+	  @( cd $(topdir) && \
+	      $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -f $(topdir)/make/Init.gmk SPEC=$@ HAS_SPEC=true \
+	      reconfigure )
+        else ifeq ($(CONF_CHECK), ignore)
+          # Do nothing
+        endif
+
+    # Unless reconfigure is explicitely called, let all targets depend on the spec files to be up to date.
+    ifeq ($(findstring reconfigure, $(CALLED_SPEC_TARGETS)), )
+      $(CALLED_SPEC_TARGETS): $(SPECS)
+    endif
+
+    # The recipe will be run once for every target specified, but we only want to execute the
+    # recipe a single time, hence the TARGET_DONE with a dummy command if true.
+    $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS):
+	@$(if $(TARGET_DONE), \
+	  true \
+	, \
+	  $(foreach spec, $(SPECS), \
+	    ( cd $(topdir) && \
+	    $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -j 1 -f $(topdir)/make/Init.gmk \
+	        SPEC=$(spec) HAS_SPEC=true \
+	        USER_MAKE_VARS="$(USER_MAKE_VARS)" MAKE_LOG_FLAGS=$(MAKE_LOG_FLAGS) \
+	        LOG_LEVEL=$(LOG_LEVEL) LOG_NOFILE=$(LOG_NOFILE) \
+	        INIT_TARGETS="$(INIT_TARGETS)" SEQUENTIAL_TARGETS="$(SEQUENTIAL_TARGETS)" \
+	        PARALLEL_TARGETS="$(PARALLEL_TARGETS)"  \
+	        main ) && \
+	  ) true \
+	  $(eval TARGET_DONE=true) \
+	)
+
+    .PHONY: $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS)
+
+  endif # has $(CALLED_SPEC_TARGETS)
+
+else # HAS_SPEC=true
+
+  ##############################################################################
+  # Now we have a spec. This part provides the "main" target that acts as a
+  # trampoline to call the Main.gmk with the value of $(MAKE) found in the spec
+  # file.
+  ##############################################################################
+
+  ifeq ($(LOG_NOFILE), true)
+    # Disable log wrapper if LOG=[level,]nofile was given
+    override BUILD_LOG_WRAPPER :=
+  endif
+
+  ifeq ($(OUTPUT_SYNC_SUPPORTED), true)
+    OUTPUT_SYNC_FLAG := -O$(OUTPUT_SYNC)
+  endif
+
+  $(eval $(call CheckSpecSanity))
+
+  reconfigure:
+        ifneq ($(CONFIGURE_COMMAND_LINE), )
+	  $(ECHO) "Re-running configure using arguments '$(CONFIGURE_COMMAND_LINE)'"
+        else
+	  $(ECHO) "Re-running configure using default settings"
+        endif
+	( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
+	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
+
+  main-init:
+	$(call RotateLogFiles)
+	$(BUILD_LOG_WRAPPER) $(PRINTF) "Building target(s) '$(strip \
+	    $(INIT_TARGETS) $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS) \
+	    )' in configuration '$(CONF_NAME)'\n"
+
+
+  # MAKEOVERRIDES is automatically set and propagated by Make to sub-Make calls.
+  # We need to clear it of the init-specific variables. The user-specified
+  # variables are explicitely propagated using $(USER_MAKE_VARS).
+  main: MAKEOVERRIDES :=
+
+  main: $(INIT_TARGETS) main-init
+        ifneq ($(SEQUENTIAL_TARGETS), )
+          # Don't touch build output dir since we might be cleaning. That means
+	  # no log wrapper.
+	  ( cd $(TOPDIR) && \
+	      $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	      $(SEQUENTIAL_TARGETS) \
+	  )
+        endif
+        ifneq ($(PARALLEL_TARGETS), )
+	  $(call StartGlobalTimer)
+	  $(call PrepareSmartJavac)
+	  ( cd $(TOPDIR) && \
+	      $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
+	      -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
+	      $(PARALLEL_TARGETS) \
+	  )
+	  $(call CleanupSmartJavac)
+	  $(call StopGlobalTimer)
+	  $(call ReportBuildTimes)
+        endif
+	$(BUILD_LOG_WRAPPER) $(PRINTF) "Finished building target(s) '$(strip \
+	    $(INIT_TARGETS) $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS) \
+	    )' in configuration '$(CONF_NAME)'\n"
+
+  .PHONY: reconfigure main-init main
+endif

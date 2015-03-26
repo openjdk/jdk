@@ -26,14 +26,19 @@
 ################################################################################
 # This is the main makefile containing most actual top level targets. It needs
 # to be called with a SPEC file defined.
+################################################################################
 
 # Declare default target
 default:
 
+ifeq ($(wildcard $(SPEC)),)
+  $(error Main.gmk needs SPEC set to a proper spec.gmk)
+endif
+
 # Now load the spec
 include $(SPEC)
 
-include $(SRC_ROOT)/make/MakeHelpers.gmk
+include $(SRC_ROOT)/make/MainSupport.gmk
 
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
@@ -589,42 +594,29 @@ ALL_TARGETS += clean dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_TEST_TARGETS) \
     $(CLEAN_PHASE_TARGETS) $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 
 ################################################################################
-
-# Setup a rule for SPEC file that fails if executed. This check makes sure the
-# configuration is up to date after changes to configure.
-ifeq ($(findstring reconfigure, $(MAKECMDGOALS)), )
-  $(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
-	@$(ECHO) "ERROR: $(SPEC) is not up to date."
-	@$(ECHO) "Please rerun configure! Easiest way to do this is by running"
-	@$(ECHO) "'make reconfigure'."
-	@$(ECHO) "It may also be ignored by setting IGNORE_OLD_CONFIG=true"
-	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
-endif
-
-# The reconfigure target is automatically run serially from everything else
-# by the Makefile calling this file.
-
-reconfigure:
-        ifneq ($(CONFIGURE_COMMAND_LINE), )
-	  @$(ECHO) "Re-running configure using arguments '$(CONFIGURE_COMMAND_LINE)'"
-        else
-	  @$(ECHO) "Re-running configure using default settings"
-        endif
-	@( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
-	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
-
-ALL_TARGETS += reconfigure
-
-################################################################################
 # Declare *-only targets for each normal target
 $(foreach t, $(ALL_TARGETS), $(eval $(t)-only: $(t)))
 
-ALL_TARGETS += $(addsuffix -only, $(filter-out clean%, $(ALL_TARGETS)))
+ALL_TARGETS += $(addsuffix -only, $(filter-out dist-clean clean%, $(ALL_TARGETS)))
+
+################################################################################
+
+# Include JPRT targets
+include $(SRC_ROOT)/make/Jprt.gmk
+
+################################################################################
+
+print-targets:
+	  @$(ECHO) $(sort $(ALL_TARGETS))
+
+print-modules:
+	  @$(ECHO) $(sort $(ALL_MODULES))
+
+# print-* targets intentionally not added to ALL_TARGETS since they are internal only.
+# The corresponding external targets are in Help.gmk
 
 ################################################################################
 
 .PHONY: $(ALL_TARGETS)
-
-include $(SRC_ROOT)/make/Jprt.gmk
 
 FRC: # Force target
