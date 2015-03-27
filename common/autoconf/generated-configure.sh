@@ -907,6 +907,8 @@ JVM_VARIANTS
 JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
+CANONICAL_TOPDIR
+ORIGINAL_TOPDIR
 TOPDIR
 PATH_SEP
 ZERO_ARCHDEF
@@ -4363,7 +4365,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1427382753
+DATE_WHEN_GENERATED=1427461839
 
 ###############################################################################
 #
@@ -14135,6 +14137,10 @@ $as_echo_n "checking for top-level directory... " >&6; }
 $as_echo "$TOPDIR" >&6; }
 
 
+  # Save the original version of TOPDIR for string comparisons
+  ORIGINAL_TOPDIR="$TOPDIR"
+
+
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
 
   # Only process if variable expands to non-empty
@@ -14390,6 +14396,58 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
 
   # SRC_ROOT is a traditional alias for TOPDIR.
   SRC_ROOT=$TOPDIR
+
+  # Calculate a canonical version of TOPDIR for string comparisons
+  CANONICAL_TOPDIR=$TOPDIR
+
+  if test "x$OPENJDK_BUILD_OS" != xwindows; then
+    # Follow a chain of symbolic links. Use readlink
+    # where it exists, else fall back to horribly
+    # complicated shell code.
+    if test "x$READLINK_TESTED" != yes; then
+      # On MacOSX there is a readlink tool with a different
+      # purpose than the GNU readlink tool. Check the found readlink.
+      ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
+      if test "x$ISGNU" = x; then
+        # A readlink that we do not know how to use.
+        # Are there other non-GNU readlinks out there?
+        READLINK_TESTED=yes
+        READLINK=
+      fi
+    fi
+
+    if test "x$READLINK" != x; then
+      CANONICAL_TOPDIR=`$READLINK -f $CANONICAL_TOPDIR`
+    else
+      # Save the current directory for restoring afterwards
+      STARTDIR=$PWD
+      COUNTER=0
+      sym_link_dir=`$DIRNAME $CANONICAL_TOPDIR`
+      sym_link_file=`$BASENAME $CANONICAL_TOPDIR`
+      cd $sym_link_dir
+      # Use -P flag to resolve symlinks in directories.
+      cd `$THEPWDCMD -P`
+      sym_link_dir=`$THEPWDCMD -P`
+      # Resolve file symlinks
+      while test $COUNTER -lt 20; do
+        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+        if test "x$ISLINK" == x; then
+          # This is not a symbolic link! We are done!
+          break
+        fi
+        # Again resolve directory symlinks since the target of the just found
+        # link could be in a different directory
+        cd `$DIRNAME $ISLINK`
+        sym_link_dir=`$THEPWDCMD -P`
+        sym_link_file=`$BASENAME $ISLINK`
+        let COUNTER=COUNTER+1
+      done
+      cd $STARTDIR
+      CANONICAL_TOPDIR=$sym_link_dir/$sym_link_file
+    fi
+  fi
+
+
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf

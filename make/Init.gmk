@@ -52,7 +52,7 @@ include $(topdir)/make/Help.gmk
 
 # Extract main targets from Main.gmk.
 ifneq ($(any_spec_file), )
-  ifeq ($(wildcard $(dir $(any_spec_file))/make-support),)
+  ifeq ($(wildcard $(dir $(any_spec_file))/make-support/module-deps.gmk),)
     # If make-support does not exist, we need to build the genmodules java tool first.
     $(info Creating data for first make execution in new configuration...)
     ignore_output := $(shell $(MAKE) -r -R -f $(topdir)/make/Main.gmk \
