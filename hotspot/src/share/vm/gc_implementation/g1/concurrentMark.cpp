@@ -2088,10 +2088,7 @@ void ConcurrentMark::cleanup() {
   _cleanup_times.add((end - start) * 1000.0);
 
   if (G1Log::fine()) {
-    g1h->print_size_transition(gclog_or_tty,
-                               start_used_bytes,
-                               g1h->used(),
-                               g1h->capacity());
+    g1h->g1_policy()->print_heap_transition(start_used_bytes);
   }
 
   // Clean up will have freed any regions completely full of garbage.

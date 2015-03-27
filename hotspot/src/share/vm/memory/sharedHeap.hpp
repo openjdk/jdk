@@ -214,16 +214,6 @@ public:
   // Sets the number of parallel threads that will be doing tasks
   // (such as process roots) subsequently.
   virtual void set_par_threads(uint t);
-
-  //
-  // New methods from CollectedHeap
-  //
-
-  // Some utilities.
-  void print_size_transition(outputStream* out,
-                             size_t bytes_before,
-                             size_t bytes_after,
-                             size_t capacity);
 };
 
 #endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP
