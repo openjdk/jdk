@@ -386,6 +386,9 @@ else
   # links against libosxapp.
   jdk.deploy.osx-libs: java.desktop-libs
 
+  # jdk.accessibility depends on java.desktop
+  jdk.accessibility-libs: java.desktop-libs
+
   # This dependency needs to be explicitly declared. jdk.jdi-gensrc generates a
   # header file used by jdk.jdwp.agent-libs. The jdk.jdwp.agent-gensrc is a
   # virtual target.
