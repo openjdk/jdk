@@ -55,8 +55,6 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 HeapWord*                  PSScavenge::_to_space_top_before_gc = NULL;
 int                        PSScavenge::_consecutive_skipped_scavenges = 0;
 ReferenceProcessor*        PSScavenge::_ref_processor = NULL;
@@ -550,8 +548,8 @@ bool PSScavenge::invoke_no_policy() {
 
        if (PrintTenuringDistribution) {
          gclog_or_tty->cr();
-         gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold "
-                                UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
+         gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold %u"
+                                " (max threshold " UINTX_FORMAT ")",
                                 size_policy->calculated_survivor_size_in_bytes(),
                                 _tenuring_threshold, MaxTenuringThreshold);
        }
@@ -693,7 +691,7 @@ bool PSScavenge::invoke_no_policy() {
   scavenge_exit.update();
 
   if (PrintGCTaskTimeStamps) {
-    tty->print_cr("VM-Thread " INT64_FORMAT " " INT64_FORMAT " " INT64_FORMAT,
+    tty->print_cr("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
                   scavenge_entry.ticks(), scavenge_midpoint.ticks(),
                   scavenge_exit.ticks());
     gc_task_manager()->print_task_time_stamps();
