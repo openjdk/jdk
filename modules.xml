@@ -2,7 +2,7 @@
 
 <!--
 
-   Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
    This code is free software; you can redistribute it and/or modify it
@@ -751,7 +751,7 @@
     </export>
     <export>
       <name>sun.awt</name>
-      <to>jdk.accessbridge</to>
+      <to>jdk.accessibility</to>
     </export>
   </module>
   <module>
@@ -1851,5 +1851,10 @@
   <module>
     <name>jdk.zipfs</name>
     <depend>java.base</depend>
+  </module>
+  <module>
+    <name>jdk.accessibility</name>
+    <depend>java.base</depend>
+    <depend>java.desktop</depend>
   </module>
 </modules>
