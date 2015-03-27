@@ -31,10 +31,12 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.lang.model.type.*;
 
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Types.MapVisitor;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import static com.sun.tools.javac.code.BoundKind.*;
@@ -218,33 +220,81 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** An abstract class for mappings from types to types
      */
-    public static abstract class Mapping {
-        private String name;
-        public Mapping(String name) {
-            this.name = name;
+    public static abstract class TypeMapping<S> extends Types.MapVisitor<S> implements Function<Type, Type> {
+
+        @Override
+        public Type apply(Type type) {
+            return visit(type);
         }
-        public abstract Type apply(Type t);
-        public String toString() {
-            return name;
+
+        List<Type> visit(List<Type> ts, S s) {
+            return ts.map(t -> visit(t, s));
+        }
+
+        @Override
+        public Type visitClassType(ClassType t, S s) {
+            Type outer = t.getEnclosingType();
+            Type outer1 = visit(outer, s);
+            List<Type> typarams = t.getTypeArguments();
+            List<Type> typarams1 = visit(typarams, s);
+            if (outer1 == outer && typarams1 == typarams) return t;
+            else return new ClassType(outer1, typarams1, t.tsym, t.metadata);
+        }
+
+        @Override
+        public Type visitWildcardType(WildcardType wt, S s) {
+            Type t = wt.type;
+            if (t != null)
+                t = visit(t, s);
+            if (t == wt.type)
+                return wt;
+            else
+                return new WildcardType(t, wt.kind, wt.tsym, wt.bound, wt.metadata);
+        }
+
+        @Override
+        public Type visitArrayType(ArrayType t, S s) {
+            Type elemtype = t.elemtype;
+            Type elemtype1 = visit(elemtype, s);
+            if (elemtype1 == elemtype) return t;
+            else return new ArrayType(elemtype1, t.tsym, t.metadata);
+        }
+
+        @Override
+        public Type visitMethodType(MethodType t, S s) {
+            List<Type> argtypes = t.argtypes;
+            Type restype = t.restype;
+            List<Type> thrown = t.thrown;
+            List<Type> argtypes1 = visit(argtypes, s);
+            Type restype1 = visit(restype, s);
+            List<Type> thrown1 = visit(thrown, s);
+            if (argtypes1 == argtypes &&
+                restype1 == restype &&
+                thrown1 == thrown) return t;
+            else return new MethodType(argtypes1, restype1, thrown1, t.tsym);
+        }
+
+        @Override
+        public Type visitCapturedType(CapturedType t, S s) {
+            return visitTypeVar(t, s);
+        }
+
+        @Override
+        public Type visitForAll(ForAll t, S s) {
+            return visit(t.qtype, s);
         }
     }
 
     /** map a type function over all immediate descendants of this type
      */
-    public Type map(Mapping f) {
-        return this;
+    public <Z> Type map(TypeMapping<Z> mapping, Z arg) {
+        return mapping.visit(this, arg);
     }
 
-    /** map a type function over a list of types
+    /** map a type function over all immediate descendants of this type (no arg version)
      */
-    public static List<Type> map(List<Type> ts, Mapping f) {
-        if (ts.nonEmpty()) {
-            List<Type> tail1 = map(ts.tail, f);
-            Type t = f.apply(ts.head);
-            if (tail1 != ts.tail || t != ts.head)
-                return tail1.prepend(t);
-        }
-        return ts;
+    public <Z> Type map(TypeMapping<Z> mapping) {
+        return mapping.visit(this, null);
     }
 
     /** Define a constant type, of the same kind as this type
@@ -775,17 +825,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return s.toString();
         }
 
-        public Type map(Mapping f) {
-            //- System.err.println("   (" + this + ").map(" + f + ")");//DEBUG
-            Type t = type;
-            if (t != null)
-                t = f.apply(t);
-            if (t == type)
-                return this;
-            else
-                return new WildcardType(t, kind, tsym, bound, metadata);
-        }
-
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getExtendsBound() {
             if (kind == EXTENDS)
@@ -1007,15 +1046,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 this != tsym.type && // necessary, but not sufficient condition
                 tsym.type.allparams().nonEmpty() &&
                 allparams().isEmpty();
-        }
-
-        public Type map(Mapping f) {
-            Type outer = getEnclosingType();
-            Type outer1 = f.apply(outer);
-            List<Type> typarams = getTypeArguments();
-            List<Type> typarams1 = map(typarams, f);
-            if (outer1 == outer && typarams1 == typarams) return this;
-            else return new ClassType(outer1, typarams1, tsym, metadata);
         }
 
         public boolean contains(Type elem) {
@@ -1248,12 +1278,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             };
         }
 
-        public Type map(Mapping f) {
-            Type elemtype1 = f.apply(elemtype);
-            if (elemtype1 == elemtype) return this;
-            else return new ArrayType(elemtype1, tsym, metadata);
-        }
-
         public boolean contains(Type elem) {
             return elem == this || elemtype.contains(elem);
         }
@@ -1343,16 +1367,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return
                 isErroneous(argtypes) ||
                 restype != null && restype.isErroneous();
-        }
-
-        public Type map(Mapping f) {
-            List<Type> argtypes1 = map(argtypes, f);
-            Type restype1 = f.apply(restype);
-            List<Type> thrown1 = map(thrown, f);
-            if (argtypes1 == argtypes &&
-                restype1 == restype &&
-                thrown1 == thrown) return this;
-            else return new MethodType(argtypes1, restype1, thrown1, tsym);
         }
 
         public boolean contains(Type elem) {
@@ -1647,10 +1661,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return qtype.isErroneous();
         }
 
-        public Type map(Mapping f) {
-            return f.apply(qtype);
-        }
-
         public boolean contains(Type elem) {
             return qtype.contains(elem);
         }
@@ -1820,7 +1830,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         protected void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
-            Type bound2 = toTypeVarMap.apply(bound).baseType();
+            Type bound2 = bound.map(toTypeVarMap).baseType();
             List<Type> prevBounds = bounds.get(ib);
             for (Type b : prevBounds) {
                 //check for redundancy - use strict version of isSameType on tvars
@@ -1831,15 +1841,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             notifyChange(EnumSet.of(ib));
         }
         //where
-            Type.Mapping toTypeVarMap = new Mapping("toTypeVarMap") {
+            TypeMapping<Void> toTypeVarMap = new TypeMapping<Void>() {
                 @Override
-                public Type apply(Type t) {
-                    if (t.hasTag(UNDETVAR)) {
-                        UndetVar uv = (UndetVar)t;
-                        return uv.inst != null ? uv.inst : uv.qtype;
-                    } else {
-                        return t.map(this);
-                    }
+                public Type visitUndetVar(UndetVar uv, Void _unused) {
+                    return uv.inst != null ? uv.inst : uv.qtype;
                 }
             };
 
@@ -2110,7 +2115,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public Type getEnclosingType()           { return this; }
         public Type getReturnType()              { return this; }
         public Type asSub(Symbol sym)            { return this; }
-        public Type map(Mapping f)               { return this; }
 
         public boolean isGenType(Type t)         { return true; }
         public boolean isErroneous()             { return true; }

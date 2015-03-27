@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,25 +185,6 @@ public class HttpsURLConnectionOldImpl
     public java.security.cert.Certificate []
         getServerCertificates() throws SSLPeerUnverifiedException {
         return delegate.getServerCertificates();
-    }
-
-    /**
-     * Returns the server's X.509 certificate chain, or null if
-     * the server did not authenticate.
-     *
-     * NOTE: This method is not necessary for the version of this class
-     * implementing javax.net.ssl.HttpsURLConnection, but provided for
-     * compatibility with the com.sun.net.ssl.HttpsURLConnection version.
-     */
-    public javax.security.cert.X509Certificate[] getServerCertificateChain() {
-        try {
-            return delegate.getServerCertificateChain();
-        } catch (SSLPeerUnverifiedException e) {
-            // this method does not throw an exception as declared in
-            // com.sun.net.ssl.HttpsURLConnection.
-            // Return null for compatibility.
-            return null;
-        }
     }
 
     /*
