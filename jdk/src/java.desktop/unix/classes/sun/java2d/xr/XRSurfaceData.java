@@ -548,8 +548,18 @@ public abstract class XRSurfaceData extends XSurfaceData {
                   peer.getColorModel().getPixelSize(), Transparency.OPAQUE);
 
             if (isXRDrawableValid()) {
-                initXRender(XRUtils.
-                    getPictureFormatForTransparency(Transparency.OPAQUE));
+                // If we have a 32 bit color model for the window it needs
+                // alpha to support translucency of the window so we need
+                // to get the ARGB32 XRender picture format else for
+                // 24 bit colormodel we need RGB24 or OPAQUE pictureformat.
+                if (peer.getColorModel().getPixelSize() == 32) {
+                     initXRender(XRUtils.
+                      getPictureFormatForTransparency(Transparency.TRANSLUCENT));
+                 }
+                 else {
+                     initXRender(XRUtils.
+                       getPictureFormatForTransparency(Transparency.OPAQUE));
+                 }
                 makePipes();
             }
         }

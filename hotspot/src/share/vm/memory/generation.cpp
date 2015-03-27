@@ -153,9 +153,8 @@ bool Generation::is_in(const void* p) const {
 
 Generation* Generation::next_gen() const {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  int next = level() + 1;
-  if (next < gch->_n_gens) {
-    return gch->get_gen(next);
+  if (level() == 0) {
+    return gch->old_gen();
   } else {
     return NULL;
   }

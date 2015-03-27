@@ -23,6 +23,7 @@
 
 /* @test
  * @summary Unit test for server-socket-channel adaptors
+ * @key intermittent
  */
 
 import java.io.*;

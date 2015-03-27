@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.awt.Graphics;
 import java.awt.Window;
 
 import sun.swing.StringUIClientPropertyKey;
+import sun.swing.SwingUtilities2;
 
 
 /**
@@ -559,25 +560,22 @@ public class MetalBorders {
         protected static Insets borderInsets = new Insets( 1, 0, 1, 0 );
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
-            g.translate( x, y );
+            g.translate(x, y);
 
             if (MetalLookAndFeel.usingOcean()) {
-                // Only paint a border if we're not next to a horizontal
-                // toolbar
-                if ((c instanceof JMenuBar) && !MetalToolBarUI.doesMenuBarBorderToolBar((JMenuBar)c)) {
+                // Only paint a border if we're not next to a horizontal toolbar
+                if (c instanceof JMenuBar
+                        && !MetalToolBarUI.doesMenuBarBorderToolBar((JMenuBar)c)) {
                     g.setColor(MetalLookAndFeel.getControl());
-                    g.drawLine(0, h - 2, w, h - 2);
+                    SwingUtilities2.drawHLine(g, 0, w - 1, h - 2);
                     g.setColor(UIManager.getColor("MenuBar.borderColor"));
-                    g.drawLine(0, h - 1, w, h - 1);
+                    SwingUtilities2.drawHLine(g, 0, w - 1, h - 1);
                 }
+            } else {
+                g.setColor(MetalLookAndFeel.getControlShadow());
+                SwingUtilities2.drawHLine(g, 0, w - 1, h - 1);
             }
-            else {
-                g.setColor( MetalLookAndFeel.getControlShadow() );
-                g.drawLine( 0, h-1, w, h-1 );
-            }
-
-            g.translate( -x, -y );
-
+            g.translate(-x, -y);
         }
 
         public Insets getBorderInsets(Component c, Insets newInsets) {

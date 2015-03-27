@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ public class AppConfigurationEntry {
      *
      * @param loginModuleName String representing the class name of the
      *                  {@code LoginModule} configured for the
-     *                  specified application. <p>
+     *                  specified application.
      *
      * @param controlFlag either REQUIRED, REQUISITE, SUFFICIENT,
-     *                  or OPTIONAL. <p>
+     *                  or OPTIONAL.
      *
      * @param options the options configured for this {@code LoginModule}.
      *

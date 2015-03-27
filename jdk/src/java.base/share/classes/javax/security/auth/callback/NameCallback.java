@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,6 @@ public class NameCallback implements Callback, java.io.Serializable {
     /**
      * Construct a {@code NameCallback} with a prompt.
      *
-     * <p>
-     *
      * @param prompt the prompt used to request the name.
      *
      * @exception IllegalArgumentException if {@code prompt} is null
@@ -72,9 +70,7 @@ public class NameCallback implements Callback, java.io.Serializable {
      * Construct a {@code NameCallback} with a prompt
      * and default name.
      *
-     * <p>
-     *
-     * @param prompt the prompt used to request the information. <p>
+     * @param prompt the prompt used to request the information.
      *
      * @param defaultName the name to be used as the default name displayed
      *                  with the prompt.
@@ -96,8 +92,6 @@ public class NameCallback implements Callback, java.io.Serializable {
     /**
      * Get the prompt.
      *
-     * <p>
-     *
      * @return the prompt.
      */
     public String getPrompt() {
@@ -106,8 +100,6 @@ public class NameCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the default name.
-     *
-     * <p>
      *
      * @return the default name, or null if this {@code NameCallback}
      *          was not instantiated with a {@code defaultName}.
@@ -119,8 +111,6 @@ public class NameCallback implements Callback, java.io.Serializable {
     /**
      * Set the retrieved name.
      *
-     * <p>
-     *
      * @param name the retrieved name (which may be null).
      *
      * @see #getName
@@ -131,8 +121,6 @@ public class NameCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the retrieved name.
-     *
-     * <p>
      *
      * @return the retrieved name (which may be null)
      *
