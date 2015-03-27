@@ -28,8 +28,6 @@
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 /////////////////////////////////////////////////////////////////////////
 //// PromotionInfo
 /////////////////////////////////////////////////////////////////////////
@@ -360,6 +358,6 @@ void PromotionInfo::print_on(outputStream* st) const {
 
 void SpoolBlock::print_on(outputStream* st) const {
   st->print("[" PTR_FORMAT "," PTR_FORMAT "), " SIZE_FORMAT " HeapWords -> " PTR_FORMAT,
-            this, (HeapWord*)displacedHdr + bufferSize,
-            bufferSize, nextSpoolBlock);
+            p2i(this), p2i((HeapWord*)displacedHdr + bufferSize),
+            bufferSize, p2i(nextSpoolBlock));
 }
