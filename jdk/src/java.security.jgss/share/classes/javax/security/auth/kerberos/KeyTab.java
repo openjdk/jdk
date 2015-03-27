@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import sun.security.krb5.RealmException;
  * The keytab file format is described at
  * <a href="http://www.ioplex.com/utilities/keytab.txt">
  * http://www.ioplex.com/utilities/keytab.txt</a>.
- * <p>
+ *
  * @since 1.7
  */
 public final class KeyTab {

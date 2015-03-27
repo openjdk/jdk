@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.AbstractCollection;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.stream.Collector;
 
 /** A class for generic linked lists. Links are supposed to be
@@ -414,6 +415,17 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
             t = t.tail;
         }
         return last;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <Z> List<Z> map(Function<A, Z> mapper) {
+        if (nonEmpty()) {
+            List<Z> tail1 = tail.map(mapper);
+            Z head1 = mapper.apply(head);
+            if (tail1 != tail || head1 != head)
+                return tail1.prepend(head1);
+        }
+        return (List<Z>)this;
     }
 
     @SuppressWarnings("unchecked")
