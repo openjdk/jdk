@@ -2530,6 +2530,11 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
 // prior to coming here.
 Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, MergeMemNode* mem, PhaseGVN* gvn) {
   Compile* C = gvn->C;
+
+  if ((*ctrl)->is_top()) {
+    return C->top();
+  }
+
   // Fast check for identical types, perhaps identical constants.
   // The types can even be identical non-constants, in cases
   // involving Array.newInstance, Object.clone, etc.
@@ -2793,6 +2798,10 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
 Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
                                         ciKlass* type,
                                         bool not_null) {
+  if (stopped()) {
+    return obj;
+  }
+
   // type == NULL if profiling tells us this object is always null
   if (type != NULL) {
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;

@@ -3670,6 +3670,11 @@ bool LibraryCallKit::inline_native_subtype_check() {
 //---------------------generate_array_guard_common------------------------
 Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
                                                   bool obj_array, bool not_array) {
+
+  if (stopped()) {
+    return NULL;
+  }
+
   // If obj_array/non_array==false/false:
   // Branch around if the given klass is in fact an array (either obj or prim).
   // If obj_array/non_array==false/true:
@@ -4761,7 +4766,7 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
 // guarantees there's no observer of the allocated array at this point
 // and the control flow is simple enough.
 void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp) {
-  if (saved_jvms != NULL) {
+  if (saved_jvms != NULL && !stopped()) {
     assert(alloc != NULL, "only with a tightly coupled allocation");
     // restore JVM state to the state at the arraycopy
     saved_jvms->map()->set_control(map()->control());
