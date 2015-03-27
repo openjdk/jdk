@@ -8279,3 +8279,6 @@ FormatData/fi/DatePatterns/0=d. MMMM yyyy
 FormatData/fi/DatePatterns/1=d. MMMM yyyy
 FormatData/fi/DatePatterns/2=d.M.yyyy
 FormatData/fi/DatePatterns/3=d.M.yyyy
+
+# bug #8075173
+FormatData/de/standalone.MonthAbbreviations/2=M\u00e4r

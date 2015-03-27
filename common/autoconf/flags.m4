@@ -481,9 +481,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     CFLAGS_JDKLIB_EXTRA="${CFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
     CXXFLAGS_JDKLIB_EXTRA="${CXXFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_JDK="${LDFLAGS_JDK} -q64 -brtl -bnolibpath -liconv -bexpall"
-    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
-    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
   if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
@@ -762,6 +761,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -liconv -bexpall -bernotok"
   fi
 
   # Customize LDFLAGS for executables

@@ -321,6 +321,8 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseFastEmptyMethods",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
 #endif // ZERO
   { "UseCompilerSafepoints",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "AdaptiveSizePausePolicy",       JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "ParallelGCRetainPLAB",          JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 

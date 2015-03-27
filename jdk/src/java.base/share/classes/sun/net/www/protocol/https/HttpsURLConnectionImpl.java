@@ -198,30 +198,6 @@ public class HttpsURLConnectionImpl
     }
 
     /**
-     * Returns the server's X.509 certificate chain, or null if
-     * the server did not authenticate.
-     *
-     * NOTE: This method is not necessary for the version of this class
-     * implementing javax.net.ssl.HttpsURLConnection, but provided for
-     * compatibility with the com.sun.net.ssl.HttpsURLConnection version.
-     *
-     * @deprecated This method returns the deprecated
-     *  {@code javax.security.cert.X509Certificate} type.
-     *  Use {@code getServerCertificates()} instead.
-     */
-    @Deprecated
-    public javax.security.cert.X509Certificate[] getServerCertificateChain() {
-        try {
-            return delegate.getServerCertificateChain();
-        } catch (SSLPeerUnverifiedException e) {
-            // this method does not throw an exception as declared in
-            // com.sun.net.ssl.HttpsURLConnection.
-            // Return null for compatibility.
-            return null;
-        }
-    }
-
-    /**
      * Returns the principal with which the server authenticated itself,
      * or throw a SSLPeerUnverifiedException if the server did not authenticate.
      */
