@@ -2109,7 +2109,7 @@ public class Attr extends JCTree.Visitor {
                 clazztype = cdef.sym.type;
                 Symbol sym = tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                Assert.check(!sym.kind.isOverloadError());
+                Assert.check(!sym.kind.isResolutionError());
                 tree.constructor = sym;
                 tree.constructorType = checkId(noCheckTree,
                     clazztype,
@@ -2647,17 +2647,20 @@ public class Attr extends JCTree.Visitor {
             Symbol refSym = refResult.fst;
             Resolve.ReferenceLookupHelper lookupHelper = refResult.snd;
 
+            /** this switch will need to go away and be replaced by the new RESOLUTION_TARGET testing
+             *  JDK-8075541
+             */
             if (refSym.kind != MTH) {
                 boolean targetError;
                 switch (refSym.kind) {
                     case ABSENT_MTH:
+                    case MISSING_ENCL:
                         targetError = false;
                         break;
                     case WRONG_MTH:
                     case WRONG_MTHS:
                     case AMBIGUOUS:
                     case HIDDEN:
-                    case MISSING_ENCL:
                     case STATICERR:
                         targetError = true;
                         break;
