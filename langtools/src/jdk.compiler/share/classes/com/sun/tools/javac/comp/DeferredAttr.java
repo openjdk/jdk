@@ -1209,8 +1209,8 @@ public class DeferredAttr extends JCTree.Visitor {
                     rs.getMemberReference(tree, localEnv, mref2,
                         exprTree.type, tree.name);
             tree.sym = res;
-            if (res.kind.isOverloadError() ||
-                    res.type.hasTag(FORALL) ||
+            if (res.kind.isResolutionTargetError() ||
+                    res.type != null && res.type.hasTag(FORALL) ||
                     (res.flags() & Flags.VARARGS) != 0 ||
                     (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
                     exprTree.type.isRaw())) {
