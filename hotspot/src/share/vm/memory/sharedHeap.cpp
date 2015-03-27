@@ -35,8 +35,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/workgroup.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 SharedHeap* SharedHeap::_sh;
 
 SharedHeap::SharedHeap(CollectorPolicy* policy_) :

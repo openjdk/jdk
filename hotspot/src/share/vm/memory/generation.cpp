@@ -42,8 +42,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 Generation::Generation(ReservedSpace rs, size_t initial_size, int level) :
   _level(level),
   _ref_processor(NULL) {
@@ -103,9 +101,9 @@ void Generation::print_on(outputStream* st)  const {
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
              capacity()/K, used()/K);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-              _virtual_space.low_boundary(),
-              _virtual_space.high(),
-              _virtual_space.high_boundary());
+              p2i(_virtual_space.low_boundary()),
+              p2i(_virtual_space.high()),
+              p2i(_virtual_space.high_boundary()));
 }
 
 void Generation::print_summary_info() { print_summary_info_on(tty); }
