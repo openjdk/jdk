@@ -55,8 +55,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/workgroup.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
@@ -1212,7 +1210,7 @@ oop ParNewGeneration::copy_to_survivor_space(
   if (TraceScavenge) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
        is_in_reserved(new_obj) ? "copying" : "tenuring",
-       new_obj->klass()->internal_name(), (void *)old, (void *)new_obj, new_obj->size());
+       new_obj->klass()->internal_name(), p2i(old), p2i(new_obj), new_obj->size());
   }
 #endif
 
