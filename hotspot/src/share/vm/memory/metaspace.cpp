@@ -49,8 +49,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 typedef BinaryTreeDictionary<Metablock, FreeList<Metablock> > BlockTreeDictionary;
 typedef BinaryTreeDictionary<Metachunk, FreeList<Metachunk> > ChunkTreeDictionary;
 
@@ -388,7 +386,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 #define assert_is_ptr_aligned(ptr, alignment) \
   assert(is_ptr_aligned(ptr, alignment),      \
     err_msg(PTR_FORMAT " is not aligned to "  \
-      SIZE_FORMAT, ptr, alignment))
+      SIZE_FORMAT, p2i(ptr), alignment))
 
 #define assert_is_size_aligned(size, alignment) \
   assert(is_size_aligned(size, alignment),      \
@@ -800,7 +798,7 @@ void VirtualSpaceNode::inc_container_count() {
   _container_count++;
   assert(_container_count == container_count_slow(),
          err_msg("Inconsistency in container_count _container_count " SIZE_FORMAT
-                 " container_count_slow() " SIZE_FORMAT,
+                 " container_count_slow() %u",
                  _container_count, container_count_slow()));
 }
 
@@ -813,7 +811,7 @@ void VirtualSpaceNode::dec_container_count() {
 void VirtualSpaceNode::verify_container_count() {
   assert(_container_count == container_count_slow(),
     err_msg("Inconsistency in container_count _container_count " SIZE_FORMAT
-            " container_count_slow() " SIZE_FORMAT, _container_count, container_count_slow()));
+            " container_count_slow() %u", _container_count, container_count_slow()));
 }
 #endif
 
@@ -916,7 +914,7 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
 
   if (!is_available(chunk_word_size)) {
     if (TraceMetadataChunkAllocation) {
-      gclog_or_tty->print("VirtualSpaceNode::take_from_committed() not available %d words ", chunk_word_size);
+      gclog_or_tty->print("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);
       // Dump some information about the virtual space that is nearly full
       print_on(gclog_or_tty);
     }
@@ -989,7 +987,7 @@ bool VirtualSpaceNode::initialize() {
 
     assert(reserved()->start() == (HeapWord*) _rs.base(),
       err_msg("Reserved start was not set properly " PTR_FORMAT
-        " != " PTR_FORMAT, reserved()->start(), _rs.base()));
+        " != " PTR_FORMAT, p2i(reserved()->start()), p2i(_rs.base())));
     assert(reserved()->word_size() == _rs.size() / BytesPerWord,
       err_msg("Reserved size was not set properly " SIZE_FORMAT
         " != " SIZE_FORMAT, reserved()->word_size(),
@@ -1003,13 +1001,13 @@ void VirtualSpaceNode::print_on(outputStream* st) const {
   size_t used = used_words_in_vs();
   size_t capacity = capacity_words_in_vs();
   VirtualSpace* vs = virtual_space();
-  st->print_cr("   space @ " PTR_FORMAT " " SIZE_FORMAT "K, %3d%% used "
+  st->print_cr("   space @ " PTR_FORMAT " " SIZE_FORMAT "K, " SIZE_FORMAT_W(3) "%% used "
            "[" PTR_FORMAT ", " PTR_FORMAT ", "
            PTR_FORMAT ", " PTR_FORMAT ")",
-           vs, capacity / K,
+           p2i(vs), capacity / K,
            capacity == 0 ? 0 : used * 100 / capacity,
-           bottom(), top(), end(),
-           vs->high_boundary());
+           p2i(bottom()), p2i(top()), p2i(end()),
+           p2i(vs->high_boundary()));
 }
 
 #ifdef ASSERT
@@ -1812,7 +1810,7 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
     if (TraceMetadataChunkAllocation && Verbose) {
       gclog_or_tty->print_cr("ChunkManager::free_chunks_get: free_list "
                              PTR_FORMAT " head " PTR_FORMAT " size " SIZE_FORMAT,
-                             free_list, chunk, chunk->word_size());
+                             p2i(free_list), p2i(chunk), chunk->word_size());
     }
   } else {
     chunk = humongous_dictionary()->get_chunk(
@@ -1872,7 +1870,7 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
     }
     gclog_or_tty->print("ChunkManager::chunk_freelist_allocate: " PTR_FORMAT " chunk "
                         PTR_FORMAT "  size " SIZE_FORMAT " count " SIZE_FORMAT " ",
-                        this, chunk, chunk->word_size(), list_count);
+                        p2i(this), p2i(chunk), chunk->word_size(), list_count);
     locked_print_free_chunks(gclog_or_tty);
   }
 
@@ -2019,7 +2017,7 @@ void SpaceManager::locked_print_chunks_in_use_on(outputStream* st) const {
   for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
     Metachunk* chunk = chunks_in_use(i);
     st->print("SpaceManager: %s " PTR_FORMAT,
-                 chunk_size_name(i), chunk);
+                 chunk_size_name(i), p2i(chunk));
     if (chunk != NULL) {
       st->print_cr(" free " SIZE_FORMAT,
                    chunk->free_word_size());
@@ -2130,8 +2128,8 @@ void SpaceManager::print_on(outputStream* st) const {
   for (ChunkIndex i = ZeroIndex;
        i < NumberOfInUseLists ;
        i = next_chunk_index(i) ) {
-    st->print_cr("  chunks_in_use " PTR_FORMAT " chunk size " PTR_FORMAT,
-                 chunks_in_use(i),
+    st->print_cr("  chunks_in_use " PTR_FORMAT " chunk size " SIZE_FORMAT,
+                 p2i(chunks_in_use(i)),
                  chunks_in_use(i) == NULL ? 0 : chunks_in_use(i)->word_size());
   }
   st->print_cr("    waste:  Small " SIZE_FORMAT " Medium " SIZE_FORMAT
@@ -2194,7 +2192,7 @@ void SpaceManager::initialize() {
   }
   _current_chunk = NULL;
   if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print_cr("SpaceManager(): " PTR_FORMAT, this);
+    gclog_or_tty->print_cr("SpaceManager(): " PTR_FORMAT, p2i(this));
   }
 }
 
@@ -2238,7 +2236,7 @@ SpaceManager::~SpaceManager() {
   dec_total_from_size_metrics();
 
   if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print_cr("~SpaceManager(): " PTR_FORMAT, this);
+    gclog_or_tty->print_cr("~SpaceManager(): " PTR_FORMAT, p2i(this));
     locked_print_chunks_in_use_on(gclog_or_tty);
   }
 
@@ -2258,7 +2256,7 @@ SpaceManager::~SpaceManager() {
 
   for (ChunkIndex i = ZeroIndex; i < HumongousIndex; i = next_chunk_index(i)) {
     if (TraceMetadataChunkAllocation && Verbose) {
-      gclog_or_tty->print_cr("returned %d %s chunks to freelist",
+      gclog_or_tty->print_cr("returned " SIZE_FORMAT " %s chunks to freelist",
                              sum_count_in_chunks_in_use(i),
                              chunk_size_name(i));
     }
@@ -2266,7 +2264,7 @@ SpaceManager::~SpaceManager() {
     chunk_manager()->return_chunks(i, chunks);
     set_chunks_in_use(i, NULL);
     if (TraceMetadataChunkAllocation && Verbose) {
-      gclog_or_tty->print_cr("updated freelist count %d %s",
+      gclog_or_tty->print_cr("updated freelist count " SSIZE_FORMAT " %s",
                              chunk_manager()->free_chunks(i)->count(),
                              chunk_size_name(i));
     }
@@ -2279,7 +2277,7 @@ SpaceManager::~SpaceManager() {
 
   // Humongous chunks
   if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print_cr("returned %d %s humongous chunks to dictionary",
+    gclog_or_tty->print_cr("returned " SIZE_FORMAT " %s humongous chunks to dictionary",
                             sum_count_in_chunks_in_use(HumongousIndex),
                             chunk_size_name(HumongousIndex));
     gclog_or_tty->print("Humongous chunk dictionary: ");
@@ -2293,14 +2291,14 @@ SpaceManager::~SpaceManager() {
 #endif
     if (TraceMetadataChunkAllocation && Verbose) {
       gclog_or_tty->print(PTR_FORMAT " (" SIZE_FORMAT ") ",
-                          humongous_chunks,
+                          p2i(humongous_chunks),
                           humongous_chunks->word_size());
     }
     assert(humongous_chunks->word_size() == (size_t)
            align_size_up(humongous_chunks->word_size(),
                              smallest_chunk_size()),
            err_msg("Humongous chunk size is wrong: word size " SIZE_FORMAT
-                   " granularity %d",
+                   " granularity " SIZE_FORMAT,
                    humongous_chunks->word_size(), smallest_chunk_size()));
     Metachunk* next_humongous_chunks = humongous_chunks->next();
     humongous_chunks->container()->dec_container_count();
@@ -2309,7 +2307,7 @@ SpaceManager::~SpaceManager() {
   }
   if (TraceMetadataChunkAllocation && Verbose) {
     gclog_or_tty->cr();
-    gclog_or_tty->print_cr("updated dictionary count %d %s",
+    gclog_or_tty->print_cr("updated dictionary count " SIZE_FORMAT " %s",
                      chunk_manager()->humongous_dictionary()->total_count(),
                      chunk_size_name(HumongousIndex));
   }
@@ -2399,7 +2397,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
 
   assert(new_chunk->is_empty(), "Not ready for reuse");
   if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print("SpaceManager::add_chunk: %d) ",
+    gclog_or_tty->print("SpaceManager::add_chunk: " SIZE_FORMAT ") ",
                         sum_count_in_chunks_in_use());
     new_chunk->print_on(gclog_or_tty);
     chunk_manager()->locked_print_free_chunks(gclog_or_tty);
@@ -3097,7 +3095,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
       metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                    _reserve_alignment, large_pages);
       if (!metaspace_rs.is_reserved()) {
-        vm_exit_during_initialization(err_msg("Could not allocate metaspace: %d bytes",
+        vm_exit_during_initialization(err_msg("Could not allocate metaspace: " SIZE_FORMAT " bytes",
                                               compressed_class_space_size()));
       }
     }
@@ -3119,10 +3117,10 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   initialize_class_space(metaspace_rs);
 
   if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
-    gclog_or_tty->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: " SIZE_FORMAT,
-                            Universe::narrow_klass_base(), Universe::narrow_klass_shift());
+    gclog_or_tty->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+                            p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
     gclog_or_tty->print_cr("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT " Req Addr: " PTR_FORMAT,
-                           compressed_class_space_size(), metaspace_rs.base(), requested_addr);
+                           compressed_class_space_size(), p2i(metaspace_rs.base()), p2i(requested_addr));
   }
 }
 
@@ -3251,7 +3249,7 @@ void Metaspace::global_initialize() {
       vm_exit_during_initialization("Unable to dump shared archive.",
           err_msg("Size of archive (" SIZE_FORMAT ") + compressed class space ("
                   SIZE_FORMAT ") == total (" SIZE_FORMAT ") is larger than compressed "
-                  "klass limit: " SIZE_FORMAT, cds_total, compressed_class_space_size(),
+                  "klass limit: " UINT64_FORMAT, cds_total, compressed_class_space_size(),
                   cds_total + compressed_class_space_size(), UnscaledClassSpaceMax));
     }
 
@@ -3262,7 +3260,7 @@ void Metaspace::global_initialize() {
     Universe::set_narrow_klass_base((address)_space_list->current_virtual_space()->bottom());
     if (TraceMetavirtualspaceAllocation && Verbose) {
       gclog_or_tty->print_cr("Setting_narrow_klass_base to Address: " PTR_FORMAT,
-                             _space_list->current_virtual_space()->bottom());
+                             p2i(_space_list->current_virtual_space()->bottom()));
     }
 
     Universe::set_narrow_klass_shift(0);
@@ -3768,10 +3766,10 @@ void Metaspace::verify() {
 }
 
 void Metaspace::dump(outputStream* const out) const {
-  out->print_cr("\nVirtual space manager: " INTPTR_FORMAT, vsm());
+  out->print_cr("\nVirtual space manager: " INTPTR_FORMAT, p2i(vsm()));
   vsm()->dump(out);
   if (using_class_space()) {
-    out->print_cr("\nClass space manager: " INTPTR_FORMAT, class_vsm());
+    out->print_cr("\nClass space manager: " INTPTR_FORMAT, p2i(class_vsm()));
     class_vsm()->dump(out);
   }
 }
@@ -3932,13 +3930,13 @@ class TestVirtualSpaceNodeTest {
   assert(vsn.is_available(word_size), \
     err_msg(#word_size ": " PTR_FORMAT " bytes were not available in " \
             "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
-            (uintptr_t)(word_size * BytesPerWord), vsn.bottom(), vsn.end()));
+            (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end())));
 
 #define assert_is_available_negative(word_size) \
   assert(!vsn.is_available(word_size), \
     err_msg(#word_size ": " PTR_FORMAT " bytes should not be available in " \
             "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
-            (uintptr_t)(word_size * BytesPerWord), vsn.bottom(), vsn.end()));
+            (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end())));
 
   static void test_is_available_positive() {
     // Reserve some memory.

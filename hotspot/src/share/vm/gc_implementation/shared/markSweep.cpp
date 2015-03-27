@@ -32,8 +32,6 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 uint                    MarkSweep::_total_invocations = 0;
 
 Stack<oop, mtGC>              MarkSweep::_marking_stack;

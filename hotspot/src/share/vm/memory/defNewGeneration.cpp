@@ -49,8 +49,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 //
 // DefNewGeneration functions.
 
@@ -137,7 +135,7 @@ void KlassScanClosure::do_klass(Klass* klass) {
   if (TraceScavenge) {
     ResourceMark rm;
     gclog_or_tty->print_cr("KlassScanClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
-                           klass,
+                           p2i(klass),
                            klass->external_name(),
                            klass->has_modified_oops() ? "true" : "false");
   }
