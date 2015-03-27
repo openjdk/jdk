@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
- *    6488442 7036905 8039317
+ *    6488442 7036905 8039317 8074350 8074351
  * @summary Basic tests for Currency class.
  */
 
@@ -49,6 +49,7 @@ public class CurrencyTest {
         testFractionDigits();
         testSerialization();
         testDisplayNames();
+        testFundsCodes();
     }
 
     static void testCurrencyCodeValidation() {
@@ -265,4 +266,41 @@ public class CurrencyTest {
         }
     }
 
+    static void testFundsCodes() {
+        testValidCurrency("BOV");
+        testValidCurrency("CHE");
+        testValidCurrency("CHW");
+        testValidCurrency("CLF");
+        testValidCurrency("COU");
+        testValidCurrency("MXV");
+        testValidCurrency("USN");
+        testValidCurrency("UYI");
+
+        testFractionDigits("BOV", 2);
+        testFractionDigits("CHE", 2);
+        testFractionDigits("CHW", 2);
+        testFractionDigits("CLF", 4);
+        testFractionDigits("COU", 2);
+        testFractionDigits("MXV", 2);
+        testFractionDigits("USN", 2);
+        testFractionDigits("UYI", 0);
+
+        testNumericCode("BOV", 984);
+        testNumericCode("CHE", 947);
+        testNumericCode("CHW", 948);
+        testNumericCode("CLF", 990);
+        testNumericCode("COU", 970);
+        testNumericCode("MXV", 979);
+        testNumericCode("USN", 997);
+        testNumericCode("UYI", 940);
+    }
+
+    static void testNumericCode(String currencyCode, int expectedNumeric) {
+        int numeric = Currency.getInstance(currencyCode).getNumericCode();
+        if (numeric != expectedNumeric) {
+            throw new RuntimeException("Wrong numeric code for currency " +
+                    currencyCode +": expected " + expectedNumeric +
+                    ", got " + numeric);
+        }
+    }
 }

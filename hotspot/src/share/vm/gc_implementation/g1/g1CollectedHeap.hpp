@@ -56,6 +56,7 @@ class HRRSCleanupTask;
 class GenerationSpec;
 class OopsInHeapRegionClosure;
 class G1KlassScanClosure;
+class G1ParScanThreadState;
 class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
@@ -780,22 +781,6 @@ protected:
   // statistics or updating free lists.
   void abandon_collection_set(HeapRegion* cs_head);
 
-  // Applies "scan_non_heap_roots" to roots outside the heap,
-  // "scan_rs" to roots inside the heap (having done "set_region" to
-  // indicate the region in which the root resides),
-  // and does "scan_metadata" If "scan_rs" is
-  // NULL, then this step is skipped.  The "worker_i"
-  // param is for use with parallel roots processing, and should be
-  // the "i" of the calling parallel worker thread's work(i) function.
-  // In the sequential case this param will be ignored.
-  void g1_process_roots(OopClosure* scan_non_heap_roots,
-                        OopClosure* scan_non_heap_weak_roots,
-                        G1ParPushHeapRSClosure* scan_rs,
-                        CLDClosure* scan_strong_clds,
-                        CLDClosure* scan_weak_clds,
-                        CodeBlobClosure* scan_strong_code,
-                        uint worker_i);
-
   // The concurrent marker (and the thread it runs in.)
   ConcurrentMark* _cm;
   ConcurrentMarkThread* _cmThread;
@@ -982,20 +967,9 @@ protected:
   // of G1CollectedHeap::_gc_time_stamp.
   uint* _worker_cset_start_region_time_stamp;
 
-  enum G1H_process_roots_tasks {
-    G1H_PS_filter_satb_buffers,
-    G1H_PS_refProcessor_oops_do,
-    // Leave this one last.
-    G1H_PS_NumElements
-  };
-
-  SubTasksDone* _process_strong_tasks;
-
   volatile bool _free_regions_coming;
 
 public:
-
-  SubTasksDone* process_strong_tasks() { return _process_strong_tasks; }
 
   void set_refine_cte_cl_concurrency(bool concurrent);
 
@@ -1029,20 +1003,10 @@ public:
   // Initialize weak reference processing.
   virtual void ref_processing_init();
 
-  void set_par_threads(uint t) {
-    SharedHeap::set_par_threads(t);
-    // Done in SharedHeap but oddly there are
-    // two _process_strong_tasks's in a G1CollectedHeap
-    // so do it here too.
-    _process_strong_tasks->set_n_threads(t);
-  }
-
+  // Explicitly import set_par_threads into this scope
+  using SharedHeap::set_par_threads;
   // Set _n_par_threads according to a policy TBD.
   void set_par_threads();
-
-  void set_n_termination(int t) {
-    _process_strong_tasks->set_n_threads(t);
-  }
 
   virtual CollectedHeap::Name kind() const {
     return CollectedHeap::G1CollectedHeap;
@@ -1117,6 +1081,10 @@ public:
 
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm.num_free_regions(); }
+
+  MemoryUsage get_auxiliary_data_memory_usage() const {
+    return _hrm.get_auxiliary_data_memory_usage();
+  }
 
   // The number of regions that are not completely free.
   uint num_used_regions() const { return num_regions() - num_free_regions(); }

@@ -26,6 +26,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
@@ -47,6 +48,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/management.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/workgroup.hpp"
@@ -61,7 +63,15 @@ NOT_PRODUCT(size_t GenCollectedHeap::_skip_header_HeapWords = 0;)
 
 // The set of potentially parallel tasks in root scanning.
 enum GCH_strong_roots_tasks {
-  // We probably want to parallelize both of these internally, but for now...
+  GCH_PS_Universe_oops_do,
+  GCH_PS_JNIHandles_oops_do,
+  GCH_PS_ObjectSynchronizer_oops_do,
+  GCH_PS_FlatProfiler_oops_do,
+  GCH_PS_Management_oops_do,
+  GCH_PS_SystemDictionary_oops_do,
+  GCH_PS_ClassLoaderDataGraph_oops_do,
+  GCH_PS_jvmti_oops_do,
+  GCH_PS_CodeCache_oops_do,
   GCH_PS_younger_gens,
   // Leave this one last.
   GCH_PS_NumElements
@@ -71,13 +81,9 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   SharedHeap(policy),
   _rem_set(NULL),
   _gen_policy(policy),
-  _gen_process_roots_tasks(new SubTasksDone(GCH_PS_NumElements)),
+  _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _full_collections_completed(0)
 {
-  if (_gen_process_roots_tasks == NULL ||
-      !_gen_process_roots_tasks->valid()) {
-    vm_exit_during_initialization("Failed necessary allocation.");
-  }
   assert(policy != NULL, "Sanity check");
 }
 
@@ -177,18 +183,17 @@ void GenCollectedHeap::post_initialize() {
   SharedHeap::post_initialize();
   GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
   guarantee(policy->is_generation_policy(), "Illegal policy type");
-  assert((get_gen(0)->kind() == Generation::DefNew) ||
-         (get_gen(0)->kind() == Generation::ParNew),
+  assert((_young_gen->kind() == Generation::DefNew) ||
+         (_young_gen->kind() == Generation::ParNew),
     "Wrong youngest generation type");
-  DefNewGeneration* def_new_gen = (DefNewGeneration*)get_gen(0);
+  DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
 
-  Generation* old_gen = get_gen(1);
-  assert(old_gen->kind() == Generation::ConcurrentMarkSweep ||
-         old_gen->kind() == Generation::MarkSweepCompact,
+  assert(_old_gen->kind() == Generation::ConcurrentMarkSweep ||
+         _old_gen->kind() == Generation::MarkSweepCompact,
     "Wrong generation kind");
 
   policy->initialize_size_policy(def_new_gen->eden()->capacity(),
-                                 old_gen->capacity(),
+                                 _old_gen->capacity(),
                                  def_new_gen->from()->capacity());
   policy->initialize_gc_policy_counters();
 }
@@ -570,29 +575,137 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
 
 void GenCollectedHeap::set_par_threads(uint t) {
   SharedHeap::set_par_threads(t);
-  _gen_process_roots_tasks->set_n_threads(t);
+  set_n_termination(t);
 }
 
-void GenCollectedHeap::
-gen_process_roots(int level,
-                  bool younger_gens_as_roots,
-                  bool activate_scope,
-                  SharedHeap::ScanningOption so,
-                  OopsInGenClosure* not_older_gens,
-                  OopsInGenClosure* weak_roots,
-                  OopsInGenClosure* older_gens,
-                  CLDClosure* cld_closure,
-                  CLDClosure* weak_cld_closure,
-                  CodeBlobClosure* code_closure) {
+void GenCollectedHeap::set_n_termination(uint t) {
+  _process_strong_tasks->set_n_threads(t);
+}
+
+#ifdef ASSERT
+class AssertNonScavengableClosure: public OopClosure {
+public:
+  virtual void do_oop(oop* p) {
+    assert(!Universe::heap()->is_in_partial_collection(*p),
+      "Referent should not be scavengable.");  }
+  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+};
+static AssertNonScavengableClosure assert_is_non_scavengable_closure;
+#endif
+
+void GenCollectedHeap::process_roots(bool activate_scope,
+                                     ScanningOption so,
+                                     OopClosure* strong_roots,
+                                     OopClosure* weak_roots,
+                                     CLDClosure* strong_cld_closure,
+                                     CLDClosure* weak_cld_closure,
+                                     CodeBlobClosure* code_roots) {
+  StrongRootsScope srs(this, activate_scope);
 
   // General roots.
-  SharedHeap::process_roots(activate_scope, so,
-                            not_older_gens, weak_roots,
-                            cld_closure, weak_cld_closure,
-                            code_closure);
+  assert(_strong_roots_parity != 0, "must have called prologue code");
+  assert(code_roots != NULL, "code root closure should always be set");
+  // _n_termination for _process_strong_tasks should be set up stream
+  // in a method not running in a GC worker.  Otherwise the GC worker
+  // could be trying to change the termination condition while the task
+  // is executing in another GC worker.
+
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_ClassLoaderDataGraph_oops_do)) {
+    ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
+  }
+
+  // Some CLDs contained in the thread frames should be considered strong.
+  // Don't process them if they will be processed during the ClassLoaderDataGraph phase.
+  CLDClosure* roots_from_clds_p = (strong_cld_closure != weak_cld_closure) ? strong_cld_closure : NULL;
+  // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
+  CodeBlobClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
+
+  Threads::possibly_parallel_oops_do(strong_roots, roots_from_clds_p, roots_from_code_p);
+
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_Universe_oops_do)) {
+    Universe::oops_do(strong_roots);
+  }
+  // Global (strong) JNI handles
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_JNIHandles_oops_do)) {
+    JNIHandles::oops_do(strong_roots);
+  }
+
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_ObjectSynchronizer_oops_do)) {
+    ObjectSynchronizer::oops_do(strong_roots);
+  }
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_FlatProfiler_oops_do)) {
+    FlatProfiler::oops_do(strong_roots);
+  }
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_Management_oops_do)) {
+    Management::oops_do(strong_roots);
+  }
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_jvmti_oops_do)) {
+    JvmtiExport::oops_do(strong_roots);
+  }
+
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_SystemDictionary_oops_do)) {
+    SystemDictionary::roots_oops_do(strong_roots, weak_roots);
+  }
+
+  // All threads execute the following. A specific chunk of buckets
+  // from the StringTable are the individual tasks.
+  if (weak_roots != NULL) {
+    if (CollectedHeap::use_parallel_gc_threads()) {
+      StringTable::possibly_parallel_oops_do(weak_roots);
+    } else {
+      StringTable::oops_do(weak_roots);
+    }
+  }
+
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_CodeCache_oops_do)) {
+    if (so & SO_ScavengeCodeCache) {
+      assert(code_roots != NULL, "must supply closure for code cache");
+
+      // We only visit parts of the CodeCache when scavenging.
+      CodeCache::scavenge_root_nmethods_do(code_roots);
+    }
+    if (so & SO_AllCodeCache) {
+      assert(code_roots != NULL, "must supply closure for code cache");
+
+      // CMSCollector uses this to do intermediate-strength collections.
+      // We scan the entire code cache, since CodeCache::do_unloading is not called.
+      CodeCache::blobs_do(code_roots);
+    }
+    // Verify that the code cache contents are not subject to
+    // movement by a scavenging collection.
+    DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
+    DEBUG_ONLY(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
+  }
+
+}
+
+void GenCollectedHeap::gen_process_roots(int level,
+                                         bool younger_gens_as_roots,
+                                         bool activate_scope,
+                                         ScanningOption so,
+                                         bool only_strong_roots,
+                                         OopsInGenClosure* not_older_gens,
+                                         OopsInGenClosure* older_gens,
+                                         CLDClosure* cld_closure) {
+  const bool is_adjust_phase = !only_strong_roots && !younger_gens_as_roots;
+
+  bool is_moving_collection = false;
+  if (level == 0 || is_adjust_phase) {
+    // young collections are always moving
+    is_moving_collection = true;
+  }
+
+  MarkingCodeBlobClosure mark_code_closure(not_older_gens, is_moving_collection);
+  OopsInGenClosure* weak_roots = only_strong_roots ? NULL : not_older_gens;
+  CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
+
+  process_roots(activate_scope, so,
+                not_older_gens, weak_roots,
+                cld_closure, weak_cld_closure,
+                &mark_code_closure);
 
   if (younger_gens_as_roots) {
-    if (!_gen_process_roots_tasks->is_task_claimed(GCH_PS_younger_gens)) {
+    if (!_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
       if (level == 1) {
         not_older_gens->set_generation(_young_gen);
         _young_gen->oop_iterate(not_older_gens);
@@ -608,43 +721,18 @@ gen_process_roots(int level,
     older_gens->reset_generation();
   }
 
-  _gen_process_roots_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed();
 }
 
-void GenCollectedHeap::
-gen_process_roots(int level,
-                  bool younger_gens_as_roots,
-                  bool activate_scope,
-                  SharedHeap::ScanningOption so,
-                  bool only_strong_roots,
-                  OopsInGenClosure* not_older_gens,
-                  OopsInGenClosure* older_gens,
-                  CLDClosure* cld_closure) {
 
-  const bool is_adjust_phase = !only_strong_roots && !younger_gens_as_roots;
-
-  bool is_moving_collection = false;
-  if (level == 0 || is_adjust_phase) {
-    // young collections are always moving
-    is_moving_collection = true;
-  }
-
-  MarkingCodeBlobClosure mark_code_closure(not_older_gens, is_moving_collection);
-  CodeBlobClosure* code_closure = &mark_code_closure;
-
-  gen_process_roots(level,
-                    younger_gens_as_roots,
-                    activate_scope, so,
-                    not_older_gens, only_strong_roots ? NULL : not_older_gens,
-                    older_gens,
-                    cld_closure, only_strong_roots ? NULL : cld_closure,
-                    code_closure);
-
-}
+class AlwaysTrueClosure: public BoolObjectClosure {
+public:
+  bool do_object_b(oop p) { return true; }
+};
+static AlwaysTrueClosure always_true;
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
-  SharedHeap::process_weak_roots(root_closure);
-  // "Local" "weak" refs
+  JNIHandles::weak_oops_do(&always_true, root_closure);
   _young_gen->ref_processor()->weak_oops_do(root_closure);
   _old_gen->ref_processor()->weak_oops_do(root_closure);
 }
@@ -1113,10 +1201,10 @@ void GenCollectedHeap::print_on_error(outputStream* st) const {
 
 void GenCollectedHeap::print_tracing_info() const {
   if (TraceYoungGenTime) {
-    get_gen(0)->print_summary_info();
+    _young_gen->print_summary_info();
   }
   if (TraceOldGenTime) {
-    get_gen(1)->print_summary_info();
+    _old_gen->print_summary_info();
   }
 }
 

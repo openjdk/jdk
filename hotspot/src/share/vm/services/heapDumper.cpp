@@ -1721,7 +1721,7 @@ void VM_HeapDumper::doit() {
   // Write the file header - use 1.0.2 for large heaps, otherwise 1.0.1
   size_t used = ch->used();
   const char* header;
-  if (used > (size_t)SegmentedHeapDumpThreshold) {
+  if (used > SegmentedHeapDumpThreshold) {
     set_segmented_dump();
     header = "JAVA PROFILE 1.0.2";
   } else {

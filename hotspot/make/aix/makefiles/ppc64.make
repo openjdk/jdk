@@ -1,6 +1,6 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2012, 2013 SAP AG. All rights reserved.
+# Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2012, 2015 SAP AG. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,6 @@ OPT_CFLAGS += -qstrict
 OPT_CFLAGS/sharedRuntimeTrig.o = $(OPT_CFLAGS/NOOPT)
 OPT_CFLAGS/sharedRuntimeTrans.o = $(OPT_CFLAGS/NOOPT)
 
-# xlc 10.01 parameters for ipa compile.
-QIPA_COMPILE=$(if $(CXX_IS_V10),-qipa)
-
 # Xlc 10.1 parameters for aggressive optimization:
 # - qhot=level=1: Most aggressive loop optimizations.
 # - qignerrno: Assume errno is not modified by system calls.
@@ -88,7 +85,7 @@ QV10_OPT_CONSERVATIVE=$(if $(CXX_IS_V10),-qhot=level=1 -qignerrno -qinline)
 OPT_CFLAGS/synchronizer.o = $(OPT_CFLAGS) -qnoinline
 
 # Set all the xlC V10.1 options here.
-OPT_CFLAGS += $(QIPA_COMPILE) $(QV10_OPT) $(QV10_OPT_AGGRESSIVE)
+OPT_CFLAGS += $(QV10_OPT) $(QV10_OPT_AGGRESSIVE)
 
 export OBJECT_MODE=64
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,12 @@ package javax.security.auth.login;
 
 public abstract class ConfigurationSpi {
     /**
-     * Retrieve the AppConfigurationEntries for the specified <i>name</i>.
-     *
-     * <p>
+     * Retrieve the AppConfigurationEntries for the specified {@code name}.
      *
      * @param name the name used to index the Configuration.
      *
      * @return an array of AppConfigurationEntries for the specified
-     *          <i>name</i>, or null if there are no entries.
+     *          {@code name}, or null if there are no entries.
      */
     protected abstract AppConfigurationEntry[] engineGetAppConfigurationEntry
                                                         (String name);

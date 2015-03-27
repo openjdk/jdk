@@ -54,7 +54,7 @@ import sun.util.logging.PlatformLogger;
 /**
  * The X11 implementation of {@link FontManager}.
  */
-public final class X11FontManager extends SunFontManager {
+public final class X11FontManager extends FcFontManager {
 
     // constants identifying XLFD and font ID fields
     private static final int FOUNDRY_FIELD = 1;
@@ -153,8 +153,6 @@ public final class X11FontManager extends SunFontManager {
       * Specifically this means MToolkit
       */
      private static String[] fontdirs = null;
-
-    private FontConfigManager fcManager = null;
 
     public static X11FontManager getInstance() {
         return (X11FontManager) SunFontManager.getInstance();
@@ -784,51 +782,9 @@ public final class X11FontManager extends SunFontManager {
                                       preferLocaleFonts, preferPropFonts);
     }
 
-    public synchronized native String getFontPathNative(boolean noType1Fonts);
-
     protected synchronized String getFontPath(boolean noType1Fonts) {
         isHeadless(); // make sure GE is inited, as its the X11 lock.
-        return getFontPathNative(noType1Fonts);
-    }
-
-    @Override
-    protected String[] getDefaultPlatformFont() {
-        final String[] info = new String[2];
-        getFontConfigManager().initFontConfigFonts(false);
-        FontConfigManager.FcCompFont[] fontConfigFonts =
-            getFontConfigManager().getFontConfigFonts();
-        for (int i=0; i<fontConfigFonts.length; i++) {
-            if ("sans".equals(fontConfigFonts[i].fcFamily) &&
-                0 == fontConfigFonts[i].style) {
-                info[0] = fontConfigFonts[i].firstFont.familyName;
-                info[1] = fontConfigFonts[i].firstFont.fontFile;
-                break;
-            }
-        }
-        /* Absolute last ditch attempt in the face of fontconfig problems.
-         * If we didn't match, pick the first, or just make something
-         * up so we don't NPE.
-         */
-        if (info[0] == null) {
-            if (fontConfigFonts.length > 0 &&
-                fontConfigFonts[0].firstFont.fontFile != null) {
-                info[0] = fontConfigFonts[0].firstFont.familyName;
-                info[1] = fontConfigFonts[0].firstFont.fontFile;
-            } else {
-                info[0] = "Dialog";
-                info[1] = "/dialog.ttf";
-            }
-        }
-        return info;
-    }
-
-    public synchronized FontConfigManager getFontConfigManager() {
-
-        if (fcManager == null) {
-            fcManager = new FontConfigManager();
-        }
-
-        return fcManager;
+        return getFontPathNative(noType1Fonts, true);
     }
 
     @Override

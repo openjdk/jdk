@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,7 @@ public class PasswordCallback implements Callback, java.io.Serializable {
      * and a boolean specifying whether the password should be displayed
      * as it is being typed.
      *
-     * <p>
-     *
-     * @param prompt the prompt used to request the password. <p>
+     * @param prompt the prompt used to request the password.
      *
      * @param echoOn true if the password should be displayed
      *                  as it is being typed.
@@ -78,8 +76,6 @@ public class PasswordCallback implements Callback, java.io.Serializable {
     /**
      * Get the prompt.
      *
-     * <p>
-     *
      * @return the prompt.
      */
     public String getPrompt() {
@@ -89,8 +85,6 @@ public class PasswordCallback implements Callback, java.io.Serializable {
     /**
      * Return whether the password
      * should be displayed as it is being typed.
-     *
-     * <p>
      *
      * @return the whether the password
      *          should be displayed as it is being typed.
@@ -102,10 +96,8 @@ public class PasswordCallback implements Callback, java.io.Serializable {
     /**
      * Set the retrieved password.
      *
-     * <p> This method makes a copy of the input <i>password</i>
+     * <p> This method makes a copy of the input {@code password}
      * before storing it.
-     *
-     * <p>
      *
      * @param password the retrieved password, which may be null.
      *
@@ -119,8 +111,6 @@ public class PasswordCallback implements Callback, java.io.Serializable {
      * Get the retrieved password.
      *
      * <p> This method returns a copy of the retrieved password.
-     *
-     * <p>
      *
      * @return the retrieved password, which may be null.
      *
