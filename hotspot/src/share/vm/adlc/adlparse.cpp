@@ -800,6 +800,7 @@ void ADLParser::reg_parse(void) {
       }
       if (strcmp(token,"reg_def")==0)          { reg_def_parse(); }
       else if (strcmp(token,"reg_class")==0)   { reg_class_parse(); }
+      else if (strcmp(token, "reg_class_dynamic") == 0) { reg_class_dynamic_parse(); }
       else if (strcmp(token,"alloc_class")==0) { alloc_class_parse(); }
       else if (strcmp(token,"#define")==0)     { preproc_define(); }
       else { parse_err(SYNERR, "bad token %s inside register block.\n", token); break; }
@@ -2323,11 +2324,12 @@ void ADLParser::reg_class_parse(void) {
   // Debug Stuff
   if (_AD._adl_debug >1) fprintf(stderr,"Register Class: %s\n", cname);
 
-  RegClass *reg_class = _AD._register->addRegClass(cname);
-
-  // Collect registers in class
   skipws();
   if (_curchar == '(') {
+    // A register list is defined for the register class.
+    // Collect registers into a generic RegClass register class.
+    RegClass* reg_class = _AD._register->addRegClass<RegClass>(cname);
+
     next_char();                  // Skip '('
     skipws();
     while (_curchar != ')') {
@@ -2352,12 +2354,15 @@ void ADLParser::reg_class_parse(void) {
     }
     next_char();                  // Skip closing ')'
   } else if (_curchar == '%') {
+    // A code snippet is defined for the register class.
+    // Collect the code snippet into a CodeSnippetRegClass register class.
+    CodeSnippetRegClass* reg_class = _AD._register->addRegClass<CodeSnippetRegClass>(cname);
     char *code = find_cpp_block("reg class");
     if (code == NULL) {
       parse_err(SYNERR, "missing code declaration for reg class.\n");
       return;
     }
-    reg_class->_user_defined = code;
+    reg_class->set_code_snippet(code);
     return;
   }
 
@@ -2370,6 +2375,87 @@ void ADLParser::reg_class_parse(void) {
   next_char();                    // Skip trailing ';'
 
   // Check RegClass size, must be <= 32 registers in class.
+
+  return;
+}
+
+//------------------------------reg_class_dynamic_parse------------------------
+void ADLParser::reg_class_dynamic_parse(void) {
+  char *cname; // Name of dynamic register class being defined
+
+  // Get register class name
+  skipws();
+  cname = get_ident();
+  if (cname == NULL) {
+    parse_err(SYNERR, "missing dynamic register class name after 'reg_class_dynamic'\n");
+    return;
+  }
+
+  if (_AD._adl_debug > 1) {
+    fprintf(stdout, "Dynamic Register Class: %s\n", cname);
+  }
+
+  skipws();
+  if (_curchar != '(') {
+    parse_err(SYNERR, "missing '(' at the beginning of reg_class_dynamic definition\n");
+    return;
+  }
+  next_char();
+  skipws();
+
+  // Collect two register classes and the C++ code representing the condition code used to
+  // select between the two classes into a ConditionalRegClass register class.
+  ConditionalRegClass* reg_class = _AD._register->addRegClass<ConditionalRegClass>(cname);
+  int i;
+  for (i = 0; i < 2; i++) {
+    char* name = get_ident();
+    if (name == NULL) {
+      parse_err(SYNERR, "missing class identifier inside reg_class_dynamic list.\n");
+      return;
+    }
+    RegClass* rc = _AD._register->getRegClass(name);
+    if (rc == NULL) {
+      parse_err(SEMERR, "unknown identifier %s inside reg_class_dynamic list.\n", name);
+    } else {
+      reg_class->set_rclass_at_index(i, rc);
+    }
+
+    skipws();
+    if (_curchar == ',') {
+      next_char();
+      skipws();
+    } else {
+      parse_err(SYNERR, "missing separator ',' inside reg_class_dynamic list.\n");
+    }
+  }
+
+  // Collect the condition code.
+  skipws();
+  if (_curchar == '%') {
+    char* code = find_cpp_block("reg class dynamic");
+    if (code == NULL) {
+       parse_err(SYNERR, "missing code declaration for reg_class_dynamic.\n");
+       return;
+    }
+    reg_class->set_condition_code(code);
+  } else {
+    parse_err(SYNERR, "missing %% at the beginning of code block in reg_class_dynamic definition\n");
+    return;
+  }
+
+  skipws();
+  if (_curchar != ')') {
+    parse_err(SYNERR, "missing ')' at the end of reg_class_dynamic definition\n");
+    return;
+  }
+  next_char();
+
+  skipws();
+  if (_curchar != ';') {
+    parse_err(SYNERR, "missing ';' at the end of reg_class_dynamic definition.\n");
+    return;
+  }
+  next_char();                    // Skip trailing ';'
 
   return;
 }
