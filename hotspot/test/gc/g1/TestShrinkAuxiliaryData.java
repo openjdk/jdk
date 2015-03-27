@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import static com.oracle.java.testlibrary.Asserts.assertLessThanOrEqual;
+import com.oracle.java.testlibrary.Asserts;
 import com.oracle.java.testlibrary.OutputAnalyzer;
 import com.oracle.java.testlibrary.Platform;
 import com.oracle.java.testlibrary.ProcessTools;
@@ -36,23 +36,29 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import sun.misc.Unsafe;
+import sun.misc.Unsafe; // for ADDRESS_SIZE
+import sun.hotspot.WhiteBox;
 
 public class TestShrinkAuxiliaryData {
+
+    private static final int REGION_SIZE = 1024 * 1024;
 
     private final static String[] initialOpts = new String[]{
         "-XX:MinHeapFreeRatio=10",
         "-XX:MaxHeapFreeRatio=11",
         "-XX:+UseG1GC",
-        "-XX:G1HeapRegionSize=1m",
+        "-XX:G1HeapRegionSize=" + REGION_SIZE,
         "-XX:-ExplicitGCInvokesConcurrent",
-        "-XX:+PrintGCDetails"
+        "-XX:+PrintGCDetails",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+WhiteBoxAPI",
+        "-Xbootclasspath/a:.",
     };
 
-    private final int RSetCacheSize;
+    private final int hotCardTableSize;
 
-    protected TestShrinkAuxiliaryData(int RSetCacheSize) {
-        this.RSetCacheSize = RSetCacheSize;
+    protected TestShrinkAuxiliaryData(int hotCardTableSize) {
+        this.hotCardTableSize = hotCardTableSize;
     }
 
     protected void test() throws Exception {
@@ -60,16 +66,16 @@ public class TestShrinkAuxiliaryData {
         Collections.addAll(vmOpts, initialOpts);
 
         int maxCacheSize = Math.max(0, Math.min(31, getMaxCacheSize()));
-        if (maxCacheSize < RSetCacheSize) {
+        if (maxCacheSize < hotCardTableSize) {
             System.out.format("Skiping test for %d cache size due max cache size %d",
-                    RSetCacheSize, maxCacheSize
+                    hotCardTableSize, maxCacheSize
             );
             return;
         }
 
         printTestInfo(maxCacheSize);
 
-        vmOpts.add("-XX:G1ConcRSLogCacheSize=" + RSetCacheSize);
+        vmOpts.add("-XX:G1ConcRSLogCacheSize=" + hotCardTableSize);
         vmOpts.addAll(Arrays.asList(Utils.getTestJavaOpts()));
 
         // for 32 bits ObjectAlignmentInBytes is not a option
@@ -92,11 +98,13 @@ public class TestShrinkAuxiliaryData {
 
     private void performTest(List<String> opts) throws Exception {
         ProcessBuilder pb
-                       = ProcessTools.createJavaProcessBuilder(
-                opts.toArray(new String[opts.size()])
-        );
+                = ProcessTools.createJavaProcessBuilder(
+                        opts.toArray(new String[opts.size()])
+                );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        System.out.println(output.getStdout());
+        System.err.println(output.getStderr());
         output.shouldHaveExitValue(0);
     }
 
@@ -107,12 +115,13 @@ public class TestShrinkAuxiliaryData {
         formatSymbols.setGroupingSeparator(' ');
         grouped.setDecimalFormatSymbols(formatSymbols);
 
-        System.out.format("Test will use %s bytes of memory of %s available%n"
+        System.out.format(
+                "Test will use %s bytes of memory of %s available%n"
                 + "Available memory is %s with %d bytes pointer size - can save %s pointers%n"
                 + "Max cache size: 2^%d = %s elements%n",
                 grouped.format(ShrinkAuxiliaryDataTest.getMemoryUsedByTest()),
-                grouped.format(Runtime.getRuntime().freeMemory()),
-                grouped.format(Runtime.getRuntime().freeMemory()
+                grouped.format(Runtime.getRuntime().maxMemory()),
+                grouped.format(Runtime.getRuntime().maxMemory()
                         - ShrinkAuxiliaryDataTest.getMemoryUsedByTest()),
                 Unsafe.ADDRESS_SIZE,
                 grouped.format((Runtime.getRuntime().freeMemory()
@@ -135,6 +144,7 @@ public class TestShrinkAuxiliaryData {
         if (availableMemory <= 0) {
             return 0;
         }
+
         long availablePointersCount = availableMemory / Unsafe.ADDRESS_SIZE;
         return (63 - (int) Long.numberOfLeadingZeros(availablePointersCount));
     }
@@ -142,17 +152,48 @@ public class TestShrinkAuxiliaryData {
     static class ShrinkAuxiliaryDataTest {
 
         public static void main(String[] args) throws IOException {
-            int iterateCount = DEFAULT_ITERATION_COUNT;
 
-            if (args.length > 0) {
-                try {
-                    iterateCount = Integer.parseInt(args[0]);
-                } catch (NumberFormatException e) {
-                    //num_iterate remains default
-                }
+            ShrinkAuxiliaryDataTest testCase = new ShrinkAuxiliaryDataTest();
+
+            if (!testCase.checkEnvApplicability()) {
+                return;
             }
 
-            new ShrinkAuxiliaryDataTest().test(iterateCount);
+            testCase.test();
+        }
+
+        /**
+         * Checks is this environment suitable to run this test
+         * - memory is enough to decommit (page size is not big)
+         * - RSet cache size is not too big
+         *
+         * @return true if test could run, false if test should be skipped
+         */
+        protected boolean checkEnvApplicability() {
+
+            int pageSize = WhiteBox.getWhiteBox().getVMPageSize();
+            System.out.println( "Page size = " + pageSize
+                    + " region size = " + REGION_SIZE
+                    + " aux data ~= " + (REGION_SIZE * 3 / 100));
+            // If auxdata size will be less than page size it wouldn't decommit.
+            // Auxiliary data size is about ~3.6% of heap size.
+            if (pageSize >= REGION_SIZE * 3 / 100) {
+                System.out.format("Skipping test for too large page size = %d",
+                       pageSize
+                );
+                return false;
+            }
+
+            if (REGION_SIZE * REGIONS_TO_ALLOCATE > Runtime.getRuntime().maxMemory()) {
+                System.out.format("Skipping test for too low available memory. "
+                        + "Need %d, available %d",
+                        REGION_SIZE * REGIONS_TO_ALLOCATE,
+                        Runtime.getRuntime().maxMemory()
+                );
+                return false;
+            }
+
+            return true;
         }
 
         class GarbageObject {
@@ -177,41 +218,54 @@ public class TestShrinkAuxiliaryData {
 
         private final List<GarbageObject> garbage = new ArrayList();
 
-        public void test(int num_iterate) throws IOException {
+        public void test() throws IOException {
+
+            MemoryUsage muFull, muFree, muAuxDataFull, muAuxDataFree;
+            float auxFull, auxFree;
 
             allocate();
             link();
             mutate();
+
+            muFull = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+            long numUsedRegions = WhiteBox.getWhiteBox().g1NumMaxRegions()
+                    - WhiteBox.getWhiteBox().g1NumFreeRegions();
+            muAuxDataFull = WhiteBox.getWhiteBox().g1AuxiliaryMemoryUsage();
+            auxFull = (float)muAuxDataFull.getUsed() / numUsedRegions;
+
+            System.out.format("Full aux data  ratio= %f, regions max= %d, used= %d\n",
+                    auxFull, WhiteBox.getWhiteBox().g1NumMaxRegions(), numUsedRegions
+            );
+
             deallocate();
-
-            MemoryUsage muBeforeHeap
-                        = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-            MemoryUsage muBeforeNonHeap
-                        = ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage();
-
-            for (int i = 0; i < num_iterate; i++) {
-                allocate();
-                link();
-                mutate();
-                deallocate();
-            }
-
             System.gc();
-            MemoryUsage muAfterHeap
-                        = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-            MemoryUsage muAfterNonHeap
-                        = ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage();
 
-            assertLessThanOrEqual(muAfterHeap.getCommitted(), muBeforeHeap.getCommitted(),
-                    String.format("heap decommit failed - after > before: %d > %d",
-                            muAfterHeap.getCommitted(), muBeforeHeap.getCommitted()
+            muFree = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+            muAuxDataFree = WhiteBox.getWhiteBox().g1AuxiliaryMemoryUsage();
+
+            numUsedRegions = WhiteBox.getWhiteBox().g1NumMaxRegions()
+                    - WhiteBox.getWhiteBox().g1NumFreeRegions();
+            auxFree = (float)muAuxDataFree.getUsed() / numUsedRegions;
+
+            System.out.format("Free aux data ratio= %f, regions max= %d, used= %d\n",
+                    auxFree, WhiteBox.getWhiteBox().g1NumMaxRegions(), numUsedRegions
+            );
+
+            Asserts.assertLessThanOrEqual(muFree.getCommitted(), muFull.getCommitted(),
+                    String.format("heap decommit failed - full > free: %d > %d",
+                            muFree.getCommitted(), muFull.getCommitted()
                     )
             );
 
-            if (muAfterHeap.getCommitted() < muBeforeHeap.getCommitted()) {
-                assertLessThanOrEqual(muAfterNonHeap.getCommitted(), muBeforeNonHeap.getCommitted(),
-                        String.format("non-heap decommit failed - after > before: %d > %d",
-                                muAfterNonHeap.getCommitted(), muBeforeNonHeap.getCommitted()
+            System.out.format("State               used   committed\n");
+            System.out.format("Full aux data: %10d %10d\n", muAuxDataFull.getUsed(), muAuxDataFull.getCommitted());
+            System.out.format("Free aux data: %10d %10d\n", muAuxDataFree.getUsed(), muAuxDataFree.getCommitted());
+
+            // if decommited check that aux data has same ratio
+            if (muFree.getCommitted() < muFull.getCommitted()) {
+                Asserts.assertLessThanOrEqual(auxFree, auxFull,
+                        String.format("auxiliary data decommit failed - full > free: %f > %f",
+                                auxFree, auxFull
                         )
                 );
             }
@@ -238,8 +292,7 @@ public class TestShrinkAuxiliaryData {
                 for (int i = 0; i < NUM_LINKS; i++) {
                     int regionToLink;
                     do {
-                        regionToLink = (int) (Math.random()
-                                * REGIONS_TO_ALLOCATE);
+                        regionToLink = (int) (Math.random() * REGIONS_TO_ALLOCATE);
                     } while (regionToLink == regionNumber);
 
                     // get random garbage object from random region
@@ -265,11 +318,8 @@ public class TestShrinkAuxiliaryData {
             return REGIONS_TO_ALLOCATE * REGION_SIZE;
         }
 
-        private static final int REGION_SIZE = 1024 * 1024;
-        private static final int DEFAULT_ITERATION_COUNT = 1;   // iterate main scenario
-        private static final int REGIONS_TO_ALLOCATE = 5;
+        private static final int REGIONS_TO_ALLOCATE = 100;
         private static final int NUM_OBJECTS_PER_REGION = 10;
         private static final int NUM_LINKS = 20; // how many links create for each object
-
     }
 }

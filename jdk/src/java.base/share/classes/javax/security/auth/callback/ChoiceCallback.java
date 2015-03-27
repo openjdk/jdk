@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,16 +70,15 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      * a list of choices, a default choice, and a boolean specifying
      * whether or not multiple selections from the list of choices are allowed.
      *
-     * <p>
      *
-     * @param prompt the prompt used to describe the list of choices. <p>
+     * @param prompt the prompt used to describe the list of choices.
      *
-     * @param choices the list of choices. <p>
+     * @param choices the list of choices.
      *
      * @param defaultChoice the choice to be used as the default choice
      *                  when the list of choices are displayed.  This value
      *                  is represented as an index into the
-     *                  {@code choices} array. <p>
+     *                  {@code choices} array.
      *
      * @param multipleSelectionsAllowed boolean specifying whether or
      *                  not multiple selections can be made from the
@@ -117,8 +116,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
     /**
      * Get the prompt.
      *
-     * <p>
-     *
      * @return the prompt.
      */
     public String getPrompt() {
@@ -128,8 +125,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
     /**
      * Get the list of choices.
      *
-     * <p>
-     *
      * @return the list of choices.
      */
     public String[] getChoices() {
@@ -138,8 +133,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the defaultChoice.
-     *
-     * <p>
      *
      * @return the defaultChoice, represented as an index into
      *          the {@code choices} list.
@@ -152,8 +145,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      * Get the boolean determining whether multiple selections from
      * the {@code choices} list are allowed.
      *
-     * <p>
-     *
      * @return whether multiple selections are allowed.
      */
     public boolean allowMultipleSelections() {
@@ -162,8 +153,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
 
     /**
      * Set the selected choice.
-     *
-     * <p>
      *
      * @param selection the selection represented as an index into the
      *          {@code choices} list.
@@ -177,8 +166,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
 
     /**
      * Set the selected choices.
-     *
-     * <p>
      *
      * @param selections the selections represented as indexes into the
      *          {@code choices} list.
@@ -197,8 +184,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the selected choices.
-     *
-     * <p>
      *
      * @return the selected choices, represented as indexes into the
      *          {@code choices} list.

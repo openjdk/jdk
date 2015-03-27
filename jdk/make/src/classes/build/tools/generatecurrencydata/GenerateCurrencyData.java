@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -72,10 +73,6 @@ public class GenerateCurrencyData {
     private static String formatVersion;
     private static String dataVersion;
     private static String validCurrencyCodes;
-    private static String currenciesWith0MinorUnitDecimals;
-    private static String currenciesWith1MinorUnitDecimal;
-    private static String currenciesWith3MinorUnitDecimal;
-    private static String currenciesWithMinorUnitsUndefined;
 
     // handy constants - must match definitions in java.util.Currency
     // magic number
@@ -83,29 +80,31 @@ public class GenerateCurrencyData {
     // number of characters from A to Z
     private static final int A_TO_Z = ('Z' - 'A') + 1;
     // entry for invalid country codes
-    private static final int INVALID_COUNTRY_ENTRY = 0x007F;
+    private static final int INVALID_COUNTRY_ENTRY = 0x0000007F;
     // entry for countries without currency
-    private static final int COUNTRY_WITHOUT_CURRENCY_ENTRY = 0x0080;
+    private static final int COUNTRY_WITHOUT_CURRENCY_ENTRY = 0x00000200;
     // mask for simple case country entries
-    private static final int SIMPLE_CASE_COUNTRY_MASK = 0x0000;
+    private static final int SIMPLE_CASE_COUNTRY_MASK = 0x00000000;
     // mask for simple case country entry final character
-    private static final int SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK = 0x001F;
+    private static final int SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK = 0x0000001F;
     // mask for simple case country entry default currency digits
-    private static final int SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK = 0x0060;
+    private static final int SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK = 0x000001E0;
     // shift count for simple case country entry default currency digits
     private static final int SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT = 5;
+    // maximum number for simple case country entry default currency digits
+    private static final int SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS = 9;
     // mask for special case country entries
-    private static final int SPECIAL_CASE_COUNTRY_MASK = 0x0080;
+    private static final int SPECIAL_CASE_COUNTRY_MASK = 0x00000200;
     // mask for special case country index
-    private static final int SPECIAL_CASE_COUNTRY_INDEX_MASK = 0x001F;
+    private static final int SPECIAL_CASE_COUNTRY_INDEX_MASK = 0x0000001F;
     // delta from entry index component in main table to index into special case tables
     private static final int SPECIAL_CASE_COUNTRY_INDEX_DELTA = 1;
     // mask for distinguishing simple and special case countries
     private static final int COUNTRY_TYPE_MASK = SIMPLE_CASE_COUNTRY_MASK | SPECIAL_CASE_COUNTRY_MASK;
     // mask for the numeric code of the currency
-    private static final int NUMERIC_CODE_MASK = 0x0003FF00;
+    private static final int NUMERIC_CODE_MASK = 0x000FFC00;
     // shift count for the numeric code of the currency
-    private static final int NUMERIC_CODE_SHIFT = 8;
+    private static final int NUMERIC_CODE_SHIFT = 10;
 
     // generated data
     private static int[] mainTable = new int[A_TO_Z * A_TO_Z];
@@ -120,7 +119,7 @@ public class GenerateCurrencyData {
     private static int[] specialCaseOldCurrenciesNumericCode = new int[maxSpecialCases];
     private static int[] specialCaseNewCurrenciesNumericCode = new int[maxSpecialCases];
 
-    private static final int maxOtherCurrencies = 70;
+    private static final int maxOtherCurrencies = 128;
     private static int otherCurrenciesCount = 0;
     private static StringBuffer otherCurrencies = new StringBuffer();
     private static int[] otherCurrenciesDefaultFractionDigits = new int[maxOtherCurrencies];
@@ -128,6 +127,11 @@ public class GenerateCurrencyData {
 
     // date format for parsing cut-over times
     private static SimpleDateFormat format;
+
+    // Minor Units
+    private static String[] currenciesWithDefinedMinorUnitDecimals =
+        new String[SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS + 1];
+    private static String currenciesWithMinorUnitsUndefined;
 
     public static void main(String[] args) {
 
@@ -171,16 +175,14 @@ public class GenerateCurrencyData {
         formatVersion = (String) currencyData.get("formatVersion");
         dataVersion = (String) currencyData.get("dataVersion");
         validCurrencyCodes = (String) currencyData.get("all");
-        currenciesWith0MinorUnitDecimals  = (String) currencyData.get("minor0");
-        currenciesWith1MinorUnitDecimal  = (String) currencyData.get("minor1");
-        currenciesWith3MinorUnitDecimal  = (String) currencyData.get("minor3");
+        for (int i = 0; i <= SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS; i++) {
+            currenciesWithDefinedMinorUnitDecimals[i]
+                = (String) currencyData.get("minor"+i);
+        }
         currenciesWithMinorUnitsUndefined  = (String) currencyData.get("minorUndefined");
         if (formatVersion == null ||
                 dataVersion == null ||
                 validCurrencyCodes == null ||
-                currenciesWith0MinorUnitDecimals == null ||
-                currenciesWith1MinorUnitDecimal == null ||
-                currenciesWith3MinorUnitDecimal == null ||
                 currenciesWithMinorUnitsUndefined == null) {
             throw new NullPointerException("not all required data is defined in input");
         }
@@ -207,7 +209,7 @@ public class GenerateCurrencyData {
                         if (currencyInfo.charAt(0) == firstChar && currencyInfo.charAt(1) == secondChar) {
                             checkCurrencyCode(currencyInfo);
                             int digits = getDefaultFractionDigits(currencyInfo);
-                            if (digits < 0 || digits > 3) {
+                            if (digits < 0 || digits > SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS) {
                                 throw new RuntimeException("fraction digits out of range for " + currencyInfo);
                             }
                             int numericCode= getNumericCode(currencyInfo);
@@ -231,13 +233,14 @@ public class GenerateCurrencyData {
     }
 
     private static int getDefaultFractionDigits(String currencyCode) {
-        if (currenciesWith0MinorUnitDecimals.indexOf(currencyCode) != -1) {
-            return 0;
-        } else if (currenciesWith1MinorUnitDecimal.indexOf(currencyCode) != -1) {
-            return 1;
-        } else if (currenciesWith3MinorUnitDecimal.indexOf(currencyCode) != -1) {
-            return 3;
-        } else if (currenciesWithMinorUnitsUndefined.indexOf(currencyCode) != -1) {
+        for (int i = 0; i <= SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS; i++) {
+            if (Objects.nonNull(currenciesWithDefinedMinorUnitDecimals[i]) &&
+                currenciesWithDefinedMinorUnitDecimals[i].indexOf(currencyCode) != -1) {
+                return i;
+            }
+        }
+
+        if (currenciesWithMinorUnitsUndefined.indexOf(currencyCode) != -1) {
             return -1;
         } else {
             return 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959 8048179
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962
  * @summary Ensure that the PrintGCDetails output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -34,131 +34,159 @@ import com.oracle.java.testlibrary.ProcessTools;
 import com.oracle.java.testlibrary.OutputAnalyzer;
 
 public class TestGCLogMessages {
-  public static void main(String[] args) throws Exception {
-    testNormalLogs();
-    testWithToSpaceExhaustionLogs();
-  }
 
-  private static void testNormalLogs() throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-Xmx10M",
-                                                              GCTest.class.getName());
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-    output.shouldNotContain("[Redirty Cards");
-    output.shouldNotContain("[Parallel Redirty");
-    output.shouldNotContain("[Redirtied Cards");
-    output.shouldNotContain("[Code Root Purge");
-    output.shouldNotContain("[String Dedup Fixup");
-    output.shouldNotContain("[Young Free CSet");
-    output.shouldNotContain("[Non-Young Free CSet");
-    output.shouldNotContain("[Humongous Register");
-    output.shouldNotContain("[Humongous Reclaim");
-    output.shouldHaveExitValue(0);
-
-    pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-XX:+UseStringDeduplication",
-                                               "-Xmx10M",
-                                               "-XX:+PrintGCDetails",
-                                               GCTest.class.getName());
-
-    output = new OutputAnalyzer(pb.start());
-
-    output.shouldContain("[Redirty Cards");
-    output.shouldNotContain("[Parallel Redirty");
-    output.shouldNotContain("[Redirtied Cards");
-    output.shouldContain("[Code Root Purge");
-    output.shouldContain("[String Dedup Fixup");
-    output.shouldNotContain("[Young Free CSet");
-    output.shouldNotContain("[Non-Young Free CSet");
-    output.shouldContain("[Humongous Register");
-    output.shouldNotContain("[Humongous Total");
-    output.shouldNotContain("[Humongous Candidate");
-    output.shouldContain("[Humongous Reclaim");
-    output.shouldNotContain("[Humongous Reclaimed");
-    output.shouldHaveExitValue(0);
-
-    pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-XX:+UseStringDeduplication",
-                                               "-Xmx10M",
-                                               "-XX:+PrintGCDetails",
-                                               "-XX:+UnlockExperimentalVMOptions",
-                                               "-XX:G1LogLevel=finest",
-                                               GCTest.class.getName());
-
-    output = new OutputAnalyzer(pb.start());
-
-    output.shouldContain("[Redirty Cards");
-    output.shouldContain("[Parallel Redirty");
-    output.shouldContain("[Redirtied Cards");
-    output.shouldContain("[Code Root Purge");
-    output.shouldContain("[String Dedup Fixup");
-    output.shouldContain("[Young Free CSet");
-    output.shouldContain("[Non-Young Free CSet");
-    output.shouldContain("[Humongous Register");
-    output.shouldContain("[Humongous Total");
-    output.shouldContain("[Humongous Candidate");
-    output.shouldContain("[Humongous Reclaim");
-    output.shouldContain("[Humongous Reclaimed");
-    output.shouldHaveExitValue(0);
-  }
-
-  private static void testWithToSpaceExhaustionLogs() throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xmx32M",
-                                               "-Xmn16M",
-                                               "-XX:+PrintGCDetails",
-                                               GCTestWithToSpaceExhaustion.class.getName());
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("[Evacuation Failure");
-    output.shouldNotContain("[Recalculate Used");
-    output.shouldNotContain("[Remove Self Forwards");
-    output.shouldNotContain("[Restore RemSet");
-    output.shouldHaveExitValue(0);
-
-    pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xmx32M",
-                                               "-Xmn16M",
-                                               "-XX:+PrintGCDetails",
-                                               "-XX:+UnlockExperimentalVMOptions",
-                                               "-XX:G1LogLevel=finest",
-                                               GCTestWithToSpaceExhaustion.class.getName());
-
-    output = new OutputAnalyzer(pb.start());
-    output.shouldContain("[Evacuation Failure");
-    output.shouldContain("[Recalculate Used");
-    output.shouldContain("[Remove Self Forwards");
-    output.shouldContain("[Restore RemSet");
-    output.shouldHaveExitValue(0);
-  }
-
-  static class GCTest {
-    private static byte[] garbage;
-    public static void main(String [] args) {
-      System.out.println("Creating garbage");
-      // create 128MB of garbage. This should result in at least one GC
-      for (int i = 0; i < 1024; i++) {
-        garbage = new byte[128 * 1024];
-      }
-      System.out.println("Done");
+    private enum Level {
+        OFF, FINER, FINEST;
+        public boolean lessOrEqualTo(Level other) {
+            return this.compareTo(other) < 0;
+        }
     }
-  }
 
-  static class GCTestWithToSpaceExhaustion {
-    private static byte[] garbage;
-    private static byte[] largeObject;
-    public static void main(String [] args) {
-      largeObject = new byte[16*1024*1024];
-      System.out.println("Creating garbage");
-      // create 128MB of garbage. This should result in at least one GC,
-      // some of them with to-space exhaustion.
-      for (int i = 0; i < 1024; i++) {
-        garbage = new byte[128 * 1024];
-      }
-      System.out.println("Done");
+    private class LogMessageWithLevel {
+        String message;
+        Level level;
+
+        public LogMessageWithLevel(String message, Level level) {
+            this.message = message;
+            this.level = level;
+        }
+    };
+
+    private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
+        // Ext Root Scan
+        new LogMessageWithLevel("Thread Roots (ms)", Level.FINEST),
+        new LogMessageWithLevel("StringTable Roots (ms)", Level.FINEST),
+        new LogMessageWithLevel("Universe Roots (ms)", Level.FINEST),
+        new LogMessageWithLevel("JNI Handles Roots (ms)", Level.FINEST),
+        new LogMessageWithLevel("ObjectSynchronizer Roots (ms)", Level.FINEST),
+        new LogMessageWithLevel("FlatProfiler Roots", Level.FINEST),
+        new LogMessageWithLevel("Management Roots", Level.FINEST),
+        new LogMessageWithLevel("SystemDictionary Roots", Level.FINEST),
+        new LogMessageWithLevel("CLDG Roots", Level.FINEST),
+        new LogMessageWithLevel("JVMTI Roots", Level.FINEST),
+        new LogMessageWithLevel("CodeCache Roots", Level.FINEST),
+        new LogMessageWithLevel("SATB Filtering", Level.FINEST),
+        new LogMessageWithLevel("CM RefProcessor Roots", Level.FINEST),
+        new LogMessageWithLevel("Wait For Strong CLD", Level.FINEST),
+        new LogMessageWithLevel("Weak CLD Roots", Level.FINEST),
+        // Redirty Cards
+        new LogMessageWithLevel("Redirty Cards", Level.FINER),
+        new LogMessageWithLevel("Parallel Redirty", Level.FINEST),
+        new LogMessageWithLevel("Redirtied Cards", Level.FINEST),
+        // Misc Top-level
+        new LogMessageWithLevel("Code Root Purge", Level.FINER),
+        new LogMessageWithLevel("String Dedup Fixup", Level.FINER),
+        // Free CSet
+        new LogMessageWithLevel("Young Free CSet", Level.FINEST),
+        new LogMessageWithLevel("Non-Young Free CSet", Level.FINEST),
+        // Humongous Eager Reclaim
+        new LogMessageWithLevel("Humongous Reclaim", Level.FINER),
+        new LogMessageWithLevel("Humongous Register", Level.FINER),
+    };
+
+    void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {
+        for (LogMessageWithLevel l : messages) {
+            if (level.lessOrEqualTo(l.level)) {
+                output.shouldNotContain(l.message);
+            } else {
+                output.shouldContain(l.message);
+            }
+        }
     }
-  }
+
+    public static void main(String[] args) throws Exception {
+        new TestGCLogMessages().testNormalLogs();
+        new TestGCLogMessages().testWithToSpaceExhaustionLogs();
+    }
+
+    private void testNormalLogs() throws Exception {
+
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                                  "-Xmx10M",
+                                                                  GCTest.class.getName());
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        checkMessagesAtLevel(output, allLogMessages, Level.OFF);
+        output.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                   "-XX:+UseStringDeduplication",
+                                                   "-Xmx10M",
+                                                   "-XX:+PrintGCDetails",
+                                                   GCTest.class.getName());
+
+        output = new OutputAnalyzer(pb.start());
+        checkMessagesAtLevel(output, allLogMessages, Level.FINER);
+
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                   "-XX:+UseStringDeduplication",
+                                                   "-Xmx10M",
+                                                   "-XX:+PrintGCDetails",
+                                                   "-XX:+UnlockExperimentalVMOptions",
+                                                   "-XX:G1LogLevel=finest",
+                                                   GCTest.class.getName());
+
+        output = new OutputAnalyzer(pb.start());
+        checkMessagesAtLevel(output, allLogMessages, Level.FINEST);
+        output.shouldHaveExitValue(0);
+    }
+
+    LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
+        new LogMessageWithLevel("Evacuation Failure", Level.FINER),
+        new LogMessageWithLevel("Recalculate Used", Level.FINEST),
+        new LogMessageWithLevel("Remove Self Forwards", Level.FINEST),
+        new LogMessageWithLevel("Restore RemSet", Level.FINEST),
+    };
+
+    private void testWithToSpaceExhaustionLogs() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                                  "-Xmx32M",
+                                                                  "-Xmn16M",
+                                                                  "-XX:+PrintGCDetails",
+                                                                  GCTestWithToSpaceExhaustion.class.getName());
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        checkMessagesAtLevel(output, exhFailureMessages, Level.FINER);
+        output.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                   "-Xmx32M",
+                                                   "-Xmn16M",
+                                                   "-XX:+PrintGCDetails",
+                                                   "-XX:+UnlockExperimentalVMOptions",
+                                                   "-XX:G1LogLevel=finest",
+                                                   GCTestWithToSpaceExhaustion.class.getName());
+
+        output = new OutputAnalyzer(pb.start());
+        checkMessagesAtLevel(output, exhFailureMessages, Level.FINEST);
+        output.shouldHaveExitValue(0);
+    }
+
+    static class GCTest {
+        private static byte[] garbage;
+        public static void main(String [] args) {
+            System.out.println("Creating garbage");
+            // create 128MB of garbage. This should result in at least one GC
+            for (int i = 0; i < 1024; i++) {
+                garbage = new byte[128 * 1024];
+            }
+            System.out.println("Done");
+        }
+    }
+
+    static class GCTestWithToSpaceExhaustion {
+        private static byte[] garbage;
+        private static byte[] largeObject;
+        public static void main(String [] args) {
+            largeObject = new byte[16*1024*1024];
+            System.out.println("Creating garbage");
+            // create 128MB of garbage. This should result in at least one GC,
+            // some of them with to-space exhaustion.
+            for (int i = 0; i < 1024; i++) {
+                garbage = new byte[128 * 1024];
+            }
+            System.out.println("Done");
+        }
+    }
 }
+

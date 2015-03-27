@@ -26,7 +26,9 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
+
 import java.nio.ByteBuffer;
+
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -101,7 +103,7 @@ public final class NativeArrayBuffer extends ScriptObject {
         }
 
         if (args.length == 0) {
-            throw new RuntimeException("missing length argument");
+            return new NativeArrayBuffer(0);
         }
 
         return new NativeArrayBuffer(JSType.toInt32(args[0]));

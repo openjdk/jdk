@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Graphics;
+
+import sun.swing.SwingUtilities2;
 
 /**
  * Factory object that can vend Borders appropriate for the basic L &amp; F.
@@ -453,10 +455,10 @@ public class BasicBorders {
             Color oldColor = g.getColor();
             g.translate(x, y);
             g.setColor(shadow);
-            g.drawLine(0, height-2, width, height-2);
+            SwingUtilities2.drawHLine(g, 0, width - 1, height - 2);
             g.setColor(highlight);
-            g.drawLine(0, height-1, width, height-1);
-            g.translate(-x,-y);
+            SwingUtilities2.drawHLine(g, 0, width - 1, height - 1);
+            g.translate(-x, -y);
             g.setColor(oldColor);
         }
 

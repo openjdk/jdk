@@ -27,6 +27,7 @@ import java.util.prefs.PreferencesFactory;
 /*
  * @test
  * @bug 8068373
+ * @requires os.family == "linux" | os.family == "solaris"
  * @summary Ensure writing a code point U+0000 null control character is detected.
  */
 public class CodePointZeroPrefsTest

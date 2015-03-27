@@ -2778,6 +2778,14 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
     pb = &data->pixelBuf;
 
     if (setPixelBuffer(env, pb, buffer) == NOT_OK) {
+        if (scale != NULL) {
+            for (i = 0; i < numBands; i++) {
+                if (scale[i] != NULL) {
+                    free(scale[i]);
+                }
+            }
+            free(scale);
+        }
         return data->abortFlag;  // We already threw an out of memory exception
     }
 

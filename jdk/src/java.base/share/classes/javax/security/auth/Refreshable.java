@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ public interface Refreshable {
     /**
      * Determine if this {@code Object} is current.
      *
-     * <p>
-     *
      * @return true if this {@code Object} is currently current,
      *          false otherwise.
      */
@@ -50,11 +48,9 @@ public interface Refreshable {
      * Update or extend the validity period for this
      * {@code Object}.
      *
-     * <p>
-     *
      * @exception SecurityException if the caller does not have permission
      *          to update or extend the validity period for this
-     *          {@code Object}. <p>
+     *          {@code Object}.
      *
      * @exception RefreshFailedException if the refresh attempt failed.
      */
