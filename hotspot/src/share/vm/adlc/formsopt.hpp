@@ -60,6 +60,8 @@ class Opcode;
 class InsEncode;
 class RegDef;
 class RegClass;
+class CodeSnippetRegClass;
+class ConditionalRegClass;
 class AllocClass;
 class ResourceForm;
 class PipeClassForm;
@@ -98,7 +100,8 @@ public:
 
   void        addRegDef(char *regName, char *callingConv, char *c_conv,
                         char * idealtype, char *encoding, char* concreteName);
-  RegClass   *addRegClass(const char *className);
+  template<typename T> T* addRegClass(const char* className);
+
   AllocClass *addAllocClass(char *allocName);
   void        addSpillRegClass();
 
@@ -154,17 +157,28 @@ public:
 };
 
 //------------------------------RegClass---------------------------------------
+// Generic register class. This register class is the internal representation
+// for the following .ad file format:
+//
+//  reg_class ptr(RAX, RBX, ...);
+//
+// where ptr is the name of the register class, RAX and RBX are registers.
+//
+// This register class allows registers to be spilled onto the stack. Spilling
+// is allowed is field _stack_or_reg is true.
 class RegClass : public Form {
 public:
   // Public Data
   const char *_classid;         // Name of class
   NameList    _regDefs;         // List of registers in class
   Dict        _regDef;          // Dictionary of registers in class
+protected:
   bool        _stack_or_reg;    // Allowed on any stack slot
-  char*       _user_defined;
 
+public:
   // Public Methods
   RegClass(const char *classid);// Constructor
+  virtual ~RegClass();
 
   void addReg(RegDef *regDef);  // Add a register to this class
 
@@ -183,6 +197,115 @@ public:
 
   void dump();                  // Debug printer
   void output(FILE *fp);        // Write info to output files
+
+  virtual bool has_stack_version() {
+    return _stack_or_reg;
+  }
+  virtual void set_stack_version(bool flag) {
+    _stack_or_reg = flag;
+  }
+
+  virtual void declare_register_masks(FILE* fp);
+  virtual void build_register_masks(FILE* fp);
+};
+
+//------------------------------CodeSnippetRegClass----------------------------
+// Register class that has an user-defined C++ code snippet attached to it
+// to determine at runtime which register class to use. This register class is
+// the internal representation for the following .ad file format:
+//
+//  reg_class actual_dflt_reg %{
+//      if (VM_Version::has_vfp3_32()) {
+//          return DFLT_REG_mask();
+//      } else {
+//          return DFLT_LOW_REG_mask();
+//      }
+//  %}
+//
+// where DFLT_REG_mask() and DFLT_LOW_REG_mask() are the internal names of the
+// masks of register classes dflt_reg and dflt_low_reg.
+//
+// The attached code snippet can select also between more than two register classes.
+// This register class can be, however, used only if the register class is not
+// cisc-spillable (i.e., the registers of this class are not allowed on the stack,
+// which is equivalent with _stack_or_reg being false).
+class CodeSnippetRegClass : public RegClass {
+protected:
+  char* _code_snippet;
+public:
+  CodeSnippetRegClass(const char* classid);// Constructor
+  ~CodeSnippetRegClass();
+
+  void set_code_snippet(char* code) {
+    _code_snippet = code;
+  }
+  char* code_snippet() {
+    return _code_snippet;
+  }
+  void set_stack_version(bool flag) {
+    assert(false, "User defined register classes are not allowed to spill to the stack.");
+  }
+  void declare_register_masks(FILE* fp);
+  void build_register_masks(FILE* fp) {
+    // We do not need to generate register masks because we select at runtime
+    // between register masks generated for other register classes.
+    return;
+  }
+};
+
+//------------------------------ConditionalRegClass----------------------------
+// Register class that has two register classes and a runtime condition attached
+// to it. The condition is evaluated at runtime and either one of the register
+// attached register classes is selected. This register class is the internal
+// representation for the following .ad format:
+//
+//  reg_class_dynamic actual_dflt_reg(dflt_reg, low_reg,
+//                                    %{ VM_Version::has_vfp3_32() }%
+//                                    );
+//
+// This example is equivalent to the example used with the CodeSnippetRegClass
+// register class. A ConditionalRegClass works also if a register class is cisc-spillable
+// (i.e., _stack_or_reg is true), but if can select only between two register classes.
+class ConditionalRegClass : public RegClass {
+protected:
+  // reference to condition code
+  char* _condition_code;  // C++ condition code to dynamically determine which register class to use.
+
+                          // Example syntax (equivalent to previous example):
+                          //
+                          //  reg_class actual_dflt_reg(dflt_reg, low_reg,
+                          //                            %{ VM_Version::has_vfp3_32() }%
+                          //                            );
+  // reference to conditional register classes
+  RegClass* _rclasses[2]; // 0 is the register class selected if the condition code returns true
+                          // 1 is the register class selected if the condition code returns false
+public:
+  ConditionalRegClass(const char* classid);// Constructor
+  ~ConditionalRegClass();
+
+  virtual void set_stack_version(bool flag) {
+    RegClass::set_stack_version(flag);
+    assert((_rclasses[0] != NULL), "Register class NULL for condition code == true");
+    assert((_rclasses[1] != NULL), "Register class NULL for condition code == false");
+    _rclasses[0]->set_stack_version(flag);
+    _rclasses[1]->set_stack_version(flag);
+  }
+  void declare_register_masks(FILE* fp);
+  void build_register_masks(FILE* fp) {
+    // We do not need to generate register masks because we select at runtime
+    // between register masks generated for other register classes.
+    return;
+  }
+  void set_rclass_at_index(int index, RegClass* rclass) {
+    assert((0 <= index && index < 2), "Condition code can select only between two register classes");
+    _rclasses[index] = rclass;
+  }
+  void set_condition_code(char* code) {
+    _condition_code = code;
+  }
+  char* condition_code() {
+    return _condition_code;
+  }
 };
 
 //------------------------------AllocClass-------------------------------------
