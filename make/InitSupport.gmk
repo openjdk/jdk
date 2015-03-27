@@ -264,8 +264,17 @@ else # $(HAS_SPEC)=true
   # Sanity check the spec file, so it matches this source code
   define CheckSpecSanity
     ifneq ($$(topdir), $$(TOPDIR))
-      $$(info Error: SPEC mismatch. $$$$(TOPDIR) does not match current directory.)
-      $$(error Cannot continue)
+      ifneq ($$(topdir), $$(ORIGINAL_TOPDIR))
+        ifneq ($$(topdir), $$(CANONICAL_TOPDIR))
+          $$(info Error: SPEC mismatch! Current working directory)
+          $$(info $$(topdir))
+          $$(info does not match either TOPDIR, ORIGINAL_TOPDIR or CANONICAL_TOPDIR)
+          $$(info $$(TOPDIR))
+          $$(info $$(ORIGINAL_TOPDIR))
+          $$(info $$(CANONICAL_TOPDIR))
+          $$(error Cannot continue)
+        endif
+      endif
     endif
   endef
 
