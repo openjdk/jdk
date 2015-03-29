@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,6 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      * Associate the provided {@code Subject} with this
      * {@code SubjectDomainCombiner}.
      *
-     * <p>
-     *
      * @param subject the {@code Subject} to be associated with
      *          with this {@code SubjectDomainCombiner}.
      */
@@ -87,8 +85,6 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
     /**
      * Get the {@code Subject} associated with this
      * {@code SubjectDomainCombiner}.
-     *
-     * <p>
      *
      * @return the {@code Subject} associated with this
      *          {@code SubjectDomainCombiner}, or {@code null}
@@ -115,24 +111,22 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      *
      * <p> A new {@code ProtectionDomain} instance is created
      * for each {@code ProtectionDomain} in the
-     * <i>currentDomains</i> array.  Each new {@code ProtectionDomain}
+     * {@code currentDomains} array.  Each new {@code ProtectionDomain}
      * instance is created using the {@code CodeSource},
      * {@code Permission}s and {@code ClassLoader}
      * from the corresponding {@code ProtectionDomain} in
-     * <i>currentDomains</i>, as well as with the Principals from
+     * {@code currentDomains}, as well as with the Principals from
      * the {@code Subject} associated with this
      * {@code SubjectDomainCombiner}.
      *
      * <p> All of the newly instantiated ProtectionDomains are
      * combined into a new array.  The ProtectionDomains from the
-     * <i>assignedDomains</i> array are appended to this new array,
+     * {@code assignedDomains} array are appended to this new array,
      * and the result is returned.
      *
      * <p> Note that optimizations such as the removal of duplicate
      * ProtectionDomains may have occurred.
      * In addition, caching of ProtectionDomains may be permitted.
-     *
-     * <p>
      *
      * @param currentDomains the ProtectionDomains associated with the
      *          current execution Thread, up to the most recent
@@ -141,15 +135,15 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      *          with the most recently executing {@code ProtectionDomain}
      *          residing at the beginning of the array. This parameter may
      *          be {@code null} if the current execution Thread
-     *          has no associated ProtectionDomains.<p>
+     *          has no associated ProtectionDomains.
      *
      * @param assignedDomains the ProtectionDomains inherited from the
      *          parent Thread, or the ProtectionDomains from the
-     *          privileged <i>context</i>, if a call to
-     *          AccessController.doPrivileged(..., <i>context</i>)
+     *          privileged {@code context}, if a call to
+     *          {@code AccessController.doPrivileged(..., context)}
      *          had occurred  This parameter may be {@code null}
      *          if there were no ProtectionDomains inherited from the
-     *          parent Thread, or from the privileged <i>context</i>.
+     *          parent Thread, or from the privileged {@code context}.
      *
      * @return a new array consisting of the updated ProtectionDomains,
      *          or {@code null}.

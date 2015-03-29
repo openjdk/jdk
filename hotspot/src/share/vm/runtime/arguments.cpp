@@ -67,16 +67,16 @@ do {                                                                  \
   }                                                                   \
 } while(0)
 
-char**  Arguments::_jvm_flags_array             = NULL;
-int     Arguments::_num_jvm_flags               = 0;
-char**  Arguments::_jvm_args_array              = NULL;
-int     Arguments::_num_jvm_args                = 0;
+char** Arguments::_jvm_flags_array              = NULL;
+int    Arguments::_num_jvm_flags                = 0;
+char** Arguments::_jvm_args_array               = NULL;
+int    Arguments::_num_jvm_args                 = 0;
 char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
 size_t Arguments::_conservative_max_heap_alignment = 0;
-uintx  Arguments::_min_heap_size                = 0;
+size_t Arguments::_min_heap_size                = 0;
 uintx  Arguments::_min_heap_free_ratio          = 0;
 uintx  Arguments::_max_heap_free_ratio          = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
@@ -1291,9 +1291,9 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     // NewSize was set on the command line and it is larger than
     // preferred_max_new_size.
     if (!FLAG_IS_DEFAULT(NewSize)) {   // NewSize explicitly set at command-line
-      FLAG_SET_ERGO(uintx, MaxNewSize, MAX2(NewSize, preferred_max_new_size));
+      FLAG_SET_ERGO(size_t, MaxNewSize, MAX2(NewSize, preferred_max_new_size));
     } else {
-      FLAG_SET_ERGO(uintx, MaxNewSize, preferred_max_new_size);
+      FLAG_SET_ERGO(size_t, MaxNewSize, preferred_max_new_size);
     }
     if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
@@ -1316,8 +1316,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // Unless explicitly requested otherwise, make young gen
       // at least min_new, and at most preferred_max_new_size.
       if (FLAG_IS_DEFAULT(NewSize)) {
-        FLAG_SET_ERGO(uintx, NewSize, MAX2(NewSize, min_new));
-        FLAG_SET_ERGO(uintx, NewSize, MIN2(preferred_max_new_size, NewSize));
+        FLAG_SET_ERGO(size_t, NewSize, MAX2(NewSize, min_new));
+        FLAG_SET_ERGO(size_t, NewSize, MIN2(preferred_max_new_size, NewSize));
         if (PrintGCDetails && Verbose) {
           // Too early to use gclog_or_tty
           tty->print_cr("CMS ergo set NewSize: " SIZE_FORMAT, NewSize);
@@ -1327,7 +1327,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // so it's NewRatio x of NewSize.
       if (FLAG_IS_DEFAULT(OldSize)) {
         if (max_heap > NewSize) {
-          FLAG_SET_ERGO(uintx, OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
+          FLAG_SET_ERGO(size_t, OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
           if (PrintGCDetails && Verbose) {
             // Too early to use gclog_or_tty
             tty->print_cr("CMS ergo set OldSize: " SIZE_FORMAT, OldSize);
@@ -1358,7 +1358,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // OldPLAB sizing manually turned off: Use a larger default setting,
       // unless it was manually specified. This is because a too-low value
       // will slow down scavenges.
-      FLAG_SET_ERGO(uintx, OldPLABSize, CFLS_LAB::_default_static_old_plab_size); // default value before 6631166
+      FLAG_SET_ERGO(size_t, OldPLABSize, CFLS_LAB::_default_static_old_plab_size); // default value before 6631166
     } else {
       FLAG_SET_DEFAULT(OldPLABSize, CFLS_LAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
     }
@@ -1560,7 +1560,7 @@ void Arguments::select_gc_ergonomically() {
 
 void Arguments::select_gc() {
   if (!gc_selected()) {
-    ArgumentsExt::select_gc_ergonomically();
+    select_gc_ergonomically();
   }
 }
 
@@ -1738,7 +1738,7 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
 }
 
 // Use static initialization to get the default before parsing
-static const uintx DefaultHeapBaseMinAddress = HeapBaseMinAddress;
+static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
 void Arguments::set_heap_size() {
   if (!FLAG_IS_DEFAULT(DefaultMaxRAMFraction)) {
@@ -1778,14 +1778,14 @@ void Arguments::set_heap_size() {
           // matches compressed oops printing flags
           if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
             jio_fprintf(defaultStream::error_stream(),
-                        "HeapBaseMinAddress must be at least " UINTX_FORMAT
-                        " (" UINTX_FORMAT "G) which is greater than value given "
-                        UINTX_FORMAT "\n",
+                        "HeapBaseMinAddress must be at least " SIZE_FORMAT
+                        " (" SIZE_FORMAT "G) which is greater than value given "
+                        SIZE_FORMAT "\n",
                         DefaultHeapBaseMinAddress,
                         DefaultHeapBaseMinAddress/G,
                         HeapBaseMinAddress);
           }
-          FLAG_SET_ERGO(uintx, HeapBaseMinAddress, DefaultHeapBaseMinAddress);
+          FLAG_SET_ERGO(size_t, HeapBaseMinAddress, DefaultHeapBaseMinAddress);
         }
       }
 
@@ -1810,7 +1810,7 @@ void Arguments::set_heap_size() {
       // Cannot use gclog_or_tty yet.
       tty->print_cr("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
     }
-    FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx)reasonable_max);
+    FLAG_SET_ERGO(size_t, MaxHeapSize, (size_t)reasonable_max);
   }
 
   // If the minimum or initial heap_size have not been set or requested to be set
@@ -1832,14 +1832,14 @@ void Arguments::set_heap_size() {
 
       if (PrintGCDetails && Verbose) {
         // Cannot use gclog_or_tty yet.
-        tty->print_cr("  Initial heap size " SIZE_FORMAT, (uintx)reasonable_initial);
+        tty->print_cr("  Initial heap size " SIZE_FORMAT, (size_t)reasonable_initial);
       }
-      FLAG_SET_ERGO(uintx, InitialHeapSize, (uintx)reasonable_initial);
+      FLAG_SET_ERGO(size_t, InitialHeapSize, (size_t)reasonable_initial);
     }
     // If the minimum heap size has not been set (via -Xms),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (min_heap_size() == 0) {
-      set_min_heap_size(MIN2((uintx)reasonable_minimum, InitialHeapSize));
+      set_min_heap_size(MIN2((size_t)reasonable_minimum, InitialHeapSize));
       if (PrintGCDetails && Verbose) {
         // Cannot use gclog_or_tty yet.
         tty->print_cr("  Minimum heap size " SIZE_FORMAT, min_heap_size());
@@ -1978,7 +1978,7 @@ void check_gclog_consistency() {
   }
 
   if (UseGCLogFileRotation && (GCLogFileSize != 0) && (GCLogFileSize < 8*K)) {
-    FLAG_SET_CMDLINE(uintx, GCLogFileSize, 8*K);
+    FLAG_SET_CMDLINE(size_t, GCLogFileSize, 8*K);
     jio_fprintf(defaultStream::output_stream(),
                 "GCLogFileSize changed to minimum 8K\n");
   }
@@ -2062,7 +2062,7 @@ bool Arguments::verify_MaxHeapFreeRatio(FormatBuffer<80>& err_msg, uintx max_hea
 }
 
 // Check consistency of GC selection
-bool Arguments::check_gc_consistency_user() {
+bool Arguments::check_gc_consistency() {
   check_gclog_consistency();
   // Ensure that the user has not selected conflicting sets
   // of collectors.
@@ -2206,7 +2206,7 @@ bool Arguments::check_vm_args_consistency() {
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);
   }
 
-  status = status && check_gc_consistency_user();
+  status = status && check_gc_consistency();
   status = status && check_stack_pages();
 
   status = status && verify_percentage(CMSIncrementalSafetyFactor,
@@ -2335,7 +2335,7 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_min_value(LogEventsBufferEntries, 1, "LogEventsBufferEntries");
 
-  status = status && verify_min_value(HeapSizePerGCThread, (uintx) os::vm_page_size(), "HeapSizePerGCThread");
+  status = status && verify_min_value(HeapSizePerGCThread, (size_t) os::vm_page_size(), "HeapSizePerGCThread");
 
   status = status && verify_min_value(GCTaskTimeStampEntries, 1, "GCTaskTimeStampEntries");
 
@@ -2750,8 +2750,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_young_size);
-      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_young_size);
+      FLAG_SET_CMDLINE(size_t, MaxNewSize, (size_t)long_initial_young_size);
+      FLAG_SET_CMDLINE(size_t, NewSize, (size_t)long_initial_young_size);
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
       julong long_initial_heap_size = 0;
@@ -2763,10 +2763,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      set_min_heap_size((uintx)long_initial_heap_size);
+      set_min_heap_size((size_t)long_initial_heap_size);
       // Currently the minimum size and the initial heap sizes are the same.
       // Can be overridden with -XX:InitialHeapSize.
-      FLAG_SET_CMDLINE(uintx, InitialHeapSize, (uintx)long_initial_heap_size);
+      FLAG_SET_CMDLINE(size_t, InitialHeapSize, (size_t)long_initial_heap_size);
     // -Xmx
     } else if (match_option(option, "-Xmx", &tail) || match_option(option, "-XX:MaxHeapSize=", &tail)) {
       julong long_max_heap_size = 0;
@@ -2777,7 +2777,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxHeapSize, (uintx)long_max_heap_size);
+      FLAG_SET_CMDLINE(size_t, MaxHeapSize, (size_t)long_max_heap_size);
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
       char* err;
@@ -2918,7 +2918,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
       FLAG_SET_CMDLINE(intx, DeferThrSuspendLoopCount, 1);
       FLAG_SET_CMDLINE(bool, UseTLAB, false);
-      FLAG_SET_CMDLINE(uintx, NewSizeThreadIncrease, 16 * K);  // 20Kb per thread added to new generation
+      FLAG_SET_CMDLINE(size_t, NewSizeThreadIncrease, 16 * K);  // 20Kb per thread added to new generation
 
       // -Xinternalversion
     } else if (match_option(option, "-Xinternalversion")) {
@@ -3079,16 +3079,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       initHeapSize = limit_by_allocatable_memory(initHeapSize);
 
       if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-         FLAG_SET_CMDLINE(uintx, MaxHeapSize, initHeapSize);
-         FLAG_SET_CMDLINE(uintx, InitialHeapSize, initHeapSize);
+         FLAG_SET_CMDLINE(size_t, MaxHeapSize, initHeapSize);
+         FLAG_SET_CMDLINE(size_t, InitialHeapSize, initHeapSize);
          // Currently the minimum size and the initial heap sizes are the same.
          set_min_heap_size(initHeapSize);
       }
       if (FLAG_IS_DEFAULT(NewSize)) {
          // Make the young generation 3/8ths of the total heap.
-         FLAG_SET_CMDLINE(uintx, NewSize,
+         FLAG_SET_CMDLINE(size_t, NewSize,
                                 ((julong)MaxHeapSize / (julong)8) * (julong)3);
-         FLAG_SET_CMDLINE(uintx, MaxNewSize, NewSize);
+         FLAG_SET_CMDLINE(size_t, MaxNewSize, NewSize);
       }
 
 #ifndef _ALLBSD_SOURCE  // UseLargePages is not yet supported on BSD.
@@ -3096,14 +3096,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #endif
 
       // Increase some data structure sizes for efficiency
-      FLAG_SET_CMDLINE(uintx, BaseFootPrintEstimate, MaxHeapSize);
+      FLAG_SET_CMDLINE(size_t, BaseFootPrintEstimate, MaxHeapSize);
       FLAG_SET_CMDLINE(bool, ResizeTLAB, false);
-      FLAG_SET_CMDLINE(uintx, TLABSize, 256*K);
+      FLAG_SET_CMDLINE(size_t, TLABSize, 256*K);
 
       // See the OldPLABSize comment below, but replace 'after promotion'
       // with 'after copying'.  YoungPLABSize is the size of the survivor
       // space per-gc-thread buffers.  The default is 4kw.
-      FLAG_SET_CMDLINE(uintx, YoungPLABSize, 256*K);      // Note: this is in words
+      FLAG_SET_CMDLINE(size_t, YoungPLABSize, 256*K);      // Note: this is in words
 
       // OldPLABSize is the size of the buffers in the old gen that
       // UseParallelGC uses to promote live data that doesn't fit in the
@@ -3118,7 +3118,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // locality.  A minor effect may be that larger PLABs reduce the
       // number of PLAB allocation events during gc.  The value of 8kw
       // was arrived at by experimenting with specjbb.
-      FLAG_SET_CMDLINE(uintx, OldPLABSize, 8*K);  // Note: this is in words
+      FLAG_SET_CMDLINE(size_t, OldPLABSize, 8*K);  // Note: this is in words
 
       // Enable parallel GC and adaptive generation sizing
       FLAG_SET_CMDLINE(bool, UseParallelGC, true);
@@ -3197,7 +3197,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       jio_fprintf(defaultStream::error_stream(),
         "Please use -XX:MarkStackSize in place of "
         "-XX:CMSMarkStackSize or -XX:G1MarkStackSize in the future\n");
-      FLAG_SET_CMDLINE(uintx, MarkStackSize, stack_size);
+      FLAG_SET_CMDLINE(size_t, MarkStackSize, stack_size);
     } else if (match_option(option, "-XX:CMSMarkStackSizeMax=", &tail)) {
       julong max_stack_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &max_stack_size, 1);
@@ -3211,7 +3211,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       jio_fprintf(defaultStream::error_stream(),
          "Please use -XX:MarkStackSizeMax in place of "
          "-XX:CMSMarkStackSizeMax in the future\n");
-      FLAG_SET_CMDLINE(uintx, MarkStackSizeMax, max_stack_size);
+      FLAG_SET_CMDLINE(size_t, MarkStackSizeMax, max_stack_size);
     } else if (match_option(option, "-XX:ParallelMarkingThreads=", &tail) ||
                match_option(option, "-XX:ParallelCMSThreads=", &tail)) {
       uintx conc_threads = 0;
@@ -3234,7 +3234,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxDirectMemorySize, max_direct_memory_size);
+      FLAG_SET_CMDLINE(size_t, MaxDirectMemorySize, max_direct_memory_size);
 #if !INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:+ManagementServer")) {
         jio_fprintf(defaultStream::error_stream(),
@@ -3841,7 +3841,7 @@ jint Arguments::apply_ergo() {
   set_shared_spaces_flags();
 
   // Check the GC selections again.
-  if (!ArgumentsExt::check_gc_consistency_ergo()) {
+  if (!check_gc_consistency()) {
     return JNI_EINVAL;
   }
 

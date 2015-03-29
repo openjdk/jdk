@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@ import sun.security.util.ResourcesMgr;
  *
  * <li> If the constructor does <b>not</b> have a Subject
  * input parameter, the LoginContext instantiates a new Subject.
- * <p>
  * </ul>
  *
  * <li> {@code Configuration}
@@ -150,7 +149,6 @@ import sun.security.util.ResourcesMgr;
  * This means the caller context (stored when the LoginContext was created)
  * must have sufficient permissions to perform any security-sensitive tasks
  * that the modules may perform.
- * <p>
  * </ul>
  *
  * <li> {@code CallbackHandler}
@@ -332,15 +330,15 @@ public class LoginContext {
      * @exception LoginException if the caller-specified {@code name}
      *          does not appear in the {@code Configuration}
      *          and there is no {@code Configuration} entry
-     *          for "<i>other</i>", or if the
-     *          <i>auth.login.defaultCallbackHandler</i>
+     *          for "{@code other}", or if the
+     *          {@code auth.login.defaultCallbackHandler}
      *          security property was set, but the implementation
      *          class could not be loaded.
-     *          <p>
+     *
      * @exception SecurityException if a SecurityManager is set and
      *          the caller does not have
      *          AuthPermission("createLoginContext.<i>name</i>"),
-     *          or if a configuration entry for <i>name</i> does not exist and
+     *          or if a configuration entry for {@code name} does not exist and
      *          the caller does not additionally have
      *          AuthPermission("createLoginContext.other")
      */
@@ -353,10 +351,8 @@ public class LoginContext {
      * Instantiate a new {@code LoginContext} object with a name
      * and a {@code Subject} object.
      *
-     * <p>
-     *
      * @param name the name used as the index into the
-     *          {@code Configuration}. <p>
+     *          {@code Configuration}.
      *
      * @param subject the {@code Subject} to authenticate.
      *
@@ -368,7 +364,7 @@ public class LoginContext {
      *          <i>auth.login.defaultCallbackHandler</i>
      *          security property was set, but the implementation
      *          class could not be loaded.
-     *          <p>
+     *
      * @exception SecurityException if a SecurityManager is set and
      *          the caller does not have
      *          AuthPermission("createLoginContext.<i>name</i>"),
@@ -391,10 +387,8 @@ public class LoginContext {
      * Instantiate a new {@code LoginContext} object with a name
      * and a {@code CallbackHandler} object.
      *
-     * <p>
-     *
      * @param name the name used as the index into the
-     *          {@code Configuration}. <p>
+     *          {@code Configuration}.
      *
      * @param callbackHandler the {@code CallbackHandler} object used by
      *          LoginModules to communicate with the user.
@@ -402,9 +396,9 @@ public class LoginContext {
      * @exception LoginException if the caller-specified {@code name}
      *          does not appear in the {@code Configuration}
      *          and there is no {@code Configuration} entry
-     *          for "<i>other</i>", or if the caller-specified
+     *          for "{@code other}", or if the caller-specified
      *          {@code callbackHandler} is {@code null}.
-     *          <p>
+     *
      * @exception SecurityException if a SecurityManager is set and
      *          the caller does not have
      *          AuthPermission("createLoginContext.<i>name</i>"),
@@ -428,12 +422,10 @@ public class LoginContext {
      * a {@code Subject} to be authenticated, and a
      * {@code CallbackHandler} object.
      *
-     * <p>
-     *
      * @param name the name used as the index into the
-     *          {@code Configuration}. <p>
+     *          {@code Configuration}.
      *
-     * @param subject the {@code Subject} to authenticate. <p>
+     * @param subject the {@code Subject} to authenticate.
      *
      * @param callbackHandler the {@code CallbackHandler} object used by
      *          LoginModules to communicate with the user.
@@ -445,7 +437,7 @@ public class LoginContext {
      *          {@code subject} is {@code null},
      *          or if the caller-specified
      *          {@code callbackHandler} is {@code null}.
-     *          <p>
+     *
      * @exception SecurityException if a SecurityManager is set and
      *          the caller does not have
      *          AuthPermission("createLoginContext.<i>name</i>"),
@@ -467,20 +459,16 @@ public class LoginContext {
     /**
      * Instantiate a new {@code LoginContext} object with a name,
      * a {@code Subject} to be authenticated,
-     * a {@code CallbackHandler} object, and a login
-     * {@code Configuration}.
-     *
-     * <p>
+     * a {@code CallbackHandler} object, and a login {@code Configuration}.
      *
      * @param name the name used as the index into the caller-specified
-     *          {@code Configuration}. <p>
+     *          {@code Configuration}.
      *
      * @param subject the {@code Subject} to authenticate,
-     *          or {@code null}. <p>
+     *          or {@code null}.
      *
      * @param callbackHandler the {@code CallbackHandler} object used by
      *          LoginModules to communicate with the user, or {@code null}.
-     *          <p>
      *
      * @param config the {@code Configuration} that lists the
      *          login modules to be called to perform the authentication,
@@ -490,7 +478,7 @@ public class LoginContext {
      *          does not appear in the {@code Configuration}
      *          and there is no {@code Configuration} entry
      *          for "<i>other</i>".
-     *          <p>
+     *
      * @exception SecurityException if a SecurityManager is set,
      *          <i>config</i> is {@code null},
      *          and either the caller does not have
@@ -570,8 +558,6 @@ public class LoginContext {
      * {@code abort} phase.  This guarantees that proper cleanup
      * and state restoration can take place.
      *
-     * <p>
-     *
      * @exception LoginException if the authentication fails.
      */
     public void login() throws LoginException {
@@ -614,8 +600,6 @@ public class LoginContext {
      * ignored for this method.  This guarantees that proper cleanup
      * and state restoration can take place.
      *
-     * <p>
-     *
      * @exception LoginException if the logout fails.
      */
     public void logout() throws LoginException {
@@ -630,8 +614,6 @@ public class LoginContext {
 
     /**
      * Return the authenticated Subject.
-     *
-     * <p>
      *
      * @return the authenticated Subject.  If the caller specified a
      *          Subject to this LoginContext's constructor,

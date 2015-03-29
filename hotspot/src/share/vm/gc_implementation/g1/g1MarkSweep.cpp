@@ -31,6 +31,7 @@
 #include "code/icBuffer.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
+#include "gc_implementation/g1/g1RootProcessor.hpp"
 #include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
@@ -125,21 +126,22 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   GCTraceTime tm("phase 1", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
   GenMarkSweep::trace(" 1");
 
-  SharedHeap* sh = SharedHeap::heap();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
 
   MarkingCodeBlobClosure follow_code_closure(&GenMarkSweep::follow_root_closure, !CodeBlobToOopClosure::FixRelocations);
-  sh->process_strong_roots(true,   // activate StrongRootsScope
-                           SharedHeap::SO_None,
-                           &GenMarkSweep::follow_root_closure,
-                           &GenMarkSweep::follow_cld_closure,
-                           &follow_code_closure);
+  {
+    G1RootProcessor root_processor(g1h);
+    root_processor.process_strong_roots(&GenMarkSweep::follow_root_closure,
+                                        &GenMarkSweep::follow_cld_closure,
+                                        &follow_code_closure);
+  }
 
   // Process reference objects found during marking
   ReferenceProcessor* rp = GenMarkSweep::ref_processor();
-  assert(rp == G1CollectedHeap::heap()->ref_processor_stw(), "Sanity");
+  assert(rp == g1h->ref_processor_stw(), "Sanity");
 
   rp->setup_policy(clear_all_softrefs);
   const ReferenceProcessorStats& stats =
@@ -225,6 +227,12 @@ class G1AdjustPointersClosure: public HeapRegionClosure {
   }
 };
 
+class G1AlwaysTrueClosure: public BoolObjectClosure {
+public:
+  bool do_object_b(oop p) { return true; }
+};
+static G1AlwaysTrueClosure always_true;
+
 void G1MarkSweep::mark_sweep_phase3() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -232,24 +240,23 @@ void G1MarkSweep::mark_sweep_phase3() {
   GCTraceTime tm("phase 3", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
   GenMarkSweep::trace("3");
 
-  SharedHeap* sh = SharedHeap::heap();
-
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
 
   CodeBlobToOopClosure adjust_code_closure(&GenMarkSweep::adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
-  sh->process_all_roots(true,  // activate StrongRootsScope
-                        SharedHeap::SO_AllCodeCache,
-                        &GenMarkSweep::adjust_pointer_closure,
-                        &GenMarkSweep::adjust_cld_closure,
-                        &adjust_code_closure);
+  {
+    G1RootProcessor root_processor(g1h);
+    root_processor.process_all_roots(&GenMarkSweep::adjust_pointer_closure,
+                                     &GenMarkSweep::adjust_cld_closure,
+                                     &adjust_code_closure);
+  }
 
   assert(GenMarkSweep::ref_processor() == g1h->ref_processor_stw(), "Sanity");
   g1h->ref_processor_stw()->weak_oops_do(&GenMarkSweep::adjust_pointer_closure);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
-  sh->process_weak_roots(&GenMarkSweep::adjust_pointer_closure);
+  JNIHandles::weak_oops_do(&always_true, &GenMarkSweep::adjust_pointer_closure);
 
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::oops_do(&GenMarkSweep::adjust_pointer_closure);

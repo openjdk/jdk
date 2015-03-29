@@ -1,0 +1,109 @@
+[
+  {
+    "expression": {
+      "endPosition": "23",
+      "kind": "NUMBER_LITERAL",
+      "value": "1",
+      "startPosition": "22"
+    },
+    "endPosition": "24",
+    "kind": "CASE",
+    "statements": [],
+    "startPosition": "17"
+  },
+  {
+    "expression": {
+      "endPosition": "35",
+      "kind": "NUMBER_LITERAL",
+      "value": "2",
+      "startPosition": "34"
+    },
+    "endPosition": "36",
+    "kind": "CASE",
+    "statements": [],
+    "startPosition": "29"
+  },
+  {
+    "expression": {
+      "endPosition": "47",
+      "kind": "NUMBER_LITERAL",
+      "value": "3",
+      "startPosition": "46"
+    },
+    "endPosition": "63",
+    "kind": "CASE",
+    "statements": [
+      {
+        "endPosition": "63",
+        "kind": "BREAK",
+        "label": "null",
+        "startPosition": "57"
+      }
+    ],
+    "startPosition": "41"
+  },
+  {
+    "expression": "null",
+    "endPosition": "77",
+    "kind": "CASE",
+    "statements": [],
+    "startPosition": "69"
+  },
+  {
+    "expression": {
+      "endPosition": "110",
+      "kind": "NUMBER_LITERAL",
+      "value": "1",
+      "startPosition": "109"
+    },
+    "endPosition": "125",
+    "kind": "CASE",
+    "statements": [
+      {
+        "endPosition": "125",
+        "kind": "BREAK",
+        "label": "null",
+        "startPosition": "120"
+      }
+    ],
+    "startPosition": "104"
+  },
+  {
+    "expression": {
+      "endPosition": "136",
+      "kind": "NUMBER_LITERAL",
+      "value": "2",
+      "startPosition": "135"
+    },
+    "endPosition": "157",
+    "kind": "CASE",
+    "statements": [
+      {
+        "endPosition": "157",
+        "kind": "BREAK",
+        "label": "label",
+        "startPosition": "146"
+      }
+    ],
+    "startPosition": "130"
+  },
+  {
+    "expression": {
+      "endPosition": "168",
+      "kind": "NUMBER_LITERAL",
+      "value": "3",
+      "startPosition": "167"
+    },
+    "endPosition": "183",
+    "kind": "CASE",
+    "statements": [
+      {
+        "endPosition": "183",
+        "kind": "BREAK",
+        "label": "null",
+        "startPosition": "178"
+      }
+    ],
+    "startPosition": "162"
+  }
+]

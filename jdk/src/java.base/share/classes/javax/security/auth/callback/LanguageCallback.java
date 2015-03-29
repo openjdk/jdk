@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@ public class LanguageCallback implements Callback, java.io.Serializable {
     /**
      * Set the retrieved {@code Locale}.
      *
-     * <p>
-     *
      * @param locale the retrieved {@code Locale}.
      *
      * @see #getLocale
@@ -65,8 +63,6 @@ public class LanguageCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the retrieved {@code Locale}.
-     *
-     * <p>
      *
      * @return the retrieved {@code Locale}, or null
      *          if no {@code Locale} could be retrieved.

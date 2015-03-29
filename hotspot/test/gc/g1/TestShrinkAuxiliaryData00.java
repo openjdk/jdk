@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,15 @@
 
 /**
  * @test TestShrinkAuxiliaryData00
- * @bug 8038423
+ * @bug 8038423 8061715
  * @summary Checks that decommitment occurs for JVM with different
  * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
+ * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /../../test/lib
- * @build TestShrinkAuxiliaryData TestShrinkAuxiliaryData00
+ * @build com.oracle.java.testlibrary.* sun.hotspot.WhiteBox
+ *        TestShrinkAuxiliaryData TestShrinkAuxiliaryData00
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver/timeout=720 TestShrinkAuxiliaryData00
  */
 public class TestShrinkAuxiliaryData00 {

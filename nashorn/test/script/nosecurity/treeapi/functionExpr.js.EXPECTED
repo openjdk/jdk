@@ -1,0 +1,128 @@
+[
+  {
+    "endPosition": "21",
+    "kind": "FUNCTION_EXPRESSION",
+    "name": "null",
+    "body": {
+      "endPosition": "22",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "21"
+    },
+    "strict": "false",
+    "startPosition": "21",
+    "parameters": []
+  },
+  {
+    "endPosition": "48",
+    "kind": "FUNCTION_EXPRESSION",
+    "name": "null",
+    "body": {
+      "endPosition": "49",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "48"
+    },
+    "strict": "false",
+    "startPosition": "48",
+    "parameters": [
+      {
+        "endPosition": "43",
+        "kind": "IDENTIFIER",
+        "name": "x",
+        "startPosition": "42"
+      },
+      {
+        "endPosition": "46",
+        "kind": "IDENTIFIER",
+        "name": "y",
+        "startPosition": "45"
+      }
+    ]
+  },
+  {
+    "endPosition": "75",
+    "kind": "FUNCTION_EXPRESSION",
+    "name": "null",
+    "body": {
+      "endPosition": "87",
+      "kind": "BLOCK",
+      "statements": [
+        {
+          "expression": {
+            "endPosition": "87",
+            "kind": "STRING_LITERAL",
+            "value": "use strict",
+            "startPosition": "77"
+          },
+          "endPosition": "87",
+          "kind": "EXPRESSION_STATEMENT",
+          "startPosition": "77"
+        }
+      ],
+      "startPosition": "75"
+    },
+    "strict": "true",
+    "startPosition": "75",
+    "parameters": [
+      {
+        "endPosition": "70",
+        "kind": "IDENTIFIER",
+        "name": "x",
+        "startPosition": "69"
+      },
+      {
+        "endPosition": "73",
+        "kind": "IDENTIFIER",
+        "name": "y",
+        "startPosition": "72"
+      }
+    ]
+  },
+  {
+    "endPosition": "110",
+    "kind": "FUNCTION_EXPRESSION",
+    "name": "null",
+    "body": {
+      "endPosition": "144",
+      "kind": "BLOCK",
+      "statements": [
+        {
+          "expression": {
+            "endPosition": "130",
+            "kind": "FUNCTION_EXPRESSION",
+            "name": "null",
+            "body": {
+              "endPosition": "142",
+              "kind": "BLOCK",
+              "statements": [
+                {
+                  "expression": {
+                    "endPosition": "142",
+                    "kind": "STRING_LITERAL",
+                    "value": "use strict",
+                    "startPosition": "132"
+                  },
+                  "endPosition": "142",
+                  "kind": "EXPRESSION_STATEMENT",
+                  "startPosition": "132"
+                }
+              ],
+              "startPosition": "130"
+            },
+            "strict": "true",
+            "startPosition": "130",
+            "parameters": []
+          },
+          "endPosition": "144",
+          "kind": "RETURN",
+          "startPosition": "112"
+        }
+      ],
+      "startPosition": "110"
+    },
+    "strict": "false",
+    "startPosition": "110",
+    "parameters": []
+  }
+]

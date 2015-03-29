@@ -25,10 +25,11 @@
  * @bug 8064934
  * @summary Incorrect Exception message from java.awt.Desktop.open()
  * @author Dmitry Markov
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main bug8064934
  */
-import sun.awt.OSInfo;
-
+import jdk.testlibrary.OSInfo;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
