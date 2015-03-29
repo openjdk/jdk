@@ -38,6 +38,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
@@ -2192,15 +2193,12 @@ void InstanceKlass::oop_follow_contents(ParCompactionManager* cm,
 #define InstanceKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)        \
                                                                              \
 int InstanceKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) { \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik);\
   /* header */                                                          \
   if_do_metadata_checked(closure, nv_suffix) {                          \
     closure->do_klass##nv_suffix(obj->klass());                         \
   }                                                                     \
   InstanceKlass_OOP_MAP_ITERATE(                                        \
     obj,                                                                \
-    SpecializationStats::                                               \
-      record_do_oop_call##nv_suffix(SpecializationStats::ik);           \
     (closure)->do_oop##nv_suffix(p),                                    \
     assert_is_in_closed_subset)                                         \
   return size_helper();                                                 \
@@ -2211,14 +2209,11 @@ int InstanceKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) 
                                                                                 \
 int InstanceKlass::oop_oop_iterate_backwards##nv_suffix(oop obj,                \
                                               OopClosureType* closure) {        \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik); \
-                                                                                \
   assert_should_ignore_metadata(closure, nv_suffix);                            \
                                                                                 \
   /* instance variables */                                                      \
   InstanceKlass_OOP_MAP_REVERSE_ITERATE(                                        \
     obj,                                                                        \
-    SpecializationStats::record_do_oop_call##nv_suffix(SpecializationStats::ik);\
     (closure)->do_oop##nv_suffix(p),                                            \
     assert_is_in_closed_subset)                                                 \
    return size_helper();                                                        \
@@ -2230,7 +2225,6 @@ int InstanceKlass::oop_oop_iterate_backwards##nv_suffix(oop obj,                
 int InstanceKlass::oop_oop_iterate##nv_suffix##_m(oop obj,              \
                                                   OopClosureType* closure, \
                                                   MemRegion mr) {          \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik);\
   if_do_metadata_checked(closure, nv_suffix) {                           \
     if (mr.contains(obj)) {                                              \
       closure->do_klass##nv_suffix(obj->klass());                        \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,14 @@
 
 package javax.swing.table;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.SwingPropertyChangeSupport;
-import java.lang.Integer;
-import java.awt.Color;
 import java.awt.Component;
-import java.io.Serializable;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Serializable;
+
+import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.UIManager;
+import javax.swing.event.SwingPropertyChangeSupport;
 
 /**
  *  A <code>TableColumn</code> represents all the attributes of a column in a
@@ -744,19 +743,25 @@ public class TableColumn extends Object implements Serializable {
 //
 
     /**
-     * Adds a <code>PropertyChangeListener</code> to the listener list.
-     * The listener is registered for all properties.
-     * <p>
-     * A <code>PropertyChangeEvent</code> will get fired in response to an
-     * explicit call to <code>setFont</code>, <code>setBackground</code>,
-     * or <code>setForeground</code> on the
-     * current component.  Note that if the current component is
-     * inheriting its foreground, background, or font from its
-     * container, then no event will be fired in response to a
-     * change in the inherited property.
+     * Adds a {@code PropertyChangeListener} to the listener list. The listener
+     * is registered for all bound properties of this class, including the
+     * following:
+     * <ul>
+     *    <li>this TableColumn's modelIndex ("modelIndex")</li>
+     *    <li>this TableColumn's identifier ("identifier")</li>
+     *    <li>this TableColumn's header value ("headerValue")</li>
+     *    <li>this TableColumn's header renderer ("headerRenderer")</li>
+     *    <li>this TableColumn's cell renderer ("cellRenderer")</li>
+     *    <li>this TableColumn's cell editor ("cellEditor")</li>
+     *    <li>this TableColumn's width ("width")</li>
+     *    <li>this TableColumn's preferred width ("preferredWidth")</li>
+     *    <li>this TableColumn's minimum width ("minWidth")</li>
+     *    <li>this TableColumn's maximum width ("maxWidth")</li>
+     *    <li>this TableColumn's resizable state ("isResizable")</li>
+     * </ul>
      *
-     * @param listener  the listener to be added
-     *
+     * @param  listener the listener to be added
+     * @see #removePropertyChangeListener(PropertyChangeListener)
      */
     public synchronized void addPropertyChangeListener(
                                 PropertyChangeListener listener) {

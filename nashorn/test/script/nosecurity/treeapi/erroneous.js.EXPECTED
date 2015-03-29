@@ -1,0 +1,27 @@
+[
+  {
+    "endPosition": "8",
+    "kind": "ERROR",
+    "startPosition": "7"
+  },
+  {
+    "endPosition": "13",
+    "kind": "ERROR",
+    "startPosition": "12"
+  },
+  {
+    "endPosition": "20",
+    "kind": "ERROR",
+    "startPosition": "19"
+  },
+  {
+    "endPosition": "27",
+    "kind": "ERROR",
+    "startPosition": "26"
+  },
+  {
+    "endPosition": "37",
+    "kind": "ERROR",
+    "startPosition": "36"
+  }
+]

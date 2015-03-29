@@ -193,19 +193,19 @@ define_pd_global(intx, CompileThreshold,             0);
 define_pd_global(intx, OnStackReplacePercentage,     0);
 define_pd_global(bool, ResizeTLAB,                   false);
 define_pd_global(intx, FreqInlineSize,               0);
-define_pd_global(intx, NewSizeThreadIncrease,        4*K);
+define_pd_global(size_t, NewSizeThreadIncrease,      4*K);
 define_pd_global(intx, InlineClassNatives,           true);
 define_pd_global(intx, InlineUnsafeOps,              true);
 define_pd_global(intx, InitialCodeCacheSize,         160*K);
 define_pd_global(intx, ReservedCodeCacheSize,        32*M);
 define_pd_global(intx, NonProfiledCodeHeapSize,      0);
 define_pd_global(intx, ProfiledCodeHeapSize,         0);
-define_pd_global(intx, NonNMethodCodeHeapSize,        32*M);
+define_pd_global(intx, NonNMethodCodeHeapSize,       32*M);
 
 define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 define_pd_global(intx, CodeCacheMinBlockLength,      1);
 define_pd_global(intx, CodeCacheMinimumUseSpace,     200*K);
-define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(4*M));
+define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(4*M));
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #define CI_COMPILER_COUNT 0
@@ -468,7 +468,7 @@ class CommandLineFlags {
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
 
 // A flag must be declared with one of the following types:
-// bool, intx, uintx, ccstr, double, or uint64_t.
+// bool, intx, uintx, size_t, ccstr, double, or uint64_t.
 // The type "ccstr" is an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
@@ -540,7 +540,7 @@ class CommandLineFlags {
   notproduct(bool, CheckCompressedOops, true,                               \
           "Generate checks in encoding/decoding code in debug VM")          \
                                                                             \
-  product_pd(uintx, HeapBaseMinAddress,                                     \
+  product_pd(size_t, HeapBaseMinAddress,                                    \
           "OS specific low limit for heap base address")                    \
                                                                             \
   product(uintx, HeapSearchSteps, 3 PPC64_ONLY(+17),                        \
@@ -606,7 +606,7 @@ class CommandLineFlags {
   product(bool, UseNUMAInterleaving, false,                                 \
           "Interleave memory across NUMA nodes if available")               \
                                                                             \
-  product(uintx, NUMAInterleaveGranularity, 2*M,                            \
+  product(size_t, NUMAInterleaveGranularity, 2*M,                           \
           "Granularity to use for NUMA interleaving on Windows OS")         \
                                                                             \
   product(bool, ForceNUMA, false,                                           \
@@ -617,7 +617,7 @@ class CommandLineFlags {
           "computing exponentially decaying average for "                   \
           "AdaptiveNUMAChunkSizing")                                        \
                                                                             \
-  product(uintx, NUMASpaceResizeRate, 1*G,                                  \
+  product(size_t, NUMASpaceResizeRate, 1*G,                                 \
           "Do not reallocate more than this amount per collection")         \
                                                                             \
   product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
@@ -641,10 +641,10 @@ class CommandLineFlags {
   product(bool, UseSHA, false,                                              \
           "Control whether SHA instructions can be used on SPARC")          \
                                                                             \
-  product(uintx, LargePageSizeInBytes, 0,                                   \
+  product(size_t, LargePageSizeInBytes, 0,                                  \
           "Large page size (0 to let VM choose the page size)")             \
                                                                             \
-  product(uintx, LargePageHeapSizeThreshold, 128*M,                         \
+  product(size_t, LargePageHeapSizeThreshold, 128*M,                        \
           "Use large pages if maximum heap is at least this big")           \
                                                                             \
   product(bool, ForceTimeHighResolution, false,                             \
@@ -966,11 +966,11 @@ class CommandLineFlags {
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(uintx, SegmentedHeapDumpThreshold, 2*G,                           \
+  develop(size_t, SegmentedHeapDumpThreshold, 2*G,                          \
           "Generate a segmented heap dump (JAVA PROFILE 1.0.2 format) "     \
           "when the heap usage is larger than this")                        \
                                                                             \
-  develop(uintx, HeapDumpSegmentSize, 1*G,                                  \
+  develop(size_t, HeapDumpSegmentSize, 1*G,                                 \
           "Approximate segment size when generating a segmented heap dump") \
                                                                             \
   develop(bool, BreakAtWarning, false,                                      \
@@ -1465,7 +1465,7 @@ class CommandLineFlags {
           "Force dynamic selection of the number of "                       \
           "parallel threads parallel gc will use to aid debugging")         \
                                                                             \
-  product(uintx, HeapSizePerGCThread, ScaleForWordSize(64*M),               \
+  product(size_t, HeapSizePerGCThread, ScaleForWordSize(64*M),              \
           "Size of heap (bytes) per GC thread used in calculating the "     \
           "number of GC threads")                                           \
                                                                             \
@@ -1482,10 +1482,10 @@ class CommandLineFlags {
   product(uintx, ConcGCThreads, 0,                                          \
           "Number of threads concurrent gc will use")                       \
                                                                             \
-  product(uintx, YoungPLABSize, 4096,                                       \
+  product(size_t, YoungPLABSize, 4096,                                      \
           "Size of young gen promotion LAB's (in HeapWords)")               \
                                                                             \
-  product(uintx, OldPLABSize, 1024,                                         \
+  product(size_t, OldPLABSize, 1024,                                        \
           "Size of old gen promotion LAB's (in HeapWords), or Number        \
           of blocks to attempt to claim when refilling CMS LAB's")          \
                                                                             \
@@ -1604,11 +1604,11 @@ class CommandLineFlags {
   product(bool, PrintOldPLAB, false,                                        \
           "Print (old gen) promotion LAB's sizing decisions")               \
                                                                             \
-  product(uintx, CMSOldPLABMin, 16,                                         \
+  product(size_t, CMSOldPLABMin, 16,                                        \
           "Minimum size of CMS gen promotion LAB caches per worker "        \
           "per block size")                                                 \
                                                                             \
-  product(uintx, CMSOldPLABMax, 1024,                                       \
+  product(size_t, CMSOldPLABMax, 1024,                                      \
           "Maximum size of CMS gen promotion LAB caches per worker "        \
           "per block size")                                                 \
                                                                             \
@@ -1631,7 +1631,7 @@ class CommandLineFlags {
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
                                                                             \
-  product_pd(uintx, CMSYoungGenPerWorker,                                   \
+  product_pd(size_t, CMSYoungGenPerWorker,                                  \
           "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \
                                                                             \
@@ -1723,10 +1723,10 @@ class CommandLineFlags {
   develop(bool, CMSOverflowEarlyRestoration, false,                         \
           "Restore preserved marks early")                                  \
                                                                             \
-  product(uintx, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),              \
+  product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
           "Size of marking stack")                                          \
                                                                             \
-  product(uintx, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),          \
+  product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
           "Maximum size of marking stack")                                  \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
@@ -1749,10 +1749,10 @@ class CommandLineFlags {
           "Time that we sleep between iterations when not given "           \
           "enough work per iteration")                                      \
                                                                             \
-  product(uintx, CMSRescanMultiple, 32,                                     \
+  product(size_t, CMSRescanMultiple, 32,                                    \
           "Size (in cards) of CMS parallel rescan task")                    \
                                                                             \
-  product(uintx, CMSConcMarkMultiple, 32,                                   \
+  product(size_t, CMSConcMarkMultiple, 32,                                  \
           "Size (in cards) of CMS concurrent MT marking task")              \
                                                                             \
   product(bool, CMSAbortSemantics, false,                                   \
@@ -1819,7 +1819,7 @@ class CommandLineFlags {
   product(uintx, CMSRemarkVerifyVariant, 1,                                 \
           "Choose variant (1,2) of verification following remark")          \
                                                                             \
-  product(uintx, CMSScheduleRemarkEdenSizeThreshold, 2*M,                   \
+  product(size_t, CMSScheduleRemarkEdenSizeThreshold, 2*M,                  \
           "If Eden size is below this, do not try to schedule remark")      \
                                                                             \
   product(uintx, CMSScheduleRemarkEdenPenetration, 50,                      \
@@ -1853,7 +1853,7 @@ class CommandLineFlags {
   product(bool, CMSYield, true,                                             \
           "Yield between steps of CMS")                                     \
                                                                             \
-  product(uintx, CMSBitMapYieldQuantum, 10*M,                               \
+  product(size_t, CMSBitMapYieldQuantum, 10*M,                              \
           "Bitmap operations should process at most this many bits "        \
           "between yields")                                                 \
                                                                             \
@@ -2033,7 +2033,7 @@ class CommandLineFlags {
   product_pd(uint64_t, MaxRAM,                                              \
           "Real memory size (in bytes) used to set maximum heap size")      \
                                                                             \
-  product(uintx, ErgoHeapSizeLimit, 0,                                      \
+  product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
           "MaxRAM / MaxRAMFraction")                                        \
                                                                             \
@@ -2176,7 +2176,7 @@ class CommandLineFlags {
   product(uintx, InitialSurvivorRatio, 8,                                   \
           "Initial ratio of young generation/survivor space size")          \
                                                                             \
-  product(uintx, BaseFootPrintEstimate, 256*M,                              \
+  product(size_t, BaseFootPrintEstimate, 256*M,                             \
           "Estimate of footprint other than Java Heap")                     \
                                                                             \
   product(bool, UseGCOverheadLimit, true,                                   \
@@ -2327,7 +2327,7 @@ class CommandLineFlags {
   develop(bool, TraceClassLoaderData, false,                                \
           "Trace class loader loader_data lifetime")                        \
                                                                             \
-  product(uintx, InitialBootClassLoaderMetaspaceSize,                       \
+  product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
           "Initial size of the boot class loader data metaspace")           \
                                                                             \
@@ -2417,7 +2417,7 @@ class CommandLineFlags {
           "Number of gclog files in rotation "                              \
           "(default: 0, no rotation)")                                      \
                                                                             \
-  product(uintx, GCLogFileSize, 8*K,                                        \
+  product(size_t, GCLogFileSize, 8*K,                                       \
           "GC log file size, requires UseGCLogFileRotation. "               \
           "Set to 0 to only trigger rotation via jcmd")                     \
                                                                             \
@@ -2955,11 +2955,11 @@ class CommandLineFlags {
   notproduct(ccstrlist, SuppressErrorAt, "",                                \
           "List of assertions (file:line) to muzzle")                       \
                                                                             \
-  notproduct(uintx, HandleAllocationLimit, 1024,                            \
+  notproduct(size_t, HandleAllocationLimit, 1024,                           \
           "Threshold for HandleMark allocation when +TraceHandleAllocation "\
           "is used")                                                        \
                                                                             \
-  develop(uintx, TotalHandleAllocationLimit, 1024,                          \
+  develop(size_t, TotalHandleAllocationLimit, 1024,                         \
           "Threshold for total handle allocation when "                     \
           "+TraceHandleAllocation is used")                                 \
                                                                             \
@@ -3103,30 +3103,30 @@ class CommandLineFlags {
           "Number of times to spin wait before inflation")                  \
                                                                             \
   /* gc parameters */                                                       \
-  product(uintx, InitialHeapSize, 0,                                        \
+  product(size_t, InitialHeapSize, 0,                                       \
           "Initial heap size (in bytes); zero means use ergonomics")        \
                                                                             \
-  product(uintx, MaxHeapSize, ScaleForWordSize(96*M),                       \
+  product(size_t, MaxHeapSize, ScaleForWordSize(96*M),                      \
           "Maximum heap size (in bytes)")                                   \
                                                                             \
-  product(uintx, OldSize, ScaleForWordSize(4*M),                            \
+  product(size_t, OldSize, ScaleForWordSize(4*M),                           \
           "Initial tenured generation size (in bytes)")                     \
                                                                             \
-  product(uintx, NewSize, ScaleForWordSize(1*M),                            \
+  product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \
                                                                             \
-  product(uintx, MaxNewSize, max_uintx,                                     \
+  product(size_t, MaxNewSize, max_uintx,                                    \
           "Maximum new generation size (in bytes), max_uintx means set "    \
           "ergonomically")                                                  \
                                                                             \
-  product(uintx, PretenureSizeThreshold, 0,                                 \
+  product(size_t, PretenureSizeThreshold, 0,                                \
           "Maximum size in bytes of objects allocated in DefNew "           \
           "generation; zero means no maximum")                              \
                                                                             \
-  product(uintx, TLABSize, 0,                                               \
+  product(size_t, TLABSize, 0,                                              \
           "Starting TLAB size (in bytes); zero means set ergonomically")    \
                                                                             \
-  product(uintx, MinTLABSize, 2*K,                                          \
+  product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
                                                                             \
   product(uintx, TLABAllocationWeight, 35,                                  \
@@ -3147,17 +3147,17 @@ class CommandLineFlags {
   product(uintx, NewRatio, 2,                                               \
           "Ratio of old/new generation sizes")                              \
                                                                             \
-  product_pd(uintx, NewSizeThreadIncrease,                                  \
+  product_pd(size_t, NewSizeThreadIncrease,                                 \
           "Additional size added to desired new generation size per "       \
           "non-daemon thread (in bytes)")                                   \
                                                                             \
-  product_pd(uintx, MetaspaceSize,                                          \
+  product_pd(size_t, MetaspaceSize,                                         \
           "Initial size of Metaspaces (in bytes)")                          \
                                                                             \
-  product(uintx, MaxMetaspaceSize, max_uintx,                               \
+  product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
                                                                             \
-  product(uintx, CompressedClassSpaceSize, 1*G,                             \
+  product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
                                                                             \
@@ -3174,10 +3174,10 @@ class CommandLineFlags {
   product(intx, SoftRefLRUPolicyMSPerMB, 1000,                              \
           "Number of milliseconds per MB of free space in the heap")        \
                                                                             \
-  product(uintx, MinHeapDeltaBytes, ScaleForWordSize(128*K),                \
+  product(size_t, MinHeapDeltaBytes, ScaleForWordSize(128*K),               \
           "The minimum change in heap space due to GC (in bytes)")          \
                                                                             \
-  product(uintx, MinMetaspaceExpansion, ScaleForWordSize(256*K),            \
+  product(size_t, MinMetaspaceExpansion, ScaleForWordSize(256*K),           \
           "The minimum expansion of Metaspace (in bytes)")                  \
                                                                             \
   product(uintx, MinMetaspaceFreeRatio,    40,                              \
@@ -3188,7 +3188,7 @@ class CommandLineFlags {
           "The maximum percentage of Metaspace free after GC to avoid "     \
           "shrinking")                                                      \
                                                                             \
-  product(uintx, MaxMetaspaceExpansion, ScaleForWordSize(4*M),              \
+  product(size_t, MaxMetaspaceExpansion, ScaleForWordSize(4*M),             \
           "The maximum expansion of Metaspace without full GC (in bytes)")  \
                                                                             \
   product(uintx, QueuedAllocationWarningCount, 0,                           \
@@ -3279,10 +3279,10 @@ class CommandLineFlags {
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
                                                                             \
-  develop_pd(uintx, JVMInvokeMethodSlack,                                   \
+  develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
-  product(uintx, ThreadSafetyMargin, 50*M,                                  \
+  product(size_t, ThreadSafetyMargin, 50*M,                                 \
           "Thread safety margin is used on fixed-stack LinuxThreads (on "   \
           "Linux/x86 only) to prevent heap-stack collision. Set to 0 to "   \
           "disable this feature")                                           \
@@ -3670,7 +3670,7 @@ class CommandLineFlags {
                                                                             \
   /* Properties for Java libraries  */                                      \
                                                                             \
-  product(uintx, MaxDirectMemorySize, 0,                                    \
+  product(size_t, MaxDirectMemorySize, 0,                                   \
           "Maximum total size of NIO direct-buffer allocations")            \
                                                                             \
   /* Flags used for temporary code during development  */                   \
@@ -3774,10 +3774,10 @@ class CommandLineFlags {
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
                                                                             \
-  product(uintx, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(16*M),      \
+  product(size_t, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(16*M),     \
           "Size of read-write space for metadata (in bytes)")               \
                                                                             \
-  product(uintx, SharedReadOnlySize,  NOT_LP64(12*M) LP64_ONLY(16*M),       \
+  product(size_t, SharedReadOnlySize,  NOT_LP64(12*M) LP64_ONLY(16*M),      \
           "Size of read-only space for metadata (in bytes)")                \
                                                                             \
   product(uintx, SharedMiscDataSize,    NOT_LP64(2*M) LP64_ONLY(4*M),       \

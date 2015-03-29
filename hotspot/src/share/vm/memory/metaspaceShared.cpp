@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,7 @@ public:
 
     // Split up and initialize the misc code and data spaces
     ReservedSpace* shared_rs = MetaspaceShared::shared_rs();
-    int metadata_size = SharedReadOnlySize+SharedReadWriteSize;
+    size_t metadata_size = SharedReadOnlySize + SharedReadWriteSize;
     ReservedSpace shared_ro_rw = shared_rs->first_part(metadata_size);
     ReservedSpace misc_section = shared_rs->last_part(metadata_size);
 

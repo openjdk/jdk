@@ -25,6 +25,7 @@
 package jdk.nashorn.api.tree;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -92,7 +93,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
 
         final Block body = node.getBody();
         return new CompilationUnitTreeImpl(node,
-                translateStats(body != null? body.getStatements() : null));
+                translateStats(body != null? getOrderedStatements(body.getStatements()) : null));
     }
 
     @Override
@@ -103,25 +104,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterBlock(final Block block) {
-        // FIXME: revisit this!
-        if (block.isSynthetic()) {
-            final int statCount = block.getStatementCount();
-            switch (statCount) {
-                case 0: {
-                    final EmptyNode emptyNode = new EmptyNode(-1, block.getToken(), block.getFinish());
-                    curStat = new EmptyStatementTreeImpl(emptyNode);
-                    return false;
-                }
-                case 1: {
-                    curStat = translateStat(block.getStatements().get(0));
-                    return false;
-                }
-            }
-        }
-
-        curStat = new BlockTreeImpl(block,
-            translateStats(block.getStatements()));
-        return false;
+        return handleBlock(block, false);
     }
 
     @Override
@@ -245,7 +228,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
 
         final List<? extends ExpressionTree> paramTrees
                     = translateExprs(functionNode.getParameters());
-        final BlockTree blockTree = (BlockTree) translateBlock(functionNode.getBody());
+        final BlockTree blockTree = (BlockTree) translateBlock(functionNode.getBody(), true);
         curExpr = new FunctionExpressionTreeImpl(functionNode, paramTrees, blockTree);
 
         return false;
@@ -420,7 +403,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
 
             final List<? extends ExpressionTree> paramTrees
                     = translateExprs(funcNode.getParameters());
-            final BlockTree blockTree = (BlockTree) translateBlock(funcNode.getBody());
+            final BlockTree blockTree = (BlockTree) translateBlock(funcNode.getBody(), true);
             curStat = new FunctionDeclarationTreeImpl(varNode, paramTrees, blockTree);
         } else {
             curStat = new VariableTreeImpl(varNode, translateExpr(initNode));
@@ -453,12 +436,49 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
     }
 
     private StatementTree translateBlock(final Block blockNode) {
+        return translateBlock(blockNode, false);
+    }
+
+    private StatementTree translateBlock(final Block blockNode, final boolean sortStats) {
         if (blockNode == null) {
             return null;
         }
         curStat = null;
-        blockNode.accept(this);
+        handleBlock(blockNode, sortStats);
         return curStat;
+    }
+
+    private boolean handleBlock(final Block block, final boolean sortStats) {
+        // FIXME: revisit this!
+        if (block.isSynthetic()) {
+            final int statCount = block.getStatementCount();
+            switch (statCount) {
+                case 0: {
+                    final EmptyNode emptyNode = new EmptyNode(-1, block.getToken(), block.getFinish());
+                    curStat = new EmptyStatementTreeImpl(emptyNode);
+                    return false;
+                }
+                case 1: {
+                    curStat = translateStat(block.getStatements().get(0));
+                    return false;
+                }
+                default: {
+                    // fall through
+                    break;
+                }
+            }
+        }
+
+        final List<? extends Statement> stats = block.getStatements();
+        curStat = new BlockTreeImpl(block,
+            translateStats(sortStats? getOrderedStatements(stats) : stats));
+        return false;
+    }
+
+    private List<? extends Statement> getOrderedStatements(final List<? extends Statement> stats) {
+        final List<? extends Statement> statList = new ArrayList<>(stats);
+        statList.sort(Comparator.comparingInt(Node::getSourceOrder));
+        return statList;
     }
 
     private List<? extends StatementTree> translateStats(final List<? extends Statement> stats) {
@@ -511,7 +531,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
         return curStat;
     }
 
-    private IdentifierTree translateIdent(final IdentNode ident) {
+    private static IdentifierTree translateIdent(final IdentNode ident) {
         return new IdentifierTreeImpl(ident);
     }
 }

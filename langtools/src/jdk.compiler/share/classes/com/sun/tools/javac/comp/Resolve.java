@@ -232,8 +232,7 @@ public class Resolve {
             }
         }
         String key = success ? "verbose.resolve.multi" : "verbose.resolve.multi.1";
-        List<Type> argtypes2 = Type.map(argtypes,
-                    deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, bestSoFar, currentResolutionContext.step));
+        List<Type> argtypes2 = argtypes.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, bestSoFar, currentResolutionContext.step));
         JCDiagnostic main = diags.note(log.currentSource(), dpos, key, name,
                 site.tsym, mostSpecificPos, currentResolutionContext.step,
                 methodArguments(argtypes2),
@@ -2259,7 +2258,7 @@ public class Resolve {
                         (typeargtypes == null || !Type.isErroneous(typeargtypes));
         }
         public List<Type> getArgumentTypes(ResolveError errSym, Symbol accessedSym, Name name, List<Type> argtypes) {
-            return Type.map(argtypes, new ResolveDeferredRecoveryMap(AttrMode.SPECULATIVE, accessedSym, currentResolutionContext.step));
+            return argtypes.map(new ResolveDeferredRecoveryMap(AttrMode.SPECULATIVE, accessedSym, currentResolutionContext.step));
         }
     };
 

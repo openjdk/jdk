@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,18 +382,18 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         protected Set<String> decomposes(MacAlg macAlg) {
             Set<String> components = new HashSet<>();
 
-            if (macAlg == CipherSuite.M_MD5) {
+            if (macAlg == CipherSuite.MacAlg.M_MD5) {
                 components.add("MD5");
                 components.add("HmacMD5");
-            } else if (macAlg == CipherSuite.M_SHA) {
+            } else if (macAlg == CipherSuite.MacAlg.M_SHA) {
                 components.add("SHA1");
                 components.add("SHA-1");
                 components.add("HmacSHA1");
-            } else if (macAlg == CipherSuite.M_SHA256) {
+            } else if (macAlg == CipherSuite.MacAlg.M_SHA256) {
                 components.add("SHA256");
                 components.add("SHA-256");
                 components.add("HmacSHA256");
-            } else if (macAlg == CipherSuite.M_SHA384) {
+            } else if (macAlg == CipherSuite.MacAlg.M_SHA384) {
                 components.add("SHA384");
                 components.add("SHA-384");
                 components.add("HmacSHA384");

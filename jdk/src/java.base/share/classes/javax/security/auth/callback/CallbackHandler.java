@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public interface CallbackHandler {
      *          by an underlying security service which contains
      *          the information requested to be retrieved or displayed.
      *
-     * @exception java.io.IOException if an input or output error occurs. <p>
+     * @exception java.io.IOException if an input or output error occurs.
      *
      * @exception UnsupportedCallbackException if the implementation of this
      *          method does not support one or more of the Callbacks

@@ -38,6 +38,7 @@
  * @library ../../testlibrary
  * @build TestLibrary ReferenceRegistryStub
  * @run main/othervm InterfaceHash
+ * @key intermittent
  */
 
 import java.lang.reflect.Constructor;

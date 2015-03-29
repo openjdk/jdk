@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Type.TypeMapping;
 import com.sun.tools.javac.comp.Resolve.ResolveError;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
@@ -44,7 +45,6 @@ import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -297,13 +297,6 @@ public class DeferredAttr extends JCTree.Visitor {
             }
             Assert.error();
             return null;
-        }
-    };
-
-    DeferredTypeCompleter dummyCompleter = new DeferredTypeCompleter() {
-        public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
-            Assert.check(deferredAttrContext.mode == AttrMode.CHECK);
-            return dt.tree.type = Type.stuckType;
         }
     };
 
@@ -849,33 +842,24 @@ public class DeferredAttr extends JCTree.Visitor {
     /** an empty deferred attribution context - all methods throw exceptions */
     final DeferredAttrContext emptyDeferredAttrContext;
 
-    /** The AttrMode to descriptive name mapping */
-    private static final EnumMap<AttrMode, String> deferredTypeMapDescriptions;
-    static {
-        deferredTypeMapDescriptions = new EnumMap<>(AttrMode.class);
-        deferredTypeMapDescriptions.put(AttrMode.CHECK, "deferredTypeMap[CHECK]");
-        deferredTypeMapDescriptions.put(AttrMode.SPECULATIVE, "deferredTypeMap[SPECULATIVE]");
-    }
-
     /**
      * Map a list of types possibly containing one or more deferred types
      * into a list of ordinary types. Each deferred type D is mapped into a type T,
      * where T is computed by retrieving the type that has already been
      * computed for D during a previous deferred attribution round of the given kind.
      */
-    class DeferredTypeMap extends Type.Mapping {
+    class DeferredTypeMap extends TypeMapping<Void> {
         DeferredAttrContext deferredAttrContext;
 
         protected DeferredTypeMap(AttrMode mode, Symbol msym, MethodResolutionPhase phase) {
-            super(deferredTypeMapDescriptions.get(mode));
             this.deferredAttrContext = new DeferredAttrContext(mode, msym, phase,
                     infer.emptyContext, emptyDeferredAttrContext, types.noWarnings);
         }
 
         @Override
-        public Type apply(Type t) {
+        public Type visitType(Type t, Void _unused) {
             if (!t.hasTag(DEFERRED)) {
-                return t.map(this);
+                return super.visitType(t, null);
             } else {
                 DeferredType dt = (DeferredType)t;
                 return typeOf(dt);
@@ -928,7 +912,7 @@ public class DeferredAttr extends JCTree.Visitor {
                     return chk.checkNonVoid(pos, super.check(pos, found));
                 }
             });
-            return super.apply(dt);
+            return super.visit(dt);
         }
     }
 
