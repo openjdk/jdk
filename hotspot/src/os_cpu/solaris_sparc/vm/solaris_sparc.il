@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 // Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 // or visit www.oracle.com if you need additional information or have any
 // questions.
-//  
+//
 //
 
   // Get the raw thread ID from %g7
@@ -35,11 +35,11 @@
   // Clear SPARC fprs.FEF DU and DL bits --
   // allows the kernel to avoid saving FPU state at context-switch time.
   // Use for state-transition points (into _thread_blocked) or when
-  // parking. 
-      
+  // parking.
+
        .inline _mark_fpu_nosave, 0
        .volatile
-       wr   %g0, 0, %fprs       
+       wr   %g0, 0, %fprs
        .nonvolatile
        .end
 
@@ -85,7 +85,7 @@
 
 
   // Support for jint Atomic::cmpxchg(jint           exchange_value,
-  //                                  volatile jint* dest, 
+  //                                  volatile jint* dest,
   //                                  jint           compare_value)
   //
   // Arguments:
@@ -103,8 +103,8 @@
         .end
 
 
-  // Support for intptr_t Atomic::cmpxchg_ptr(intptr_t           exchange_value, 
-  //                                          volatile intptr_t* dest, 
+  // Support for intptr_t Atomic::cmpxchg_ptr(intptr_t           exchange_value,
+  //                                          volatile intptr_t* dest,
   //                                          intptr_t           compare_value)
   //
   // 64-bit
@@ -124,8 +124,8 @@
         .end
 
 
-  // Support for jlong Atomic::cmpxchg(jlong           exchange_value, 
-  //                                   volatile jlong* dest, 
+  // Support for jlong Atomic::cmpxchg(jlong           exchange_value,
+  //                                   volatile jlong* dest,
   //                                   jlong           compare_value)
   //
   // 32-bit calling conventions
@@ -217,27 +217,6 @@
         bne     %xcc, 3b
          nop
         add     %o0, %o2, %o0
-        .nonvolatile
-        .end
-
-
-  // Support for void OrderAccess::acquire()
-  // The method is intentionally empty.  
-  // It exists for the sole purpose of generating
-  // a C/C++ sequence point over which the compiler won't 
-  // reorder code.
-
-        .inline _OrderAccess_acquire,0
-        .volatile
-        .nonvolatile
-        .end
-
-
-  // Support for void OrderAccess::fence()
-
-        .inline _OrderAccess_fence,0
-        .volatile
-        membar  #StoreLoad
         .nonvolatile
         .end
 

@@ -38,7 +38,9 @@ tier2 = \
     :jdk_time \
     :jdk_security \
     :jdk_text \
-    :core_tools
+    :core_tools \
+    :jdk_other \
+    :jdk_svc
 
 ###############################################################################
 #
