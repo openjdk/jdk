@@ -309,7 +309,7 @@ class Properties extends Hashtable<Object,Object> {
      *          input stream.
      * @throws  IllegalArgumentException if a malformed Unicode escape
      *          appears in the input.
-     * @throws NullPointerException if {@code reader} is null.
+     * @throws  NullPointerException if {@code reader} is null.
      * @since   1.6
      */
     public synchronized void load(Reader reader) throws IOException {
@@ -335,7 +335,7 @@ class Properties extends Hashtable<Object,Object> {
      *             input stream.
      * @throws     IllegalArgumentException if the input stream contains a
      *             malformed Unicode escape sequence.
-     * @throws NullPointerException if {@code inStream} is null.
+     * @throws     NullPointerException if {@code inStream} is null.
      * @since 1.2
      */
     public synchronized void load(InputStream inStream) throws IOException {

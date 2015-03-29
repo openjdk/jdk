@@ -39,6 +39,7 @@
  * @build TestLibrary RMID ActivateMe CheckActivateRef_Stub
  * @run main/othervm/policy=security.policy/timeout=240 -Djava.rmi.server.ignoreStubClasses=true CheckActivateRef
  * @run main/othervm/policy=security.policy/timeout=240 -Djava.rmi.server.ignoreStubClasses=false CheckActivateRef
+ * @key intermittent
  */
 
 import java.io.*;

@@ -1317,6 +1317,7 @@ public class Date
     private void writeObject(ObjectOutputStream s)
          throws IOException
     {
+        s.defaultWriteObject();
         s.writeLong(getTimeImpl());
     }
 
@@ -1326,6 +1327,7 @@ public class Date
     private void readObject(ObjectInputStream s)
          throws IOException, ClassNotFoundException
     {
+        s.defaultReadObject();
         fastTime = s.readLong();
     }
 
