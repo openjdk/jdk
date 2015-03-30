@@ -130,8 +130,7 @@ void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
 
   GenCollectorPolicy* gen_policy = policy->as_generation_policy();
   if (gen_policy != NULL) {
-    GenerationSpec** specs = gen_policy->generations();
-    Generation::Name kind = specs[0]->name();
+    Generation::Name kind = gen_policy->young_gen_spec()->name();
     switch (kind) {
       case Generation::DefNew:
         _minor_gc_manager = MemoryManager::get_copy_memory_manager();

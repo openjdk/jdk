@@ -36,8 +36,6 @@
 #include "runtime/virtualspace.hpp"
 #include "runtime/vmThread.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                                              OopsInGenClosure* cl,
                                                              CardTableRS* ct,
@@ -376,13 +374,14 @@ process_chunk_boundaries(Space* sp,
                          " does not exceed used.end() = " PTR_FORMAT ","
                          " yet last_chunk_index_to_check " INTPTR_FORMAT
                          " exceeds last_chunk_index " INTPTR_FORMAT,
-                         last_block, last_block + last_block_size,
-                         used.end(),
+                         p2i(last_block), p2i(last_block + last_block_size),
+                         p2i(used.end()),
                          last_chunk_index_to_check, last_chunk_index));
           assert(sp->used_region().end() > used.end(),
                  err_msg("Expansion did not happen: "
                          "[" PTR_FORMAT "," PTR_FORMAT ") -> [" PTR_FORMAT "," PTR_FORMAT ")",
-                         sp->used_region().start(), sp->used_region().end(), used.start(), used.end()));
+                         p2i(sp->used_region().start()), p2i(sp->used_region().end()),
+                         p2i(used.start()), p2i(used.end())));
           NOISY(tty->print_cr(" process_chunk_boundary: heap expanded; explicitly bounding last_chunk");)
           last_chunk_index_to_check = last_chunk_index;
         }

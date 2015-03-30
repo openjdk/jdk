@@ -34,8 +34,6 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 GCTaskThread::GCTaskThread(GCTaskManager* manager,
                            uint           which,
                            uint           processor_id) :
@@ -79,7 +77,7 @@ void GCTaskThread::print_task_time_stamps() {
   tty->print_cr("GC-Thread %u entries: %d", id(), _time_stamp_index);
   for(uint i=0; i<_time_stamp_index; i++) {
     GCTaskTimeStamp* time_stamp = time_stamp_at(i);
-    tty->print_cr("\t[ %s " INT64_FORMAT " " INT64_FORMAT " ]",
+    tty->print_cr("\t[ %s " JLONG_FORMAT " " JLONG_FORMAT " ]",
                   time_stamp->name(),
                   time_stamp->entry_time(),
                   time_stamp->exit_time());

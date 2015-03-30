@@ -35,8 +35,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/workgroup.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 SharedHeap* SharedHeap::_sh;
 
 SharedHeap::SharedHeap(CollectorPolicy* policy_) :
@@ -102,17 +100,3 @@ void SharedHeap::post_initialize() {
 }
 
 void SharedHeap::ref_processing_init() {}
-
-// Some utilities.
-void SharedHeap::print_size_transition(outputStream* out,
-                                       size_t bytes_before,
-                                       size_t bytes_after,
-                                       size_t capacity) {
-  out->print(" " SIZE_FORMAT "%s->" SIZE_FORMAT "%s(" SIZE_FORMAT "%s)",
-             byte_size_in_proper_unit(bytes_before),
-             proper_unit_for_byte_size(bytes_before),
-             byte_size_in_proper_unit(bytes_after),
-             proper_unit_for_byte_size(bytes_after),
-             byte_size_in_proper_unit(capacity),
-             proper_unit_for_byte_size(capacity));
-}

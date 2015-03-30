@@ -90,7 +90,6 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
 jint GenCollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
 
-  int i;
   _n_gens = gen_policy()->number_of_generations();
   assert(_n_gens == 2, "There is no support for more than two generations");
 
@@ -100,16 +99,6 @@ jint GenCollectedHeap::initialize() {
   // cases incorrectly returns the size in wordSize units rather than
   // HeapWordSize).
   guarantee(HeapWordSize == wordSize, "HeapWordSize must equal wordSize");
-
-  // The heap must be at least as aligned as generations.
-  size_t gen_alignment = Generation::GenGrain;
-
-  _gen_specs = gen_policy()->generations();
-
-  // Make sure the sizes are all aligned.
-  for (i = 0; i < _n_gens; i++) {
-    _gen_specs[i]->align(gen_alignment);
-  }
 
   // Allocate space for the heap.
 
@@ -133,12 +122,12 @@ jint GenCollectedHeap::initialize() {
 
   _gch = this;
 
-  ReservedSpace young_rs = heap_rs.first_part(_gen_specs[0]->max_size(), false, false);
-  _young_gen = _gen_specs[0]->init(young_rs, 0, rem_set());
-  heap_rs = heap_rs.last_part(_gen_specs[0]->max_size());
+  ReservedSpace young_rs = heap_rs.first_part(gen_policy()->young_gen_spec()->max_size(), false, false);
+  _young_gen = gen_policy()->young_gen_spec()->init(young_rs, 0, rem_set());
+  heap_rs = heap_rs.last_part(gen_policy()->young_gen_spec()->max_size());
 
-  ReservedSpace old_rs = heap_rs.first_part(_gen_specs[1]->max_size(), false, false);
-  _old_gen = _gen_specs[1]->init(old_rs, 1, rem_set());
+  ReservedSpace old_rs = heap_rs.first_part(gen_policy()->old_gen_spec()->max_size(), false, false);
+  _old_gen = gen_policy()->old_gen_spec()->init(old_rs, 1, rem_set());
   clear_incremental_collection_failed();
 
 #if INCLUDE_ALL_GCS
@@ -155,21 +144,18 @@ jint GenCollectedHeap::initialize() {
 
 char* GenCollectedHeap::allocate(size_t alignment,
                                  ReservedSpace* heap_rs){
-  const char overflow_msg[] = "The size of the object heap + VM data exceeds "
-    "the maximum representable size";
-
   // Now figure out the total size.
-  size_t total_reserved = 0;
-  const size_t pageSize = UseLargePages ?
-      os::large_page_size() : os::vm_page_size();
-
+  const size_t pageSize = UseLargePages ? os::large_page_size() : os::vm_page_size();
   assert(alignment % pageSize == 0, "Must be");
 
-  for (int i = 0; i < _n_gens; i++) {
-    total_reserved += _gen_specs[i]->max_size();
-    if (total_reserved < _gen_specs[i]->max_size()) {
-      vm_exit_during_initialization(overflow_msg);
-    }
+  GenerationSpec* young_spec = gen_policy()->young_gen_spec();
+  GenerationSpec* old_spec = gen_policy()->old_gen_spec();
+
+  // Check for overflow.
+  size_t total_reserved = young_spec->max_size() + old_spec->max_size();
+  if (total_reserved < young_spec->max_size()) {
+    vm_exit_during_initialization("The size of the object heap + VM data exceeds "
+                                  "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
          err_msg("Gen size; total_reserved=" SIZE_FORMAT ", alignment="
@@ -1351,7 +1337,7 @@ jlong GenCollectedHeap::millis_since_last_gc() {
   // back a time later than 'now'.
   jlong retVal = now - tolgc_cl.time();
   if (retVal < 0) {
-    NOT_PRODUCT(warning("time warp: "INT64_FORMAT, (int64_t) retVal);)
+    NOT_PRODUCT(warning("time warp: " JLONG_FORMAT, retVal);)
     return 0;
   }
   return retVal;

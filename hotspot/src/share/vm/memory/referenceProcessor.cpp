@@ -35,8 +35,6 @@
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
 bool             ReferenceProcessor::_pending_list_uses_discovered_field = false;
@@ -161,7 +159,7 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 
   NOT_PRODUCT(
   if (now < _soft_ref_timestamp_clock) {
-    warning("time warp: "INT64_FORMAT" to "INT64_FORMAT,
+    warning("time warp: " JLONG_FORMAT " to " JLONG_FORMAT,
             _soft_ref_timestamp_clock, now);
   }
   )
@@ -361,7 +359,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
   // field.
   if (TraceReferenceGC && PrintGCDetails) {
     gclog_or_tty->print_cr("ReferenceProcessor::enqueue_discovered_reflist list "
-                           INTPTR_FORMAT, (address)refs_list.head());
+                           INTPTR_FORMAT, p2i(refs_list.head()));
   }
 
   oop obj = NULL;
@@ -375,7 +373,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       next_d = java_lang_ref_Reference::discovered(obj);
       if (TraceReferenceGC && PrintGCDetails) {
         gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
-                               (void *)obj, (void *)next_d);
+                               p2i(obj), p2i(next_d));
       }
       assert(java_lang_ref_Reference::next(obj) == NULL,
              "Reference not active; should not be discovered");
@@ -402,7 +400,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       next_d = java_lang_ref_Reference::discovered(obj);
       if (TraceReferenceGC && PrintGCDetails) {
         gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
-                               (void *)obj, (void *)next_d);
+                               p2i(obj), p2i(next_d));
       }
       assert(java_lang_ref_Reference::next(obj) == NULL,
              "The reference should not be enqueued");
@@ -565,7 +563,7 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
         !policy->should_clear_reference(iter.obj(), _soft_ref_timestamp_clock)) {
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Dropping reference (" INTPTR_FORMAT ": %s"  ") by policy",
-                               (void *)iter.obj(), iter.obj()->klass()->internal_name());
+                               p2i(iter.obj()), iter.obj()->klass()->internal_name());
       }
       // Remove Reference object from list
       iter.remove();
@@ -582,9 +580,9 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
   complete_gc->do_void();
   NOT_PRODUCT(
     if (PrintGCDetails && TraceReferenceGC) {
-      gclog_or_tty->print_cr(" Dropped %d dead Refs out of %d "
-        "discovered Refs by policy, from list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), (address)refs_list.head());
+      gclog_or_tty->print_cr(" Dropped " SIZE_FORMAT " dead Refs out of " SIZE_FORMAT
+        " discovered Refs by policy, from list " INTPTR_FORMAT,
+        iter.removed(), iter.processed(), p2i(refs_list.head()));
     }
   )
 }
@@ -604,7 +602,7 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
     if (iter.is_referent_alive()) {
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Dropping strongly reachable reference (" INTPTR_FORMAT ": %s)",
-                               (void *)iter.obj(), iter.obj()->klass()->internal_name());
+                               p2i(iter.obj()), iter.obj()->klass()->internal_name());
       }
       // The referent is reachable after all.
       // Remove Reference object from list.
@@ -620,9 +618,9 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
   }
   NOT_PRODUCT(
     if (PrintGCDetails && TraceReferenceGC && (iter.processed() > 0)) {
-      gclog_or_tty->print_cr(" Dropped %d active Refs out of %d "
-        "Refs in discovered list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), (address)refs_list.head());
+      gclog_or_tty->print_cr(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
+        " Refs in discovered list " INTPTR_FORMAT,
+        iter.removed(), iter.processed(), p2i(refs_list.head()));
     }
   )
 }
@@ -659,9 +657,9 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
   complete_gc->do_void();
   NOT_PRODUCT(
     if (PrintGCDetails && TraceReferenceGC && (iter.processed() > 0)) {
-      gclog_or_tty->print_cr(" Dropped %d active Refs out of %d "
-        "Refs in discovered list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), (address)refs_list.head());
+      gclog_or_tty->print_cr(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
+        " Refs in discovered list " INTPTR_FORMAT,
+        iter.removed(), iter.processed(), p2i(refs_list.head()));
     }
   )
 }
@@ -690,7 +688,7 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Adding %sreference (" INTPTR_FORMAT ": %s) as pending",
                              clear_referent ? "cleared " : "",
-                             (void *)iter.obj(), iter.obj()->klass()->internal_name());
+                             p2i(iter.obj()), iter.obj()->klass()->internal_name());
     }
     assert(iter.obj()->is_oop(UseConcMarkSweepGC), "Adding a bad reference");
     iter.next();
@@ -807,11 +805,11 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   for (uint i = 0; i < _max_num_q; ++i) {
     total_refs += ref_lists[i].length();
     if (TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print("%d ", ref_lists[i].length());
+      gclog_or_tty->print(SIZE_FORMAT " ", ref_lists[i].length());
     }
   }
   if (TraceReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print_cr(" = %d", total_refs);
+    gclog_or_tty->print_cr(" = " SIZE_FORMAT, total_refs);
   }
   size_t avg_refs = total_refs / _num_q + 1;
   uint to_idx = 0;
@@ -877,11 +875,11 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   for (uint i = 0; i < _max_num_q; ++i) {
     balanced_total_refs += ref_lists[i].length();
     if (TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print("%d ", ref_lists[i].length());
+      gclog_or_tty->print(SIZE_FORMAT " ", ref_lists[i].length());
     }
   }
   if (TraceReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print_cr(" = %d", balanced_total_refs);
+    gclog_or_tty->print_cr(" = " SIZE_FORMAT, balanced_total_refs);
     gclog_or_tty->flush();
   }
   assert(total_refs == balanced_total_refs, "Balancing was incomplete");
@@ -923,7 +921,7 @@ ReferenceProcessor::process_discovered_reflist(
   size_t total_list_count = total_count(refs_lists);
 
   if (PrintReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print(", %u refs", total_list_count);
+    gclog_or_tty->print(", " SIZE_FORMAT " refs", total_list_count);
   }
 
   // Phase 1 (soft refs only):
@@ -1016,7 +1014,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       ShouldNotReachHere();
   }
   if (TraceReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print_cr("Thread %d gets list " INTPTR_FORMAT, id, list);
+    gclog_or_tty->print_cr("Thread %d gets list " INTPTR_FORMAT, id, p2i(list));
   }
   return list;
 }
@@ -1043,14 +1041,14 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
 
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Discovered reference (mt) (" INTPTR_FORMAT ": %s)",
-                             (void *)obj, obj->klass()->internal_name());
+                             p2i(obj), obj->klass()->internal_name());
     }
   } else {
     // If retest was non NULL, another thread beat us to it:
     // The reference has already been discovered...
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Already discovered reference (" INTPTR_FORMAT ": %s)",
-                             (void *)obj, obj->klass()->internal_name());
+                             p2i(obj), obj->klass()->internal_name());
     }
   }
 }
@@ -1065,7 +1063,7 @@ void ReferenceProcessor::verify_referent(oop obj) {
   assert(da ? referent->is_oop() : referent->is_oop_or_null(),
          err_msg("Bad referent " INTPTR_FORMAT " found in Reference "
                  INTPTR_FORMAT " during %satomic discovery ",
-                 (void *)referent, (void *)obj, da ? "" : "non-"));
+                 p2i(referent), p2i(obj), da ? "" : "non-"));
 }
 #endif
 
@@ -1145,7 +1143,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // The reference has already been discovered...
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Already discovered reference (" INTPTR_FORMAT ": %s)",
-                             (void *)obj, obj->klass()->internal_name());
+                             p2i(obj), obj->klass()->internal_name());
     }
     if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
       // assumes that an object is not processed twice;
@@ -1203,7 +1201,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Discovered reference (" INTPTR_FORMAT ": %s)",
-                                (void *)obj, obj->klass()->internal_name());
+                                p2i(obj), obj->klass()->internal_name());
     }
   }
   assert(obj->is_oop(), "Discovered a bad reference");
@@ -1314,7 +1312,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
       // active; we need to trace and mark its cohort.
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Precleaning Reference (" INTPTR_FORMAT ": %s)",
-                               (void *)iter.obj(), iter.obj()->klass()->internal_name());
+                               p2i(iter.obj()), iter.obj()->klass()->internal_name());
       }
       // Remove Reference object from list
       iter.remove();
@@ -1337,9 +1335,9 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
 
   NOT_PRODUCT(
     if (PrintGCDetails && PrintReferenceGC && (iter.processed() > 0)) {
-      gclog_or_tty->print_cr(" Dropped %d Refs out of %d "
-        "Refs in discovered list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), (address)refs_list.head());
+      gclog_or_tty->print_cr(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT
+        " Refs in discovered list " INTPTR_FORMAT,
+        iter.removed(), iter.processed(), p2i(refs_list.head()));
     }
   )
 }
