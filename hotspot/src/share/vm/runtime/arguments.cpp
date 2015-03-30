@@ -3455,15 +3455,16 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   if (os::is_headless_jre()) {
     const char* headless = Arguments::get_property("java.awt.headless");
     if (headless == NULL) {
-      char envbuffer[128];
-      if (!os::getenv("JAVA_AWT_HEADLESS", envbuffer, sizeof(envbuffer))) {
+      const char *headless_env = ::getenv("JAVA_AWT_HEADLESS");
+      if (headless_env == NULL) {
         if (!add_property("java.awt.headless=true")) {
           return JNI_ENOMEM;
         }
       } else {
         char buffer[256];
-        strcpy(buffer, "java.awt.headless=");
-        strcat(buffer, envbuffer);
+        const char *key = "java.awt.headless=";
+        strcpy(buffer, key);
+        strncat(buffer, headless_env, 256 - strlen(key) - 1);
         if (!add_property(buffer)) {
           return JNI_ENOMEM;
         }
@@ -3494,75 +3495,91 @@ jint Arguments::parse_java_tool_options_environment_variable(SysClassPath* scp_p
 }
 
 jint Arguments::parse_options_environment_variable(const char* name, SysClassPath* scp_p, bool* scp_assembly_required_p) {
-  const int N_MAX_OPTIONS = 64;
-  const int OPTION_BUFFER_SIZE = 1024;
-  char buffer[OPTION_BUFFER_SIZE];
+  char *buffer = ::getenv(name);
 
-  // The variable will be ignored if it exceeds the length of the buffer.
   // Don't check this variable if user has special privileges
   // (e.g. unix su command).
-  if (os::getenv(name, buffer, sizeof(buffer)) &&
-      !os::have_special_privileges()) {
-    JavaVMOption options[N_MAX_OPTIONS];      // Construct option array
-    jio_fprintf(defaultStream::error_stream(),
-                "Picked up %s: %s\n", name, buffer);
-    char* rd = buffer;                        // pointer to the input string (rd)
-    int i;
-    for (i = 0; i < N_MAX_OPTIONS;) {         // repeat for all options in the input string
-      while (isspace(*rd)) rd++;              // skip whitespace
-      if (*rd == 0) break;                    // we re done when the input string is read completely
-
-      // The output, option string, overwrites the input string.
-      // Because of quoting, the pointer to the option string (wrt) may lag the pointer to
-      // input string (rd).
-      char* wrt = rd;
-
-      options[i++].optionString = wrt;        // Fill in option
-      while (*rd != 0 && !isspace(*rd)) {     // unquoted strings terminate with a space or NULL
-        if (*rd == '\'' || *rd == '"') {      // handle a quoted string
-          int quote = *rd;                    // matching quote to look for
-          rd++;                               // don't copy open quote
-          while (*rd != quote) {              // include everything (even spaces) up until quote
-            if (*rd == 0) {                   // string termination means unmatched string
-              jio_fprintf(defaultStream::error_stream(),
-                          "Unmatched quote in %s\n", name);
-              return JNI_ERR;
-            }
-            *wrt++ = *rd++;                   // copy to option string
-          }
-          rd++;                               // don't copy close quote
-        } else {
-          *wrt++ = *rd++;                     // copy to option string
-        }
-      }
-      // Need to check if we're done before writing a NULL,
-      // because the write could be to the byte that rd is pointing to.
-      if (*rd++ == 0) {
-        *wrt = 0;
-        break;
-      }
-      *wrt = 0;                               // Zero terminate option
-    }
-    // Construct JavaVMInitArgs structure and parse as if it was part of the command line
-    JavaVMInitArgs vm_args;
-    vm_args.version = JNI_VERSION_1_2;
-    vm_args.options = options;
-    vm_args.nOptions = i;
-    vm_args.ignoreUnrecognized = IgnoreUnrecognizedVMOptions;
-
-    if (PrintVMOptions) {
-      const char* tail;
-      for (int i = 0; i < vm_args.nOptions; i++) {
-        const JavaVMOption *option = vm_args.options + i;
-        if (match_option(option, "-XX:", &tail)) {
-          logOption(tail);
-        }
-      }
-    }
-
-    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, Flag::ENVIRON_VAR));
+  if (buffer == NULL || os::have_special_privileges()) {
+    return JNI_OK;
   }
-  return JNI_OK;
+
+  if ((buffer = os::strdup(buffer)) == NULL) {
+    return JNI_ENOMEM;
+  }
+
+  GrowableArray<JavaVMOption> options(2, true);    // Construct option array
+  jio_fprintf(defaultStream::error_stream(),
+              "Picked up %s: %s\n", name, buffer);
+  char* rd = buffer;                        // pointer to the input string (rd)
+  while (true) {                            // repeat for all options in the input string
+    while (isspace(*rd)) rd++;              // skip whitespace
+    if (*rd == 0) break;                    // we re done when the input string is read completely
+
+    // The output, option string, overwrites the input string.
+    // Because of quoting, the pointer to the option string (wrt) may lag the pointer to
+    // input string (rd).
+    char* wrt = rd;
+
+    JavaVMOption option;
+    option.optionString = wrt;
+    options.append(option);                 // Fill in option
+    while (*rd != 0 && !isspace(*rd)) {     // unquoted strings terminate with a space or NULL
+      if (*rd == '\'' || *rd == '"') {      // handle a quoted string
+        int quote = *rd;                    // matching quote to look for
+        rd++;                               // don't copy open quote
+        while (*rd != quote) {              // include everything (even spaces) up until quote
+          if (*rd == 0) {                   // string termination means unmatched string
+            jio_fprintf(defaultStream::error_stream(),
+                        "Unmatched quote in %s\n", name);
+            os::free(buffer);
+            return JNI_ERR;
+          }
+          *wrt++ = *rd++;                   // copy to option string
+        }
+        rd++;                               // don't copy close quote
+      } else {
+        *wrt++ = *rd++;                     // copy to option string
+      }
+    }
+    // Need to check if we're done before writing a NULL,
+    // because the write could be to the byte that rd is pointing to.
+    if (*rd++ == 0) {
+      *wrt = 0;
+      break;
+    }
+    *wrt = 0;                               // Zero terminate option
+  }
+  JavaVMOption* options_arr =
+      NEW_C_HEAP_ARRAY_RETURN_NULL(JavaVMOption, options.length(), mtInternal);
+  if (options_arr == NULL) {
+    return JNI_ENOMEM;
+  }
+  for (int i = 0; i < options.length(); i++) {
+    options_arr[i] = options.at(i);
+  }
+
+  // Construct JavaVMInitArgs structure and parse as if it was part of the command line
+  JavaVMInitArgs vm_args;
+  vm_args.version = JNI_VERSION_1_2;
+  vm_args.options = options_arr;
+  vm_args.nOptions = options.length();
+  vm_args.ignoreUnrecognized = IgnoreUnrecognizedVMOptions;
+
+  if (PrintVMOptions) {
+    const char* tail;
+    for (int i = 0; i < vm_args.nOptions; i++) {
+      const JavaVMOption *option = vm_args.options + i;
+      if (match_option(option, "-XX:", &tail)) {
+        logOption(tail);
+      }
+    }
+  }
+
+  jint result = parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p,
+                                       Flag::ENVIRON_VAR);
+  FREE_C_HEAP_ARRAY(JavaVMOption, options_arr);
+  os::free(buffer);
+  return result;
 }
 
 void Arguments::set_shared_spaces_flags() {
