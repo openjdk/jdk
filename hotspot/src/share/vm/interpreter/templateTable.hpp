@@ -351,10 +351,8 @@ class TemplateTable: AllStatic {
   // Platform specifics
 #if defined TEMPLATETABLE_MD_HPP
 # include TEMPLATETABLE_MD_HPP
-#elif defined TARGET_ARCH_MODEL_x86_32
-# include "templateTable_x86_32.hpp"
-#elif defined TARGET_ARCH_MODEL_x86_64
-# include "templateTable_x86_64.hpp"
+#elif defined (TARGET_ARCH_MODEL_x86_32) || defined (TARGET_ARCH_MODEL_x86_64)
+# include "templateTable_x86.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "templateTable_sparc.hpp"
 #elif defined TARGET_ARCH_MODEL_zero
