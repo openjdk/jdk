@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,12 @@ public class SharedBaseAddress {
             return;
 
         for (String testEntry : testTable) {
+            String filename = "SharedBaseAddress" + testEntry + ".jsa";
             System.out.println("sharedBaseAddress = " + testEntry);
 
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                "-XX:+UnlockDiagnosticVMOptions",
-               "-XX:SharedArchiveFile=test.jsa",
+               "-XX:SharedArchiveFile=" + filename,
                "-XX:SharedBaseAddress=" + testEntry,
                "-Xshare:dump");
 
@@ -62,7 +63,7 @@ public class SharedBaseAddress {
             try {
                 pb = ProcessTools.createJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:SharedArchiveFile=test.jsa",
+                    "-XX:SharedArchiveFile=" + filename,
                     "-Xshare:on",
                     "-version");
                 output = new OutputAnalyzer(pb.start());

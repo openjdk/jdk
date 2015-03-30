@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,14 @@ import com.oracle.java.testlibrary.*;
 public class SharedArchiveFile {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./SharedArchiveFile.jsa", "-Xshare:dump");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     try {
       output.shouldContain("Loading classes to share");
       output.shouldHaveExitValue(0);
 
       pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:on", "-version");
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./SharedArchiveFile.jsa", "-Xshare:on", "-version");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("sharing");
       output.shouldHaveExitValue(0);
