@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class SharedSymbolTableBucketSize {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xshare:dump", "-XX:+PrintSharedSpaces",
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa",
+            "-XX:SharedArchiveFile=./SharedSymbolTableBucketSize.jsa",
             "-XX:SharedSymbolTableBucketSize=" + Integer.valueOf(bucket_size));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Loading classes to share");
@@ -58,7 +58,7 @@ public class SharedSymbolTableBucketSize {
           pb = ProcessTools.createJavaProcessBuilder(
                "-Xshare:dump", "-XX:+PrintSharedSpaces",
                "-XX:+UnlockDiagnosticVMOptions",
-               "-XX:SharedArchiveFile=./sample.jsa",
+               "-XX:SharedArchiveFile=./SharedSymbolTableBucketSize.jsa",
                input[i]);
           output = new OutputAnalyzer(pb.start());
           output.shouldContain("Improperly specified VM option");
