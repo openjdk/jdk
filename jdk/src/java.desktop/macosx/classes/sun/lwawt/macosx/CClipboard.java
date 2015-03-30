@@ -57,6 +57,18 @@ final class CClipboard extends SunClipboard {
     }
 
     @Override
+    public synchronized Transferable getContents(Object requestor) {
+        checkPasteboardAndNotify();
+        return super.getContents(requestor);
+    }
+
+    @Override
+    protected synchronized Transferable getContextContents() {
+        checkPasteboardAndNotify();
+        return super.getContextContents();
+    }
+
+    @Override
     protected void setContentsNative(Transferable contents) {
         FlavorTable flavorMap = getDefaultFlavorTable();
         // Don't use delayed Clipboard rendering for the Transferable's data.
@@ -116,13 +128,20 @@ final class CClipboard extends SunClipboard {
     private native void declareTypes(long[] formats, SunClipboard newOwner);
     private native void setData(byte[] data, long format);
 
+    void checkPasteboardAndNotify() {
+        if (checkPasteboardWithoutNotification()) {
+            notifyChanged();
+            lostOwnershipNow(null);
+        }
+    }
+
     /**
      * Invokes native check whether a change count on the general pasteboard is different
      * than when we set it. The different count value means the current owner lost
      * pasteboard ownership and someone else put data on the clipboard.
      * @since 1.7
      */
-    native void checkPasteboard();
+    native boolean checkPasteboardWithoutNotification();
 
     /*** Native Callbacks ***/
     private void notifyLostOwnership() {
