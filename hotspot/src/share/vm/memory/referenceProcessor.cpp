@@ -676,7 +676,6 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
   ResourceMark rm;
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
-    iter.update_discovered();
     iter.load_ptrs(DEBUG_ONLY(false /* allow_null_referent */));
     if (clear_referent) {
       // NULL out referent pointer
@@ -693,8 +692,6 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
     assert(iter.obj()->is_oop(UseConcMarkSweepGC), "Adding a bad reference");
     iter.next();
   }
-  // Remember to update the next pointer of the last ref.
-  iter.update_discovered();
   // Close the reachable set
   complete_gc->do_void();
 }
