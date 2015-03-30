@@ -184,20 +184,6 @@ julong os::physical_memory() {
   return Linux::physical_memory();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// environment support
-
-bool os::getenv(const char* name, char* buf, int len) {
-  const char* val = ::getenv(name);
-  if (val != NULL && strlen(val) < (size_t)len) {
-    strcpy(buf, val);
-    return true;
-  }
-  if (len > 0) buf[0] = 0;  // return a null string
-  return false;
-}
-
-
 // Return true if user is running as root.
 
 bool os::have_special_privileges() {

@@ -164,8 +164,7 @@ class os: AllStatic {
   // Override me as needed
   static int    file_name_strcmp(const char* s1, const char* s2);
 
-  // get/unset environment variable
-  static bool getenv(const char* name, char* buffer, int len);
+  // unset environment variable
   static bool unsetenv(const char* name);
 
   static bool have_special_privileges();
@@ -591,7 +590,7 @@ class os: AllStatic {
   static void pd_print_cpu_info(outputStream* st);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
-  static void print_environment_variables(outputStream* st, const char** env_list, char* buffer, int len);
+  static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, void* context);
   static void print_register_info(outputStream* st, void* context);
   static void print_siginfo(outputStream* st, void* siginfo);
