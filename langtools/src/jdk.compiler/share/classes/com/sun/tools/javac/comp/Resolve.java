@@ -2555,7 +2555,8 @@ public class Resolve {
                               boolean allowBoxing,
                               boolean useVarargs) {
         Symbol bestSoFar = methodNotFound;
-        for (final Symbol sym : site.tsym.members().getSymbolsByName(names.init)) {
+        TypeSymbol tsym = site.tsym.isInterface() ? syms.objectType.tsym : site.tsym;
+        for (final Symbol sym : tsym.members().getSymbolsByName(names.init)) {
             //- System.out.println(" e " + e.sym);
             if (sym.kind == MTH &&
                 (sym.flags_field & SYNTHETIC) == 0) {
