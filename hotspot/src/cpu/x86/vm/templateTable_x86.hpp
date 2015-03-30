@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_TEMPLATETABLE_X86_32_HPP
-#define CPU_X86_VM_TEMPLATETABLE_X86_32_HPP
+#ifndef CPU_X86_VM_TEMPLATETABLE_X86_HPP
+#define CPU_X86_VM_TEMPLATETABLE_X86_HPP
 
   static void prepare_invoke(int byte_no,
                              Register method,         // linked method (or i-klass)
@@ -39,4 +39,4 @@
   static void index_check(Register array, Register index);
   static void index_check_without_pop(Register array, Register index);
 
-#endif // CPU_X86_VM_TEMPLATETABLE_X86_32_HPP
+#endif // CPU_X86_VM_TEMPLATETABLE_X86_HPP
