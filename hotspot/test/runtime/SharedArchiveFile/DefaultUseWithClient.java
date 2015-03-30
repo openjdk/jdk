@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.io.File;
 
 public class DefaultUseWithClient {
     public static void main(String[] args) throws Exception {
-        String fileName = "test.jsa";
+        String fileName = "DefaultUseWithClient.jsa";
 
         // On 32-bit windows CDS should be on by default in "-client" config
         // Skip this test on any other platform
