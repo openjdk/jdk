@@ -30,10 +30,19 @@
  * @run main/othervm -Djdk.util.zip.inhibitZip64=false EntryCount64k
  */
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.nio.file.Files;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.RandomAccessFile;
 import java.nio.file.Paths;
-import java.util.*;
-import java.util.zip.*;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
@@ -41,11 +50,15 @@ import jdk.testlibrary.ProcessTools;
 public class EntryCount64k {
     public static class Main {
         public static void main(String[] args) {
-            System.out.println("Main");
+            System.out.print("Main");
         }
     }
 
-    static final String mainClass = "EntryCount64k$Main";
+    static final String MAIN_CLASS = "EntryCount64k$Main";
+    static final String THIS_CLASS = "EntryCount64k";
+    static final String[] SPECIAL_CLASSES = { MAIN_CLASS, THIS_CLASS };
+    // static final String[] SPECIAL_CLASSES = { MAIN_CLASS };
+    static final int SPECIAL_COUNT = 1 + SPECIAL_CLASSES.length;
 
     public static void main(String[] args) throws Throwable {
         for (int i = (1 << 16) - 3; i < (1 << 16) + 2; i++)
@@ -60,30 +73,27 @@ public class EntryCount64k {
              BufferedOutputStream bos = new BufferedOutputStream(fos);
              ZipOutputStream zos = new ZipOutputStream(bos)) {
 
-            // Add 2 special entries, manifest and main class,
-            // to allow the zip file to be used with "java -jar"
-            ZipEntry man = new ZipEntry("META-INF/MANIFEST.MF");
-            zos.putNextEntry(man);
-            zos.write("Manifest-Version: 1.0\n".getBytes("US-ASCII"));
-            zos.write(("Main-Class: " + mainClass + "\n").getBytes("US-ASCII"));
+            // Add entries to allow the zip file to be used with "java -jar"
+            zos.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
+            for (String line : new String[] {
+                     "Manifest-Version: 1.0",
+                     "Main-Class: " + MAIN_CLASS,
+                 })
+                zos.write((line + "\n").getBytes("US-ASCII"));
             zos.closeEntry();
 
-            String mainName = mainClass + ".class";
-            ZipEntry mainEntry = new ZipEntry(mainName);
             String testClasses = System.getProperty("test.classes");
-            File mainFile = new File(testClasses, mainName);
-            zos.putNextEntry(mainEntry);
-            try (FileInputStream fis = new FileInputStream(mainFile)) {
-                byte[] buf = new byte[4096];
-                int n;
-                while ((n = fis.read(buf)) > 0)
-                    zos.write(buf, 0, n);
+            for (String className : SPECIAL_CLASSES) {
+                String baseName = className + ".class";
+                ZipEntry ze = new ZipEntry(baseName);
+                File file = new File(testClasses, baseName);
+                zos.putNextEntry(ze);
+                Files.copy(file.toPath(), zos);
+                zos.closeEntry();
             }
-            zos.closeEntry();
 
-            for (int i = 2; i < entryCount; i++) {
-                ZipEntry e = new ZipEntry(Integer.toString(i));
-                zos.putNextEntry(e);
+            for (int i = SPECIAL_COUNT; i < entryCount; i++) {
+                zos.putNextEntry(new ZipEntry(Integer.toString(i)));
                 zos.closeEntry();
             }
         }
@@ -121,17 +131,14 @@ public class EntryCount64k {
 
     static void checkCanRead(File zipFile, int entryCount) throws Throwable {
         // Check ZipInputStream API
-        try (ZipInputStream zis =
-             new ZipInputStream(
-                 new BufferedInputStream(
-                     new FileInputStream(zipFile)))) {
-            // skip over first two entries
-            for (int i = 0; i < 2; i++)
-                zis.getNextEntry();
-            for (int i = 2; i < entryCount; i++) {
+        try (FileInputStream fis = new FileInputStream(zipFile);
+             BufferedInputStream bis = new BufferedInputStream(fis);
+             ZipInputStream zis = new ZipInputStream(bis)) {
+            for (int i = 0; i < entryCount; i++) {
                 ZipEntry e = zis.getNextEntry();
-                if (Integer.parseInt(e.getName()) != i)
-                    throw new AssertionError(e.getName());
+                if (i >= SPECIAL_COUNT) // skip special entries
+                    if (Integer.parseInt(e.getName()) != i)
+                        throw new AssertionError(e.getName());
             }
             if (zis.getNextEntry() != null)
                 throw new AssertionError();
@@ -140,13 +147,11 @@ public class EntryCount64k {
         // Check ZipFile API
         try (ZipFile zf = new ZipFile(zipFile)) {
             Enumeration<? extends ZipEntry> en = zf.entries();
-            // skip over first two entries
-            for (int i = 0; i < 2; i++)
-                en.nextElement();
-            for (int i = 2; i < entryCount; i++) {
+            for (int i = 0; i < entryCount; i++) {
                 ZipEntry e = en.nextElement();
-                if (Integer.parseInt(e.getName()) != i)
-                    throw new AssertionError();
+                if (i >= SPECIAL_COUNT) // skip special entries
+                    if (Integer.parseInt(e.getName()) != i)
+                        throw new AssertionError();
             }
             if (en.hasMoreElements()
                 || (zf.size() != entryCount)
@@ -162,7 +167,7 @@ public class EntryCount64k {
         ProcessBuilder pb = new ProcessBuilder(cmd);
         OutputAnalyzer a = ProcessTools.executeProcess(pb);
         a.shouldHaveExitValue(0);
-        a.stdoutShouldMatch("\\AMain\n\\Z");
+        a.stdoutShouldMatch("\\AMain\\Z");
         a.stderrShouldMatch("\\A\\Z");
     }
 }
