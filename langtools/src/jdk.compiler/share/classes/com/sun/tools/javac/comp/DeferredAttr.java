@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
+import com.sun.source.tree.NewClassTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.TypeMapping;
 import com.sun.tools.javac.comp.Resolve.ResolveError;
@@ -81,6 +82,8 @@ public class DeferredAttr extends JCTree.Visitor {
     final Log log;
     final Symtab syms;
     final TreeMaker make;
+    final TreeCopier<Void> treeCopier;
+    final TypeMapping<Void> deferredCopier;
     final Types types;
     final Flow flow;
     final Names names;
@@ -123,6 +126,35 @@ public class DeferredAttr extends JCTree.Visitor {
                 @Override
                 public String toString() {
                     return "Empty deferred context!";
+                }
+            };
+
+        // For speculative attribution, skip the class definition in <>.
+        treeCopier =
+            new TreeCopier<Void>(make) {
+                @Override @DefinedBy(Api.COMPILER_TREE)
+                public JCTree visitNewClass(NewClassTree node, Void p) {
+                    JCNewClass t = (JCNewClass) node;
+                    if (TreeInfo.isDiamond(t)) {
+                        JCExpression encl = copy(t.encl, p);
+                        List<JCExpression> typeargs = copy(t.typeargs, p);
+                        JCExpression clazz = copy(t.clazz, p);
+                        List<JCExpression> args = copy(t.args, p);
+                        JCClassDecl def = null;
+                        return make.at(t.pos).NewClass(encl, typeargs, clazz, args, def);
+                    } else {
+                        return super.visitNewClass(node, p);
+                    }
+                }
+            };
+        deferredCopier = new TypeMapping<Void> () {
+                @Override
+                public Type visitType(Type t, Void v) {
+                    if (t.hasTag(DEFERRED)) {
+                        DeferredType dt = (DeferredType) t;
+                        return new DeferredType(treeCopier.copy(dt.tree), dt.env);
+                    }
+                    return t;
                 }
             };
     }
@@ -364,7 +396,7 @@ public class DeferredAttr extends JCTree.Visitor {
      * disabled during speculative type-checking.
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
-        return attribSpeculative(tree, env, resultInfo, new TreeCopier<>(make),
+        return attribSpeculative(tree, env, resultInfo, treeCopier,
                 (newTree)->new DeferredAttrDiagHandler(log, newTree));
     }
 

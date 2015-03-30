@@ -46,6 +46,10 @@ import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.jvm.*;
+import static com.sun.tools.javac.resources.CompilerProperties.Fragments.Diamond;
+import static com.sun.tools.javac.resources.CompilerProperties.Fragments.DiamondInvalidArg;
+import static com.sun.tools.javac.resources.CompilerProperties.Fragments.DiamondInvalidArgs;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -54,6 +58,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
@@ -219,6 +224,26 @@ public class Attr extends JCTree.Visitor {
                final Type found,
                final KindSelector ownkind,
                final ResultInfo resultInfo) {
+        return check(tree, found, ownkind, resultInfo, true);
+    }
+    /** Check kind and type of given tree against protokind and prototype.
+     *  If check succeeds, store type in tree and return it.
+     *  If check fails, store errType in tree and return it.
+     *  No checks are performed if the prototype is a method type.
+     *  It is not necessary in this case since we know that kind and type
+     *  are correct.
+     *
+     *  @param tree     The tree whose kind and type is checked
+     *  @param found    The computed type of the tree
+     *  @param ownkind  The computed kind of the tree
+     *  @param resultInfo  The expected result of the tree
+     *  @param recheckPostInference If true and inference is underway, arrange to recheck the tree after inference finishes.
+     */
+    Type check(final JCTree tree,
+               final Type found,
+               final KindSelector ownkind,
+               final ResultInfo resultInfo,
+               boolean recheckPostInference) {
         InferenceContext inferenceContext = resultInfo.checkContext.inferenceContext();
         Type owntype;
         boolean shouldCheck = !found.hasTag(ERROR) &&
@@ -233,12 +258,14 @@ public class Attr extends JCTree.Visitor {
             //delay the check if there are inference variables in the found type
             //this means we are dealing with a partially inferred poly expression
             owntype = shouldCheck ? resultInfo.pt : found;
-            inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt),
-                    instantiatedContext -> {
-                        ResultInfo pendingResult =
-                                resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
-                        check(tree, inferenceContext.asInstType(found), ownkind, pendingResult);
-                    });
+            if (recheckPostInference) {
+                inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt),
+                        instantiatedContext -> {
+                            ResultInfo pendingResult =
+                                    resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
+                            check(tree, inferenceContext.asInstType(found), ownkind, pendingResult, false);
+                        });
+            }
         } else {
             owntype = shouldCheck ?
             resultInfo.check(tree, found) :
@@ -862,7 +889,7 @@ public class Attr extends JCTree.Visitor {
             } else {
                 chk.checkOverrideClashes(tree.pos(), env.enclClass.type, m);
             }
-            chk.checkOverride(tree, m);
+            chk.checkOverride(env, tree, m);
 
             if (isDefaultMethod && types.overridesObjectMethod(m.enclClass(), m)) {
                 log.error(tree, "default.overrides.object.member", m.name, Kinds.kindName(m.location()), m.location());
@@ -1969,11 +1996,16 @@ public class Attr extends JCTree.Visitor {
                  (((JCVariableDecl) env.tree).mods.flags & Flags.ENUM) == 0 ||
                  ((JCVariableDecl) env.tree).init != tree))
                 log.error(tree.pos(), "enum.cant.be.instantiated");
+
+            boolean isSpeculativeDiamondInferenceRound = TreeInfo.isDiamond(tree) &&
+                    resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
+            boolean skipNonDiamondPath = false;
             // Check that class is not abstract
-            if (cdef == null &&
+            if (cdef == null && !isSpeculativeDiamondInferenceRound && // class body may be nulled out in speculative tree copy
                 (clazztype.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
                 log.error(tree.pos(), "abstract.cant.be.instantiated",
                           clazztype.tsym);
+                skipNonDiamondPath = true;
             } else if (cdef != null && clazztype.tsym.isInterface()) {
                 // Check that no constructor arguments are given to
                 // anonymous classes implementing an interface
@@ -1986,7 +2018,9 @@ public class Attr extends JCTree.Visitor {
                 // Error recovery: pretend no arguments were supplied.
                 argtypes = List.nil();
                 typeargtypes = List.nil();
-            } else if (TreeInfo.isDiamond(tree)) {
+                skipNonDiamondPath = true;
+            }
+            if (TreeInfo.isDiamond(tree)) {
                 ClassType site = new ClassType(clazztype.getEnclosingType(),
                             clazztype.tsym.type.getTypeArguments(),
                                                clazztype.tsym,
@@ -2022,7 +2056,7 @@ public class Attr extends JCTree.Visitor {
 
                 tree.clazz.type = types.createErrorType(clazztype);
                 if (!constructorType.isErroneous()) {
-                    tree.clazz.type = clazztype = constructorType.getReturnType();
+                    tree.clazz.type = clazz.type = constructorType.getReturnType();
                     tree.constructorType = types.createMethodTypeWithReturn(constructorType, syms.voidType);
                 }
                 clazztype = chk.checkClassType(tree.clazz, tree.clazz.type, true);
@@ -2031,7 +2065,7 @@ public class Attr extends JCTree.Visitor {
             // Resolve the called constructor under the assumption
             // that we are referring to a superclass instance of the
             // current instance (JLS ???).
-            else {
+            else if (!skipNonDiamondPath) {
                 //the following code alters some of the fields in the current
                 //AttrContext - hence, the current context must be dup'ed in
                 //order to avoid downstream failures
@@ -2052,70 +2086,8 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (cdef != null) {
-                // We are seeing an anonymous class instance creation.
-                // In this case, the class instance creation
-                // expression
-                //
-                //    E.new <typeargs1>C<typargs2>(args) { ... }
-                //
-                // is represented internally as
-                //
-                //    E . new <typeargs1>C<typargs2>(args) ( class <empty-name> { ... } )  .
-                //
-                // This expression is then *transformed* as follows:
-                //
-                // (1) add an extends or implements clause
-                // (2) add a constructor.
-                //
-                // For instance, if C is a class, and ET is the type of E,
-                // the expression
-                //
-                //    E.new <typeargs1>C<typargs2>(args) { ... }
-                //
-                // is translated to (where X is a fresh name and typarams is the
-                // parameter list of the super constructor):
-                //
-                //   new <typeargs1>X(<*nullchk*>E, args) where
-                //     X extends C<typargs2> {
-                //       <typarams> X(ET e, args) {
-                //         e.<typeargs1>super(args)
-                //       }
-                //       ...
-                //     }
-
-                if (clazztype.tsym.isInterface()) {
-                    cdef.implementing = List.of(clazz);
-                } else {
-                    cdef.extending = clazz;
-                }
-
-                if (resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
-                    isSerializable(clazztype)) {
-                    localEnv.info.isSerializable = true;
-                }
-
-                attribStat(cdef, localEnv);
-
-                // If an outer instance is given,
-                // prefix it to the constructor arguments
-                // and delete it from the new expression
-                if (tree.encl != null && !clazztype.tsym.isInterface()) {
-                    tree.args = tree.args.prepend(makeNullCheck(tree.encl));
-                    argtypes = argtypes.prepend(tree.encl.type);
-                    tree.encl = null;
-                }
-
-                // Reassign clazztype and recompute constructor.
-                clazztype = cdef.sym.type;
-                Symbol sym = tree.constructor = rs.resolveConstructor(
-                    tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                Assert.check(!sym.kind.isResolutionError());
-                tree.constructor = sym;
-                tree.constructorType = checkId(noCheckTree,
-                    clazztype,
-                    tree.constructor,
-                    localEnv,
-                    new ResultInfo(pkind, newMethodTemplate(syms.voidType, argtypes, typeargtypes)));
+                visitAnonymousClassDefinition(tree, clazz, clazztype, cdef, localEnv, argtypes, typeargtypes, pkind);
+                return;
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)
@@ -2132,6 +2104,125 @@ public class Attr extends JCTree.Visitor {
         }
         chk.validate(tree.typeargs, localEnv);
     }
+
+        // where
+        private void visitAnonymousClassDefinition(JCNewClass tree, JCExpression clazz, Type clazztype,
+                                                   JCClassDecl cdef, Env<AttrContext> localEnv,
+                                                   List<Type> argtypes, List<Type> typeargtypes,
+                                                   KindSelector pkind) {
+            // We are seeing an anonymous class instance creation.
+            // In this case, the class instance creation
+            // expression
+            //
+            //    E.new <typeargs1>C<typargs2>(args) { ... }
+            //
+            // is represented internally as
+            //
+            //    E . new <typeargs1>C<typargs2>(args) ( class <empty-name> { ... } )  .
+            //
+            // This expression is then *transformed* as follows:
+            //
+            // (1) add an extends or implements clause
+            // (2) add a constructor.
+            //
+            // For instance, if C is a class, and ET is the type of E,
+            // the expression
+            //
+            //    E.new <typeargs1>C<typargs2>(args) { ... }
+            //
+            // is translated to (where X is a fresh name and typarams is the
+            // parameter list of the super constructor):
+            //
+            //   new <typeargs1>X(<*nullchk*>E, args) where
+            //     X extends C<typargs2> {
+            //       <typarams> X(ET e, args) {
+            //         e.<typeargs1>super(args)
+            //       }
+            //       ...
+            //     }
+            InferenceContext inferenceContext = resultInfo.checkContext.inferenceContext();
+            final boolean isDiamond = TreeInfo.isDiamond(tree);
+            if (isDiamond
+                    && ((tree.constructorType != null && inferenceContext.free(tree.constructorType))
+                    || (tree.clazz.type != null && inferenceContext.free(tree.clazz.type)))) {
+                inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
+                        instantiatedContext -> {
+                            tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
+                            clazz.type = instantiatedContext.asInstType(clazz.type);
+                            visitAnonymousClassDefinition(tree, clazz, clazz.type, cdef, localEnv, argtypes, typeargtypes, pkind);
+                        });
+            } else {
+                if (isDiamond && clazztype.hasTag(CLASS)) {
+                    List<Type> invalidDiamondArgs = chk.checkDiamondDenotable((ClassType)clazztype);
+                    if (!clazztype.isErroneous() && invalidDiamondArgs.nonEmpty()) {
+                        // One or more types inferred in the previous steps is non-denotable.
+                        Fragment fragment = Diamond(clazztype.tsym);
+                        log.error(tree.clazz.pos(),
+                                Errors.CantApplyDiamond1(
+                                        fragment,
+                                        invalidDiamondArgs.size() > 1 ?
+                                                DiamondInvalidArgs(invalidDiamondArgs, fragment) :
+                                                DiamondInvalidArg(invalidDiamondArgs, fragment)));
+                    }
+                    // For <>(){}, inferred types must also be accessible.
+                    for (Type t : clazztype.getTypeArguments()) {
+                        rs.checkAccessibleType(env, t);
+                    }
+                }
+
+                // If we already errored, be careful to avoid a further avalanche. ErrorType answers
+                // false for isInterface call even when the original type is an interface.
+                boolean implementing = clazztype.tsym.isInterface() ||
+                        clazztype.isErroneous() && clazztype.getOriginalType().tsym.isInterface();
+
+                if (implementing) {
+                    cdef.implementing = List.of(clazz);
+                } else {
+                    cdef.extending = clazz;
+                }
+
+                if (resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
+                    isSerializable(clazztype)) {
+                    localEnv.info.isSerializable = true;
+                }
+
+                attribStat(cdef, localEnv);
+
+                List<Type> finalargtypes;
+                // If an outer instance is given,
+                // prefix it to the constructor arguments
+                // and delete it from the new expression
+                if (tree.encl != null && !clazztype.tsym.isInterface()) {
+                    tree.args = tree.args.prepend(makeNullCheck(tree.encl));
+                    finalargtypes = argtypes.prepend(tree.encl.type);
+                    tree.encl = null;
+                } else {
+                    finalargtypes = argtypes;
+                }
+
+                // Reassign clazztype and recompute constructor. As this necessarily involves
+                // another attribution pass for deferred types in the case of <>, replicate
+                // them. Original arguments have right decorations already.
+                if (isDiamond && pkind.contains(KindSelector.POLY)) {
+                    finalargtypes = finalargtypes.map(deferredAttr.deferredCopier);
+                }
+
+                clazztype = cdef.sym.type;
+                Symbol sym = tree.constructor = rs.resolveConstructor(
+                        tree.pos(), localEnv, clazztype, finalargtypes, typeargtypes);
+                Assert.check(!sym.kind.isResolutionError());
+                tree.constructor = sym;
+                tree.constructorType = checkId(noCheckTree,
+                        clazztype,
+                        tree.constructor,
+                        localEnv,
+                        new ResultInfo(pkind, newMethodTemplate(syms.voidType, finalargtypes, typeargtypes)));
+            }
+            Type owntype = (tree.constructor != null && tree.constructor.kind == MTH) ?
+                                clazztype : types.createErrorType(tree.type);
+            result = check(tree, owntype, KindSelector.VAL, resultInfo, false);
+            chk.validate(tree.typeargs, localEnv);
+        }
 
     /** Make an attributed null check tree.
      */
