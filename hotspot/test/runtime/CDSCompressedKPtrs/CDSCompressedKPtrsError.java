@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,12 @@ import com.oracle.java.testlibrary.*;
 public class CDSCompressedKPtrsError {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb;
+    String filename = "./CDSCompressedKPtrsError.jsa";
+
     if (Platform.is64bit()) {
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UseCompressedOops", "-XX:+UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+        "-XX:SharedArchiveFile=" + filename, "-Xshare:dump");
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
       try {
         output.shouldContain("Loading classes to share");
@@ -45,21 +47,21 @@ public class CDSCompressedKPtrsError {
 
         pb = ProcessTools.createJavaProcessBuilder(
           "-XX:-UseCompressedClassPointers", "-XX:-UseCompressedOops",
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:on", "-version");
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename, "-Xshare:on", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Unable to use shared archive");
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder(
           "-XX:-UseCompressedClassPointers", "-XX:+UseCompressedOops",
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:on", "-version");
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename, "-Xshare:on", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Unable to use shared archive");
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder(
           "-XX:+UseCompressedClassPointers", "-XX:-UseCompressedOops",
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:on", "-version");
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename, "-Xshare:on", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Unable to use shared archive");
         output.shouldHaveExitValue(0);
@@ -72,19 +74,19 @@ public class CDSCompressedKPtrsError {
       // Test bad options with -Xshare:dump.
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:-UseCompressedOops", "-XX:+UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad1.jsa", "-Xshare:dump");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Cannot dump shared archive");
 
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UseCompressedOops", "-XX:-UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad2.jsa", "-Xshare:dump");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Cannot dump shared archive");
 
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:-UseCompressedOops", "-XX:-UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad3.jsa", "-Xshare:dump");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Cannot dump shared archive");
 
