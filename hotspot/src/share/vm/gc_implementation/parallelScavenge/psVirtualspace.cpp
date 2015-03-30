@@ -27,8 +27,6 @@
 #include "runtime/os.hpp"
 #include "runtime/virtualspace.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // PSVirtualSpace
 
 PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
@@ -218,22 +216,22 @@ void PSVirtualSpace::verify() const {
 void PSVirtualSpace::print() const {
   gclog_or_tty->print_cr("virtual space [" PTR_FORMAT "]:  alignment="
                          SIZE_FORMAT "K grows %s%s",
-                         this, alignment() / K, grows_up() ? "up" : "down",
+                         p2i(this), alignment() / K, grows_up() ? "up" : "down",
                          special() ? " (pinned in memory)" : "");
   gclog_or_tty->print_cr("    reserved=" SIZE_FORMAT "K"
                          " [" PTR_FORMAT "," PTR_FORMAT "]"
                          " committed=" SIZE_FORMAT "K"
                          " [" PTR_FORMAT "," PTR_FORMAT "]",
                          reserved_size() / K,
-                         reserved_low_addr(), reserved_high_addr(),
+                         p2i(reserved_low_addr()), p2i(reserved_high_addr()),
                          committed_size() / K,
-                         committed_low_addr(), committed_high_addr());
+                         p2i(committed_low_addr()), p2i(committed_high_addr()));
 }
 #endif // #ifndef PRODUCT
 
 void PSVirtualSpace::print_space_boundaries_on(outputStream* st) const {
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               low_boundary(), high(), high_boundary());
+               p2i(low_boundary()), p2i(high()), p2i(high_boundary()));
 }
 
 PSVirtualSpaceHighToLow::PSVirtualSpaceHighToLow(ReservedSpace rs,
@@ -350,5 +348,5 @@ size_t PSVirtualSpaceHighToLow::expand_into(PSVirtualSpace* other_space,
 void
 PSVirtualSpaceHighToLow::print_space_boundaries_on(outputStream* st) const {
   st->print_cr(" (" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
-               high_boundary(), low(), low_boundary());
+               p2i(high_boundary()), p2i(low()), p2i(low_boundary()));
 }

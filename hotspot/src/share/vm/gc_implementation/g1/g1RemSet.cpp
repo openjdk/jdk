@@ -39,8 +39,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/intHisto.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #define CARD_REPEAT_HISTO 0
 
 #if CARD_REPEAT_HISTO
@@ -156,9 +154,9 @@ public:
                            "RS names card " SIZE_FORMAT_HEX ": "
                            "[" PTR_FORMAT ", " PTR_FORMAT ")",
                            _worker_i,
-                           card_region->bottom(), card_region->end(),
+                           p2i(card_region->bottom()), p2i(card_region->end()),
                            card_index,
-                           card_start, card_start + G1BlockOffsetSharedArray::N_words);
+                           p2i(card_start), p2i(card_start + G1BlockOffsetSharedArray::N_words));
   }
 
   void scan_strong_code_roots(HeapRegion* r) {
@@ -428,7 +426,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
          err_msg("Card at "PTR_FORMAT" index "SIZE_FORMAT" representing heap at "PTR_FORMAT" (%u) must be in committed heap",
                  p2i(card_ptr),
                  _ct_bs->index_for(_ct_bs->addr_for(card_ptr)),
-                 _ct_bs->addr_for(card_ptr),
+                 p2i(_ct_bs->addr_for(card_ptr)),
                  _g1->addr_to_region(_ct_bs->addr_for(card_ptr))));
 
   // If the card is no longer dirty, nothing to do.

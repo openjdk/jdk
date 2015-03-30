@@ -27,8 +27,6 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "utilities/ostream.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 const char* G1HRPrinter::action_name(ActionType action) {
   switch(action) {
     case Alloc:          return "ALLOC";
@@ -85,18 +83,18 @@ void G1HRPrinter::print(ActionType action, RegionType type,
   if (type_str != NULL) {
     if (top != NULL) {
       gclog_or_tty->print_cr(G1HR_PREFIX" %s(%s) "PTR_FORMAT" "PTR_FORMAT,
-                             action_str, type_str, bottom, top);
+                             action_str, type_str, p2i(bottom), p2i(top));
     } else {
       gclog_or_tty->print_cr(G1HR_PREFIX" %s(%s) "PTR_FORMAT,
-                             action_str, type_str, bottom);
+                             action_str, type_str, p2i(bottom));
     }
   } else {
     if (top != NULL) {
       gclog_or_tty->print_cr(G1HR_PREFIX" %s "PTR_FORMAT" "PTR_FORMAT,
-                             action_str, bottom, top);
+                             action_str, p2i(bottom), p2i(top));
     } else {
       gclog_or_tty->print_cr(G1HR_PREFIX" %s "PTR_FORMAT,
-                             action_str, bottom);
+                             action_str, p2i(bottom));
     }
   }
 }
@@ -105,7 +103,7 @@ void G1HRPrinter::print(ActionType action, HeapWord* bottom, HeapWord* end) {
   const char* action_str = action_name(action);
 
   gclog_or_tty->print_cr(G1HR_PREFIX" %s ["PTR_FORMAT","PTR_FORMAT"]",
-                         action_str, bottom, end);
+                         action_str, p2i(bottom), p2i(end));
 }
 
 void G1HRPrinter::print(PhaseType phase, size_t phase_num) {
