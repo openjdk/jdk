@@ -819,46 +819,9 @@ WB_ENTRY(void, WB_UnlockCompilation(JNIEnv* env, jobject o))
   mo.notify_all();
 WB_END
 
-void WhiteBox::sweeper_thread_entry(JavaThread* thread, TRAPS) {
-  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
-  {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    NMethodSweeper::_should_sweep = true;
-  }
-  NMethodSweeper::possibly_sweep();
-}
-
-JavaThread* WhiteBox::create_sweeper_thread(TRAPS) {
-  // create sweeper thread w/ custom entry -- one iteration instead of loop
-  CodeCacheSweeperThread* sweeper_thread = new CodeCacheSweeperThread();
-  sweeper_thread->set_entry_point(&WhiteBox::sweeper_thread_entry);
-
-  // create j.l.Thread object and associate it w/ sweeper thread
-  {
-    // inherit deamon property from current thread
-    bool is_daemon = java_lang_Thread::is_daemon(JavaThread::current()->threadObj());
-
-    HandleMark hm(THREAD);
-    Handle thread_group(THREAD, Universe::system_thread_group());
-    const char* name = "WB Sweeper thread";
-    sweeper_thread->allocate_threadObj(thread_group, name, is_daemon, THREAD);
-  }
-
-  {
-    MutexLocker mu(Threads_lock, THREAD);
-    Threads::add(sweeper_thread);
-  }
-  return sweeper_thread;
-}
-
-WB_ENTRY(jobject, WB_ForceNMethodSweep(JNIEnv* env, jobject o))
-  JavaThread* sweeper_thread = WhiteBox::create_sweeper_thread(Thread::current());
-  if (sweeper_thread == NULL) {
-    return NULL;
-  }
-  jobject result = JNIHandles::make_local(env, sweeper_thread->threadObj());
-  Thread::start(sweeper_thread);
-  return result;
+WB_ENTRY(void, WB_ForceNMethodSweep(JNIEnv* env, jobject o))
+  // Force a code cache sweep and block until it finished
+  NMethodSweeper::force_sweep();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
@@ -1402,7 +1365,7 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
-  {CC"forceNMethodSweep0", CC"()Ljava/lang/Thread;",  (void*)&WB_ForceNMethodSweep  },
+  {CC"forceNMethodSweep",  CC"()V",                   (void*)&WB_ForceNMethodSweep  },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
