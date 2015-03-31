@@ -151,8 +151,7 @@ process_stride(Space* sp,
     // result of the dirty card iteration below.
     OrderAccess::storestore();
 
-    // We do not call the non_clean_card_iterate_serial() version because
-    // we want to clear the cards: clear_cl here does the work of finding
+    // We want to clear the cards: clear_cl here does the work of finding
     // contiguous dirty ranges of cards to process and clear.
     clear_cl.do_MemRegion(chunk_mr);
 
