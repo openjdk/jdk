@@ -344,7 +344,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   void inc_container_count();
   void dec_container_count();
 #ifdef ASSERT
-  uint container_count_slow();
+  uintx container_count_slow();
   void verify_container_count();
 #endif
 
@@ -461,8 +461,8 @@ void VirtualSpaceNode::purge(ChunkManager* chunk_manager) {
 }
 
 #ifdef ASSERT
-uint VirtualSpaceNode::container_count_slow() {
-  uint count = 0;
+uintx VirtualSpaceNode::container_count_slow() {
+  uintx count = 0;
   Metachunk* chunk = first_chunk();
   Metachunk* invalid_chunk = (Metachunk*) top();
   while (chunk < invalid_chunk ) {
@@ -796,10 +796,7 @@ Mutex* const SpaceManager::_expand_lock =
 void VirtualSpaceNode::inc_container_count() {
   assert_lock_strong(SpaceManager::expand_lock());
   _container_count++;
-  assert(_container_count == container_count_slow(),
-         err_msg("Inconsistency in container_count _container_count " SIZE_FORMAT
-                 " container_count_slow() %u",
-                 _container_count, container_count_slow()));
+  DEBUG_ONLY(verify_container_count();)
 }
 
 void VirtualSpaceNode::dec_container_count() {
@@ -810,8 +807,8 @@ void VirtualSpaceNode::dec_container_count() {
 #ifdef ASSERT
 void VirtualSpaceNode::verify_container_count() {
   assert(_container_count == container_count_slow(),
-    err_msg("Inconsistency in container_count _container_count " SIZE_FORMAT
-            " container_count_slow() %u", _container_count, container_count_slow()));
+    err_msg("Inconsistency in container_count _container_count " UINTX_FORMAT
+            " container_count_slow() " UINTX_FORMAT, _container_count, container_count_slow()));
 }
 #endif
 
