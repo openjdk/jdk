@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,8 +578,8 @@ BytecodeInterpreter::run(interpreterState istate) {
 
 /* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
 /* 0xE4 */ &&opc_default,     &&opc_fast_aldc,      &&opc_fast_aldc_w,     &&opc_return_register_finalizer,
-/* 0xE8 */ &&opc_invokehandle,&&opc_nofast_getfield,&&opc_nofast_putfield, &&opc_nofast_aload_0,
-/* 0xEC */ &&opc_nofast_iload,&&opc_default,        &&opc_default,         &&opc_default,
+/* 0xE8 */ &&opc_invokehandle,&&opc_default,        &&opc_default,         &&opc_default,
+/* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
 
 /* 0xF0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xF4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
