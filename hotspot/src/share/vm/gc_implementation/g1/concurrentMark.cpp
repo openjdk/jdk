@@ -2581,7 +2581,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, CMTask* task) :
     _cm_obj(task), _cm_cl(g1h, g1h->concurrent_mark(), task), _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
-    _thread_parity(SharedHeap::heap()->strong_roots_parity()) {}
+    _thread_parity(Threads::thread_claim_parity()) {}
 
   void do_thread(Thread* thread) {
     if (thread->is_Java_thread()) {
