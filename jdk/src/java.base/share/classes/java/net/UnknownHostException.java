@@ -41,10 +41,10 @@ class UnknownHostException extends IOException {
      * Constructs a new {@code UnknownHostException} with the
      * specified detail message.
      *
-     * @param   host   the detail message.
+     * @param   message   the detail message.
      */
-    public UnknownHostException(String host) {
-        super(host);
+    public UnknownHostException(String message) {
+        super(message);
     }
 
     /**
