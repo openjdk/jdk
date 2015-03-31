@@ -1379,10 +1379,6 @@ public:
 
   inline bool is_in_young(const oop obj);
 
-#ifdef ASSERT
-  virtual bool is_in_partial_collection(const void* p);
-#endif
-
   virtual bool is_scavengable(const void* addr);
 
   // We don't need barriers for initializing stores to objects

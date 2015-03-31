@@ -402,25 +402,6 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
   return hr;
 }
 
-#ifdef ASSERT
-// A region is added to the collection set as it is retired
-// so an address p can point to a region which will be in the
-// collection set but has not yet been retired.  This method
-// therefore is only accurate during a GC pause after all
-// regions have been retired.  It is used for debugging
-// to check if an nmethod has references to objects that can
-// be move during a partial collection.  Though it can be
-// inaccurate, it is sufficient for G1 because the conservative
-// implementation of is_scavengable() for G1 will indicate that
-// all nmethods must be scanned during a partial collection.
-bool G1CollectedHeap::is_in_partial_collection(const void* p) {
-  if (p == NULL) {
-    return false;
-  }
-  return heap_region_containing(p)->in_collection_set();
-}
-#endif
-
 // Returns true if the reference points to an object that
 // can move in an incremental collection.
 bool G1CollectedHeap::is_scavengable(const void* p) {

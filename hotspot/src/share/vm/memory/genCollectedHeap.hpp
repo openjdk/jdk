@@ -215,7 +215,7 @@ public:
   bool is_in_young(oop p);
 
 #ifdef ASSERT
-  virtual bool is_in_partial_collection(const void* p);
+  bool is_in_partial_collection(const void* p);
 #endif
 
   virtual bool is_scavengable(const void* addr) {
