@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1088,6 +1088,7 @@ public class AWTEventMulticaster implements
      * contains only the specified listener. If no such listeners are chained,
      * this method returns an empty array.
      *
+     * @param <T> the listener type
      * @param l the specified <code>java.util.EventListener</code>
      * @param listenerType the type of listeners requested; this parameter
      *          should specify an interface that descends from

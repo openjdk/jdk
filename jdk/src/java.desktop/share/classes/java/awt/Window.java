@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2789,6 +2789,7 @@ public class Window extends Container implements Accessible {
     /**
      * @deprecated As of J2SE 1.4, replaced by
      * {@link Component#applyComponentOrientation Component.applyComponentOrientation}.
+     * @param rb the resource bundle
      */
     @Deprecated
     public void applyResourceBundle(ResourceBundle rb) {
@@ -2798,6 +2799,7 @@ public class Window extends Container implements Accessible {
     /**
      * @deprecated As of J2SE 1.4, replaced by
      * {@link Component#applyComponentOrientation Component.applyComponentOrientation}.
+     * @param rbName the resource name
      */
     @Deprecated
     public void applyResourceBundle(String rbName) {
