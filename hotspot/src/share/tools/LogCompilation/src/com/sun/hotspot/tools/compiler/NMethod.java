@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,20 @@ package com.sun.hotspot.tools.compiler;
 
 import java.io.PrintStream;
 
+/**
+ * A compilation log event that is signalled whenever a new nmethod (a native
+ * method, a compilation result) is created.
+ */
 public class NMethod extends BasicLogEvent {
 
+    /**
+     * The nmethod's starting address in memory.
+     */
     private long address;
+
+    /**
+     * The nmethod's size in bytes.
+     */
     private long size;
 
     NMethod(double s, String i, long a, long sz) {
@@ -37,7 +48,7 @@ public class NMethod extends BasicLogEvent {
         size = sz;
     }
 
-    public void print(PrintStream out) {
+    public void print(PrintStream out, boolean printID) {
         // XXX Currently we do nothing
         // throw new InternalError();
     }
