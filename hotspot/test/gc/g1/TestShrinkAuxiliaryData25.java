@@ -23,14 +23,17 @@
 
 /**
  * @test TestShrinkAuxiliaryData25
- * @bug 8038423
+ * @bug 8038423 8061715
  * @summary Checks that decommitment occurs for JVM with different
  * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /../../test/lib
  * @modules java.base/sun.misc
  *          java.management
+ * @build com.oracle.java.testlibrary.* sun.hotspot.WhiteBox
  * @build TestShrinkAuxiliaryData TestShrinkAuxiliaryData25
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver/timeout=720 TestShrinkAuxiliaryData25
  */
 public class TestShrinkAuxiliaryData25 {

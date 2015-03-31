@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_HPP
 
 #include "gc_interface/collectedHeap.hpp"
-#include "memory/universe.hpp"
+#include "memory/genOopClosures.hpp"
+#include "memory/iterator.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.hpp"
 #include "runtime/timer.hpp"
@@ -182,13 +183,8 @@ public:
     _mark = mark;
   }
 
-  void adjust_pointer() {
-    MarkSweep::adjust_pointer(&_obj);
-  }
-
-  void restore() {
-    _obj->set_mark(_mark);
-  }
+  void adjust_pointer();
+  void restore();
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_HPP
