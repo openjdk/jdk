@@ -45,9 +45,4 @@ public final class FieldUtil {
         ReflectUtil.checkPackageAccess(cls);
         return cls.getFields();
     }
-
-    public static Field[] getDeclaredFields(Class<?> cls) {
-        ReflectUtil.checkPackageAccess(cls);
-        return cls.getDeclaredFields();
-    }
 }
