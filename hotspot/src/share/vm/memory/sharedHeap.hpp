@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,15 +110,12 @@ protected:
   // set the static pointer "_sh" to that instance.
   static SharedHeap* _sh;
 
-  // A gc policy, controls global gc resource issues
-  CollectorPolicy *_collector_policy;
-
   // If we're doing parallel GC, use this gang of threads.
   FlexibleWorkGang* _workers;
 
   // Full initialization is done in a concrete subtype's "initialize"
   // function.
-  SharedHeap(CollectorPolicy* policy_);
+  SharedHeap();
 
   // Returns true if the calling thread holds the heap lock,
   // or the calling thread is a par gc thread and the heap_lock is held

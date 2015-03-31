@@ -37,9 +37,8 @@
 
 SharedHeap* SharedHeap::_sh;
 
-SharedHeap::SharedHeap(CollectorPolicy* policy_) :
+SharedHeap::SharedHeap() :
   CollectedHeap(),
-  _collector_policy(policy_),
   _workers(NULL)
 {
   _sh = this;  // ch is static, should be set only once.
