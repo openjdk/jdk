@@ -572,7 +572,7 @@ void GenCollectedHeap::set_n_termination(uint t) {
 class AssertNonScavengableClosure: public OopClosure {
 public:
   virtual void do_oop(oop* p) {
-    assert(!Universe::heap()->is_in_partial_collection(*p),
+    assert(!GenCollectedHeap::heap()->is_in_partial_collection(*p),
       "Referent should not be scavengable.");  }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
