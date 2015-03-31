@@ -78,7 +78,7 @@ AC_DEFUN([BASIC_PREPEND_TO_PATH],
 AC_DEFUN([BASIC_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
-  
+
   if test "x[$]$1" != x; then
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
       BASIC_FIXUP_PATH_CYGWIN($1)
@@ -118,7 +118,7 @@ AC_DEFUN([BASIC_FIXUP_PATH],
 AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
 [
   # Only process if variable expands to non-empty
-  
+
   if test "x[$]$1" != x; then
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
       BASIC_FIXUP_EXECUTABLE_CYGWIN($1)
@@ -459,11 +459,20 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_MSG_RESULT([$TOPDIR])
   AC_SUBST(TOPDIR)
 
+  # Save the original version of TOPDIR for string comparisons
+  ORIGINAL_TOPDIR="$TOPDIR"
+  AC_SUBST(ORIGINAL_TOPDIR)
+
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   BASIC_FIXUP_PATH(CURDIR)
   BASIC_FIXUP_PATH(TOPDIR)
   # SRC_ROOT is a traditional alias for TOPDIR.
   SRC_ROOT=$TOPDIR
+
+  # Calculate a canonical version of TOPDIR for string comparisons
+  CANONICAL_TOPDIR=$TOPDIR
+  BASIC_REMOVE_SYMBOLIC_LINKS([CANONICAL_TOPDIR])
+  AC_SUBST(CANONICAL_TOPDIR)
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
@@ -708,18 +717,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   # which will look for generated configurations
   AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
 ])
-
-AC_DEFUN_ONCE([BASIC_SETUP_LOGGING],
-[
-  # Setup default logging of stdout and stderr to build.log in the output root.
-  BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-  BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-  BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
-  AC_SUBST(BUILD_LOG)
-  AC_SUBST(BUILD_LOG_PREVIOUS)
-  AC_SUBST(BUILD_LOG_WRAPPER)
-])
-
 
 #%%% Simple tools %%%
 
