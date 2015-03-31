@@ -33,30 +33,269 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Stack;
+import java.util.regex.Pattern;
+
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class LogParser extends DefaultHandler implements ErrorHandler, Constants {
+/**
+ * A SAX parser for HotSpot compilation logs. The bulk of the parsing and event
+ * maintenance work is done in the {@link #startElement(String,String,String,Attributes)}
+ * and {@link #endElement(String,String,String)} methods.
+ */
+public class LogParser extends DefaultHandler implements ErrorHandler {
 
-    static final HashMap<String, String> typeMap;
+    static final Pattern spacePattern = Pattern.compile(" ");
+
+    /**
+     * Map internal array type descriptors to Java names.
+     */
+    static final HashMap<String, String> type2printableMap;
+
+    /**
+     * Map Java primitive type names to internal type descriptors.
+     */
+    static final HashMap<String, String> type2vmtypeMap;
+
     static {
-        typeMap = new HashMap<String, String>();
-        typeMap.put("[I", "int[]");
-        typeMap.put("[C", "char[]");
-        typeMap.put("[Z", "boolean[]");
-        typeMap.put("[L", "Object[]");
-        typeMap.put("[B", "byte[]");
+        type2printableMap = new HashMap<>();
+        type2printableMap.put("[I", "int[]");
+        type2printableMap.put("[C", "char[]");
+        type2printableMap.put("[Z", "boolean[]");
+        type2printableMap.put("[L", "Object[]");
+        type2printableMap.put("[B", "byte[]");
+
+        type2vmtypeMap = new HashMap<>();
+        type2vmtypeMap.put("void", "V");
+        type2vmtypeMap.put("boolean", "Z");
+        type2vmtypeMap.put("byte", "B");
+        type2vmtypeMap.put("char", "C");
+        type2vmtypeMap.put("short", "S");
+        type2vmtypeMap.put("int", "I");
+        type2vmtypeMap.put("long", "J");
+        type2vmtypeMap.put("float", "F");
+        type2vmtypeMap.put("double", "D");
     }
 
+    static String[] bytecodes = new String[] {
+        "nop",
+        "aconst_null",
+        "iconst_m1",
+        "iconst_0",
+        "iconst_1",
+        "iconst_2",
+        "iconst_3",
+        "iconst_4",
+        "iconst_5",
+        "lconst_0",
+        "lconst_1",
+        "fconst_0",
+        "fconst_1",
+        "fconst_2",
+        "dconst_0",
+        "dconst_1",
+        "bipush",
+        "sipush",
+        "ldc",
+        "ldc_w",
+        "ldc2_w",
+        "iload",
+        "lload",
+        "fload",
+        "dload",
+        "aload",
+        "iload_0",
+        "iload_1",
+        "iload_2",
+        "iload_3",
+        "lload_0",
+        "lload_1",
+        "lload_2",
+        "lload_3",
+        "fload_0",
+        "fload_1",
+        "fload_2",
+        "fload_3",
+        "dload_0",
+        "dload_1",
+        "dload_2",
+        "dload_3",
+        "aload_0",
+        "aload_1",
+        "aload_2",
+        "aload_3",
+        "iaload",
+        "laload",
+        "faload",
+        "daload",
+        "aaload",
+        "baload",
+        "caload",
+        "saload",
+        "istore",
+        "lstore",
+        "fstore",
+        "dstore",
+        "astore",
+        "istore_0",
+        "istore_1",
+        "istore_2",
+        "istore_3",
+        "lstore_0",
+        "lstore_1",
+        "lstore_2",
+        "lstore_3",
+        "fstore_0",
+        "fstore_1",
+        "fstore_2",
+        "fstore_3",
+        "dstore_0",
+        "dstore_1",
+        "dstore_2",
+        "dstore_3",
+        "astore_0",
+        "astore_1",
+        "astore_2",
+        "astore_3",
+        "iastore",
+        "lastore",
+        "fastore",
+        "dastore",
+        "aastore",
+        "bastore",
+        "castore",
+        "sastore",
+        "pop",
+        "pop2",
+        "dup",
+        "dup_x1",
+        "dup_x2",
+        "dup2",
+        "dup2_x1",
+        "dup2_x2",
+        "swap",
+        "iadd",
+        "ladd",
+        "fadd",
+        "dadd",
+        "isub",
+        "lsub",
+        "fsub",
+        "dsub",
+        "imul",
+        "lmul",
+        "fmul",
+        "dmul",
+        "idiv",
+        "ldiv",
+        "fdiv",
+        "ddiv",
+        "irem",
+        "lrem",
+        "frem",
+        "drem",
+        "ineg",
+        "lneg",
+        "fneg",
+        "dneg",
+        "ishl",
+        "lshl",
+        "ishr",
+        "lshr",
+        "iushr",
+        "lushr",
+        "iand",
+        "land",
+        "ior",
+        "lor",
+        "ixor",
+        "lxor",
+        "iinc",
+        "i2l",
+        "i2f",
+        "i2d",
+        "l2i",
+        "l2f",
+        "l2d",
+        "f2i",
+        "f2l",
+        "f2d",
+        "d2i",
+        "d2l",
+        "d2f",
+        "i2b",
+        "i2c",
+        "i2s",
+        "lcmp",
+        "fcmpl",
+        "fcmpg",
+        "dcmpl",
+        "dcmpg",
+        "ifeq",
+        "ifne",
+        "iflt",
+        "ifge",
+        "ifgt",
+        "ifle",
+        "if_icmpeq",
+        "if_icmpne",
+        "if_icmplt",
+        "if_icmpge",
+        "if_icmpgt",
+        "if_icmple",
+        "if_acmpeq",
+        "if_acmpne",
+        "goto",
+        "jsr",
+        "ret",
+        "tableswitch",
+        "lookupswitch",
+        "ireturn",
+        "lreturn",
+        "freturn",
+        "dreturn",
+        "areturn",
+        "return",
+        "getstatic",
+        "putstatic",
+        "getfield",
+        "putfield",
+        "invokevirtual",
+        "invokespecial",
+        "invokestatic",
+        "invokeinterface",
+        "invokedynamic",
+        "new",
+        "newarray",
+        "anewarray",
+        "arraylength",
+        "athrow",
+        "checkcast",
+        "instanceof",
+        "monitorenter",
+        "monitorexit",
+        "wide",
+        "multianewarray",
+        "ifnull",
+        "ifnonnull",
+        "goto_w",
+        "jsr_w",
+        "breakpoint"
+    };
+
+    /**
+     * Sort log events by start time.
+     */
     static Comparator<LogEvent> sortByStart = new Comparator<LogEvent>() {
 
         public int compare(LogEvent a, LogEvent b) {
@@ -80,25 +319,29 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             return 7;
         }
     };
+
+    /**
+     * Sort log events first by the name of the compiled method, then by start
+     * time. In case one of the events has no associated compilation (or the
+     * associated compilation has no method name), the event with a compilation
+     * and/or name is considered the larger one.
+     */
     static Comparator<LogEvent> sortByNameAndStart = new Comparator<LogEvent>() {
 
         public int compare(LogEvent a, LogEvent b) {
             Compilation c1 = a.getCompilation();
             Compilation c2 = b.getCompilation();
-            if (c1 != null && c2 != null) {
+            if (c1 != null && c1.getMethod() != null && c2 != null && c2.getMethod() != null) {
                 int result = c1.getMethod().toString().compareTo(c2.getMethod().toString());
                 if (result != 0) {
                     return result;
                 }
-            }
-            double difference = (a.getStart() - b.getStart());
-            if (difference < 0) {
+            } else if ((c1 == null || c1.getMethod() == null) && c2 != null && c2.getMethod() != null) {
                 return -1;
-            }
-            if (difference > 0) {
+            } else if ((c2 == null || c2.getMethod() == null) && c1 != null && c1.getMethod() != null) {
                 return 1;
             }
-            return 0;
+            return Double.compare(a.getStart(), b.getStart());
         }
 
         public boolean equals(Object other) {
@@ -110,6 +353,10 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             return 7;
         }
     };
+
+    /**
+     * Sort log events by duration.
+     */
     static Comparator<LogEvent> sortByElapsed = new Comparator<LogEvent>() {
 
         public int compare(LogEvent a, LogEvent b) {
@@ -134,6 +381,10 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         }
     };
 
+    /**
+     * Shrink-wrapped representation of a JVMState (tailored to meet this
+     * tool's needs). It only records a method and bytecode instruction index.
+     */
     class Jvms {
         Jvms(Method method, int bci) {
             this.method = method;
@@ -146,12 +397,33 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         }
     }
 
+    /**
+     * Representation of a lock elimination. Locks, corresponding to
+     * synchronized blocks and method calls, may be eliminated if the object in
+     * question is guaranteed to be used thread-locally.
+     */
     class LockElimination extends BasicLogEvent {
 
-        ArrayList<Jvms> jvms = new ArrayList<Jvms>(1);
+        /**
+         * Track all locations from which this lock was eliminated.
+         */
+        ArrayList<Jvms> jvms = new ArrayList<>(1);
+
+        /**
+         * The kind of lock (coarsened, nested, non-escaping, unknown).
+         */
         final String kind;
+
+        /**
+         * The lock class (unlock, lock, unknown).
+         */
         final String classId;
+
+        /**
+         * The precise type of lock.
+         */
         final String tagName;
+
         LockElimination(String tagName, double start, String id, String kind, String classId) {
             super(start, id);
             this.kind = kind;
@@ -160,8 +432,11 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         }
 
         @Override
-        public void print(PrintStream stream) {
-            stream.printf("%s %s %s %s  %.3f ", getId(), tagName, kind, classId, getStart());
+        public void print(PrintStream stream, boolean printID) {
+            if (printID) {
+                stream.printf("%s ", getId());
+            }
+            stream.printf("%s %s %s  %.3f ", tagName, kind, classId, getStart());
             stream.print(jvms.toString());
             stream.print("\n");
         }
@@ -172,25 +447,154 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
 
     }
 
-    private ArrayList<LogEvent> events = new ArrayList<LogEvent>();
+    /**
+     * A list of log events. This is populated with the events found in the
+     * compilation log file during parsing.
+     */
+    private ArrayList<LogEvent> events = new ArrayList<>();
 
-    private HashMap<String, String> types = new HashMap<String, String>();
-    private HashMap<String, Method> methods = new HashMap<String, Method>();
-    private LinkedHashMap<String, NMethod> nmethods = new LinkedHashMap<String, NMethod>();
-    private HashMap<String, Compilation> compiles = new HashMap<String, Compilation>();
+    /**
+     * Map compilation log IDs to type names.
+     */
+    private HashMap<String, String> types = new HashMap<>();
+
+    /**
+     * Map compilation log IDs to methods.
+     */
+    private HashMap<String, Method> methods = new HashMap<>();
+
+    /**
+     * Map compilation IDs ({@see #makeId()}) to newly created nmethods.
+     */
+    private LinkedHashMap<String, NMethod> nmethods = new LinkedHashMap<>();
+
+    /**
+     * Map compilation task IDs {@see #makeId()}) to {@link Compilation}
+     * objects.
+     */
+    private HashMap<String, Compilation> compiles = new HashMap<>();
+
+    /**
+     * Track compilation failure reasons.
+     */
     private String failureReason;
-    private int bci;
-    private Stack<CallSite> scopes = new Stack<CallSite>();
+
+    /**
+     * The current bytecode instruction index.
+     */
+    private int current_bci;
+
+    /**
+     * The current bytecode instruction.
+     */
+    private int current_bytecode;
+
+    /**
+     * A sequence of {@link CallSite}s representing a call stack. A scope
+     * typically holds several {@link CallSite}s that represent calls
+     * originating from that scope.
+     *
+     * New scopes are typically pushed when parse log events are encountered
+     * ({@see #startElement()}) and popped when parsing of a given Java method
+     * is done ({@see #endElement()}). Parsing events can be nested. Several
+     * other events add information to scopes ({@see #startElement()}).
+     */
+    private Deque<CallSite> scopes = new ArrayDeque<>();
+
+    /**
+     * The current compilation.
+     */
     private Compilation compile;
+
+    /**
+     * The {@linkplain CallSite compilation scope} currently in focus.
+     */
     private CallSite site;
+
+    /**
+     * The {@linkplain CallSite method handle call site} currently under
+     * observation.
+     */
     private CallSite methodHandleSite;
-    private Stack<Phase> phaseStack = new Stack<Phase>();
+
+    /**
+     * Keep track of potentially nested compiler {@linkplain Phase phases}.
+     */
+    private Deque<Phase> phaseStack = new ArrayDeque<>();
+
+    /**
+     * The {@linkplain LockElimination lock elimination event} currently being
+     * processed.
+     */
     private LockElimination currentLockElimination;
+
+    /**
+     * The {@linkplain UncommonTrapEvent uncommon trap event} currently being
+     * processed.
+     */
     private UncommonTrapEvent currentTrap;
-    private Stack<CallSite> lateInlineScope;
+
+    /**
+     * During the processing of a late inline event, this stack holds the
+     * {@link CallSite}s that represent the inlining event's call stack.
+     */
+    private Deque<CallSite> lateInlineScope;
+
+    /**
+     * Denote whether a late inlining event is currently being processed.
+     */
     private boolean lateInlining;
 
+    /**
+     * A document locator to provide better error messages: this allows the
+     * tool to display in which line of the log file the problem occurred.
+     */
+    private Locator locator;
 
+    /**
+     * Callback for the SAX framework to set the document locator.
+     */
+    @Override
+    public void setDocumentLocator(Locator locator) {
+        this.locator = locator;
+    }
+
+    /**
+     * Report an internal error explicitly raised, i.e., not derived from an
+     * exception.
+     *
+     * @param msg The error message to report.
+     */
+    private void reportInternalError(String msg) {
+        reportInternalError(msg, null);
+    }
+
+    /**
+     * Report an internal error derived from an exception.
+     *
+     * @param msg The beginning of the error message to report. The message
+     * from the exception will be appended to this.
+     * @param e The exception that led to the internal error.
+     */
+    private void reportInternalError(String msg, Exception e) {
+        if (locator != null) {
+            msg += " at " + locator.getLineNumber() + ":" + locator.getColumnNumber();
+            if (e != null) {
+                msg += " - " + e.getMessage();
+            }
+        }
+        if (e != null) {
+            throw new Error(msg, e);
+        } else {
+            throw new Error(msg);
+        }
+    }
+
+    /**
+     * Parse a long hexadecimal address into a {@code long} value. As Java only
+     * supports positive {@code long} values, extra error handling and parsing
+     * logic is provided.
+     */
     long parseLong(String l) {
         try {
             return Long.decode(l).longValue();
@@ -207,16 +611,29 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                 System.out.println(v1);
                 System.out.println(v2);
                 System.out.println(Long.toHexString(v1 + v2));
-                throw new InternalError("bad conversion");
+                reportInternalError("bad conversion");
             }
             return v1 + v2;
         }
     }
 
+    /**
+     * Entry point for log file parsing with a file name.
+     *
+     * @param file The name of the log file to parse.
+     * @param cleanup Whether to perform bad XML cleanup during parsing (this
+     * is relevant for some log files generated by the 1.5 JVM).
+     * @return a list of {@link LogEvent} instances describing the events found
+     * in the log file.
+     */
     public static ArrayList<LogEvent> parse(String file, boolean cleanup) throws Exception {
         return parse(new FileReader(file), cleanup);
     }
 
+    /**
+     * Entry point for log file parsing with a file reader.
+     * {@see #parse(String,boolean)}
+     */
     public static ArrayList<LogEvent> parse(Reader reader, boolean cleanup) throws Exception {
         // Create the XML input factory
         SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -238,31 +655,58 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             // Carry on with what we've got...
         }
 
-        // Associate compilations with their NMethods
-        for (NMethod nm : log.nmethods.values()) {
-            Compilation c = log.compiles.get(nm.getId());
-            nm.setCompilation(c);
-            // Native wrappers for methods don't have a compilation
-            if (c != null) {
-                c.setNMethod(nm);
+        // Associate compilations with their NMethods and other kinds of events
+        for (LogEvent e : log.events) {
+            if (e instanceof BasicLogEvent) {
+                BasicLogEvent ble = (BasicLogEvent) e;
+                Compilation c = log.compiles.get(ble.getId());
+                if (c == null) {
+                    if (!(ble instanceof NMethod)) {
+                        throw new InternalError("only nmethods should have a null compilation, here's a " + ble.getClass());
+                    }
+                    continue;
+                }
+                ble.setCompilation(c);
+                if (ble instanceof NMethod) {
+                    c.setNMethod((NMethod) ble);
+                }
             }
         }
-
-        // Initially we want the LogEvent log sorted by timestamp
-        Collections.sort(log.events, sortByStart);
 
         return log.events;
     }
 
+    /**
+     * Retrieve a given attribute's value from a collection of XML tag
+     * attributes. Report an error if the requested attribute is not found.
+     *
+     * @param attr A collection of XML tag attributes.
+     * @param name The name of the attribute the value of which is to be found.
+     * @return The value of the requested attribute, or {@code null} if it was
+     * not found.
+     */
     String search(Attributes attr, String name) {
         String result = attr.getValue(name);
         if (result != null) {
             return result;
         } else {
-            throw new InternalError("can't find " + name);
+            reportInternalError("can't find " + name);
+            return null;
         }
     }
 
+    /**
+     * Retrieve a given attribute's value from a collection of XML tag
+     * attributes. Return a default value if the requested attribute is not
+     * found.
+     *
+     * @param attr A collection of XML tag attributes.
+     * @param name The name of the attribute the value of which is to be found.
+     * @param defaultValue The default value to return if the attribute is not
+     * found.
+     * @return The value of the requested attribute, or the default value if it
+     * was not found.
+     */
     String search(Attributes attr, String name, String defaultValue) {
         String result = attr.getValue(name);
         if (result != null) {
@@ -270,33 +714,70 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         }
         return defaultValue;
     }
-    int indent = 0;
 
+    /**
+     * Map a type ID from the compilation log to an actual type name. In case
+     * the type represents an internal array type descriptor, return a
+     * Java-level name. If the type ID cannot be mapped to a name, raise an
+     * error.
+     */
     String type(String id) {
         String result = types.get(id);
         if (result == null) {
-            throw new InternalError(id);
+            reportInternalError(id);
         }
-        String remapped = typeMap.get(result);
+        String remapped = type2printableMap.get(result);
         if (remapped != null) {
             return remapped;
         }
         return result;
     }
 
+    /**
+     * Register a mapping from log file type ID to type name.
+     */
     void type(String id, String name) {
         assert type(id) == null;
         types.put(id, name);
     }
 
+    /**
+     * Map a log file type ID to an internal type declarator.
+     */
+    String sigtype(String id) {
+        String result = types.get(id);
+        String remapped = type2vmtypeMap.get(result);
+        if (remapped != null) {
+            return remapped;
+        }
+        if (result == null) {
+            reportInternalError(id);
+        }
+        if (result.charAt(0) == '[') {
+            return result;
+        }
+        return "L" + result + ";";
+    }
+
+    /**
+     * Retrieve a method based on the log file ID it was registered under.
+     * Raise an error if the ID does not map to a method.
+     */
     Method method(String id) {
         Method result = methods.get(id);
         if (result == null) {
-            throw new InternalError(id);
+            reportInternalError(id);
         }
         return result;
     }
 
+    /**
+     * From a compilation ID and kind, assemble a compilation ID for inclusion
+     * in the output.
+     *
+     * @param atts A collection of XML attributes from which the required
+     * attributes are retrieved.
+     */
     public String makeId(Attributes atts) {
         String id = atts.getValue("compile_id");
         String kind = atts.getValue("kind");
@@ -306,11 +787,60 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         return id;
     }
 
+    /**
+     * Process the start of a compilation log XML element.<ul>
+     * <li><b>phase:</b> record the beginning of a compilation phase, pushing
+     * it on the {@linkplain #phaseStack phase stack} and collecting
+     * information about the compiler graph.</li>
+     * <li><b>phase_done:</b> record the end of a compilation phase, popping it
+     * off the {@linkplain #phaseStack phase stack} and collecting information
+     * about the compiler graph (number of nodes and live nodes).</li>
+     * <li><b>task:</b> register the start of a new compilation.</li>
+     * <li><b>type:</b> register a type.</li>
+     * <li><b>bc:</b> note the current bytecode index and instruction name,
+     * updating {@link #current_bci} and {@link #current_bytecode}.</li>
+     * <li><b>klass:</b> register a type (class).</li>
+     * <li><b>method:</b> register a Java method.</li>
+     * <li><b>call:</b> process a call, populating {@link #site} with the
+     * appropriate data.</li>
+     * <li><b>regalloc:</b> record the register allocator's trip count in the
+     * {@linkplain #compile current compilation}.</li>
+     * <li><b>inline_fail:</b> record the reason for a failed inline
+     * operation.</li>
+     * <li><b>inline_success:</b> record a successful inlining operation,
+     * noting the success reason in the {@linkplain #site call site}.</li>
+     * <li><b>failure:</b> note a compilation failure, storing the reason
+     * description in {@link #failureReason}.</li>
+     * <li><b>task_done:</b> register the end of a compilation, recording time
+     * stamp and success information.</li>
+     * <li><b>make_not_entrant:</b> deal with making a native method
+     * non-callable (e.g., during an OSR compilation, if there are still
+     * activations) or a zombie (when the method can be deleted).</li>
+     * <li><b>uncommon_trap:</b> process an uncommon trap, setting the
+     * {@link #currentTrap} field.</li>
+     * <li><b>eliminate_lock:</b> record the start of a lock elimination,
+     * setting the {@link #currentLockElimination} event.</li>
+     * <li><b>late_inline:</b> start processing a late inline decision:
+     * initialize the {@linkplain #lateInlineScope inline scope stack}, create
+     * an {@linkplain #site initial scope} with a bogus bytecode index and the
+     * right inline ID, and push the scope with the inline ID attached. Note
+     * that most of late inlining processing happens in
+     * {@link #endElement()}.</li>
+     * <li><b>jvms:</b> record a {@linkplain Jvms JVMState}. Depending on the
+     * context in which this event is encountered, this can mean adding
+     * information to the currently being processed trap, lock elimination, or
+     * inlining operation.</li>
+     * <li><b>inline_id:</b> set the inline ID in the
+     * {@linkplain #site current call site}.</li>
+     * <li><b>nmethod:</b> record the creation of a new {@link NMethod} and
+     * store it in the {@link #nmethods} map.</li>
+     * <li><b>parse:</b> begin parsing a Java method's bytecode and
+     * transforming it into an initial compiler IR graph.</li>
+     * <li><b>parse_done:</b> finish parsing a Java method's bytecode.</li>
+     * </ul>
+     */
     @Override
-    public void startElement(String uri,
-            String localName,
-            String qname,
-            Attributes atts) {
+    public void startElement(String uri, String localName, String qname, Attributes atts) {
         if (qname.equals("phase")) {
             Phase p = new Phase(search(atts, "name"),
                     Double.parseDouble(search(atts, "stamp")),
@@ -322,45 +852,62 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             String phaseName = search(atts, "name", null);
             if (phaseName != null && !p.getId().equals(phaseName)) {
                 System.out.println("phase: " + p.getId());
-                throw new InternalError("phase name mismatch");
+                reportInternalError("phase name mismatch");
             }
             p.setEnd(Double.parseDouble(search(atts, "stamp")));
             p.setEndNodes(Integer.parseInt(search(atts, "nodes", "0")));
             p.setEndLiveNodes(Integer.parseInt(search(atts, "live", "0")));
             compile.getPhases().add(p);
         } else if (qname.equals("task")) {
+            String id = makeId(atts);
+
+            // Create the new Compilation instance and populate it with readily
+            // available data.
             compile = new Compilation(Integer.parseInt(search(atts, "compile_id", "-1")));
             compile.setStart(Double.parseDouble(search(atts, "stamp")));
             compile.setICount(search(atts, "count", "0"));
             compile.setBCount(search(atts, "backedge_count", "0"));
-
-            String method = atts.getValue("method");
-            int space = method.indexOf(' ');
-            method = method.substring(0, space) + "::" +
-                    method.substring(space + 1, method.indexOf(' ', space + 1) + 1);
+            compile.setBCI(Integer.parseInt(search(atts, "osr_bci", "-1")));
             String compiler = atts.getValue("compiler");
             if (compiler == null) {
                 compiler = "";
             }
+            compile.setCompiler(compiler);
+
+            // Extract the name of the compiled method.
+            String[] parts = spacePattern.split(atts.getValue("method"));
+            String methodName = parts[0] + "::" + parts[1];
+
+            // Continue collecting compilation meta-data.
             String kind = atts.getValue("compile_kind");
             if (kind == null) {
                 kind = "normal";
             }
             if (kind.equals("osr")) {
                 compile.setOsr(true);
-                compile.setOsr_bci(Integer.parseInt(search(atts, "osr_bci")));
             } else if (kind.equals("c2i")) {
-                compile.setSpecial("--- adapter " + method);
+                compile.setSpecial("--- adapter " + methodName);
             } else {
-                compile.setSpecial(compile.getId() + " " + method + " (0 bytes)");
+                compile.setSpecial(compile.getId() + " " + methodName + " (0 bytes)");
             }
+
+            // Build a dummy method to stuff in the Compilation at the
+            // beginning.
+            Method m = new Method();
+            m.setHolder(parts[0]);
+            m.setName(parts[1]);
+            m.setSignature(parts[2]);
+            m.setFlags("0");
+            m.setBytes("unknown");
+            compile.setMethod(m);
             events.add(compile);
-            compiles.put(makeId(atts), compile);
+            compiles.put(id, compile);
             site = compile.getCall();
         } else if (qname.equals("type")) {
             type(search(atts, "id"), search(atts, "name"));
         } else if (qname.equals("bc")) {
-            bci = Integer.parseInt(search(atts, "bci"));
+            current_bci = Integer.parseInt(search(atts, "bci"));
+            current_bytecode = Integer.parseInt(search(atts, "code"));
         } else if (qname.equals("klass")) {
             type(search(atts, "id"), search(atts, "name"));
         } else if (qname.equals("method")) {
@@ -369,7 +916,19 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             m.setHolder(type(search(atts, "holder")));
             m.setName(search(atts, "name"));
             m.setReturnType(type(search(atts, "return")));
-            m.setArguments(search(atts, "arguments", "void"));
+            String arguments = atts.getValue("arguments");;
+            if (arguments == null) {
+                m.setSignature("()" + sigtype(atts.getValue("return")));
+            } else {
+                String[] args = spacePattern.split(arguments);
+                StringBuilder sb = new StringBuilder("(");
+                for (int i = 0; i < args.length; i++) {
+                    sb.append(sigtype(args[i]));
+                }
+                sb.append(")");
+                sb.append(sigtype(atts.getValue("return")));
+                m.setSignature(sb.toString());
+            }
 
             if (search(atts, "unloaded", "0").equals("0")) {
                m.setBytes(search(atts, "bytes"));
@@ -385,15 +944,17 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             if (lateInlining && scopes.size() == 0) {
                 // re-attempting already seen call site (late inlining for MH invokes)
                 if (m != site.getMethod()) {
-                    if (bci != site.getBci()) {
-                        System.out.println(m + " bci: " + bci);
-                        System.out.println(site.getMethod() +  " bci: " + site.getBci());
-                        throw new InternalError("bci mismatch after late inlining");
+                    if (current_bci != site.getBci()) {
+                        System.err.println(m + " bci: " + current_bci);
+                        System.err.println(site.getMethod() +  " bci: " + site.getBci());
+                        reportInternalError("bci mismatch after late inlining");
                     }
                     site.setMethod(m);
                 }
             } else {
-                site = new CallSite(bci, m);
+                // We're dealing with a new call site; the called method is
+                // likely to be parsed next.
+                site = new CallSite(current_bci, m);
             }
             site.setCount(Integer.parseInt(search(atts, "count", "0")));
             String receiver = atts.getValue("receiver");
@@ -403,7 +964,8 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             }
             int methodHandle = Integer.parseInt(search(atts, "method_handle_intrinsic", "0"));
             if (lateInlining && scopes.size() == 0) {
-                // The call was added before this round of late inlining
+                // The call was already added before this round of late
+                // inlining. Ignore.
             } else if (methodHandle == 0) {
                 scopes.peek().add(site);
             } else {
@@ -421,18 +983,16 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                 methodHandleSite = null;
             }
             if (lateInlining && scopes.size() == 0) {
-                site.setReason(search(atts, "reason"));
+                site.setReason("fail: " + search(atts, "reason"));
                 lateInlining = false;
             } else {
-                scopes.peek().last().setReason(search(atts, "reason"));
+                scopes.peek().last().setReason("fail: " + search(atts, "reason"));
             }
         } else if (qname.equals("inline_success")) {
             if (methodHandleSite != null) {
-                throw new InternalError("method handle site should have been replaced");
+                reportInternalError("method handle site should have been replaced");
             }
-            if (lateInlining && scopes.size() == 0) {
-                site.setReason(null);
-            }
+            site.setReason("succeed: " + search(atts, "reason"));
         } else if (qname.equals("failure")) {
             failureReason = search(atts, "reason");
         } else if (qname.equals("task_done")) {
@@ -444,7 +1004,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         } else if (qname.equals("make_not_entrant")) {
             String id = makeId(atts);
             NMethod nm = nmethods.get(id);
-            if (nm == null) throw new InternalError();
+            if (nm == null) reportInternalError("nm == null");
             LogEvent e = new MakeNotEntrantEvent(Double.parseDouble(search(atts, "stamp")), id,
                                                  atts.getValue("zombie") != null, nm);
             events.add(e);
@@ -459,8 +1019,22 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                         Integer.parseInt(search(atts, "count", "0")));
                 events.add(currentTrap);
             } else {
-                // uncommon trap inserted during parsing.
-                // ignore for now
+                if (atts.getValue("method") != null) {
+                    // These are messages from ciTypeFlow that don't
+                    // actually correspond to generated code.
+                    return;
+                }
+                try {
+                    if (scopes.size() == 0) {
+                        reportInternalError("scope underflow");
+                    }
+                    scopes.peek().add(new UncommonTrap(Integer.parseInt(search(atts, "bci")),
+                                                       search(atts, "reason"),
+                                                       search(atts, "action"),
+                                                       bytecodes[current_bytecode]));
+                } catch (Error e) {
+                    e.printStackTrace();
+                }
             }
         } else if (qname.startsWith("eliminate_lock")) {
             String id = atts.getValue("compile_id");
@@ -474,24 +1048,27 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         } else if (qname.equals("late_inline")) {
             long inlineId = 0;
             try {
-                Long.parseLong(search(atts, "inline_id"));
+                inlineId = Long.parseLong(search(atts, "inline_id"));
             } catch (InternalError ex) {
                 // Log files from older hotspots may lack inline_id,
                 // and zero is an acceptable substitute that allows processing to continue.
             }
-            lateInlineScope = new Stack<CallSite>();
-            site = new CallSite(-999, method(search(atts, "method")));
+            lateInlineScope = new ArrayDeque<>();
+            Method m = method(search(atts, "method"));
+            site = new CallSite(-999, m);
             site.setInlineId(inlineId);
             lateInlineScope.push(site);
         } else if (qname.equals("jvms")) {
             // <jvms bci='4' method='java/io/DataInputStream readChar ()C' bytes='40' count='5815' iicount='20815'/>
             if (currentTrap != null) {
-                currentTrap.addJVMS(atts.getValue("method"), Integer.parseInt(atts.getValue("bci")));
+                String[] parts = spacePattern.split(atts.getValue("method"));
+                currentTrap.addMethodAndBCI(parts[0].replace('/', '.') + '.' + parts[1] + parts[2], Integer.parseInt(atts.getValue("bci")));
             } else if (currentLockElimination != null) {
                   currentLockElimination.addJVMS(method(atts.getValue("method")), Integer.parseInt(atts.getValue("bci")));
             } else if (lateInlineScope != null) {
-                bci = Integer.parseInt(search(atts, "bci"));
-                site = new CallSite(bci, method(search(atts, "method")));
+                current_bci = Integer.parseInt(search(atts, "bci"));
+                Method m = method(search(atts, "method"));
+                site = new CallSite(current_bci, m);
                 lateInlineScope.push(site);
             } else {
                 // Ignore <eliminate_allocation type='667'>,
@@ -499,7 +1076,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             }
         } else if (qname.equals("inline_id")) {
             if (methodHandleSite != null) {
-                throw new InternalError("method handle site should have been replaced");
+                reportInternalError("method handle site should have been replaced");
             }
             long id = Long.parseLong(search(atts, "id"));
             site.setInlineId(id);
@@ -513,33 +1090,53 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             events.add(nm);
         } else if (qname.equals("parse")) {
             if (failureReason != null && scopes.size() == 0 && !lateInlining) {
+                // A compilation just failed, and we're back at a top
+                // compilation scope.
                 failureReason = null;
                 compile.reset();
                 site = compile.getCall();
             }
 
+            // Error checking.
             if (methodHandleSite != null) {
-                throw new InternalError("method handle site should have been replaced");
+                reportInternalError("method handle site should have been replaced");
             }
-            Method m = method(search(atts, "method"));
+            Method m = method(search(atts, "method")); // this is the method being parsed
             if (lateInlining && scopes.size() == 0) {
                 if (site.getMethod() != m) {
-                    System.out.println(site.getMethod());
-                    System.out.println(m);
-                    throw new InternalError("Unexpected method mismatch during late inlining");
+                    reportInternalError("Unexpected method mismatch during late inlining (method at call site: " +
+                        site.getMethod() + ", method being parsed: " + m + ")");
                 }
             }
+
             if (scopes.size() == 0 && !lateInlining) {
+                // The method being parsed is actually the method being
+                // compiled; i.e., we're dealing with a compilation top scope,
+                // which we must consequently push to the scopes stack.
                 compile.setMethod(m);
                 scopes.push(site);
             } else {
+                // The method being parsed is *not* the current compilation's
+                // top scope; i.e., we're dealing with an actual call site
+                // in the top scope or somewhere further down a call stack.
                 if (site.getMethod() == m) {
+                    // We're dealing with monomorphic inlining that didn't have
+                    // to be narrowed down, because the receiver was known
+                    // beforehand.
                     scopes.push(site);
-                } else if (scopes.peek().getCalls().size() > 2 && m == scopes.peek().last(-2).getMethod()) {
-                    scopes.push(scopes.peek().last(-2));
+                } else if (scopes.peek().getCalls().size() > 2 && m == scopes.peek().lastButOne().getMethod()) {
+                    // We're dealing with an at least bimorphic call site, and
+                    // the compiler has now decided to parse the last-but-one
+                    // method. The last one may already have been parsed for
+                    // inlining.
+                    scopes.push(scopes.peek().lastButOne());
                 } else {
-                    // C1 prints multiple method tags during inlining when it narrows method being inlinied.
-                    // Example:
+                    // The method has been narrowed down to the one we're now
+                    // going to parse, which is inlined here. It's monomorphic
+                    // inlining, but was not immediately clear as such.
+                    //
+                    // C1 prints multiple method tags during inlining when it
+                    // narrows the method being inlined. Example:
                     //   ...
                     //   <method id="813" holder="694" name="toString" return="695" flags="1" bytes="36" iicount="1"/>
                     //   <call method="813" instr="invokevirtual"/>
@@ -552,99 +1149,131 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                 }
             }
         } else if (qname.equals("parse_done")) {
-            CallSite call = scopes.pop();
+            // Attach collected information about IR nodes to the current
+            // parsing scope before it's popped off the stack in endElement()
+            // (see where the parse tag is handled).
+            CallSite call = scopes.peek();
             call.setEndNodes(Integer.parseInt(search(atts, "nodes", "0")));
             call.setEndLiveNodes(Integer.parseInt(search(atts, "live", "0")));
             call.setTimeStamp(Double.parseDouble(search(atts, "stamp")));
-            scopes.push(call);
         }
     }
 
+    /**
+     * Process the end of a compilation log XML element.<ul>
+     * <li><b>parse:</b> finish transforming a Java method's bytecode
+     * instructions to an initial compiler IR graph.</li>
+     * <li><b>uncommon_trap:</b> record the end of processing an uncommon trap,
+     * resetting {@link #currentTrap}.</li>
+     * <li><b>eliminate_lock:</b> record the end of a lock elimination,
+     * resetting {@link #currentLockElimination}.</li>
+     * <li><b>late_inline:</b> the closing tag for late_inline does not denote
+     * the end of a late inlining operation, but the end of the descriptive log
+     * data given at its beginning. That is, we're now in the position to
+     * assemble details about the inlining chain (bytecode instruction index in
+     * caller, called method). The {@link #lateInlining} flag is set to
+     * {@code true} here. (It will be reset when parsing the inlined methods is
+     * done; this happens for the successful case in this method as well, when
+     * {@code parse} elements are processed; and for inlining failures, in
+     * {@link #startElement()}, when {@code inline_fail} elements are
+     * processed.)</li>
+     * <li><b>task:</b> perform cleanup at the end of a compilation. Note that
+     * the explicit {@code task_done} event is handled in
+     * {@link #startElement()}.</li>
+     * </ul>
+     */
     @Override
-    public void endElement(String uri,
-            String localName,
-            String qname) {
-        if (qname.equals("parse")) {
-            indent -= 2;
-            scopes.pop();
-            if (scopes.size() == 0) {
-                lateInlining = false;
-            }
-        } else if (qname.equals("uncommon_trap")) {
-            currentTrap = null;
-        } else if (qname.startsWith("eliminate_lock")) {
-            currentLockElimination = null;
-        } else if (qname.equals("late_inline")) {
-            // Populate late inlining info.
-            if (scopes.size() != 0) {
-                throw new InternalError("scopes should be empty for late inline");
-            }
-            // late inline scopes are specified in reverse order:
-            // compiled method should be on top of stack.
-            CallSite caller = lateInlineScope.pop();
-            Method m = compile.getMethod();
-            if (m != caller.getMethod()) {
-                System.err.println(m);
-                System.err.println(caller.getMethod() + " bci: " + bci);
-                throw new InternalError("call site and late_inline info don't match");
-            }
-
-            // late_inline contains caller+bci info, convert it
-            // to bci+callee info used by LogCompilation.
-            CallSite lateInlineSite = compile.getLateInlineCall();
-            ArrayDeque<CallSite> thisCallScopes = new ArrayDeque<CallSite>();
-            do {
-                bci = caller.getBci();
-                // Next inlined call.
-                caller = lateInlineScope.pop();
-                CallSite callee =  new CallSite(bci, caller.getMethod());
-                callee.setInlineId(caller.getInlineId());
-                thisCallScopes.addLast(callee);
-                lateInlineSite.add(callee);
-                lateInlineSite = callee;
-            } while (!lateInlineScope.empty());
-
-            site = compile.getCall().findCallSite(thisCallScopes);
-            if (site == null) {
-                System.out.println("call scopes:");
-                for (CallSite c : thisCallScopes) {
-                    System.out.println(c.getMethod() + " " + c.getBci() + " " + c.getInlineId());
+    public void endElement(String uri, String localName, String qname) {
+        try {
+            if (qname.equals("parse")) {
+                // Finish dealing with the current call scope. If no more are
+                // left, no late inlining can be going on.
+                scopes.pop();
+                if (scopes.size() == 0) {
+                    lateInlining = false;
                 }
-                CallSite c = thisCallScopes.getLast();
-                if (c.getInlineId() != 0) {
-                    System.out.println("Looking for call site in entire tree:");
-                    ArrayDeque<CallSite> stack = compile.getCall().findCallSite2(c);
-                    for (CallSite c2 : stack) {
-                        System.out.println(c2.getMethod() + " " + c2.getBci() + " " + c2.getInlineId());
+            } else if (qname.equals("uncommon_trap")) {
+                currentTrap = null;
+            } else if (qname.startsWith("eliminate_lock")) {
+                currentLockElimination = null;
+            } else if (qname.equals("late_inline")) {
+                // Populate late inlining info.
+                if (scopes.size() != 0) {
+                    reportInternalError("scopes should be empty for late inline");
+                }
+                // late inline scopes are specified in reverse order:
+                // compiled method should be on top of stack.
+                CallSite caller = lateInlineScope.pop();
+                Method m = compile.getMethod();
+                if (!m.equals(caller.getMethod())) {
+                    reportInternalError(String.format("call site and late_inline info don't match:\n  method %s\n  caller method %s, bci %d", m, caller.getMethod(), current_bci));
+                }
+
+                // Walk down the inlining chain and assemble bci+callee info.
+                // This needs to be converted from caller+bci info contained in
+                // the late_inline data.
+                CallSite lateInlineSite = compile.getLateInlineCall();
+                ArrayDeque<CallSite> thisCallScopes = new ArrayDeque<>();
+                do {
+                    current_bci = caller.getBci();
+                    // Next inlined call.
+                    caller = lateInlineScope.pop();
+                    CallSite callee = new CallSite(current_bci, caller.getMethod());
+                    callee.setInlineId(caller.getInlineId());
+                    thisCallScopes.addLast(callee);
+                    lateInlineSite.add(callee);
+                    lateInlineSite = callee;
+                } while (!lateInlineScope.isEmpty());
+
+                site = compile.getCall().findCallSite(thisCallScopes);
+                if (site == null) {
+                    // Call site could not be found - report the problem in detail.
+                    System.err.println("call scopes:");
+                    for (CallSite c : thisCallScopes) {
+                        System.err.println(c.getMethod() + " " + c.getBci() + " " + c.getInlineId());
+                    }
+                    CallSite c = thisCallScopes.getLast();
+                    if (c.getInlineId() != 0) {
+                        System.err.println("Looking for call site in entire tree:");
+                        ArrayDeque<CallSite> stack = compile.getCall().findCallSite2(c);
+                        for (CallSite c2 : stack) {
+                            System.err.println(c2.getMethod() + " " + c2.getBci() + " " + c2.getInlineId());
+                        }
+                    }
+                    System.err.println(caller.getMethod() + " bci: " + current_bci);
+                    reportInternalError("couldn't find call site");
+                }
+                lateInlining = true;
+
+                if (caller.getBci() != -999) {
+                    System.out.println(caller.getMethod());
+                    reportInternalError("broken late_inline info");
+                }
+                if (site.getMethod() != caller.getMethod()) {
+                    if (site.getInlineId() == caller.getInlineId()) {
+                        site.setMethod(caller.getMethod());
+                    } else {
+                        System.out.println(site.getMethod());
+                        System.out.println(caller.getMethod());
+                        reportInternalError("call site and late_inline info don't match");
                     }
                 }
-                System.out.println(caller.getMethod() + " bci: " + bci);
-                throw new InternalError("couldn't find call site");
+                // late_inline is followed by parse with scopes.size() == 0,
+                // 'site' will be pushed to scopes.
+                lateInlineScope = null;
+            } else if (qname.equals("task")) {
+                types.clear();
+                methods.clear();
+                site = null;
             }
-            lateInlining = true;
-
-            if (caller.getBci() != -999) {
-                System.out.println(caller.getMethod());
-                throw new InternalError("broken late_inline info");
-            }
-            if (site.getMethod() != caller.getMethod()) {
-                if (site.getInlineId() == caller.getInlineId()) {
-                    site.setMethod(caller.getMethod());
-                } else {
-                    System.out.println(site.getMethod());
-                    System.out.println(caller.getMethod());
-                    throw new InternalError("call site and late_inline info don't match");
-                }
-            }
-            // late_inline is followed by parse with scopes.size() == 0,
-            // 'site' will be pushed to scopes.
-            lateInlineScope = null;
-        } else if (qname.equals("task")) {
-            types.clear();
-            methods.clear();
-            site = null;
+        } catch (Exception e) {
+            reportInternalError("exception while processing end element", e);
         }
     }
+
+    //
+    // Handlers for problems that occur in XML parsing itself.
+    //
 
     @Override
     public void warning(org.xml.sax.SAXParseException e) {

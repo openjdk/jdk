@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,9 @@ import java.util.regex.*;
  * This class is a filter class to deal with malformed XML that used
  * to be produced by the JVM when generating LogCompilation.  In 1.6
  * and later releases it shouldn't be required.
- * @author never
  */
-
 class LogCleanupReader extends Reader {
+
     private Reader reader;
 
     private char[] buffer = new char[4096];
@@ -55,32 +54,38 @@ class LogCleanupReader extends Reader {
         reader = r;
     }
 
-    static final private Matcher pattern = Pattern.compile(".+ compile_id='[0-9]+'.*( compile_id='[0-9]+)").matcher("");
-    static final private Matcher pattern2 = Pattern.compile("' (C[12]) compile_id=").matcher("");
-    static final private Matcher pattern3 = Pattern.compile("'(destroy_vm)/").matcher("");
+    static final private Matcher duplicateCompileID = Pattern.compile(".+ compile_id='[0-9]+'.*( compile_id='[0-9]+)").matcher("");
+    static final private Matcher compilerName = Pattern.compile("' (C[12]) compile_id=").matcher("");
+    static final private Matcher destroyVM = Pattern.compile("'(destroy_vm)/").matcher("");
 
+    /**
+     * The log cleanup takes place in this method. If any of the three patterns
+     * ({@link #duplicateCompileID}, {@link #compilerName}, {@link #destroyVM})
+     * match, that indicates a problem in the log. The cleanup is performed by
+     * correcting the input line and writing it back into the {@link #line}
+     * buffer.
+     */
     private void fill() throws IOException {
         rawFill();
         if (length != -1) {
             boolean changed = false;
             String s = new String(line, 0, length);
-            String orig = s;
 
-            pattern2.reset(s);
-            if (pattern2.find()) {
-                s = s.substring(0, pattern2.start(1)) + s.substring(pattern2.end(1) + 1);
+            compilerName.reset(s);
+            if (compilerName.find()) {
+                s = s.substring(0, compilerName.start(1)) + s.substring(compilerName.end(1) + 1);
                 changed = true;
             }
 
-            pattern.reset(s);
-            if (pattern.lookingAt()) {
-                s = s.substring(0, pattern.start(1)) + s.substring(pattern.end(1) + 1);
+            duplicateCompileID.reset(s);
+            if (duplicateCompileID.lookingAt()) {
+                s = s.substring(0, duplicateCompileID.start(1)) + s.substring(duplicateCompileID.end(1) + 1);
                 changed = true;
             }
 
-            pattern3.reset(s);
-            if (pattern3.find()) {
-                s = s.substring(0, pattern3.start(1)) + s.substring(pattern3.end(1));
+            destroyVM.reset(s);
+            if (destroyVM.find()) {
+                s = s.substring(0, destroyVM.start(1)) + s.substring(destroyVM.end(1));
                 changed = true;
             }
 

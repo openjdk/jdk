@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,41 +29,119 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Representation of a compilation scope in a compilation log. This class is a
+ * hybrid: its instances can represent original scopes of methods being
+ * compiled, but are also used to represent call sites in given methods.
+ */
 public class CallSite {
 
+    /**
+     * The index of the call in the caller. This will be 0 if this instance
+     * represents a compilation root.
+     */
     private int bci;
+
+    /**
+     * The method that is called at this call site. This will be {@code null}
+     * if this instance represents a compilation root.
+     */
     private Method method;
+
+    /**
+     * The invocation count for this call site.
+     */
     private int count;
+
+    /**
+     * The receiver type of the call represented by this instance, if known.
+     */
     private String receiver;
+
+    /**
+     * In case the {@linkplain receiver receiver type} of the call represented
+     * by this instance is known, this is how often the type was encountered.
+     */
     private int receiver_count;
+
+    /**
+     * The reason for a success or failure of an inlining operation at this
+     * call site.
+     */
     private String reason;
+
+    /**
+     * A list of all calls in this compilation scope.
+     */
     private List<CallSite> calls;
+
+    /**
+     * Number of nodes in the graph at the end of parsing this compilation
+     * scope.
+     */
     private int endNodes;
+
+    /**
+     * Number of live nodes in the graph at the end of parsing this compilation
+     * scope.
+     */
     private int endLiveNodes;
+
+    /**
+     * Time in seconds since VM startup at which parsing this compilation scope
+     * ended.
+     */
     private double timeStamp;
+
+    /**
+     * The inline ID in case the call represented by this instance is inlined,
+     * 0 otherwise.
+     */
     private long inlineId;
 
-    CallSite() {
-    }
+    /**
+     * List of uncommon traps in this compilation scope.
+     */
+    private List<UncommonTrap> traps;
 
+    /**
+     * Default constructor: used to create an instance that represents the top
+     * scope of a compilation.
+     */
+    CallSite() {}
+
+    /**
+     * Constructor to create an instance that represents an actual method call.
+     */
     CallSite(int bci, Method m) {
         this.bci = bci;
         this.method = m;
     }
 
+    /**
+     * Add a call site to the compilation scope represented by this instance.
+     */
     void add(CallSite site) {
         if (getCalls() == null) {
-            setCalls(new ArrayList<CallSite>());
+            calls = new ArrayList<>();
         }
         getCalls().add(site);
     }
 
+    /**
+     * Return the last of the {@linkplain #getCalls() call sites} in this
+     * compilation scope.
+     */
     CallSite last() {
-        return last(-1);
+        return getCalls().get(getCalls().size() - 1);
     }
 
-    CallSite last(int fromEnd) {
-        return getCalls().get(getCalls().size() + fromEnd);
+    /**
+     * Return the last-but-one of the {@linkplain #getCalls() call sites} in
+     * this compilation scope.
+     */
+    CallSite lastButOne() {
+        return getCalls().get(getCalls().size() - 2);
     }
 
     public String toString() {
@@ -84,7 +162,7 @@ public class CallSite {
     }
 
     public void print(PrintStream stream) {
-        print(stream, 0);
+        print(stream, 0, true, false);
     }
 
     void emit(PrintStream stream, int indent) {
@@ -92,21 +170,14 @@ public class CallSite {
             stream.print(' ');
         }
     }
-    private static boolean compat = true;
 
-    public void print(PrintStream stream, int indent) {
+    public void print(PrintStream stream, int indent, boolean printInlining, boolean printUncommonTraps) {
         emit(stream, indent);
         String m = getMethod().getHolder() + "::" + getMethod().getName();
         if (getReason() == null) {
             stream.print("  @ " + getBci() + " " + m + " (" + getMethod().getBytes() + " bytes)");
-
         } else {
-            if (isCompat()) {
-                stream.print("  @ " + getBci() + " " + m + " " + getReason());
-            } else {
-                stream.print("- @ " + getBci() + " " + m +
-                        " (" + getMethod().getBytes() + " bytes) " + getReason());
-            }
+            stream.print("  @ " + getBci() + " " + m + " " + getReason());
         }
         stream.printf(" (end time: %6.4f", getTimeStamp());
         if (getEndNodes() > 0) {
@@ -116,13 +187,16 @@ public class CallSite {
 
         if (getReceiver() != null) {
             emit(stream, indent + 4);
-            //                 stream.println("type profile " + method.holder + " -> " + receiver + " (" +
-            //                                receiver_count + "/" + count + "," + (receiver_count * 100 / count) + "%)");
             stream.println("type profile " + getMethod().getHolder() + " -> " + getReceiver() + " (" +
                     (getReceiverCount() * 100 / getCount()) + "%)");
         }
-        if (getCalls() != null) {
+        if (printInlining && getCalls() != null) {
             for (CallSite site : getCalls()) {
+                site.print(stream, indent + 2, printInlining, printUncommonTraps);
+            }
+        }
+        if (printUncommonTraps && getTraps() != null) {
+            for (UncommonTrap site : getTraps()) {
                 site.print(stream, indent + 2);
             }
         }
@@ -180,16 +254,15 @@ public class CallSite {
         return calls;
     }
 
-    public void setCalls(List<CallSite> calls) {
-        this.calls = calls;
+    public List<UncommonTrap> getTraps() {
+        return traps;
     }
 
-    public static boolean isCompat() {
-        return compat;
-    }
-
-    public static void setCompat(boolean aCompat) {
-        compat = aCompat;
+    void add(UncommonTrap e) {
+        if (traps == null) {
+            traps = new ArrayList<UncommonTrap>();
+        }
+        traps.add(e);
     }
 
     void setEndNodes(int n) {
@@ -216,21 +289,30 @@ public class CallSite {
         return timeStamp;
     }
 
+    /**
+     * Check whether this call site matches another. Every late inline call
+     * site has a unique inline ID. If the call site we're looking for has one,
+     * then use it; otherwise rely on method name and byte code index.
+     */
     private boolean matches(CallSite other) {
-        // Every late inline call site has a unique inline id. If the
-        // call site we're looking for has one then use it other rely
-        // on method name and bci.
         if (other.inlineId != 0) {
             return inlineId == other.inlineId;
         }
         return method.equals(other.method) && bci == other.bci;
     }
 
+    /**
+     * Locate a late inline call site: find, in this instance's
+     * {@linkplain #calls call sites}, the one furthest down the given call
+     * stack.
+     *
+     * Multiple chains of identical call sites with the same method name / bci
+     * combination are possible, so we have to try them all until we find the
+     * late inline call site that has a matching inline ID.
+     *
+     * @return a matching call site, or {@code null} if none was found.
+     */
     public CallSite findCallSite(ArrayDeque<CallSite> sites) {
-        // Locate a late inline call site. Multiple chains of
-        // identical call sites with the same method name/bci are
-        // possible so we have to try them all until we find the late
-        // inline call site that has a matching inline id.
         if (calls == null) {
             return null;
         }
@@ -253,6 +335,11 @@ public class CallSite {
         return null;
     }
 
+    /**
+     * Locate a late inline call site in the tree spanned by all this instance's
+     * {@linkplain #calls call sites}, and return the sequence of call sites
+     * (scopes) leading to that late inline call site.
+     */
     public ArrayDeque<CallSite> findCallSite2(CallSite site) {
         if (calls == null) {
             return null;
@@ -260,7 +347,7 @@ public class CallSite {
 
         for (CallSite c : calls) {
             if (c.matches(site)) {
-                ArrayDeque<CallSite> stack = new ArrayDeque<CallSite>();
+                ArrayDeque<CallSite> stack = new ArrayDeque<>();
                 stack.push(c);
                 return stack;
             } else {
