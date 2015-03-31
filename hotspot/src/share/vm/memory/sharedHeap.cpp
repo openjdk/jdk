@@ -40,7 +40,6 @@ SharedHeap* SharedHeap::_sh;
 SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   CollectedHeap(),
   _collector_policy(policy_),
-  _strong_roots_parity(0),
   _workers(NULL)
 {
   _sh = this;  // ch is static, should be set only once.
@@ -68,24 +67,18 @@ void SharedHeap::set_par_threads(uint t) {
   _n_par_threads = t;
 }
 
-void SharedHeap::change_strong_roots_parity() {
-  // Also set the new collection parity.
-  assert(_strong_roots_parity >= 0 && _strong_roots_parity <= 2,
-         "Not in range.");
-  _strong_roots_parity++;
-  if (_strong_roots_parity == 3) _strong_roots_parity = 1;
-  assert(_strong_roots_parity >= 1 && _strong_roots_parity <= 2,
-         "Not in range.");
-}
-
 SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* heap, bool activate)
   : MarkScope(activate), _sh(heap)
 {
   if (_active) {
-    _sh->change_strong_roots_parity();
+    Threads::change_thread_claim_parity();
     // Zero the claimed high water mark in the StringTable
     StringTable::clear_parallel_claimed_index();
   }
+}
+
+SharedHeap::StrongRootsScope::~StrongRootsScope() {
+  Threads::assert_all_threads_claimed();
 }
 
 void SharedHeap::set_barrier_set(BarrierSet* bs) {
