@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,8 +160,8 @@ void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
   _managers_list->append(_minor_gc_manager);
   _managers_list->append(_major_gc_manager);
 
-  add_generation_memory_pool(heap->get_gen(minor), _major_gc_manager, _minor_gc_manager);
-  add_generation_memory_pool(heap->get_gen(major), _major_gc_manager);
+  add_generation_memory_pool(heap->young_gen(), _major_gc_manager, _minor_gc_manager);
+  add_generation_memory_pool(heap->old_gen(), _major_gc_manager);
 }
 
 #if INCLUDE_ALL_GCS
