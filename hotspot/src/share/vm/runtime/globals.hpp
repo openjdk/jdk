@@ -3912,7 +3912,10 @@ class CommandLineFlags {
           "Enable event-based tracing")                                     \
                                                                             \
   product(bool, UseLockedTracing, false,                                    \
-          "Use locked-tracing when doing event-based tracing")
+          "Use locked-tracing when doing event-based tracing")              \
+                                                                            \
+  diagnostic(bool, UseUnalignedAccesses, false,                             \
+          "Use unaligned memory accesses in sun.misc.Unsafe")
 
 /*
  *  Macros for factoring of globals
