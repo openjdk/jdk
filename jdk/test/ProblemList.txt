@@ -283,9 +283,6 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 # jdk_jdi
 
-# 6983531
-com/sun/jdi/BadHandshakeTest.java                               linux-all,windows-all
-
 # 8004127
 com/sun/jdi/RedefineImplementor.sh                              generic-all
 

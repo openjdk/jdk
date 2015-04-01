@@ -28,10 +28,10 @@ import java.util.Properties;
 
 /*
  * @test
- * @bug 8073214
- * @summary Basic tests of Properties methods.
+ * @bug 8073214 8075362
+ * @summary Tests to verify that load() and store() throw NPEs as advertised.
  */
-public class Basic
+public class LoadAndStoreNPE
 {
     public static void main(String[] args) throws Exception
     {
@@ -68,7 +68,7 @@ public class Basic
         }
 
         if (failures != 0) {
-            throw new RuntimeException("Basic failed with "
+            throw new RuntimeException("LoadAndStoreNPE failed with "
                 + failures + " errors!");
         }
     }

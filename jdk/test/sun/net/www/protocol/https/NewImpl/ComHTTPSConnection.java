@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
 
 import java.io.*;
 import java.net.*;
+import java.security.cert.Certificate;
 import javax.net.ssl.*;
-import javax.security.cert.*;
 import com.sun.net.ssl.HostnameVerifier;
 import com.sun.net.ssl.HttpsURLConnection;
 
@@ -240,8 +240,8 @@ public class ComHTTPSConnection {
 
                 System.out.println("Cipher Suite: " +
                     ((HttpsURLConnection)urlc).getCipherSuite());
-                X509Certificate[] certs =
-                    ((HttpsURLConnection)urlc).getServerCertificateChain();
+                Certificate[] certs =
+                    ((HttpsURLConnection)urlc).getServerCertificates();
                 for (int i = 0; i < certs.length; i++) {
                     System.out.println(certs[0]);
                 }
