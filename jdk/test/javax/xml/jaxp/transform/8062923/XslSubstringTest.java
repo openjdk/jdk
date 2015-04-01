@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8062923 8062924 8074297
+ * @bug 8062923 8062924 8074297 8076290
  * @run testng XslSubstringTest
  * @summary Test xsl substring function with negative, Inf and
  * NaN length and few other use cases. Also test proper
@@ -59,12 +59,15 @@ public class XslSubstringTest {
             { "|<xsl:value-of select=\"substring('asdf',2, 1 div 0)\"/>|", "<t>|sdf|</t>"},
             { "|<xsl:value-of select=\"substring('asdf',2, -0 div 0)\"/>|", "<t>||</t>" },
             { "|<xsl:value-of select=\"substring('asdf',2, 1 div 0)\"/>|", "<t>|sdf|</t>" },
+            // 8076290 bug test case
+            { "|<xsl:value-of select=\"substring('123', 0, 3)\"/>|", "<t>|12|</t>"},
         };
     }
 
     @DataProvider(name = "SupplementaryCharactersTestData")
-    private Object[][] bug8074297() {
+    private Object[][] dataSupplementaryCharacters() {
         return new Object[][] {
+            // 8074297 bug test cases
             { "|<xsl:value-of select=\"substring('&#131083;ABC', 3)\"/>|",    "<t>|BC|</t>"},
             { "|<xsl:value-of select=\"substring('&#131083;ABC', 3, 1)\"/>|", "<t>|B|</t>" },
             { "|<xsl:value-of select=\"substring('&#131083;ABC', 2, 2)\"/>|", "<t>|AB|</t>"},
@@ -74,6 +77,8 @@ public class XslSubstringTest {
             { "|<xsl:value-of select=\"substring('&#131083;ABC', 2, 1)\"/>|", "<t>|A|</t>"},
             { "|<xsl:value-of select=\"substring('&#131083;ABC', 1, 1 div 0)\"/>|", "<t>|&#131083;ABC|</t>"},
             { "|<xsl:value-of select=\"substring('&#131083;ABC', -10, 1 div 0)\"/>|", "<t>|&#131083;ABC|</t>"},
+            // 8076290 bug test case
+            { "|<xsl:value-of select=\"substring('&#131083;ABC', 0, 2)\"/>|", "<t>|&#131083;|</t>"},
         };
     }
 
