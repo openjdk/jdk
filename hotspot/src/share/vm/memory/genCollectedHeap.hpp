@@ -139,7 +139,7 @@ public:
   // Initialize ("weak") refs processing support
   virtual void ref_processing_init();
 
-  virtual CollectedHeap::Name kind() const {
+  virtual Name kind() const {
     return CollectedHeap::GenCollectedHeap;
   }
 

@@ -1008,7 +1008,7 @@ public:
   // Set _n_par_threads according to a policy TBD.
   void set_par_threads();
 
-  virtual CollectedHeap::Name kind() const {
+  virtual Name kind() const {
     return CollectedHeap::G1CollectedHeap;
   }
 
