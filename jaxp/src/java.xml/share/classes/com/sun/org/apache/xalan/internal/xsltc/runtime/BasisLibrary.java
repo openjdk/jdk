@@ -298,7 +298,7 @@ public final class BasisLibrary {
             return(EMPTYSTRING);
 
         int istart = (int)Math.round(start) - 1;
-        final int ilength = (int)Math.round(length);
+        int ilength = (int)Math.round(length);
         final int isum;
         if (Double.isInfinite(length))
             isum = Integer.MAX_VALUE;
@@ -309,8 +309,10 @@ public final class BasisLibrary {
         if (isum < 0 || istart > strlen)
                 return(EMPTYSTRING);
 
-        if (istart < 0)
+        if (istart < 0) {
+            ilength += istart;
             istart = 0;
+        }
 
         try {
             istart = value.offsetByCodePoints(0, istart);
