@@ -400,6 +400,22 @@ Declares a structure type that can be used in other events.
       <value type="UINT" field="compileID" label="Compilation ID" relation="COMP_ID"/>
     </event>
 
+    <struct id="CiMethod">
+      <value type="UTF8" field="class" label="Class name"/>
+      <value type="UTF8" field="name" label="Method name"/>
+      <value type="UTF8" field="signature" label="Method signature"/>
+    </struct>
+
+    <event id="CompilerInlining" path="vm/compiler/optimization/inlining" label="Method Inlining"
+         has_thread="true" is_instant="true">
+      <value type="UINT" field="compileID" label="Compilation ID" relation="COMP_ID"/>
+      <value type="METHOD" field="caller" label="Caller Method"/>
+      <structvalue type="CiMethod" field="callee" label="Callee Method"/>
+      <value type="BOOLEAN" field="succeeded" label="Succeeded"/>
+      <value type="UTF8" field="message" label="Message"/>
+      <value type="INTEGER" field="bci" label="Byte Code Index"/>
+    </event>
+
     <!-- Code sweeper events -->
 
     <event id="SweepCodeCache" path="vm/code_sweeper/sweep" label="Sweep Code Cache"
