@@ -3507,7 +3507,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
     return JNI_ENOMEM;
   }
 
-  GrowableArray<JavaVMOption> options(2, true);    // Construct option array
+  GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JavaVMOption>(2, true);    // Construct option array
   jio_fprintf(defaultStream::error_stream(),
               "Picked up %s: %s\n", name, buffer);
   char* rd = buffer;                        // pointer to the input string (rd)
@@ -3522,7 +3522,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
 
     JavaVMOption option;
     option.optionString = wrt;
-    options.append(option);                 // Fill in option
+    options->append(option);                // Fill in option
     while (*rd != 0 && !isspace(*rd)) {     // unquoted strings terminate with a space or NULL
       if (*rd == '\'' || *rd == '"') {      // handle a quoted string
         int quote = *rd;                    // matching quote to look for
@@ -3531,6 +3531,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
           if (*rd == 0) {                   // string termination means unmatched string
             jio_fprintf(defaultStream::error_stream(),
                         "Unmatched quote in %s\n", name);
+            delete options;
             os::free(buffer);
             return JNI_ERR;
           }
@@ -3550,19 +3551,21 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
     *wrt = 0;                               // Zero terminate option
   }
   JavaVMOption* options_arr =
-      NEW_C_HEAP_ARRAY_RETURN_NULL(JavaVMOption, options.length(), mtInternal);
+      NEW_C_HEAP_ARRAY_RETURN_NULL(JavaVMOption, options->length(), mtInternal);
   if (options_arr == NULL) {
+    delete options;
+    os::free(buffer);
     return JNI_ENOMEM;
   }
-  for (int i = 0; i < options.length(); i++) {
-    options_arr[i] = options.at(i);
+  for (int i = 0; i < options->length(); i++) {
+    options_arr[i] = options->at(i);
   }
 
   // Construct JavaVMInitArgs structure and parse as if it was part of the command line
   JavaVMInitArgs vm_args;
   vm_args.version = JNI_VERSION_1_2;
   vm_args.options = options_arr;
-  vm_args.nOptions = options.length();
+  vm_args.nOptions = options->length();
   vm_args.ignoreUnrecognized = IgnoreUnrecognizedVMOptions;
 
   if (PrintVMOptions) {
@@ -3578,6 +3581,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
   jint result = parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p,
                                        Flag::ENVIRON_VAR);
   FREE_C_HEAP_ARRAY(JavaVMOption, options_arr);
+  delete options;
   os::free(buffer);
   return result;
 }
