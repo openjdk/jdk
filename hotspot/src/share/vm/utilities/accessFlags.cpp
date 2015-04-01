@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,20 +47,6 @@ void AccessFlags::atomic_clear_bits(jint bits) {
   } while(f != old_flags);
 }
 
-// Returns true iff this thread succeeded setting the bit.
-bool AccessFlags::atomic_set_one_bit(jint bit) {
-  // Atomically update the flags with the bit given
-  jint old_flags, new_flags, f;
-  bool is_setting_bit = false;
-  do {
-    old_flags = _flags;
-    new_flags = old_flags | bit;
-    is_setting_bit = old_flags != new_flags;
-    f = Atomic::cmpxchg(new_flags, &_flags, old_flags);
-  } while(f != old_flags);
-
-  return is_setting_bit;
-}
 
 #if !defined(PRODUCT) || INCLUDE_JVMTI
 
