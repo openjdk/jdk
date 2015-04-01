@@ -83,7 +83,7 @@ class ParallelScavengeHeap : public CollectedHeap {
     MarkSweep
   };
 
-  ParallelScavengeHeap::Name kind() const {
+  virtual Name kind() const {
     return CollectedHeap::ParallelScavengeHeap;
   }
 

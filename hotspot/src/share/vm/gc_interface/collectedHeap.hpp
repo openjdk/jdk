@@ -185,8 +185,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
  public:
   enum Name {
-    Abstract,
-    SharedHeap,
     GenCollectedHeap,
     ParallelScavengeHeap,
     G1CollectedHeap
@@ -196,7 +194,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     return _filler_array_max_size;
   }
 
-  virtual CollectedHeap::Name kind() const { return CollectedHeap::Abstract; }
+  virtual Name kind() const = 0;
 
   /**
    * Returns JNI error code JNI_ENOMEM if memory could not be allocated,

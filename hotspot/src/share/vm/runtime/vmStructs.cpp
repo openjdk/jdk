@@ -2253,9 +2253,9 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_constant(CardTableRS::youngergen_card)                          \
                                                                           \
-  declare_constant(CollectedHeap::Abstract)                               \
-  declare_constant(CollectedHeap::SharedHeap)                             \
   declare_constant(CollectedHeap::GenCollectedHeap)                       \
+  declare_constant(CollectedHeap::ParallelScavengeHeap)                   \
+  declare_constant(CollectedHeap::G1CollectedHeap)                        \
                                                                           \
   declare_constant(GenCollectedHeap::max_gens)                            \
                                                                           \
