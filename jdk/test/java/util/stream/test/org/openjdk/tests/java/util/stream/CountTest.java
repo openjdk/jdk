@@ -24,11 +24,12 @@
 /**
  * @test
  * @summary Tests counting of streams
- * @bug 8031187 8067969
+ * @bug 8031187 8067969 8075307
  */
 
 package org.openjdk.tests.java.util.stream;
 
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.DoubleStream;
 import java.util.stream.DoubleStreamTestDataProvider;
@@ -59,6 +60,19 @@ public class CountTest extends OpTestCase {
                 terminal(s -> s.filter(e -> true), Stream::count).
                 expectedResult(expectedCount).
                 exercise();
+
+        // Test with stateful distinct op that is a barrier or lazy
+        // depending if source is not already distinct and encounter order is
+        // preserved or not
+        expectedCount = data.into(new HashSet<>()).size();
+        withData(data).
+                terminal(Stream::distinct, Stream::count).
+                expectedResult(expectedCount).
+                exercise();
+        withData(data).
+                terminal(s -> s.unordered().distinct(), Stream::count).
+                expectedResult(expectedCount).
+                exercise();
     }
 
     @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
@@ -72,6 +86,16 @@ public class CountTest extends OpTestCase {
 
         withData(data).
                 terminal(s -> s.filter(e -> true), IntStream::count).
+                expectedResult(expectedCount).
+                exercise();
+
+        expectedCount = data.into(new HashSet<>()).size();
+        withData(data).
+                terminal(IntStream::distinct, IntStream::count).
+                expectedResult(expectedCount).
+                exercise();
+        withData(data).
+                terminal(s -> s.unordered().distinct(), IntStream::count).
                 expectedResult(expectedCount).
                 exercise();
     }
@@ -89,6 +113,16 @@ public class CountTest extends OpTestCase {
                 terminal(s -> s.filter(e -> true), LongStream::count).
                 expectedResult(expectedCount).
                 exercise();
+
+        expectedCount = data.into(new HashSet<>()).size();
+        withData(data).
+                terminal(LongStream::distinct, LongStream::count).
+                expectedResult(expectedCount).
+                exercise();
+        withData(data).
+                terminal(s -> s.unordered().distinct(), LongStream::count).
+                expectedResult(expectedCount).
+                exercise();
     }
 
     @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
@@ -104,6 +138,16 @@ public class CountTest extends OpTestCase {
                 terminal(s -> s.filter(e -> true), DoubleStream::count).
                 expectedResult(expectedCount).
                 exercise();
+
+        expectedCount = data.into(new HashSet<>()).size();
+        withData(data).
+                terminal(DoubleStream::distinct, DoubleStream::count).
+                expectedResult(expectedCount).
+                exercise();
+        withData(data).
+                terminal(s -> s.unordered().distinct(), DoubleStream::count).
+                expectedResult(expectedCount).
+                exercise();
     }
 
     public void testNoEvaluationForSizedStream() {
@@ -111,11 +155,17 @@ public class CountTest extends OpTestCase {
             AtomicInteger ai = new AtomicInteger();
             Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
             assertEquals(ai.get(), 0);
+
+            Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
+            assertEquals(ai.get(), 0);
         }
 
         {
             AtomicInteger ai = new AtomicInteger();
             IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(ai.get(), 0);
+
+            IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
             assertEquals(ai.get(), 0);
         }
 
@@ -123,11 +173,17 @@ public class CountTest extends OpTestCase {
             AtomicInteger ai = new AtomicInteger();
             LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
             assertEquals(ai.get(), 0);
+
+            LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
+            assertEquals(ai.get(), 0);
         }
 
         {
             AtomicInteger ai = new AtomicInteger();
             DoubleStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(ai.get(), 0);
+
+            DoubleStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
             assertEquals(ai.get(), 0);
         }
     }

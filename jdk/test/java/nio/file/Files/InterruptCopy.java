@@ -25,7 +25,6 @@
  * @bug 4313887 6993267
  * @summary Unit test for Sun-specific ExtendedCopyOption.INTERRUPTIBLE option
  * @library ..
- * @key intermittent
  */
 
 import java.nio.file.*;
