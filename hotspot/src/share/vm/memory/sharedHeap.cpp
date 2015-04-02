@@ -35,13 +35,10 @@
 #include "utilities/copy.hpp"
 #include "utilities/workgroup.hpp"
 
-SharedHeap* SharedHeap::_sh;
-
 SharedHeap::SharedHeap() :
   CollectedHeap(),
   _workers(NULL)
 {
-  _sh = this;  // ch is static, should be set only once.
   if (UseConcMarkSweepGC || UseG1GC) {
     _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
                             /* are_GC_task_threads */true,
@@ -52,13 +49,6 @@ SharedHeap::SharedHeap() :
       _workers->initialize_workers();
     }
   }
-}
-
-bool SharedHeap::heap_lock_held_for_gc() {
-  Thread* t = Thread::current();
-  return    Heap_lock->owned_by_self()
-         || (   (t->is_GC_task_thread() ||  t->is_VM_thread())
-             && _thread_holds_heap_lock_for_gc);
 }
 
 void SharedHeap::set_par_threads(uint t) {

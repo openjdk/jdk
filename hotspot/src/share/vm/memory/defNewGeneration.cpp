@@ -550,8 +550,9 @@ HeapWord* DefNewGeneration::expand_and_allocate(size_t size,
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
+  GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->collector_policy()->counters();
   _tenuring_threshold =
-    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize);
+    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize, gc_counters);
 }
 
 void DefNewGeneration::collect(bool   full,

@@ -79,7 +79,7 @@ void ageTable::merge_par(ageTable* subTable) {
   }
 }
 
-uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
+uint ageTable::compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters) {
   size_t desired_survivor_size = (size_t)((((double) survivor_capacity)*TargetSurvivorRatio)/100);
   uint result;
 
@@ -126,9 +126,6 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
       age++;
     }
     if (UsePerfData) {
-      SharedHeap* sh = SharedHeap::heap();
-      CollectorPolicy* policy = sh->collector_policy();
-      GCPolicyCounters* gc_counters = policy->counters();
       gc_counters->tenuring_threshold()->set_value(result);
       gc_counters->desired_survivor_size()->set_value(
         desired_survivor_size*oopSize);

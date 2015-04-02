@@ -167,10 +167,10 @@ ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
     // Cannot yet substitute active_workers for n_par_threads
     // in the case where parallelism is being turned off by
     // setting n_par_threads to 0.
-    _is_par = (SharedHeap::heap()->n_par_threads() > 0);
+    _is_par = (GenCollectedHeap::heap()->n_par_threads() > 0);
     assert(!_is_par ||
-           (SharedHeap::heap()->n_par_threads() ==
-            SharedHeap::heap()->workers()->active_workers()), "Mismatch");
+           (GenCollectedHeap::heap()->n_par_threads() ==
+            GenCollectedHeap::heap()->workers()->active_workers()), "Mismatch");
 }
 
 bool ClearNoncleanCardWrapper::is_word_aligned(jbyte* entry) {
