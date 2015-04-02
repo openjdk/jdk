@@ -48,6 +48,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/parNew/parOopClosures.hpp"
+#endif
 
 //
 // DefNewGeneration functions.

@@ -60,8 +60,9 @@ class MarkSweep : AllStatic {
     virtual void do_oop(narrowOop* p);
   };
 
-  class MarkAndPushClosure: public OopClosure {
+  class MarkAndPushClosure: public ExtendedOopClosure {
    public:
+    template <typename T> void do_oop_nv(T* p);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
   };
@@ -73,8 +74,12 @@ class MarkSweep : AllStatic {
 
   class AdjustPointerClosure: public OopsInGenClosure {
    public:
+    template <typename T> void do_oop_nv(T* p);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
+
+    // This closure provides its own oop verification code.
+    debug_only(virtual bool should_verify_oops() { return false; })
   };
 
   // Used for java/lang/ref handling
