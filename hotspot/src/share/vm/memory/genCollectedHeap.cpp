@@ -50,9 +50,10 @@
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/workgroup.hpp"
-#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
