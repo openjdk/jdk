@@ -248,6 +248,7 @@
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.naming</to>
+      <to>java.prefs</to>
       <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
