@@ -52,10 +52,6 @@ class GenCollectedHeap : public CollectedHeap {
   friend class GCCauseSetter;
   friend class VMStructs;
 public:
-  enum SomeConstants {
-    max_gens = 10
-  };
-
   friend class VM_PopulateDumpSharedSpace;
 
  protected:
@@ -63,8 +59,6 @@ public:
   static GenCollectedHeap* _gch;
 
  private:
-  int _n_gens;
-
   Generation* _young_gen;
   Generation* _old_gen;
 
@@ -372,11 +366,6 @@ public:
   // maximal committed limit that they can reach, without a garbage
   // collection.
   virtual bool is_maximal_no_gc() const;
-
-  int n_gens() const {
-    assert(_n_gens == gen_policy()->number_of_generations(), "Sanity");
-    return _n_gens;
-  }
 
   // This function returns the "GenRemSet" object that allows us to scan
   // generations in a fully generational heap.

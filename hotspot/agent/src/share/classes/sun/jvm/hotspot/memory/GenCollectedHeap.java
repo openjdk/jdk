@@ -34,7 +34,6 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
 public class GenCollectedHeap extends CollectedHeap {
-  private static CIntegerField nGensField;
   private static AddressField youngGenField;
   private static AddressField oldGenField;
 
@@ -54,7 +53,6 @@ public class GenCollectedHeap extends CollectedHeap {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("GenCollectedHeap");
 
-    nGensField = type.getCIntegerField("_n_gens");
     youngGenField = type.getAddressField("_young_gen");
     oldGenField = type.getAddressField("_old_gen");
 
@@ -70,7 +68,7 @@ public class GenCollectedHeap extends CollectedHeap {
   }
 
   public int nGens() {
-    return (int) nGensField.getValue(addr);
+    return 2; // Young + Old
   }
 
   public Generation getGen(int i) {
