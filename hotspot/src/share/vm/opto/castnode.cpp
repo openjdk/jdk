@@ -216,16 +216,13 @@ const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {
   const Type *result = _type;
   if( in_type != NULL && my_type != NULL ) {
     TypePtr::PTR   in_ptr    = in_type->ptr();
-    if( in_ptr == TypePtr::Null ) {
+    if (in_ptr == TypePtr::Null) {
       result = in_type;
-    } else if( in_ptr == TypePtr::Constant ) {
-      // Casting a constant oop to an interface?
-      // (i.e., a String to a Comparable?)
-      // Then return the interface.
+    } else if (in_ptr == TypePtr::Constant) {
       const TypeOopPtr *jptr = my_type->isa_oopptr();
-      assert( jptr, "" );
-      result =  (jptr->klass()->is_interface() || !in_type->higher_equal(_type))
-      ? my_type->cast_to_ptr_type( TypePtr::NotNull )
+      assert(jptr, "");
+      result = !in_type->higher_equal(_type)
+      ? my_type->cast_to_ptr_type(TypePtr::NotNull)
       : in_type;
     } else {
       result =  my_type->cast_to_ptr_type( my_type->join_ptr(in_ptr) );
