@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1ParScanThreadState.hpp"
 #include "memory/iterator.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
 G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
   G1ParClosureSuper(g1, par_scan_state), _scanned_klass(NULL),

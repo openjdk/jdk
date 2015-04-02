@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/g1StringDedupTable.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/padded.inline.hpp"
