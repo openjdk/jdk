@@ -34,6 +34,10 @@ public class ManagedLocalsThread extends Thread {
     private static final long THREAD_LOCALS;
     private static final long INHERITABLE_THREAD_LOCALS;
 
+    public ManagedLocalsThread() {
+        eraseThreadLocals();
+    }
+
     public ManagedLocalsThread(Runnable target) {
         super(target);
         eraseThreadLocals();
@@ -41,6 +45,11 @@ public class ManagedLocalsThread extends Thread {
 
     public ManagedLocalsThread(Runnable target, String name) {
         super(target, name);
+        eraseThreadLocals();
+    }
+
+    public ManagedLocalsThread(ThreadGroup group, String name) {
+        super(group, name);
         eraseThreadLocals();
     }
 
