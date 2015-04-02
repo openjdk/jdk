@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,11 @@
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
 #include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
+#include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -180,17 +179,16 @@ void ParCompactionManager::follow_marking_stacks() {
     // Drain the overflow stack first, to allow stealing from the marking stack.
     oop obj;
     while (marking_stack()->pop_overflow(obj)) {
-      obj->follow_contents(this);
+      follow_contents(obj);
     }
     while (marking_stack()->pop_local(obj)) {
-      obj->follow_contents(this);
+      follow_contents(obj);
     }
 
     // Process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
     if (_objarray_stack.pop_overflow(task) || _objarray_stack.pop_local(task)) {
-      ObjArrayKlass* k = (ObjArrayKlass*)task.obj()->klass();
-      k->oop_follow_contents(this, task.obj(), task.index());
+      follow_contents((objArrayOop)task.obj(), task.index());
     }
   } while (!marking_stacks_empty());
 

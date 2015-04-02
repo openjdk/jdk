@@ -470,56 +470,12 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
       fatal("Parallel gc not supported here.");
 #endif // INCLUDE_ALL_GCS
     } else {
-      // We do not call the non_clean_card_iterate_serial() version below because
-      // we want to clear the cards (which non_clean_card_iterate_serial() does not
-      // do for us): clear_cl here does the work of finding contiguous dirty ranges
-      // of cards to process and clear.
+      // clear_cl finds contiguous dirty ranges of cards to process and clear.
 
-      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(),
-                                                       cl->gen_boundary());
+      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), cl->gen_boundary());
       ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
 
       clear_cl.do_MemRegion(mr);
-    }
-  }
-}
-
-// The iterator itself is not MT-aware, but
-// MT-aware callers and closures can use this to
-// accomplish dirty card iteration in parallel. The
-// iterator itself does not clear the dirty cards, or
-// change their values in any manner.
-void CardTableModRefBS::non_clean_card_iterate_serial(MemRegion mr,
-                                                      MemRegionClosure* cl) {
-  bool is_par = (SharedHeap::heap()->n_par_threads() > 0);
-  assert(!is_par ||
-          (SharedHeap::heap()->n_par_threads() ==
-          SharedHeap::heap()->workers()->active_workers()), "Mismatch");
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (mri.word_size() > 0) {
-      jbyte* cur_entry = byte_for(mri.last());
-      jbyte* limit = byte_for(mri.start());
-      while (cur_entry >= limit) {
-        jbyte* next_entry = cur_entry - 1;
-        if (*cur_entry != clean_card) {
-          size_t non_clean_cards = 1;
-          // Should the next card be included in this range of dirty cards.
-          while (next_entry >= limit && *next_entry != clean_card) {
-            non_clean_cards++;
-            cur_entry = next_entry;
-            next_entry--;
-          }
-          // The memory region may not be on a card boundary.  So that
-          // objects beyond the end of the region are not processed, make
-          // cur_cards precise with regard to the end of the memory region.
-          MemRegion cur_cards(addr_for(cur_entry),
-                              non_clean_cards * card_size_in_words);
-          MemRegion dirty_region = cur_cards.intersection(mri);
-          cl->do_MemRegion(dirty_region);
-        }
-        cur_entry = next_entry;
-      }
     }
   }
 }

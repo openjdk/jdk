@@ -32,8 +32,6 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void ObjPtrQueue::flush() {
   // The buffer might contain refs into the CSet. We have to filter it
   // first before we flush it, otherwise we might end up with an
@@ -182,7 +180,7 @@ void ObjPtrQueue::print(const char* name,
                         void** buf, size_t index, size_t sz) {
   gclog_or_tty->print_cr("  SATB BUFFER [%s] buf: "PTR_FORMAT" "
                          "index: "SIZE_FORMAT" sz: "SIZE_FORMAT,
-                         name, buf, index, sz);
+                         name, p2i(buf), index, sz);
 }
 #endif // PRODUCT
 
