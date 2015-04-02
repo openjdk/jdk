@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * A multi-threaded implementation of Selector for Windows.
@@ -403,7 +404,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
     }
 
     // Represents a helper thread used for select.
-    private final class SelectThread extends Thread {
+    private final class SelectThread extends ManagedLocalsThread {
         private final int index; // index of this thread
         final SubSelector subSelector;
         private long lastRun = 0; // last run number

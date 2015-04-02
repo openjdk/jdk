@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import com.sun.nio.file.SensitivityWatchEventModifier;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * Simple WatchService implementation that uses periodic tasks to poll
@@ -58,7 +59,7 @@ class PollingWatchService
             .newSingleThreadScheduledExecutor(new ThreadFactory() {
                  @Override
                  public Thread newThread(Runnable r) {
-                     Thread t = new Thread(r);
+                     Thread t = new ManagedLocalsThread(r);
                      t.setDaemon(true);
                      return t;
                  }});

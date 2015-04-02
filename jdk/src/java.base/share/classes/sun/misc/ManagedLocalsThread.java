@@ -43,6 +43,11 @@ public class ManagedLocalsThread extends Thread {
         eraseThreadLocals();
     }
 
+    public ManagedLocalsThread(String name) {
+        super(name);
+        eraseThreadLocals();
+    }
+
     public ManagedLocalsThread(Runnable target, String name) {
         super(target, name);
         eraseThreadLocals();
