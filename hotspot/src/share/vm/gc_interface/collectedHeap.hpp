@@ -75,9 +75,8 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 
 //
 // CollectedHeap
-//   SharedHeap
-//     GenCollectedHeap
-//     G1CollectedHeap
+//   GenCollectedHeap
+//   G1CollectedHeap
 //   ParallelScavengeHeap
 //
 class CollectedHeap : public CHeapObj<mtInternal> {

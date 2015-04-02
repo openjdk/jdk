@@ -25,9 +25,9 @@
 #include "precompiled.hpp"
 #include "gc_implementation/shared/ageTable.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/collectorPolicy.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/sharedHeap.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "utilities/copy.hpp"
 

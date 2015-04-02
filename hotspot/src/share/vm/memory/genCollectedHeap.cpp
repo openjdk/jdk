@@ -78,7 +78,7 @@ enum GCH_strong_roots_tasks {
 };
 
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
-  SharedHeap(),
+  CollectedHeap(),
   _rem_set(NULL),
   _gen_policy(policy),
   _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),

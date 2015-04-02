@@ -30,7 +30,7 @@
 #include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
-#include "memory/sharedHeap.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "oops/oop.hpp"
 
 class ParallelScavengeHeap;
