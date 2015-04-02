@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void field_offset_at(int n, Register tmp, Register dest, Register base);
   int  field_offset_at(Register object, address bcp, int offset);
   void fast_iaaccess(int n, address bcp);
-  void fast_iagetfield(address bcp);
   void fast_iaputfield(address bcp, bool do_store_check );
 
   void index_check(Register array, Register index, int index_shift, Register tmp, Register res);
