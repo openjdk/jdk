@@ -255,6 +255,7 @@
       <to>java.sql</to>
       <to>jdk.charsets</to>
       <to>jdk.deploy.osx</to>
+      <to>jdk.httpserver</to>
       <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
       <to>jdk.jvmstat</to>
