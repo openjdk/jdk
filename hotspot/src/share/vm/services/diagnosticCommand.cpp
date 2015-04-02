@@ -81,6 +81,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStatusDCmd>(jmx_agent_export_flags, true,false));
 
 }
 
@@ -706,6 +707,38 @@ void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, ik, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
+}
+
+JMXStatusDCmd::JMXStatusDCmd(outputStream *output, bool heap_allocated) :
+  DCmd(output, heap_allocated) {
+  // do nothing
+}
+
+void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  // Load and initialize the sun.management.Agent class
+  // invoke getManagementAgentStatus() method to generate the status info
+  // throw java.lang.NoSuchMethodError if method doesn't exist
+
+  Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+  instanceKlassHandle ik (THREAD, k);
+
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result, ik, vmSymbols::getAgentStatus_name(), vmSymbols::void_string_signature(), CHECK);
+
+  jvalue* jv = (jvalue*) result.get_value_addr();
+  oop str = (oop) jv->l;
+  if (str != NULL) {
+      char* out = java_lang_String::as_utf8_string(str);
+      if (out) {
+          output()->print_cr("%s", out);
+          return;
+      }
+  }
+  output()->print_cr("Error obtaining management agent status");
 }
 
 VMDynamicLibrariesDCmd::VMDynamicLibrariesDCmd(outputStream *output, bool heap_allocated) :
