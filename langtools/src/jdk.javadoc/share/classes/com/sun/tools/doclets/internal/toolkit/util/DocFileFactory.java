@@ -56,17 +56,10 @@ abstract class DocFileFactory {
         DocFileFactory f = factories.get(configuration);
         if (f == null) {
             JavaFileManager fm = configuration.getFileManager();
-            if (fm instanceof StandardJavaFileManager)
+            if (fm instanceof StandardJavaFileManager) {
                 f = new StandardDocFileFactory(configuration);
-            else {
-                try {
-                    Class<?> pathFileManagerClass =
-                            Class.forName("com.sun.tools.javac.nio.PathFileManager");
-                    if (pathFileManagerClass.isAssignableFrom(fm.getClass()))
-                        f = new PathDocFileFactory(configuration);
-                } catch (Throwable t) {
-                    throw new IllegalStateException(t);
-                }
+            } else {
+                throw new IllegalStateException();
             }
             factories.put(configuration, f);
         }

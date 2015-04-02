@@ -63,8 +63,6 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
-import com.sun.tools.javac.nio.PathFileObject;
-import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -72,8 +70,6 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
 import static javax.tools.StandardLocation.*;
-
-import static com.sun.tools.javac.util.BaseFileManager.getKind;
 
 /**
  * This class provides access to the source, class and other files
