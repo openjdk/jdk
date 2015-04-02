@@ -190,11 +190,12 @@ GenCollectorPolicy::GenCollectorPolicy() :
     _min_young_size(0),
     _initial_young_size(0),
     _max_young_size(0),
-    _gen_alignment(0),
     _min_old_size(0),
     _initial_old_size(0),
     _max_old_size(0),
-    _generations(NULL)
+    _gen_alignment(0),
+    _young_gen_spec(NULL),
+    _old_gen_spec(NULL)
 {}
 
 size_t GenCollectorPolicy::scale_by_NewRatio_aligned(size_t base_size) {
@@ -912,9 +913,8 @@ void MarkSweepPolicy::initialize_alignments() {
 }
 
 void MarkSweepPolicy::initialize_generations() {
-  _generations = NEW_C_HEAP_ARRAY(GenerationSpecPtr, number_of_generations(), mtGC);
-  _generations[0] = new GenerationSpec(Generation::DefNew, _initial_young_size, _max_young_size);
-  _generations[1] = new GenerationSpec(Generation::MarkSweepCompact, _initial_old_size, _max_old_size);
+  _young_gen_spec = new GenerationSpec(Generation::DefNew, _initial_young_size, _max_young_size, _gen_alignment);
+  _old_gen_spec   = new GenerationSpec(Generation::MarkSweepCompact, _initial_old_size, _max_old_size, _gen_alignment);
 }
 
 void MarkSweepPolicy::initialize_gc_policy_counters() {

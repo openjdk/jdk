@@ -37,8 +37,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 class PerRegionTable: public CHeapObj<mtGC> {
   friend class OtherRegionsTable;
   friend class HeapRegionRemSetIterator;
@@ -93,10 +91,10 @@ protected:
 
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print_cr("    PRT::Add_reference_work(" PTR_FORMAT "->" PTR_FORMAT").",
-                             from,
+                             p2i(from),
                              UseCompressedOops
-                             ? (void *)oopDesc::load_decode_heap_oop((narrowOop*)from)
-                             : (void *)oopDesc::load_decode_heap_oop((oop*)from));
+                             ? p2i(oopDesc::load_decode_heap_oop((narrowOop*)from))
+                             : p2i(oopDesc::load_decode_heap_oop((oop*)from)));
     }
 
     HeapRegion* loc_hr = hr();
@@ -412,17 +410,17 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
   if (G1TraceHeapRegionRememberedSet) {
     gclog_or_tty->print_cr("ORT::add_reference_work(" PTR_FORMAT "->" PTR_FORMAT ").",
-                                                    from,
+                                                    p2i(from),
                                                     UseCompressedOops
-                                                    ? (void *)oopDesc::load_decode_heap_oop((narrowOop*)from)
-                                                    : (void *)oopDesc::load_decode_heap_oop((oop*)from));
+                                                    ? p2i(oopDesc::load_decode_heap_oop((narrowOop*)from))
+                                                    : p2i(oopDesc::load_decode_heap_oop((oop*)from)));
   }
 
   int from_card = (int)(uintptr_t(from) >> CardTableModRefBS::card_shift);
 
   if (G1TraceHeapRegionRememberedSet) {
     gclog_or_tty->print_cr("Table for [" PTR_FORMAT "...): card %d (cache = %d)",
-                  _hr->bottom(), from_card,
+                  p2i(_hr->bottom()), from_card,
                   FromCardCache::at(tid, cur_hrm_ind));
   }
 
@@ -471,7 +469,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
                                 "[" PTR_FORMAT "...) for ref " PTR_FORMAT ".\n",
                                 align_size_down(uintptr_t(from),
                                                 CardTableModRefBS::card_size),
-                                _hr->bottom(), from);
+                                p2i(_hr->bottom()), p2i(from));
           }
         }
         if (G1TraceHeapRegionRememberedSet) {
@@ -533,7 +531,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
                           "[" PTR_FORMAT "...) for ref " PTR_FORMAT ".\n",
                           align_size_down(uintptr_t(from),
                                           CardTableModRefBS::card_size),
-                          _hr->bottom(), from);
+                          p2i(_hr->bottom()), p2i(from));
     }
   }
   assert(contains_reference(from), "We just added it!");
@@ -602,8 +600,8 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print("Coarsened entry in region [" PTR_FORMAT "...] "
                  "for region [" PTR_FORMAT "...] (" SIZE_FORMAT " coarse entries).\n",
-                 _hr->bottom(),
-                 max->hr()->bottom(),
+                 p2i(_hr->bottom()),
+                 p2i(max->hr()->bottom()),
                  _n_coarse_entries);
     }
   }
@@ -857,7 +855,7 @@ void HeapRegionRemSet::print() {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT, card_start);
+    gclog_or_tty->print_cr("  Card " PTR_FORMAT, p2i(card_start));
   }
   if (iter.n_yielded() != occupied()) {
     gclog_or_tty->print_cr("Yielded disagrees with occupied:");
@@ -1152,8 +1150,8 @@ void HeapRegionRemSet::print_recorded() {
     }
     gclog_or_tty->print("Added card " PTR_FORMAT " to region [" PTR_FORMAT "...]"
                         " for ref " PTR_FORMAT ".\n",
-                        _recorded_cards[i], _recorded_regions[i]->bottom(),
-                        _recorded_oops[i]);
+                        p2i(_recorded_cards[i]), p2i(_recorded_regions[i]->bottom()),
+                        p2i(_recorded_oops[i]));
   }
 }
 
@@ -1240,7 +1238,7 @@ void HeapRegionRemSet::test() {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT ".", card_start);
+    gclog_or_tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
     sum++;
   }
   guarantee(sum == 11 - 3 + 2048, "Failure");

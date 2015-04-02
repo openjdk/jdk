@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@ private:
   size_t           _max_size;
 
 public:
-  GenerationSpec(Generation::Name name, size_t init_size, size_t max_size) {
-    _name = name;
-    _init_size = init_size;
-    _max_size = max_size;
-  }
+  GenerationSpec(Generation::Name name, size_t init_size, size_t max_size, size_t alignment) :
+    _name(name),
+    _init_size(align_size_up(init_size, alignment)),
+    _max_size(align_size_up(max_size, alignment))
+  { }
 
   Generation* init(ReservedSpace rs, int level, GenRemSet* remset);
 
@@ -53,12 +53,6 @@ public:
   void set_init_size(size_t size)      { _init_size = size; }
   size_t max_size()              const { return _max_size; }
   void set_max_size(size_t size)       { _max_size = size; }
-
-  // Alignment
-  void align(size_t alignment) {
-    set_init_size(align_size_up(init_size(), alignment));
-    set_max_size(align_size_up(max_size(), alignment));
-  }
 };
 
 typedef GenerationSpec* GenerationSpecPtr;
