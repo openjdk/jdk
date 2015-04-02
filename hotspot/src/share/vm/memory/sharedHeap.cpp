@@ -36,25 +36,8 @@
 #include "utilities/workgroup.hpp"
 
 SharedHeap::SharedHeap() :
-  CollectedHeap(),
-  _workers(NULL)
-{
-  if (UseConcMarkSweepGC || UseG1GC) {
-    _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
-                            /* are_GC_task_threads */true,
-                            /* are_ConcurrentGC_threads */false);
-    if (_workers == NULL) {
-      vm_exit_during_initialization("Failed necessary allocation.");
-    } else {
-      _workers->initialize_workers();
-    }
-  }
-}
-
-void SharedHeap::set_par_threads(uint t) {
-  assert(t == 0 || !UseSerialGC, "Cannot have parallel threads");
-  _n_par_threads = t;
-}
+  CollectedHeap()
+{}
 
 SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* heap, bool activate)
   : MarkScope(activate), _sh(heap)
@@ -69,16 +52,3 @@ SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* heap, bool activate)
 SharedHeap::StrongRootsScope::~StrongRootsScope() {
   Threads::assert_all_threads_claimed();
 }
-
-void SharedHeap::set_barrier_set(BarrierSet* bs) {
-  _barrier_set = bs;
-  // Cached barrier set for fast access in oops
-  oopDesc::set_bs(bs);
-}
-
-void SharedHeap::post_initialize() {
-  CollectedHeap::post_initialize();
-  ref_processing_init();
-}
-
-void SharedHeap::ref_processing_init() {}

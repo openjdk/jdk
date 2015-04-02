@@ -32,6 +32,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/space.inline.hpp"
 #include "memory/universe.inline.hpp"
@@ -2442,11 +2443,10 @@ void CompactibleFreeListSpace::verify() const {
   {
     VerifyAllOopsClosure cl(_collector, this, span, past_remark,
       _collector->markBitMap());
-    CollectedHeap* ch = Universe::heap();
 
     // Iterate over all oops in the heap. Uses the _no_header version
     // since we are not interested in following the klass pointers.
-    ch->oop_iterate_no_header(&cl);
+    GenCollectedHeap::heap()->oop_iterate_no_header(&cl);
   }
 
   if (VerifyObjectStartArray) {

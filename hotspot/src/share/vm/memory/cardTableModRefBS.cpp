@@ -26,6 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableModRefBS.inline.hpp"
 #include "memory/cardTableRS.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/sharedHeap.hpp"
 #include "memory/space.hpp"
 #include "memory/space.inline.hpp"

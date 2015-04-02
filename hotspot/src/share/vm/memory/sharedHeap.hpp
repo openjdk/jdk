@@ -26,26 +26,11 @@
 #define SHARE_VM_MEMORY_SHAREDHEAP_HPP
 
 #include "gc_interface/collectedHeap.hpp"
-#include "memory/generation.hpp"
 
 // A "SharedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
-
-class Generation;
-class BarrierSet;
-class GenRemSet;
-class Space;
-class SpaceClosure;
-class OopClosure;
-class OopsInGenClosure;
-class ObjectClosure;
-class SubTasksDone;
-class WorkGang;
-class FlexibleWorkGang;
-class CollectorPolicy;
-class KlassClosure;
 
 // Note on use of FlexibleWorkGang's for GC.
 // There are three places where task completion is determined.
@@ -101,39 +86,12 @@ class KlassClosure;
 class SharedHeap : public CollectedHeap {
   friend class VMStructs;
 
-  friend class VM_GC_Operation;
-  friend class VM_CGC_Operation;
-
 protected:
-  // If we're doing parallel GC, use this gang of threads.
-  FlexibleWorkGang* _workers;
-
   // Full initialization is done in a concrete subtype's "initialize"
   // function.
   SharedHeap();
 
 public:
-  void set_barrier_set(BarrierSet* bs);
-
-  // Does operations required after initialization has been done.
-  virtual void post_initialize();
-
-  // Initialization of ("weak") reference processing support
-  virtual void ref_processing_init();
-
-  // Iteration functions.
-  void oop_iterate(ExtendedOopClosure* cl) = 0;
-
-  // Iterate over all spaces in use in the heap, in an undefined order.
-  virtual void space_iterate(SpaceClosure* cl) = 0;
-
-  // A SharedHeap will contain some number of spaces.  This finds the
-  // space whose reserved area contains the given address, or else returns
-  // NULL.
-  virtual Space* space_containing(const void* addr) const = 0;
-
-  bool no_gc_in_progress() { return !is_gc_active(); }
-
   // Note, the below comment needs to be updated to reflect the changes
   // introduced by JDK-8076225. This should be done as part of JDK-8076289.
   //
@@ -174,25 +132,6 @@ public:
     StrongRootsScope(SharedHeap* heap, bool activate = true);
     ~StrongRootsScope();
   };
-
- private:
-
- public:
-  FlexibleWorkGang* workers() const { return _workers; }
-
-  // The functions below are helper functions that a subclass of
-  // "SharedHeap" can use in the implementation of its virtual
-  // functions.
-
-public:
-
-  // Do anything common to GC's.
-  virtual void gc_prologue(bool full) = 0;
-  virtual void gc_epilogue(bool full) = 0;
-
-  // Sets the number of parallel threads that will be doing tasks
-  // (such as process roots) subsequently.
-  virtual void set_par_threads(uint t);
-};
+ };
 
 #endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP

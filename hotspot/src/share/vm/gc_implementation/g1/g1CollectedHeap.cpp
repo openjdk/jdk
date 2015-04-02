@@ -1770,6 +1770,11 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
 
   _g1h = this;
 
+  _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
+                          /* are_GC_task_threads */true,
+                          /* are_ConcurrentGC_threads */false);
+  _workers->initialize_workers();
+
   _allocator = G1Allocator::create_allocator(_g1h);
   _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
 
@@ -2035,6 +2040,11 @@ size_t G1CollectedHeap::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
 }
 
+void G1CollectedHeap::post_initialize() {
+  CollectedHeap::post_initialize();
+  ref_processing_init();
+}
+
 void G1CollectedHeap::ref_processing_init() {
   // Reference processing in G1 currently works as follows:
   //
@@ -2071,7 +2081,6 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
-  SharedHeap::ref_processing_init();
   MemRegion mr = reserved_region();
 
   // Concurrent Mark ref processor
@@ -2463,11 +2472,6 @@ public:
   }
 };
 
-void G1CollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
-  IterateOopClosureRegionClosure blk(cl);
-  heap_region_iterate(&blk);
-}
-
 // Iterates an ObjectClosure over all objects within a HeapRegion.
 
 class IterateObjectClosureRegionClosure: public HeapRegionClosure {
@@ -2484,23 +2488,6 @@ public:
 
 void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
   IterateObjectClosureRegionClosure blk(cl);
-  heap_region_iterate(&blk);
-}
-
-// Calls a SpaceClosure on a HeapRegion.
-
-class SpaceClosureRegionClosure: public HeapRegionClosure {
-  SpaceClosure* _cl;
-public:
-  SpaceClosureRegionClosure(SpaceClosure* cl) : _cl(cl) {}
-  bool doHeapRegion(HeapRegion* r) {
-    _cl->do_space(r);
-    return false;
-  }
-};
-
-void G1CollectedHeap::space_iterate(SpaceClosure* cl) {
-  SpaceClosureRegionClosure blk(cl);
   heap_region_iterate(&blk);
 }
 
@@ -2640,23 +2627,19 @@ HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) cons
   return result;
 }
 
-Space* G1CollectedHeap::space_containing(const void* addr) const {
-  return heap_region_containing(addr);
-}
-
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_start(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_start(addr);
 }
 
 size_t G1CollectedHeap::block_size(const HeapWord* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_size(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_size(addr);
 }
 
 bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_is_obj(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_is_obj(addr);
 }
 
 bool G1CollectedHeap::supports_tlab_allocation() const {

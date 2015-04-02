@@ -201,7 +201,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // initializing stores to an object at this address.
   virtual bool can_elide_initializing_store_barrier(oop new_obj);
 
-  void oop_iterate(ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
 
