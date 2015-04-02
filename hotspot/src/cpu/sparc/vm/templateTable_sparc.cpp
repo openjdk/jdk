@@ -2070,23 +2070,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   __ br(Assembler::equal, false, Assembler::pt, resolved);
   __ delayed()->set(code, O1);
 
-  address entry;
-
-  switch (code) {
-    case Bytecodes::_getstatic      : // fall through
-    case Bytecodes::_putstatic      : // fall through
-    case Bytecodes::_getfield       : // fall through
-    case Bytecodes::_putfield       : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_get_put); break;
-    case Bytecodes::_invokevirtual  : // fall through
-    case Bytecodes::_invokespecial  : // fall through
-    case Bytecodes::_invokestatic   : // fall through
-    case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);  break;
-    case Bytecodes::_invokehandle   : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokehandle);  break;
-    case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic);  break;
-    default:
-      fatal(err_msg("unexpected bytecode: %s", Bytecodes::name(code)));
-      break;
-  }
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   // first time invocation - must resolve first
   __ call_VM(noreg, entry, O1);
   // Update registers with resolved info
