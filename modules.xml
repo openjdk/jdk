@@ -253,6 +253,7 @@
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
       <to>java.sql</to>
+      <to>java.xml</to>
       <to>jdk.charsets</to>
       <to>jdk.deploy.osx</to>
       <to>jdk.httpserver</to>
