@@ -39,7 +39,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/sharedHeap.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -596,7 +596,7 @@ void GenCollectedHeap::process_roots(bool activate_scope,
                                      CLDClosure* strong_cld_closure,
                                      CLDClosure* weak_cld_closure,
                                      CodeBlobClosure* code_roots) {
-  StrongRootsScope srs(this, activate_scope);
+  StrongRootsScope srs(activate_scope);
 
   // General roots.
   assert(Threads::thread_claim_parity() != 0, "must have called prologue code");

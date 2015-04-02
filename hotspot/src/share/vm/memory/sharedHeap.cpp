@@ -23,32 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/sharedHeap.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
-#include "runtime/fprofiler.hpp"
-#include "runtime/java.hpp"
-#include "utilities/copy.hpp"
-#include "utilities/workgroup.hpp"
 
 SharedHeap::SharedHeap() :
   CollectedHeap()
 {}
-
-SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* heap, bool activate)
-  : MarkScope(activate), _sh(heap)
-{
-  if (_active) {
-    Threads::change_thread_claim_parity();
-    // Zero the claimed high water mark in the StringTable
-    StringTable::clear_parallel_claimed_index();
-  }
-}
-
-SharedHeap::StrongRootsScope::~StrongRootsScope() {
-  Threads::assert_all_threads_claimed();
-}

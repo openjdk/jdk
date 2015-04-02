@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,25 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_SHAREDHEAP_HPP
-#define SHARE_VM_MEMORY_SHAREDHEAP_HPP
+#ifndef SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP
+#define SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP
 
-#include "gc_interface/collectedHeap.hpp"
+#include "memory/allocation.hpp"
 
-class SharedHeap : public CollectedHeap {
-  friend class VMStructs;
+class MarkScope : public StackObj {
+ protected:
+  bool _active;
+ public:
+  MarkScope(bool activate = true);
+  ~MarkScope();
+};
 
-protected:
-  // Full initialization is done in a concrete subtype's "initialize"
-  // function.
-  SharedHeap();
- };
+// Sets up and tears down the required state for parallel root processing.
 
-#endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP
+class StrongRootsScope : public MarkScope {
+ public:
+  StrongRootsScope(bool activate = true);
+  ~StrongRootsScope();
+};
+
+#endif // SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP

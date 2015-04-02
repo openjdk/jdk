@@ -42,7 +42,7 @@
 #include "memory/generation.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/sharedHeap.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "memory/space.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -974,10 +974,10 @@ void ParNewGeneration::collect(bool   full,
   // in the multi-threaded case, but we special-case n=1 here to get
   // repeatable measurements of the 1-thread overhead of the parallel code.
   if (n_workers > 1) {
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     workers->run_task(&tsk);
   } else {
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     tsk.work(0);
   }
   thread_state_set.reset(0 /* Bad value in debug if not reset */,

@@ -288,16 +288,6 @@ class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
   // Called for each code blob, but at most once per unique blob.
 
   virtual void do_code_blob(CodeBlob* cb);
-
-  class MarkScope : public StackObj {
-  protected:
-    bool _active;
-  public:
-    MarkScope(bool activate = true);
-      // = { if (active) nmethod::oops_do_marking_prologue(); }
-    ~MarkScope();
-      // = { if (active) nmethod::oops_do_marking_epilogue(); }
-  };
 };
 
 // MonitorClosure is used for iterating over monitors in the monitors cache

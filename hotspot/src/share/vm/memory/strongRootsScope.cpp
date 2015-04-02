@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,32 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_SHAREDHEAP_HPP
-#define SHARE_VM_MEMORY_SHAREDHEAP_HPP
+#include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
+#include "code/nmethod.hpp"
+#include "memory/strongRootsScope.hpp"
+#include "runtime/thread.hpp"
 
-#include "gc_interface/collectedHeap.hpp"
+MarkScope::MarkScope(bool activate) : _active(activate) {
+  if (_active) {
+    nmethod::oops_do_marking_prologue();
+  }
+}
 
-class SharedHeap : public CollectedHeap {
-  friend class VMStructs;
+MarkScope::~MarkScope() {
+  if (_active) {
+    nmethod::oops_do_marking_epilogue();
+  }
+}
 
-protected:
-  // Full initialization is done in a concrete subtype's "initialize"
-  // function.
-  SharedHeap();
- };
+StrongRootsScope::StrongRootsScope(bool activate) : MarkScope(activate) {
+  if (_active) {
+    Threads::change_thread_claim_parity();
+    // Zero the claimed high water mark in the StringTable
+    StringTable::clear_parallel_claimed_index();
+  }
+}
 
-#endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP
+StrongRootsScope::~StrongRootsScope() {
+  Threads::assert_all_threads_claimed();
+}

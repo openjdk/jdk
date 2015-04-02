@@ -116,7 +116,7 @@ void G1RootProcessor::wait_until_all_strong_classes_discovered() {
 G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h) :
     _g1h(g1h),
     _process_strong_tasks(new SubTasksDone(G1RP_PS_NumElements)),
-    _srs(g1h),
+    _srs(),
     _lock(Mutex::leaf, "G1 Root Scanning barrier lock", false, Monitor::_safepoint_check_never),
     _n_workers_discovered_strong_classes(0) {}
 
