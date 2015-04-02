@@ -954,10 +954,6 @@ class InstanceKlass: public Klass {
   void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
-  // Garbage collection
-  void oop_follow_contents(oop obj);
-  int  oop_adjust_pointers(oop obj);
-
   void clean_implementors_list(BoolObjectClosure* is_alive);
   void clean_method_data(BoolObjectClosure* is_alive);
   void clean_dependent_nmethods();
@@ -981,32 +977,108 @@ class InstanceKlass: public Klass {
   static void notify_unload_class(InstanceKlass* ik);
   static void release_C_heap_structures(InstanceKlass* ik);
 
-  // Parallel Scavenge and Parallel Old
-  PARALLEL_GC_DECLS
-
   // Naming
   const char* signature_name() const;
 
-  // Iterators
-  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {
-    return oop_oop_iterate_v(obj, blk);
-  }
+  // GC specific object visitors
+  //
+  // Mark Sweep
+  void oop_ms_follow_contents(oop obj);
+  int  oop_ms_adjust_pointers(oop obj);
+#if INCLUDE_ALL_GCS
+  // Parallel Scavenge
+  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
+  // Parallel Compact
+  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
+  void oop_pc_update_pointers(oop obj);
+#endif
 
-  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
-    return oop_oop_iterate_v_m(obj, blk, mr);
-  }
+  // Oop fields (and metadata) iterators
+  //  [nv = true]  Use non-virtual calls to do_oop_nv.
+  //  [nv = false] Use virtual calls to do_oop.
+  //
+  // The InstanceKlass iterators also visits the Object's klass.
 
-#define InstanceKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)      \
-  int  oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);           \
-  int  oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk,        \
-                                      MemRegion mr);
+  // Forward iteration
+ public:
+  // Iterate over all oop fields in the oop maps.
+  template <bool nv, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure);
+
+ protected:
+  // Iterate over all oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+
+ private:
+  // Iterate over all oop fields in the oop maps.
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_specialized(oop obj, OopClosureType* closure);
+
+  // Iterate over all oop fields in one oop map.
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure);
+
+
+  // Reverse iteration
+#if INCLUDE_ALL_GCS
+ public:
+  // Iterate over all oop fields in the oop maps.
+  template <bool nv, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure);
+
+ protected:
+  // Iterate over all oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+
+ private:
+  // Iterate over all oop fields in the oop maps.
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_specialized_reverse(oop obj, OopClosureType* closure);
+
+  // Iterate over all oop fields in one oop map.
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure);
+#endif
+
+
+  // Bounded range iteration
+ public:
+  // Iterate over all oop fields in the oop maps.
+  template <bool nv, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+ protected:
+  // Iterate over all oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+ private:
+  // Iterate over all oop fields in the oop maps.
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_specialized_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+  // Iterate over all oop fields in one oop map.
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr);
+
+
+ public:
+
+#define InstanceKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                   \
+  int  oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure);                    \
+  int  oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DECL)
 
 #if INCLUDE_ALL_GCS
-#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix) \
-  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
+#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)  \
+  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)

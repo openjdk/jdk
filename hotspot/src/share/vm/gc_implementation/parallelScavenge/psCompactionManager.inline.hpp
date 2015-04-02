@@ -26,9 +26,11 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_INLINE_HPP
 
 #include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
-#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
-#include "oops/objArrayKlass.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.inline.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 void ParCompactionManager::push_objarray(oop obj, size_t index)
 {
@@ -49,16 +51,43 @@ void ParCompactionManager::push_region(size_t index)
 }
 
 inline void ParCompactionManager::follow_contents(oop obj) {
-  obj->follow_contents(this);
+  assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
+  obj->pc_follow_contents(this);
+}
+
+template <class T>
+inline void oop_pc_follow_contents_specialized(ObjArrayKlass* klass, oop obj, int index, ParCompactionManager* cm) {
+  objArrayOop a = objArrayOop(obj);
+  const size_t len = size_t(a->length());
+  const size_t beg_index = size_t(index);
+  assert(beg_index < len || len == 0, "index too large");
+
+  const size_t stride = MIN2(len - beg_index, ObjArrayMarkingStride);
+  const size_t end_index = beg_index + stride;
+  T* const base = (T*)a->base();
+  T* const beg = base + beg_index;
+  T* const end = base + end_index;
+
+  // Push the non-NULL elements of the next stride on the marking stack.
+  for (T* e = beg; e < end; e++) {
+    PSParallelCompact::mark_and_push<T>(cm, e);
+  }
+
+  if (end_index < len) {
+    cm->push_objarray(a, end_index); // Push the continuation.
+  }
 }
 
 inline void ParCompactionManager::follow_contents(objArrayOop obj, int index) {
-  ObjArrayKlass* k = (ObjArrayKlass*)obj->klass();
-  k->oop_follow_contents(this, obj, index);
+  if (UseCompressedOops) {
+    oop_pc_follow_contents_specialized<narrowOop>((ObjArrayKlass*)obj->klass(), obj, index, this);
+  } else {
+    oop_pc_follow_contents_specialized<oop>((ObjArrayKlass*)obj->klass(), obj, index, this);
+  }
 }
 
 inline void ParCompactionManager::update_contents(oop obj) {
-  obj->update_contents(this);
+  obj->pc_update_contents();
 }
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSCOMPACTIONMANAGER_INLINE_HPP

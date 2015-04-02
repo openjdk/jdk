@@ -34,7 +34,7 @@
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
 #include "gc_implementation/parallelScavenge/psMarkSweepDecorator.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
-#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.inline.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
@@ -48,7 +48,10 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/referenceProcessor.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/methodData.hpp"
+#include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
@@ -823,15 +826,7 @@ void PSParallelCompact::KeepAliveClosure::do_oop(narrowOop* p) { PSParallelCompa
 PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closure;
 PSParallelCompact::AdjustKlassClosure PSParallelCompact::_adjust_klass_closure;
 
-void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p); }
-void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p); }
-
 void PSParallelCompact::FollowStackClosure::do_void() { _compaction_manager->follow_marking_stacks(); }
-
-void PSParallelCompact::MarkAndPushClosure::do_oop(oop* p)       {
-  mark_and_push(_compaction_manager, p);
-}
-void PSParallelCompact::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(_compaction_manager, p); }
 
 void PSParallelCompact::FollowKlassClosure::do_klass(Klass* klass) {
   klass->oops_do(_mark_and_push_closure);
@@ -3336,6 +3331,71 @@ void MoveAndUpdateClosure::copy_partial_obj()
     Copy::aligned_conjoint_words(source(), destination(), words);
   }
   update_state(words);
+}
+
+void InstanceKlass::oop_pc_update_pointers(oop obj) {
+  oop_oop_iterate_oop_maps<true>(obj, PSParallelCompact::adjust_pointer_closure());
+}
+
+void InstanceMirrorKlass::oop_pc_update_pointers(oop obj) {
+  InstanceKlass::oop_pc_update_pointers(obj);
+
+  oop_oop_iterate_statics<true>(obj, PSParallelCompact::adjust_pointer_closure());
+}
+
+void InstanceClassLoaderKlass::oop_pc_update_pointers(oop obj) {
+  InstanceKlass::oop_pc_update_pointers(obj);
+}
+
+#ifdef ASSERT
+template <class T> static void trace_reference_gc(const char *s, oop obj,
+                                                  T* referent_addr,
+                                                  T* next_addr,
+                                                  T* discovered_addr) {
+  if(TraceReferenceGC && PrintGCDetails) {
+    gclog_or_tty->print_cr("%s obj " PTR_FORMAT, s, p2i(obj));
+    gclog_or_tty->print_cr("     referent_addr/* " PTR_FORMAT " / "
+                           PTR_FORMAT, p2i(referent_addr),
+                           referent_addr ? p2i(oopDesc::load_decode_heap_oop(referent_addr)) : NULL);
+    gclog_or_tty->print_cr("     next_addr/* " PTR_FORMAT " / "
+                           PTR_FORMAT, p2i(next_addr),
+                           next_addr ? p2i(oopDesc::load_decode_heap_oop(next_addr)) : NULL);
+    gclog_or_tty->print_cr("     discovered_addr/* " PTR_FORMAT " / "
+                           PTR_FORMAT, p2i(discovered_addr),
+                           discovered_addr ? p2i(oopDesc::load_decode_heap_oop(discovered_addr)) : NULL);
+  }
+}
+#endif
+
+template <class T>
+static void oop_pc_update_pointers_specialized(oop obj) {
+  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
+  PSParallelCompact::adjust_pointer(referent_addr);
+  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
+  PSParallelCompact::adjust_pointer(next_addr);
+  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
+  PSParallelCompact::adjust_pointer(discovered_addr);
+  debug_only(trace_reference_gc("InstanceRefKlass::oop_update_ptrs", obj,
+                                referent_addr, next_addr, discovered_addr);)
+}
+
+void InstanceRefKlass::oop_pc_update_pointers(oop obj) {
+  InstanceKlass::oop_pc_update_pointers(obj);
+
+  if (UseCompressedOops) {
+    oop_pc_update_pointers_specialized<narrowOop>(obj);
+  } else {
+    oop_pc_update_pointers_specialized<oop>(obj);
+  }
+}
+
+void ObjArrayKlass::oop_pc_update_pointers(oop obj) {
+  assert(obj->is_objArray(), "obj must be obj array");
+  oop_oop_iterate_elements<true>(objArrayOop(obj), PSParallelCompact::adjust_pointer_closure());
+}
+
+void TypeArrayKlass::oop_pc_update_pointers(oop obj) {
+  assert(obj->is_typeArray(),"must be a type array");
 }
 
 ParMarkBitMapClosure::IterationStatus
