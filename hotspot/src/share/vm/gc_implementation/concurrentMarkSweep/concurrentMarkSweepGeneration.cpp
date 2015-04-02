@@ -53,6 +53,7 @@
 #include "memory/padded.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -3014,10 +3015,10 @@ void CMSCollector::checkpointRootsInitialWork() {
       gch->set_par_threads(n_workers);
       initialize_sequential_subtasks_for_young_gen_rescan(n_workers);
       if (n_workers > 1) {
-        GenCollectedHeap::StrongRootsScope srs(gch);
+        StrongRootsScope srs;
         workers->run_task(&tsk);
       } else {
-        GenCollectedHeap::StrongRootsScope srs(gch);
+        StrongRootsScope srs;
         tsk.work(0);
       }
       gch->set_par_threads(0);
@@ -5112,11 +5113,11 @@ void CMSCollector::do_remark_parallel() {
     // necessarily be so, since it's possible that we are doing
     // ST marking.
     ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), true);
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     workers->run_task(&tsk);
   } else {
     ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), false);
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     tsk.work(0);
   }
 
@@ -5184,7 +5185,7 @@ void CMSCollector::do_remark_non_parallel() {
     verify_work_stacks_empty();
 
     gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
 
     gch->gen_process_roots(_cmsGen->level(),
                            true,  // younger gens as roots

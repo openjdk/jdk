@@ -46,6 +46,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -2650,7 +2651,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   g1h->ensure_parsability(false);
 
-  G1CollectedHeap::StrongRootsScope srs(g1h);
+  StrongRootsScope srs;
   // this is remark, so we'll use up all active threads
   uint active_workers = g1h->workers()->active_workers();
   if (active_workers == 0) {

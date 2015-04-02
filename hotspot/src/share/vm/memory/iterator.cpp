@@ -64,16 +64,6 @@ void CodeBlobToOopClosure::do_code_blob(CodeBlob* cb) {
   }
 }
 
-MarkingCodeBlobClosure::MarkScope::MarkScope(bool activate)
-  : _active(activate)
-{
-  if (_active)  nmethod::oops_do_marking_prologue();
-}
-
-MarkingCodeBlobClosure::MarkScope::~MarkScope() {
-  if (_active)  nmethod::oops_do_marking_epilogue();
-}
-
 void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* nm = cb->as_nmethod_or_null();
   if (nm != NULL && !nm->test_set_oops_do_mark()) {

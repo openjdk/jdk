@@ -1886,10 +1886,23 @@ class Threads: AllStatic {
   // Does not include JNI_VERSION_1_1
   static jboolean is_supported_jni_version(jint version);
 
+  // The "thread claim parity" provides a way for threads to be claimed
+  // by parallel worker tasks.
+  //
+  // Each thread contains a a "parity" field. A task will claim the
+  // thread only if its parity field is the same as the global parity,
+  // which is updated by calling change_thread_claim_parity().
+  //
+  // For this to work change_thread_claim_parity() needs to be called
+  // exactly once in sequential code before starting parallel tasks
+  // that should claim threads.
+  //
+  // New threads get their parity set to 0 and change_thread_claim_parity()
+  // never set the global parity to 0.
   static int thread_claim_parity() { return _thread_claim_parity; }
   static void change_thread_claim_parity();
-
   static void assert_all_threads_claimed() PRODUCT_RETURN;
+
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.
   static void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
