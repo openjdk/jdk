@@ -537,7 +537,8 @@ IRT_END
 // Fields
 //
 
-IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code bytecode))
+void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code bytecode) {
+  Thread* THREAD = thread;
   // resolve field
   fieldDescriptor info;
   constantPoolHandle pool(thread, method(thread)->constants());
@@ -552,7 +553,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  if (already_resolved(thread)) return;
+  ConstantPoolCacheEntry* cp_cache_entry = cache_entry(thread);
+  if (cp_cache_entry->is_resolved(bytecode)) return;
 
   // compute auxiliary field attributes
   TosState state  = as_TosState(info.field_type());
@@ -580,7 +582,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
     }
   }
 
-  cache_entry(thread)->set_field(
+  cp_cache_entry->set_field(
     get_code,
     put_code,
     info.field_holder(),
@@ -591,7 +593,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
     info.access_flags().is_volatile(),
     pool->pool_holder()
   );
-IRT_END
+}
 
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -686,7 +688,8 @@ IRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* thread, Method* meth
   JvmtiExport::post_raw_breakpoint(thread, method, bcp);
 IRT_END
 
-IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code bytecode)) {
+void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code bytecode) {
+  Thread* THREAD = thread;
   // extract receiver from the outgoing argument list if necessary
   Handle receiver(thread, NULL);
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface) {
@@ -710,7 +713,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   {
     JvmtiHideSingleStepping jhss(thread);
     LinkResolver::resolve_invoke(info, receiver, pool,
-                                 get_index_u2_cpcache(thread, bytecode), bytecode, CHECK);
+                                 get_index_u2_cpcache(thread, bytecode), bytecode,
+                                 CHECK);
     if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
       int retry_count = 0;
       while (info.resolved_method()->is_old()) {
@@ -721,13 +725,15 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
                   "Could not resolve to latest version of redefined method");
         // method is redefined in the middle of resolve so re-try.
         LinkResolver::resolve_invoke(info, receiver, pool,
-                                     get_index_u2_cpcache(thread, bytecode), bytecode, CHECK);
+                                     get_index_u2_cpcache(thread, bytecode), bytecode,
+                                     CHECK);
       }
     }
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  if (already_resolved(thread)) return;
+  ConstantPoolCacheEntry* cp_cache_entry = cache_entry(thread);
+  if (cp_cache_entry->is_resolved(bytecode)) return;
 
   if (bytecode == Bytecodes::_invokeinterface) {
     if (TraceItables && Verbose) {
@@ -762,18 +768,18 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
 #endif
   switch (info.call_kind()) {
   case CallInfo::direct_call:
-    cache_entry(thread)->set_direct_call(
+    cp_cache_entry->set_direct_call(
       bytecode,
       info.resolved_method());
     break;
   case CallInfo::vtable_call:
-    cache_entry(thread)->set_vtable_call(
+    cp_cache_entry->set_vtable_call(
       bytecode,
       info.resolved_method(),
       info.vtable_index());
     break;
   case CallInfo::itable_call:
-    cache_entry(thread)->set_itable_call(
+    cp_cache_entry->set_itable_call(
       bytecode,
       info.resolved_method(),
       info.itable_index());
@@ -781,30 +787,30 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   default:  ShouldNotReachHere();
   }
 }
-IRT_END
 
 
 // First time execution:  Resolve symbols, create a permanent MethodType object.
-IRT_ENTRY(void, InterpreterRuntime::resolve_invokehandle(JavaThread* thread)) {
+void InterpreterRuntime::resolve_invokehandle(JavaThread* thread) {
+  Thread* THREAD = thread;
   const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
 
   // resolve method
   CallInfo info;
   constantPoolHandle pool(thread, method(thread)->constants());
-
   {
     JvmtiHideSingleStepping jhss(thread);
     LinkResolver::resolve_invoke(info, Handle(), pool,
-                                 get_index_u2_cpcache(thread, bytecode), bytecode, CHECK);
+                                 get_index_u2_cpcache(thread, bytecode), bytecode,
+                                 CHECK);
   } // end JvmtiHideSingleStepping
 
-  cache_entry(thread)->set_method_handle(pool, info);
+  ConstantPoolCacheEntry* cp_cache_entry = cache_entry(thread);
+  cp_cache_entry->set_method_handle(pool, info);
 }
-IRT_END
-
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
-IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
+void InterpreterRuntime::resolve_invokedynamic(JavaThread* thread) {
+  Thread* THREAD = thread;
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
 
   //TO DO: consider passing BCI to Java.
@@ -823,8 +829,36 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   ConstantPoolCacheEntry* cp_cache_entry = pool->invokedynamic_cp_cache_entry_at(index);
   cp_cache_entry->set_dynamic_call(pool, info);
 }
-IRT_END
 
+// This function is the interface to the assembly code. It returns the resolved
+// cpCache entry.  This doesn't safepoint, but the helper routines safepoint.
+// This function will check for redefinition!
+IRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* thread, Bytecodes::Code bytecode)) {
+  switch (bytecode) {
+  case Bytecodes::_getstatic:
+  case Bytecodes::_putstatic:
+  case Bytecodes::_getfield:
+  case Bytecodes::_putfield:
+    resolve_get_put(thread, bytecode);
+    break;
+  case Bytecodes::_invokevirtual:
+  case Bytecodes::_invokespecial:
+  case Bytecodes::_invokestatic:
+  case Bytecodes::_invokeinterface:
+    resolve_invoke(thread, bytecode);
+    break;
+  case Bytecodes::_invokehandle:
+    resolve_invokehandle(thread);
+    break;
+  case Bytecodes::_invokedynamic:
+    resolve_invokedynamic(thread);
+    break;
+  default:
+    fatal(err_msg("unexpected bytecode: %s", Bytecodes::name(bytecode)));
+    break;
+  }
+}
+IRT_END
 
 //------------------------------------------------------------------------------------------------------------------------
 // Miscellaneous

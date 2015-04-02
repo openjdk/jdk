@@ -1942,7 +1942,7 @@ run:
 
           cache = cp->entry_at(index);
           if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_get_put(THREAD, (Bytecodes::Code)opcode),
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -2040,7 +2040,7 @@ run:
           u2 index = Bytes::get_native_u2(pc+1);
           ConstantPoolCacheEntry* cache = cp->entry_at(index);
           if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_get_put(THREAD, (Bytecodes::Code)opcode),
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -2416,7 +2416,7 @@ run:
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         if (! cache->is_resolved((Bytecodes::Code) opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invokedynamic(THREAD),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
         }
@@ -2447,7 +2447,7 @@ run:
         ConstantPoolCacheEntry* cache = cp->entry_at(index);
 
         if (! cache->is_resolved((Bytecodes::Code) opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invokehandle(THREAD),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->entry_at(index);
         }
@@ -2480,7 +2480,7 @@ run:
 
         ConstantPoolCacheEntry* cache = cp->entry_at(index);
         if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invoke(THREAD, (Bytecodes::Code)opcode),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->entry_at(index);
         }
@@ -2571,7 +2571,7 @@ run:
         // out so c++ compiler has a chance for constant prop to fold everything possible away.
 
         if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invoke(THREAD, (Bytecodes::Code)opcode),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->entry_at(index);
         }
