@@ -31,6 +31,7 @@
 #include "memory/sharedHeap.hpp"
 
 class SubTasksDone;
+class FlexibleWorkGang;
 
 // A "GenCollectedHeap" is a SharedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -93,6 +94,8 @@ public:
   // In block contents verification, the number of header words to skip
   NOT_PRODUCT(static size_t _skip_header_HeapWords;)
 
+  FlexibleWorkGang* _workers;
+
 protected:
   // Helper functions for allocation
   HeapWord* attempt_allocation(size_t size,
@@ -124,6 +127,8 @@ protected:
 
 public:
   GenCollectedHeap(GenCollectorPolicy *policy);
+
+  FlexibleWorkGang* workers() const { return _workers; }
 
   GCStats* gc_stats(int level) const;
 
@@ -223,6 +228,7 @@ public:
   }
 
   // Iteration functions.
+  void oop_iterate_no_header(OopClosure* cl);
   void oop_iterate(ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl);
@@ -331,7 +337,6 @@ public:
     _old_gen->update_gc_stats(current_level, full);
   }
 
-  // Override.
   bool no_gc_in_progress() { return !is_gc_active(); }
 
   // Override.
@@ -362,8 +367,6 @@ public:
   // Apply "cl.do_generation" to all generations in the heap
   // If "old_to_young" determines the order.
   void generation_iterate(GenClosure* cl, bool old_to_young);
-
-  void space_iterate(SpaceClosure* cl);
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
@@ -531,8 +534,8 @@ private:
   void record_gen_tops_before_GC() PRODUCT_RETURN;
 
 protected:
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue(bool full);
+  void gc_epilogue(bool full);
 };
 
 #endif // SHARE_VM_MEMORY_GENCOLLECTEDHEAP_HPP

@@ -85,6 +85,15 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   _full_collections_completed(0)
 {
   assert(policy != NULL, "Sanity check");
+  if (UseConcMarkSweepGC) {
+    _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
+                            /* are_GC_task_threads */true,
+                            /* are_ConcurrentGC_threads */false);
+    _workers->initialize_workers();
+  } else {
+    // Serial GC does not use workers.
+    _workers = NULL;
+  }
 }
 
 jint GenCollectedHeap::initialize() {
@@ -166,7 +175,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
 }
 
 void GenCollectedHeap::post_initialize() {
-  SharedHeap::post_initialize();
+  CollectedHeap::post_initialize();
+  ref_processing_init();
   GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
   guarantee(policy->is_generation_policy(), "Illegal policy type");
   assert((_young_gen->kind() == Generation::DefNew) ||
@@ -185,7 +195,6 @@ void GenCollectedHeap::post_initialize() {
 }
 
 void GenCollectedHeap::ref_processing_init() {
-  SharedHeap::ref_processing_init();
   _young_gen->ref_processor_init();
   _old_gen->ref_processor_init();
 }
@@ -560,7 +569,8 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
 }
 
 void GenCollectedHeap::set_par_threads(uint t) {
-  SharedHeap::set_par_threads(t);
+  assert(t == 0 || !UseSerialGC, "Cannot have parallel threads");
+  CollectedHeap::set_par_threads(t);
   set_n_termination(t);
 }
 
@@ -924,6 +934,11 @@ bool GenCollectedHeap::is_in_partial_collection(const void* p) {
 }
 #endif
 
+void GenCollectedHeap::oop_iterate_no_header(OopClosure* cl) {
+  NoHeaderExtendedOopClosure no_header_cl(cl);
+  oop_iterate(&no_header_cl);
+}
+
 void GenCollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
   _young_gen->oop_iterate(cl);
   _old_gen->oop_iterate(cl);
@@ -1091,11 +1106,6 @@ void GenCollectedHeap::generation_iterate(GenClosure* cl,
     cl->do_generation(_young_gen);
     cl->do_generation(_old_gen);
   }
-}
-
-void GenCollectedHeap::space_iterate(SpaceClosure* cl) {
-  _young_gen->space_iterate(cl, true);
-  _old_gen->space_iterate(cl, true);
 }
 
 bool GenCollectedHeap::is_maximal_no_gc() const {

@@ -78,13 +78,7 @@ jint ParallelScavengeHeap::initialize() {
 
   CardTableExtension* const barrier_set = new CardTableExtension(reserved_region());
   barrier_set->initialize();
-  _barrier_set = barrier_set;
-  oopDesc::set_bs(_barrier_set);
-  if (_barrier_set == NULL) {
-    vm_shutdown_during_initialization(
-      "Could not reserve enough space for barrier set");
-    return JNI_ENOMEM;
-  }
+  set_barrier_set(barrier_set);
 
   // Make up the generations
   // Calculate the maximum size that a generation can grow.  This
@@ -520,10 +514,6 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
 
   VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
   VMThread::execute(&op);
-}
-
-void ParallelScavengeHeap::oop_iterate(ExtendedOopClosure* cl) {
-  Unimplemented();
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {

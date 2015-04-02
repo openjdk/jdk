@@ -205,7 +205,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
-  virtual void post_initialize() = 0;
+  virtual void post_initialize();
 
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() {}
@@ -470,6 +470,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Returns the barrier set for this heap
   BarrierSet* barrier_set() { return _barrier_set; }
+  void set_barrier_set(BarrierSet* barrier_set);
 
   // Returns "true" iff there is a stop-world GC in progress.  (I assume
   // that it should answer "false" for the concurrent part of a concurrent
@@ -496,12 +497,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
-
-  void oop_iterate_no_header(OopClosure* cl);
-
-  // Iterate over all the ref-containing fields of all objects, calling
-  // "cl.do_oop" on each.
-  virtual void oop_iterate(ExtendedOopClosure* cl) = 0;
 
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
