@@ -34,6 +34,7 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import sun.misc.JavaAWTAccess;
+import sun.misc.ManagedLocalsThread;
 import sun.misc.SharedSecrets;
 
 /**
@@ -248,7 +249,7 @@ public class LogManager {
 
     // This private class is used as a shutdown hook.
     // It does a "reset" to close all open handlers.
-    private class Cleaner extends Thread {
+    private class Cleaner extends ManagedLocalsThread {
 
         private Cleaner() {
             /* Set context class loader to null in order to avoid

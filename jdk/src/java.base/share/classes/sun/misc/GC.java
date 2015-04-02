@@ -82,8 +82,7 @@ public class GC {
      */
     public static native long maxObjectInspectionAge();
 
-
-    private static class Daemon extends Thread {
+    private static class Daemon extends ManagedLocalsThread {
 
         public void run() {
             for (;;) {

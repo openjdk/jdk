@@ -27,6 +27,7 @@ package java.lang.ref;
 
 import sun.misc.Cleaner;
 import sun.misc.JavaLangRefAccess;
+import sun.misc.ManagedLocalsThread;
 import sun.misc.SharedSecrets;
 
 /**
@@ -126,7 +127,7 @@ public abstract class Reference<T> {
 
     /* High-priority thread to enqueue pending References
      */
-    private static class ReferenceHandler extends Thread {
+    private static class ReferenceHandler extends ManagedLocalsThread {
 
         private static void ensureClassInitialized(Class<?> clazz) {
             try {

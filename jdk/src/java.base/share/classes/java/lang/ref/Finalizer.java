@@ -28,6 +28,7 @@ package java.lang.ref;
 import java.security.PrivilegedAction;
 import java.security.AccessController;
 import sun.misc.JavaLangAccess;
+import sun.misc.ManagedLocalsThread;
 import sun.misc.SharedSecrets;
 import sun.misc.VM;
 
@@ -126,7 +127,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                     for (ThreadGroup tgn = tg;
                          tgn != null;
                          tg = tgn, tgn = tg.getParent());
-                    Thread sft = new Thread(tg, proc, "Secondary finalizer");
+                    Thread sft = new ManagedLocalsThread(tg, proc, "Secondary finalizer");
                     sft.start();
                     try {
                         sft.join();
@@ -185,7 +186,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                 }}});
     }
 
-    private static class FinalizerThread extends Thread {
+    private static class FinalizerThread extends ManagedLocalsThread {
         private volatile boolean running;
         FinalizerThread(ThreadGroup g) {
             super(g, "Finalizer");

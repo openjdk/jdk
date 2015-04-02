@@ -77,7 +77,7 @@ public class RequestProcessor implements Runnable {
      */
     public static synchronized void startProcessing() {
         if (dispatcher == null) {
-            dispatcher = new Thread(new RequestProcessor(), "Request Processor");
+            dispatcher = new ManagedLocalsThread(new RequestProcessor(), "Request Processor");
             dispatcher.setPriority(Thread.NORM_PRIORITY + 2);
             dispatcher.start();
         }
