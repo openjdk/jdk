@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1379,7 +1379,19 @@ public class LogManager {
         reset();
 
         // Load the properties
-        props.load(ins);
+        try {
+            props.load(ins);
+        } catch (IllegalArgumentException x) {
+            // props.load may throw an IllegalArgumentException if the stream
+            // contains malformed Unicode escape sequences.
+            // We wrap that in an IOException as readConfiguration is
+            // specified to throw IOException if there are problems reading
+            // from the stream.
+            // Note: new IOException(x.getMessage(), x) allow us to get a more
+            // concise error message than new IOException(x);
+            throw new IOException(x.getMessage(), x);
+        }
+
         // Instantiate new configuration objects.
         String names[] = parseClassNames("config");
 
