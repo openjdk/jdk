@@ -238,7 +238,6 @@ static bool     check_signals      = true;
 static pid_t    _initial_pid       = 0;
 static int      SR_signum          = SIGUSR2; // Signal used to suspend/resume a thread (must be > SIGSEGV, see 4355769)
 static sigset_t SR_sigset;
-static pthread_mutex_t dl_mutex;              // Used to protect dlsym() calls.
 
 julong os::available_memory() {
   return Aix::available_memory();
@@ -1479,13 +1478,8 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return NULL;
 }
 
-// Glibc-2.0 libdl is not MT safe. If you are building with any glibc,
-// chances are you might want to run the generated bits against glibc-2.0
-// libdl.so, so always use locking for any version of glibc.
 void* os::dll_lookup(void* handle, const char* name) {
-  pthread_mutex_lock(&dl_mutex);
   void* res = dlsym(handle, name);
-  pthread_mutex_unlock(&dl_mutex);
   return res;
 }
 
@@ -3685,7 +3679,6 @@ void os::init(void) {
   Aix::_main_thread = pthread_self();
 
   initial_time_count = os::elapsed_counter();
-  pthread_mutex_init(&dl_mutex, NULL);
 }
 
 // This is called _after_ the global arguments have been parsed.
