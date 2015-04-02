@@ -324,6 +324,9 @@
   develop(bool, SuperWordRTDepCheck, false,                                 \
           "Enable runtime dependency checks.")                              \
                                                                             \
+  product(bool, SuperWordReductions, true,                                  \
+          "Enable reductions support in superword.")                        \
+                                                                            \
   notproduct(bool, TraceSuperWord, false,                                   \
           "Trace superword transforms")                                     \
                                                                             \
