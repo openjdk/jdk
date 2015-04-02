@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,8 @@ import com.sun.corba.se.impl.util.JDKBridge;
 import com.sun.corba.se.impl.logging.UtilSystemException;
 import com.sun.corba.se.spi.logging.CORBALogDomains;
 import sun.corba.SharedSecrets;
+import com.sun.corba.se.impl.transport.ManagedLocalsThread;
+
 
 /**
  * Provides utility methods that can be used by stubs and ties to
@@ -750,7 +752,7 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
     }
 }
 
-class KeepAlive extends Thread
+class KeepAlive extends ManagedLocalsThread
 {
     boolean quit = false;
 

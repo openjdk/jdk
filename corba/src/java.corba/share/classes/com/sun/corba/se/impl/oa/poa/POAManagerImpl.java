@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.sun.corba.se.spi.protocol.PIHandler ;
 import com.sun.corba.se.impl.logging.POASystemException ;
 
 import com.sun.corba.se.impl.orbutil.ORBUtility ;
+import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 /** POAManagerImpl is the implementation of the POAManager interface.
  *  Its public methods are activate(), hold_requests(), discard_requests()
@@ -357,7 +358,7 @@ public class POAManagerImpl extends org.omg.CORBA.LocalObject implements
             if (wait_for_completion)
                 deactivator.run() ;
             else {
-                Thread thr = new Thread(deactivator) ;
+                Thread thr = new ManagedLocalsThread(deactivator) ;
                 thr.start() ;
             }
         } finally {
