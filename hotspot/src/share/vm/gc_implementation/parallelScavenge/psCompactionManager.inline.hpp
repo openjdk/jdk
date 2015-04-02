@@ -56,15 +56,14 @@ inline void ParCompactionManager::follow_contents(oop obj) {
 }
 
 template <class T>
-inline void oop_pc_follow_contents_specialized(ObjArrayKlass* klass, oop obj, int index, ParCompactionManager* cm) {
-  objArrayOop a = objArrayOop(obj);
-  const size_t len = size_t(a->length());
+inline void oop_pc_follow_contents_specialized(objArrayOop obj, int index, ParCompactionManager* cm) {
+  const size_t len = size_t(obj->length());
   const size_t beg_index = size_t(index);
   assert(beg_index < len || len == 0, "index too large");
 
   const size_t stride = MIN2(len - beg_index, ObjArrayMarkingStride);
   const size_t end_index = beg_index + stride;
-  T* const base = (T*)a->base();
+  T* const base = (T*)obj->base();
   T* const beg = base + beg_index;
   T* const end = base + end_index;
 
@@ -74,15 +73,15 @@ inline void oop_pc_follow_contents_specialized(ObjArrayKlass* klass, oop obj, in
   }
 
   if (end_index < len) {
-    cm->push_objarray(a, end_index); // Push the continuation.
+    cm->push_objarray(obj, end_index); // Push the continuation.
   }
 }
 
 inline void ParCompactionManager::follow_contents(objArrayOop obj, int index) {
   if (UseCompressedOops) {
-    oop_pc_follow_contents_specialized<narrowOop>((ObjArrayKlass*)obj->klass(), obj, index, this);
+    oop_pc_follow_contents_specialized<narrowOop>(obj, index, this);
   } else {
-    oop_pc_follow_contents_specialized<oop>((ObjArrayKlass*)obj->klass(), obj, index, this);
+    oop_pc_follow_contents_specialized<oop>(obj, index, this);
   }
 }
 

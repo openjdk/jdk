@@ -152,7 +152,7 @@ INLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureT
 template <bool nv, class OopClosureType>
 INLINE int InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   if (Devirtualizer<nv>::do_metadata(closure)) {
-    Devirtualizer<nv>::do_klass(closure, obj->klass());
+    Devirtualizer<nv>::do_klass(closure, this);
   }
 
   oop_oop_iterate_oop_maps<nv>(obj, closure);
@@ -176,7 +176,7 @@ template <bool nv, class OopClosureType>
 INLINE int InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   if (Devirtualizer<nv>::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      Devirtualizer<nv>::do_klass(closure, obj->klass());
+      Devirtualizer<nv>::do_klass(closure, this);
     }
   }
 

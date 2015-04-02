@@ -68,7 +68,7 @@ void MarkSweep::follow_class_loader(ClassLoaderData* cld) {
 
 void InstanceKlass::oop_ms_follow_contents(oop obj) {
   assert(obj != NULL, "can't follow the content of NULL object");
-  MarkSweep::follow_klass(obj->klass());
+  MarkSweep::follow_klass(this);
 
   oop_oop_iterate_oop_maps<true>(obj, &MarkSweep::mark_and_push_closure);
 }
