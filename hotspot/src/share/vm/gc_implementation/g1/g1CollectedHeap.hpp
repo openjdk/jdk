@@ -40,9 +40,9 @@
 #include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/sharedHeap.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -178,7 +178,7 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
   virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
-class G1CollectedHeap : public SharedHeap {
+class G1CollectedHeap : public CollectedHeap {
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
@@ -1011,7 +1011,7 @@ public:
   void ref_processing_init();
 
   // Explicitly import set_par_threads into this scope
-  using SharedHeap::set_par_threads;
+  using CollectedHeap::set_par_threads;
   // Set _n_par_threads according to a policy TBD.
   void set_par_threads();
 

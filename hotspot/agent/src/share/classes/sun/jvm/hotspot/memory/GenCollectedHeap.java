@@ -33,7 +33,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class GenCollectedHeap extends SharedHeap {
+public class GenCollectedHeap extends CollectedHeap {
   private static CIntegerField nGensField;
   private static AddressField youngGenField;
   private static AddressField oldGenField;

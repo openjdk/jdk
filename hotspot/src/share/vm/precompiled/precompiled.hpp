@@ -132,7 +132,6 @@
 # include "memory/referencePolicy.hpp"
 # include "memory/referenceProcessor.hpp"
 # include "memory/resourceArea.hpp"
-# include "memory/sharedHeap.hpp"
 # include "memory/space.hpp"
 # include "memory/threadLocalAllocBuffer.hpp"
 # include "memory/threadLocalAllocBuffer.inline.hpp"

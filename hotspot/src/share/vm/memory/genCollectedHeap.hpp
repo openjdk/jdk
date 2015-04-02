@@ -26,16 +26,16 @@
 #define SHARE_VM_MEMORY_GENCOLLECTEDHEAP_HPP
 
 #include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/collectorPolicy.hpp"
 #include "memory/generation.hpp"
-#include "memory/sharedHeap.hpp"
 
 class SubTasksDone;
 class FlexibleWorkGang;
 
-// A "GenCollectedHeap" is a SharedHeap that uses generational
+// A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
-class GenCollectedHeap : public SharedHeap {
+class GenCollectedHeap : public CollectedHeap {
   friend class GenCollectorPolicy;
   friend class Generation;
   friend class DefNewGeneration;

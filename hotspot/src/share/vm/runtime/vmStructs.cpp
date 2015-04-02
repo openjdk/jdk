@@ -1501,8 +1501,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /******************************************/                            \
                                                                           \
   declare_toplevel_type(CollectedHeap)                                    \
-           declare_type(SharedHeap,                   CollectedHeap)      \
-           declare_type(GenCollectedHeap,             SharedHeap)         \
+           declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \

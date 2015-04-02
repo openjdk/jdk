@@ -151,7 +151,6 @@ class CLDToOopClosure : public CLDClosure {
 };
 
 class CLDToKlassAndOopClosure : public CLDClosure {
-  friend class SharedHeap;
   friend class G1CollectedHeap;
  protected:
   OopClosure*   _oop_closure;
