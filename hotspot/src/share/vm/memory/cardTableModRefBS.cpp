@@ -459,12 +459,12 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     // equal to active_workers.  When a different mechanism for shutting
     // off parallelism is used, then active_workers can be used in
     // place of n_par_threads.
-    int n_threads =  SharedHeap::heap()->n_par_threads();
+    int n_threads =  GenCollectedHeap::heap()->n_par_threads();
     bool is_par = n_threads > 0;
     if (is_par) {
 #if INCLUDE_ALL_GCS
-      assert(SharedHeap::heap()->n_par_threads() ==
-             SharedHeap::heap()->workers()->active_workers(), "Mismatch");
+      assert(GenCollectedHeap::heap()->n_par_threads() ==
+             GenCollectedHeap::heap()->workers()->active_workers(), "Mismatch");
       non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
 #else  // INCLUDE_ALL_GCS
       fatal("Parallel gc not supported here.");

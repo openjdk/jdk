@@ -606,7 +606,8 @@ void GenCollectedHeap::process_roots(bool activate_scope,
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
   CodeBlobClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
 
-  Threads::possibly_parallel_oops_do(strong_roots, roots_from_clds_p, roots_from_code_p);
+  bool is_par = n_par_threads() > 0;
+  Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_clds_p, roots_from_code_p);
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_Universe_oops_do)) {
     Universe::oops_do(strong_roots);

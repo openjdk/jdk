@@ -105,11 +105,6 @@ class SharedHeap : public CollectedHeap {
   friend class VM_CGC_Operation;
 
 protected:
-  // There should be only a single instance of "SharedHeap" in a program.
-  // This is enforced with the protected constructor below, which will also
-  // set the static pointer "_sh" to that instance.
-  static SharedHeap* _sh;
-
   // If we're doing parallel GC, use this gang of threads.
   FlexibleWorkGang* _workers;
 
@@ -117,17 +112,7 @@ protected:
   // function.
   SharedHeap();
 
-  // Returns true if the calling thread holds the heap lock,
-  // or the calling thread is a par gc thread and the heap_lock is held
-  // by the vm thread doing a gc operation.
-  bool heap_lock_held_for_gc();
-  // True if the heap_lock is held by the a non-gc thread invoking a gc
-  // operation.
-  bool _thread_holds_heap_lock_for_gc;
-
 public:
-  static SharedHeap* heap() { return _sh; }
-
   void set_barrier_set(BarrierSet* bs);
 
   // Does operations required after initialization has been done.

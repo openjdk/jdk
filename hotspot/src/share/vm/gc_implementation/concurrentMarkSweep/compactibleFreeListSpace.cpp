@@ -673,10 +673,10 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl(MemRegion mr,                 
                                                  HeapWord* bottom,              \
                                                  HeapWord* top,                 \
                                                  ClosureType* cl) {             \
-   bool is_par = SharedHeap::heap()->n_par_threads() > 0;                       \
+   bool is_par = GenCollectedHeap::heap()->n_par_threads() > 0;                 \
    if (is_par) {                                                                \
-     assert(SharedHeap::heap()->n_par_threads() ==                              \
-            SharedHeap::heap()->workers()->active_workers(), "Mismatch");       \
+     assert(GenCollectedHeap::heap()->n_par_threads() ==                        \
+            GenCollectedHeap::heap()->workers()->active_workers(), "Mismatch"); \
      walk_mem_region_with_cl_par(mr, bottom, top, cl);                          \
    } else {                                                                     \
      walk_mem_region_with_cl_nopar(mr, bottom, top, cl);                        \
@@ -1907,11 +1907,11 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
   assert(chunk->is_free() && ffc->is_free(), "Error");
   _bt.split_block((HeapWord*)chunk, chunk->size(), new_size);
   if (rem_sz < SmallForDictionary) {
-    bool is_par = (SharedHeap::heap()->n_par_threads() > 0);
+    bool is_par = (GenCollectedHeap::heap()->n_par_threads() > 0);
     if (is_par) _indexedFreeListParLocks[rem_sz]->lock();
     assert(!is_par ||
-           (SharedHeap::heap()->n_par_threads() ==
-            SharedHeap::heap()->workers()->active_workers()), "Mismatch");
+           (GenCollectedHeap::heap()->n_par_threads() ==
+            GenCollectedHeap::heap()->workers()->active_workers()), "Mismatch");
     returnChunkToFreeList(ffc);
     split(size, rem_sz);
     if (is_par) _indexedFreeListParLocks[rem_sz]->unlock();
@@ -1982,7 +1982,7 @@ void CompactibleFreeListSpace::save_marks() {
 
 bool CompactibleFreeListSpace::no_allocs_since_save_marks() {
   assert(_promoInfo.tracking(), "No preceding save_marks?");
-  assert(SharedHeap::heap()->n_par_threads() == 0,
+  assert(GenCollectedHeap::heap()->n_par_threads() == 0,
          "Shouldn't be called if using parallel gc.");
   return _promoInfo.noPromotions();
 }
@@ -1991,7 +1991,7 @@ bool CompactibleFreeListSpace::no_allocs_since_save_marks() {
                                                                             \
 void CompactibleFreeListSpace::                                             \
 oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {              \
-  assert(SharedHeap::heap()->n_par_threads() == 0,                          \
+  assert(GenCollectedHeap::heap()->n_par_threads() == 0,                    \
          "Shouldn't be called (yet) during parallel part of gc.");          \
   _promoInfo.promoted_oops_iterate##nv_suffix(blk);                         \
   /*                                                                        \

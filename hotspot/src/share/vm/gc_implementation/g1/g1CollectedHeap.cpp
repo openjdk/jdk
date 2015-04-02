@@ -2128,6 +2128,7 @@ void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
 }
 
 #ifndef PRODUCT
+
 class CheckGCTimeStampsHRClosure : public HeapRegionClosure {
 private:
   unsigned _gc_time_stamp;
@@ -3336,8 +3337,6 @@ void G1CollectedHeap::print_all_rsets() {
 #endif // PRODUCT
 
 G1CollectedHeap* G1CollectedHeap::heap() {
-  assert(_sh->kind() == CollectedHeap::G1CollectedHeap,
-         "not a garbage-first heap");
   return _g1h;
 }
 
@@ -6163,8 +6162,6 @@ void G1CollectedHeap::wait_while_free_regions_coming() {
 }
 
 void G1CollectedHeap::set_region_short_lived_locked(HeapRegion* hr) {
-  assert(heap_lock_held_for_gc(),
-              "the heap lock should already be held by or for this thread");
   _young_list->push_region(hr);
 }
 
