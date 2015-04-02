@@ -99,9 +99,6 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
 jint GenCollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
 
-  _n_gens = gen_policy()->number_of_generations();
-  assert(_n_gens == 2, "There is no support for more than two generations");
-
   // While there are no constraints in the GC code that HeapWordSize
   // be any particular value, there are multiple other areas in the
   // system which believe this to be true (e.g. oop->object_size in some
@@ -209,8 +206,7 @@ size_t GenCollectedHeap::used() const {
 
 // Save the "used_region" for generations level and lower.
 void GenCollectedHeap::save_used_regions(int level) {
-  assert(level >= 0, "Illegal level parameter");
-  assert(level < _n_gens, "Illegal level parameter");
+  assert(level == 0 || level == 1, "Illegal level parameter");
   if (level == 1) {
     _old_gen->save_used_region();
   }
@@ -426,7 +422,6 @@ void GenCollectedHeap::do_collection(bool   full,
   assert(Heap_lock->is_locked(),
          "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
-  assert(max_level < n_gens(), "sanity check");
 
   if (GC_locker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
@@ -444,7 +439,7 @@ void GenCollectedHeap::do_collection(bool   full,
   {
     FlagSetting fl(_is_gc_active, true);
 
-    bool complete = full && (max_level == (n_gens()-1));
+    bool complete = full && (max_level == 1 /* old */);
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
@@ -516,7 +511,7 @@ void GenCollectedHeap::do_collection(bool   full,
     // Update "complete" boolean wrt what actually transpired --
     // for instance, a promotion failure could have led to
     // a whole heap collection.
-    complete = complete || (max_level_collected == n_gens() - 1);
+    complete = complete || (max_level_collected == 1 /* old */);
 
     if (complete) { // We did a "major" collection
       // FIXME: See comment at pre_full_gc_dump call
@@ -533,7 +528,7 @@ void GenCollectedHeap::do_collection(bool   full,
     }
 
     // Adjust generation sizes.
-    if (max_level_collected == 1) {
+    if (max_level_collected == 1 /* old */) {
       _old_gen->compute_new_size();
     }
     _young_gen->compute_new_size();
@@ -782,19 +777,19 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
 #endif // INCLUDE_ALL_GCS
   } else if (cause == GCCause::_wb_young_gc) {
     // minor collection for WhiteBox API
-    collect(cause, 0);
+    collect(cause, 0 /* young */);
   } else {
 #ifdef ASSERT
   if (cause == GCCause::_scavenge_alot) {
     // minor collection only
-    collect(cause, 0);
+    collect(cause, 0 /* young */);
   } else {
     // Stop-the-world full collection
-    collect(cause, n_gens() - 1);
+    collect(cause, 1 /* old */);
   }
 #else
     // Stop-the-world full collection
-    collect(cause, n_gens() - 1);
+    collect(cause, 1 /* old */);
 #endif
   }
 }
@@ -809,7 +804,7 @@ void GenCollectedHeap::collect(GCCause::Cause cause, int max_level) {
 void GenCollectedHeap::collect_locked(GCCause::Cause cause) {
   // The caller has the Heap_lock
   assert(Heap_lock->owned_by_self(), "this thread should own the Heap_lock");
-  collect_locked(cause, n_gens() - 1);
+  collect_locked(cause, 1 /* old */);
 }
 
 // this is the private collection interface
@@ -865,7 +860,7 @@ void GenCollectedHeap::collect_mostly_concurrent(GCCause::Cause cause) {
 #endif // INCLUDE_ALL_GCS
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-   do_full_collection(clear_all_soft_refs, _n_gens - 1);
+   do_full_collection(clear_all_soft_refs, 1 /* old */);
 }
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
@@ -897,7 +892,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
                   clear_all_soft_refs  /* clear_all_soft_refs */,
                   0                    /* size */,
                   false                /* is_tlab */,
-                  n_gens() - 1         /* max_level */);
+                  1  /* old */         /* max_level */);
   }
 }
 
@@ -1123,9 +1118,7 @@ GenCollectedHeap* GenCollectedHeap::heap() {
   return _gch;
 }
 
-
 void GenCollectedHeap::prepare_for_compaction() {
-  guarantee(_n_gens = 2, "Wrong number of generations");
   // Start by compacting into same gen.
   CompactPoint cp(_old_gen);
   _old_gen->prepare_for_compaction(&cp);
