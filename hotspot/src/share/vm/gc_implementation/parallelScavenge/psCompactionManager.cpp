@@ -180,7 +180,7 @@ ParCompactionManager::gc_thread_compaction_manager(int index) {
 void InstanceKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
   assert(obj != NULL, "can't follow the content of NULL object");
 
-  PSParallelCompact::follow_klass(cm, obj->klass());
+  PSParallelCompact::follow_klass(cm, this);
   // Only mark the header and let the scan of the meta-data mark
   // everything else.
 
@@ -301,9 +301,9 @@ void ObjArrayKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
   PSParallelCompact::follow_klass(cm, this);
 
   if (UseCompressedOops) {
-    oop_pc_follow_contents_specialized<narrowOop>(this, obj, 0, cm);
+    oop_pc_follow_contents_specialized<narrowOop>(objArrayOop(obj), 0, cm);
   } else {
-    oop_pc_follow_contents_specialized<oop>(this, obj, 0, cm);
+    oop_pc_follow_contents_specialized<oop>(objArrayOop(obj), 0, cm);
   }
 }
 
