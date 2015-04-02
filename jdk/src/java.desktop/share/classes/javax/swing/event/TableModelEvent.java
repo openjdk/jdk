@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,9 +85,21 @@ public class TableModelEvent extends java.util.EventObject
 //  Instance Variables
 //
 
+    /**
+     * The type of the event.
+     */
     protected int       type;
+    /**
+     * The first row that has changed.
+     */
     protected int       firstRow;
+    /**
+     * The last row that has changed.
+     */
     protected int       lastRow;
+    /**
+     * The column for the event.
+     */
     protected int       column;
 
 //
