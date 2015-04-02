@@ -452,6 +452,29 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+// Print the JMX system status
+class JMXStatusDCmd : public DCmd {
+public:
+  JMXStatusDCmd(outputStream *output, bool heap_allocated);
+
+  static const char *name() {
+    return "ManagementAgent.status";
+  }
+
+  static const char *description() {
+    return "Print the management agent status.";
+  }
+
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+
+  virtual void execute(DCmdSource source, TRAPS);
+
+};
+
 class RotateGCLogDCmd : public DCmd {
 public:
   RotateGCLogDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
