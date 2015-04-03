@@ -168,14 +168,7 @@ public class WhiteBox {
       return allocateCodeBlob( intSize, type);
   }
   public native void    freeCodeBlob(long addr);
-  public        void    forceNMethodSweep() {
-    try {
-        forceNMethodSweep0().join();
-    } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-    }
-  }
-  public native Thread  forceNMethodSweep0();
+  public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
   public native Object[] getCodeBlob(long addr);
