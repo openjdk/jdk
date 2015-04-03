@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import static sun.awt.shell.Win32ShellFolder2.*;
 import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
+import sun.misc.InnocuousThread;
 
 // NOTE: This class supersedes Win32ShellFolderManager, which was removed
 //       from distribution after version 1.4.2.
@@ -516,26 +517,22 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         private static Thread comThread;
 
         private ComInvoker() {
-            super(1, 1, 0, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>());
+            super(1, 1, 0, TimeUnit.DAYS, new LinkedBlockingQueue<>());
             allowCoreThreadTimeOut(false);
             setThreadFactory(this);
-            final Runnable shutdownHook = new Runnable() {
-                public void run() {
-                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                        public Void run() {
-                            shutdownNow();
-                            return null;
-                        }
-                    });
+            final Runnable shutdownHook = () -> AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                shutdownNow();
+                return null;
+            });
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                Thread t;
+                if (System.getSecurityManager() == null) {
+                    t = new Thread(ThreadGroupUtils.getRootThreadGroup(), shutdownHook);
+                } else {
+                    t = new InnocuousThread(shutdownHook);
                 }
-            };
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    Runtime.getRuntime().addShutdownHook(
-                        new Thread(shutdownHook)
-                    );
-                    return null;
-                }
+                Runtime.getRuntime().addShutdownHook(t);
+                return null;
             });
         }
 
@@ -550,17 +547,22 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                     }
                 }
             };
-            comThread =  AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                            /* The thread must be a member of a thread group
-                             * which will not get GCed before VM exit.
-                             * Make its parent the top-level thread group.
-                             */
-                            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                            Thread thread = new Thread(rootTG, comRun, "Swing-Shell");
-                            thread.setDaemon(true);
-                            return thread;
-                        }
-                );
+            comThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+                String name = "Swing-Shell";
+                Thread thread;
+                if (System.getSecurityManager() == null) {
+                     /* The thread must be a member of a thread group
+                      * which will not get GCed before VM exit.
+                      * Make its parent the top-level thread group.
+                      */
+                    thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), comRun, name);
+                } else {
+                    /* InnocuousThread is a member of a correct TG by default */
+                    thread = new InnocuousThread(comRun, name);
+                }
+                thread.setDaemon(true);
+                return thread;
+            });
             return comThread;
         }
 
