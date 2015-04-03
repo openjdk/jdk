@@ -812,7 +812,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      *
      * @return FindPropertyData or null if not found.
      */
-    FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
+    protected FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
 
         final PropertyMap selfMap  = getMap();
         final Property    property = selfMap.findProperty(key);
