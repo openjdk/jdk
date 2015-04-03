@@ -46,7 +46,6 @@
 #include "memory/space.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
@@ -55,8 +54,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/workgroup.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -1213,7 +1210,7 @@ oop ParNewGeneration::copy_to_survivor_space(
   if (TraceScavenge) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
        is_in_reserved(new_obj) ? "copying" : "tenuring",
-       new_obj->klass()->internal_name(), (void *)old, (void *)new_obj, new_obj->size());
+       new_obj->klass()->internal_name(), p2i(old), p2i(new_obj), new_obj->size());
   }
 #endif
 

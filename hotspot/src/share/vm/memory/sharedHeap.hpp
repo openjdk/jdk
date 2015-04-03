@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,19 +110,12 @@ protected:
   // set the static pointer "_sh" to that instance.
   static SharedHeap* _sh;
 
-  // A gc policy, controls global gc resource issues
-  CollectorPolicy *_collector_policy;
-
-  // See the discussion below, in the specification of the reader function
-  // for this variable.
-  int _strong_roots_parity;
-
   // If we're doing parallel GC, use this gang of threads.
   FlexibleWorkGang* _workers;
 
   // Full initialization is done in a concrete subtype's "initialize"
   // function.
-  SharedHeap(CollectorPolicy* policy_);
+  SharedHeap();
 
   // Returns true if the calling thread holds the heap lock,
   // or the calling thread is a par gc thread and the heap_lock is held
@@ -156,7 +149,10 @@ public:
 
   bool no_gc_in_progress() { return !is_gc_active(); }
 
-  // Some collectors will perform "process_strong_roots" in parallel.
+  // Note, the below comment needs to be updated to reflect the changes
+  // introduced by JDK-8076225. This should be done as part of JDK-8076289.
+  //
+  //Some collectors will perform "process_strong_roots" in parallel.
   // Such a call will involve claiming some fine-grained tasks, such as
   // scanning of threads.  To make this process simpler, we provide the
   // "strong_roots_parity()" method.  Collectors that start parallel tasks
@@ -182,7 +178,6 @@ public:
   //      task-claiming variables may be initialized, to indicate "never
   //      claimed".
  public:
-  int strong_roots_parity() { return _strong_roots_parity; }
 
   // Call these in sequential code around process_roots.
   // strong_roots_prologue calls change_strong_roots_parity, if
@@ -192,11 +187,10 @@ public:
 
    public:
     StrongRootsScope(SharedHeap* heap, bool activate = true);
+    ~StrongRootsScope();
   };
-  friend class StrongRootsScope;
 
  private:
-  void change_strong_roots_parity();
 
  public:
   FlexibleWorkGang* workers() const { return _workers; }
@@ -214,16 +208,6 @@ public:
   // Sets the number of parallel threads that will be doing tasks
   // (such as process roots) subsequently.
   virtual void set_par_threads(uint t);
-
-  //
-  // New methods from CollectedHeap
-  //
-
-  // Some utilities.
-  void print_size_transition(outputStream* out,
-                             size_t bytes_before,
-                             size_t bytes_after,
-                             size_t capacity);
 };
 
 #endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP

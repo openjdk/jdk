@@ -25,6 +25,8 @@
  * @test DefaultUseWithClient
  * @summary Test default behavior of sharing with -client
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main DefaultUseWithClient
  * @bug 8032224
  */

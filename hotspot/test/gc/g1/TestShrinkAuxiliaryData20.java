@@ -28,6 +28,8 @@
  * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /../../test/lib
+ * @modules java.base/sun.misc
+  *          java.management
  * @build com.oracle.java.testlibrary.* sun.hotspot.WhiteBox
  * @build TestShrinkAuxiliaryData TestShrinkAuxiliaryData20
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

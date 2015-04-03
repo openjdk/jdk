@@ -30,6 +30,8 @@
  *          should fail when loading.
  * @library /testlibrary
  * @bug 8025642
+ * @modules java.base/sun.misc
+ *          java.management
  */
 
 import com.oracle.java.testlibrary.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 8010463 8011343 8011898
  * @summary Simple test run with -XX:+VerifyDuringStartup -XX:-UseTLAB to verify 8010463
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  */
 
 import com.oracle.java.testlibrary.JDKToolFinder;

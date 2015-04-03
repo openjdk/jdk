@@ -26,6 +26,8 @@
  * @bug 8066670
  * @summary Testing -XX:+PrintSharedArchiveAndExit option
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  */
 
 import com.oracle.java.testlibrary.*;
