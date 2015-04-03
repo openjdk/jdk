@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,7 +304,7 @@ JDK_execvpe(int mode, const char *file,
 }
 
 /**
- * Child process after a successful fork() or clone().
+ * Child process after a successful fork().
  * This function must not return, and must be prepared for either all
  * of its address space to be shared with its parent, or to be a copy.
  * It must not modify global variables such as "environ".

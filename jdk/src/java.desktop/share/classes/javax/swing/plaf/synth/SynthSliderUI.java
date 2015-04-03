@@ -308,14 +308,14 @@ public class SynthSliderUI extends BasicSliderUI
     public Dimension getPreferredSize(JComponent c)  {
         recalculateIfInsetsChanged();
         Dimension d = new Dimension(contentRect.width, contentRect.height);
+        Insets i = slider.getInsets();
         if (slider.getOrientation() == JSlider.VERTICAL) {
             d.height = 200;
+            d.height += i.top + i.bottom;
         } else {
             d.width = 200;
+            d.width += i.left + i.right;
         }
-        Insets i = slider.getInsets();
-        d.width += i.left + i.right;
-        d.height += i.top + i.bottom;
         return d;
     }
 
