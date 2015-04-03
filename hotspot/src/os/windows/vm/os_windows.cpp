@@ -2695,17 +2695,6 @@ address os::win32::fast_jni_accessor_wrapper(BasicType type) {
 }
 #endif
 
-void os::win32::call_test_func_with_wrapper(void (*funcPtr)(void)) {
-  // Install a win32 structured exception handler around the test
-  // function call so the VM can generate an error dump if needed.
-  __try {
-    (*funcPtr)();
-  } __except(topLevelExceptionFilter(
-                                     (_EXCEPTION_POINTERS*)_exception_info())) {
-    // Nothing to do.
-  }
-}
-
 // Virtual Memory
 
 int os::vm_page_size() { return os::win32::vm_page_size(); }

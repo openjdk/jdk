@@ -84,6 +84,9 @@
 
 static jint CurrentVersion = JNI_VERSION_1_8;
 
+#ifdef _WIN32
+extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
+#endif
 
 // The DT_RETURN_MARK macros create a scoped object to fire the dtrace
 // '-return' probe regardless of the return path is taken out of the function.
@@ -3924,7 +3927,7 @@ void execute_internal_vm_tests() {
 DT_RETURN_MARK_DECL(CreateJavaVM, jint
                     , HOTSPOT_JNI_CREATEJAVAVM_RETURN(_ret_ref));
 
-_JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, void *args) {
+static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
   HOTSPOT_JNI_CREATEJAVAVM_ENTRY((void **) vm, penv, args);
 
   jint result = JNI_ERR;
@@ -4001,18 +4004,14 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     }
 
 #ifndef PRODUCT
-  #ifndef CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED
-    #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) f()
-  #endif
-
     // Check if we should compile all classes on bootclasspath
     if (CompileTheWorld) ClassLoader::compile_the_world();
     if (ReplayCompiles) ciReplay::replay(thread);
 
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
-    CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(test_error_handler);
-    CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(execute_internal_vm_tests);
+    test_error_handler();
+    execute_internal_vm_tests();
 #endif
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
@@ -4045,8 +4044,23 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
   }
 
   return result;
+
 }
 
+_JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, void *args) {
+  jint result = 0;
+  // On Windows, let CreateJavaVM run with SEH protection
+#ifdef _WIN32
+  __try {
+#endif
+    result = JNI_CreateJavaVM_inner(vm, penv, args);
+#ifdef _WIN32
+  } __except(topLevelExceptionFilter((_EXCEPTION_POINTERS*)_exception_info())) {
+    // Nothing to do.
+  }
+#endif
+  return result;
+}
 
 _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetCreatedJavaVMs(JavaVM **vm_buf, jsize bufLen, jsize *numVMs) {
   // See bug 4367188, the wrapper can sometimes cause VM crashes
