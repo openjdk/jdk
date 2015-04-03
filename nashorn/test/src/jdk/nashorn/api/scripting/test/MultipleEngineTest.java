@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,43 +23,30 @@
  * questions.
  */
 
+package jdk.nashorn.api.scripting.test;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import org.testng.annotations.Test;
+
 /**
- * Check that user defined interface can be implemented.
+ * Test that we can create multiple, independent script engines and use those
+ * independently.
  *
  * @test
- * @run
- * @security
+ * @run testng jdk.nashorn.api.scripting.MultipleEngineTest
  */
+@SuppressWarnings("javadoc")
+public class MultipleEngineTest {
+    @Test
+    public void createAndUseManyEngine() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
 
-var Window = Java.type("jdk.nashorn.api.scripting.test.Window");
-var WindowEventHandler = Java.type("jdk.nashorn.api.scripting.test.WindowEventHandler");
+        final ScriptEngine e1 = m.getEngineByName("nashorn");
+        e1.eval("var  x = 33; print(x);");
 
-var w = new Window();
-
-var loadedFuncReached = false;
-// try function to SAM converter
-w.onload = function() {
-    loadedFuncReached = true;
-    return true;
-}
-
-w.onload.loaded();
-if (! loadedFuncReached) {
-    fail("Interface method impl. not called");
-}
-
-// reset
-loadedFuncReached = false;
-
-// try direct interface implementation
-w.onload = new WindowEventHandler() {
-    loaded: function() {
-        loadedFuncReached = true;
-        return true;
+        final ScriptEngine e2 = m.getEngineByName("nashorn");
+        e2.eval("try { print(x) } catch(e) { print(e); }");
     }
-};
-
-w.onload.loaded();
-if (! loadedFuncReached) {
-    fail("Interface method impl. not called");
 }
