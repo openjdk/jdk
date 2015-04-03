@@ -25,8 +25,10 @@ import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import sun.management.Agent;
 import sun.management.AgentConfigurationError;
@@ -43,6 +45,7 @@ final class ManagementAgentJcmd {
     private static final String CMD_START = "ManagementAgent.start";
     private static final String CMD_START_LOCAL = "ManagementAgent.start_local";
     private static final String CMD_STATUS = "ManagementAgent.status";
+    private static final String CMD_PRINTPERF = "PerfCounter.print";
 
     private final String id;
     private final boolean verbose;
@@ -60,6 +63,39 @@ final class ManagementAgentJcmd {
      */
     public String list() throws IOException, InterruptedException {
         return jcmd();
+    }
+
+    /**
+     * `jcmd PerfCounter.print`
+     * @return Returns the available performance counters with their values as
+     *         {@linkplain Properties} instance
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public Properties perfCounters() throws IOException, InterruptedException {
+        return perfCounters(".*");
+    }
+
+    /**
+     * `jcmd PerfCounter.print | grep {exp}>`
+     * @param regex Regular expression for including perf counters in the result
+     * @return Returns the matching performance counters with their values
+     *         as {@linkplain Properties} instance
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public Properties perfCounters(String regex) throws IOException, InterruptedException {
+        Pattern pat = Pattern.compile(regex);
+        Properties p = new Properties();
+        for(String l : jcmd(CMD_PRINTPERF).split("\\n")) {
+            String[] kv = l.split("=");
+            if (kv.length > 1) {
+                if (pat.matcher(kv[0]).matches()) {
+                    p.setProperty(kv[0], kv[1].replace("\"", ""));
+                }
+            }
+        }
+        return p;
     }
 
     /**
