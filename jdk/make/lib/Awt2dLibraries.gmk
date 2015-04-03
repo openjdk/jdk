@@ -236,10 +236,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBAWT_VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/java.desktop/windows/native/libawt/windows/awt.rc
 endif
 
-ifeq ($(MILESTONE), internal)
-  LIBAWT_CFLAGS += -DINTERNAL_BUILD
-endif
-
 LIBAWT_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libawt/mapfile-vers
 ifeq ($(OPENJDK_TARGET_OS), linux)
   LIBAWT_MAPFILE :=
@@ -345,10 +341,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
       ifeq ($(DISABLE_XRENDER), true)
         LIBAWT_XAWT_CFLAGS += -DDISABLE_XRENDER_BY_DEFAULT=true
       endif
-    endif
-
-    ifeq ($(MILESTONE), internal)
-      LIBAWT_XAWT_CFLAGS += -DINTERNAL_BUILD
     endif
 
     LIBAWT_XAWT_LDFLAGS_SUFFIX := $(LIBM) -lawt -lXext -lX11 -lXrender $(LIBDL) -lXtst -lXi -ljava -ljvm -lc
