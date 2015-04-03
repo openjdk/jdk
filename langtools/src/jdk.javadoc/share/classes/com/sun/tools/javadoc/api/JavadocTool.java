@@ -46,7 +46,7 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.api.ClientCodeWrapper;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;

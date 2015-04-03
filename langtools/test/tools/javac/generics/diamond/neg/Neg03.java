@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620 7020044
+ * @bug 6939620 7020044 8062373
  *
  * @summary  Check that diamond fails when inference violates declared bounds
  *           (test with inner class, qualified/simple type expressions)
@@ -26,6 +26,16 @@ class Neg03<U> {
         Foo<? extends String> f6 = new Foo<>("", "");
         Foo<?> f7 = new Foo<>("", "");
         Foo<? super String> f8 = new Foo<>("", "");
+
+        Foo<String> f9 = new Foo<>(""){};
+        Foo<? extends String> f10 = new Foo<>(""){};
+        Foo<?> f11 = new Foo<>(""){};
+        Foo<? super String> f12 = new Foo<>(""){};
+
+        Foo<String> f13 = new Foo<>("", ""){};
+        Foo<? extends String> f14 = new Foo<>("", ""){};
+        Foo<?> f15 = new Foo<>("", ""){};
+        Foo<? super String> f16 = new Foo<>("", ""){};
     }
 
     void testQualified_1() {
@@ -38,6 +48,16 @@ class Neg03<U> {
         Foo<? extends String> f6 = new Neg03<U>.Foo<>("", "");
         Foo<?> f7 = new Neg03<U>.Foo<>("", "");
         Foo<? super String> f8 = new Neg03<U>.Foo<>("", "");
+
+        Foo<String> f9 = new Neg03<U>.Foo<>(""){};
+        Foo<? extends String> f10 = new Neg03<U>.Foo<>(""){};
+        Foo<?> f11 = new Neg03<U>.Foo<>(""){};
+        Foo<? super String> f12 = new Neg03<U>.Foo<>(""){};
+
+        Foo<String> f13 = new Neg03<U>.Foo<>("", ""){};
+        Foo<? extends String> f14 = new Neg03<U>.Foo<>("", ""){};
+        Foo<?> f15 = new Neg03<U>.Foo<>("", ""){};
+        Foo<? super String> f16 = new Neg03<U>.Foo<>("", ""){};
     }
 
     void testQualified_2(Neg03<U> n) {
@@ -50,5 +70,15 @@ class Neg03<U> {
         Foo<? extends String> f6 = n.new Foo<>("", "");
         Foo<?> f7 = n.new Foo<>("", "");
         Foo<? super String> f8 = n.new Foo<>("", "");
+
+        Foo<String> f9 = n.new Foo<>(""){};
+        Foo<? extends String> f10 = n.new Foo<>(""){};
+        Foo<?> f11 = n.new Foo<>(""){};
+        Foo<? super String> f12 = n.new Foo<>(""){};
+
+        Foo<String> f13 = n.new Foo<>("", ""){};
+        Foo<? extends String> f14 = n.new Foo<>("", ""){};
+        Foo<?> f15 = n.new Foo<>("", ""){};
+        Foo<? super String> f16 = n.new Foo<>("", ""){};
     }
 }
