@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,31 +567,12 @@ class Bits {                            // package-private
 
     // -- Processor and memory-system properties --
 
-    private static final ByteOrder byteOrder;
+    private static final ByteOrder byteOrder
+        = unsafe.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
 
     static ByteOrder byteOrder() {
-        if (byteOrder == null)
-            throw new Error("Unknown byte order");
         return byteOrder;
     }
-
-    static {
-        long a = unsafe.allocateMemory(8);
-        try {
-            unsafe.putLong(a, 0x0102030405060708L);
-            byte b = unsafe.getByte(a);
-            switch (b) {
-            case 0x01: byteOrder = ByteOrder.BIG_ENDIAN;     break;
-            case 0x08: byteOrder = ByteOrder.LITTLE_ENDIAN;  break;
-            default:
-                assert false;
-                byteOrder = null;
-            }
-        } finally {
-            unsafe.freeMemory(a);
-        }
-    }
-
 
     private static int pageSize = -1;
 
@@ -605,17 +586,9 @@ class Bits {                            // package-private
         return (int)(size + (long)pageSize() - 1L) / pageSize();
     }
 
-    private static boolean unaligned;
-    private static boolean unalignedKnown = false;
+    private static boolean unaligned = unsafe.unalignedAccess();
 
     static boolean unaligned() {
-        if (unalignedKnown)
-            return unaligned;
-        String arch = AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("os.arch"));
-        unaligned = arch.equals("i386") || arch.equals("x86")
-            || arch.equals("amd64") || arch.equals("x86_64");
-        unalignedKnown = true;
         return unaligned;
     }
 
