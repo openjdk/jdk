@@ -24,8 +24,8 @@
 #
 
 ################################################################################
-
-VALID_VS_VERSIONS="2010 2012 2013"
+# The order of these defines the priority by which we try to find them.
+VALID_VS_VERSIONS="2013 2012 2010"
 
 VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
 VS_VERSION_INTERNAL_2010=100
@@ -72,7 +72,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
     else
       VCVARSFILE="vc/bin/amd64/vcvars64.bat"
     fi
-  
+
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(VS_BASE)
     if test -d "$VS_BASE"; then
       if test -f "$VS_BASE/$VCVARSFILE"; then
@@ -404,7 +404,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
   METHOD="$3"
   if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
     AC_MSG_NOTICE([Found $1 at $POSSIBLE_MSVC_DLL using $METHOD])
-    
+
     # Need to check if the found msvcr is correct architecture
     AC_MSG_CHECKING([found $1 architecture])
     MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
@@ -463,9 +463,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
         [well-known location in Boot JDK])
   fi
-  
+
   if test "x$MSVC_DLL" = x; then
-    # Probe: Look in the Windows system32 directory 
+    # Probe: Look in the Windows system32 directory
     CYGWIN_SYSTEMROOT="$SYSTEMROOT"
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_SYSTEMROOT)
     POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
@@ -489,7 +489,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
           [search of VS100COMNTOOLS])
     fi
   fi
-      
+
   if test "x$MSVC_DLL" = x; then
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
     # (This was the original behaviour; kept since it might turn something up)
@@ -506,12 +506,12 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 	      | $HEAD --lines 1`
         fi
       fi
-      
+
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
           [search of VCINSTALLDIR])
     fi
   fi
-  
+
   if test "x$MSVC_DLL" = x; then
     AC_MSG_CHECKING([for $DLL_NAME])
     AC_MSG_RESULT([no])
