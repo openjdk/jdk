@@ -228,7 +228,7 @@ extern JavaVM *jvm;
 /*
  * checks if the current thread is/isn't the toolkit thread
  */
-#if defined(DEBUG) || defined(INTERNAL_BUILD)
+#if defined(DEBUG)
 #define CHECK_IS_TOOLKIT_THREAD() \
   if (GetCurrentThreadId() != AwtToolkit::MainThread())  \
   { JNU_ThrowInternalError(env,"Operation is not permitted on non-toolkit thread!\n"); }

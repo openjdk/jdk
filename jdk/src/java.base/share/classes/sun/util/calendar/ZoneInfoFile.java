@@ -625,6 +625,15 @@ public final class ZoneInfoFile {
                     params[2] = 5;
                     params[3] = 86400000;
                 }
+                // Additional check for startDayOfWeek=6 and starTime=86400000
+                // is needed for Asia/Amman; Asia/Gasa and Asia/Hebron
+                if (params[2] == 7 && params[3] == 0 &&
+                     (zoneId.equals("Asia/Amman") ||
+                      zoneId.equals("Asia/Gaza") ||
+                      zoneId.equals("Asia/Hebron"))) {
+                    params[2] = 6;        // Friday
+                    params[3] = 86400000; // 24h
+                }
                 //endDayOfWeek and endTime workaround
                 if (params[7] == 6 && params[8] == 0 &&
                     (zoneId.equals("Africa/Cairo"))) {

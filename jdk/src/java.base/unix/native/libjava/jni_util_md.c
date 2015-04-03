@@ -55,10 +55,12 @@ void buildJniFunctionName(const char *sym, const char *cname,
 size_t
 getLastErrorString(char *buf, size_t len)
 {
+    char *err;
+    size_t n;
     if (errno == 0 || len < 1) return 0;
 
-    const char *err = strerror(errno);
-    size_t n = strlen(err);
+    err = strerror(errno);
+    n = strlen(err);
     if (n >= len)
         n = len - 1;
 

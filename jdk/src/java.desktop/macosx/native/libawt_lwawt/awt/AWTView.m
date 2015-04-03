@@ -311,7 +311,10 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (BOOL) performKeyEquivalent: (NSEvent *) event {
-    [self deliverJavaKeyEventHelper: event];
+    // if IM is active key events should be ignored 
+    if (![self hasMarkedText] && !fInPressAndHold) {
+        [self deliverJavaKeyEventHelper: event];
+    }
 
     // Workaround for 8020209: special case for "Cmd =" and "Cmd ." 
     // because Cocoa calls performKeyEquivalent twice for these keystrokes  
