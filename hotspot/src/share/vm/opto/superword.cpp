@@ -449,11 +449,13 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
   int preloop_stride = pre_end->stride_con();
 
   int span = preloop_stride * p.scale_in_bytes();
-
-  // Stride one accesses are alignable.
-  if (ABS(span) == p.memory_size())
+  int mem_size = p.memory_size();
+  int offset   = p.offset_in_bytes();
+  // Stride one accesses are alignable if offset is aligned to memory operation size.
+  // Offset can be unaligned when UseUnalignedAccesses is used.
+  if (ABS(span) == mem_size && (ABS(offset) % mem_size) == 0) {
     return true;
-
+  }
   // If initial offset from start of object is computable,
   // compute alignment within the vector.
   int vw = vector_width_in_bytes(p.mem());
@@ -463,7 +465,7 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
     if (init_nd->is_Con() && p.invar() == NULL) {
       int init = init_nd->bottom_type()->is_int()->get_con();
 
-      int init_offset = init * p.scale_in_bytes() + p.offset_in_bytes();
+      int init_offset = init * p.scale_in_bytes() + offset;
       assert(init_offset >= 0, "positive offset from object start");
 
       if (span > 0) {
