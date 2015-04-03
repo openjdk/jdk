@@ -2083,17 +2083,33 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             return null;
         }
 
+        String calendarType = getCalendarType();
+        int fieldValue = get(field);
         // the standalone and narrow styles are supported only through CalendarDataProviders.
-        if (isStandaloneStyle(style) || isNarrowStyle(style)) {
-            return CalendarDataUtility.retrieveFieldValueName(getCalendarType(),
-                                                              field, get(field),
-                                                              style, locale);
+        if (isStandaloneStyle(style) || isNarrowFormatStyle(style)) {
+            String val = CalendarDataUtility.retrieveFieldValueName(calendarType,
+                                                                    field, fieldValue,
+                                                                    style, locale);
+            // Perform fallback here to follow the CLDR rules
+            if (val == null) {
+                if (isNarrowFormatStyle(style)) {
+                    val = CalendarDataUtility.retrieveFieldValueName(calendarType,
+                                                                     field, fieldValue,
+                                                                     toStandaloneStyle(style),
+                                                                     locale);
+                } else if (isStandaloneStyle(style)) {
+                    val = CalendarDataUtility.retrieveFieldValueName(calendarType,
+                                                                     field, fieldValue,
+                                                                     getBaseStyle(style),
+                                                                     locale);
+                }
+            }
+            return val;
         }
 
         DateFormatSymbols symbols = DateFormatSymbols.getInstance(locale);
         String[] strings = getFieldStrings(field, style, symbols);
         if (strings != null) {
-            int fieldValue = get(field);
             if (fieldValue < strings.length) {
                 return strings[fieldValue];
             }
@@ -2155,10 +2171,26 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                                     ERA_MASK|MONTH_MASK|DAY_OF_WEEK_MASK|AM_PM_MASK)) {
             return null;
         }
-        if (style == ALL_STYLES || isStandaloneStyle(style)) {
-            return CalendarDataUtility.retrieveFieldValueNames(getCalendarType(), field, style, locale);
+
+        String calendarType = getCalendarType();
+        if (style == ALL_STYLES || isStandaloneStyle(style) || isNarrowFormatStyle(style)) {
+            Map<String, Integer> map;
+            map = CalendarDataUtility.retrieveFieldValueNames(calendarType, field, style, locale);
+
+            // Perform fallback here to follow the CLDR rules
+            if (map == null) {
+                if (isNarrowFormatStyle(style)) {
+                    map = CalendarDataUtility.retrieveFieldValueNames(calendarType, field,
+                                                                      toStandaloneStyle(style), locale);
+                } else if (style != ALL_STYLES) {
+                    map = CalendarDataUtility.retrieveFieldValueNames(calendarType, field,
+                                                                      getBaseStyle(style), locale);
+                }
+            }
+            return map;
         }
-        // SHORT, LONG, or NARROW
+
+        // SHORT or LONG
         return getDisplayNamesImpl(field, style, locale);
     }
 
@@ -2544,12 +2576,20 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         return style & ~STANDALONE_MASK;
     }
 
-    boolean isStandaloneStyle(int style) {
+    private int toStandaloneStyle(int style) {
+        return style | STANDALONE_MASK;
+    }
+
+    private boolean isStandaloneStyle(int style) {
         return (style & STANDALONE_MASK) != 0;
     }
 
-    boolean isNarrowStyle(int style) {
+    private boolean isNarrowStyle(int style) {
         return style == NARROW_FORMAT || style == NARROW_STANDALONE;
+    }
+
+    private boolean isNarrowFormatStyle(int style) {
+        return style == NARROW_FORMAT;
     }
 
     /**

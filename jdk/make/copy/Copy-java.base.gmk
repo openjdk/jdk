@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/macosx/conf/$(JVMCFG_ARCH)/jvm.cfg
 else
   JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/$(JVMCFG_ARCH)/jvm.cfg
+  # Allow override by ALT_JVMCFG_SRC if it exists
+  JVMCFG_SRC := $(if $(wildcard $(ALT_JVMCFG_SRC)),$(ALT_JVMCFG_SRC),$(JVMCFG_SRC)) 
 endif
 JVMCFG_DIR := $(LIB_DST_DIR)$(OPENJDK_TARGET_CPU_LIBDIR)
 JVMCFG := $(JVMCFG_DIR)/jvm.cfg

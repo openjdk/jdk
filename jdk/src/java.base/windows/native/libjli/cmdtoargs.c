@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
     USHORT ch = 0;
     int i;
     jboolean done = JNI_FALSE;
-    int charLength;
+    ptrdiff_t charLength;
 
     *wildcard = JNI_FALSE;
     while (!done) {
@@ -208,9 +208,11 @@ void JLI_CmdToArgs(char* cmdline) {
         argv = (StdArg*) JLI_MemRealloc(argv, (nargs+1) * sizeof(StdArg));
         argv[nargs].arg = JLI_StringDup(arg);
         argv[nargs].has_wildcard = wildcard;
-        *arg = NULL;
+        *arg = '\0';
         nargs++;
     } while (src != NULL);
+
+    JLI_MemFree(arg);
 
     stdargc = nargs;
     stdargs = argv;
