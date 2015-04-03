@@ -673,7 +673,8 @@ public:
     Flag_avoid_back_to_back_before   = Flag_may_be_short_branch << 1,
     Flag_avoid_back_to_back_after    = Flag_avoid_back_to_back_before << 1,
     Flag_has_call                    = Flag_avoid_back_to_back_after << 1,
-    Flag_is_expensive                = Flag_has_call << 1,
+    Flag_is_reduction                = Flag_has_call << 1,
+    Flag_is_expensive                = Flag_is_reduction << 1,
     _max_flags = (Flag_is_expensive << 1) - 1 // allow flags combination
   };
 
@@ -700,6 +701,10 @@ public:
   const jushort class_id() const { return _class_id; }
 
   const jushort flags() const { return _flags; }
+
+  void add_flag(jushort fl) { init_flags(fl); }
+
+  void remove_flag(jushort fl) { clear_flag(fl); }
 
   // Return a dense integer opcode number
   virtual int Opcode() const;
@@ -852,6 +857,10 @@ public:
   // The node is expensive: the best control is set during loop opts
   bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != NULL; }
 
+  // An arithmetic node which accumulates a data in a loop.
+  // It must have the loop's phi as input and provide a def to the phi.
+  bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+
 //----------------- Optimization
 
   // Get the worst-case Type output for this Node.
@@ -931,7 +940,7 @@ public:
   Node* find_similar(int opc);
 
   // Return the unique control out if only one. Null if none or more than one.
-  Node* unique_ctrl_out();
+  Node* unique_ctrl_out() const;
 
 //----------------- Code Generation
 

@@ -1985,13 +1985,18 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(PowDNode, Node)                                         \
   declare_c2_type(ReverseBytesINode, Node)                                \
   declare_c2_type(ReverseBytesLNode, Node)                                \
+  declare_c2_type(ReductionNode, Node)                                    \
   declare_c2_type(VectorNode, Node)                                       \
   declare_c2_type(AddVBNode, VectorNode)                                  \
   declare_c2_type(AddVSNode, VectorNode)                                  \
   declare_c2_type(AddVINode, VectorNode)                                  \
+  declare_c2_type(AddReductionVINode, ReductionNode)                      \
   declare_c2_type(AddVLNode, VectorNode)                                  \
+  declare_c2_type(AddReductionVLNode, ReductionNode)                      \
   declare_c2_type(AddVFNode, VectorNode)                                  \
+  declare_c2_type(AddReductionVFNode, ReductionNode)                      \
   declare_c2_type(AddVDNode, VectorNode)                                  \
+  declare_c2_type(AddReductionVDNode, ReductionNode)                      \
   declare_c2_type(SubVBNode, VectorNode)                                  \
   declare_c2_type(SubVSNode, VectorNode)                                  \
   declare_c2_type(SubVINode, VectorNode)                                  \
@@ -2000,8 +2005,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(SubVDNode, VectorNode)                                  \
   declare_c2_type(MulVSNode, VectorNode)                                  \
   declare_c2_type(MulVINode, VectorNode)                                  \
+  declare_c2_type(MulReductionVINode, ReductionNode)                      \
   declare_c2_type(MulVFNode, VectorNode)                                  \
+  declare_c2_type(MulReductionVFNode, ReductionNode)                      \
   declare_c2_type(MulVDNode, VectorNode)                                  \
+  declare_c2_type(MulReductionVDNode, ReductionNode)                      \
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
   declare_c2_type(LShiftVBNode, VectorNode)                               \
@@ -2516,6 +2524,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
   declare_constant(Deoptimization::Reason_rtm_state_change)               \
   declare_constant(Deoptimization::Reason_unstable_if)                    \
+  declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_tenured)                        \
   declare_constant(Deoptimization::Reason_LIMIT)                          \
   declare_constant(Deoptimization::Reason_RECORDED_LIMIT)                 \

@@ -323,6 +323,8 @@ class Arguments : AllStatic {
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
   static bool _CIDynamicCompilePriority;
+  static intx _Tier3InvokeNotifyFreqLog;
+  static intx _Tier4InvocationThreshold;
 
   // Tiered
   static void set_tiered_flags();

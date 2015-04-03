@@ -1777,6 +1777,12 @@ private:
   void vxorpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
   void vxorps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
 
+  // Add horizontal packed integers
+  void vphaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vphaddd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void phaddw(XMMRegister dst, XMMRegister src);
+  void phaddd(XMMRegister dst, XMMRegister src);
+
   // Add packed integers
   void paddb(XMMRegister dst, XMMRegister src);
   void paddw(XMMRegister dst, XMMRegister src);
@@ -1869,6 +1875,7 @@ private:
   // Copy low 128bit into high 128bit of YMM registers.
   void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vextractf128h(XMMRegister dst, XMMRegister src);
 
   // Load/store high 128bit of YMM registers which does not destroy other half.
   void vinsertf128h(XMMRegister dst, Address src);

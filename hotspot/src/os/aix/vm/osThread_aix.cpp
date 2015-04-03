@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ void OSThread::pd_initialize() {
 
   _startThread_lock = new Monitor(Mutex::event, "startThread_lock", true,
                                   Monitor::_safepoint_check_never);
-  assert(_startThread_lock !=NULL, "check");
+  assert(_startThread_lock != NULL, "check");
 }
 
 void OSThread::pd_destroy() {
