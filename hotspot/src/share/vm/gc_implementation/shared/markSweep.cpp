@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,14 @@ void MarkSweep::follow_stack() {
 MarkSweep::FollowStackClosure MarkSweep::follow_stack_closure;
 
 void MarkSweep::FollowStackClosure::do_void() { follow_stack(); }
+
+void PreservedMark::adjust_pointer() {
+  MarkSweep::adjust_pointer(&_obj);
+}
+
+void PreservedMark::restore() {
+  _obj->set_mark(_mark);
+}
 
 // We preserve the mark which should be replaced at the end and the location
 // that it will go.  Note that the object that this markOop belongs to isn't

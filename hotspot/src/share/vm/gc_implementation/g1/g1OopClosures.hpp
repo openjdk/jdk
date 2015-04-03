@@ -109,6 +109,18 @@ protected:
   template <class T> void do_klass_barrier(T* p, oop new_obj);
 };
 
+enum G1Barrier {
+  G1BarrierNone,
+  G1BarrierEvac,
+  G1BarrierKlass
+};
+
+enum G1Mark {
+  G1MarkNone,
+  G1MarkFromRoot,
+  G1MarkPromotedFromRoot
+};
+
 template <G1Barrier barrier, G1Mark do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
 private:
