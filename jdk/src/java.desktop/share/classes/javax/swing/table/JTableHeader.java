@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,14 +281,8 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     /**
      * Obsolete as of Java 2 platform v1.3.  Real time repaints, in response to
      * column dragging or resizing, are now unconditional.
-     */
-    /*
-     *  Sets whether the body of the table updates in real time when
-     *  a column is resized or dragged.
-     *
-     * @param   flag                    true if tableView should update
-     *                                  the body of the table in real time
-     * @see #getUpdateTableInRealTime
+     * @param flag true if tableView should update the body of the
+     * table in real time
      */
     public void setUpdateTableInRealTime(boolean flag) {
         updateTableInRealTime = flag;
@@ -297,15 +291,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     /**
      * Obsolete as of Java 2 platform v1.3.  Real time repaints, in response to
      * column dragging or resizing, are now unconditional.
-     */
-    /*
-     * Returns true if the body of the table view updates in real
-     * time when a column is resized or dragged.  User can set this flag to
-     * false to speed up the table's response to user resize or drag actions.
-     * The default is true.
-     *
      * @return  true if the table updates in real time
-     * @see #setUpdateTableInRealTime
      */
     public boolean getUpdateTableInRealTime() {
         return updateTableInRealTime;
