@@ -1109,6 +1109,8 @@ static void do_thread_dump(ThreadDumpResult* dump_result,
                            bool with_locked_monitors,
                            bool with_locked_synchronizers,
                            TRAPS) {
+  // no need to actually perform thread dump if no TIDs are specified
+  if (num_threads == 0) return;
 
   // First get an array of threadObj handles.
   // A JavaThread may terminate before we get the stack trace.
