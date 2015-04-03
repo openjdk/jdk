@@ -980,6 +980,11 @@ void VM_Version::get_processor_features() {
      (cache_line_size > ContendedPaddingWidth))
      ContendedPaddingWidth = cache_line_size;
 
+  // This machine allows unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  }
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("Logical CPUs per core: %u",

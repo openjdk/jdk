@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,12 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  // This machine does not allow unaligned memory accesses
+  if (UseUnalignedAccesses) {
+    if (!FLAG_IS_DEFAULT(UseUnalignedAccesses))
+      warning("Unaligned memory access is not available on this CPU");
+    FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
+  }
 }
 
 void VM_Version::print_features() {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_LINUX_VM_INTERFACESUPPORT_LINUX_HPP
-#define OS_LINUX_VM_INTERFACESUPPORT_LINUX_HPP
+#ifndef OS_AIX_VM_INTERFACESUPPORT_AIX_HPP
+#define OS_AIX_VM_INTERFACESUPPORT_AIX_HPP
 
 // Contains inlined functions for class InterfaceSupport
 
@@ -32,4 +32,4 @@ static inline void serialize_memory(JavaThread *thread) {
   os::write_memory_serialize_page(thread);
 }
 
-#endif // OS_LINUX_VM_INTERFACESUPPORT_LINUX_HPP
+#endif // OS_AIX_VM_INTERFACESUPPORT_AIX_HPP
