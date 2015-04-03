@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
  * @test
  * @library /testlibrary
  * @summary Test that type annotations are retained after a retransform
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.instrument
+ *          jdk.jartool/sun.tools.jar
  * @run main RedefineAnnotations buildagent
  * @run main/othervm -javaagent:redefineagent.jar RedefineAnnotations
  */
