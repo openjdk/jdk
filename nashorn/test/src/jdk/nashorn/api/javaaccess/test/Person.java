@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,43 +23,37 @@
  * questions.
  */
 
-/**
- * Check that user defined interface can be implemented.
- *
- * @test
- * @run
- * @security
- */
+package jdk.nashorn.api.javaaccess.test;
 
-var Window = Java.type("jdk.nashorn.api.scripting.test.Window");
-var WindowEventHandler = Java.type("jdk.nashorn.api.scripting.test.WindowEventHandler");
+@SuppressWarnings("javadoc")
+public class Person {
 
-var w = new Window();
+    public int id = 0;
 
-var loadedFuncReached = false;
-// try function to SAM converter
-w.onload = function() {
-    loadedFuncReached = true;
-    return true;
-}
-
-w.onload.loaded();
-if (! loadedFuncReached) {
-    fail("Interface method impl. not called");
-}
-
-// reset
-loadedFuncReached = false;
-
-// try direct interface implementation
-w.onload = new WindowEventHandler() {
-    loaded: function() {
-        loadedFuncReached = true;
-        return true;
+    public Person() {
     }
-};
 
-w.onload.loaded();
-if (! loadedFuncReached) {
-    fail("Interface method impl. not called");
+    public Person(final int code) {
+        this.id = code;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (obj != null && obj instanceof Person) {
+            final Person o = (Person)obj;
+            return this.id == o.id;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
+    @Override
+    public String toString() {
+        return "Person(" + id + ")";
+    }
+
 }

@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,43 +23,10 @@
  * questions.
  */
 
-/**
- * Check that user defined interface can be implemented.
- *
- * @test
- * @run
- * @security
- */
+package jdk.nashorn.api.scripting.test;
 
-var Window = Java.type("jdk.nashorn.api.scripting.test.Window");
-var WindowEventHandler = Java.type("jdk.nashorn.api.scripting.test.WindowEventHandler");
-
-var w = new Window();
-
-var loadedFuncReached = false;
-// try function to SAM converter
-w.onload = function() {
-    loadedFuncReached = true;
-    return true;
-}
-
-w.onload.loaded();
-if (! loadedFuncReached) {
-    fail("Interface method impl. not called");
-}
-
-// reset
-loadedFuncReached = false;
-
-// try direct interface implementation
-w.onload = new WindowEventHandler() {
-    loaded: function() {
-        loadedFuncReached = true;
-        return true;
-    }
-};
-
-w.onload.loaded();
-if (! loadedFuncReached) {
-    fail("Interface method impl. not called");
+@SuppressWarnings("javadoc")
+public interface VariableArityTestInterface {
+    public String test1(int i, String... strings);
+    public String test2(int i, String... strings);
 }
