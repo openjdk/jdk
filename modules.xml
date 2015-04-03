@@ -255,6 +255,7 @@
       <to>java.sql</to>
       <to>java.xml</to>
       <to>jdk.charsets</to>
+      <to>jdk.crypto.pkcs11</to>
       <to>jdk.deploy.osx</to>
       <to>jdk.httpserver</to>
       <to>jdk.jartool</to>
