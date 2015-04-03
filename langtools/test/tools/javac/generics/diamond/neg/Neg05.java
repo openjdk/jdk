@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620 7020044
+ * @bug 6939620 7020044 8062373
  *
  * @summary  Check that usage of rare types doesn't cause spurious diamond diagnostics
  * @author mcimadamore
@@ -25,6 +25,16 @@ class Neg05<U> {
         Neg05<?>.Foo<? extends String> f6 = new Neg05.Foo<>("", "");
         Neg05<?>.Foo<?> f7 = new Neg05.Foo<>("", "");
         Neg05<?>.Foo<? super String> f8 = new Neg05.Foo<>("", "");
+
+        Neg05<?>.Foo<String> f9 = new Neg05.Foo<>(""){};
+        Neg05<?>.Foo<? extends String> f10 = new Neg05.Foo<>(""){};
+        Neg05<?>.Foo<?> f11 = new Neg05.Foo<>(""){};
+        Neg05<?>.Foo<? super String> f12 = new Neg05.Foo<>(""){};
+
+        Neg05<?>.Foo<String> f13 = new Neg05.Foo<>("", ""){};
+        Neg05<?>.Foo<? extends String> f14 = new Neg05.Foo<>("", ""){};
+        Neg05<?>.Foo<?> f15 = new Neg05.Foo<>("", ""){};
+        Neg05<?>.Foo<? super String> f16 = new Neg05.Foo<>("", ""){};
     }
 
     void testRare_2(Neg05 n) {
@@ -37,5 +47,15 @@ class Neg05<U> {
         Neg05<?>.Foo<? extends String> f6 = n.new Foo<>("", "");
         Neg05<?>.Foo<?> f7 = n.new Foo<>("", "");
         Neg05<?>.Foo<? super String> f8 = n.new Foo<>("", "");
+
+        Neg05<?>.Foo<String> f9 = n.new Foo<>(""){};
+        Neg05<?>.Foo<? extends String> f10 = n.new Foo<>(""){};
+        Neg05<?>.Foo<?> f11 = n.new Foo<>(""){};
+        Neg05<?>.Foo<? super String> f12 = n.new Foo<>(""){};
+
+        Neg05<?>.Foo<String> f13 = n.new Foo<>("", ""){};
+        Neg05<?>.Foo<? extends String> f14 = n.new Foo<>("", ""){};
+        Neg05<?>.Foo<?> f15 = n.new Foo<>("", ""){};
+        Neg05<?>.Foo<? super String> f16 = n.new Foo<>("", ""){};
     }
 }

@@ -43,7 +43,6 @@ $(eval $(call SetupJavaCompilation,BUILD_INTERIM_LANGTOOLS, \
       $(LANGTOOLS_TOPDIR)/src/jdk.compiler/share/classes \
       $(LANGTOOLS_TOPDIR)/src/jdk.dev/share/classes \
       $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/classes \
-      $(LANGTOOLS_TOPDIR)/src/java.base/share/classes \
       $(SUPPORT_OUTPUTDIR)/gensrc/jdk.compiler \
       $(SUPPORT_OUTPUTDIR)/gensrc/jdk.dev \
       $(SUPPORT_OUTPUTDIR)/gensrc/jdk.javadoc, \

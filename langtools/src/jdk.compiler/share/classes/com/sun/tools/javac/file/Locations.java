@@ -108,35 +108,21 @@ public class Locations {
     // Locations can use Paths.get(URI.create("jrt:"))
     static final Path JRT_MARKER_FILE = Paths.get("JRT_MARKER_FILE");
 
-    public Locations() {
+    Locations() {
         initHandlers();
     }
 
     // could replace Lint by "boolean warn"
-    public void update(Log log, Lint lint, FSInfo fsInfo) {
+    void update(Log log, Lint lint, FSInfo fsInfo) {
         this.log = log;
         warn = lint.isEnabled(Lint.LintCategory.PATH);
         this.fsInfo = fsInfo;
     }
 
-    public Collection<Path> bootClassPath() {
-        return getLocation(PLATFORM_CLASS_PATH);
-    }
-
-    public boolean isDefaultBootClassPath() {
+    boolean isDefaultBootClassPath() {
         BootClassPathLocationHandler h
                 = (BootClassPathLocationHandler) getHandler(PLATFORM_CLASS_PATH);
         return h.isDefault();
-    }
-
-    public Collection<Path> userClassPath() {
-        return getLocation(CLASS_PATH);
-    }
-
-    public Collection<Path> sourcePath() {
-        Collection<Path> p = getLocation(SOURCE_PATH);
-        // TODO: this should be handled by the LocationHandler
-        return p == null || p.isEmpty() ? null : p;
     }
 
     /**
@@ -753,7 +739,7 @@ public class Locations {
         }
     }
 
-    public boolean handleOption(Option option, String value) {
+    boolean handleOption(Option option, String value) {
         LocationHandler h = handlersForOption.get(option);
         return (h == null ? false : h.handleOption(option, value));
     }

@@ -32,6 +32,8 @@ import javax.tools.JavaFileManager;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -84,6 +86,7 @@ public class Check {
     private boolean suppressAbortOnBadClassFile;
     private boolean enableSunApiLintControl;
     private final JavaFileManager fileManager;
+    private final Source source;
     private final Profile profile;
     private final boolean warnOnAccessToSensitiveMembers;
 
@@ -122,11 +125,12 @@ public class Check {
         lint = Lint.instance(context);
         fileManager = context.get(JavaFileManager.class);
 
-        Source source = Source.instance(context);
+        source = Source.instance(context);
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
         allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
         allowPrivateSafeVarargs = source.allowPrivateSafeVarargs();
+        allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
         complexInference = options.isSet("complexinference");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
@@ -168,6 +172,10 @@ public class Check {
     /** Switch: can the @SafeVarargs annotation be applied to private methods?
      */
     boolean allowPrivateSafeVarargs;
+
+    /** Switch: can diamond inference be used in anonymous instance creation ?
+     */
+    boolean allowDiamondWithAnonymousClassCreation;
 
     /** Switch: -complexinference option set?
      */
@@ -773,10 +781,9 @@ public class Check {
         if (!TreeInfo.isDiamond(tree) ||
                 t.isErroneous()) {
             return checkClassType(tree.clazz.pos(), t, true);
-        } else if (tree.def != null) {
+        } else if (tree.def != null && !allowDiamondWithAnonymousClassCreation) {
             log.error(tree.clazz.pos(),
-                    "cant.apply.diamond.1",
-                    t, diags.fragment("diamond.and.anon.class", t));
+                    Errors.CantApplyDiamond1(t, Fragments.DiamondAndAnonClassNotSupportedInSource(source.name)));
             return types.createErrorType(t);
         } else if (t.tsym.type.getTypeArguments().isEmpty()) {
             log.error(tree.clazz.pos(),
@@ -793,6 +800,59 @@ public class Check {
             return t;
         }
     }
+
+    /** Check that the type inferred using the diamond operator does not contain
+     *  non-denotable types such as captured types or intersection types.
+     *  @param t the type inferred using the diamond operator
+     *  @return  the (possibly empty) list of non-denotable types.
+     */
+    List<Type> checkDiamondDenotable(ClassType t) {
+        ListBuffer<Type> buf = new ListBuffer<>();
+        for (Type arg : t.getTypeArguments()) {
+            if (!diamondTypeChecker.visit(arg, null)) {
+                buf.append(arg);
+            }
+        }
+        return buf.toList();
+    }
+        // where
+
+        /** diamondTypeChecker: A type visitor that descends down the given type looking for non-denotable
+         *  types. The visit methods return false as soon as a non-denotable type is encountered and true
+         *  otherwise.
+         */
+        private static final Types.SimpleVisitor<Boolean, Void> diamondTypeChecker = new Types.SimpleVisitor<Boolean, Void>() {
+            @Override
+            public Boolean visitType(Type t, Void s) {
+                return true;
+            }
+            @Override
+            public Boolean visitClassType(ClassType t, Void s) {
+                if (t.isCompound()) {
+                    return false;
+                }
+                for (Type targ : t.getTypeArguments()) {
+                    if (!visit(targ, s)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            @Override
+            public Boolean visitCapturedType(CapturedType t, Void s) {
+                return false;
+            }
+
+            @Override
+            public Boolean visitArrayType(ArrayType t, Void s) {
+                return visit(t.elemtype, s);
+            }
+
+            @Override
+            public Boolean visitWildcardType(WildcardType t, Void s) {
+                return visit(t.type, s);
+            }
+        };
 
     void checkVarargsMethodDecl(Env<AttrContext> env, JCMethodDecl tree) {
         MethodSymbol m = tree.sym;
@@ -1917,7 +1977,7 @@ public class Check {
      *                      for errors.
      *  @param m            The overriding method.
      */
-    void checkOverride(JCMethodDecl tree, MethodSymbol m) {
+    void checkOverride(Env<AttrContext> env, JCMethodDecl tree, MethodSymbol m) {
         ClassSymbol origin = (ClassSymbol)m.owner;
         if ((origin.flags() & ENUM) != 0 && names.finalize.equals(m.name))
             if (m.overrides(syms.enumFinalFinalize, origin, types, false)) {
@@ -1934,7 +1994,12 @@ public class Check {
             }
         }
 
-        if (m.attribute(syms.overrideType.tsym) != null && !isOverrider(m)) {
+        // Check if this method must override a super method due to being annotated with @Override
+        // or by virtue of being a member of a diamond inferred anonymous class. Latter case is to
+        // be treated "as if as they were annotated" with @Override.
+        boolean mustOverride = m.attribute(syms.overrideType.tsym) != null ||
+                (env.info.isAnonymousDiamond && !m.isConstructor() && !m.isPrivate());
+        if (mustOverride && !isOverrider(m)) {
             DiagnosticPosition pos = tree.pos();
             for (JCAnnotation a : tree.getModifiers().annotations) {
                 if (a.annotationType.type.tsym == syms.overrideType.tsym) {
