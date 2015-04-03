@@ -25,6 +25,8 @@
  * @test SpaceUtilizationCheck
  * @summary Check if the space utilization for shared spaces is adequate
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main SpaceUtilizationCheck
  */
 

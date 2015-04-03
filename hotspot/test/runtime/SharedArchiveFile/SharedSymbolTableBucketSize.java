@@ -26,6 +26,8 @@
  * @bug 8059510
  * @summary Test SharedSymbolTableBucketSize option
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  */
 
 import com.oracle.java.testlibrary.*;

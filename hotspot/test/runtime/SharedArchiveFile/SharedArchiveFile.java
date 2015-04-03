@@ -26,6 +26,8 @@
  * @bug 8014138
  * @summary Testing new -XX:SharedArchiveFile=<file-name> option
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  */
 
 import com.oracle.java.testlibrary.*;

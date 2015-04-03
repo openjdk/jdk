@@ -24,6 +24,8 @@
 /* @test LimitSharedSizes
  * @summary Test handling of limits on shared space size
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main LimitSharedSizes
  */
 

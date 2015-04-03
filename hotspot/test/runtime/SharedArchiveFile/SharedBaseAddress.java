@@ -26,6 +26,8 @@
  * @summary Test variety of values for SharedBaseAddress, making sure
  *          VM handles normal values as well as edge values w/o a crash.
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main SharedBaseAddress
  */
 

@@ -1201,11 +1201,21 @@ void G1CollectorPolicy::record_heap_size_info_at_start(bool full) {
   }
 }
 
+void G1CollectorPolicy::print_heap_transition(size_t bytes_before) {
+  size_t bytes_after = _g1->used();
+  size_t capacity = _g1->capacity();
+
+  gclog_or_tty->print(" " SIZE_FORMAT "%s->" SIZE_FORMAT "%s(" SIZE_FORMAT "%s)",
+      byte_size_in_proper_unit(bytes_before),
+      proper_unit_for_byte_size(bytes_before),
+      byte_size_in_proper_unit(bytes_after),
+      proper_unit_for_byte_size(bytes_after),
+      byte_size_in_proper_unit(capacity),
+      proper_unit_for_byte_size(capacity));
+}
+
 void G1CollectorPolicy::print_heap_transition() {
-  _g1->print_size_transition(gclog_or_tty,
-                             _heap_used_bytes_before_gc,
-                             _g1->used(),
-                             _g1->capacity());
+  print_heap_transition(_heap_used_bytes_before_gc);
 }
 
 void G1CollectorPolicy::print_detailed_heap_transition(bool full) {

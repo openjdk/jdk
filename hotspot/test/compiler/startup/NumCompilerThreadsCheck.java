@@ -26,6 +26,8 @@
  * @bug 8034775
  * @summary Ensures correct minimal number of compiler threads (provided by -XX:CICompilerCount=)
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  */
 import com.oracle.java.testlibrary.*;
 

@@ -26,6 +26,8 @@
  * @bug 8003424
  * @summary Testing UseCompressedClassPointers with CDS
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main CDSCompressedKPtrs
  */
 
