@@ -38,13 +38,10 @@ import static org.testng.Assert.*;
  */
 
 public class SetVMFlagTest {
-    private static final String PRINTGC_NAME = "PrintGC";
-    private static final String XMX_NAME = "MaxHeapSize";
-
-    private static final String PRINTGC_PATTERN = "\\s*bool " + PRINTGC_NAME +
-                                                  "\\s+[\\:]?=\\s+(.*?)\\s+\\{manageable\\}";
-    private static final String XMX_PATTERN = "\\s*uintx " + XMX_NAME +
-                                                  "\\s+[\\:]?=\\s+(.*?)\\s+\\{product\\}";
+    private static final String MANAGEABLE_PATTERN = "\\s*bool\\s+(\\S+)\\s+[\\:]?=\\s+" +
+                                                     "(.*?)\\s+\\{manageable\\}";
+    private static final String IMMUTABLE_PATTERN = "\\s*uintx\\s+(\\S+)\\s+[\\:]?=\\s+" +
+                                                    "(.*?)\\s+\\{product\\}";
 
     public void run(CommandExecutor executor) {
         setMutableFlag(executor);
@@ -60,76 +57,86 @@ public class SetVMFlagTest {
 
     private void setMutableFlag(CommandExecutor executor) {
         OutputAnalyzer out = getAllFlags(executor);
-        String flagVal = out.firstMatch(PRINTGC_PATTERN, 1);
+        String flagName = out.firstMatch(MANAGEABLE_PATTERN, 1);
+        String flagVal = out.firstMatch(MANAGEABLE_PATTERN, 2);
+
+        System.out.println("### Setting a mutable flag '" + flagName + "'");
 
         if (flagVal == null) {
             System.err.println(out.getOutput());
-            throw new Error("'" + PRINTGC_NAME + "' flag is either not available or manageable");
+            throw new Error("Can not find a boolean manageable flag");
         }
 
         Boolean blnVal = Boolean.parseBoolean(flagVal);
 
-        out = executor.execute("VM.set_flag " + PRINTGC_NAME + " " + (blnVal ? 0 : 1));
+        out = executor.execute("VM.set_flag " + flagName + " " + (blnVal ? 0 : 1));
         out.stderrShouldBeEmpty();
 
         out = getAllFlags(executor);
 
-        String newFlagVal = out.firstMatch(PRINTGC_PATTERN, 1);
+        String newFlagVal = out.firstMatch(MANAGEABLE_PATTERN.replace("(\\S+)", flagName), 1);
 
         assertNotEquals(newFlagVal, flagVal);
     }
 
     private void setMutableFlagWithInvalidValue(CommandExecutor executor) {
         OutputAnalyzer out = getAllFlags(executor);
-        String flagVal = out.firstMatch(PRINTGC_PATTERN, 1);
+        String flagName = out.firstMatch(MANAGEABLE_PATTERN, 1);
+        String flagVal = out.firstMatch(MANAGEABLE_PATTERN, 2);
+
+        System.out.println("### Setting a mutable flag '" + flagName + "' to an invalid value");
 
         if (flagVal == null) {
             System.err.println(out.getOutput());
-            throw new Error("'" + PRINTGC_NAME + "' flag is either not available or manageable");
+            throw new Error("Can not find a boolean manageable flag");
         }
 
-        // PrintGC is a boolean flag and accepts only 0/1 as its value
-        out = executor.execute("VM.set_flag " + PRINTGC_NAME + " unexpected_value");
+        // a boolean flag accepts only 0/1 as its value
+        out = executor.execute("VM.set_flag " + flagName + " unexpected_value");
         out.stderrShouldBeEmpty();
         out.stdoutShouldContain("flag value must be a boolean (1 or 0)");
 
         out = getAllFlags(executor);
 
-        String newFlagVal = out.firstMatch(PRINTGC_PATTERN, 1);
+        String newFlagVal = out.firstMatch(MANAGEABLE_PATTERN.replace("(\\S+)", flagName), 1);
 
         assertEquals(newFlagVal, flagVal);
     }
 
     private void setImmutableFlag(CommandExecutor executor) {
         OutputAnalyzer out = getAllFlags(executor);
-        String flagVal = out.firstMatch(XMX_PATTERN, 1);
+        String flagName = out.firstMatch(IMMUTABLE_PATTERN, 1);
+        String flagVal = out.firstMatch(IMMUTABLE_PATTERN, 2);
+
+        System.out.println("### Setting an immutable flag '" + flagName + "'");
 
         if (flagVal == null) {
             System.err.println(out.getOutput());
-            throw new Error("'" + XMX_NAME + "' flag is not available or immutable");
+            throw new Error("Can not find an immutable uintx flag");
         }
 
         Long numVal = Long.parseLong(flagVal);
 
-        out = executor.execute("VM.set_flag " + XMX_NAME + " " + (numVal + 1));
+        out = executor.execute("VM.set_flag " + flagName + " " + (numVal + 1));
         out.stderrShouldBeEmpty();
         out.stdoutShouldContain("only 'writeable' flags can be set");
 
         out = getAllFlags(executor);
 
-        String newFlagVal = out.firstMatch(XMX_PATTERN, 1);
+        String newFlagVal = out.firstMatch(IMMUTABLE_PATTERN.replace("(\\S+)", flagName), 1);
 
         assertEquals(newFlagVal, flagVal);
     }
 
     private void setNonExistingFlag(CommandExecutor executor) {
         String unknownFlag = "ThisIsUnknownFlag";
+        System.out.println("### Setting a non-existing flag '" + unknownFlag + "'");
         OutputAnalyzer out = executor.execute("VM.set_flag " + unknownFlag + " 1");
         out.stderrShouldBeEmpty();
         out.stdoutShouldContain("flag " + unknownFlag + " does not exist");
     }
 
     private OutputAnalyzer getAllFlags(CommandExecutor executor) {
-        return executor.execute("VM.flags -all");
+        return executor.execute("VM.flags -all", true);
     }
 }
