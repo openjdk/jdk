@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,6 @@ inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL &&
 inline int frame::frame_size(RegisterMap* map) const { return sender_sp() - sp(); }
 
 inline intptr_t* frame::link() const { return (intptr_t *)(fp()[FP->sp_offset_in_saved_window()] + STACK_BIAS); }
-
-inline void frame::set_link(intptr_t* addr) { assert(link()==addr, "frame nesting is controlled by hardware"); }
 
 inline intptr_t* frame::unextended_sp() const { return sp() + _sp_adjustment_by_callee; }
 

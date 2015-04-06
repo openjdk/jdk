@@ -358,18 +358,38 @@ void VMError::report(outputStream* st) {
 
   // test secondary error handling. Test it twice, to test that resetting
   // error handler after a secondary crash works.
-  STEP(13, "(test secondary crash 1)")
+  STEP(11, "(test secondary crash 1)")
     if (_verbose && TestCrashInErrorHandler != 0) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
-  STEP(14, "(test secondary crash 2)")
+  STEP(12, "(test secondary crash 2)")
     if (_verbose && TestCrashInErrorHandler != 0) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
+    }
+
+  STEP(13, "(test safefetch in error handler)")
+    // test whether it is safe to use SafeFetch32 in Crash Handler. Test twice
+    // to test that resetting the signal handler works correctly.
+    if (_verbose && TestSafeFetchInErrorHandler) {
+      st->print_cr("Will test SafeFetch...");
+      if (CanUseSafeFetch32()) {
+        int* const invalid_pointer = (int*) get_segfault_address();
+        const int x = 0x76543210;
+        int i1 = SafeFetch32(invalid_pointer, x);
+        int i2 = SafeFetch32(invalid_pointer, x);
+        if (i1 == x && i2 == x) {
+          st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
+        } else {
+          st->print_cr("??");
+        }
+      } else {
+        st->print_cr("not possible; skipped.");
+      }
     }
 #endif // PRODUCT
 
