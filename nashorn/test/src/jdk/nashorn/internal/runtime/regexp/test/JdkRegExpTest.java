@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * Basic tests for the JDK based RegExp implementation.
  *
  * @test
- * @run testng jdk.nashorn.internal.runtime.regexp.JdkRegExpTest
+ * @run testng jdk.nashorn.internal.runtime.regexp.test.JdkRegExpTest
  */
 public class JdkRegExpTest {
 

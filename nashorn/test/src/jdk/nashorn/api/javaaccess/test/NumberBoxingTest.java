@@ -37,8 +37,8 @@ import org.testng.annotations.Test;
 
 /**
  * @test
- * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.NumberBoxingTest
- * @run testng/othervm jdk.nashorn.api.javaaccess.NumberBoxingTest
+ * @build jdk.nashorn.api.javaaccess.test.SharedObject jdk.nashorn.api.javaaccess.test.Person jdk.nashorn.api.javaaccess.test.NumberBoxingTest
+ * @run testng/othervm jdk.nashorn.api.javaaccess.test.NumberBoxingTest
  */
 @SuppressWarnings("javadoc")
 public class NumberBoxingTest {
@@ -56,7 +56,7 @@ public class NumberBoxingTest {
         e = m.getEngineByName("nashorn");
         o = new SharedObject();
         e.put("o", o);
-        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
+        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.test.SharedObject;");
     }
 
     @AfterClass
