@@ -640,6 +640,9 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
         // check if we can scale to the requested size
         Dimension canvas = ctx.canvasSize;
         Insets insets = ctx.stretchingInsets;
+        if (insets.left + insets.right > w || insets.top + insets.bottom > h) {
+            return;
+        }
 
         if (w <= (canvas.width * ctx.maxHorizontalScaleFactor) && h <= (canvas.height * ctx.maxVerticalScaleFactor)) {
             // get image at canvas size
