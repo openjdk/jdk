@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,50 +21,14 @@
  * questions.
  */
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.Test;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-/**
- * @author Robert Field
- */
-
-@Test
-public class LambdaTranslationInnerConstructor  {
-
-    public void testLambdaWithInnerConstructor() {
-        assertEquals(seq1().m().toString(), "Cbl:nada");
-        assertEquals(seq2().m("rats").toString(), "Cbl:rats");
-    }
-
-    Ib1 seq1() {
-        return () -> { return new Cbl(); };
-    }
-
-    Ib2 seq2() {
-        return (x) -> { return new Cbl(x); };
-    }
-
-    class Cbl {
-        String val;
-
-        Cbl() {
-            this.val = "nada";
-        }
-
-        Cbl(String z) {
-            this.val = z;
-        }
-
-        public String toString() {
-            return "Cbl:" + val;
-        }
-    }
-
-    interface Ib1 {
-        Object m();
-    }
-
-    interface Ib2 {
-        Object m(String x);
-    }
+@Repeatable(ExpectedSignatureContainer.class)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ExpectedSignature {
+    boolean isAnonymous() default false;
+    String descriptor();
+    String signature();
 }

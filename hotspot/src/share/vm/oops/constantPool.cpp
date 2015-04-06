@@ -1790,17 +1790,10 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
 
 void ConstantPool::set_on_stack(const bool value) {
   if (value) {
-    int old_flags = *const_cast<volatile int *>(&_flags);
-    while ((old_flags & _on_stack) == 0) {
-      int new_flags = old_flags | _on_stack;
-      int result = Atomic::cmpxchg(new_flags, &_flags, old_flags);
-
-      if (result == old_flags) {
-        // Succeeded.
-        MetadataOnStackMark::record(this, Thread::current());
-        return;
-      }
-      old_flags = result;
+    // Only record if it's not already set.
+    if (!on_stack()) {
+      _flags |= _on_stack;
+      MetadataOnStackMark::record(this);
     }
   } else {
     // Clearing is done single-threadedly.

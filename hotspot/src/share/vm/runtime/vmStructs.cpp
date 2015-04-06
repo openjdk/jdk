@@ -2584,7 +2584,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /**********************/                                                \
   /* frame              */                                                \
   /**********************/                                                \
-  NOT_ZERO(PPC64_ONLY(declare_constant(frame::abi_minframe_size)))        \
   NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
                                                                           \
   NOT_ZERO(X86_ONLY(declare_constant(frame::entry_frame_call_wrapper_offset)))      \

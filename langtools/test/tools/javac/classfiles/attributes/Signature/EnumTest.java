@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,19 @@
  * questions.
  */
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.Test;
-
-/**
- * @author Robert Field
+/*
+ * @test
+ * @bug 8049238
+ * @summary Checks Signature attribute for enum.
+ * @library /tools/lib /tools/javac/lib ../lib
+ * @build TestBase TestResult InMemoryFileManager ToolBox
+ * @build EnumTest Driver ExpectedSignature ExpectedSignatureContainer
+ * @run main Driver EnumTest
  */
 
-interface LTII {
-
-    interface ILsp1 {
-        String m();
-    }
-
-    interface ILsp2 {
-        String m(String x);
-    }
-
-    default ILsp1 t1() {
-        return () -> { return "yo"; };
-    }
-
-    default ILsp2 t2() {
-        return (x) -> { return "snur" + x; };
-    }
-
-}
-
-@Test
-public class LambdaTranslationInInterface implements LTII {
-
-    public void testLambdaInDefaultMethod() {
-        assertEquals(t1().m(), "yo");
-        assertEquals(t2().m("p"), "snurp");
-    }
-
+@ExpectedSignature(descriptor = "EnumTest", signature = "Ljava/lang/Enum<LEnumTest;>;")
+public enum EnumTest {;
+    // see 8026480
+    @ExpectedSignature(descriptor = "<init>(java.lang.String, int)", signature = "()V")
+    private EnumTest() {}
 }

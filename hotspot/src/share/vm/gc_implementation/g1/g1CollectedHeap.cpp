@@ -4909,10 +4909,6 @@ private:
         clean_nmethod(claimed_nmethods[i]);
       }
     }
-
-    // The nmethod cleaning helps out and does the CodeCache part of MetadataOnStackMark.
-    // Need to retire the buffers now that this thread has stopped cleaning nmethods.
-    MetadataOnStackMark::retire_buffer_for_thread(Thread::current());
   }
 
   void work_second_pass(uint worker_id) {
@@ -4965,9 +4961,6 @@ public:
     // G1 specific cleanup work that has
     // been moved here to be done in parallel.
     ik->clean_dependent_nmethods();
-    if (JvmtiExport::has_redefined_a_class()) {
-      InstanceKlass::purge_previous_versions(ik);
-    }
   }
 
   void work() {
@@ -5002,18 +4995,8 @@ public:
       _klass_cleaning_task(is_alive) {
   }
 
-  void pre_work_verification() {
-    assert(!MetadataOnStackMark::has_buffer_for_thread(Thread::current()), "Should be empty");
-  }
-
-  void post_work_verification() {
-    assert(!MetadataOnStackMark::has_buffer_for_thread(Thread::current()), "Should be empty");
-  }
-
   // The parallel work done by all worker threads.
   void work(uint worker_id) {
-    pre_work_verification();
-
     // Do first pass of code cache cleaning.
     _code_cache_task.work_first_pass(worker_id);
 
@@ -5032,8 +5015,6 @@ public:
 
     // Clean all klasses that were not unloaded.
     _klass_cleaning_task.work();
-
-    post_work_verification();
   }
 };
 
@@ -5425,7 +5406,7 @@ public:
     // limit is set using max_num_q() - which was set using ParallelGCThreads.
     // So this must be true - but assert just in case someone decides to
     // change the worker ids.
-    assert(0 <= worker_id && worker_id < limit, "sanity");
+    assert(worker_id < limit, "sanity");
     assert(!rp->discovery_is_atomic(), "check this code");
 
     // Select discovered lists [i, i+stride, i+2*stride,...,limit)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,26 +33,31 @@
 #include "services/threadService.hpp"
 #include "utilities/chunkedList.hpp"
 
-volatile MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = NULL;
-volatile MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = NULL;
+MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = NULL;
+MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = NULL;
 
+MetadataOnStackBuffer* MetadataOnStackMark::_current_buffer = NULL;
 NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
 
 // Walk metadata on the stack and mark it so that redefinition doesn't delete
-// it.  Class unloading also walks the previous versions and might try to
-// delete it, so this class is used by class unloading also.
-MetadataOnStackMark::MetadataOnStackMark(bool visit_code_cache) {
+// it.  Class unloading only deletes in-error class files, methods created by
+// the relocator and dummy constant pools.  None of these appear anywhere except
+// in metadata Handles.
+MetadataOnStackMark::MetadataOnStackMark(bool redefinition_walk) {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
   assert(_used_buffers == NULL, "sanity check");
+  assert(!_is_active, "MetadataOnStackMarks do not nest");
   NOT_PRODUCT(_is_active = true;)
 
-  Threads::metadata_do(Metadata::mark_on_stack);
-  if (visit_code_cache) {
+  Threads::metadata_handles_do(Metadata::mark_on_stack);
+
+  if (redefinition_walk) {
+    Threads::metadata_do(Metadata::mark_on_stack);
     CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
+    CompileBroker::mark_on_stack();
+    JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
+    ThreadService::metadata_do(Metadata::mark_on_stack);
   }
-  CompileBroker::mark_on_stack();
-  JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
-  ThreadService::metadata_do(Metadata::mark_on_stack);
 }
 
 MetadataOnStackMark::~MetadataOnStackMark() {
@@ -60,10 +65,9 @@ MetadataOnStackMark::~MetadataOnStackMark() {
   // Unmark everything that was marked.   Can't do the same walk because
   // redefine classes messes up the code cache so the set of methods
   // might not be the same.
+  retire_current_buffer();
 
-  retire_buffer_for_thread(Thread::current());
-
-  MetadataOnStackBuffer* buffer = const_cast<MetadataOnStackBuffer* >(_used_buffers);
+  MetadataOnStackBuffer* buffer = _used_buffers;
   while (buffer != NULL) {
     // Clear on stack state for all metadata.
     size_t size = buffer->size();
@@ -77,7 +81,7 @@ MetadataOnStackMark::~MetadataOnStackMark() {
     // Move the buffer to the free list.
     buffer->clear();
     buffer->set_next_used(NULL);
-    buffer->set_next_free(const_cast<MetadataOnStackBuffer*>(_free_buffers));
+    buffer->set_next_free(_free_buffers);
     _free_buffers = buffer;
 
     // Step to next used buffer.
@@ -93,35 +97,23 @@ void MetadataOnStackMark::retire_buffer(MetadataOnStackBuffer* buffer) {
   if (buffer == NULL) {
     return;
   }
-
-  MetadataOnStackBuffer* old_head;
-
-  do {
-    old_head = const_cast<MetadataOnStackBuffer*>(_used_buffers);
-    buffer->set_next_used(old_head);
-  } while (Atomic::cmpxchg_ptr(buffer, &_used_buffers, old_head) != old_head);
+  buffer->set_next_used(_used_buffers);
+  _used_buffers = buffer;
 }
 
-void MetadataOnStackMark::retire_buffer_for_thread(Thread* thread) {
-  retire_buffer(thread->metadata_on_stack_buffer());
-  thread->set_metadata_on_stack_buffer(NULL);
+// Current buffer is full or we're ready to walk them, add it to the used list.
+void MetadataOnStackMark::retire_current_buffer() {
+  retire_buffer(_current_buffer);
+  _current_buffer = NULL;
 }
 
-bool MetadataOnStackMark::has_buffer_for_thread(Thread* thread) {
-  return thread->metadata_on_stack_buffer() != NULL;
-}
-
+// Get buffer off free list.
 MetadataOnStackBuffer* MetadataOnStackMark::allocate_buffer() {
-  MetadataOnStackBuffer* allocated;
-  MetadataOnStackBuffer* new_head;
+  MetadataOnStackBuffer* allocated = _free_buffers;
 
-  do {
-    allocated = const_cast<MetadataOnStackBuffer*>(_free_buffers);
-    if (allocated == NULL) {
-      break;
-    }
-    new_head = allocated->next_free();
-  } while (Atomic::cmpxchg_ptr(new_head, &_free_buffers, allocated) != allocated);
+  if (allocated != NULL) {
+    _free_buffers = allocated->next_free();
+  }
 
   if (allocated == NULL) {
     allocated = new MetadataOnStackBuffer();
@@ -133,10 +125,10 @@ MetadataOnStackBuffer* MetadataOnStackMark::allocate_buffer() {
 }
 
 // Record which objects are marked so we can unmark the same objects.
-void MetadataOnStackMark::record(Metadata* m, Thread* thread) {
+void MetadataOnStackMark::record(Metadata* m) {
   assert(_is_active, "metadata on stack marking is active");
 
-  MetadataOnStackBuffer* buffer =  thread->metadata_on_stack_buffer();
+  MetadataOnStackBuffer* buffer = _current_buffer;
 
   if (buffer != NULL && buffer->is_full()) {
     retire_buffer(buffer);
@@ -145,7 +137,7 @@ void MetadataOnStackMark::record(Metadata* m, Thread* thread) {
 
   if (buffer == NULL) {
     buffer = allocate_buffer();
-    thread->set_metadata_on_stack_buffer(buffer);
+    _current_buffer = buffer;
   }
 
   buffer->push(m);

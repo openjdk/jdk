@@ -255,9 +255,6 @@ class Thread: public ThreadShadow {
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
 
-  // Thread-local buffer used by MetadataOnStackMark.
-  MetadataOnStackBuffer* _metadata_on_stack_buffer;
-
   TRACE_DATA _trace_data;                       // Thread-local data for tracing
 
   ThreadExt _ext;
@@ -478,7 +475,7 @@ class Thread: public ThreadShadow {
   void nmethods_do(CodeBlobClosure* cf);
 
   // jvmtiRedefineClasses support
-  void metadata_do(void f(Metadata*));
+  void metadata_handles_do(void f(Metadata*));
 
   // Used by fast lock support
   virtual bool is_lock_owned(address adr) const;
@@ -493,9 +490,6 @@ class Thread: public ThreadShadow {
   // Sets this thread as starting thread. Returns failure if thread
   // creation fails due to lack of memory, too many threads etc.
   bool set_as_starting_thread();
-
-  void set_metadata_on_stack_buffer(MetadataOnStackBuffer* buffer) { _metadata_on_stack_buffer = buffer; }
-  MetadataOnStackBuffer* metadata_on_stack_buffer() const          { return _metadata_on_stack_buffer; }
 
 protected:
   // OS data associated with the thread
@@ -1915,6 +1909,7 @@ class Threads: AllStatic {
 
   // RedefineClasses support
   static void metadata_do(void f(Metadata*));
+  static void metadata_handles_do(void f(Metadata*));
 
 #ifdef ASSERT
   static bool is_vm_complete() { return _vm_complete; }
