@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -447,22 +447,6 @@ public class Functions {
     /**
      * Check the given arrays for equalitiy. This method considers both arrays as
      * equal, if both are <code>null</code> or both have the same length and
-     * contain exactly the same byte values.
-     *
-     * @param array1 The first array.
-     * @param array2 The second array.
-     * @return True, if both arrays are <code>null</code> or both have the same
-     *         length and contain exactly the same byte values. False, otherwise.
-     * @preconditions
-     * @postconditions
-     */
-    public static boolean equals(byte[] array1, byte[] array2) {
-        return Arrays.equals(array1, array2);
-    }
-
-    /**
-     * Check the given arrays for equalitiy. This method considers both arrays as
-     * equal, if both are <code>null</code> or both have the same length and
      * contain exactly the same char values.
      *
      * @param array1 The first array.
@@ -472,7 +456,7 @@ public class Functions {
      * @preconditions
      * @postconditions
      */
-    public static boolean equals(char[] array1, char[] array2) {
+    private static boolean equals(char[] array1, char[] array2) {
         return Arrays.equals(array1, array2);
     }
 

@@ -542,7 +542,7 @@ final class ClientHandshaker extends Handshaker {
                         0, clientVerifyData.length);
                 System.arraycopy(serverVerifyData, 0, verifyData,
                         clientVerifyData.length, serverVerifyData.length);
-                if (!Arrays.equals(verifyData,
+                if (!MessageDigest.isEqual(verifyData,
                                 serverHelloRI.getRenegotiatedConnection())) {
                     fatalSE(Alerts.alert_handshake_failure,
                         "Incorrect verify data in ServerHello " +
