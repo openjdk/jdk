@@ -54,8 +54,6 @@
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 elapsedTimer        PSMarkSweep::_accumulated_time;
 jlong               PSMarkSweep::_time_of_last_gc   = 0;
 CollectorCounters*  PSMarkSweep::_counters = NULL;
@@ -670,7 +668,7 @@ jlong PSMarkSweep::millis_since_last_gc() {
   jlong ret_val = now - _time_of_last_gc;
   // XXX See note in genCollectedHeap::millis_since_last_gc().
   if (ret_val < 0) {
-    NOT_PRODUCT(warning("time warp: "INT64_FORMAT, ret_val);)
+    NOT_PRODUCT(warning("time warp: " JLONG_FORMAT, ret_val);)
     return 0;
   }
   return ret_val;

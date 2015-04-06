@@ -1008,7 +1008,7 @@ public:
   // Set _n_par_threads according to a policy TBD.
   void set_par_threads();
 
-  virtual CollectedHeap::Name kind() const {
+  virtual Name kind() const {
     return CollectedHeap::G1CollectedHeap;
   }
 
@@ -1378,10 +1378,6 @@ public:
   }
 
   inline bool is_in_young(const oop obj);
-
-#ifdef ASSERT
-  virtual bool is_in_partial_collection(const void* p);
-#endif
 
   virtual bool is_scavengable(const void* addr);
 

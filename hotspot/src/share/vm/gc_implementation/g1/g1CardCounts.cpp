@@ -31,8 +31,6 @@
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void G1CardCountsMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
   if (zero_filled) {
     return;
