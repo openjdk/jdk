@@ -38,8 +38,6 @@
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // HeapInspection
 
 inline KlassInfoEntry::~KlassInfoEntry() {
@@ -100,8 +98,8 @@ void KlassInfoEntry::print_on(outputStream* st) const {
 
   // simplify the formatting (ILP32 vs LP64) - always cast the numbers to 64-bit
   st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
-               (jlong)  _instance_count,
-               (julong) _instance_words * HeapWordSize,
+               (int64_t)_instance_count,
+               (uint64_t)_instance_words * HeapWordSize,
                name());
 }
 
@@ -240,8 +238,8 @@ void KlassInfoHisto::sort() {
 
 void KlassInfoHisto::print_elements(outputStream* st) const {
   // simplify the formatting (ILP32 vs LP64) - store the sum in 64-bit
-  jlong total = 0;
-  julong totalw = 0;
+  int64_t total = 0;
+  uint64_t totalw = 0;
   for(int i=0; i < elements()->length(); i++) {
     st->print("%4d: ", i+1);
     elements()->at(i)->print_on(st);
@@ -451,7 +449,7 @@ static void print_classname(outputStream* st, Klass* klass) {
   if (loader_oop == NULL) {
     st->print("null");
   } else {
-    st->print(INTPTR_FORMAT, klass->class_loader_data());
+    st->print(INTPTR_FORMAT, p2i(klass->class_loader_data()));
   }
 }
 
@@ -557,13 +555,13 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
         }
 
         if (csv_format) {
-          st->print("%d,%d", e->index(), super_index);
+          st->print("%ld,%d", e->index(), super_index);
           for (int c=0; c<KlassSizeStats::_num_columns; c++) {
             if (selected[c]) {st->print("," JULONG_FORMAT, col_table[c]);}
           }
           st->print(",%s",e->name());
         } else {
-          st->print("%5d %5d", e->index(), super_index);
+          st->print("%5ld %5d", e->index(), super_index);
           for (int c=0; c<KlassSizeStats::_num_columns; c++) {
             if (selected[c]) {print_julong(st, width_table[c], col_table[c]);}
           }
