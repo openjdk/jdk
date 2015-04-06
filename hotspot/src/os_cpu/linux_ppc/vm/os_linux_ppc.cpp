@@ -113,6 +113,14 @@ address os::Linux::ucontext_get_pc(ucontext_t * uc) {
   return (address)uc->uc_mcontext.regs->nip;
 }
 
+// modify PC in ucontext.
+// Note: Only use this for an ucontext handed down to a signal handler. See comment
+// in ucontext_get_pc.
+void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
+  guarantee(uc->uc_mcontext.regs != NULL, "only use ucontext_set_pc in sigaction context");
+  uc->uc_mcontext.regs->nip = (unsigned long)pc;
+}
+
 intptr_t* os::Linux::ucontext_get_sp(ucontext_t * uc) {
   return (intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/];
 }
@@ -213,7 +221,7 @@ JVM_handle_linux_signal(int sig,
   if (uc) {
     address const pc = os::Linux::ucontext_get_pc(uc);
     if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      uc->uc_mcontext.regs->nip = (unsigned long)StubRoutines::continuation_for_safefetch_fault(pc);
+      os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
       return true;
     }
   }
@@ -360,7 +368,7 @@ JVM_handle_linux_signal(int sig,
           // continue at the next instruction after the faulting read. Returning
           // garbage from this read is ok.
           thread->set_pending_unsafe_access_error();
-          uc->uc_mcontext.regs->nip = ((unsigned long)pc) + 4;
+          os::Linux::ucontext_set_pc(uc, pc + 4);
           return true;
         }
       }
@@ -379,7 +387,7 @@ JVM_handle_linux_signal(int sig,
         // continue at the next instruction after the faulting read. Returning
         // garbage from this read is ok.
         thread->set_pending_unsafe_access_error();
-        uc->uc_mcontext.regs->nip = ((unsigned long)pc) + 4;
+        os::Linux::ucontext_set_pc(uc, pc + 4);
         return true;
       }
     }
@@ -402,7 +410,7 @@ JVM_handle_linux_signal(int sig,
   if (stub != NULL) {
     // Save all thread context in case we need to restore it.
     if (thread != NULL) thread->set_saved_exception_pc(pc);
-    uc->uc_mcontext.regs->nip = (unsigned long)stub;
+    os::Linux::ucontext_set_pc(uc, stub);
     return true;
   }
 
