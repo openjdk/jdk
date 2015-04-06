@@ -3492,9 +3492,11 @@ void InstanceKlass::set_init_state(ClassState state) {
 #endif
 
 
-// RedefineClasses() support for previous versions:
 
-// Purge previous versions
+// RedefineClasses() support for previous versions:
+int InstanceKlass::_previous_version_count = 0;
+
+// Purge previous versions before adding new previous versions of the class.
 void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
   if (ik->previous_versions() != NULL) {
     // This klass has previous versions so see what we can cleanup
@@ -3524,6 +3526,11 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
         // are executing.  Unlink this previous_version.
         // The previous version InstanceKlass is on the ClassLoaderData deallocate list
         // so will be deallocated during the next phase of class unloading.
+        RC_TRACE(0x00000200, ("purge: previous version " INTPTR_FORMAT " is dead",
+                              pv_node));
+        // For debugging purposes.
+        pv_node->set_is_scratch_class();
+        pv_node->class_loader_data()->add_to_deallocate_list(pv_node);
         pv_node = pv_node->previous_versions();
         last->link_previous_versions(pv_node);
         deleted_count++;
@@ -3537,7 +3544,7 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
         live_count++;
       }
 
-      // At least one method is live in this previous version so clean its MethodData.
+      // At least one method is live in this previous version.
       // Reset dead EMCP methods not to get breakpoints.
       // All methods are deallocated when all of the methods for this class are no
       // longer running.
@@ -3561,12 +3568,6 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
               ("purge: %s(%s): prev method @%d in version @%d is alive",
               method->name()->as_C_string(),
               method->signature()->as_C_string(), j, version));
-#ifdef ASSERT
-            if (method->method_data() != NULL) {
-              // Verify MethodData for running methods don't refer to old methods.
-              method->method_data()->verify_clean_weak_method_links();
-            }
-#endif // ASSERT
           }
         }
       }
@@ -3579,18 +3580,6 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
       ("purge: previous version stats: live=%d, deleted=%d", live_count,
       deleted_count));
   }
-
-#ifdef ASSERT
-  // Verify clean MethodData for this class's methods, e.g. they don't refer to
-  // old methods that are no longer running.
-  Array<Method*>* methods = ik->methods();
-  int num_methods = methods->length();
-  for (int index = 0; index < num_methods; ++index) {
-    if (methods->at(index)->method_data() != NULL) {
-      methods->at(index)->method_data()->verify_clean_weak_method_links();
-    }
-  }
-#endif // ASSERT
 }
 
 void InstanceKlass::mark_newly_obsolete_methods(Array<Method*>* old_methods,
@@ -3677,6 +3666,11 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
   ConstantPool* cp_ref = scratch_class->constants();
   if (!cp_ref->on_stack()) {
     RC_TRACE(0x00000400, ("add: scratch class not added; no methods are running"));
+    // For debugging purposes.
+    scratch_class->set_is_scratch_class();
+    scratch_class->class_loader_data()->add_to_deallocate_list(scratch_class());
+    // Update count for class unloading.
+    _previous_version_count--;
     return;
   }
 
@@ -3688,8 +3682,8 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
         // if EMCP method (not obsolete) is on the stack, mark as EMCP so that
         // we can add breakpoints for it.
 
-        // We set the method->on_stack bit during safepoints for class redefinition and
-        // class unloading and use this bit to set the is_running_emcp bit.
+        // We set the method->on_stack bit during safepoints for class redefinition
+        // and use this bit to set the is_running_emcp bit.
         // After the safepoint, the on_stack bit is cleared and the running emcp
         // method may exit.   If so, we would set a breakpoint in a method that
         // is never reached, but this won't be noticeable to the programmer.
@@ -3708,6 +3702,8 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
   assert(scratch_class->previous_versions() == NULL, "shouldn't have a previous version");
   scratch_class->link_previous_versions(previous_versions());
   link_previous_versions(scratch_class());
+  // Update count for class unloading.
+  _previous_version_count++;
 } // end add_previous_version()
 
 

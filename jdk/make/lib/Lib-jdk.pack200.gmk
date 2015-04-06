@@ -40,11 +40,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
         -I$(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
-    DISABLED_WARNINGS_gcc := conversion-null sign-compare format-security \
-        format-nonliteral parentheses, \
-    DISABLED_WARNINGS_clang := bool-conversion format-security, \
-    DISABLED_WARNINGS_solstudio := truncwarn, \
-    DISABLED_WARNINGS_microsoft := 4267 4018, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

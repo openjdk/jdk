@@ -4290,8 +4290,8 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #
 
 ################################################################################
-
-VALID_VS_VERSIONS="2010 2012 2013"
+# The order of these defines the priority by which we try to find them.
+VALID_VS_VERSIONS="2013 2012 2010"
 
 VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
 VS_VERSION_INTERNAL_2010=100
@@ -4365,7 +4365,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1427843803
+DATE_WHEN_GENERATED=1428017006
 
 ###############################################################################
 #

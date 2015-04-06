@@ -30,6 +30,7 @@
 # @run shell ShortRSAKey1024.sh 1024
 # @run shell ShortRSAKey1024.sh 768
 # @run shell ShortRSAKey1024.sh 512
+# @key intermittent
 
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory
