@@ -407,7 +407,7 @@ final class ServerHandshaker extends Handshaker {
                 }
 
                 // verify the client_verify_data value
-                if (!Arrays.equals(clientVerifyData,
+                if (!MessageDigest.isEqual(clientVerifyData,
                                 clientHelloRI.getRenegotiatedConnection())) {
                     fatalSE(Alerts.alert_handshake_failure,
                         "Incorrect verify data in ClientHello " +
