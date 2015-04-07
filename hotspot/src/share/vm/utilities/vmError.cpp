@@ -463,14 +463,7 @@ void VMError::report(outputStream* st) {
 #else
          const char *file = _filename;
 #endif
-         size_t len = strlen(file);
-         size_t buflen = sizeof(buf);
-
-         strncpy(buf, file, buflen);
-         if (len + 10 < buflen) {
-           sprintf(buf + len, ":%d", _lineno);
-         }
-         st->print(" (%s)", buf);
+         st->print(" (%s:%d)", file, _lineno);
        } else {
          st->print(" (0x%x)", _id);
        }

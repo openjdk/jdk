@@ -673,9 +673,7 @@ static MethodMatcher* scan_flag_and_value(const char* type, const char* line, in
       // so read integer and fraction part of double value separately.
       if (sscanf(line, "%*[ \t]%255[0-9]%*[ /\t]%255[0-9]%n", buffer[0], buffer[1], &bytes_read) == 2) {
         char value[512] = "";
-        strncat(value, buffer[0], 255);
-        strcat(value, ".");
-        strncat(value, buffer[1], 255);
+        jio_snprintf(value, sizeof(value), "%s.%s", buffer[0], buffer[1]);
         total_bytes_read += bytes_read;
         return add_option_string(c_name, c_match, m_name, m_match, signature, flag, atof(value));
       } else {

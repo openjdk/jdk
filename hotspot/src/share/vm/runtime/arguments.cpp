@@ -2714,7 +2714,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
         char *options = NULL;
         if(pos != NULL) {
-          options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(pos + 1) + 1, mtInternal), pos + 1);
+          options = os::strdup_check_oom(pos + 1, mtInternal);
         }
 #if !INCLUDE_JVMTI
         if (valid_hprof_or_jdwp_agent(name, is_absolute_path)) {
@@ -3314,8 +3314,7 @@ void Arguments::fix_appclasspath() {
       src ++;
     }
 
-    char* copy = AllocateHeap(strlen(src) + 1, mtInternal);
-    strncpy(copy, src, strlen(src) + 1);
+    char* copy = os::strdup_check_oom(src, mtInternal);
 
     // trim all trailing empty paths
     for (char* tail = copy + strlen(copy) - 1; tail >= copy && *tail == separator; tail--) {
@@ -3480,9 +3479,7 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
         }
       } else {
         char buffer[256];
-        const char *key = "java.awt.headless=";
-        strcpy(buffer, key);
-        strncat(buffer, headless_env, 256 - strlen(key) - 1);
+        jio_snprintf(buffer, sizeof(buffer), "java.awt.headless=%s", headless_env);
         if (!add_property(buffer)) {
           return JNI_ENOMEM;
         }
@@ -3645,18 +3642,14 @@ static char* get_shared_archive_path() {
     if (end != NULL) *end = '\0';
     size_t jvm_path_len = strlen(jvm_path);
     size_t file_sep_len = strlen(os::file_separator());
-    shared_archive_path = NEW_C_HEAP_ARRAY(char, jvm_path_len +
-        file_sep_len + 20, mtInternal);
+    const size_t len = jvm_path_len + file_sep_len + 20;
+    shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     if (shared_archive_path != NULL) {
-      strncpy(shared_archive_path, jvm_path, jvm_path_len + 1);
-      strncat(shared_archive_path, os::file_separator(), file_sep_len);
-      strncat(shared_archive_path, "classes.jsa", 11);
+      jio_snprintf(shared_archive_path, len, "%s%sclasses.jsa",
+        jvm_path, os::file_separator());
     }
   } else {
-    shared_archive_path = NEW_C_HEAP_ARRAY(char, strlen(SharedArchiveFile) + 1, mtInternal);
-    if (shared_archive_path != NULL) {
-      strncpy(shared_archive_path, SharedArchiveFile, strlen(SharedArchiveFile) + 1);
-    }
+    shared_archive_path = os::strdup_check_oom(SharedArchiveFile, mtInternal);
   }
   return shared_archive_path;
 }

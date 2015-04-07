@@ -109,7 +109,7 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
   }
   if (add_cr) {
     if (result != buffer) {
-      strncpy(buffer, result, buflen);
+      memcpy(buffer, result, result_len);
       result = buffer;
     }
     buffer[result_len++] = '\n';
@@ -334,15 +334,19 @@ void stringStream::write(const char* s, size_t len) {
       assert(rm == NULL || Thread::current()->current_resource_mark() == rm,
              "stringStream is re-allocated with a different ResourceMark");
       buffer = NEW_RESOURCE_ARRAY(char, end);
-      strncpy(buffer, oldbuf, buffer_pos);
+      if (buffer_pos > 0) {
+        memcpy(buffer, oldbuf, buffer_pos);
+      }
       buffer_length = end;
     }
   }
   // invariant: buffer is always null-terminated
   guarantee(buffer_pos + write_len + 1 <= buffer_length, "stringStream oob");
-  buffer[buffer_pos + write_len] = 0;
-  strncpy(buffer + buffer_pos, s, write_len);
-  buffer_pos += write_len;
+  if (write_len > 0) {
+    buffer[buffer_pos + write_len] = 0;
+    memcpy(buffer + buffer_pos, s, write_len);
+    buffer_pos += write_len;
+  }
 
   // Note that the following does not depend on write_len.
   // This means that position and count get updated
