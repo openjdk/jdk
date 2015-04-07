@@ -1802,6 +1802,25 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 }
 
+G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
+                                                                 size_t size,
+                                                                 size_t translation_factor) {
+  // Allocate a new reserved space, preferring to use large pages.
+  ReservedSpace rs(size, true);
+  G1RegionToSpaceMapper* result  =
+    G1RegionToSpaceMapper::create_mapper(rs,
+                                         size,
+                                         rs.alignment(),
+                                         HeapRegion::GrainBytes,
+                                         translation_factor,
+                                         mtGC);
+  if (TracePageSizes) {
+    gclog_or_tty->print_cr("G1 '%s': pg_sz=" SIZE_FORMAT " base=" PTR_FORMAT " size=" SIZE_FORMAT " alignment=" SIZE_FORMAT " reqsize=" SIZE_FORMAT,
+                           description, rs.alignment(), p2i(rs.base()), rs.size(), rs.alignment(), size);
+  }
+  return result;
+}
+
 jint G1CollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
   os::enable_vtime();
@@ -1869,57 +1888,35 @@ jint G1CollectedHeap::initialize() {
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(g1_rs,
+                                         g1_rs.size(),
                                          UseLargePages ? os::large_page_size() : os::vm_page_size(),
                                          HeapRegion::GrainBytes,
                                          1,
                                          mtJavaHeap);
   heap_storage->set_mapping_changed_listener(&_listener);
 
-  // Reserve space for the block offset table. We do not support automatic uncommit
-  // for the card table at this time. BOT only.
-  ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
+  // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
-    G1RegionToSpaceMapper::create_mapper(bot_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Block offset table",
+                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
-    G1RegionToSpaceMapper::create_mapper(cardtable_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Card table",
+                             G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
-  // Reserve space for the card counts table.
-  ReservedSpace card_counts_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* card_counts_storage =
-    G1RegionToSpaceMapper::create_mapper(card_counts_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Card counts table",
+                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
-  // Reserve space for prev and next bitmap.
   size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
-
-  ReservedSpace prev_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
   G1RegionToSpaceMapper* prev_bitmap_storage =
-    G1RegionToSpaceMapper::create_mapper(prev_bitmap_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         CMBitMap::mark_distance(),
-                                         mtGC);
-
-  ReservedSpace next_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
+    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::mark_distance());
   G1RegionToSpaceMapper* next_bitmap_storage =
-    G1RegionToSpaceMapper::create_mapper(next_bitmap_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         CMBitMap::mark_distance(),
-                                         mtGC);
+    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::mark_distance());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);

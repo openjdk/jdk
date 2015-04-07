@@ -51,7 +51,12 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
  public:
   // Constructor
   ReservedSpace();
-  ReservedSpace(size_t size);
+  // Initialize the reserved space with the given size. If prefer_large_pages is
+  // set, if the given size warrants use of large pages, try to force them by
+  // passing an alignment restriction further down. This may waste some space
+  // if the given size is not aligned, as the reservation will be aligned up
+  // to large page alignment.
+  ReservedSpace(size_t size, bool prefer_large_pages = false);
   ReservedSpace(size_t size, size_t alignment, bool large,
                 char* requested_address = NULL);
   ReservedSpace(size_t size, size_t alignment, bool large, bool executable);

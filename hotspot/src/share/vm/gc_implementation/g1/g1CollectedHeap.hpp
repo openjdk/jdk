@@ -354,6 +354,12 @@ private:
   // heap after a compaction.
   void print_hrm_post_compaction();
 
+  // Create a memory mapper for auxiliary data structures of the given size and
+  // translation factor.
+  static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,
+                                                         size_t size,
+                                                         size_t translation_factor);
+
   double verify(bool guard, const char* msg);
   void verify_before_gc();
   void verify_after_gc();

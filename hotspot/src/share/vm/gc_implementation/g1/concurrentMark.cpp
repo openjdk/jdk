@@ -116,7 +116,7 @@ void CMBitMapRO::print_on_error(outputStream* st, const char* prefix) const {
 }
 
 size_t CMBitMap::compute_size(size_t heap_size) {
-  return heap_size / mark_distance();
+  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
 }
 
 size_t CMBitMap::mark_distance() {
