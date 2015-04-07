@@ -97,13 +97,9 @@ le_int32 MarkToBasePositioningSubtable::process(const LETableReference &base, Gl
 
     if( LE_FAILURE(success) ) { return 0; }
     Offset anchorTableOffset = SWAPW(baseRecord->baseAnchorTableOffsetArray[markClass]);
-    if (anchorTableOffset <= 0) {
-        // this means the table is mal-formed...
-        glyphIterator->setCurrGlyphBaseOffset(baseIterator.getCurrStreamPosition());
-        return 0;
-    }
-
     LEReferenceTo<AnchorTable> anchorTable(baseArray, success, anchorTableOffset);
+    if( LE_FAILURE(success) ) { return 0; }
+
     LEPoint baseAnchor, markAdvance, pixels;
 
 
