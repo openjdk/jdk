@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.comp;
 
-import java.util.*;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
@@ -34,7 +33,6 @@ import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -87,11 +85,11 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 public class Enter extends JCTree.Visitor {
     protected static final Context.Key<Enter> enterKey = new Context.Key<>();
 
+    Annotate annotate;
     Log log;
     Symtab syms;
     Check chk;
     TreeMaker make;
-    Annotate annotate;
     TypeEnter typeEnter;
     Types types;
     Lint lint;
@@ -253,11 +251,13 @@ public class Enter extends JCTree.Visitor {
         Env<AttrContext> prevEnv = this.env;
         try {
             this.env = env;
+            annotate.blockAnnotations();
             tree.accept(this);
             return result;
         }  catch (CompletionFailure ex) {
             return chk.completionError(tree.pos(), ex);
         } finally {
+            annotate.unblockAnnotations();
             this.env = prevEnv;
         }
     }
@@ -474,7 +474,7 @@ public class Enter extends JCTree.Visitor {
      *  @param c          The class symbol to be processed or null to process all.
      */
     public void complete(List<JCCompilationUnit> trees, ClassSymbol c) {
-        annotate.enterStart();
+        annotate.blockAnnotations();
         ListBuffer<ClassSymbol> prevUncompleted = uncompleted;
         if (typeEnter.completionEnabled) uncompleted = new ListBuffer<>();
 
@@ -497,7 +497,7 @@ public class Enter extends JCTree.Visitor {
             }
         } finally {
             uncompleted = prevUncompleted;
-            annotate.enterDone();
+            annotate.unblockAnnotations();
         }
     }
 

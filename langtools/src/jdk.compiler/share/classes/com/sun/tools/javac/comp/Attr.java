@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
@@ -103,11 +104,11 @@ public class Attr extends JCTree.Visitor {
     final Target target;
     final Types types;
     final JCDiagnostic.Factory diags;
-    final Annotate annotate;
     final TypeAnnotations typeAnnotations;
     final DeferredLintHandler deferredLintHandler;
     final TypeEnvs typeEnvs;
     final Dependencies dependencies;
+    final Annotate annotate;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -997,7 +998,7 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 // Attribute all type annotations in the body
-                annotate.annotateTypeLater(tree.body, localEnv, m, null);
+                annotate.queueScanTreeAndTypeAnnotate(tree.body, localEnv, m, null);
                 annotate.flush();
 
                 // Attribute method body.
@@ -1020,16 +1021,16 @@ public class Attr extends JCTree.Visitor {
                 env.info.scope.enter(tree.sym);
             } else {
                 try {
-                    annotate.enterStart();
+                    annotate.blockAnnotations();
                     memberEnter.memberEnter(tree, env);
                 } finally {
-                    annotate.enterDone();
+                    annotate.unblockAnnotations();
                 }
             }
         } else {
             if (tree.init != null) {
                 // Field initializer expression need to be entered.
-                annotate.annotateTypeLater(tree.init, env, tree.sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree.pos());
                 annotate.flush();
             }
         }
@@ -1090,7 +1091,7 @@ public class Attr extends JCTree.Visitor {
 
             if ((tree.flags & STATIC) != 0) localEnv.info.staticLevel++;
             // Attribute all type annotations in the block
-            annotate.annotateTypeLater(tree, localEnv, localEnv.info.scope.owner, null);
+            annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, localEnv.info.scope.owner, null);
             annotate.flush();
             attribStats(tree.stats, localEnv);
 
@@ -1953,9 +1954,16 @@ public class Attr extends JCTree.Visitor {
 
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
-        Type clazztype = TreeInfo.isEnumInit(env.tree) ?
-            attribIdentAsEnumType(env, (JCIdent)clazz) :
-            attribType(clazz, env);
+        Type clazztype;
+
+        try {
+            env.info.isNewClass = true;
+            clazztype = TreeInfo.isEnumInit(env.tree) ?
+                attribIdentAsEnumType(env, (JCIdent)clazz) :
+                attribType(clazz, env);
+        } finally {
+            env.info.isNewClass = false;
+        }
 
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
@@ -4002,7 +4010,7 @@ public class Attr extends JCTree.Visitor {
         TypeVar typeVar = (TypeVar) tree.type;
 
         if (tree.annotations != null && tree.annotations.nonEmpty()) {
-            annotateType(tree, tree.annotations);
+            annotate.annotateTypeParameterSecondStage(tree, tree.annotations);
         }
 
         if (!typeVar.bound.isErroneous()) {
@@ -4092,45 +4100,17 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitAnnotation(JCAnnotation tree) {
-        Assert.error("should be handled in Annotate");
+        Assert.error("should be handled in annotate");
     }
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
-        Type underlyingType = attribType(tree.getUnderlyingType(), env);
-        this.attribAnnotationTypes(tree.annotations, env);
-        annotateType(tree, tree.annotations);
-        result = tree.type = underlyingType;
-    }
+        attribAnnotationTypes(tree.annotations, env);
+        Type underlyingType = attribType(tree.underlyingType, env);
+        Type annotatedType = underlyingType.annotatedType(Annotations.TO_BE_SET);
 
-    /**
-     * Apply the annotations to the particular type.
-     */
-    public void annotateType(final JCTree tree, final List<JCAnnotation> annotations) {
-        annotate.typeAnnotation(new Annotate.Worker() {
-            @Override
-            public String toString() {
-                return "annotate " + annotations + " onto " + tree;
-            }
-            @Override
-            public void run() {
-                List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
-                Assert.check(annotations.size() == compounds.size());
-                tree.type = tree.type.annotatedType(compounds);
-                }
-        });
-    }
-
-    private static List<Attribute.TypeCompound> fromAnnotations(List<JCAnnotation> annotations) {
-        if (annotations.isEmpty()) {
-            return List.nil();
-        }
-
-        ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
-        for (JCAnnotation anno : annotations) {
-            Assert.checkNonNull(anno.attribute);
-            buf.append((Attribute.TypeCompound) anno.attribute);
-        }
-        return buf.toList();
+        if (!env.info.isNewClass)
+            annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);
+        result = tree.type = annotatedType;
     }
 
     public void visitErroneous(JCErroneous tree) {
@@ -4298,8 +4278,9 @@ public class Attr extends JCTree.Visitor {
                 log.error(tree.typarams.head.pos(),
                           "intf.annotation.cant.have.type.params");
 
-            // If this annotation has a @Repeatable, validate
-            Attribute.Compound repeatable = c.attribute(syms.repeatableType.tsym);
+            // If this annotation type has a @Repeatable, validate
+            Attribute.Compound repeatable = c.getAnnotationTypeMetadata().getRepeatable();
+            // If this annotation type has a @Repeatable, validate
             if (repeatable != null) {
                 // get diagnostic position for error reporting
                 DiagnosticPosition cbPos = getDiagnosticPosition(tree, repeatable.type);
@@ -4675,7 +4656,7 @@ public class Attr extends JCTree.Visitor {
             // This method will raise an error for such a type.
             for (JCAnnotation ai : annotations) {
                 if (!ai.type.isErroneous() &&
-                        typeAnnotations.annotationType(ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
+                        typeAnnotations.annotationTargetType(ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
                     log.error(ai.pos(), "annotation.type.not.applicable");
                 }
             }

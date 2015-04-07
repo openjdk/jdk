@@ -75,6 +75,7 @@ public class Gen extends JCTree.Visitor {
     private final Types types;
     private final Lower lower;
     private final Flow flow;
+    private final Annotate annotate;
 
     /** Format of stackmap tables to be generated. */
     private final Code.StackMapFormat stackMap;
@@ -142,6 +143,7 @@ public class Gen extends JCTree.Visitor {
         }
         this.jsrlimit = setjsrlimit;
         this.useJsrLocally = false; // reset in visitTry
+        annotate = Annotate.instance(context);
     }
 
     /** Switches
@@ -1468,21 +1470,18 @@ public class Gen extends JCTree.Visitor {
                       int startpc, int endpc,
                       List<Integer> gaps) {
             if (startpc != endpc) {
-                List<JCExpression> subClauses = TreeInfo.isMultiCatch(tree) ?
-                        ((JCTypeUnion)tree.param.vartype).alternatives :
-                        List.of(tree.param.vartype);
+                List<Pair<List<Attribute.TypeCompound>, JCExpression>> catchTypeExprs
+                        = catchTypesWithAnnotations(tree);
                 while (gaps.nonEmpty()) {
-                    for (JCExpression subCatch : subClauses) {
+                    for (Pair<List<Attribute.TypeCompound>, JCExpression> subCatch1 : catchTypeExprs) {
+                        JCExpression subCatch = subCatch1.snd;
                         int catchType = makeRef(tree.pos(), subCatch.type);
                         int end = gaps.head.intValue();
                         registerCatch(tree.pos(),
                                       startpc,  end, code.curCP(),
                                       catchType);
-                        if (subCatch.type.isAnnotated()) {
-                            for (Attribute.TypeCompound tc :
-                                     subCatch.type.getAnnotationMirrors()) {
+                        for (Attribute.TypeCompound tc :  subCatch1.fst) {
                                 tc.position.setCatchInfo(catchType, startpc);
-                            }
                         }
                     }
                     gaps = gaps.tail;
@@ -1490,16 +1489,14 @@ public class Gen extends JCTree.Visitor {
                     gaps = gaps.tail;
                 }
                 if (startpc < endpc) {
-                    for (JCExpression subCatch : subClauses) {
+                    for (Pair<List<Attribute.TypeCompound>, JCExpression> subCatch1 : catchTypeExprs) {
+                        JCExpression subCatch = subCatch1.snd;
                         int catchType = makeRef(tree.pos(), subCatch.type);
                         registerCatch(tree.pos(),
                                       startpc, endpc, code.curCP(),
                                       catchType);
-                        if (subCatch.type.isAnnotated()) {
-                            for (Attribute.TypeCompound tc :
-                                     subCatch.type.getAnnotationMirrors()) {
-                                tc.position.setCatchInfo(catchType, startpc);
-                            }
+                        for (Attribute.TypeCompound tc :  subCatch1.fst) {
+                            tc.position.setCatchInfo(catchType, startpc);
                         }
                     }
                 }
@@ -1507,13 +1504,37 @@ public class Gen extends JCTree.Visitor {
                 code.statBegin(tree.pos);
                 code.markStatBegin();
                 int limit = code.nextreg;
-                int exlocal = code.newLocal(exparam);
+                code.newLocal(exparam);
                 items.makeLocalItem(exparam).store();
                 code.statBegin(TreeInfo.firstStatPos(tree.body));
                 genStat(tree.body, env, CRT_BLOCK);
                 code.endScopes(limit);
                 code.statBegin(TreeInfo.endPos(tree.body));
             }
+        }
+        // where
+        List<Pair<List<Attribute.TypeCompound>, JCExpression>> catchTypesWithAnnotations(JCCatch tree) {
+            return TreeInfo.isMultiCatch(tree) ?
+                    catchTypesWithAnnotationsFromMulticatch((JCTypeUnion)tree.param.vartype, tree.param.sym.getRawTypeAttributes()) :
+                    List.of(new Pair<>(tree.param.sym.getRawTypeAttributes(), tree.param.vartype));
+        }
+        // where
+        List<Pair<List<Attribute.TypeCompound>, JCExpression>> catchTypesWithAnnotationsFromMulticatch(JCTypeUnion tree, List<TypeCompound> first) {
+            List<JCExpression> alts = tree.alternatives;
+            List<Pair<List<TypeCompound>, JCExpression>> res = List.of(new Pair<>(first, alts.head));
+            alts = alts.tail;
+
+            while(alts != null && alts.head != null) {
+                JCExpression alt = alts.head;
+                if (alt instanceof JCAnnotatedType) {
+                    JCAnnotatedType a = (JCAnnotatedType)alt;
+                    res = res.prepend(new Pair<>(annotate.fromAnnotations(a.annotations), alt));
+                } else {
+                    res = res.prepend(new Pair<>(List.nil(), alt));
+                }
+                alts = alts.tail;
+            }
+            return res.reverse();
         }
 
         /** Register a catch clause in the "Exceptions" code-attribute.
@@ -2052,7 +2073,7 @@ public class Gen extends JCTree.Visitor {
             code.emitop2(new_, makeRef(pos, stringBufferType));
             code.emitop0(dup);
             callMethod(
-                pos, stringBufferType, names.init, List.<Type>nil(), false);
+                    pos, stringBufferType, names.init, List.<Type>nil(), false);
         }
 
         /** Append value (on tos) to string buffer (on tos - 1).
@@ -2100,11 +2121,11 @@ public class Gen extends JCTree.Visitor {
          */
         void bufferToString(DiagnosticPosition pos) {
             callMethod(
-                pos,
-                stringBufferType,
-                names.toString,
-                List.<Type>nil(),
-                false);
+                    pos,
+                    stringBufferType,
+                    names.toString,
+                    List.<Type>nil(),
+                    false);
         }
 
         /** Complete generating code for operation, with left operand
