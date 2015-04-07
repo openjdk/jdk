@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,6 +234,8 @@ public class RichDiagnosticFormatter extends
     }
 
     private boolean unique(TypeVar typevar) {
+        typevar = (TypeVar)typevar.stripMetadataIfNeeded();
+
         int found = 0;
         for (Type t : whereClauses.get(WhereClauseKind.TYPEVAR).keySet()) {
             if (t.toString().equals(typevar.toString())) {
@@ -542,6 +544,7 @@ public class RichDiagnosticFormatter extends
 
         @Override
         public Void visitTypeVar(TypeVar t, Void ignored) {
+            t = (TypeVar)t.stripMetadataIfNeeded();
             if (indexOf(t, WhereClauseKind.TYPEVAR) == -1) {
                 //access the bound type and skip error types
                 Type bound = t.bound;

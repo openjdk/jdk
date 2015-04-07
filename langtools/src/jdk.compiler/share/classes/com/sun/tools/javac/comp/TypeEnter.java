@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -135,6 +136,7 @@ public class TypeEnter implements Completer {
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
+        Source source = Source.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
         allowDeprecationOnImport = source.allowDeprecationOnImport();
     }
@@ -164,7 +166,7 @@ public class TypeEnter implements Completer {
                 Env<AttrContext> topEnv = enter.topLevelEnv(tree);
                 finishImports(tree, () -> { completeClass.resolveImports(tree, topEnv); });
             }
-       }
+        }
     }
 
 /* ********************************************************************
@@ -184,7 +186,7 @@ public class TypeEnter implements Completer {
         }
 
         try {
-            annotate.enterStart();
+            annotate.blockAnnotations();
             sym.flags_field |= UNATTRIBUTED;
 
             List<Env<AttrContext>> queue;
@@ -206,7 +208,7 @@ public class TypeEnter implements Completer {
                 }
             }
         } finally {
-            annotate.enterDone();
+            annotate.unblockAnnotations();
         }
     }
 
@@ -780,9 +782,9 @@ public class TypeEnter implements Completer {
             Env<AttrContext> baseEnv = baseEnv(tree, env);
 
             if (tree.extending != null)
-                annotate.annotateTypeLater(tree.extending, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tree.extending, baseEnv, sym, tree.pos());
             for (JCExpression impl : tree.implementing)
-                annotate.annotateTypeLater(impl, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(impl, baseEnv, sym, tree.pos());
             annotate.flush();
 
             attribSuperTypes(env, baseEnv);
@@ -800,7 +802,7 @@ public class TypeEnter implements Completer {
 
             attr.attribTypeVariables(tree.typarams, baseEnv);
             for (JCTypeParameter tp : tree.typarams)
-                annotate.annotateTypeLater(tp, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tp, baseEnv, sym, tree.pos());
 
             // check that no package exists with same fully qualified name,
             // but admit classes in the unnamed package which have the same
@@ -899,6 +901,11 @@ public class TypeEnter implements Completer {
                 addEnumMembers(tree, env);
             }
             memberEnter.memberEnter(tree.defs, env);
+
+            if (tree.sym.isAnnotationType()) {
+                Assert.checkNull(tree.sym.completer);
+                tree.sym.setAnnotationTypeMetadata(new AnnotationTypeMetadata(tree.sym, annotate.annotationTypeSourceCompleter()));
+            }
         }
 
         /** Add the implicit members for an enum type

@@ -68,6 +68,11 @@ public class AttrContext {
      */
     boolean isAnonymousDiamond = false;
 
+    /**
+     *  Is this an attribution environment for an instance creation expression?
+     */
+    boolean isNewClass = false;
+
     /** Are arguments to current function applications boxed into an array for varargs?
      */
     Resolve.MethodResolutionPhase pendingResolutionPhase = null;
@@ -106,6 +111,7 @@ public class AttrContext {
         info.isSerializable = isSerializable;
         info.isSpeculative = isSpeculative;
         info.isAnonymousDiamond = isAnonymousDiamond;
+        info.isNewClass = isNewClass;
         return info;
     }
 
