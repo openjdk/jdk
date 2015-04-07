@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.io.File;
-import java.io.IOException;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -130,8 +129,6 @@ public final class JstatdTest {
     private OutputAnalyzer runJps() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jps");
         launcher.addVMArg("-XX:+UsePerfData");
-        // Run jps with -v flag to obtain -Dparent.pid.<pid>
-        launcher.addToolArg("-v");
         launcher.addToolArg(getDestination());
 
         String[] cmd = launcher.getCommand();
@@ -277,8 +274,6 @@ public final class JstatdTest {
         assertTrue(policy.exists() && policy.isFile(),
                 "Security policy " + policy.getAbsolutePath() + " does not exist or not a file");
         launcher.addVMArg("-Djava.security.policy=" + policy.getAbsolutePath());
-        // -Dparent.pid.<pid> will help to identify jstad process started by this test
-        launcher.addVMArg("-Dparent.pid." + ProcessTools.getProcessId());
         if (port != null) {
             launcher.addToolArg("-p");
             launcher.addToolArg(port);
@@ -295,7 +290,7 @@ public final class JstatdTest {
 
     private ProcessThread tryToSetupJstatdProcess() throws Throwable {
         ProcessThread jstatdThread = new ProcessThread("Jstatd-Thread",
-                getJstatdCmd());
+                JstatdTest::isJstadReady, getJstatdCmd());
         try {
             jstatdThread.start();
             // Make sure jstatd is up and running
@@ -313,6 +308,10 @@ public final class JstatdTest {
         }
 
         return jstatdThread;
+    }
+
+    private static boolean isJstadReady(String line) {
+        return line.startsWith("jstatd started (bound to ");
     }
 
     public void doTest() throws Throwable {
