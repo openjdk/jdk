@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,17 @@ public class EtchedBorder extends AbstractBorder
     /** Lowered etched type. */
     public static final int LOWERED = 1;
 
+    /**
+     * The type of etch to be drawn by the border.
+     */
     protected int etchType;
+    /**
+     * The color to use for the etched highlight.
+     */
     protected Color highlight;
+    /**
+     * The color to use for the etched shadow.
+     */
     protected Color shadow;
 
     /**
