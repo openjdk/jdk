@@ -32,7 +32,7 @@
 
 int VM_Version::_features = VM_Version::unknown_m;
 const char* VM_Version::_features_str = "";
-unsigned int VM_Version::_L2_cache_line_size = 0;
+unsigned int VM_Version::_L2_data_cache_line_size = 0;
 
 void VM_Version::initialize() {
   _features = determine_features();
@@ -366,7 +366,7 @@ void VM_Version::initialize() {
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
-    tty->print_cr("L2 cache line size: %u", L2_cache_line_size());
+    tty->print_cr("L2 data cache line size: %u", L2_data_cache_line_size());
     tty->print("Allocation");
     if (AllocatePrefetchStyle <= 0) {
       tty->print_cr(": no prefetching");
