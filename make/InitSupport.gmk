@@ -32,13 +32,6 @@
 ifndef _INITSUPPORT_GMK
 _INITSUPPORT_GMK := 1
 
-# Setup information about available configurations, if any.
-build_dir=$(topdir)/build
-all_spec_files=$(wildcard $(build_dir)/*/spec.gmk)
-# Extract the configuration names from the path
-all_confs=$(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
-any_spec_file=$(firstword $(all_spec_files))
-
 ifeq ($(HAS_SPEC),)
   ##############################################################################
   # Helper functions for the initial part of Init.gmk, before the spec file is
@@ -62,17 +55,24 @@ ifeq ($(HAS_SPEC),)
   # line, but in reverse order to what the user entered.
   COMMAND_LINE_VARIABLES := $(subst \#,\ , $(call reverse, $(subst \ ,\#,$(MAKEOVERRIDES))))
 
-  # A list like FOO="val1" BAR="val2" containing all user-supplied make variables
-  # that we should propagate.
+  # A list like FOO="val1" BAR="val2" containing all user-supplied make
+  # variables that we should propagate.
   USER_MAKE_VARS := $(filter-out $(addsuffix =%, $(INIT_CONTROL_VARIABLES)), \
       $(MAKEOVERRIDES))
+
+  # Setup information about available configurations, if any.
+  build_dir=$(topdir)/build
+  all_spec_files=$(wildcard $(build_dir)/*/spec.gmk)
+  # Extract the configuration names from the path
+  all_confs=$(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
 
   # Check for unknown command-line variables
   define CheckControlVariables
     command_line_variables := $$(strip $$(foreach var, \
         $$(subst \ ,_,$$(MAKEOVERRIDES)), \
         $$(firstword $$(subst =, , $$(var)))))
-    unknown_command_line_variables := $$(strip $$(filter-out $$(MAKE_CONTROL_VARIABLES), $$(command_line_variables)))
+    unknown_command_line_variables := $$(strip \
+        $$(filter-out $$(MAKE_CONTROL_VARIABLES), $$(command_line_variables)))
     ifneq ($$(unknown_command_line_variables), )
       $$(info Note: Command line contains non-control variables:)
       $$(foreach var, $$(unknown_command_line_variables), $$(info * $$(var)=$$($$(var))))
@@ -182,7 +182,7 @@ ifeq ($(HAS_SPEC),)
       override SPEC :=
     else
       # Use spec.gmk files in the build output directory
-      ifeq ($$(any_spec_file),)
+      ifeq ($$(all_spec_files),)
         $$(info Error: No configurations found for $$(topdir).)
         $$(info Please run 'bash configure' to create a configuration.)
         $$(info )
@@ -196,7 +196,8 @@ ifeq ($(HAS_SPEC),)
           matching_confs := $$(strip $$(all_confs))
         else
           # Otherwise select those that contain the given CONF string
-          matching_confs := $$(strip $$(foreach var, $$(all_confs), $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+          matching_confs := $$(strip $$(foreach var, $$(all_confs), \
+              $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
         endif
         ifeq ($$(matching_confs),)
           $$(info Error: No configurations found matching CONF=$$(CONF).)
@@ -231,6 +232,37 @@ ifeq ($(HAS_SPEC),)
     endif
   endef
 
+  # Extract main targets from Main.gmk using the spec provided in $2.
+  #
+  # Param 1: FORCE = force generation of main-targets.gmk or LAZY = do not force.
+  # Param 2: The SPEC file to use.
+  define DefineMainTargets
+
+    # We will start by making sure the main-targets.gmk file is removed, if
+    # make has not been restarted. By the -include, we will trigger the
+    # rule for generating the file (which is never there since we removed it),
+    # thus generating it fresh, and make will restart, incrementing the restart
+    # count.
+    main_targets_file := $$(dir $(strip $2))make-support/main-targets.gmk
+
+    ifeq ($$(MAKE_RESTARTS),)
+      # Only do this if make has not been restarted, and if we do not force it.
+      ifeq ($(strip $1), FORCE)
+        $$(shell rm -f $$(main_targets_file))
+      endif
+    endif
+
+    $$(main_targets_file):
+	@( cd $$(topdir) && \
+	    $$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(topdir)/make/Main.gmk \
+	    -I $$(topdir)/make/common SPEC=$(strip $2) NO_RECIPES=true \
+	    LOG_LEVEL=$$(LOG_LEVEL) \
+	    create-main-targets-include )
+
+    # Now include main-targets.gmk. This will define ALL_MAIN_TARGETS.
+    -include $$(main_targets_file)
+  endef
+
   define PrintConfCheckFailed
 	@echo ' '
 	@echo "Please rerun configure! Easiest way to do this is by running"
@@ -242,10 +274,9 @@ ifeq ($(HAS_SPEC),)
 else # $(HAS_SPEC)=true
   ##############################################################################
   # Helper functions for the 'main' target. These functions assume a single,
-  # proper and existing SPEC is provided, and will load it.
+  # proper and existing SPEC is included.
   ##############################################################################
 
-  include $(SPEC)
   include $(SRC_ROOT)/make/common/MakeBase.gmk
 
   # Define basic logging setup
@@ -263,11 +294,11 @@ else # $(HAS_SPEC)=true
 
   # Sanity check the spec file, so it matches this source code
   define CheckSpecSanity
-    ifneq ($$(topdir), $$(TOPDIR))
-      ifneq ($$(topdir), $$(ORIGINAL_TOPDIR))
-        ifneq ($$(topdir), $$(CANONICAL_TOPDIR))
+    ifneq ($$(ACTUAL_TOPDIR), $$(TOPDIR))
+      ifneq ($$(ACTUAL_TOPDIR), $$(ORIGINAL_TOPDIR))
+        ifneq ($$(ACTUAL_TOPDIR), $$(CANONICAL_TOPDIR))
           $$(info Error: SPEC mismatch! Current working directory)
-          $$(info $$(topdir))
+          $$(info $$(ACTUAL_TOPDIR))
           $$(info does not match either TOPDIR, ORIGINAL_TOPDIR or CANONICAL_TOPDIR)
           $$(info $$(TOPDIR))
           $$(info $$(ORIGINAL_TOPDIR))
