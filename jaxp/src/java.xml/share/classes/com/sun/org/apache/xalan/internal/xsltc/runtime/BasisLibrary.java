@@ -270,7 +270,7 @@ public final class BasisLibrary {
         if (Double.isNaN(start))
             return(EMPTYSTRING);
 
-        final int strlen = value.length();
+        final int strlen = getStringLength(value);
         int istart = (int)Math.round(start) - 1;
 
         if (istart > strlen)
@@ -278,6 +278,7 @@ public final class BasisLibrary {
         if (istart < 1)
             istart = 0;
         try {
+            istart = value.offsetByCodePoints(0, istart);
             return value.substring(istart);
         } catch (IndexOutOfBoundsException e) {
             runTimeError(RUN_TIME_INTERNAL_ERR, "substring()");
@@ -297,24 +298,30 @@ public final class BasisLibrary {
             return(EMPTYSTRING);
 
         int istart = (int)Math.round(start) - 1;
+        int ilength = (int)Math.round(length);
         final int isum;
         if (Double.isInfinite(length))
             isum = Integer.MAX_VALUE;
         else
-            isum = istart + (int)Math.round(length);
+            isum = istart + ilength;
 
-        final int strlen = value.length();
+        final int strlen = getStringLength(value);
         if (isum < 0 || istart > strlen)
                 return(EMPTYSTRING);
 
-        if (istart < 0)
+        if (istart < 0) {
+            ilength += istart;
             istart = 0;
+        }
 
         try {
-            if (isum > strlen)
+            istart = value.offsetByCodePoints(0, istart);
+            if (isum > strlen) {
                 return value.substring(istart);
-            else
-                return value.substring(istart, isum);
+            } else {
+                int offset = value.offsetByCodePoints(istart, ilength);
+                return value.substring(istart, offset);
+            }
         } catch (IndexOutOfBoundsException e) {
             runTimeError(RUN_TIME_INTERNAL_ERR, "substring()");
             return null;
