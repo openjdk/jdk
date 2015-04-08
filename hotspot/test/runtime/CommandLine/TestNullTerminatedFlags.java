@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import com.oracle.java.testlibrary.*;
  * @bug 6522873
  * @summary Test that the VM don't allow random junk characters at the end of valid command line flags.
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run driver TestNullTerminatedFlags
  */
 public class TestNullTerminatedFlags {
