@@ -3150,7 +3150,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       uintx max_tenuring_thresh = 0;
       if(!parse_uintx(tail, &max_tenuring_thresh, 0)) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid MaxTenuringThreshold: %s\n", option->optionString);
+          "Improperly specified VM option 'MaxTenuringThreshold=%s'\n", tail);
+        return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, max_tenuring_thresh);
 
