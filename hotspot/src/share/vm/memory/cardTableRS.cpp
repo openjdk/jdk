@@ -180,6 +180,10 @@ bool ClearNoncleanCardWrapper::is_word_aligned(jbyte* entry) {
   return (((intptr_t)entry) & (BytesPerWord-1)) == 0;
 }
 
+// The regions are visited in *decreasing* address order.
+// This order aids with imprecise card marking, where a dirty
+// card may cause scanning, and summarization marking, of objects
+// that extend onto subsequent cards.
 void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
   assert(mr.word_size() > 0, "Error");
   assert(_ct->is_aligned(mr.start()), "mr.start() should be card aligned");
