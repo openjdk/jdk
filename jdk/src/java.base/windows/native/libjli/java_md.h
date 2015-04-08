@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #define MAXPATHLEN      MAX_PATH
 #define MAXNAMELEN      MAX_PATH
 
+#define JLONG_FORMAT_SPECIFIER "%I64d"
 
 /*
  * Support for doing cheap, accurate interval timing.
