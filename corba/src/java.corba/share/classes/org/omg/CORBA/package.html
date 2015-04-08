@@ -6,7 +6,7 @@
    <TITLE>package</TITLE>
 <!--
 /*
-* Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ a holder class.
 <TT>ORB</TT> Methods</H3>
 
 <P>Before an application can enter the CORBA environment, it must first: 
-<P>
 <UL>
 <LI>Be initialized into the ORB and possibly the object adapter (POA) environments.
 <LI>Get references to ORB object (for use in future ORB operations) 
@@ -81,7 +80,6 @@ and perhaps other objects (including the root POA or some Object Adapter objects
 </UL>
 <P>The following operations are provided to initialize applications and obtain
  the appropriate object references:
- <P>
  <UL>
  <LI>Operations providing access to the ORB, which are discussed in this
  section.
@@ -107,13 +105,13 @@ identifier for the ORB for which the object reference is required,
  that provide access to the ORB:
 <UL>
 <LI>
-<TT><bold>init</bold>()</TT> 
+<TT><b>init</b>()</TT>
 
 <LI>
-<TT><bold>init</bold>(String [] args, Properties props)</TT>
+<TT><b>init</b>(String [] args, Properties props)</TT>
 
 <LI>
-<TT><bold>init</bold>(Applet app, Properties props)</TT>
+<TT><b>init</b>(Applet app, Properties props)</TT>
 </UL>
 
 <P>Using the <tt>init()</tt> method without parameters initiates 
@@ -142,11 +140,11 @@ the ORB object interface, providing facilities to list and
 resolve initial object references.  These are:
 <UL>
 <LI>
-<TT><bold>resolve_initial_references</bold>(String name)</TT>
+<TT><b>resolve_initial_references</b>(String name)</TT>
 <LI>
-<TT><bold>list_initial_services</bold>()</TT>
+<TT><b>list_initial_services</b>()</TT>
 <LI>
-<TT><bold>register_initial_reference</bold>(String id, 
+<TT><b>register_initial_reference</b>(String id, 
 org.omg.CORBA.Object obj)</TT>
 </UL>
 
@@ -278,7 +276,6 @@ that can be modified.   To support portable stubs and skeletons, holder classes 
 
 
 <P>Each holder class has:
-<P>
 <UL>
 <LI>a constructor from an instance
 <LI>a default constructor
@@ -291,7 +288,6 @@ type's <tt>value</tt> field
 
 <P>The default constructor sets the value field to the default value for the 
 type as defined by the Java language: 
-<P>
 <UL>
 <LI><tt>false</tt> for boolean
 <LI><tt>0</tt> for numeric and char types
@@ -391,7 +387,6 @@ in the package <TT>org.omg.CORBA</TT> are:
 <h2>Helper Classes </h2>
 <P>Helper files supply several static methods needed to manipulate the type.
  These include:
- <P>
  <UL>
  <LI><tt>Any</tt> insert and extract operations for the type
  <LI>getting the repository id
@@ -455,14 +450,13 @@ both versions of the <code>narrow</code> method.
 <P>The <A HREF="{@docRoot}/../technotes/guides/idl/jidlExample.html"><em>Hello World</em></A> 
 tutorial uses a <tt>narrow</tt> method that looks 
 like this:
-<P>
 <PRE>
         // create and initialize the ORB
-	ORB orb = ORB.init(args, null);
+        ORB orb = ORB.init(args, null);
 
         // get the root naming context
         org.omg.CORBA.Object objRef = 
-	    orb.resolve_initial_references("NameService");
+            orb.resolve_initial_references("NameService");
         // Use NamingContextExt instead of NamingContext. This is 
         // part of latest Inter-Operable naming Service.  
         NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
@@ -554,7 +548,6 @@ abstract public class AccountHelper
 
 }
 </PRE>
-<P>
 
 <h3>Value Type Helper Classes</h3>
 A helper class for a value type includes different renderings of
@@ -844,7 +837,7 @@ implementation of an interface repository, the following IR classes and
 interfaces have been included for the purpose of creating typecodes (see
 create_value_tc, create_struct_tc, create_union_tc and create_exception_tc
 methods in interface org.omg.CORBA.ORB):
-<BR>&nbs
+<BR>&nbsp;
 <UL>
 <LI>
 IRObject
@@ -893,20 +886,19 @@ extensions and products.
 <P>Some of the API included in <TT>org.omg</TT> subpackages throw 
 <tt>NO_IMPLEMENT</tt> exceptions for various reasons.  Among these reasons
 are:
-<P>
-	<UL>
-	<LI>In some cases, for example <tt>LocalObject</tt>, the complete
-	implementation according to the specification indicates that 
-	these API should throw <tt>NO_IMPLEMENT</tt>.
-	<P>
-	<LI>In most cases, for example methods in <tt>ORB.java</tt>, 
-	methods that throw  
-	<tt>NO_IMPLEMENT</tt> are actually implemented in subclasses
-	elsewhere in the ORB code.
-	<P>
-	<LI>In some cases, for example <tt>_get_interface_def()</tt> 
-	and <tt>_get_interface</tt>, API are really not yet implemented.
-	</UL>
+    <UL>
+    <LI>In some cases, for example <tt>LocalObject</tt>, the complete
+    implementation according to the specification indicates that 
+    these API should throw <tt>NO_IMPLEMENT</tt>.
+
+    <LI>In most cases, for example methods in <tt>ORB.java</tt>, 
+    methods that throw  
+    <tt>NO_IMPLEMENT</tt> are actually implemented in subclasses
+    elsewhere in the ORB code.
+
+    <LI>In some cases, for example <tt>_get_interface_def()</tt> 
+    and <tt>_get_interface</tt>, API are really not yet implemented.
+    </UL>
 
 
 
