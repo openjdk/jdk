@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,14 +258,14 @@ module IOP {
      * <p>
      * The <code>TAG_ALTERNATE_IIOP_ADDRESS</code> component has an 
      * associated value of type:
-     * <code>
-     *   <pre>
+     * <pre>
+     *   <code>
      *     struct { 
      *         string HostID, 
      *         short Port 
-     *     }; 
-     *   </pre>
-     * </code>
+     *     };
+     *   </code>
+     * </pre>
      * encoded as a CDR encapsulation. 
      * <p>
      * Zero or more instances of the <code>TAG_ALTERNATE_IIOP_ADDRESS</code> 
@@ -601,7 +601,7 @@ module IOP {
 
     /**
      * Create a <code>Codec</code> of the given encoding.
-     * <p>
+     *
      * @param enc The encoding for which to create a <code>Codec</code>.
      * @return A <code>Codec</code> obtained with the given encoding.
      * @exception UnknownEncoding thrown if this factory cannot create a 
