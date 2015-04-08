@@ -259,14 +259,35 @@ inline void CMTask::push(oop obj) {
              ++_local_pushes );
 }
 
-// This determines whether the method below will check both the local
-// and global fingers when determining whether to push on the stack a
-// gray object (value 1) or whether it will only check the global one
-// (value 0). The tradeoffs are that the former will be a bit more
-// accurate and possibly push less on the stack, but it might also be
-// a little bit slower.
+inline bool CMTask::is_below_finger(HeapWord* objAddr,
+                                    HeapWord* global_finger) const {
+  // If objAddr is above the global finger, then the mark bitmap scan
+  // will find it later, and no push is needed.  Similarly, if we have
+  // a current region and objAddr is between the local finger and the
+  // end of the current region, then no push is needed.  The tradeoff
+  // of checking both vs only checking the global finger is that the
+  // local check will be more accurate and so result in fewer pushes,
+  // but may also be a little slower.
+  if (_finger != NULL) {
+    // We have a current region.
 
-#define _CHECK_BOTH_FINGERS_      1
+    // Finger and region values are all NULL or all non-NULL.  We
+    // use _finger to check since we immediately use its value.
+    assert(_curr_region != NULL, "invariant");
+    assert(_region_limit != NULL, "invariant");
+    assert(_region_limit <= global_finger, "invariant");
+
+    // True if objAddr is less than the local finger, or is between
+    // the region limit and the global finger.
+    if (objAddr < _finger) {
+      return true;
+    } else if (objAddr < _region_limit) {
+      return false;
+    } // Else check global finger.
+  }
+  // Check global finger.
+  return objAddr < global_finger;
+}
 
 inline void CMTask::deal_with_reference(oop obj) {
   if (_cm->verbose_high()) {
@@ -297,50 +318,29 @@ inline void CMTask::deal_with_reference(oop obj) {
           // CAS done in CMBitMap::parMark() call in the routine above.
           HeapWord* global_finger = _cm->finger();
 
-#if _CHECK_BOTH_FINGERS_
-          // we will check both the local and global fingers
-
-          if (_finger != NULL && objAddr < _finger) {
+          // We only need to push a newly grey object on the mark
+          // stack if it is in a section of memory the mark bitmap
+          // scan has already examined.  Mark bitmap scanning
+          // maintains progress "fingers" for determining that.
+          //
+          // Notice that the global finger might be moving forward
+          // concurrently. This is not a problem. In the worst case, we
+          // mark the object while it is above the global finger and, by
+          // the time we read the global finger, it has moved forward
+          // past this object. In this case, the object will probably
+          // be visited when a task is scanning the region and will also
+          // be pushed on the stack. So, some duplicate work, but no
+          // correctness problems.
+          if (is_below_finger(objAddr, global_finger)) {
             if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%u] below the local finger ("PTR_FORMAT"), "
-                                     "pushing it", _worker_id, p2i(_finger));
-            }
-            push(obj);
-          } else if (_curr_region != NULL && objAddr < _region_limit) {
-            // do nothing
-          } else if (objAddr < global_finger) {
-            // Notice that the global finger might be moving forward
-            // concurrently. This is not a problem. In the worst case, we
-            // mark the object while it is above the global finger and, by
-            // the time we read the global finger, it has moved forward
-            // passed this object. In this case, the object will probably
-            // be visited when a task is scanning the region and will also
-            // be pushed on the stack. So, some duplicate work, but no
-            // correctness problems.
-
-            if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%u] below the global finger "
-                                     "("PTR_FORMAT"), pushing it",
-                                     _worker_id, p2i(global_finger));
-            }
-            push(obj);
-          } else {
-            // do nothing
-          }
-#else // _CHECK_BOTH_FINGERS_
-          // we will only check the global finger
-
-          if (objAddr < global_finger) {
-            // see long comment above
-
-            if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%u] below the global finger "
-                                     "("PTR_FORMAT"), pushing it",
-                                     _worker_id, p2i(global_finger));
+              gclog_or_tty->print_cr("[%u] below a finger (local: " PTR_FORMAT
+                                     ", global: " PTR_FORMAT ") pushing "
+                                     PTR_FORMAT " on mark stack",
+                                     _worker_id, p2i(_finger),
+                                     p2i(global_finger), p2i(objAddr));
             }
             push(obj);
           }
-#endif // _CHECK_BOTH_FINGERS_
         }
       }
     }

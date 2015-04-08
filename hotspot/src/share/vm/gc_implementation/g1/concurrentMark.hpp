@@ -1100,6 +1100,10 @@ private:
   void regular_clock_call();
   bool concurrent() { return _concurrent; }
 
+  // Test whether objAddr might have already been passed over by the
+  // mark bitmap scan, and so needs to be pushed onto the mark stack.
+  bool is_below_finger(HeapWord* objAddr, HeapWord* global_finger) const;
+
 public:
   // It resets the task; it should be called right at the beginning of
   // a marking phase.
