@@ -3992,14 +3992,13 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     // the_class doesn't have a cache yet so copy it
     the_class->set_cached_class_file(scratch_class->get_cached_class_file());
   }
-#ifndef PRODUCT
-  else {
-    assert(the_class->get_cached_class_file_bytes() ==
-      scratch_class->get_cached_class_file_bytes(), "cache ptrs must match");
-    assert(the_class->get_cached_class_file_len() ==
-      scratch_class->get_cached_class_file_len(), "cache lens must match");
+  else if (scratch_class->get_cached_class_file_bytes() !=
+           the_class->get_cached_class_file_bytes()) {
+    // The same class can be present twice in the scratch classes list or there
+    // are multiple concurrent RetransformClasses calls on different threads.
+    // In such cases we have to deallocate scratch_class cached_class_file_bytes.
+    os::free(scratch_class->get_cached_class_file_bytes());
   }
-#endif
 
   // NULL out in scratch class to not delete twice.  The class to be redefined
   // always owns these bytes.
