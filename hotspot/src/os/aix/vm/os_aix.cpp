@@ -2635,7 +2635,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   if (!os::Aix::xpg_sus_mode()) {
 
-    if (StubRoutines::SafeFetch32_stub()) {
+    if (CanUseSafeFetch32()) {
 
       const bool read_protected =
         (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
