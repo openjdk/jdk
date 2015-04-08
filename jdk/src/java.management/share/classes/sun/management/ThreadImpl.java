@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,10 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
             throw new IllegalArgumentException(
                 "Invalid maxDepth parameter: " + maxDepth);
         }
+
+        // ids has been verified to be non-null
+        // an empty array of ids should return an empty array of ThreadInfos
+        if (ids.length == 0) return new ThreadInfo[0];
 
         Util.checkMonitorAccess();
 
@@ -436,6 +440,10 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
                                       boolean lockedMonitors,
                                       boolean lockedSynchronizers) {
         verifyThreadIds(ids);
+        // ids has been verified to be non-null
+        // an empty array of ids should return an empty array of ThreadInfos
+        if (ids.length == 0) return new ThreadInfo[0];
+
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
         return dumpThreads0(ids, lockedMonitors, lockedSynchronizers);
     }
