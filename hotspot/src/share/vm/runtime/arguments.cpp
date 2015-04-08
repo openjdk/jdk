@@ -3714,8 +3714,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
-#if INCLUDE_NMT
     if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
+#if INCLUDE_NMT
       // The launcher did not setup nmt environment variable properly.
       if (!MemTracker::check_launcher_nmt_support(tail)) {
         warning("Native Memory Tracking did not setup properly, using wrong launcher?");
@@ -3731,9 +3731,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
         vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
       }
       continue;
-    }
+#else
+      jio_fprintf(defaultStream::error_stream(),
+        "Native Memory Tracking is not supported in this VM\n");
+      return JNI_ERR;
 #endif
-
+    }
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments")) {
