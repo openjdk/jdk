@@ -86,7 +86,19 @@ public class NarrowNamesTest {
                 "\u6728",
                 "\u91d1",
                 "\u571f");
-        testMap(THTH, MONTH, NARROW_FORMAT); // expect null
+        testMap(THTH, MONTH, NARROW_FORMAT,
+                "\u0e21.\u0e04.",
+                "\u0e01.\u0e1e.",
+                "\u0e21\u0e35.\u0e04.",
+                "\u0e40\u0e21.\u0e22.",
+                "\u0e1e.\u0e04.",
+                "\u0e21\u0e34.\u0e22",  // no last dot
+                "\u0e01.\u0e04.",
+                "\u0e2a.\u0e04.",
+                "\u0e01.\u0e22.",
+                "\u0e15.\u0e04.",
+                "\u0e1e.\u0e22.",
+                "\u0e18.\u0e04.");
         testMap(THTH, MONTH, NARROW_STANDALONE,
                 "\u0e21.\u0e04.",
                 "\u0e01.\u0e1e.",
@@ -146,7 +158,7 @@ public class NarrowNamesTest {
         Calendar cal = Calendar.getInstance(locale);
         Map<String, Integer> got = cal.getDisplayNames(field, style, locale);
         if (!(expectedMap == null && got == null)
-            && !expectedMap.equals(got)) {
+            && !(expectedMap != null && expectedMap.equals(got))) {
             System.err.printf("testMap: locale=%s, field=%d, style=%d, expected=%s, got=%s%n",
                               locale, field, style, expectedMap, got);
             errors++;

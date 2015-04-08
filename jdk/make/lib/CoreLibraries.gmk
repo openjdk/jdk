@@ -269,7 +269,7 @@ endif
 LIBJLI_EXCLUDE_FILES += $(notdir $(LIBJLI_EXCLUDE_ERGO))
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  LIBJLI_EXCLUDE_FILES += java_md_solinux.c ergo.c
+  LIBJLI_EXCLUDE_FILES += java_md_solinux.c ergo.c ergo_i586.c
 
   BUILD_LIBJLI_java_md_macosx.c_CFLAGS := -x objective-c
   BUILD_LIBJLI_STATIC_java_md_macosx.c_CFLAGS := -x objective-c
@@ -317,12 +317,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS), \
-    DISABLED_WARNINGS_gcc := pointer-to-int-cast sign-compare format-nonliteral \
-        parentheses, \
-    DISABLED_WARNINGS_clang := implicit-function-declaration parentheses \
-        int-conversion, \
-    DISABLED_WARNINGS_solstudio := E_ASM_DISABLES_OPTIMIZATION E_NEWLINE_NOT_LAST, \
-    DISABLED_WARNINGS_microsoft := 4244 4047 4267, \
+    DISABLED_WARNINGS_solstudio := E_ASM_DISABLES_OPTIMIZATION, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjli/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -371,7 +366,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS), \
-      DISABLED_WARNINGS_microsoft := 4244 4047 4267, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
@@ -392,8 +386,6 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
-      DISABLED_WARNINGS_clang := implicit-function-declaration parentheses \
-          int-conversion, \
       LDFLAGS := -nostdlib -r, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))

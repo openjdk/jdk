@@ -109,6 +109,8 @@
 /*
  * Macros for getting end of central directory header (END) fields
  */
+#define ENDNMD(b) SH(b, 4)          /* number of this disk */
+#define ENDDSK(b) SH(b, 6)          /* disk number of start */
 #define ENDSUB(b) SH(b, 8)          /* number of entries on this disk */
 #define ENDTOT(b) SH(b, 10)         /* total number of entries */
 #define ENDSIZ(b) LG(b, 12)         /* central directory size */
