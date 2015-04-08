@@ -40,6 +40,7 @@ import com.sun.source.tree.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.comp.*;
+import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.main.*;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.parser.Parser;

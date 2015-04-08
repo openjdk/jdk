@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.javac.util;
+package com.sun.tools.javac.file;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,8 +60,12 @@ import com.sun.tools.javac.file.Locations;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
 
 /**
  * Utility methods for building a filemanager.

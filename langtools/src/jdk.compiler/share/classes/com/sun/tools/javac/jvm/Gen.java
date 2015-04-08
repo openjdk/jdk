@@ -1860,6 +1860,13 @@ public class Gen extends JCTree.Visitor {
     public void visitAssign(JCAssign tree) {
         Item l = genExpr(tree.lhs, tree.lhs.type);
         genExpr(tree.rhs, tree.lhs.type).load();
+        if (tree.rhs.type.hasTag(BOT)) {
+            /* This is just a case of widening reference conversion that per 5.1.5 simply calls
+               for "regarding a reference as having some other type in a manner that can be proved
+               correct at compile time."
+            */
+            code.state.forceStackTop(tree.lhs.type);
+        }
         result = items.makeAssignItem(l);
     }
 
@@ -2272,12 +2279,7 @@ public class Gen extends JCTree.Visitor {
     public void visitLiteral(JCLiteral tree) {
         if (tree.type.hasTag(BOT)) {
             code.emitop0(aconst_null);
-            if (types.dimensions(pt) > 1) {
-                code.emitop2(checkcast, makeRef(tree.pos(), pt));
-                result = items.makeStackItem(pt);
-            } else {
-                result = items.makeStackItem(tree.type);
-            }
+            result = items.makeStackItem(tree.type);
         }
         else
             result = items.makeImmediateItem(tree.type, tree.value);

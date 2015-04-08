@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8010303
+ * @bug 8010303 8062373
  * @summary Graph inference: missing incorporation step causes spurious inference error
- * @compile TargetType68.java
+ * @compile/fail/ref=TargetType68.out -XDrawDiagnostics TargetType68.java
  */
 import java.util.*;
 
@@ -58,6 +58,6 @@ class TargetType68 {
             List<XYChart.Data<Number, Number>> data_2 = new ArrayList<>();
             numberChart.getData().setAll(
                     Arrays.asList(new XYChart.Series<>("Data", FXCollections.observableList(data_1)),
-                    new XYChart.Series<>("Data", FXCollections.observableList(data_2))));
+                    new XYChart.Series<>("Data", FXCollections.observableList(data_2)) {}));
     }
 }

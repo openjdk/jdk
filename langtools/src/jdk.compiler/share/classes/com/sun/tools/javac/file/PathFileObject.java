@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.javac.nio;
+package com.sun.tools.javac.file;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,11 +40,11 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Objects;
+
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
