@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ public class Analyzer {
     final DeferredAttr deferredAttr;
     final TreeMaker make;
     final Names names;
+    private final boolean allowDiamondWithAnonymousClassCreation;
 
     final EnumSet<AnalyzerMode> analyzerModes;
 
@@ -112,6 +113,7 @@ public class Analyzer {
         String findOpt = options.get("find");
         //parse modes
         Source source = Source.instance(context);
+        allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
         analyzerModes = AnalyzerMode.getAnalyzerModes(findOpt, source);
     }
 
@@ -210,7 +212,7 @@ public class Analyzer {
         boolean match(JCNewClass tree) {
             return tree.clazz.hasTag(TYPEAPPLY) &&
                     !TreeInfo.isDiamond(tree) &&
-                    tree.def == null;
+                    (tree.def == null || allowDiamondWithAnonymousClassCreation);
         }
 
         @Override

@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620 7020044
+ * @bug 6939620 7020044 8062373
  *
  * @summary  Check that diamond works where LHS is supertype of RHS (1-ary constructor)
  * @author mcimadamore
@@ -15,4 +15,5 @@ class Neg07 {
    }
 
    SuperFoo<String> sf1 = new Foo<>("");
+   SuperFoo<String> sf2 = new Foo<>("") {};
 }
