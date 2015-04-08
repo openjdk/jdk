@@ -60,6 +60,7 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Setter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.GlobalConstants;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.JSType;
@@ -2201,6 +2202,17 @@ public final class Global extends ScriptObject implements Scope {
         }
 
         return invocation;
+    }
+
+    @Override
+    protected FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
+        if (lexicalScope != null && start != this && start.isScope()) {
+            final FindProperty find = lexicalScope.findProperty(key, false);
+            if (find != null) {
+                return find;
+            }
+        }
+        return super.findProperty(key, deep, start);
     }
 
     @Override
