@@ -25,6 +25,8 @@
  * @test
  * @summary Verifies behaviour of Unsafe.allocateMemory
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m AllocateMemory
  */
 

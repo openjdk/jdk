@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/parNew/parOopClosures.inline.hpp"
@@ -325,7 +326,7 @@ public:
 private:
   ParallelTaskTerminator& _term;
   ParNewGeneration&       _gen;
-  Generation&             _next_gen;
+  Generation&             _old_gen;
  public:
   bool is_valid(int id) const { return id < length(); }
   ParallelTaskTerminator* terminator() { return &_term; }
@@ -338,7 +339,7 @@ ParScanThreadStateSet::ParScanThreadStateSet(
   Stack<oop, mtGC>* overflow_stacks,
   size_t desired_plab_sz, ParallelTaskTerminator& term)
   : ResourceArray(sizeof(ParScanThreadState), num_threads),
-    _gen(gen), _next_gen(old_gen), _term(term)
+    _gen(gen), _old_gen(old_gen), _term(term)
 {
   assert(num_threads > 0, "sanity check!");
   assert(ParGCUseLocalOverflow == (overflow_stacks != NULL),
@@ -471,8 +472,8 @@ void ParScanThreadStateSet::flush()
     _gen.age_table()->merge(local_table);
 
     // Inform old gen that we're done.
-    _next_gen.par_promote_alloc_done(i);
-    _next_gen.par_oop_since_save_marks_iterate_done(i);
+    _old_gen.par_promote_alloc_done(i);
+    _old_gen.par_oop_since_save_marks_iterate_done(i);
   }
 
   if (UseConcMarkSweepGC) {
@@ -574,10 +575,10 @@ void ParEvacuateFollowersClosure::do_void() {
   par_scan_state()->end_term_time();
 }
 
-ParNewGenTask::ParNewGenTask(ParNewGeneration* gen, Generation* next_gen,
-                HeapWord* young_old_boundary, ParScanThreadStateSet* state_set) :
+ParNewGenTask::ParNewGenTask(ParNewGeneration* gen, Generation* old_gen,
+                             HeapWord* young_old_boundary, ParScanThreadStateSet* state_set) :
     AbstractGangTask("ParNewGeneration collection"),
-    _gen(gen), _next_gen(next_gen),
+    _gen(gen), _old_gen(old_gen),
     _young_old_boundary(young_old_boundary),
     _state_set(state_set)
   {}
@@ -601,8 +602,6 @@ void ParNewGenTask::work(uint worker_id) {
   // We would need multiple old-gen queues otherwise.
   assert(gch->n_gens() == 2, "Par young collection currently only works with one older gen.");
 
-  Generation* old_gen = gch->next_gen(_gen);
-
   ParScanThreadState& par_scan_state = _state_set->thread_state(worker_id);
   assert(_state_set->is_valid(worker_id), "Should not have been called");
 
@@ -619,7 +618,7 @@ void ParNewGenTask::work(uint worker_id) {
                          true,  // Process younger gens, if any,
                                 // as strong roots.
                          false, // no scope; this is parallel code
-                         SharedHeap::SO_ScavengeCodeCache,
+                         GenCollectedHeap::SO_ScavengeCodeCache,
                          GenCollectedHeap::StrongAndWeakRoots,
                          &par_scan_state.to_space_root_closure(),
                          &par_scan_state.older_gen_closure(),
@@ -763,8 +762,9 @@ void ScanClosureWithParBarrier::do_oop(narrowOop* p) { ScanClosureWithParBarrier
 class ParNewRefProcTaskProxy: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
 public:
-  ParNewRefProcTaskProxy(ProcessTask& task, ParNewGeneration& gen,
-                         Generation& next_gen,
+  ParNewRefProcTaskProxy(ProcessTask& task,
+                         ParNewGeneration& gen,
+                         Generation& old_gen,
                          HeapWord* young_old_boundary,
                          ParScanThreadStateSet& state_set);
 
@@ -776,20 +776,20 @@ private:
 private:
   ParNewGeneration&      _gen;
   ProcessTask&           _task;
-  Generation&            _next_gen;
+  Generation&            _old_gen;
   HeapWord*              _young_old_boundary;
   ParScanThreadStateSet& _state_set;
 };
 
-ParNewRefProcTaskProxy::ParNewRefProcTaskProxy(
-    ProcessTask& task, ParNewGeneration& gen,
-    Generation& next_gen,
-    HeapWord* young_old_boundary,
-    ParScanThreadStateSet& state_set)
+ParNewRefProcTaskProxy::ParNewRefProcTaskProxy(ProcessTask& task,
+                                               ParNewGeneration& gen,
+                                               Generation& old_gen,
+                                               HeapWord* young_old_boundary,
+                                               ParScanThreadStateSet& state_set)
   : AbstractGangTask("ParNewGeneration parallel reference processing"),
     _gen(gen),
     _task(task),
-    _next_gen(next_gen),
+    _old_gen(old_gen),
     _young_old_boundary(young_old_boundary),
     _state_set(state_set)
 {
@@ -893,7 +893,7 @@ void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThr
   from()->set_next_compaction_space(to());
   gch->set_incremental_collection_failed();
   // Inform the next generation that a promotion failure occurred.
-  _next_gen->promotion_failure_occurred();
+  _old_gen->promotion_failure_occurred();
 
   // Trace promotion failure in the parallel GC threads
   thread_state_set.trace_promotion_failed(gc_tracer());
@@ -927,7 +927,7 @@ void ParNewGeneration::collect(bool   full,
   workers->set_active_workers(active_workers);
   assert(gch->n_gens() == 2,
          "Par collection currently only works with single older gen.");
-  _next_gen = gch->next_gen(this);
+  _old_gen = gch->old_gen();
 
   // If the next generation is too full to accommodate worst-case promotion
   // from this generation, pass on collection; let the next generation
@@ -952,8 +952,6 @@ void ParNewGeneration::collect(bool   full,
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
-  SpecializationStats::clear();
-
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
 
@@ -968,10 +966,10 @@ void ParNewGeneration::collect(bool   full,
   // because only those workers go through the termination protocol.
   ParallelTaskTerminator _term(n_workers, task_queues());
   ParScanThreadStateSet thread_state_set(workers->active_workers(),
-                                         *to(), *this, *_next_gen, *task_queues(),
+                                         *to(), *this, *_old_gen, *task_queues(),
                                          _overflow_stacks, desired_plab_sz(), _term);
 
-  ParNewGenTask tsk(this, _next_gen, reserved().end(), &thread_state_set);
+  ParNewGenTask tsk(this, _old_gen, reserved().end(), &thread_state_set);
   gch->set_par_threads(n_workers);
   gch->rem_set()->prepare_for_younger_refs_iterate(true);
   // It turns out that even when we're using 1 thread, doing the work in a
@@ -1073,8 +1071,6 @@ void ParNewGeneration::collect(bool   full,
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   update_time_of_last_gc(now);
 
-  SpecializationStats::print();
-
   rp->set_enqueuing_is_done(true);
   if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
@@ -1126,14 +1122,6 @@ oop ParNewGeneration::real_forwardee_slow(oop obj) {
   }
   return forward_ptr;
 }
-
-#ifdef ASSERT
-bool ParNewGeneration::is_legal_forward_ptr(oop p) {
-  return
-    (p == ClaimedForwardPtr)
-    || Universe::heap()->is_in_reserved(p);
-}
-#endif
 
 void ParNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
   if (m->must_be_preserved_for_promotion_failure(obj)) {
@@ -1191,8 +1179,8 @@ oop ParNewGeneration::copy_to_survivor_space(
     }
 
     if (!_promotion_failed) {
-      new_obj = _next_gen->par_promote(par_scan_state->thread_num(),
-                                        old, m, sz);
+      new_obj = _old_gen->par_promote(par_scan_state->thread_num(),
+                                      old, m, sz);
     }
 
     if (new_obj == NULL) {
@@ -1209,6 +1197,7 @@ oop ParNewGeneration::copy_to_survivor_space(
   } else {
     // Is in to-space; do copying ourselves.
     Copy::aligned_disjoint_words((HeapWord*)old, (HeapWord*)new_obj, sz);
+    assert(Universe::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
     forward_ptr = old->forward_to_atomic(new_obj);
     // Restore the mark word copied above.
     new_obj->set_mark(m);
