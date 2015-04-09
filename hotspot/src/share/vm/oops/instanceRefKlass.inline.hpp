@@ -90,10 +90,10 @@ class AlwaysContains {
  public:
   template <typename T> bool operator()(T* p) const { return true; }
 };
-static AlwaysContains always_contains;
 
 template <bool nv, class OopClosureType>
 void InstanceRefKlass::oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure) {
+  AlwaysContains always_contains;
   if (UseCompressedOops) {
     oop_oop_iterate_ref_processing_specialized<nv, narrowOop>(obj, closure, always_contains);
   } else {
