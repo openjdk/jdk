@@ -113,9 +113,13 @@ public class MouseInfo {
     /**
      * Returns the number of buttons on the mouse.
      * On systems without a mouse, returns <code>-1</code>.
+     * The number of buttons is obtained from the AWT Toolkit
+     * by requesting the {@code "awt.mouse.numButtons"} desktop property
+     * which is set by the underlying native platform.
      *
      * @exception HeadlessException if GraphicsEnvironment.isHeadless() returns true
      * @return number of buttons on the mouse
+     * @see Toolkit#getDesktopProperty
      * @since 1.5
      */
     public static int getNumberOfButtons() throws HeadlessException {
