@@ -1805,8 +1805,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
 G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
                                                                  size_t size,
                                                                  size_t translation_factor) {
+  size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
   // Allocate a new reserved space, preferring to use large pages.
-  ReservedSpace rs(size, true);
+  ReservedSpace rs(size, preferred_page_size);
   G1RegionToSpaceMapper* result  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,
@@ -1816,7 +1817,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
                                          mtGC);
   if (TracePageSizes) {
     gclog_or_tty->print_cr("G1 '%s': pg_sz=" SIZE_FORMAT " base=" PTR_FORMAT " size=" SIZE_FORMAT " alignment=" SIZE_FORMAT " reqsize=" SIZE_FORMAT,
-                           description, rs.alignment(), p2i(rs.base()), rs.size(), rs.alignment(), size);
+                           description, preferred_page_size, p2i(rs.base()), rs.size(), rs.alignment(), size);
   }
   return result;
 }
