@@ -1728,7 +1728,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
-  SharedHeap(),
+  CollectedHeap(),
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
   _into_cset_dirty_card_queue_set(false),
@@ -1770,6 +1770,11 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
 
   _g1h = this;
 
+  _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
+                          /* are_GC_task_threads */true,
+                          /* are_ConcurrentGC_threads */false);
+  _workers->initialize_workers();
+
   _allocator = G1Allocator::create_allocator(_g1h);
   _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
 
@@ -1795,6 +1800,25 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   NOT_PRODUCT(reset_evacuation_should_fail();)
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
+}
+
+G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
+                                                                 size_t size,
+                                                                 size_t translation_factor) {
+  // Allocate a new reserved space, preferring to use large pages.
+  ReservedSpace rs(size, true);
+  G1RegionToSpaceMapper* result  =
+    G1RegionToSpaceMapper::create_mapper(rs,
+                                         size,
+                                         rs.alignment(),
+                                         HeapRegion::GrainBytes,
+                                         translation_factor,
+                                         mtGC);
+  if (TracePageSizes) {
+    gclog_or_tty->print_cr("G1 '%s': pg_sz=" SIZE_FORMAT " base=" PTR_FORMAT " size=" SIZE_FORMAT " alignment=" SIZE_FORMAT " reqsize=" SIZE_FORMAT,
+                           description, rs.alignment(), p2i(rs.base()), rs.size(), rs.alignment(), size);
+  }
+  return result;
 }
 
 jint G1CollectedHeap::initialize() {
@@ -1864,57 +1888,35 @@ jint G1CollectedHeap::initialize() {
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(g1_rs,
+                                         g1_rs.size(),
                                          UseLargePages ? os::large_page_size() : os::vm_page_size(),
                                          HeapRegion::GrainBytes,
                                          1,
                                          mtJavaHeap);
   heap_storage->set_mapping_changed_listener(&_listener);
 
-  // Reserve space for the block offset table. We do not support automatic uncommit
-  // for the card table at this time. BOT only.
-  ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
+  // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
-    G1RegionToSpaceMapper::create_mapper(bot_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Block offset table",
+                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
-    G1RegionToSpaceMapper::create_mapper(cardtable_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Card table",
+                             G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
-  // Reserve space for the card counts table.
-  ReservedSpace card_counts_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* card_counts_storage =
-    G1RegionToSpaceMapper::create_mapper(card_counts_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Card counts table",
+                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
-  // Reserve space for prev and next bitmap.
   size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
-
-  ReservedSpace prev_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
   G1RegionToSpaceMapper* prev_bitmap_storage =
-    G1RegionToSpaceMapper::create_mapper(prev_bitmap_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         CMBitMap::mark_distance(),
-                                         mtGC);
-
-  ReservedSpace next_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
+    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::mark_distance());
   G1RegionToSpaceMapper* next_bitmap_storage =
-    G1RegionToSpaceMapper::create_mapper(next_bitmap_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         CMBitMap::mark_distance(),
-                                         mtGC);
+    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::mark_distance());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);
@@ -2035,6 +2037,11 @@ size_t G1CollectedHeap::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
 }
 
+void G1CollectedHeap::post_initialize() {
+  CollectedHeap::post_initialize();
+  ref_processing_init();
+}
+
 void G1CollectedHeap::ref_processing_init() {
   // Reference processing in G1 currently works as follows:
   //
@@ -2071,7 +2078,6 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
-  SharedHeap::ref_processing_init();
   MemRegion mr = reserved_region();
 
   // Concurrent Mark ref processor
@@ -2128,6 +2134,7 @@ void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
 }
 
 #ifndef PRODUCT
+
 class CheckGCTimeStampsHRClosure : public HeapRegionClosure {
 private:
   unsigned _gc_time_stamp;
@@ -2462,11 +2469,6 @@ public:
   }
 };
 
-void G1CollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
-  IterateOopClosureRegionClosure blk(cl);
-  heap_region_iterate(&blk);
-}
-
 // Iterates an ObjectClosure over all objects within a HeapRegion.
 
 class IterateObjectClosureRegionClosure: public HeapRegionClosure {
@@ -2483,23 +2485,6 @@ public:
 
 void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
   IterateObjectClosureRegionClosure blk(cl);
-  heap_region_iterate(&blk);
-}
-
-// Calls a SpaceClosure on a HeapRegion.
-
-class SpaceClosureRegionClosure: public HeapRegionClosure {
-  SpaceClosure* _cl;
-public:
-  SpaceClosureRegionClosure(SpaceClosure* cl) : _cl(cl) {}
-  bool doHeapRegion(HeapRegion* r) {
-    _cl->do_space(r);
-    return false;
-  }
-};
-
-void G1CollectedHeap::space_iterate(SpaceClosure* cl) {
-  SpaceClosureRegionClosure blk(cl);
   heap_region_iterate(&blk);
 }
 
@@ -2639,23 +2624,19 @@ HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) cons
   return result;
 }
 
-Space* G1CollectedHeap::space_containing(const void* addr) const {
-  return heap_region_containing(addr);
-}
-
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_start(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_start(addr);
 }
 
 size_t G1CollectedHeap::block_size(const HeapWord* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_size(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_size(addr);
 }
 
 bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_is_obj(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_is_obj(addr);
 }
 
 bool G1CollectedHeap::supports_tlab_allocation() const {
@@ -3336,8 +3317,6 @@ void G1CollectedHeap::print_all_rsets() {
 #endif // PRODUCT
 
 G1CollectedHeap* G1CollectedHeap::heap() {
-  assert(_sh->kind() == CollectedHeap::G1CollectedHeap,
-         "not a garbage-first heap");
   return _g1h;
 }
 
@@ -6163,8 +6142,6 @@ void G1CollectedHeap::wait_while_free_regions_coming() {
 }
 
 void G1CollectedHeap::set_region_short_lived_locked(HeapRegion* hr) {
-  assert(heap_lock_held_for_gc(),
-              "the heap lock should already be held by or for this thread");
   _young_list->push_region(hr);
 }
 

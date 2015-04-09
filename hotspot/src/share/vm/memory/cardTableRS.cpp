@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,15 @@ CardTableRS::CardTableRS(MemRegion whole_heap) :
   _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
   _ct_bs->initialize();
   set_bs(_ct_bs);
-  _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(jbyte, GenCollectedHeap::max_gens + 1,
+  // max_gens is really GenCollectedHeap::heap()->gen_policy()->number_of_generations()
+  // (which is always 2, young & old), but GenCollectedHeap has not been initialized yet.
+  uint max_gens = 2;
+  _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(jbyte, max_gens + 1,
                          mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
   if (_last_cur_val_in_gen == NULL) {
     vm_exit_during_initialization("Could not create last_cur_val_in_gen array.");
   }
-  for (int i = 0; i < GenCollectedHeap::max_gens + 1; i++) {
+  for (uint i = 0; i < max_gens + 1; i++) {
     _last_cur_val_in_gen[i] = clean_card_val();
   }
   _ct_bs->set_CTRS(this);
@@ -167,10 +170,10 @@ ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
     // Cannot yet substitute active_workers for n_par_threads
     // in the case where parallelism is being turned off by
     // setting n_par_threads to 0.
-    _is_par = (SharedHeap::heap()->n_par_threads() > 0);
+    _is_par = (GenCollectedHeap::heap()->n_par_threads() > 0);
     assert(!_is_par ||
-           (SharedHeap::heap()->n_par_threads() ==
-            SharedHeap::heap()->workers()->active_workers()), "Mismatch");
+           (GenCollectedHeap::heap()->n_par_threads() ==
+            GenCollectedHeap::heap()->workers()->active_workers()), "Mismatch");
 }
 
 bool ClearNoncleanCardWrapper::is_word_aligned(jbyte* entry) {

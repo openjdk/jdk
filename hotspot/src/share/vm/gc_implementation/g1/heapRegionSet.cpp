@@ -419,6 +419,7 @@ void FreeRegionList_test() {
   ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(heap.word_size()));
   G1RegionToSpaceMapper* bot_storage =
     G1RegionToSpaceMapper::create_mapper(bot_rs,
+                                         bot_rs.size(),
                                          os::vm_page_size(),
                                          HeapRegion::GrainBytes,
                                          G1BlockOffsetSharedArray::N_bytes,

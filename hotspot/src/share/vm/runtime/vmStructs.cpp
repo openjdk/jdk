@@ -558,7 +558,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
     static_field(GenCollectedHeap,             _gch,                                          GenCollectedHeap*)                     \
   nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
   nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
- nonstatic_field(GenCollectedHeap,             _n_gens,                                       int)                                   \
                                                                                                                                      \
   nonstatic_field(GenCollectorPolicy,          _young_gen_spec,                               GenerationSpec*)                       \
   nonstatic_field(GenCollectorPolicy,          _old_gen_spec,                                 GenerationSpec*)                       \
@@ -1501,8 +1500,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /******************************************/                            \
                                                                           \
   declare_toplevel_type(CollectedHeap)                                    \
-           declare_type(SharedHeap,                   CollectedHeap)      \
-           declare_type(GenCollectedHeap,             SharedHeap)         \
+           declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
@@ -2256,8 +2254,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(CollectedHeap::GenCollectedHeap)                       \
   declare_constant(CollectedHeap::ParallelScavengeHeap)                   \
   declare_constant(CollectedHeap::G1CollectedHeap)                        \
-                                                                          \
-  declare_constant(GenCollectedHeap::max_gens)                            \
                                                                           \
   /* constants from Generation::Name enum */                              \
                                                                           \

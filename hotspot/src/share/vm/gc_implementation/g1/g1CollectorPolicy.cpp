@@ -1460,7 +1460,7 @@ void G1CollectorPolicy::update_survivors_policy() {
   _max_survivor_regions = (uint) ceil(max_survivor_regions_d);
 
   _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
-        HeapRegion::GrainWords * _max_survivor_regions);
+        HeapRegion::GrainWords * _max_survivor_regions, counters());
 }
 
 bool G1CollectorPolicy::force_initial_mark_if_outside_cycle(

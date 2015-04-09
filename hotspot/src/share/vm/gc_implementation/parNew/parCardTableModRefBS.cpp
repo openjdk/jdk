@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/cardTableRS.hpp"
-#include "memory/sharedHeap.hpp"
 #include "memory/space.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"

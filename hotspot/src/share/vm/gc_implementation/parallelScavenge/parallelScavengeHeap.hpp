@@ -34,6 +34,7 @@
 #include "gc_implementation/shared/gcWhen.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/collectorPolicy.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "utilities/ostream.hpp"
 
 class AdjoiningGenerations;
@@ -201,7 +202,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // initializing stores to an object at this address.
   virtual bool can_elide_initializing_store_barrier(oop new_obj);
 
-  void oop_iterate(ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
 
@@ -238,7 +238,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   void gen_mangle_unused_area() PRODUCT_RETURN;
 
   // Call these in sequential code around the processing of strong roots.
-  class ParStrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
+  class ParStrongRootsScope : public MarkScope {
    public:
     ParStrongRootsScope();
     ~ParStrongRootsScope();

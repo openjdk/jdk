@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,25 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+#ifndef SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP
+#define SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP
 
-import java.io.*;
-import java.util.*;
+#include "memory/allocation.hpp"
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.gc_interface.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
+class MarkScope : public StackObj {
+ protected:
+  bool _active;
+ public:
+  MarkScope(bool activate = true);
+  ~MarkScope();
+};
 
-public abstract class SharedHeap extends CollectedHeap {
-  private static VirtualConstructor ctor;
+// Sets up and tears down the required state for parallel root processing.
 
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
+class StrongRootsScope : public MarkScope {
+ public:
+  StrongRootsScope(bool activate = true);
+  ~StrongRootsScope();
+};
 
-  private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("SharedHeap");
-    ctor = new VirtualConstructor(db);
-  }
-
-  public SharedHeap(Address addr) {
-    super(addr);
-  }
-
-  public CollectedHeapName kind() {
-    return CollectedHeapName.SHARED_HEAP;
-  }
-  }
+#endif // SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP

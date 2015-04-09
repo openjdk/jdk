@@ -40,9 +40,9 @@
 #include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/sharedHeap.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -76,6 +76,7 @@ class G1OldTracer;
 class EvacuationFailedInfo;
 class nmethod;
 class Ticks;
+class FlexibleWorkGang;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -177,7 +178,7 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
   virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
-class G1CollectedHeap : public SharedHeap {
+class G1CollectedHeap : public CollectedHeap {
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
@@ -203,6 +204,8 @@ class G1CollectedHeap : public SharedHeap {
 private:
   // The one and only G1CollectedHeap, so static functions can find it.
   static G1CollectedHeap* _g1h;
+
+  FlexibleWorkGang* _workers;
 
   static size_t _humongous_object_threshold_in_words;
 
@@ -350,6 +353,12 @@ private:
   // If the HR printer is active, dump the state of the regions in the
   // heap after a compaction.
   void print_hrm_post_compaction();
+
+  // Create a memory mapper for auxiliary data structures of the given size and
+  // translation factor.
+  static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,
+                                                         size_t size,
+                                                         size_t translation_factor);
 
   double verify(bool guard, const char* msg);
   void verify_before_gc();
@@ -605,6 +614,7 @@ protected:
   void enqueue_discovered_references(uint no_of_gc_workers);
 
 public:
+  FlexibleWorkGang* workers() const { return _workers; }
 
   G1Allocator* allocator() {
     return _allocator;
@@ -630,8 +640,8 @@ public:
   inline AllocationContextStats& allocation_context_stats();
 
   // Do anything common to GC's.
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue(bool full);
+  void gc_epilogue(bool full);
 
   inline void set_humongous_is_live(oop obj);
 
@@ -1000,11 +1010,14 @@ public:
   // Return the (conservative) maximum heap alignment for any G1 heap
   static size_t conservative_max_heap_alignment();
 
+  // Does operations required after initialization has been done.
+  void post_initialize();
+
   // Initialize weak reference processing.
-  virtual void ref_processing_init();
+  void ref_processing_init();
 
   // Explicitly import set_par_threads into this scope
-  using SharedHeap::set_par_threads;
+  using CollectedHeap::set_par_threads;
   // Set _n_par_threads according to a policy TBD.
   void set_par_threads();
 
@@ -1251,19 +1264,12 @@ public:
 
   // Iteration functions.
 
-  // Iterate over all the ref-containing fields of all objects, calling
-  // "cl.do_oop" on each.
-  virtual void oop_iterate(ExtendedOopClosure* cl);
-
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
 
   virtual void safe_object_iterate(ObjectClosure* cl) {
     object_iterate(cl);
   }
-
-  // Iterate over all spaces in use in the heap, in ascending address order.
-  virtual void space_iterate(SpaceClosure* cl);
 
   // Iterate over heap regions, in address order, terminating the
   // iteration early if the "doHeapRegion" method returns "true".
@@ -1306,10 +1312,6 @@ public:
   void collection_set_iterate_from(HeapRegion* r, HeapRegionClosure *blk);
 
   HeapRegion* next_compaction_region(const HeapRegion* from) const;
-
-  // A CollectedHeap will contain some number of spaces.  This finds the
-  // space containing a given address, or else returns NULL.
-  virtual Space* space_containing(const void* addr) const;
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>

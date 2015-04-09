@@ -116,8 +116,6 @@ bool VM_GC_Operation::doit_prologue() {
     _prologue_succeeded = false;
   } else {
     _prologue_succeeded = true;
-    SharedHeap* sh = SharedHeap::heap();
-    if (sh != NULL) sh->_thread_holds_heap_lock_for_gc = true;
   }
   return _prologue_succeeded;
 }
@@ -126,8 +124,6 @@ bool VM_GC_Operation::doit_prologue() {
 void VM_GC_Operation::doit_epilogue() {
   assert(Thread::current()->is_Java_thread(), "just checking");
   // Release the Heap_lock first.
-  SharedHeap* sh = SharedHeap::heap();
-  if (sh != NULL) sh->_thread_holds_heap_lock_for_gc = false;
   Heap_lock->unlock();
   release_and_notify_pending_list_lock();
 }
