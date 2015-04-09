@@ -222,11 +222,13 @@
       <name>jdk.internal.org.objectweb.asm</name>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.commons</name>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.signature</name>
@@ -235,11 +237,13 @@
     <export>
       <name>jdk.internal.org.objectweb.asm.tree</name>
       <to>jdk.jfr</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.util</name>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.misc</name>
@@ -260,6 +264,7 @@
       <to>jdk.pack200</to>
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.net.dns</name>
@@ -304,6 +309,7 @@
       <to>java.sql</to>
       <to>java.sql.rowset</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.reflect.annotation</name>
@@ -759,6 +765,10 @@
     <depend>java.base</depend>
     <export>
       <name>java.lang.instrument</name>
+    </export>
+    <export>
+      <name>jdk.internal.instrumentation</name>
+      <to>jdk.jfr</to>
     </export>
   </module>
   <module>
