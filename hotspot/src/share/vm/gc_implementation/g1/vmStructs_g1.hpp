@@ -70,7 +70,7 @@
                                                                               \
   declare_toplevel_type(G1HeapRegionTable)                                    \
                                                                               \
-  declare_type(G1CollectedHeap, SharedHeap)                                   \
+  declare_type(G1CollectedHeap, CollectedHeap)                                \
                                                                               \
   declare_type(G1OffsetTableContigSpace, CompactibleSpace)                    \
   declare_type(HeapRegion, G1OffsetTableContigSpace)                          \

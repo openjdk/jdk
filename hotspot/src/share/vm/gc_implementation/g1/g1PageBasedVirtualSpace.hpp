@@ -34,6 +34,12 @@
 // granularity.
 // (De-)Allocation requests are always OS page aligned by passing a page index
 // and multiples of pages.
+// For systems that only commits of memory in a given size (always greater than
+// page size) the base address is required to be aligned to that page size.
+// The actual size requested need not be aligned to that page size, but the size
+// of the reservation passed may be rounded up to this page size. Any fragment
+// (less than the page size) of the actual size at the tail of the request will
+// be committed using OS small pages.
 // The implementation gives an error when trying to commit or uncommit pages that
 // have already been committed or uncommitted.
 class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
@@ -43,7 +49,11 @@ class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
   char* _low_boundary;
   char* _high_boundary;
 
-  // The commit/uncommit granularity in bytes.
+  // The size of the tail in bytes of the handled space that needs to be committed
+  // using small pages.
+  size_t _tail_size;
+
+  // The preferred page size used for commit/uncommit in bytes.
   size_t _page_size;
 
   // Bitmap used for verification of commit/uncommit operations.
@@ -62,30 +72,55 @@ class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
   // Indicates whether the committed space should be executable.
   bool _executable;
 
+  // Helper function for committing memory. Commit the given memory range by using
+  // _page_size pages as much as possible and the remainder with small sized pages.
+  void commit_internal(size_t start_page, size_t end_page);
+  // Commit num_pages pages of _page_size size starting from start. All argument
+  // checking has been performed.
+  void commit_preferred_pages(size_t start_page, size_t end_page);
+  // Commit space at the high end of the space that needs to be committed with small
+  // sized pages.
+  void commit_tail();
+
+  // Uncommit the given memory range.
+  void uncommit_internal(size_t start_page, size_t end_page);
+
+  // Pretouch the given memory range.
+  void pretouch_internal(size_t start_page, size_t end_page);
+
   // Returns the index of the page which contains the given address.
   uintptr_t  addr_to_page_index(char* addr) const;
   // Returns the address of the given page index.
-  char*  page_start(uintptr_t index);
-  // Returns the byte size of the given number of pages.
-  size_t byte_size_for_pages(size_t num);
+  char*  page_start(size_t index) const;
+
+  // Is the given page index the last page?
+  bool is_last_page(size_t index) const { return index == (_committed.size() - 1); }
+  // Is the given page index the first after last page?
+  bool is_after_last_page(size_t index) const;
+  // Is the last page only partially covered by this space?
+  bool is_last_page_partial() const { return !is_ptr_aligned(_high_boundary, _page_size); }
+  // Returns the end address of the given page bounded by the reserved space.
+  char* bounded_end_addr(size_t end_page) const;
 
   // Returns true if the entire area is backed by committed memory.
-  bool is_area_committed(uintptr_t start, size_t size_in_pages) const;
+  bool is_area_committed(size_t start_page, size_t size_in_pages) const;
   // Returns true if the entire area is not backed by committed memory.
-  bool is_area_uncommitted(uintptr_t start, size_t size_in_pages) const;
+  bool is_area_uncommitted(size_t start_page, size_t size_in_pages) const;
 
+  void initialize_with_page_size(ReservedSpace rs, size_t used_size, size_t page_size);
  public:
 
   // Commit the given area of pages starting at start being size_in_pages large.
   // Returns true if the given area is zero filled upon completion.
-  bool commit(uintptr_t start, size_t size_in_pages);
+  bool commit(size_t start_page, size_t size_in_pages);
 
   // Uncommit the given area of pages starting at start being size_in_pages large.
-  void uncommit(uintptr_t start, size_t size_in_pages);
+  void uncommit(size_t start_page, size_t size_in_pages);
 
-  // Initialization
-  G1PageBasedVirtualSpace();
-  bool initialize_with_granularity(ReservedSpace rs, size_t page_size);
+  // Initialize the given reserved space with the given base address and the size
+  // actually used.
+  // Prefer to commit in page_size chunks.
+  G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_size, size_t page_size);
 
   // Destruction
   ~G1PageBasedVirtualSpace();

@@ -48,6 +48,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/parNew/parOopClosures.hpp"
+#endif
 
 //
 // DefNewGeneration functions.
@@ -378,8 +381,7 @@ void DefNewGeneration::compute_new_size() {
 
   int next_level = level() + 1;
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(next_level < gch->n_gens(),
-         "DefNewGeneration cannot be an oldest gen");
+  assert(next_level == 1, "DefNewGeneration must be a young gen");
 
   Generation* old_gen = gch->old_gen();
   size_t old_size = old_gen->capacity();
@@ -550,8 +552,9 @@ HeapWord* DefNewGeneration::expand_and_allocate(size_t size,
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
+  GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->collector_policy()->counters();
   _tenuring_threshold =
-    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize);
+    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize, gc_counters);
 }
 
 void DefNewGeneration::collect(bool   full,

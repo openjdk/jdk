@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,32 @@
  *
  */
 
-package sun.jvm.hotspot.gc_interface;
+#include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
+#include "code/nmethod.hpp"
+#include "memory/strongRootsScope.hpp"
+#include "runtime/thread.hpp"
 
-/** Mimics the enums in the VM under CollectedHeap::Name */
-
-public class CollectedHeapName {
-  private String name;
-
-  private CollectedHeapName(String name) { this.name = name; }
-
-  public static final CollectedHeapName GEN_COLLECTED_HEAP = new CollectedHeapName("GenCollectedHeap");
-  public static final CollectedHeapName G1_COLLECTED_HEAP = new CollectedHeapName("G1CollectedHeap");
-  public static final CollectedHeapName PARALLEL_SCAVENGE_HEAP = new CollectedHeapName("ParallelScavengeHeap");
-
-  public String toString() {
-    return name;
+MarkScope::MarkScope(bool activate) : _active(activate) {
+  if (_active) {
+    nmethod::oops_do_marking_prologue();
   }
+}
+
+MarkScope::~MarkScope() {
+  if (_active) {
+    nmethod::oops_do_marking_epilogue();
+  }
+}
+
+StrongRootsScope::StrongRootsScope(bool activate) : MarkScope(activate) {
+  if (_active) {
+    Threads::change_thread_claim_parity();
+    // Zero the claimed high water mark in the StringTable
+    StringTable::clear_parallel_claimed_index();
+  }
+}
+
+StrongRootsScope::~StrongRootsScope() {
+  Threads::assert_all_threads_claimed();
 }

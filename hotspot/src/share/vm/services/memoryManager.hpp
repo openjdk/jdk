@@ -53,20 +53,6 @@ protected:
   volatile instanceOop _memory_mgr_obj;
 
 public:
-  enum Name {
-    Abstract,
-    CodeCache,
-    Metaspace,
-    Copy,
-    MarkSweepCompact,
-    ParNew,
-    ConcurrentMarkSweep,
-    PSScavenge,
-    PSMarkSweep,
-    G1YoungGen,
-    G1OldGen
-  };
-
   MemoryManager();
 
   int num_memory_pools() const           { return _num_pools; }
@@ -80,7 +66,6 @@ public:
   bool is_manager(instanceHandle mh)     { return mh() == _memory_mgr_obj; }
 
   virtual instanceOop get_memory_manager_instance(TRAPS);
-  virtual MemoryManager::Name kind()     { return MemoryManager::Abstract; }
   virtual bool is_gc_memory_manager()    { return false; }
   virtual const char* name() = 0;
 
@@ -98,7 +83,6 @@ public:
   static GCMemoryManager* get_psMarkSweep_memory_manager();
   static GCMemoryManager* get_g1YoungGen_memory_manager();
   static GCMemoryManager* get_g1OldGen_memory_manager();
-
 };
 
 class CodeCacheMemoryManager : public MemoryManager {
@@ -106,16 +90,14 @@ private:
 public:
   CodeCacheMemoryManager() : MemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::CodeCache; }
-  const char* name()         { return "CodeCacheManager"; }
+  const char* name() { return "CodeCacheManager"; }
 };
 
 class MetaspaceMemoryManager : public MemoryManager {
 public:
   MetaspaceMemoryManager() : MemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::Metaspace; }
-  const char *name()         { return "Metaspace Manager"; }
+  const char* name() { return "Metaspace Manager"; }
 };
 
 class GCStatInfo : public ResourceObj {
@@ -202,7 +184,6 @@ public:
 
   void set_notification_enabled(bool enabled) { _notification_enabled = enabled; }
   bool is_notification_enabled() { return _notification_enabled; }
-  virtual MemoryManager::Name kind() = 0;
 };
 
 // These subclasses of GCMemoryManager are defined to include
@@ -213,8 +194,7 @@ private:
 public:
   CopyMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::Copy; }
-  const char* name()         { return "Copy"; }
+  const char* name() { return "Copy"; }
 };
 
 class MSCMemoryManager : public GCMemoryManager {
@@ -222,9 +202,7 @@ private:
 public:
   MSCMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::MarkSweepCompact; }
-  const char* name()         { return "MarkSweepCompact"; }
-
+  const char* name() { return "MarkSweepCompact"; }
 };
 
 class ParNewMemoryManager : public GCMemoryManager {
@@ -232,9 +210,7 @@ private:
 public:
   ParNewMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::ParNew; }
-  const char* name()         { return "ParNew"; }
-
+  const char* name() { return "ParNew"; }
 };
 
 class CMSMemoryManager : public GCMemoryManager {
@@ -242,9 +218,7 @@ private:
 public:
   CMSMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::ConcurrentMarkSweep; }
-  const char* name()         { return "ConcurrentMarkSweep";}
-
+  const char* name() { return "ConcurrentMarkSweep";}
 };
 
 class PSScavengeMemoryManager : public GCMemoryManager {
@@ -252,9 +226,7 @@ private:
 public:
   PSScavengeMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::PSScavenge; }
-  const char* name()         { return "PS Scavenge"; }
-
+  const char* name() { return "PS Scavenge"; }
 };
 
 class PSMarkSweepMemoryManager : public GCMemoryManager {
@@ -262,8 +234,7 @@ private:
 public:
   PSMarkSweepMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::PSMarkSweep; }
-  const char* name()         { return "PS MarkSweep"; }
+  const char* name() { return "PS MarkSweep"; }
 };
 
 class G1YoungGenMemoryManager : public GCMemoryManager {
@@ -271,8 +242,7 @@ private:
 public:
   G1YoungGenMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::G1YoungGen; }
-  const char* name()         { return "G1 Young Generation"; }
+  const char* name() { return "G1 Young Generation"; }
 };
 
 class G1OldGenMemoryManager : public GCMemoryManager {
@@ -280,8 +250,7 @@ private:
 public:
   G1OldGenMemoryManager() : GCMemoryManager() {}
 
-  MemoryManager::Name kind() { return MemoryManager::G1OldGen; }
-  const char* name()         { return "G1 Old Generation"; }
+  const char* name() { return "G1 Old Generation"; }
 };
 
 #endif // SHARE_VM_SERVICES_MEMORYMANAGER_HPP

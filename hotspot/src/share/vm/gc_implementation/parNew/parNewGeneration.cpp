@@ -42,7 +42,7 @@
 #include "memory/generation.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/sharedHeap.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "memory/space.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -596,8 +596,6 @@ void ParNewGenTask::work(uint worker_id) {
   // and handle marks.
   ResourceMark rm;
   HandleMark hm;
-  // We would need multiple old-gen queues otherwise.
-  assert(gch->n_gens() == 2, "Par young collection currently only works with one older gen.");
 
   ParScanThreadState& par_scan_state = _state_set->thread_state(worker_id);
   assert(_state_set->is_valid(worker_id), "Should not have been called");
@@ -922,8 +920,6 @@ void ParNewGeneration::collect(bool   full,
                                    workers->active_workers(),
                                    Threads::number_of_non_daemon_threads());
   workers->set_active_workers(active_workers);
-  assert(gch->n_gens() == 2,
-         "Par collection currently only works with single older gen.");
   _old_gen = gch->old_gen();
 
   // If the next generation is too full to accommodate worst-case promotion
@@ -974,10 +970,10 @@ void ParNewGeneration::collect(bool   full,
   // in the multi-threaded case, but we special-case n=1 here to get
   // repeatable measurements of the 1-thread overhead of the parallel code.
   if (n_workers > 1) {
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     workers->run_task(&tsk);
   } else {
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     tsk.work(0);
   }
   thread_state_set.reset(0 /* Bad value in debug if not reset */,

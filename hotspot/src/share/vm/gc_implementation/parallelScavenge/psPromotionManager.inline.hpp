@@ -29,7 +29,7 @@
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionLAB.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#include "oops/oop.psgc.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 inline PSPromotionManager* PSPromotionManager::manager_array(int index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
@@ -92,7 +92,7 @@ inline void PSPromotionManager::promotion_trace_event(oop new_obj, oop old_obj,
 }
 
 inline void PSPromotionManager::push_contents(oop obj) {
-  obj->push_contents(this);
+  obj->ps_push_contents(this);
 }
 //
 // This method is pretty bulky. It would be nice to split it up
