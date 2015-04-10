@@ -43,7 +43,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.ir.Symbol.HAS_SLOT;
 import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
@@ -303,6 +302,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      */
     boolean isEvalCode() {
         return evalCode;
+    }
+
+    /**
+     * Are we using dual primitive/object field representation?
+     * @return true if using dual field representation, false for object-only fields
+     */
+    boolean useDualFields() {
+        return compiler.getContext().useDualFields();
     }
 
     /**
@@ -1896,10 +1903,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         //this symbol will be put fielded, we can't initialize it as undefined with a known type
                         @Override
                         public Class<?> getValueType() {
-                            if (OBJECT_FIELDS_ONLY || value == null || paramType == null) {
+                            if (!useDualFields() ||  value == null || paramType == null || paramType.isBoolean()) {
                                 return Object.class;
                             }
-                            return paramType.isBoolean() ? Object.class : paramType.getTypeClass();
+                            return paramType.getTypeClass();
                         }
                     });
                 }
@@ -2555,7 +2562,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             //for literals, a value of null means object type, i.e. the value null or getter setter function
             //(I think)
-            final Class<?> valueType = (OBJECT_FIELDS_ONLY || value == null || value.getType().isBoolean()) ? Object.class : value.getType().getTypeClass();
+            final Class<?> valueType = (!useDualFields() || value == null || value.getType().isBoolean()) ? Object.class : value.getType().getTypeClass();
             tuples.add(new MapTuple<Expression>(key, symbol, Type.typeFor(valueType), value) {
                 @Override
                 public Class<?> getValueType() {

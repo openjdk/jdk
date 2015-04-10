@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
- * Empty object class for object-only fields.
+ * Empty object class for dual primitive-object fields.
  */
-public class JO extends ScriptObject {
+public class JD extends ScriptObject {
 
-    private static final PropertyMap map$ = PropertyMap.newMap(JO.class);
+    private static final PropertyMap map$ = PropertyMap.newMap(JD.class);
 
     /**
      * Returns the initial property map to be used.
@@ -48,7 +48,7 @@ public class JO extends ScriptObject {
      *
      * @param map the property map
      */
-    public JO(final PropertyMap map) {
+    public JD(final PropertyMap map) {
         super(map);
     }
 
@@ -57,7 +57,7 @@ public class JO extends ScriptObject {
      *
      * @param proto the prototype object
      */
-    public JO(final ScriptObject proto) {
+    public JD(final ScriptObject proto) {
         super(proto, getInitialMap());
     }
 
@@ -70,7 +70,7 @@ public class JO extends ScriptObject {
      * @param primitiveSpill primitive spill pool
      * @param objectSpill    reference spill pool
      */
-    public JO(final PropertyMap map, final long[] primitiveSpill, final Object[] objectSpill) {
+    public JD(final PropertyMap map, final long[] primitiveSpill, final Object[] objectSpill) {
         super(map, primitiveSpill, objectSpill);
     }
 
@@ -82,7 +82,7 @@ public class JO extends ScriptObject {
      * @return newly allocated ScriptObject
      */
     public static ScriptObject allocate(final PropertyMap map) {
-        return new JO(map);
+        return new JD(map);
     }
 }
 
