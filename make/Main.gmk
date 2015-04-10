@@ -607,14 +607,19 @@ include $(SRC_ROOT)/make/Jprt.gmk
 
 ################################################################################
 
+# The following targets are intentionally not added to ALL_TARGETS since they
+# are internal only, to support Init.gmk.
+
 print-targets:
 	  @$(ECHO) $(sort $(ALL_TARGETS))
 
 print-modules:
 	  @$(ECHO) $(sort $(ALL_MODULES))
 
-# print-* targets intentionally not added to ALL_TARGETS since they are internal only.
-# The corresponding external targets are in Help.gmk
+create-main-targets-include:
+	  @$(ECHO) $(LOG_INFO) Generating main target list
+	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
+	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 
 ################################################################################
 
