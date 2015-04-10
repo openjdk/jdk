@@ -141,12 +141,12 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
         if (connection == null) {
             throw new IllegalArgumentException("Null connection");
         }
-//        if (Proxy.isProxyClass(connection.getClass())) {
-//            if (MBeanServerInvocationHandler.class.isAssignableFrom(
-//                    Proxy.getInvocationHandler(connection).getClass())) {
-//                throw new IllegalArgumentException("Wrapping MBeanServerInvocationHandler");
-//            }
-//        }
+        if (Proxy.isProxyClass(connection.getClass())) {
+            if (MBeanServerInvocationHandler.class.isAssignableFrom(
+                    Proxy.getInvocationHandler(connection).getClass())) {
+                throw new IllegalArgumentException("Wrapping MBeanServerInvocationHandler");
+            }
+        }
         if (objectName == null) {
             throw new IllegalArgumentException("Null object name");
         }
@@ -424,10 +424,10 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                              new Class<?>[] {Object.class})
             && isLocal(proxy, method))
             return true;
-//        if (methodName.equals("finalize")
-//            && method.getParameterTypes().length == 0) {
-//            return true;
-//        }
+        if (methodName.equals("finalize")
+            && method.getParameterTypes().length == 0) {
+            return true;
+        }
         return false;
     }
 
