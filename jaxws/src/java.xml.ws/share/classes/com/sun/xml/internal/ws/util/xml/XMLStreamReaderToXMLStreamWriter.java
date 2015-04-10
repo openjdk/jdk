@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,14 +187,11 @@ public class XMLStreamReaderToXMLStreamWriter {
 
     protected void handleStartElement() throws XMLStreamException {
         String nsUri = in.getNamespaceURI();
-        if(nsUri==null)
-            out.writeStartElement(in.getLocalName());
-        else
-            out.writeStartElement(
-                fixNull(in.getPrefix()),
-                in.getLocalName(),
-                nsUri
-            );
+        out.writeStartElement(
+            fixNull(in.getPrefix()),
+            in.getLocalName(),
+            fixNull(nsUri)
+        );
 
         // start namespace bindings
         int nsCount = in.getNamespaceCount();

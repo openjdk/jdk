@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ import com.sun.xml.internal.bind.marshaller.SAX2DOMEx;
 
 //TODO DOMHeader DOMMessage SAAJMessage StatefulInstanceResolver
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
+
+//TODO MtomCodec
+import com.sun.xml.internal.bind.v2.runtime.output.Encoded;
 
 //TODO ExceptionBean
 import com.sun.xml.internal.bind.marshaller.NamespacePrefixMapper;
