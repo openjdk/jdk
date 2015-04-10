@@ -383,45 +383,46 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     AC_MSG_CHECKING([if fixpath can be created])
     FIXPATH_SRC="$SRC_ROOT/common/src/fixpath.c"
-    FIXPATH_BIN="$OUTPUT_ROOT/fixpath.exe"
+    FIXPATH_BIN="$CONFIGURESUPPORT_OUTPUTDIR/bin/fixpath.exe"
+    FIXPATH_DIR="$CONFIGURESUPPORT_OUTPUTDIR/fixpath"
     if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
-      FIXPATH_SRC=`$CYGPATH -m $FIXPATH_SRC`
-      FIXPATH_BIN=`$CYGPATH -m $FIXPATH_BIN`
       # Important to keep the .exe suffix on Cygwin for Hotspot makefiles
-      FIXPATH="$OUTPUT_ROOT/fixpath.exe -c"
+      FIXPATH="$FIXPATH_BIN -c"
     elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.msys; then
-      FIXPATH_SRC=`cmd //c echo $FIXPATH_SRC`
-      FIXPATH_BIN=`cmd //c echo $FIXPATH_BIN`
-
       # Take all collected prefixes and turn them into a -m/c/foo@/c/bar@... command line
       # @ was chosen as separator to minimize risk of other tools messing around with it
-      all_unique_prefixes=`echo "${all_fixpath_prefixes@<:@@@:>@}" | tr ' ' '\n' | grep '^/./' | sort | uniq`
+      all_unique_prefixes=`echo "${all_fixpath_prefixes@<:@@@:>@}" \
+          | tr ' ' '\n' | grep '^/./' | sort | uniq`
       fixpath_argument_list=`echo $all_unique_prefixes  | tr ' ' '@'`
-
-      FIXPATH="$OUTPUT_ROOT/fixpath -m$fixpath_argument_list"
+      FIXPATH="$FIXPATH_BIN -m$fixpath_argument_list"
     fi
-    rm -f $OUTPUT_ROOT/fixpath*
-    cd $OUTPUT_ROOT
-    $CC $FIXPATH_SRC -Fe$FIXPATH_BIN > $OUTPUT_ROOT/fixpath1.log 2>&1
+    FIXPATH_SRC_W="$FIXPATH_SRC"
+    FIXPATH_BIN_W="$FIXPATH_BIN"
+    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_SRC_W])
+    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_BIN_W])
+    $RM -rf $FIXPATH_BIN $FIXPATH_DIR
+    $MKDIR -p $FIXPATH_DIR $CONFIGURESUPPORT_OUTPUTDIR/bin
+    cd $FIXPATH_DIR
+    $CC $FIXPATH_SRC_W -Fe$FIXPATH_BIN_W > $FIXPATH_DIR/fixpath1.log 2>&1
     cd $CURDIR
 
-    if test ! -x $OUTPUT_ROOT/fixpath.exe; then
+    if test ! -x $FIXPATH_BIN; then
       AC_MSG_RESULT([no])
-      cat $OUTPUT_ROOT/fixpath1.log
-      AC_MSG_ERROR([Could not create $OUTPUT_ROOT/fixpath.exe])
+      cat $FIXPATH_DIR/fixpath1.log
+      AC_MSG_ERROR([Could not create $FIXPATH_BIN])
     fi
     AC_MSG_RESULT([yes])
     AC_MSG_CHECKING([if fixpath.exe works])
-    cd $OUTPUT_ROOT
-    $FIXPATH $CC $SRC_ROOT/common/src/fixpath.c -Fe$OUTPUT_ROOT/fixpath2.exe > $OUTPUT_ROOT/fixpath2.log 2>&1
+    cd $FIXPATH_DIR
+    $FIXPATH $CC $FIXPATH_SRC -Fe$FIXPATH_DIR/fixpath2.exe \
+        > $FIXPATH_DIR/fixpath2.log 2>&1
     cd $CURDIR
-    if test ! -x $OUTPUT_ROOT/fixpath2.exe; then
+    if test ! -x $FIXPATH_DIR/fixpath2.exe; then
       AC_MSG_RESULT([no])
-      cat $OUTPUT_ROOT/fixpath2.log
+      cat $FIXPATH_DIR/fixpath2.log
       AC_MSG_ERROR([fixpath did not work!])
     fi
     AC_MSG_RESULT([yes])
-    rm -f $OUTPUT_ROOT/fixpath?.??? $OUTPUT_ROOT/fixpath.obj
   fi
 
   AC_SUBST(FIXPATH)
