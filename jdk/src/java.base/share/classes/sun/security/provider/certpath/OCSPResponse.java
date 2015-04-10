@@ -151,8 +151,8 @@ public final class OCSPResponse {
     private static final int DEFAULT_MAX_CLOCK_SKEW = 900000;
 
     /**
-     * Integer value indicating the maximum allowable clock skew, in seconds,
-     * to be used for the OCSP check.
+     * Integer value indicating the maximum allowable clock skew,
+     * in milliseconds, to be used for the OCSP check.
      */
     private static final int MAX_CLOCK_SKEW = initializeClockSkew();
 
@@ -585,12 +585,13 @@ public final class OCSPResponse {
                 "Unable to verify OCSP Response's signature");
         }
 
-        // Check freshness of OCSPResponse
         if (nonce != null) {
             if (responseNonce != null && !Arrays.equals(nonce, responseNonce)) {
                 throw new CertPathValidatorException("Nonces don't match");
             }
         }
+
+        // Check freshness of OCSPResponse
 
         long now = (date == null) ? System.currentTimeMillis() : date.getTime();
         Date nowPlusSkew = new Date(now + MAX_CLOCK_SKEW);
@@ -601,13 +602,18 @@ public final class OCSPResponse {
                 if (sr.nextUpdate != null) {
                     until = " until " + sr.nextUpdate;
                 }
-                debug.println("Response's validity interval is from " +
+                debug.println("OCSP response validity interval is from " +
                               sr.thisUpdate + until);
+                debug.println("Checking validity of OCSP response on: " +
+                    new Date(now));
             }
 
-            // Check that the test date is within the validity interval
-            if ((sr.thisUpdate != null && nowPlusSkew.before(sr.thisUpdate)) ||
-                (sr.nextUpdate != null && nowMinusSkew.after(sr.nextUpdate)))
+            // Check that the test date is within the validity interval:
+            //   [ thisUpdate - MAX_CLOCK_SKEW,
+            //     MAX(thisUpdate, nextUpdate) + MAX_CLOCK_SKEW ]
+            if (nowPlusSkew.before(sr.thisUpdate) ||
+                nowMinusSkew.after(
+                    sr.nextUpdate != null ? sr.nextUpdate : sr.thisUpdate))
             {
                 throw new CertPathValidatorException(
                                       "Response is unreliable: its validity " +
@@ -669,38 +675,6 @@ public final class OCSPResponse {
         return signerCert; // set in verify()
     }
 
-    /**
-     * Build a String-Extension map from DER encoded data.
-     * @param derVal A {@code DerValue} object built from a SEQUENCE of
-     *      extensions
-     *
-     * @return A {@code Map} using the OID in string form as the keys.  If no
-     *      extensions are found or an empty SEQUENCE is passed in, then
-     *      an empty {@code Map} will be returned.
-     *
-     * @throws IOException if any decoding errors occur.
-     */
-    private static Map<String, java.security.cert.Extension>
-        parseExtensions(DerValue derVal) throws IOException {
-        DerValue[] extDer = derVal.data.getSequence(3);
-        Map<String, java.security.cert.Extension> extMap =
-                new HashMap<>(extDer.length);
-
-        for (DerValue extDerVal : extDer) {
-            Extension ext = new Extension(extDerVal);
-            // We don't support any extensions yet. Therefore, if it
-            // is critical we must throw an exception because we
-            // don't know how to process it.
-            if (ext.isCritical()) {
-                throw new IOException("Unsupported OCSP critical extension: " +
-                        ext.getExtensionId());
-            }
-            extMap.put(ext.getId(), ext);
-        }
-
-        return extMap;
-    }
-
     /*
      * A class representing a single OCSP response.
      */
@@ -749,7 +723,7 @@ public final class OCSPResponse {
                 }
             } else {
                 revocationTime = null;
-                revocationReason = null;
+                revocationReason = CRLReason.UNSPECIFIED;
                 if (tag == CERT_STATUS_GOOD) {
                     certStatus = CertStatus.GOOD;
                 } else if (tag == CERT_STATUS_UNKNOWN) {
@@ -760,59 +734,55 @@ public final class OCSPResponse {
             }
 
             thisUpdate = tmp.getGeneralizedTime();
-            if (debug != null) {
-                debug.println("thisUpdate: " + thisUpdate);
+
+            if (tmp.available() == 0)  {
+                // we are done
+                nextUpdate = null;
+            } else {
+                derVal = tmp.getDerValue();
+                tag = (byte)(derVal.tag & 0x1f);
+                if (tag == 0) {
+                    // next update
+                    nextUpdate = derVal.data.getGeneralizedTime();
+
+                    if (tmp.available() == 0)  {
+                        // we are done
+                    } else {
+                        derVal = tmp.getDerValue();
+                        tag = (byte)(derVal.tag & 0x1f);
+                    }
+                } else {
+                    nextUpdate = null;
+                }
             }
-
-            // Parse optional fields like nextUpdate and singleExtensions
-            Date tmpNextUpdate = null;
-            Map<String, java.security.cert.Extension> tmpMap = null;
-
-            // Check for the first optional item, it could be nextUpdate
-            // [CONTEXT 0] or singleExtensions [CONTEXT 1]
+            // singleExtensions
             if (tmp.available() > 0) {
                 derVal = tmp.getDerValue();
-
-                // nextUpdate processing
-                if (derVal.isContextSpecific((byte)0)) {
-                    tmpNextUpdate = derVal.data.getGeneralizedTime();
-                    if (debug != null) {
-                        debug.println("nextUpdate: " + tmpNextUpdate);
-                    }
-
-                    // If more data exists in the singleResponse, it
-                    // can only be singleExtensions.  Get this DER value
-                    // for processing in the next block
-                    derVal = tmp.available() > 0 ? tmp.getDerValue() : null;
-                }
-
-                // singleExtensions processing
-                if (derVal != null) {
-                    if (derVal.isContextSpecific((byte)1)) {
-                        tmpMap = parseExtensions(derVal);
-
-                        // There should not be any other items in the
-                        // singleResponse at this point.
-                        if (tmp.available() > 0) {
-                            throw new IOException(tmp.available() +
-                                " bytes of additional data in singleResponse");
+                if (derVal.isContextSpecific((byte)1)) {
+                    DerValue[] singleExtDer = derVal.data.getSequence(3);
+                    singleExtensions =
+                        new HashMap<String, java.security.cert.Extension>
+                            (singleExtDer.length);
+                    for (int i = 0; i < singleExtDer.length; i++) {
+                        Extension ext = new Extension(singleExtDer[i]);
+                        if (debug != null) {
+                            debug.println("OCSP single extension: " + ext);
                         }
-                    } else {
-                        // Unknown item in the singleResponse
-                        throw new IOException("Unsupported singleResponse " +
-                            "item, tag = " + String.format("%02X", derVal.tag));
+                        // We don't support any extensions yet. Therefore, if it
+                        // is critical we must throw an exception because we
+                        // don't know how to process it.
+                        if (ext.isCritical()) {
+                            throw new IOException(
+                                "Unsupported OCSP critical extension: " +
+                                ext.getExtensionId());
+                        }
+                        singleExtensions.put(ext.getId(), ext);
                     }
+                } else {
+                    singleExtensions = Collections.emptyMap();
                 }
-            }
-
-            nextUpdate = tmpNextUpdate;
-            singleExtensions = (tmpMap != null) ? tmpMap :
-                    Collections.emptyMap();
-            if (debug != null) {
-                for (java.security.cert.Extension ext :
-                        singleExtensions.values()) {
-                   debug.println("singleExtension: " + ext);
-                }
+            } else {
+                singleExtensions = Collections.emptyMap();
             }
         }
 
@@ -828,8 +798,7 @@ public final class OCSPResponse {
         }
 
         @Override public Date getRevocationTime() {
-            return (revocationTime != null ? (Date) revocationTime.clone() :
-                    null);
+            return (Date) revocationTime.clone();
         }
 
         @Override public CRLReason getRevocationReason() {
@@ -856,9 +825,6 @@ public final class OCSPResponse {
             sb.append("thisUpdate is " + thisUpdate + "\n");
             if (nextUpdate != null) {
                 sb.append("nextUpdate is " + nextUpdate + "\n");
-            }
-            for (java.security.cert.Extension ext : singleExtensions.values()) {
-                sb.append("singleExtension: " + ext + "\n");
             }
             return sb.toString();
         }
