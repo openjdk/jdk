@@ -43,7 +43,7 @@ import static org.testng.Assert.fail;
 /**
  * @test
  * @summary test BitSet stream
- * @bug 8012645
+ * @bug 8012645 8076442
  * @run testng BitSetStreamTest
  */
 public class BitSetStreamTest {
@@ -70,6 +70,7 @@ public class BitSetStreamTest {
         { "step 5", IntStream.range(0, 255).map(f -> f * 5) },
         { "step 7", IntStream.range(0, 255).map(f -> f * 7) },
         { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000) },
+        { "max int", IntStream.of(Integer.MAX_VALUE) },
         { "25 fibs", IntStream.generate(new Fibs()).limit(25) }
     };
 
@@ -106,6 +107,8 @@ public class BitSetStreamTest {
         for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
             assertTrue(it.hasNext());
             assertEquals(it.nextInt(), i);
+            if (i == Integer.MAX_VALUE)
+                break; // or (i+1) would overflow
         }
         assertFalse(it.hasNext());
     }
