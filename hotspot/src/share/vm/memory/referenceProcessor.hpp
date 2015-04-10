@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,20 +170,6 @@ public:
       _keep_alive->do_oop((narrowOop*)_referent_addr);
     } else {
       _keep_alive->do_oop((oop*)_referent_addr);
-    }
-  }
-
-  // Update the discovered field.
-  inline void update_discovered() {
-    // First _prev_next ref actually points into DiscoveredList (gross).
-    if (UseCompressedOops) {
-      if (!oopDesc::is_null(*(narrowOop*)_prev_next)) {
-        _keep_alive->do_oop((narrowOop*)_prev_next);
-      }
-    } else {
-      if (!oopDesc::is_null(*(oop*)_prev_next)) {
-        _keep_alive->do_oop((oop*)_prev_next);
-      }
     }
   }
 
