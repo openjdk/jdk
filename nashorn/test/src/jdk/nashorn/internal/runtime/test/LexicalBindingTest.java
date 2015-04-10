@@ -40,7 +40,7 @@ import static org.testng.Assert.assertEquals;
  * Top-level lexical binding tests.
  *
  * @test
- * @run testng jdk.nashorn.internal.runtime.LexicalBindingTest
+ * @run testng jdk.nashorn.internal.runtime.test.LexicalBindingTest
  */
 @SuppressWarnings("javadoc")
 public class LexicalBindingTest {
