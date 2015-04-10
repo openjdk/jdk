@@ -237,6 +237,8 @@ JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
 IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
 TESTMAKE_OUTPUTDIR=$(BUILD_OUTPUT)/test-make
 MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/make-support
+# This does not get overridden in a bootcycle build
+CONFIGURESUPPORT_OUTPUTDIR:=@CONFIGURESUPPORT_OUTPUTDIR@
 
 HOTSPOT_DIST=@HOTSPOT_DIST@
 
@@ -258,7 +260,7 @@ MEMORY_SIZE:=@MEMORY_SIZE@
 ENABLE_SJAVAC:=@ENABLE_SJAVAC@
 # Store sjavac server synchronization files here, and
 # the sjavac server log files.
-SJAVAC_SERVER_DIR:=@SJAVAC_SERVER_DIR@
+SJAVAC_SERVER_DIR=$(MAKESUPPORT_OUTPUTDIR)/javacservers
 
 # Number of parallel jobs to use for compilation
 JOBS?=@JOBS@

@@ -658,6 +658,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
+    CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
+    $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
     if test ! -d "$OUTPUT_ROOT"; then
       AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])
     fi
@@ -703,6 +705,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
   AC_SUBST(CONF_NAME, $CONF_NAME)
   AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
+  AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
   AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
