@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.*;
-import com.sun.source.tree.LambdaExpressionTree.BodyKind;
-import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
@@ -2502,12 +2500,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         public JCTree annotationType;
         public List<JCExpression> args;
-
-        // Attribute.Compound if tag is ANNOTATION
-        // Attribute.TypeCompound if tag is TYPE_ANNOTATION
-        //
-        // NOTE: This field is slated for removal in the future.  Do
-        // not use it for anything new.
         public Attribute.Compound attribute;
 
         protected JCAnnotation(Tag tag, JCTree annotationType, List<JCExpression> args) {
