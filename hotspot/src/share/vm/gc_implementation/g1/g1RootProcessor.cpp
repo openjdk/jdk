@@ -326,10 +326,6 @@ void G1RootProcessor::process_vm_roots(OopClosure* strong_roots,
 void G1RootProcessor::scan_remembered_sets(G1ParPushHeapRSClosure* scan_rs,
                                            OopClosure* scan_non_heap_weak_roots,
                                            uint worker_i) {
-  G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
-  G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CodeCacheRoots, worker_i);
-
-  // Now scan the complement of the collection set.
   G1CodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots);
 
   _g1h->g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);
