@@ -88,28 +88,15 @@ help:
 	$(info $(_)                        # make test TEST="jdk_lang jdk_net")
 	$(info )
 	$(if $(all_confs), $(info Available configurations in $(build_dir):) $(foreach var,$(all_confs),$(info * $(var))),\
-	    $(info No configurations were found in $(build_dir).) $(info Run 'bash configure' to create a configuration))
+	    $(info No configurations were found in $(build_dir).) $(info Run 'bash configure' to create a configuration.))
         # We need a dummy rule otherwise make will complain
 	@true
-
-print-targets:
-	$(if $(any_spec_file), ,\
-	  @echo "Note: More targets will be available when at least one configuration exists." 1>&2\
-	)
-	@echo $(ALL_TARGETS)
-
-print-modules:
-	$(if $(any_spec_file), \
-	  @$(MAKE) -s -f $(topdir)/make/Main.gmk -I $(topdir)/make/common SPEC=$(any_spec_file) print-modules \
-	, \
-	  @echo print-modules can currently only be run when at least one configuration exists \
-	)
 
 print-configurations:
 	$(foreach var, $(all_confs), $(info $(var)))
         # We need a dummy rule otherwise make will complain
 	@true
 
-ALL_GLOBAL_TARGETS := help print-modules print-targets print-configurations
+ALL_GLOBAL_TARGETS := help print-configurations
 
 .PHONY: $(ALL_GLOBAL_TARGETS)
