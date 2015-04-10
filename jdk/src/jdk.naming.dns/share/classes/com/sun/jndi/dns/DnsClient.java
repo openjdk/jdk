@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,119 +184,124 @@ public class DnsClient {
         Exception caughtException = null;
         boolean[] doNotRetry = new boolean[servers.length];
 
-        //
-        // The UDP retry strategy is to try the 1st server, and then
-        // each server in order. If no answer, double the timeout
-        // and try each server again.
-        //
-        for (int retry = 0; retry < retries; retry++) {
+        try {
+            //
+            // The UDP retry strategy is to try the 1st server, and then
+            // each server in order. If no answer, double the timeout
+            // and try each server again.
+            //
+            for (int retry = 0; retry < retries; retry++) {
 
-            // Try each name server.
-            for (int i = 0; i < servers.length; i++) {
-                if (doNotRetry[i]) {
-                    continue;
-                }
-
-                // send the request packet and wait for a response.
-                try {
-                    if (debug) {
-                        dprint("SEND ID (" + (retry + 1) + "): " + xid);
-                    }
-
-                    byte[] msg = null;
-                    msg = doUdpQuery(pkt, servers[i], serverPorts[i],
-                                        retry, xid);
-                    //
-                    // If the matching response is not got within the
-                    // given timeout, check if the response was enqueued
-                    // by some other thread, if not proceed with the next
-                    // server or retry.
-                    //
-                    if (msg == null) {
-                        if (resps.size() > 0) {
-                            msg = lookupResponse(xid);
-                        }
-                        if (msg == null) { // try next server or retry
-                            continue;
-                        }
-                    }
-                    Header hdr = new Header(msg, msg.length);
-
-                    if (auth && !hdr.authoritative) {
-                        caughtException = new NameNotFoundException(
-                                "DNS response not authoritative");
-                        doNotRetry[i] = true;
+                // Try each name server.
+                for (int i = 0; i < servers.length; i++) {
+                    if (doNotRetry[i]) {
                         continue;
                     }
-                    if (hdr.truncated) {    // message is truncated -- try TCP
 
-                        // Try each server, starting with the one that just
-                        // provided the truncated message.
-                        for (int j = 0; j < servers.length; j++) {
-                            int ij = (i + j) % servers.length;
-                            if (doNotRetry[ij]) {
+                    // send the request packet and wait for a response.
+                    try {
+                        if (debug) {
+                            dprint("SEND ID (" + (retry + 1) + "): " + xid);
+                        }
+
+                        byte[] msg = null;
+                        msg = doUdpQuery(pkt, servers[i], serverPorts[i],
+                                            retry, xid);
+                        //
+                        // If the matching response is not got within the
+                        // given timeout, check if the response was enqueued
+                        // by some other thread, if not proceed with the next
+                        // server or retry.
+                        //
+                        if (msg == null) {
+                            if (resps.size() > 0) {
+                                msg = lookupResponse(xid);
+                            }
+                            if (msg == null) { // try next server or retry
                                 continue;
                             }
-                            try {
-                                Tcp tcp =
-                                    new Tcp(servers[ij], serverPorts[ij]);
-                                byte[] msg2;
+                        }
+                        Header hdr = new Header(msg, msg.length);
+
+                        if (auth && !hdr.authoritative) {
+                            caughtException = new NameNotFoundException(
+                                    "DNS response not authoritative");
+                            doNotRetry[i] = true;
+                            continue;
+                        }
+                        if (hdr.truncated) {  // message is truncated -- try TCP
+
+                            // Try each server, starting with the one that just
+                            // provided the truncated message.
+                            for (int j = 0; j < servers.length; j++) {
+                                int ij = (i + j) % servers.length;
+                                if (doNotRetry[ij]) {
+                                    continue;
+                                }
                                 try {
-                                    msg2 = doTcpQuery(tcp, pkt);
-                                } finally {
-                                    tcp.close();
-                                }
-                                Header hdr2 = new Header(msg2, msg2.length);
-                                if (hdr2.query) {
-                                    throw new CommunicationException(
-                                        "DNS error: expecting response");
-                                }
-                                checkResponseCode(hdr2);
+                                    Tcp tcp =
+                                        new Tcp(servers[ij], serverPorts[ij]);
+                                    byte[] msg2;
+                                    try {
+                                        msg2 = doTcpQuery(tcp, pkt);
+                                    } finally {
+                                        tcp.close();
+                                    }
+                                    Header hdr2 = new Header(msg2, msg2.length);
+                                    if (hdr2.query) {
+                                        throw new CommunicationException(
+                                            "DNS error: expecting response");
+                                    }
+                                    checkResponseCode(hdr2);
 
-                                if (!auth || hdr2.authoritative) {
-                                    // Got a valid response
-                                    hdr = hdr2;
-                                    msg = msg2;
-                                    break;
-                                } else {
-                                    doNotRetry[ij] = true;
+                                    if (!auth || hdr2.authoritative) {
+                                        // Got a valid response
+                                        hdr = hdr2;
+                                        msg = msg2;
+                                        break;
+                                    } else {
+                                        doNotRetry[ij] = true;
+                                    }
+                                } catch (Exception e) {
+                                    // Try next server, or use UDP response
                                 }
-                            } catch (Exception e) {
-                                // Try next server, or use UDP response
-                            }
-                        } // servers
-                    }
-                    return new ResourceRecords(msg, msg.length, hdr, false);
+                            } // servers
+                        }
+                        return new ResourceRecords(msg, msg.length, hdr, false);
 
-                } catch (IOException e) {
-                    if (debug) {
-                        dprint("Caught IOException:" + e);
-                    }
-                    if (caughtException == null) {
-                        caughtException = e;
-                    }
-                    // Use reflection to allow pre-1.4 compilation.
-                    // This won't be needed much longer.
-                    if (e.getClass().getName().equals(
-                            "java.net.PortUnreachableException")) {
+                    } catch (IOException e) {
+                        if (debug) {
+                            dprint("Caught IOException:" + e);
+                        }
+                        if (caughtException == null) {
+                            caughtException = e;
+                        }
+                        // Use reflection to allow pre-1.4 compilation.
+                        // This won't be needed much longer.
+                        if (e.getClass().getName().equals(
+                                "java.net.PortUnreachableException")) {
+                            doNotRetry[i] = true;
+                        }
+                    } catch (NameNotFoundException e) {
+                        // This is authoritative, so return immediately
+                        throw e;
+                    } catch (CommunicationException e) {
+                        if (caughtException == null) {
+                            caughtException = e;
+                        }
+                    } catch (NamingException e) {
+                        if (caughtException == null) {
+                            caughtException = e;
+                        }
                         doNotRetry[i] = true;
                     }
-                } catch (NameNotFoundException e) {
-                    throw e;
-                } catch (CommunicationException e) {
-                    if (caughtException == null) {
-                        caughtException = e;
-                    }
-                } catch (NamingException e) {
-                    if (caughtException == null) {
-                        caughtException = e;
-                    }
-                    doNotRetry[i] = true;
-                }
-            } // servers
-        } // retries
+                } // servers
+            } // retries
 
-        reqs.remove(xid);
+        } finally {
+            reqs.remove(xid); // cleanup
+        }
+
         if (caughtException instanceof NamingException) {
             throw (NamingException) caughtException;
         }
