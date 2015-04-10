@@ -59,12 +59,12 @@ import static java.lang.annotation.ElementType.PARAMETER;
  *
  * would produce XML like this:
  *
- * <pre>
- * &lt;foo&gt;
- *   &lt;data&gt;abc&lt;/data&gt;
- *   &lt;data&gt;def&lt;/data&gt;
- * &lt;/foo&gt;
- * </pre>
+ * <pre>{@code
+ * <foo>
+ *   <data>abc</data>
+ *   <data>def</data>
+ * </foo>
+ * }</pre>
  *
  * &#64;XmlList annotation, on the other hand, allows multiple values to be
  * represented as whitespace-separated tokens in a single element. For example,
@@ -80,11 +80,11 @@ import static java.lang.annotation.ElementType.PARAMETER;
  *
  * the above code will produce XML like this:
  *
- * <pre>
- * &lt;foo&gt;
- *   &lt;data&gt;abc def&lt;/data&gt;
- * &lt;/foo&gt;
- * </pre>
+ * <pre>{@code
+ * <foo>
+ *   <data>abc def</data>
+ * </foo>
+ * }</pre>
  *
  * <p>This annotation can be used with the following annotations:
  *        {@link XmlElement},

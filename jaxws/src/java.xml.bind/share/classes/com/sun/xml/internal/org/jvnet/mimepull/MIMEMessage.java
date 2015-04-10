@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,18 @@
 
 package com.sun.xml.internal.org.jvnet.mimepull;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,18 +46,20 @@ import java.util.logging.Logger;
  *
  * @author Jitendra Kotamraju
  */
-public class MIMEMessage {
+public class MIMEMessage implements Closeable {
+
     private static final Logger LOGGER = Logger.getLogger(MIMEMessage.class.getName());
 
     MIMEConfig config;
 
     private final InputStream in;
-    private final List<MIMEPart> partsList;
-    private final Map<String, MIMEPart> partsMap;
     private final Iterator<MIMEEvent> it;
     private boolean parsed;     // true when entire message is parsed
     private MIMEPart currentPart;
     private int currentIndex;
+
+    private final List<MIMEPart> partsList = new ArrayList<MIMEPart>();
+    private final Map<String, MIMEPart> partsMap = new HashMap<String, MIMEPart>();
 
     /**
      * @see MIMEMessage(InputStream, String, MIMEConfig)
@@ -64,9 +72,9 @@ public class MIMEMessage {
      * Creates a MIME message from the content's stream. The content stream
      * is closed when EOF is reached.
      *
-     * @param in MIME message stream
+     * @param in       MIME message stream
      * @param boundary the separator for parts(pass it without --)
-     * @param config various configuration parameters
+     * @param config   various configuration parameters
      */
     public MIMEMessage(InputStream in, String boundary, MIMEConfig config) {
         this.in = in;
@@ -74,8 +82,6 @@ public class MIMEMessage {
         MIMEParser parser = new MIMEParser(in, boundary, config);
         it = parser.iterator();
 
-        partsList = new ArrayList<MIMEPart>();
-        partsMap = new HashMap<String, MIMEPart>();
         if (config.isParseEagerly()) {
             parseAll();
         }
@@ -108,14 +114,14 @@ public class MIMEMessage {
         LOGGER.log(Level.FINE, "index={0}", index);
         MIMEPart part = (index < partsList.size()) ? partsList.get(index) : null;
         if (parsed && part == null) {
-            throw new MIMEParsingException("There is no "+index+" attachment part ");
+            throw new MIMEParsingException("There is no " + index + " attachment part ");
         }
         if (part == null) {
             // Parsing will done lazily and will be driven by reading the part
             part = new MIMEPart(this);
             partsList.add(index, part);
         }
-        LOGGER.log(Level.FINE, "Got attachment at index={0} attachment={1}", new Object[]{index, part});
+        LOGGER.log(Level.FINE, "Got attachment at index={0} attachment={1}", new Object[] {index, part});
         return part;
     }
 
@@ -132,14 +138,14 @@ public class MIMEMessage {
         LOGGER.log(Level.FINE, "Content-ID={0}", contentId);
         MIMEPart part = getDecodedCidPart(contentId);
         if (parsed && part == null) {
-            throw new MIMEParsingException("There is no attachment part with Content-ID = "+contentId);
+            throw new MIMEParsingException("There is no attachment part with Content-ID = " + contentId);
         }
         if (part == null) {
             // Parsing is done lazily and is driven by reading the part
             part = new MIMEPart(this, contentId);
             partsMap.put(contentId, part);
         }
-        LOGGER.log(Level.FINE, "Got attachment for Content-ID={0} attachment={1}", new Object[]{contentId, part});
+        LOGGER.log(Level.FINE, "Got attachment for Content-ID={0} attachment={1}", new Object[] {contentId, part});
         return part;
     }
 
@@ -151,7 +157,7 @@ public class MIMEMessage {
                 try {
                     String tempCid = URLDecoder.decode(cid, "utf-8");
                     part = partsMap.get(tempCid);
-                } catch(UnsupportedEncodingException ue) {
+                } catch (UnsupportedEncodingException ue) {
                     // Ignore it
                 }
             }
@@ -159,22 +165,43 @@ public class MIMEMessage {
         return part;
     }
 
-
     /**
      * Parses the whole MIME message eagerly
      */
     public final void parseAll() {
-        while(makeProgress()) {
+        while (makeProgress()) {
             // Nothing to do
         }
     }
 
+    /**
+     * Closes all parsed {@link com.sun.xml.internal.org.jvnet.mimepull.MIMEPart parts}.
+     * This method is safe to call even if parsing of message failed.
+     * <p/>
+     * Does not throw {@link com.sun.xml.internal.org.jvnet.mimepull.MIMEParsingException} if an
+     * error occurred during closing a MIME part. The exception (if any) is
+     * still logged.
+     */
+    @Override
+    public void close() {
+        close(partsList);
+        close(partsMap.values());
+    }
+
+    private void close(final Collection<MIMEPart> parts) {
+        for (final MIMEPart part : parts) {
+            try {
+                part.close();
+            } catch (final MIMEParsingException closeError) {
+                LOGGER.log(Level.FINE, "Exception during closing MIME part", closeError);
+            }
+        }
+    }
 
     /**
      * Parses the MIME message in a pull fashion.
      *
-     * @return
-     *      false if the parsing is completed.
+     * @return false if the parsing is completed.
      */
     public synchronized boolean makeProgress() {
         if (!it.hasNext()) {
@@ -183,23 +210,23 @@ public class MIMEMessage {
 
         MIMEEvent event = it.next();
 
-        switch(event.getEventType()) {
-            case START_MESSAGE :
+        switch (event.getEventType()) {
+            case START_MESSAGE:
                 LOGGER.log(Level.FINE, "MIMEEvent={0}", MIMEEvent.EVENT_TYPE.START_MESSAGE);
                 break;
 
-            case START_PART :
+            case START_PART:
                 LOGGER.log(Level.FINE, "MIMEEvent={0}", MIMEEvent.EVENT_TYPE.START_PART);
                 break;
 
-            case HEADERS :
+            case HEADERS:
                 LOGGER.log(Level.FINE, "MIMEEvent={0}", MIMEEvent.EVENT_TYPE.HEADERS);
-                MIMEEvent.Headers headers = (MIMEEvent.Headers)event;
+                MIMEEvent.Headers headers = (MIMEEvent.Headers) event;
                 InternetHeaders ih = headers.getHeaders();
                 List<String> cids = ih.getHeader("content-id");
-                String cid = (cids != null) ? cids.get(0) : currentIndex+"";
-                if (cid.length() > 2 && cid.charAt(0)=='<') {
-                    cid = cid.substring(1,cid.length()-1);
+                String cid = (cids != null) ? cids.get(0) : currentIndex + "";
+                if (cid.length() > 2 && cid.charAt(0) == '<') {
+                    cid = cid.substring(1, cid.length() - 1);
                 }
                 MIMEPart listPart = (currentIndex < partsList.size()) ? partsList.get(currentIndex) : null;
                 MIMEPart mapPart = getDecodedCidPart(cid);
@@ -219,31 +246,31 @@ public class MIMEMessage {
                 currentPart.setHeaders(ih);
                 break;
 
-            case CONTENT :
+            case CONTENT:
                 LOGGER.log(Level.FINER, "MIMEEvent={0}", MIMEEvent.EVENT_TYPE.CONTENT);
-                MIMEEvent.Content content = (MIMEEvent.Content)event;
+                MIMEEvent.Content content = (MIMEEvent.Content) event;
                 ByteBuffer buf = content.getData();
                 currentPart.addBody(buf);
                 break;
 
-            case END_PART :
+            case END_PART:
                 LOGGER.log(Level.FINE, "MIMEEvent={0}", MIMEEvent.EVENT_TYPE.END_PART);
                 currentPart.doneParsing();
                 ++currentIndex;
                 break;
 
-            case END_MESSAGE :
+            case END_MESSAGE:
                 LOGGER.log(Level.FINE, "MIMEEvent={0}", MIMEEvent.EVENT_TYPE.END_MESSAGE);
                 parsed = true;
                 try {
                     in.close();
-                } catch(IOException ioe) {
+                } catch (IOException ioe) {
                     throw new MIMEParsingException(ioe);
                 }
                 break;
 
-            default :
-                throw new MIMEParsingException("Unknown Parser state = "+event.getEventType());
+            default:
+                throw new MIMEParsingException("Unknown Parser state = " + event.getEventType());
         }
         return true;
     }
