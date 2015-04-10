@@ -38,6 +38,11 @@ BUILD_LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/i
     $(LIBJAVA_HEADER_FLAGS) \
     #
 
+# In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
+# a binary that is compatible with windows versions older than 7/2008R2.
+# See MSDN documentation for GetProcessMemoryInfo for more information.
+BUILD_LIBMANAGEMENT_CFLAGS += -DPSAPI_VERSION=1
+
 BUILD_LIBMANAGEMENT_EXCLUDES :=
 
 ifneq ($(OPENJDK_TARGET_OS), solaris)

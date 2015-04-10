@@ -269,11 +269,11 @@ class JImageTask {
                         return 0L;
                     }
 
-                    String name = pathString.substring(chop).replace('\\','/');
-
                     File file = path.toFile();
 
                     if (file.isFile()) {
+                        String name = pathString.substring(chop).replace(File.separatorChar, '/');
+
                         if (options.verbose) {
                             log.println(name);
                         }
@@ -310,7 +310,7 @@ class JImageTask {
                 for (File file : files) {
                     try {
                         Path path = file.toPath();
-                        String name = path.toString();
+                        String name = path.toString().replace(File.separatorChar, '/');
 
                         if (name.endsWith(MODULES_ENTRY) || name.endsWith(PACKAGES_ENTRY)) {
                             for (String line: Files.readAllLines(path)) {
