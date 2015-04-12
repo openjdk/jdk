@@ -128,16 +128,7 @@ void VM_GC_Operation::doit_epilogue() {
   release_and_notify_pending_list_lock();
 }
 
-bool VM_GC_HeapInspection::doit_prologue() {
-  if (Universe::heap()->supports_heap_inspection()) {
-    return VM_GC_Operation::doit_prologue();
-  } else {
-    return false;
-  }
-}
-
 bool VM_GC_HeapInspection::skip_operation() const {
-  assert(Universe::heap()->supports_heap_inspection(), "huh?");
   return false;
 }
 

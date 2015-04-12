@@ -177,9 +177,6 @@ public:
   HeapWord** top_addr() const;
   HeapWord** end_addr() const;
 
-  // Does this heap support heap inspection? (+PrintClassHistogram)
-  virtual bool supports_heap_inspection() const { return true; }
-
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.

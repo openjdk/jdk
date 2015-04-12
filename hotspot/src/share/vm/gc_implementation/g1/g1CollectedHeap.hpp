@@ -1346,9 +1346,6 @@ public:
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const;
 
-  // Does this heap support heap inspection? (+PrintClassHistogram)
-  virtual bool supports_heap_inspection() const { return true; }
-
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 

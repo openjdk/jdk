@@ -132,9 +132,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // the young gen.
   virtual bool is_scavengable(const void* addr);
 
-  // Does this heap support heap inspection? (+PrintClassHistogram)
-  bool supports_heap_inspection() const { return true; }
-
   size_t max_capacity() const;
 
   // Whether p is in the allocated part of the heap
