@@ -450,9 +450,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // remembered set.
   virtual void flush_deferred_store_barrier(JavaThread* thread);
 
-  // Does this heap support heap inspection (+PrintClassHistogram?)
-  virtual bool supports_heap_inspection() const = 0;
-
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
   // "CollectedHeap" supports.
