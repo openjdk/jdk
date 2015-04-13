@@ -1901,7 +1901,7 @@ class Threads: AllStatic {
   // never set the global parity to 0.
   static int thread_claim_parity() { return _thread_claim_parity; }
   static void change_thread_claim_parity();
-  static void assert_all_threads_claimed() PRODUCT_RETURN;
+  static void assert_all_threads_claimed() NOT_DEBUG_RETURN;
 
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.

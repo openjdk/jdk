@@ -4052,7 +4052,7 @@ void Threads::change_thread_claim_parity() {
          "Not in range.");
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
     const int thread_parity = p->oops_do_parity();
@@ -4060,7 +4060,7 @@ void Threads::assert_all_threads_claimed() {
         err_msg("Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity));
   }
 }
-#endif // PRODUCT
+#endif // ASSERT
 
 void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   int cp = Threads::thread_claim_parity();
