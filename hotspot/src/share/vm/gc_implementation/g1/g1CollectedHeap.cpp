@@ -3318,6 +3318,8 @@ void G1CollectedHeap::print_all_rsets() {
 #endif // PRODUCT
 
 G1CollectedHeap* G1CollectedHeap::heap() {
+  assert(_g1h != NULL, "Uninitialized access to G1CollectedHeap::heap()");
+  assert(_g1h->kind() == CollectedHeap::G1CollectedHeap, "Not a G1 heap");
   return _g1h;
 }
 

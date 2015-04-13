@@ -299,8 +299,6 @@ void CMSCollector::ref_processor_init() {
 
 AdaptiveSizePolicy* CMSCollector::size_policy() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->kind() == CollectedHeap::GenCollectedHeap,
-    "Wrong type of heap");
   return gch->gen_policy()->size_policy();
 }
 
@@ -981,7 +979,7 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
   assert_lock_strong(freelistLock());
 
 #ifndef PRODUCT
-  if (Universe::heap()->promotion_should_fail()) {
+  if (GenCollectedHeap::heap()->promotion_should_fail()) {
     return NULL;
   }
 #endif  // #ifndef PRODUCT
@@ -1058,7 +1056,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
                                            oop old, markOop m,
                                            size_t word_sz) {
 #ifndef PRODUCT
-  if (Universe::heap()->promotion_should_fail()) {
+  if (GenCollectedHeap::heap()->promotion_should_fail()) {
     return NULL;
   }
 #endif  // #ifndef PRODUCT
@@ -2468,7 +2466,7 @@ void CMSCollector::verify_after_remark_work_1() {
   verification_mark_bm()->iterate(&vcl);
   if (vcl.failed()) {
     gclog_or_tty->print("Verification failed");
-    Universe::heap()->print_on(gclog_or_tty);
+    gch->print_on(gclog_or_tty);
     fatal("CMS: failed marking verification after remark");
   }
 }

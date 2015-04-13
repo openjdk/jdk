@@ -70,7 +70,7 @@ template <class T>
 inline void ParScanClosure::do_oop_work(T* p,
                                         bool gc_barrier,
                                         bool root_scan) {
-  assert((!Universe::heap()->is_in_reserved(p) ||
+  assert((!GenCollectedHeap::heap()->is_in_reserved(p) ||
           generation()->is_in_reserved(p))
          && (generation()->level() == 0 || gc_barrier),
          "The gen must be right, and we must be doing the barrier "
@@ -82,7 +82,7 @@ inline void ParScanClosure::do_oop_work(T* p,
 #ifndef PRODUCT
       if (_g->to()->is_in_reserved(obj)) {
         tty->print_cr("Scanning field (" PTR_FORMAT ") twice?", p2i(p));
-        GenCollectedHeap* gch =  (GenCollectedHeap*)Universe::heap();
+        GenCollectedHeap* gch = GenCollectedHeap::heap();
         Space* sp = gch->space_containing(p);
         oop obj = oop(sp->block_start(p));
         assert((HeapWord*)obj < (HeapWord*)p, "Error");

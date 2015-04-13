@@ -44,8 +44,7 @@ PSOldGen*                      PSPromotionManager::_old_gen = NULL;
 MutableSpace*                  PSPromotionManager::_young_space = NULL;
 
 void PSPromotionManager::initialize() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _old_gen = heap->old_gen();
   _young_space = heap->young_gen()->to_space();
@@ -88,8 +87,7 @@ PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
 }
 
 void PSPromotionManager::pre_scavenge() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _young_space = heap->young_gen()->to_space();
 
@@ -132,7 +130,7 @@ static const char* const pm_stats_hdr[] = {
 void
 PSPromotionManager::print_taskqueue_stats(outputStream* const out) {
   out->print_cr("== GC Tasks Stats, GC %3d",
-                Universe::heap()->total_collections());
+                ParallelScavengeHeap::heap()->total_collections());
 
   TaskQueueStats totals;
   out->print("thr "); TaskQueueStats::print_header(1, out); out->cr();
@@ -160,8 +158,7 @@ PSPromotionManager::reset_stats() {
 #endif // TASKQUEUE_STATS
 
 PSPromotionManager::PSPromotionManager() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
@@ -191,8 +188,7 @@ void PSPromotionManager::reset() {
 
   // We need to get an assert in here to make sure the labs are always flushed.
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   // Do not prefill the LAB's, save heap wastage!
   HeapWord* lab_base = young_space()->top();
@@ -213,8 +209,7 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   totally_drain = totally_drain || _totally_drain;
 
 #ifdef ASSERT
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MutableSpace* to_space = heap->young_gen()->to_space();
   MutableSpace* old_space = heap->old_gen()->object_space();
 #endif /* ASSERT */

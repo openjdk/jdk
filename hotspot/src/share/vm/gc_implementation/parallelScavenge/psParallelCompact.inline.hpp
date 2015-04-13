@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_INLINE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_INLINE_HPP
 
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_interface/collectedHeap.hpp"
@@ -36,7 +37,7 @@ inline void PSParallelCompact::mark_and_push(ParCompactionManager* cm, T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    assert(Universe::heap()->is_in(obj), "should be in heap");
+    assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
     if (mark_bitmap()->is_unmarked(obj) && mark_obj(obj)) {
       cm->push(obj);
@@ -62,14 +63,14 @@ inline void PSParallelCompact::adjust_pointer(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
-    assert(Universe::heap()->is_in(obj), "should be in heap");
+    assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
     oop new_obj = (oop)summary_data().calc_new_pointer(obj);
     assert(new_obj != NULL,                    // is forwarding ptr?
            "should be forwarded");
     // Just always do the update unconditionally?
     if (new_obj != NULL) {
-      assert(Universe::heap()->is_in_reserved(new_obj),
+      assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
              "should be in object space");
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
     }

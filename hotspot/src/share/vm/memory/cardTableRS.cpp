@@ -38,7 +38,6 @@ CardTableRS::CardTableRS(MemRegion whole_heap) :
   GenRemSet(),
   _cur_youngergen_card_val(youngergenP1_card)
 {
-  guarantee(Universe::heap()->kind() == CollectedHeap::GenCollectedHeap, "sanity");
   _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
   _ct_bs->initialize();
   set_bs(_ct_bs);
@@ -598,10 +597,6 @@ void CardTableRS::verify() {
   // At present, we only know how to verify the card table RS for
   // generational heaps.
   VerifyCTGenClosure blk(this);
-  CollectedHeap* ch = Universe::heap();
-
-  if (ch->kind() == CollectedHeap::GenCollectedHeap) {
-    GenCollectedHeap::heap()->generation_iterate(&blk, false);
-    _ct_bs->verify();
-    }
-  }
+  GenCollectedHeap::heap()->generation_iterate(&blk, false);
+  _ct_bs->verify();
+}

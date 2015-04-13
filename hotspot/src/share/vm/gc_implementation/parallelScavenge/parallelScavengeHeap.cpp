@@ -89,6 +89,7 @@ jint ParallelScavengeHeap::initialize() {
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
   double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
+  _psh = this;
   _gens = new AdjoiningGenerations(heap_rs, _collector_policy, generation_alignment());
 
   _old_gen = _gens->old_gen();
@@ -114,7 +115,6 @@ jint ParallelScavengeHeap::initialize() {
   // initialize the policy counters - 2 collectors, 3 generations
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 3, _size_policy);
-  _psh = this;
 
   // Set up the GCTaskManager
   _gc_task_manager = GCTaskManager::create(ParallelGCThreads);
@@ -259,7 +259,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
     // total_collections() value!
     {
       MutexLocker ml(Heap_lock);
-      gc_count = Universe::heap()->total_collections();
+      gc_count = total_collections();
 
       result = young_gen()->allocate(size);
       if (result != NULL) {
@@ -309,8 +309,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
       // This prevents us from looping until time out on requests that can
       // not be satisfied.
       if (op.prologue_succeeded()) {
-        assert(Universe::heap()->is_in_or_null(op.result()),
-          "result not in heap");
+        assert(is_in_or_null(op.result()), "result not in heap");
 
         // If GC was locked out during VM operation then retry allocation
         // and/or stall as necessary.
@@ -420,7 +419,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
 HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!Universe::heap()->is_gc_active(), "not reentrant");
+  assert(!is_gc_active(), "not reentrant");
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   // We assume that allocation in eden will fail unless we collect.
@@ -508,8 +507,8 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   {
     MutexLocker ml(Heap_lock);
     // This value is guarded by the Heap_lock
-    gc_count      = Universe::heap()->total_collections();
-    full_gc_count = Universe::heap()->total_full_collections();
+    gc_count      = total_collections();
+    full_gc_count = total_full_collections();
   }
 
   VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);

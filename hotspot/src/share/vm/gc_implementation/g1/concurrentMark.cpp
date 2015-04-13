@@ -1326,7 +1326,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
@@ -1353,7 +1353,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
-      Universe::heap()->prepare_for_verify();
+      g1h->prepare_for_verify();
       Universe::verify(VerifyOption_G1UsePrevMarking,
                        " VerifyDuringGC:(overflow)");
     }
@@ -1379,7 +1379,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
 
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
-      Universe::heap()->prepare_for_verify();
+      g1h->prepare_for_verify();
       Universe::verify(VerifyOption_G1UseNextMarking,
                        " VerifyDuringGC:(after)");
     }
@@ -1987,13 +1987,13 @@ void ConcurrentMark::cleanup() {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
   g1h->check_bitmaps("Cleanup Start");
 
-  G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
+  G1CollectorPolicy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
@@ -2098,7 +2098,7 @@ void ConcurrentMark::cleanup() {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(after)");
   }
