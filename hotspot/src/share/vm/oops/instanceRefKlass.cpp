@@ -78,12 +78,6 @@ void InstanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   InstanceKlass::oop_verify_on(obj, st);
   // Verify referent field
   oop referent = java_lang_ref_Reference::referent(obj);
-
-  // We should make this general to all heaps
-  GenCollectedHeap* gch = NULL;
-  if (Universe::heap()->kind() == CollectedHeap::GenCollectedHeap)
-    gch = GenCollectedHeap::heap();
-
   if (referent != NULL) {
     guarantee(referent->is_oop(), "referent field heap failed");
   }

@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_INLINE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_INLINE_HPP
 
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionLAB.inline.hpp"
@@ -57,9 +58,7 @@ inline void PSPromotionManager::claim_or_forward_internal_depth(T* p) {
 template <class T>
 inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
-  assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap,
-         "Sanity");
-  assert(Universe::heap()->is_in(p), "pointer outside heap");
+  assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
 
   claim_or_forward_internal_depth(p);
 }
@@ -150,7 +149,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
     // Otherwise try allocating obj tenured
     if (new_obj == NULL) {
 #ifndef PRODUCT
-      if (Universe::heap()->promotion_should_fail()) {
+      if (ParallelScavengeHeap::heap()->promotion_should_fail()) {
         return oop_promotion_failed(o, test_mark);
       }
 #endif  // #ifndef PRODUCT
@@ -296,7 +295,7 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
   // that are outside the heap. These pointers are either from roots
   // or from metadata.
   if ((!PSScavenge::is_obj_in_young((HeapWord*)p)) &&
-      Universe::heap()->is_in_reserved(p)) {
+      ParallelScavengeHeap::heap()->is_in_reserved(p)) {
     if (PSScavenge::is_obj_in_young(new_obj)) {
       PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
     }

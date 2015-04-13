@@ -117,7 +117,7 @@ bool ParScanThreadState::should_be_partially_scanned(oop new_obj, oop old_obj) c
 void ParScanThreadState::scan_partial_array_and_push_remainder(oop old) {
   assert(old->is_objArray(), "must be obj array");
   assert(old->is_forwarded(), "must be forwarded");
-  assert(Universe::heap()->is_in_reserved(old), "must be in heap.");
+  assert(GenCollectedHeap::heap()->is_in_reserved(old), "must be in heap.");
   assert(!old_gen()->is_in(old), "must be in young generation.");
 
   objArrayOop obj = objArrayOop(old->forwardee());
@@ -199,9 +199,9 @@ bool ParScanThreadState::take_from_overflow_stack() {
   for (size_t i = 0; i != num_take_elems; i++) {
     oop cur = of_stack->pop();
     oop obj_to_push = cur->forwardee();
-    assert(Universe::heap()->is_in_reserved(cur), "Should be in heap");
+    assert(GenCollectedHeap::heap()->is_in_reserved(cur), "Should be in heap");
     assert(!old_gen()->is_in_reserved(cur), "Should be in young gen");
-    assert(Universe::heap()->is_in_reserved(obj_to_push), "Should be in heap");
+    assert(GenCollectedHeap::heap()->is_in_reserved(obj_to_push), "Should be in heap");
     if (should_be_partially_scanned(obj_to_push, cur)) {
       assert(arrayOop(cur)->length() == 0, "entire array remaining to be scanned");
       obj_to_push = cur;
@@ -695,7 +695,7 @@ void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
 
   _par_cl->do_oop_nv(p);
 
-  if (Universe::heap()->is_in_reserved(p)) {
+  if (GenCollectedHeap::heap()->is_in_reserved(p)) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     _rs->write_ref_field_gc_par(p, obj);
   }
@@ -722,7 +722,7 @@ void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
 
   _cl->do_oop_nv(p);
 
-  if (Universe::heap()->is_in_reserved(p)) {
+  if (GenCollectedHeap::heap()->is_in_reserved(p)) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     _rs->write_ref_field_gc_par(p, obj);
   }
@@ -821,8 +821,6 @@ public:
 void ParNewRefProcTaskExecutor::execute(ProcessTask& task)
 {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->kind() == CollectedHeap::GenCollectedHeap,
-         "not a generational heap");
   FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   _state_set.reset(workers->active_workers(), _generation.promotion_failed());
@@ -897,7 +895,7 @@ void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThr
     _gc_tracer.report_promotion_failed(_promotion_failed_info);
   }
   // Reset the PromotionFailureALot counters.
-  NOT_PRODUCT(Universe::heap()->reset_promotion_should_fail();)
+  NOT_PRODUCT(gch->reset_promotion_should_fail();)
 }
 
 void ParNewGeneration::collect(bool   full,
@@ -910,8 +908,6 @@ void ParNewGeneration::collect(bool   full,
 
   _gc_timer->register_gc_start();
 
-  assert(gch->kind() == CollectedHeap::GenCollectedHeap,
-    "not a CMS generational heap");
   AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
   FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need workgang for parallel work");
@@ -1190,7 +1186,7 @@ oop ParNewGeneration::copy_to_survivor_space(
   } else {
     // Is in to-space; do copying ourselves.
     Copy::aligned_disjoint_words((HeapWord*)old, (HeapWord*)new_obj, sz);
-    assert(Universe::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
+    assert(GenCollectedHeap::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
     forward_ptr = old->forward_to_atomic(new_obj);
     // Restore the mark word copied above.
     new_obj->set_mark(m);

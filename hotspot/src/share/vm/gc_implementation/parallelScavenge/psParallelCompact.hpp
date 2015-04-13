@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_HPP
 
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
 #include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
@@ -1167,11 +1168,6 @@ class PSParallelCompact : AllStatic {
   };
 
   PSParallelCompact();
-
-  // Convenient accessor for Universe::heap().
-  static ParallelScavengeHeap* gc_heap() {
-    return (ParallelScavengeHeap*)Universe::heap();
-  }
 
   static void invoke(bool maximum_heap_compaction);
   static bool invoke_no_policy(bool maximum_heap_compaction);

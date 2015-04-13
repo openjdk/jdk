@@ -748,7 +748,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
 
 HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr) {
   assert(addr != NULL, "Should detect NULL oop earlier");
-  assert(PSParallelCompact::gc_heap()->is_in(addr), "not in heap");
+  assert(ParallelScavengeHeap::heap()->is_in(addr), "not in heap");
   assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "not marked");
 
   // Region covering the object.
@@ -836,9 +836,7 @@ void PSParallelCompact::AdjustKlassClosure::do_klass(Klass* klass) {
 }
 
 void PSParallelCompact::post_initialize() {
-  ParallelScavengeHeap* heap = gc_heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
   _ref_processor =
     new ReferenceProcessor(mr,            // span
@@ -855,8 +853,7 @@ void PSParallelCompact::post_initialize() {
 }
 
 bool PSParallelCompact::initialize() {
-  ParallelScavengeHeap* heap = gc_heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
 
   // Was the old gen get allocated successfully?
@@ -890,7 +887,7 @@ void PSParallelCompact::initialize_space_info()
 {
   memset(&_space_info, 0, sizeof(_space_info));
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
 
   _space_info[old_space_id].set_space(heap->old_gen()->object_space());
@@ -973,7 +970,7 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
   // promotion failure does not swap spaces) because an unknown number of minor
   // collections will have swapped the spaces an unknown number of times.
   GCTraceTime tm("pre compact", print_phases(), true, &_gc_timer, _gc_tracer.gc_id());
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _space_info[from_space_id].set_space(heap->young_gen()->from_space());
   _space_info[to_space_id].set_space(heap->young_gen()->to_space());
 
@@ -1028,7 +1025,7 @@ void PSParallelCompact::post_compact()
   MutableSpace* const from_space = _space_info[from_space_id].space();
   MutableSpace* const to_space   = _space_info[to_space_id].space();
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   bool eden_empty = eden_space->is_empty();
   if (!eden_empty) {
     eden_empty = absorb_live_data_from_eden(heap->size_policy(),
@@ -1966,7 +1963,7 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   GCCause::Cause gc_cause = heap->gc_cause();
   assert(!heap->is_gc_active(), "not reentrant");
 
@@ -1994,7 +1991,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     return false;
   }
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _gc_timer.register_gc_start();
   _gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer.gc_start());
@@ -2347,7 +2344,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Recursively traverse all live objects and mark them
   GCTraceTime tm("marking phase", print_phases(), true, &_gc_timer, _gc_tracer.gc_id());
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
   uint active_gc_threads = heap->gc_task_manager()->active_workers();
   TaskQueueSetSuper* qset = ParCompactionManager::region_array();
@@ -2687,8 +2684,7 @@ void PSParallelCompact::compact() {
   // trace("5");
   GCTraceTime tm("compaction phase", print_phases(), true, &_gc_timer, _gc_tracer.gc_id());
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
   old_gen->start_array()->reset();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
@@ -2839,7 +2835,7 @@ PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
 // heap, last_space_id is returned.  In debug mode it expects the address to be
 // in the heap and asserts such.
 PSParallelCompact::SpaceId PSParallelCompact::space_id(HeapWord* addr) {
-  assert(Universe::heap()->is_in_reserved(addr), "addr not in the heap");
+  assert(ParallelScavengeHeap::heap()->is_in_reserved(addr), "addr not in the heap");
 
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     if (_space_info[id].space()->contains(addr)) {

@@ -60,8 +60,7 @@ ParCompactionManager::ParCompactionManager() :
     _region_stack(NULL),
     _region_stack_index((uint)max_uintx) {
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _old_gen = heap->old_gen();
   _start_array = old_gen()->start_array();
