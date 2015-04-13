@@ -23,18 +23,19 @@
 //
 //
 
-
+import com.oracle.java.testlibrary.Utils;
 import static java.lang.Math.abs;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import java.util.SplittableRandom;
+import java.util.Random;
 import java.util.Arrays;
 
 /**
  * @test
  * @bug 8026049
+ * @library /testlibrary
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses HeapByteBufferTest
  * @run main/othervm HeapByteBufferTest
  * @summary Verify that byte buffers are correctly accessed.
@@ -242,11 +243,11 @@ class MyByteBuffer {
 
 public class HeapByteBufferTest implements Runnable {
 
-    SplittableRandom random = new SplittableRandom();
+    Random random = Utils.getRandomInstance();
     MyByteBuffer data = MyByteBuffer.wrap(new byte[1024]);
 
-    int randomOffset(SplittableRandom r, MyByteBuffer buf, int size) {
-        return abs(r.nextInt()) % (buf.capacity() - size);
+    int randomOffset(Random r, MyByteBuffer buf, int size) {
+        return r.nextInt(buf.capacity() - size);
     }
 
     long iterations;
@@ -259,7 +260,7 @@ public class HeapByteBufferTest implements Runnable {
     // random data, XORing it as we go.  We can detect writes in the
     // wrong place, writes which are too long or too short, and reads
     // or writes of the wrong data,
-    void step(SplittableRandom r) {
+    void step(Random r) {
         data.order((r.nextInt() & 1) != 0 ? BIG_ENDIAN : LITTLE_ENDIAN);
 
         data.rewind();
@@ -296,11 +297,11 @@ public class HeapByteBufferTest implements Runnable {
             data.putInt(offset, data.getInt(offset) ^ random.nextInt());
         }
         for (int i = 0; i < 100; i++) {
-            int offset = randomOffset(r, data, 4);
+            int offset = randomOffset(r, data, 2);
             data.putShort(offset, (short)(data.getShort(offset) ^ random.nextInt()));
         }
         for (int i = 0; i < 100; i++) {
-            int offset = randomOffset(r, data, 4);
+            int offset = randomOffset(r, data, 2);
             data.putChar(offset, (char)(data.getChar(offset) ^ random.nextInt()));
         }
         for (int i = 0; i < 100; i++) {
@@ -345,14 +346,12 @@ public class HeapByteBufferTest implements Runnable {
     }
 
     public void run() {
-        SplittableRandom r = new SplittableRandom();
-
         for (int i = 0; i < data.capacity(); i += 8) {
             data.putLong(i, random.nextLong());
         }
 
         for (int i = 0; i < iterations; i++) {
-            step(r);
+            step(random);
         }
 
         if (!Arrays.equals(data.array(), data.backingArray())) {
