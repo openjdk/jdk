@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1768,43 +1768,59 @@ public class IIOPInputStream
             switch (field.getTypeCode()) {
                 case 'B':
                     byte byteValue = orbStream.read_octet();
-                    bridge.putByte( o, field.getFieldID(), byteValue ) ;
-                    //reflective code: field.getField().setByte( o, byteValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putByte( o, field.getFieldID(), byteValue ) ;
+                        //reflective code: field.getField().setByte( o, byteValue ) ;
+                    }
                     break;
                 case 'Z':
                     boolean booleanValue = orbStream.read_boolean();
-                    bridge.putBoolean( o, field.getFieldID(), booleanValue ) ;
-                    //reflective code: field.getField().setBoolean( o, booleanValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putBoolean( o, field.getFieldID(), booleanValue ) ;
+                        //reflective code: field.getField().setBoolean( o, booleanValue ) ;
+                    }
                     break;
                 case 'C':
                     char charValue = orbStream.read_wchar();
-                    bridge.putChar( o, field.getFieldID(), charValue ) ;
-                    //reflective code: field.getField().setChar( o, charValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putChar( o, field.getFieldID(), charValue ) ;
+                        //reflective code: field.getField().setChar( o, charValue ) ;
+                    }
                     break;
                 case 'S':
                     short shortValue = orbStream.read_short();
-                    bridge.putShort( o, field.getFieldID(), shortValue ) ;
-                    //reflective code: field.getField().setShort( o, shortValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putShort( o, field.getFieldID(), shortValue ) ;
+                        //reflective code: field.getField().setShort( o, shortValue ) ;
+                    }
                     break;
                 case 'I':
                     int intValue = orbStream.read_long();
-                    bridge.putInt( o, field.getFieldID(), intValue ) ;
-                    //reflective code: field.getField().setInt( o, intValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putInt( o, field.getFieldID(), intValue ) ;
+                        //reflective code: field.getField().setInt( o, intValue ) ;
+                    }
                     break;
                 case 'J':
                     long longValue = orbStream.read_longlong();
-                    bridge.putLong( o, field.getFieldID(), longValue ) ;
-                    //reflective code: field.getField().setLong( o, longValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putLong( o, field.getFieldID(), longValue ) ;
+                        //reflective code: field.getField().setLong( o, longValue ) ;
+                    }
                     break;
                 case 'F' :
                     float floatValue = orbStream.read_float();
-                    bridge.putFloat( o, field.getFieldID(), floatValue ) ;
-                    //reflective code: field.getField().setFloat( o, floatValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putFloat( o, field.getFieldID(), floatValue ) ;
+                        //reflective code: field.getField().setFloat( o, floatValue ) ;
+                    }
                     break;
                 case 'D' :
                     double doubleValue = orbStream.read_double();
-                    bridge.putDouble( o, field.getFieldID(), doubleValue ) ;
-                    //reflective code: field.getField().setDouble( o, doubleValue ) ;
+                    if (field.getField() != null) {
+                        bridge.putDouble( o, field.getFieldID(), doubleValue ) ;
+                        //reflective code: field.getField().setDouble( o, doubleValue ) ;
+                    }
                     break;
                 default:
                     // XXX I18N, logging needed.
@@ -2217,9 +2233,6 @@ public class IIOPInputStream
 
         if (o != null) {
             for (int i = 0; i < primFields; ++i) {
-                if (fields[i].getField() == null)
-                    continue;
-
                 inputPrimitiveField(o, cl, fields[i]);
             }
         }
