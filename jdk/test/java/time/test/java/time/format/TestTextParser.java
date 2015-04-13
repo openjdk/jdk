@@ -68,10 +68,20 @@ import static org.testng.Assert.assertTrue;
 
 import java.text.ParsePosition;
 import java.time.DayOfWeek;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.HijrahDate;
+import java.time.chrono.JapaneseDate;
+import java.time.chrono.MinguoDate;
+import java.time.chrono.ThaiBuddhistDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
+import java.time.format.SignStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
+import java.time.temporal.ChronoField;
 import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
@@ -242,6 +252,8 @@ public class TestTextParser extends AbstractTestPrinterParser {
             {RUSSIAN, MONTH_OF_YEAR, 1, "\u042f\u043d\u0432."}, // short standalone
         };
     }
+
+
 
     @Test(dataProvider="parseText")
     public void test_parseText(TemporalField field, TextStyle style, int value, String input) throws Exception {
@@ -431,6 +443,44 @@ public class TestTextParser extends AbstractTestPrinterParser {
         DateTimeFormatter formatter = getFormatter(field).withLocale(locale);
         assertEquals(formatter.parseUnresolved(input, pos).getLong(field), (long) expectedValue);
         assertEquals(pos.getIndex(), input.length());
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="parseChronoLocalDate")
+    Object[][] provider_chronoLocalDate() {
+        return new Object[][] {
+            { HijrahDate.now() },
+            { JapaneseDate.now() },
+            { MinguoDate.now() },
+            { ThaiBuddhistDate.now() }};
+    }
+
+    private static final DateTimeFormatter fmt_chrono =
+        new DateTimeFormatterBuilder()
+            .optionalStart()
+            .appendChronologyId()
+            .appendLiteral(' ')
+            .optionalEnd()
+            .optionalStart()
+            .appendText(ChronoField.ERA, TextStyle.SHORT)
+            .appendLiteral(' ')
+            .optionalEnd()
+            .appendValue(ChronoField.YEAR_OF_ERA, 1, 9, SignStyle.NORMAL)
+            .appendLiteral('-')
+            .appendValue(ChronoField.MONTH_OF_YEAR, 1, 2, SignStyle.NEVER)
+            .appendLiteral('-')
+            .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NEVER)
+            .toFormatter();
+
+    @Test(dataProvider="parseChronoLocalDate")
+    public void test_chronoLocalDate(ChronoLocalDate date) throws Exception {
+        System.out.printf(" %s, [fmt=%s]%n", date, fmt_chrono.format(date));
+        assertEquals(date, fmt_chrono.parse(fmt_chrono.format(date), ChronoLocalDate::from));
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("[GGG ]yyy-MM-dd")
+                                                 .withChronology(date.getChronology());
+        System.out.printf(" %s, [fmt=%s]%n", date.toString(), fmt.format(date));
+        assertEquals(date, fmt.parse(fmt.format(date), ChronoLocalDate::from));
     }
 
 }
