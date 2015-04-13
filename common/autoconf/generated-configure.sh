@@ -4365,7 +4365,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1428676283
+DATE_WHEN_GENERATED=1428904416
 
 ###############################################################################
 #
@@ -15266,8 +15266,6 @@ $as_echo "in build directory with custom name" >&6; }
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
-    CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
-    $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
     if test ! -d "$OUTPUT_ROOT"; then
       as_fn_error $? "Could not create build directory $OUTPUT_ROOT" "$LINENO" 5
     fi
@@ -15444,6 +15442,9 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
     fi
   fi
 
+
+  CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
+  $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
 
   SPEC=$OUTPUT_ROOT/spec.gmk
 
