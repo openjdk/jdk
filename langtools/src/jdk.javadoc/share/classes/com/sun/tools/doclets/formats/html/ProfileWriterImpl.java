@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,11 @@ public class ProfileWriterImpl extends HtmlDocletWriter
     protected Profile profile;
 
     /**
+     * The HTML tree for main tag.
+     */
+    protected HtmlTree mainTree = HtmlTree.MAIN();
+
+    /**
      * Constructor to construct ProfileWriter object and to generate
      * "profileName-summary.html" file.
      *
@@ -87,9 +92,15 @@ public class ProfileWriterImpl extends HtmlDocletWriter
      */
     public Content getProfileHeader(String heading) {
         String profileName = profile.name;
-        Content bodyTree = getBody(true, getWindowTitle(profileName));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(profileName));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
         Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
@@ -98,7 +109,11 @@ public class ProfileWriterImpl extends HtmlDocletWriter
         Content profileHead = new RawHtml(heading);
         tHeading.addContent(profileHead);
         div.addContent(tHeading);
-        bodyTree.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(div);
+        } else {
+            bodyTree.addContent(div);
+        }
         return bodyTree;
     }
 
@@ -133,20 +148,29 @@ public class ProfileWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     public Content getPackageSummaryHeader(PackageDoc pkg) {
-        Content pkgName = getTargetProfilePackageLink(pkg,
-                    "classFrame", new StringContent(pkg.name()), profile.name);
-        Content heading = HtmlTree.HEADING(HtmlTag.H3, pkgName);
-        HtmlTree li = HtmlTree.LI(HtmlStyle.blockList, heading);
-        addPackageDeprecationInfo(li, pkg);
-        return li;
+        Content pkgName = new StringContent(pkg.name());
+        Content pkgNameLink = getTargetProfilePackageLink(pkg,
+                    "classFrame", pkgName, profile.name);
+        Content heading = HtmlTree.HEADING(HtmlTag.H3, pkgNameLink);
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
+                ? HtmlTree.SECTION(heading)
+                : HtmlTree.LI(HtmlStyle.blockList, heading);
+        addPackageDeprecationInfo(htmlTree, pkg);
+        return htmlTree;
     }
 
     /**
      * {@inheritDoc}
      */
     public Content getPackageSummaryTree(Content packageSummaryContentTree) {
-        HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList, packageSummaryContentTree);
-        return ul;
+        HtmlTree htmlTree;
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            htmlTree = HtmlTree.UL(HtmlStyle.blockList,
+                    HtmlTree.LI(HtmlStyle.blockList, packageSummaryContentTree));
+        } else {
+            htmlTree = HtmlTree.UL(HtmlStyle.blockList, packageSummaryContentTree);
+        }
+        return htmlTree;
     }
 
     /**
@@ -161,9 +185,27 @@ public class ProfileWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    public void addProfileContent(Content contentTree, Content profileContentTree) {
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(profileContentTree);
+            contentTree.addContent(mainTree);
+        } else {
+            contentTree.addContent(profileContentTree);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void addProfileFooter(Content contentTree) {
-        addNavLinks(false, contentTree);
-        addBottom(contentTree);
+        Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : contentTree;
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            contentTree.addContent(htmlTree);
+        }
     }
 
     /**

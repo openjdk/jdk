@@ -48,14 +48,24 @@ public class DocType extends Content {
     public static final DocType TRANSITIONAL =
             new DocType("Transitional", "http://www.w3.org/TR/html4/loose.dtd");
 
+    public static final DocType HTML5 = new DocType();
+
     /**
      * Constructor to construct a DocType object.
      *
      * @param type the doctype to be added
+     * @param dtd the dtd of the doctype
      */
     private DocType(String type, String dtd) {
         docType = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " + type +
                 "//EN\" \"" + dtd + "\">" + DocletConstants.NL;
+    }
+
+    /**
+     * Constructor to construct a DocType object.
+     */
+    private DocType() {
+        docType = "<!DOCTYPE HTML>" + DocletConstants.NL;
     }
 
     /**

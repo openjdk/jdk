@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class TestHtmlDocument extends JavadocTester {
         // Test another version of A tag.
         HtmlTree anchor = new HtmlTree(HtmlTag.A);
         anchor.addAttr(HtmlAttr.HREF, "testLink.html");
-        anchor.addAttr(HtmlAttr.NAME, "Another version of a tag");
+        anchor.addAttr(HtmlAttr.ID, "Another version of a tag");
         p1.addContent(anchor);
         body.addContent(p1);
         // Test for empty tags.

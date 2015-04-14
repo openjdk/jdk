@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 import java.util.*;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -49,6 +50,11 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     List<ClassDoc> visibleClasses;
 
     /**
+     * HTML tree for main tag.
+     */
+    private HtmlTree mainTree = HtmlTree.MAIN();
+
+    /**
      * @param configuration the configuration data for the doclet
      * @throws IOException
      * @throws DocletAbortException
@@ -66,14 +72,24 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return the body content tree
      */
     public Content getHeader(String header) {
-        Content bodyTree = getBody(true, getWindowTitle(header));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(header));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         Content h1Content = new StringContent(header);
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, h1Content);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        bodyTree.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(div);
+        } else {
+            bodyTree.addContent(div);
+        }
         return bodyTree;
     }
 
@@ -94,9 +110,14 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return the package serialized form header tree
      */
     public Content getPackageSerializedHeader() {
-        HtmlTree li = new HtmlTree(HtmlTag.LI);
-        li.addStyle(HtmlStyle.blockList);
-        return li;
+        HtmlTree htmlTree;
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            htmlTree = HtmlTree.SECTION();
+        } else {
+            htmlTree = new HtmlTree(HtmlTag.LI);
+            htmlTree.addStyle(HtmlStyle.blockList);
+        }
+        return htmlTree;
     }
 
     /**
@@ -211,9 +232,24 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return a div content tree
      */
     public Content getSerializedContent(Content serializedTreeContent) {
-        Content divContent = HtmlTree.DIV(HtmlStyle.serializedFormContainer,
+        HtmlTree divContent = HtmlTree.DIV(HtmlStyle.serializedFormContainer,
                 serializedTreeContent);
-        return divContent;
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(divContent);
+            return mainTree;
+        } else {
+            return divContent;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addPackageSerializedTree(Content serializedSummariesTree,
+            Content packageSerializedTree) {
+        serializedSummariesTree.addContent((configuration.allowTag(HtmlTag.SECTION))
+                ? HtmlTree.LI(HtmlStyle.blockList, packageSerializedTree)
+                : packageSerializedTree);
     }
 
     /**
@@ -222,8 +258,14 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @param serializedTree the serialized tree to be added
      */
     public void addFooter(Content serializedTree) {
-        addNavLinks(false, serializedTree);
-        addBottom(serializedTree);
+        Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : serializedTree;
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            serializedTree.addContent(htmlTree);
+        }
     }
 
     /**

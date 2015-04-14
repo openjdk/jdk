@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -814,7 +814,7 @@ public class DocEnv {
         return result;
     }
 
-    void initDoclint(Collection<String> opts, Collection<String> customTagNames) {
+    void initDoclint(Collection<String> opts, Collection<String> customTagNames, String htmlVersion) {
         ArrayList<String> doclintOpts = new ArrayList<>();
 
         for (String opt: opts) {
@@ -836,6 +836,7 @@ public class DocEnv {
             sep = DocLint.SEPARATOR;
         }
         doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags.toString());
+        doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + htmlVersion);
 
         JavacTask t = BasicJavacTask.instance(context);
         doclint = new DocLint();

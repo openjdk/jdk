@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      */
     protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprapi)
             throws IOException {
-        Content body = getHeader();
-        body.addContent(getContentsList(deprapi));
+        HtmlTree body = getHeader();
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                ? HtmlTree.MAIN()
+                : body;
+        htmlTree.addContent(getContentsList(deprapi));
         String memberTableSummary;
         String[] memberTableHeader = new String[1];
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
@@ -164,9 +167,20 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                             HEADING_KEYS[i], memberTableSummary, memberTableHeader, div);
             }
         }
-        body.addContent(div);
-        addNavLinks(false, body);
-        addBottom(body);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            htmlTree.addContent(div);
+            body.addContent(htmlTree);
+        } else {
+            body.addContent(div);
+        }
+        htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : body;
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            body.addContent(htmlTree);
+        }
         printHtmlDocument(null, true, body);
     }
 
@@ -226,11 +240,17 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      *
      * @return a content tree for the header
      */
-    public Content getHeader() {
+    public HtmlTree getHeader() {
         String title = configuration.getText("doclet.Window_Deprecated_List");
-        Content bodyTree = getBody(true, getWindowTitle(title));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         return bodyTree;
     }
 

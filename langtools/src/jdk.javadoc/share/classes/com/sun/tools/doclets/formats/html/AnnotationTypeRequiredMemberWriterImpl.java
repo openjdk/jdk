@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,13 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     public Content getMemberTreeHeader() {
         return writer.getMemberTreeHeader();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
+        writer.addMemberTree(memberSummaryTree, memberTree);
     }
 
     /**
@@ -158,6 +165,10 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public Content getAnnotationDetails(Content annotationDetailsTree) {
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(annotationDetailsTree));
+            return htmlTree;
+        }
         return getMemberTree(annotationDetailsTree);
     }
 
