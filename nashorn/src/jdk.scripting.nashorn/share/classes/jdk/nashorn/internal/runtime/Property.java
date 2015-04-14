@@ -96,6 +96,9 @@ public abstract class Property implements Serializable {
     /** Is this property an ES6 lexical binding? */
     public static final int IS_LEXICAL_BINDING      = 1 << 10;
 
+    /** Does this property support dual field representation? */
+    public static final int DUAL_FIELDS             = 1 << 11;
+
     /** Property key. */
     private final String key;
 
@@ -286,7 +289,7 @@ public abstract class Property implements Serializable {
      * @return true if parameter
      */
     public boolean isParameter() {
-        return (flags & IS_PARAMETER) == IS_PARAMETER;
+        return (flags & IS_PARAMETER) != 0;
     }
 
     /**
@@ -294,7 +297,7 @@ public abstract class Property implements Serializable {
      * @return true if has arguments
      */
     public boolean hasArguments() {
-        return (flags & HAS_ARGUMENTS) == HAS_ARGUMENTS;
+        return (flags & HAS_ARGUMENTS) != 0;
     }
 
     /**
@@ -316,7 +319,7 @@ public abstract class Property implements Serializable {
      * @return true if this is a bound property
      */
     public boolean isBound() {
-        return (flags & IS_BOUND) == IS_BOUND;
+        return (flags & IS_BOUND) != 0;
     }
 
     /**
@@ -325,7 +328,7 @@ public abstract class Property implements Serializable {
      * @return true if this is a block-scoped variable
      */
     public boolean needsDeclaration() {
-        return (flags & NEEDS_DECLARATION) == NEEDS_DECLARATION;
+        return (flags & NEEDS_DECLARATION) != 0;
     }
 
     /**
@@ -346,31 +349,11 @@ public abstract class Property implements Serializable {
     }
 
     /**
-     * Check if a flag is set for a property
-     * @param property property
-     * @param flag     flag to check
-     * @return true if flag is set
-     */
-    public static boolean checkFlag(final Property property, final int flag) {
-        return (property.getFlags() & flag) == flag;
-    }
-
-    /**
      * Get the flags for this property
      * @return property flags
      */
     public int getFlags() {
         return flags;
-    }
-
-    /**
-     * Get the modify flags for this property. The modify flags are the ECMA 8.6.1
-     * flags that decide if the Property is writable, configurable and/or enumerable.
-     *
-     * @return modify flags for property
-     */
-    public int getModifyFlags() {
-        return flags & MODIFY_MASK;
     }
 
     /**
@@ -715,7 +698,7 @@ public abstract class Property implements Serializable {
      * @return whether this property is a function declaration or not.
      */
     public boolean isFunctionDeclaration() {
-        return (flags & IS_FUNCTION_DECLARATION) == IS_FUNCTION_DECLARATION;
+        return (flags & IS_FUNCTION_DECLARATION) != 0;
     }
 
     /**
@@ -723,6 +706,14 @@ public abstract class Property implements Serializable {
      * @return true if this property represents a lexical binding.
      */
     public boolean isLexicalBinding() {
-        return (flags & IS_LEXICAL_BINDING) == IS_LEXICAL_BINDING;
+        return (flags & IS_LEXICAL_BINDING) != 0;
+    }
+
+    /**
+     * Does this property support dual fields for both primitive and object values?
+     * @return true if supports dual fields
+     */
+    public boolean hasDualFields() {
+        return (flags & DUAL_FIELDS) != 0;
     }
 }

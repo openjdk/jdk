@@ -27,6 +27,8 @@
  * @bug 8068942
  * @summary Test argument processing of various percentage options
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run driver TestG1PercentageOptions
  */
 

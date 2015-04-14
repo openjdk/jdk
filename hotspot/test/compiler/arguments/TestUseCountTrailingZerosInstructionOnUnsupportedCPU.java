@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Verify processing of UseCountTrailingZerosInstruction option
  *          on CPU without TZCNT instruction (BMI1 feature) support.
  * @library /testlibrary /../../test/lib
+ * @modules java.base/sun.misc
+ *          java.management
  * @build TestUseCountTrailingZerosInstructionOnUnsupportedCPU
  *        BMIUnsupportedCPUTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

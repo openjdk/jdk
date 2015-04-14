@@ -160,7 +160,7 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static ScriptObject wrapAdaptee(final ScriptObject adaptee) {
-        return new JO(adaptee, JO.getInitialMap());
+        return new JO(adaptee);
     }
 
     @Override

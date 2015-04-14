@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ import sun.reflect.misc.ReflectUtil;
  * <P>
  * When an ORB instance is being created, the class name of the ORB
  * implementation is located using
- * the following standard search order:<P>
+ * the following standard search order:
  *
  * <OL>
  *     <LI>check in Applet parameter or application string array, if any
@@ -1036,7 +1036,7 @@ abstract public class ORB {
      * <P>
      * Recursive types can only appear within sequences which can be empty.
      * That way marshaling problems, when transmitting the struct in an Any, are avoided.
-     * <P>
+     *
      * @param id                 the logical id of the referenced type
      * @return                   the requested TypeCode
      */
@@ -1179,7 +1179,7 @@ abstract public class ORB {
      * value <tt>true</tt>. If no information for the requested
      * services type is available, the operation returns <tt>false</tt>
      *  (i.e., the service is not supported by this ORB).
-     * <P>
+     *
      * @param service_type a <code>short</code> indicating the
      *        service type for which information is being requested
      * @param service_info a <code>ServiceInformationHolder</code> object
@@ -1203,7 +1203,7 @@ abstract public class ORB {
     /**
      * Creates a new <code>DynAny</code> object from the given
      * <code>Any</code> object.
-     * <P>
+     *
      * @param value the <code>Any</code> object from which to create a new
      *        <code>DynAny</code> object
      * @return the new <code>DynAny</code> object created from the given
@@ -1221,7 +1221,7 @@ abstract public class ORB {
     /**
      * Creates a basic <code>DynAny</code> object from the given
      * <code>TypeCode</code> object.
-     * <P>
+     *
      * @param type the <code>TypeCode</code> object from which to create a new
      *        <code>DynAny</code> object
      * @return the new <code>DynAny</code> object created from the given
@@ -1241,7 +1241,7 @@ abstract public class ORB {
     /**
      * Creates a new <code>DynStruct</code> object from the given
      * <code>TypeCode</code> object.
-     * <P>
+     *
      * @param type the <code>TypeCode</code> object from which to create a new
      *        <code>DynStruct</code> object
      * @return the new <code>DynStruct</code> object created from the given
@@ -1261,7 +1261,7 @@ abstract public class ORB {
     /**
      * Creates a new <code>DynSequence</code> object from the given
      * <code>TypeCode</code> object.
-     * <P>
+     *
      * @param type the <code>TypeCode</code> object from which to create a new
      *        <code>DynSequence</code> object
      * @return the new <code>DynSequence</code> object created from the given
@@ -1282,7 +1282,7 @@ abstract public class ORB {
     /**
      * Creates a new <code>DynArray</code> object from the given
      * <code>TypeCode</code> object.
-     * <P>
+     *
      * @param type the <code>TypeCode</code> object from which to create a new
      *        <code>DynArray</code> object
      * @return the new <code>DynArray</code> object created from the given
@@ -1302,7 +1302,7 @@ abstract public class ORB {
     /**
      * Creates a new <code>DynUnion</code> object from the given
      * <code>TypeCode</code> object.
-     * <P>
+     *
      * @param type the <code>TypeCode</code> object from which to create a new
      *        <code>DynUnion</code> object
      * @return the new <code>DynUnion</code> object created from the given
@@ -1322,7 +1322,7 @@ abstract public class ORB {
     /**
      * Creates a new <code>DynEnum</code> object from the given
      * <code>TypeCode</code> object.
-     * <P>
+     *
      * @param type the <code>TypeCode</code> object from which to create a new
      *        <code>DynEnum</code> object
      * @return the new <code>DynEnum</code> object created from the given

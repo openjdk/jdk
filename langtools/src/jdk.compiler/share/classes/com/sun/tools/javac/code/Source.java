@@ -209,6 +209,9 @@ public enum Source {
     public boolean allowPrivateSafeVarargs() {
         return compareTo(JDK1_9) >= 0;
     }
+    public boolean allowDiamondWithAnonymousClassCreation() {
+        return compareTo(JDK1_9) >= 0;
+    }
     public boolean allowUnderscoreIdentifier() {
         return compareTo(JDK1_8) <= 0;
     }

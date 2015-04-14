@@ -1927,6 +1927,13 @@ Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Male
 # was at the start of 2008-03-31 (the day of Steffen Thorsen's report);
 # this is almost surely wrong.
 
+# From Ganbold Tsagaankhuu (2015-03-10):
+# It seems like yesterday Mongolian Government meeting has concluded to use
+# daylight saving time in Mongolia....  Starting at 2:00AM of last Saturday of
+# March 2015, daylight saving time starts.  And 00:00AM of last Saturday of
+# September daylight saving time ends.  Source:
+# http://zasag.mn/news/view/8969
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Mongol	1983	1984	-	Apr	1	0:00	1:00	S
 Rule	Mongol	1983	only	-	Oct	1	0:00	0	-
@@ -1947,6 +1954,8 @@ Rule	Mongol	1984	1998	-	Sep	lastSun	0:00	0	-
 Rule	Mongol	2001	only	-	Apr	lastSat	2:00	1:00	S
 Rule	Mongol	2001	2006	-	Sep	lastSat	2:00	0	-
 Rule	Mongol	2002	2006	-	Mar	lastSat	2:00	1:00	S
+Rule	Mongol	2015	max	-	Mar	lastSat	2:00	1:00	S
+Rule	Mongol	2015	max	-	Sep	lastSat	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # Hovd, a.k.a. Chovd, Dund-Us, Dzhargalant, Khovd, Jirgalanta
@@ -2365,13 +2374,19 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # official source...:
 # http://www.palestinecabinet.gov.ps/ar/Views/ViewDetails.aspx?pid=1252
 
-# From Paul Eggert (2013-09-24):
-# For future dates, guess the last Thursday in March at 24:00 through
-# the first Friday on or after September 21 at 00:00.  This is consistent with
-# the predictions in today's editions of the following URLs,
-# which are for Gaza and Hebron respectively:
-# http://www.timeanddate.com/worldclock/timezone.html?n=702
-# http://www.timeanddate.com/worldclock/timezone.html?n=2364
+# From Steffen Thorsen (2015-03-03):
+# Sources such as http://www.alquds.com/news/article/view/id/548257
+# and http://www.raya.ps/ar/news/890705.html say Palestine areas will
+# start DST on 2015-03-28 00:00 which is one day later than expected.
+#
+# From Paul Eggert (2015-03-03):
+# http://www.timeanddate.com/time/change/west-bank/ramallah?year=2014
+# says that the fall 2014 transition was Oct 23 at 24:00.
+# For future dates, guess the last Friday in March at 24:00 through
+# the first Friday on or after October 21 at 00:00.  This is consistent with
+# the predictions in today's editions of the following URLs:
+# http://www.timeanddate.com/time/change/gaza-strip/gaza
+# http://www.timeanddate.com/time/change/west-bank/hebron
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -2397,9 +2412,11 @@ Rule Palestine	2011	only	-	Apr	 1	0:01	1:00	S
 Rule Palestine	2011	only	-	Aug	 1	0:00	0	-
 Rule Palestine	2011	only	-	Aug	30	0:00	1:00	S
 Rule Palestine	2011	only	-	Sep	30	0:00	0	-
-Rule Palestine	2012	max	-	Mar	lastThu	24:00	1:00	S
+Rule Palestine	2012	2014	-	Mar	lastThu	24:00	1:00	S
 Rule Palestine	2012	only	-	Sep	21	1:00	0	-
-Rule Palestine	2013	max	-	Sep	Fri>=21	0:00	0	-
+Rule Palestine	2013	only	-	Sep	Fri>=21	0:00	0	-
+Rule Palestine	2014	max	-	Oct	Fri>=21	0:00	0	-
+Rule Palestine	2015	max	-	Mar	lastFri	24:00	1:00	S
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct

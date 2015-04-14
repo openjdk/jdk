@@ -29,8 +29,6 @@
 @run main AltCharAcceleratorTest
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -103,12 +101,11 @@ public class AltCharAcceleratorTest {
     }
 
     void test() throws Exception {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-
-        focusLatch.await(5, TimeUnit.SECONDS);
-
         Robot robot = new Robot();
         robot.setAutoDelay(100);
+        robot.waitForIdle();
+
+        focusLatch.await(5, TimeUnit.SECONDS);
 
         robot.keyPress(KeyEvent.VK_ALT);
         robot.keyPress(KeyEvent.VK_T);

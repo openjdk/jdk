@@ -2766,20 +2766,6 @@ public class Lower extends TreeTranslator {
             return translationMap;
         }
 
-    public void visitAnnotatedType(JCAnnotatedType tree) {
-        // No need to retain type annotations in the tree
-        // tree.annotations = translate(tree.annotations);
-        tree.annotations = List.nil();
-        tree.underlyingType = translate(tree.underlyingType);
-        // but maintain type annotations in the type.
-        if (tree.type.isAnnotated()) {
-            tree.type = tree.underlyingType.type.annotatedType(tree.type.getAnnotationMirrors());
-        } else if (tree.underlyingType.type.isAnnotated()) {
-            tree.type = tree.underlyingType.type;
-        }
-        result = tree;
-    }
-
     public void visitTypeCast(JCTypeCast tree) {
         tree.clazz = translate(tree.clazz);
         if (tree.type.isPrimitive() != tree.expr.type.isPrimitive())

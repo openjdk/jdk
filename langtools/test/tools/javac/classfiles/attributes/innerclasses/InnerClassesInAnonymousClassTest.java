@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8042251
+ * @bug 8042251 8062373
  * @summary Testing InnerClasses_attribute of inner classes in anonymous class.
  * @library /tools/lib /tools/javac/lib ../lib
  * @build InnerClassesTestBase TestResult TestBase InMemoryFileManager ToolBox
@@ -73,6 +73,6 @@ public class InnerClassesInAnonymousClassTest extends InnerClassesTestBase {
     public void getAdditionalFlags(Map<String, Set<String>> class2Flags, ClassType type, Modifier... flags) {
         super.getAdditionalFlags(class2Flags, type, flags);
         class2Flags.put("Anonymous", getFlags(currentClassType, Arrays.asList(flags)));
-        class2Flags.put("1", new HashSet<>());
+        class2Flags.put("1", new HashSet<>() {});
     }
 }

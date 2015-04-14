@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,11 @@
  * @bug 8054823
  * @summary Tests the setFlag and printFlag attach command
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.attach/sun.tools.attach
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @build com.oracle.java.testlibrary.* AttachSetGetFlag
  * @run driver AttachSetGetFlag
  */

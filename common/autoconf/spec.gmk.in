@@ -59,7 +59,7 @@ SPEC:=@SPEC@
 MAKE := @MAKE@
 
 # The default make arguments
-MAKE_ARGS = $(MAKE_LOG_FLAGS) -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
+MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
     MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" LOG_LEVEL=$(LOG_LEVEL)
 
 OUTPUT_SYNC_SUPPORTED:=@OUTPUT_SYNC_SUPPORTED@
@@ -231,13 +231,14 @@ BUILD_OUTPUT:=@BUILD_OUTPUT@
 # Colon left out to be able to override IMAGES_OUTPUTDIR for bootcycle-images
 SUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/support
 BUILDTOOLS_OUTPUTDIR=$(BUILD_OUTPUT)/buildtools
-MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/makesupport
 
 HOTSPOT_OUTPUTDIR=$(BUILD_OUTPUT)/hotspot
 JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
 IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
 TESTMAKE_OUTPUTDIR=$(BUILD_OUTPUT)/test-make
 MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/make-support
+# This does not get overridden in a bootcycle build
+CONFIGURESUPPORT_OUTPUTDIR:=@CONFIGURESUPPORT_OUTPUTDIR@
 
 HOTSPOT_DIST=@HOTSPOT_DIST@
 
@@ -259,7 +260,7 @@ MEMORY_SIZE:=@MEMORY_SIZE@
 ENABLE_SJAVAC:=@ENABLE_SJAVAC@
 # Store sjavac server synchronization files here, and
 # the sjavac server log files.
-SJAVAC_SERVER_DIR:=@SJAVAC_SERVER_DIR@
+SJAVAC_SERVER_DIR=$(MAKESUPPORT_OUTPUTDIR)/javacservers
 
 # Number of parallel jobs to use for compilation
 JOBS?=@JOBS@

@@ -39,6 +39,7 @@ import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.file.CacheFSInfo;
+import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.util.*;

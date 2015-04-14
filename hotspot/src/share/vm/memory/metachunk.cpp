@@ -28,8 +28,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 class VirtualSpaceNode;
 
 const size_t metadata_chunk_initialize = 0xf7f7f7f7;
@@ -92,7 +90,7 @@ void Metachunk::print_on(outputStream* st) const {
   st->print_cr("Metachunk:"
                " bottom " PTR_FORMAT " top " PTR_FORMAT
                " end " PTR_FORMAT " size " SIZE_FORMAT,
-               bottom(), _top, end(), word_size());
+               p2i(bottom()), p2i(_top), p2i(end()), word_size());
   if (Verbose) {
     st->print_cr("    used " SIZE_FORMAT " free " SIZE_FORMAT,
                  used_word_size(), free_word_size());

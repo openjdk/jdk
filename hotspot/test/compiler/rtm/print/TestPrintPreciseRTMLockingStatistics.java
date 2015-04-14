@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  *          different types. Test also verify that VM output does not
  *          contain rtm locking statistics when it should not.
  * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @build TestPrintPreciseRTMLockingStatistics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

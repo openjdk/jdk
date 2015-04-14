@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genOopClosures.inline.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/preserveException.hpp"
@@ -42,7 +43,6 @@
 #include "gc_implementation/parNew/parOopClosures.inline.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
@@ -260,7 +260,6 @@ int InstanceRefKlass::oop_adjust_pointers(oop obj) {
       return size;                                                              \
     } else if (contains(referent_addr)) {                                       \
       /* treat referent as normal oop */                                        \
-      SpecializationStats::record_do_oop_call##nv_suffix(SpecializationStats::irk);\
       closure->do_oop##nv_suffix(referent_addr);                                \
     }                                                                           \
   }                                                                             \
@@ -276,7 +275,6 @@ int InstanceRefKlass::oop_adjust_pointers(oop obj) {
                                  INTPTR_FORMAT, disc_addr);                     \
         }                                                                       \
       )                                                                         \
-      SpecializationStats::record_do_oop_call##nv_suffix(SpecializationStats::irk);\
       closure->do_oop##nv_suffix(disc_addr);                                    \
     }                                                                           \
   } else {                                                                      \
@@ -293,7 +291,6 @@ int InstanceRefKlass::oop_adjust_pointers(oop obj) {
   }                                                                             \
   /* treat next as normal oop */                                                \
   if (contains(next_addr)) {                                                    \
-    SpecializationStats::record_do_oop_call##nv_suffix(SpecializationStats::irk); \
     closure->do_oop##nv_suffix(next_addr);                                      \
   }                                                                             \
   return size;                                                                  \
@@ -309,8 +306,6 @@ template <class T> bool contains(T *t) { return true; }
 int InstanceRefKlass::                                                          \
 oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  \
   /* Get size before changing pointers */                                       \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
-                                                                                \
   int size = InstanceKlass::oop_oop_iterate##nv_suffix(obj, closure);           \
                                                                                 \
   if (UseCompressedOops) {                                                      \
@@ -326,8 +321,6 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
 int InstanceRefKlass::                                                          \
 oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        \
   /* Get size before changing pointers */                                       \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
-                                                                                \
   int size = InstanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure); \
                                                                                 \
   if (UseCompressedOops) {                                                      \
@@ -345,8 +338,6 @@ int InstanceRefKlass::                                                          
 oop_oop_iterate##nv_suffix##_m(oop obj,                                         \
                                OopClosureType* closure,                         \
                                MemRegion mr) {                                  \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
-                                                                                \
   int size = InstanceKlass::oop_oop_iterate##nv_suffix##_m(obj, closure, mr);   \
   if (UseCompressedOops) {                                                      \
     InstanceRefKlass_SPECIALIZED_OOP_ITERATE(narrowOop, nv_suffix, mr.contains); \

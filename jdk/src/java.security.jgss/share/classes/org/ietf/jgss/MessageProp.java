@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ package org.ietf.jgss;
  * <code>false</code>.  Upon return from these methods, this object will also
  * contain any supplementary status values applicable to the processed
  * token.  The supplementary status values can indicate old tokens, out
- * of sequence tokens, gap tokens or duplicate tokens.<p>
+ * of sequence tokens, gap tokens or duplicate tokens.
  *
  * @see GSSContext#wrap
  * @see GSSContext#unwrap

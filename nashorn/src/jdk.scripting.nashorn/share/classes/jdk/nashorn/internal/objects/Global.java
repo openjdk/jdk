@@ -60,6 +60,7 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Setter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.GlobalConstants;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.JSType;
@@ -78,6 +79,7 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
+import jdk.nashorn.internal.scripts.JD;
 import jdk.nashorn.internal.scripts.JO;
 import jdk.nashorn.tools.ShellFunctions;
 
@@ -717,7 +719,7 @@ public final class Global extends ScriptObject implements Scope {
     private static final MethodHandle LOAD                 = findOwnMH_S("load",                Object.class, Object.class, Object.class);
     private static final MethodHandle LOAD_WITH_NEW_GLOBAL = findOwnMH_S("loadWithNewGlobal",   Object.class, Object.class, Object[].class);
     private static final MethodHandle EXIT                 = findOwnMH_S("exit",                Object.class, Object.class, Object.class);
-    private static final MethodHandle LEXICAL_SCOPE_FILTER = findOwnMH_S("lexicalScopeFilter", Object.class, Object.class);
+    private static final MethodHandle LEXICAL_SCOPE_FILTER = findOwnMH_S("lexicalScopeFilter",  Object.class, Object.class);
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
@@ -747,6 +749,11 @@ public final class Global extends ScriptObject implements Scope {
     @Override
     protected Context getContext() {
         return context;
+    }
+
+    @Override
+    protected boolean useDualFields() {
+        return context.useDualFields();
     }
 
     // performs initialization checks for Global constructor and returns the
@@ -932,7 +939,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the new ScriptObject
      */
     public ScriptObject newObject() {
-        return new JO(getObjectPrototype(), JO.getInitialMap());
+        return useDualFields() ? new JD(getObjectPrototype()) : new JO(getObjectPrototype());
     }
 
     /**
@@ -2204,6 +2211,17 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     @Override
+    protected FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
+        if (lexicalScope != null && start != this && start.isScope()) {
+            final FindProperty find = lexicalScope.findProperty(key, false);
+            if (find != null) {
+                return find;
+            }
+        }
+        return super.findProperty(key, deep, start);
+    }
+
+    @Override
     public GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final boolean isScope = NashornCallSiteDescriptor.isScope(desc);
 
@@ -2732,8 +2750,8 @@ public final class Global extends ScriptObject implements Scope {
      */
     private static class LexicalScope extends ScriptObject {
 
-        LexicalScope(final ScriptObject proto) {
-            super(proto, PropertyMap.newMap());
+        LexicalScope(final Global global) {
+            super(global, PropertyMap.newMap());
         }
 
         @Override

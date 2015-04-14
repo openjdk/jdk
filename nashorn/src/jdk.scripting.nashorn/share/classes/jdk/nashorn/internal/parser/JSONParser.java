@@ -41,6 +41,7 @@ import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.SpillProperty;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
+import jdk.nashorn.internal.scripts.JD;
 import jdk.nashorn.internal.scripts.JO;
 
 import static jdk.nashorn.internal.parser.TokenType.STRING;
@@ -54,10 +55,9 @@ public class JSONParser {
 
     final private String source;
     final private Global global;
+    final private boolean dualFields;
     final int length;
     int pos = 0;
-
-    private static PropertyMap EMPTY_MAP = PropertyMap.newMap();
 
     private static final int EOF = -1;
 
@@ -74,10 +74,11 @@ public class JSONParser {
      * @param source  the source
      * @param global the global object
      */
-    public JSONParser(final String source, final Global global ) {
+    public JSONParser(final String source, final Global global, final boolean dualFields) {
         this.source = source;
         this.global = global;
         this.length = source.length();
+        this.dualFields = dualFields;
     }
 
     /**
@@ -180,7 +181,7 @@ public class JSONParser {
     }
 
     private Object parseObject() {
-        PropertyMap propertyMap = EMPTY_MAP;
+        PropertyMap propertyMap = dualFields ? JD.getInitialMap() : JO.getInitialMap();
         ArrayData arrayData = ArrayData.EMPTY_ARRAY;
         final ArrayList<Object> values = new ArrayList<>();
         int state = STATE_EMPTY;
@@ -241,36 +242,45 @@ public class JSONParser {
         return newArrayData.set(index, value, false);
     }
 
-    private static PropertyMap addObjectProperty(final PropertyMap propertyMap, final List<Object> values,
+    private PropertyMap addObjectProperty(final PropertyMap propertyMap, final List<Object> values,
                                                  final String id, final Object value) {
         final Property oldProperty = propertyMap.findProperty(id);
         final PropertyMap newMap;
-        final Class<?> type = ObjectClassGenerator.OBJECT_FIELDS_ONLY ? Object.class : getType(value);
+        final Class<?> type;
+        final int flags;
+        if (dualFields) {
+            type = getType(value);
+            flags = Property.DUAL_FIELDS;
+        } else {
+            type = Object.class;
+            flags = 0;
+        }
 
         if (oldProperty != null) {
             values.set(oldProperty.getSlot(), value);
-            newMap = propertyMap.replaceProperty(oldProperty, new SpillProperty(id, 0, oldProperty.getSlot(), type));;
+            newMap = propertyMap.replaceProperty(oldProperty, new SpillProperty(id, flags, oldProperty.getSlot(), type));;
         } else {
             values.add(value);
-            newMap = propertyMap.addProperty(new SpillProperty(id, 0, propertyMap.size(), type));
+            newMap = propertyMap.addProperty(new SpillProperty(id, flags, propertyMap.size(), type));
         }
 
         return newMap;
     }
 
     private Object createObject(final PropertyMap propertyMap, final List<Object> values, final ArrayData arrayData) {
-        final long[] primitiveSpill = new long[values.size()];
+        final long[] primitiveSpill = dualFields ? new long[values.size()] : null;
         final Object[] objectSpill = new Object[values.size()];
 
         for (final Property property : propertyMap.getProperties()) {
-            if (property.getType() == Object.class) {
+            if (!dualFields || property.getType() == Object.class) {
                 objectSpill[property.getSlot()] = values.get(property.getSlot());
             } else {
                 primitiveSpill[property.getSlot()] = ObjectClassGenerator.pack((Number) values.get(property.getSlot()));
             }
         }
 
-        final ScriptObject object = new JO(propertyMap, primitiveSpill, objectSpill);
+        final ScriptObject object = dualFields ?
+                new JD(propertyMap, primitiveSpill, objectSpill) : new JO(propertyMap, null, objectSpill);
         object.setInitialProto(global.getObjectPrototype());
         object.setArray(arrayData);
         return object;
