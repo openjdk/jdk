@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,11 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
     // pure C2, 32-bit, medium machine
     #define DEFAULT_CACHE_LINE_SIZE 64
   #endif
+#endif
+
+#if defined(COMPILER2) && !defined(JAVASE_EMBEDDED)
+// Include Restricted Transactional Memory lock eliding optimization
+#define INCLUDE_RTM_OPT 1
 #endif
 
 #endif // CPU_X86_VM_GLOBALDEFINITIONS_X86_HPP
