@@ -239,22 +239,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
-  // Since this method can be expensive in general, we restrict its
-  // use to assertion checking only.
+  // This method can be expensive so avoid using it in performance critical
+  // code.
   virtual bool is_in(const void* p) const = 0;
 
-  bool is_in_or_null(const void* p) const {
-    return p == NULL || is_in(p);
-  }
-
-  bool is_in_place(Metadata** p) {
-    return !Universe::heap()->is_in(p);
-  }
-  bool is_in_place(oop* p) { return Universe::heap()->is_in(p); }
-  bool is_in_place(narrowOop* p) {
-    oop o = oopDesc::load_decode_heap_oop_not_null(p);
-    return Universe::heap()->is_in((const void*)o);
-  }
+  DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
 
   // Let's define some terms: a "closed" subset of a heap is one that
   //
