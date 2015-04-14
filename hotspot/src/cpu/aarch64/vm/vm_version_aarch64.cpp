@@ -198,6 +198,10 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
 
+  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+    UseMultiplyToLenIntrinsic = true;
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptoScheduling)) {
     OptoScheduling = true;

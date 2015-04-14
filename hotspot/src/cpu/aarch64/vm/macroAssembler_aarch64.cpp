@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2243,6 +2243,341 @@ void MacroAssembler::pop_CPU_state() {
          Address(post(sp, 2 * wordSize)));
 
   pop(0x3fffffff, sp);         // integer registers except lr & sp
+}
+
+/**
+ * Helpers for multiply_to_len().
+ */
+void MacroAssembler::add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
+                                     Register src1, Register src2) {
+  adds(dest_lo, dest_lo, src1);
+  adc(dest_hi, dest_hi, zr);
+  adds(dest_lo, dest_lo, src2);
+  adc(final_dest_hi, dest_hi, zr);
+}
+
+// Generate an address from (r + r1 extend offset).  "size" is the
+// size of the operand.  The result may be in rscratch2.
+Address MacroAssembler::offsetted_address(Register r, Register r1,
+                                          Address::extend ext, int offset, int size) {
+  if (offset || (ext.shift() % size != 0)) {
+    lea(rscratch2, Address(r, r1, ext));
+    return Address(rscratch2, offset);
+  } else {
+    return Address(r, r1, ext);
+  }
+}
+
+/**
+ * Multiply 64 bit by 64 bit first loop.
+ */
+void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
+                                           Register y, Register y_idx, Register z,
+                                           Register carry, Register product,
+                                           Register idx, Register kdx) {
+  //
+  //  jlong carry, x[], y[], z[];
+  //  for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx-, kdx--) {
+  //    huge_128 product = y[idx] * x[xstart] + carry;
+  //    z[kdx] = (jlong)product;
+  //    carry  = (jlong)(product >>> 64);
+  //  }
+  //  z[xstart] = carry;
+  //
+
+  Label L_first_loop, L_first_loop_exit;
+  Label L_one_x, L_one_y, L_multiply;
+
+  subsw(xstart, xstart, 1);
+  br(Assembler::MI, L_one_x);
+
+  lea(rscratch1, Address(x, xstart, Address::lsl(LogBytesPerInt)));
+  ldr(x_xstart, Address(rscratch1));
+  ror(x_xstart, x_xstart, 32); // convert big-endian to little-endian
+
+  bind(L_first_loop);
+  subsw(idx, idx, 1);
+  br(Assembler::MI, L_first_loop_exit);
+  subsw(idx, idx, 1);
+  br(Assembler::MI, L_one_y);
+  lea(rscratch1, Address(y, idx, Address::uxtw(LogBytesPerInt)));
+  ldr(y_idx, Address(rscratch1));
+  ror(y_idx, y_idx, 32); // convert big-endian to little-endian
+  bind(L_multiply);
+
+  // AArch64 has a multiply-accumulate instruction that we can't use
+  // here because it has no way to process carries, so we have to use
+  // separate add and adc instructions.  Bah.
+  umulh(rscratch1, x_xstart, y_idx); // x_xstart * y_idx -> rscratch1:product
+  mul(product, x_xstart, y_idx);
+  adds(product, product, carry);
+  adc(carry, rscratch1, zr);   // x_xstart * y_idx + carry -> carry:product
+
+  subw(kdx, kdx, 2);
+  ror(product, product, 32); // back to big-endian
+  str(product, offsetted_address(z, kdx, Address::uxtw(LogBytesPerInt), 0, BytesPerLong));
+
+  b(L_first_loop);
+
+  bind(L_one_y);
+  ldrw(y_idx, Address(y,  0));
+  b(L_multiply);
+
+  bind(L_one_x);
+  ldrw(x_xstart, Address(x,  0));
+  b(L_first_loop);
+
+  bind(L_first_loop_exit);
+}
+
+/**
+ * Multiply 128 bit by 128. Unrolled inner loop.
+ *
+ */
+void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
+                                             Register carry, Register carry2,
+                                             Register idx, Register jdx,
+                                             Register yz_idx1, Register yz_idx2,
+                                             Register tmp, Register tmp3, Register tmp4,
+                                             Register tmp6, Register product_hi) {
+
+  //   jlong carry, x[], y[], z[];
+  //   int kdx = ystart+1;
+  //   for (int idx=ystart-2; idx >= 0; idx -= 2) { // Third loop
+  //     huge_128 tmp3 = (y[idx+1] * product_hi) + z[kdx+idx+1] + carry;
+  //     jlong carry2  = (jlong)(tmp3 >>> 64);
+  //     huge_128 tmp4 = (y[idx]   * product_hi) + z[kdx+idx] + carry2;
+  //     carry  = (jlong)(tmp4 >>> 64);
+  //     z[kdx+idx+1] = (jlong)tmp3;
+  //     z[kdx+idx] = (jlong)tmp4;
+  //   }
+  //   idx += 2;
+  //   if (idx > 0) {
+  //     yz_idx1 = (y[idx] * product_hi) + z[kdx+idx] + carry;
+  //     z[kdx+idx] = (jlong)yz_idx1;
+  //     carry  = (jlong)(yz_idx1 >>> 64);
+  //   }
+  //
+
+  Label L_third_loop, L_third_loop_exit, L_post_third_loop_done;
+
+  lsrw(jdx, idx, 2);
+
+  bind(L_third_loop);
+
+  subsw(jdx, jdx, 1);
+  br(Assembler::MI, L_third_loop_exit);
+  subw(idx, idx, 4);
+
+  lea(rscratch1, Address(y, idx, Address::uxtw(LogBytesPerInt)));
+
+  ldp(yz_idx2, yz_idx1, Address(rscratch1, 0));
+
+  lea(tmp6, Address(z, idx, Address::uxtw(LogBytesPerInt)));
+
+  ror(yz_idx1, yz_idx1, 32); // convert big-endian to little-endian
+  ror(yz_idx2, yz_idx2, 32);
+
+  ldp(rscratch2, rscratch1, Address(tmp6, 0));
+
+  mul(tmp3, product_hi, yz_idx1);  //  yz_idx1 * product_hi -> tmp4:tmp3
+  umulh(tmp4, product_hi, yz_idx1);
+
+  ror(rscratch1, rscratch1, 32); // convert big-endian to little-endian
+  ror(rscratch2, rscratch2, 32);
+
+  mul(tmp, product_hi, yz_idx2);   //  yz_idx2 * product_hi -> carry2:tmp
+  umulh(carry2, product_hi, yz_idx2);
+
+  // propagate sum of both multiplications into carry:tmp4:tmp3
+  adds(tmp3, tmp3, carry);
+  adc(tmp4, tmp4, zr);
+  adds(tmp3, tmp3, rscratch1);
+  adcs(tmp4, tmp4, tmp);
+  adc(carry, carry2, zr);
+  adds(tmp4, tmp4, rscratch2);
+  adc(carry, carry, zr);
+
+  ror(tmp3, tmp3, 32); // convert little-endian to big-endian
+  ror(tmp4, tmp4, 32);
+  stp(tmp4, tmp3, Address(tmp6, 0));
+
+  b(L_third_loop);
+  bind (L_third_loop_exit);
+
+  andw (idx, idx, 0x3);
+  cbz(idx, L_post_third_loop_done);
+
+  Label L_check_1;
+  subsw(idx, idx, 2);
+  br(Assembler::MI, L_check_1);
+
+  lea(rscratch1, Address(y, idx, Address::uxtw(LogBytesPerInt)));
+  ldr(yz_idx1, Address(rscratch1, 0));
+  ror(yz_idx1, yz_idx1, 32);
+  mul(tmp3, product_hi, yz_idx1);  //  yz_idx1 * product_hi -> tmp4:tmp3
+  umulh(tmp4, product_hi, yz_idx1);
+  lea(rscratch1, Address(z, idx, Address::uxtw(LogBytesPerInt)));
+  ldr(yz_idx2, Address(rscratch1, 0));
+  ror(yz_idx2, yz_idx2, 32);
+
+  add2_with_carry(carry, tmp4, tmp3, carry, yz_idx2);
+
+  ror(tmp3, tmp3, 32);
+  str(tmp3, Address(rscratch1, 0));
+
+  bind (L_check_1);
+
+  andw (idx, idx, 0x1);
+  subsw(idx, idx, 1);
+  br(Assembler::MI, L_post_third_loop_done);
+  ldrw(tmp4, Address(y, idx, Address::uxtw(LogBytesPerInt)));
+  mul(tmp3, tmp4, product_hi);  //  tmp4 * product_hi -> carry2:tmp3
+  umulh(carry2, tmp4, product_hi);
+  ldrw(tmp4, Address(z, idx, Address::uxtw(LogBytesPerInt)));
+
+  add2_with_carry(carry2, tmp3, tmp4, carry);
+
+  strw(tmp3, Address(z, idx, Address::uxtw(LogBytesPerInt)));
+  extr(carry, carry2, tmp3, 32);
+
+  bind(L_post_third_loop_done);
+}
+
+/**
+ * Code for BigInteger::multiplyToLen() instrinsic.
+ *
+ * r0: x
+ * r1: xlen
+ * r2: y
+ * r3: ylen
+ * r4:  z
+ * r5: zlen
+ * r10: tmp1
+ * r11: tmp2
+ * r12: tmp3
+ * r13: tmp4
+ * r14: tmp5
+ * r15: tmp6
+ * r16: tmp7
+ *
+ */
+void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,
+                                     Register z, Register zlen,
+                                     Register tmp1, Register tmp2, Register tmp3, Register tmp4,
+                                     Register tmp5, Register tmp6, Register product_hi) {
+
+  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+
+  const Register idx = tmp1;
+  const Register kdx = tmp2;
+  const Register xstart = tmp3;
+
+  const Register y_idx = tmp4;
+  const Register carry = tmp5;
+  const Register product  = xlen;
+  const Register x_xstart = zlen;  // reuse register
+
+  // First Loop.
+  //
+  //  final static long LONG_MASK = 0xffffffffL;
+  //  int xstart = xlen - 1;
+  //  int ystart = ylen - 1;
+  //  long carry = 0;
+  //  for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx-, kdx--) {
+  //    long product = (y[idx] & LONG_MASK) * (x[xstart] & LONG_MASK) + carry;
+  //    z[kdx] = (int)product;
+  //    carry = product >>> 32;
+  //  }
+  //  z[xstart] = (int)carry;
+  //
+
+  movw(idx, ylen);      // idx = ylen;
+  movw(kdx, zlen);      // kdx = xlen+ylen;
+  mov(carry, zr);       // carry = 0;
+
+  Label L_done;
+
+  movw(xstart, xlen);
+  subsw(xstart, xstart, 1);
+  br(Assembler::MI, L_done);
+
+  multiply_64_x_64_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
+
+  Label L_second_loop;
+  cbzw(kdx, L_second_loop);
+
+  Label L_carry;
+  subw(kdx, kdx, 1);
+  cbzw(kdx, L_carry);
+
+  strw(carry, Address(z, kdx, Address::uxtw(LogBytesPerInt)));
+  lsr(carry, carry, 32);
+  subw(kdx, kdx, 1);
+
+  bind(L_carry);
+  strw(carry, Address(z, kdx, Address::uxtw(LogBytesPerInt)));
+
+  // Second and third (nested) loops.
+  //
+  // for (int i = xstart-1; i >= 0; i--) { // Second loop
+  //   carry = 0;
+  //   for (int jdx=ystart, k=ystart+1+i; jdx >= 0; jdx--, k--) { // Third loop
+  //     long product = (y[jdx] & LONG_MASK) * (x[i] & LONG_MASK) +
+  //                    (z[k] & LONG_MASK) + carry;
+  //     z[k] = (int)product;
+  //     carry = product >>> 32;
+  //   }
+  //   z[i] = (int)carry;
+  // }
+  //
+  // i = xlen, j = tmp1, k = tmp2, carry = tmp5, x[i] = product_hi
+
+  const Register jdx = tmp1;
+
+  bind(L_second_loop);
+  mov(carry, zr);                // carry = 0;
+  movw(jdx, ylen);               // j = ystart+1
+
+  subsw(xstart, xstart, 1);      // i = xstart-1;
+  br(Assembler::MI, L_done);
+
+  str(z, Address(pre(sp, -4 * wordSize)));
+
+  Label L_last_x;
+  lea(z, offsetted_address(z, xstart, Address::uxtw(LogBytesPerInt), 4, BytesPerInt)); // z = z + k - j
+  subsw(xstart, xstart, 1);       // i = xstart-1;
+  br(Assembler::MI, L_last_x);
+
+  lea(rscratch1, Address(x, xstart, Address::uxtw(LogBytesPerInt)));
+  ldr(product_hi, Address(rscratch1));
+  ror(product_hi, product_hi, 32);  // convert big-endian to little-endian
+
+  Label L_third_loop_prologue;
+  bind(L_third_loop_prologue);
+
+  str(ylen, Address(sp, wordSize));
+  stp(x, xstart, Address(sp, 2 * wordSize));
+  multiply_128_x_128_loop(y, z, carry, x, jdx, ylen, product,
+                          tmp2, x_xstart, tmp3, tmp4, tmp6, product_hi);
+  ldp(z, ylen, Address(post(sp, 2 * wordSize)));
+  ldp(x, xlen, Address(post(sp, 2 * wordSize)));   // copy old xstart -> xlen
+
+  addw(tmp3, xlen, 1);
+  strw(carry, Address(z, tmp3, Address::uxtw(LogBytesPerInt)));
+  subsw(tmp3, tmp3, 1);
+  br(Assembler::MI, L_done);
+
+  lsr(carry, carry, 32);
+  strw(carry, Address(z, tmp3, Address::uxtw(LogBytesPerInt)));
+  b(L_second_loop);
+
+  // Next infrequent code is moved outside loops.
+  bind(L_last_x);
+  ldrw(product_hi, Address(x,  0));
+  b(L_third_loop_prologue);
+
+  bind(L_done);
 }
 
 /**
