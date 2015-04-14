@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,8 @@ JDK_PKGS = jdk \
       jdk.net \
       jdk.management.cmm
 
+JACCESSAPI_PKGS = com.sun.java.accessibility.util
+
 # non-core packages in rt.jar
 NON_CORE_PKGS = $(DOMAPI_PKGS) \
     $(MGMT_PKGS) \
@@ -110,4 +112,5 @@ NON_CORE_PKGS = $(DOMAPI_PKGS) \
     $(SMARTCARDIO_PKGS) \
     $(SCTPAPI_PKGS) \
     $(APPLE_EXT_PKGS) \
-    $(JDK_PKGS)
+    $(JDK_PKGS) \
+    $(JACCESSAPI_PKGS)
