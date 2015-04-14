@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     5073060
+ * @bug     5073060 8075610
  * @summary Package private members not found for intersection types
  * @author  Bruce Eckel
  * see      http://www.artima.com/forums/flat.jsp?forum=106&thread=136204
@@ -33,7 +33,7 @@
 package code;
 
 interface HasColor {
-    java.awt.Color getColor();
+    String getColor();
 }
 
 class Dimension {
@@ -44,6 +44,6 @@ class ColoredDimension<T extends Dimension & HasColor> {
     T item;
     ColoredDimension(T item) { this.item = item; }
     T getItem() { return item; }
-    java.awt.Color f() { return item.getColor(); }
+    String f() { return item.getColor(); }
     int getX() { return item.x; }
 }

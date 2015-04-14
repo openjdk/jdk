@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @bug 8004867
  * @summary VM crashing with assert "share/vm/opto/node.hpp:357 - assert(i < _max) failed: oob"
  *
+ * @modules java.base/sun.misc
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-OptimizeFill TestIntUnsafeVolatile
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:+OptimizeFill TestIntUnsafeVolatile
  */

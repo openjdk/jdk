@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
  * @test
  * @bug 8042235
  * @summary redefining method used by multiple MethodHandles crashes VM
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.compiler
+ *          java.instrument
+ *          java.management
  * @compile -XDignore.symbol.file RedefineMethodUsedByMultipleMethodHandles.java
  * @run main RedefineMethodUsedByMultipleMethodHandles
  */

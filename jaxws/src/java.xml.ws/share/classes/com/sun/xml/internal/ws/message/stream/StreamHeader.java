@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public abstract class StreamHeader extends AbstractHeaderImpl {
             // TODO what about in-scope namespaces
             // Not very efficient consider implementing a stream buffer
             // processor that produces a DOM node from the buffer.
-            TransformerFactory tf = XmlUtil.newTransformerFactory();
+            TransformerFactory tf = XmlUtil.newTransformerFactory(true);
             Transformer t = tf.newTransformer();
             XMLStreamBufferSource source = new XMLStreamBufferSource(_mark);
             DOMResult result = new DOMResult();

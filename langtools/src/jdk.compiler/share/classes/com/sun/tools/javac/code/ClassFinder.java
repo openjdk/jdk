@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.tools.javac.code;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.File;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,16 +39,15 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.comp.Annotate;
+import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.file.JRTIndex;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.util.*;
@@ -75,7 +75,7 @@ public class ClassFinder {
 
     ClassReader reader;
 
-    Annotate annotate;
+    private final Annotate annotate;
 
     /** Switch: verbose output.
      */
@@ -272,18 +272,13 @@ public class ClassFinder {
             try {
                 ClassSymbol c = (ClassSymbol) sym;
                 dependencies.push(c, CompletionCause.CLASS_READER);
+                annotate.blockAnnotations();
                 c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
-                annotate.enterStart();
-                try {
-                    completeOwners(c.owner);
-                    completeEnclosing(c);
-                } finally {
-                    // The flush needs to happen only after annotations
-                    // are filled in.
-                    annotate.enterDoneWithoutFlush();
-                }
+                completeOwners(c.owner);
+                completeEnclosing(c);
                 fillIn(c);
             } finally {
+                annotate.unblockAnnotationsNoFlush();
                 dependencies.pop();
             }
         } else if (sym.kind == PCK) {

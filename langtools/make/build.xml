@@ -254,7 +254,6 @@
             warningsProperty="findbugs.all.warnings"
             jvm="${target.java.home}/bin/java"
             jvmargs="-Xmx512M">
-            <class location="${build.dir}/java.base/classes"/>
             <class location="${build.dir}/java.compiler/classes"/>
             <class location="${build.dir}/jdk.compiler/classes"/>
             <class location="${build.dir}/jdk.javadoc/classes"/>
@@ -461,7 +460,6 @@
         <macrodef name="build-all-module-jars">
             <attribute name="compilation.kind" default=""/>
             <sequential>
-                <build-module-jar module.name="java.base" compilation.kind="@{compilation.kind}" />
                 <build-module-jar module.name="java.compiler" compilation.kind="@{compilation.kind}" />
                 <build-module-jar module.name="jdk.compiler" compilation.kind="@{compilation.kind}" />
                 <build-module-jar module.name="jdk.javadoc" compilation.kind="@{compilation.kind}" />
@@ -522,8 +520,6 @@
         <macrodef name="build-all-module-classes">
             <attribute name="compilation.kind" default=""/>
             <sequential>
-                <build-module-classes module.name="java.base"
-                                      compilation.kind="@{compilation.kind}" />
                 <build-module-classes module.name="java.compiler"
                                       compilation.kind="@{compilation.kind}" />
                 <build-module-classes module.name="jdk.compiler"

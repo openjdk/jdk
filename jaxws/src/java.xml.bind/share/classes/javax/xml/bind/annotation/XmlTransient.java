@@ -78,14 +78,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *       String setName() {..};
  *   }
  *
+ * {@code
  *
- *   &lt;!-- Example: XML Schema fragment --&gt;
- *   &lt;xs:complexType name="USAddress"&gt;
- *     &lt;xs:sequence&gt;
- *       &lt;xs:element name="name" type="xs:string"/&gt;
- *     &lt;/xs:sequence&gt;
- *   &lt;/xs:complexType&gt;
- * </pre>
+ *   <!-- Example: XML Schema fragment -->
+ *   <xs:complexType name="USAddress">
+ *     <xs:sequence>
+ *       <xs:element name="name" type="xs:string"/>
+ *     </xs:sequence>
+ *   </xs:complexType>
+ * }</pre>
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @since 1.6, JAXB 2.0

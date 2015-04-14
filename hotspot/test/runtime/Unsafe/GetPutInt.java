@@ -24,6 +24,8 @@
 /*
  * @test
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main GetPutInt
  */
 

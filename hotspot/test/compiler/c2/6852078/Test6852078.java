@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @bug 6852078
  * @summary Disable SuperWord optimization for unsafe read/write
  *
+ * @modules java.corba/com.sun.corba.se.impl.encoding
+ *          java.corba/com.sun.jndi.toolkit.corba
  * @run main Test6852078
  */
 

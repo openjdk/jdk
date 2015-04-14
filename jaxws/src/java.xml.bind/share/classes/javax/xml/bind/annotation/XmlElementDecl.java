@@ -65,21 +65,22 @@ import static java.lang.annotation.ElementType.METHOD;
  *         JAXBElement&lt;String&gt; createFoo(String s) { ... }
  *     }
  * </pre>
- * <pre>
- *     &lt;!-- XML input --&gt;
- *       &lt;foo&gt;string&lt;/foo&gt;
+ * <pre> {@code
+ *
+ *     <!-- XML input -->
+ *     <foo>string</foo>
  *
  *     // Example: code fragment corresponding to XML input
- *     JAXBElement&lt;String&gt; o =
- *     (JAXBElement&lt;String&gt;)unmarshaller.unmarshal(aboveDocument);
+ *     JAXBElement<String> o =
+ *     (JAXBElement<String>)unmarshaller.unmarshal(aboveDocument);
  *     // print JAXBElement instance to show values
  *     System.out.println(o.getName());   // prints  "{}foo"
  *     System.out.println(o.getValue());  // prints  "string"
  *     System.out.println(o.getValue().getClass()); // prints "java.lang.String"
  *
- *     &lt;!-- Example: XML schema definition --&gt;
- *     &lt;xs:element name="foo" type="xs:string"/&gt;
- * </pre>
+ *     <!-- Example: XML schema definition -->
+ *     <xs:element name="foo" type="xs:string"/>
+ * }</pre>
  *
  * <p><b>Example 2: </b> Element declaration with non local scope
  * <p>
@@ -90,18 +91,18 @@ import static java.lang.annotation.ElementType.METHOD;
  * The following example may be replaced in a future revision of
  * this javadoc.
  *
- * <pre>
- *     &lt;!-- Example: XML schema definition --&gt;
- *     &lt;xs:schema&gt;
- *       &lt;xs:complexType name="pea"&gt;
- *         &lt;xs:choice maxOccurs="unbounded"&gt;
- *           &lt;xs:element name="foo" type="xs:string"/&gt;
- *           &lt;xs:element name="bar" type="xs:string"/&gt;
- *         &lt;/xs:choice&gt;
- *       &lt;/xs:complexType&gt;
- *       &lt;xs:element name="foo" type="xs:int"/&gt;
- *     &lt;/xs:schema&gt;
- * </pre>
+ * <pre>{@code
+ *     <!-- Example: XML schema definition -->
+ *     <xs:schema>
+ *       <xs:complexType name="pea">
+ *         <xs:choice maxOccurs="unbounded">
+ *           <xs:element name="foo" type="xs:string"/>
+ *           <xs:element name="bar" type="xs:string"/>
+ *         </xs:choice>
+ *       </xs:complexType>
+ *       <xs:element name="foo" type="xs:int"/>
+ *     </xs:schema>
+ * }</pre>
  * <pre>
  *     // Example: expected default binding
  *     class Pea {

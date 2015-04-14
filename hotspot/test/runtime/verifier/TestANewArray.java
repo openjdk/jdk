@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ import com.oracle.java.testlibrary.*;
  * @test
  * @summary Test that anewarray bytecode is valid only if it specifies 255 or fewer dimensions.
  * @library /testlibrary
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/sun.misc
+ *          java.management
  * @compile -XDignore.symbol.file TestANewArray.java
  * @run main/othervm TestANewArray 49
  * @run main/othervm TestANewArray 50
