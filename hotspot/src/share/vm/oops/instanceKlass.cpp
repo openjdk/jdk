@@ -2712,6 +2712,57 @@ bool InstanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
   return false;
 }
 
+bool InstanceKlass::find_inner_classes_attr(instanceKlassHandle k, int* ooff, int* noff, TRAPS) {
+  constantPoolHandle i_cp(THREAD, k->constants());
+  for (InnerClassesIterator iter(k); !iter.done(); iter.next()) {
+    int ioff = iter.inner_class_info_index();
+    if (ioff != 0) {
+      // Check to see if the name matches the class we're looking for
+      // before attempting to find the class.
+      if (i_cp->klass_name_at_matches(k, ioff)) {
+        Klass* inner_klass = i_cp->klass_at(ioff, CHECK_false);
+        if (k() == inner_klass) {
+          *ooff = iter.outer_class_info_index();
+          *noff = iter.inner_name_index();
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle k, bool* inner_is_member, TRAPS) {
+  instanceKlassHandle outer_klass;
+  *inner_is_member = false;
+  int ooff = 0, noff = 0;
+  if (find_inner_classes_attr(k, &ooff, &noff, THREAD)) {
+    constantPoolHandle i_cp(THREAD, k->constants());
+    if (ooff != 0) {
+      Klass* ok = i_cp->klass_at(ooff, CHECK_NULL);
+      outer_klass = instanceKlassHandle(THREAD, ok);
+      *inner_is_member = true;
+    }
+    if (outer_klass.is_null()) {
+      // It may be anonymous; try for that.
+      int encl_method_class_idx = k->enclosing_method_class_index();
+      if (encl_method_class_idx != 0) {
+        Klass* ok = i_cp->klass_at(encl_method_class_idx, CHECK_NULL);
+        outer_klass = instanceKlassHandle(THREAD, ok);
+        *inner_is_member = false;
+      }
+    }
+  }
+
+  // If no inner class attribute found for this class.
+  if (outer_klass.is_null())  return NULL;
+
+  // Throws an exception if outer klass has not declared k as an inner klass
+  // We need evidence that each klass knows about the other, or else
+  // the system could allow a spoof of an inner class to gain access rights.
+  Reflection::check_for_inner_class(outer_klass, k, *inner_is_member, CHECK_NULL);
+  return outer_klass();
+}
 
 jint InstanceKlass::compute_modifier_flags(TRAPS) const {
   jint access = access_flags().as_int();
