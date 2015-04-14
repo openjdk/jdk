@@ -39,6 +39,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
  protected:
 
  protected:
+  using MacroAssembler::call_VM_leaf_base;
+
   // Interpreter specific version of call_VM_base
   virtual void call_VM_leaf_base(address entry_point,
                                  int number_of_arguments);

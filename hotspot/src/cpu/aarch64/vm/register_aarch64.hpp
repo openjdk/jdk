@@ -60,7 +60,10 @@ class RegisterImpl: public AbstractRegisterImpl {
   bool  has_byte_register() const                { return 0 <= (intptr_t)this && (intptr_t)this < number_of_byte_registers; }
   const char* name() const;
   int   encoding_nocheck() const                 { return (intptr_t)this; }
-  unsigned long bit(bool yes = true) const       { return yes << encoding(); }
+
+  // Return the bit which represents this register.  This is intended
+  // to be ORed into a bitmask: for usage see class RegSet below.
+  unsigned long bit(bool should_set = true) const { return should_set ? 1 << encoding() : 0; }
 };
 
 // The integer registers of the aarch64 architecture
