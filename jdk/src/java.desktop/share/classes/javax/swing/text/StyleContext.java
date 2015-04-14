@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,9 +479,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * behavior of SmallAttributeSet.  This can be reimplemented
      * to return an AttributeSet that provides some sort of
      * attribute conversion.
-     *
      * @param a The set of attributes to be represented in the
      *  the compact form.
+     * @return a compact set of attributes that might be shared
      */
     protected SmallAttributeSet createSmallAttributeSet(AttributeSet a) {
         return new SmallAttributeSet(a);
@@ -498,6 +498,8 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      *
      * @param a The set of attributes to be represented in the
      *  the larger form.
+     * @return a large set of attributes that should trade off
+     * space for time
      */
     protected MutableAttributeSet createLargeAttributeSet(AttributeSet a) {
         return new SimpleAttributeSet(a);
@@ -558,6 +560,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
 
     /**
      * Context-specific handling of writing out attributes
+     * @param out the output stream
+     * @param a the attribute set
+     * @exception IOException on any I/O error
      */
     public void writeAttributes(ObjectOutputStream out,
                                   AttributeSet a) throws IOException {
@@ -566,6 +571,13 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
 
     /**
      * Context-specific handling of reading in attributes
+     * @param in the object stream to read the attribute data from.
+     * @param a  the attribute set to place the attribute
+     *   definitions in.
+     * @exception ClassNotFoundException passed upward if encountered
+     *  when reading the object stream.
+     * @exception IOException passed upward if encountered when
+     *  reading the object stream.
      */
     public void readAttributes(ObjectInputStream in,
                                MutableAttributeSet a) throws ClassNotFoundException, IOException {
@@ -685,6 +697,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     /**
      * Returns the object previously registered with
      * <code>registerStaticAttributeKey</code>.
+     * @param key the object key
+     * @return Returns the object previously registered with
+     * {@code registerStaticAttributeKey}
      */
     public static Object getStaticAttribute(Object key) {
         if (thawKeyMap == null || key == null) {
@@ -694,9 +709,11 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     }
 
     /**
-     * Returns the String that <code>key</code> will be registered with
+     * Returns the String that <code>key</code> will be registered with.
      * @see #getStaticAttribute
      * @see #registerStaticAttributeKey
+     * @param key the object key
+     * @return the String that {@code key} will be registered with
      */
     public static Object getStaticAttributeKey(Object key) {
         return key.getClass().getName() + "." + key.toString();
@@ -772,11 +789,19 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      */
     public class SmallAttributeSet implements AttributeSet {
 
+        /**
+         * Constructs a SmallAttributeSet.
+         * @param attributes the attributes
+         */
         public SmallAttributeSet(Object[] attributes) {
             this.attributes = attributes;
             updateResolveParent();
         }
 
+        /**
+         * Constructs a SmallAttributeSet.
+         * @param attrs the attributes
+         */
         public SmallAttributeSet(AttributeSet attrs) {
             int n = attrs.getAttributeCount();
             Object[] tbl = new Object[2 * n];
@@ -818,7 +843,8 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         // --- Object methods -------------------------
 
         /**
-         * Returns a string showing the key/value pairs
+         * Returns a string showing the key/value pairs.
+         * @return a string showing the key/value pairs
          */
         public String toString() {
             String s = "{";
@@ -1382,7 +1408,8 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         /**
          * Return an array of all the listeners of the given type that
          * were added to this model.
-         *
+         * @param <T> the listener type
+         * @param listenerType the type of listeners requested
          * @return all of the objects receiving <em>listenerType</em> notifications
          *          from this model
          *
