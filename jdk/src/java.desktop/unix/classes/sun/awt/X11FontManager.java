@@ -40,7 +40,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import javax.swing.plaf.FontUIResource;
-import sun.awt.motif.MFontConfiguration;
+import sun.font.MFontConfiguration;
 import sun.font.CompositeFont;
 import sun.font.FontManager;
 import sun.font.SunFontManager;

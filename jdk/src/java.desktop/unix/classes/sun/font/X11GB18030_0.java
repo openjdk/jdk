@@ -23,12 +23,11 @@
  * questions.
  */
 
-package sun.awt.motif;
+package sun.font;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
-import sun.nio.cs.ext.DoubleByteEncoder;
 
 public class X11GB18030_0 extends Charset {
     public X11GB18030_0 () {

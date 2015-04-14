@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,46 +23,66 @@
  * questions.
  */
 
-package sun.awt.motif;
+package sun.font;
 
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.*;
 import sun.nio.cs.*;
-import sun.nio.cs.ext.*;
-import static sun.nio.cs.CharsetMapping.*;
 
-public class X11KSC5601 extends Charset {
-    public X11KSC5601 () {
-        super("X11KSC5601", null);
+public abstract class X11CNS11643 extends Charset {
+    private final int plane;
+    public X11CNS11643 (int plane, String name) {
+        super(name, null);
+        switch (plane) {
+        case 1:
+            this.plane = 0; // CS1
+            break;
+        case 2:
+        case 3:
+            this.plane = plane;
+            break;
+        default:
+            throw new IllegalArgumentException
+                ("Only planes 1, 2, and 3 supported");
+        }
     }
+
     public CharsetEncoder newEncoder() {
-        return new Encoder(this);
+        return new Encoder(this, plane);
     }
+
     public CharsetDecoder newDecoder() {
-        return new Decoder(this);
+        return new Decoder(this, plane);
     }
 
     public boolean contains(Charset cs) {
-        return cs instanceof X11KSC5601;
+        return cs instanceof X11CNS11643;
     }
 
-    private class Encoder extends CharsetEncoder {
-        private DoubleByte.Encoder enc = (DoubleByte.Encoder)new EUC_KR().newEncoder();
-
-        public Encoder(Charset cs) {
-            super(cs, 2.0f, 2.0f);
+    private class Encoder extends EUC_TW.Encoder {
+        private int plane;
+        public Encoder(Charset cs, int plane) {
+            super(cs);
+            this.plane = plane;
         }
 
+        private byte[] bb = new byte[4];
         public boolean canEncode(char c) {
             if (c <= 0x7F) {
                 return false;
             }
-            return enc.canEncode(c);
+            int nb = toEUC(c, bb);
+            if (nb == -1)
+                return false;
+            int p = 0;
+            if (nb == 4)
+                p = (bb[1] & 0xff) - 0xa0;
+            return (p == plane);
         }
 
-        protected int encodeDouble(char c) {
-            return enc.encodeChar(c);
+        public boolean isLegalReplacement(byte[] repl) {
+            return true;
         }
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
@@ -76,14 +96,26 @@ public class X11KSC5601 extends Charset {
             try {
                 while (sp < sl) {
                     char c = sa[sp];
-                    if (c <= '\u007f')
-                        return CoderResult.unmappableForLength(1);
-                    int ncode = encodeDouble(c);
-                    if (ncode != 0 && c != '\u0000' ) {
-                        da[dp++] = (byte) ((ncode  >> 8) & 0x7f);
-                        da[dp++] = (byte) (ncode & 0x7f);
-                        sp++;
-                        continue;
+                    if ( c > '\u007f'&& c < '\uFFFE') {
+                        int nb = toEUC(c, bb);
+                        if (nb != -1) {
+                            int p = 0;
+                            if (nb == 4)
+                                p = (bb[1] & 0xff) - 0xa0;
+                            if (p == plane) {
+                                if (dl - dp < 2)
+                                    return CoderResult.OVERFLOW;
+                                if (nb == 2) {
+                                    da[dp++] = (byte)(bb[0] & 0x7f);
+                                    da[dp++] = (byte)(bb[1] & 0x7f);
+                                } else {
+                                    da[dp++] = (byte)(bb[2] & 0x7f);
+                                    da[dp++] = (byte)(bb[3] & 0x7f);
+                                }
+                                sp++;
+                                continue;
+                            }
+                        }
                     }
                     return CoderResult.unmappableForLength(1);
                 }
@@ -93,49 +125,47 @@ public class X11KSC5601 extends Charset {
                 dst.position(dp - dst.arrayOffset());
             }
         }
-        public boolean isLegalReplacement(byte[] repl) {
-            return true;
-        }
     }
 
-    private class Decoder extends  CharsetDecoder {
-        private DoubleByte.Decoder dec = (DoubleByte.Decoder)new EUC_KR().newDecoder();
-
-        public Decoder(Charset cs) {
-            super(cs, 0.5f, 1.0f);
+    private class Decoder extends EUC_TW.Decoder {
+        int plane;
+        private String table;
+        protected Decoder(Charset cs, int plane) {
+            super(cs);
+            if (plane == 0)
+                this.plane = plane;
+            else if (plane == 2 || plane == 3)
+                this.plane = plane - 1;
+            else
+                throw new IllegalArgumentException
+                    ("Only planes 1, 2, and 3 supported");
         }
 
-        protected char decodeDouble(int b1, int b2) {
-            return dec.decodeDouble(b1, b2);
-        }
-
+        //we only work on array backed buffer.
         protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
+
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
-
 
             try {
                 while (sp < sl) {
                     if ( sl - sp < 2) {
                         return CoderResult.UNDERFLOW;
                     }
-                    int b1 = sa[sp] & 0xFF | 0x80;
-                    int b2 = sa[sp + 1] & 0xFF | 0x80;
-                    char c = decodeDouble(b1, b2);
-                    if (c == UNMAPPABLE_DECODING) {
+                    int b1 = (sa[sp] & 0xff) | 0x80;
+                    int b2 = (sa[sp + 1] & 0xff) | 0x80;
+                    char[] cc = toUnicode(b1, b2, plane);
+                    // plane3 has non-bmp characters(added), x11cnsp3
+                    // however does not support them
+                    if (cc == null || cc.length == 2)
                         return CoderResult.unmappableForLength(2);
-                    }
                     if (dl - dp < 1)
                         return CoderResult.OVERFLOW;
-                    da[dp++] = c;
+                    da[dp++] = cc[0];
                     sp +=2;
                 }
                 return CoderResult.UNDERFLOW;
@@ -143,7 +173,6 @@ public class X11KSC5601 extends Charset {
                 src.position(sp - src.arrayOffset());
                 dst.position(dp - dst.arrayOffset());
             }
-
         }
     }
 }

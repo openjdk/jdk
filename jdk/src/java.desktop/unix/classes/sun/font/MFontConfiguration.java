@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.awt.motif;
+package sun.font;
 
 import sun.awt.FontConfiguration;
 import sun.awt.X11FontManager;
@@ -235,7 +235,7 @@ public class MFontConfiguration extends FontConfiguration {
         String xlfdEncoding = awtFontName.substring(beginIndex);
         if (xlfdEncoding.indexOf("fontspecific") > 0) {
             if (awtFontName.indexOf("dingbats") > 0) {
-                return "sun.awt.motif.X11Dingbats";
+                return "sun.font.X11Dingbats";
             } else if (awtFontName.indexOf("symbol") > 0) {
                 return "sun.awt.Symbol";
             }
@@ -303,28 +303,28 @@ public class MFontConfiguration extends FontConfiguration {
         encodingMap.put("iso8859-9", "ISO-8859-9");
         encodingMap.put("iso8859-13", "ISO-8859-13");
         encodingMap.put("iso8859-15", "ISO-8859-15");
-        encodingMap.put("gb2312.1980-0", "sun.awt.motif.X11GB2312");
+        encodingMap.put("gb2312.1980-0", "sun.font.X11GB2312");
         if (osName == null) {
             // use standard converter on Solaris
             encodingMap.put("gbk-0", "GBK");
         } else {
-            encodingMap.put("gbk-0", "sun.awt.motif.X11GBK");
+            encodingMap.put("gbk-0", "sun.font.X11GBK");
         }
-        encodingMap.put("gb18030.2000-0", "sun.awt.motif.X11GB18030_0");
-        encodingMap.put("gb18030.2000-1", "sun.awt.motif.X11GB18030_1");
-        encodingMap.put("cns11643-1", "sun.awt.motif.X11CNS11643P1");
-        encodingMap.put("cns11643-2", "sun.awt.motif.X11CNS11643P2");
-        encodingMap.put("cns11643-3", "sun.awt.motif.X11CNS11643P3");
+        encodingMap.put("gb18030.2000-0", "sun.font.X11GB18030_0");
+        encodingMap.put("gb18030.2000-1", "sun.font.X11GB18030_1");
+        encodingMap.put("cns11643-1", "sun.font.X11CNS11643P1");
+        encodingMap.put("cns11643-2", "sun.font.X11CNS11643P2");
+        encodingMap.put("cns11643-3", "sun.font.X11CNS11643P3");
         encodingMap.put("big5-1", "Big5");
         encodingMap.put("big5-0", "Big5");
         encodingMap.put("hkscs-1", "Big5-HKSCS");
         encodingMap.put("ansi-1251", "windows-1251");
         encodingMap.put("koi8-r", "KOI8-R");
-        encodingMap.put("jisx0201.1976-0", "sun.awt.motif.X11JIS0201");
-        encodingMap.put("jisx0208.1983-0", "sun.awt.motif.X11JIS0208");
-        encodingMap.put("jisx0212.1990-0", "sun.awt.motif.X11JIS0212");
-        encodingMap.put("ksc5601.1987-0", "sun.awt.motif.X11KSC5601");
-        encodingMap.put("ksc5601.1992-3", "sun.awt.motif.X11Johab");
+        encodingMap.put("jisx0201.1976-0", "JIS0201");
+        encodingMap.put("jisx0208.1983-0", "JIS0208");
+        encodingMap.put("jisx0212.1990-0", "JIS0212");
+        encodingMap.put("ksc5601.1987-0", "sun.font.X11KSC5601");
+        encodingMap.put("ksc5601.1992-3", "sun.font.X11Johab");
         encodingMap.put("tis620.2533-0", "TIS-620");
         encodingMap.put("iso10646-1", "UTF-16BE");
     }
