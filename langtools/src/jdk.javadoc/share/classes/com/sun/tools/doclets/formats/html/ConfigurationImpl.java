@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.*;
 import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
-import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclint.DocLint;
@@ -176,6 +176,11 @@ public class ConfigurationImpl extends Configuration {
     public boolean createoverview = false;
 
     /**
+     * This is the HTML version of the generated pages. HTML 4.01 is the default output version.
+     */
+    public HtmlVersion htmlVersion = HtmlVersion.HTML4;
+
+    /**
      * Collected set of doclint options
      */
     public Set<String> doclintOpts = new LinkedHashSet<>();
@@ -279,6 +284,10 @@ public class ConfigurationImpl extends Configuration {
                 nooverview = true;
             } else if (opt.equals("-overview")) {
                 overview = true;
+            } else if (opt.equals("-html4")) {
+                htmlVersion = HtmlVersion.HTML4;
+            } else if (opt.equals("-html5")) {
+                htmlVersion = HtmlVersion.HTML5;
             } else if (opt.equals("-xdoclint")) {
                 doclintOpts.add(null);
             } else if (opt.startsWith("-xdoclint:")) {
@@ -300,7 +309,8 @@ public class ConfigurationImpl extends Configuration {
         setTopFile(root);
 
         if (root instanceof RootDocImpl) {
-            ((RootDocImpl) root).initDocLint(doclintOpts, tagletManager.getCustomTagNames());
+            ((RootDocImpl) root).initDocLint(doclintOpts, tagletManager.getCustomTagNames(),
+                    StringUtils.toLowerCase(htmlVersion.name()));
         }
     }
 
@@ -336,6 +346,8 @@ public class ConfigurationImpl extends Configuration {
             option.equals("-use") ||
             option.equals("-nonavbar") ||
             option.equals("-nooverview") ||
+            option.equals("-html4") ||
+            option.equals("-html5") ||
             option.equals("-xdoclint") ||
             option.startsWith("-xdoclint:")) {
             return 1;
@@ -468,6 +480,20 @@ public class ConfigurationImpl extends Configuration {
             }
         }
         return true;
+    }
+
+    /**
+     * Return true if the generated output is HTML5.
+     */
+    public boolean isOutputHtml5() {
+        return htmlVersion == HtmlVersion.HTML5;
+    }
+
+    /**
+     * Return true if the tag is allowed for this specific version of HTML.
+     */
+    public boolean allowTag(HtmlTag htmlTag) {
+        return htmlTag.allowTag(this.htmlVersion);
     }
 
     /**

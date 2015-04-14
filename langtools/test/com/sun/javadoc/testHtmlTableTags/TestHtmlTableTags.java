@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,111 +63,85 @@ public class TestHtmlTableTags extends JavadocTester {
     void checkHtmlTableSummaries() {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
-                + " cellspacing=\"0\" summary=\"Class Summary table, "
+                "<table class=\"typeSummary\" summary=\"Class Summary table, "
                 + "listing classes, and an explanation\">",
-                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
-                + " cellspacing=\"0\" summary=\"Interface Summary table, "
+                "<table class=\"typeSummary\" summary=\"Interface Summary table, "
                 + "listing interfaces, and an explanation\">");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
-                + " cellspacing=\"0\" summary=\"Enum Summary table, "
+                "<table class=\"typeSummary\" summary=\"Enum Summary table, "
                 + "listing enums, and an explanation\">",
-                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
-                + " cellspacing=\"0\" summary=\"Annotation Types Summary table, "
+                "<table class=\"typeSummary\" summary=\"Annotation Types Summary table, "
                 + "listing annotation types, and an explanation\">");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Field Summary table, listing fields, "
+                "<table class=\"memberSummary\" summary=\"Field Summary table, listing fields, "
                 + "and an explanation\">",
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Method Summary table, listing methods, "
+                "<table class=\"memberSummary\" summary=\"Method Summary table, listing methods, "
                 + "and an explanation\">");
 
         checkOutput("pkg2/C2.html", true,
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Nested Class Summary table, listing "
+                "<table class=\"memberSummary\" summary=\"Nested Class Summary table, listing "
                 + "nested classes, and an explanation\">",
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Constructor Summary table, listing "
+                "<table class=\"memberSummary\" summary=\"Constructor Summary table, listing "
                 + "constructors, and an explanation\">");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Enum Constant Summary table, listing "
+                "<table class=\"memberSummary\" summary=\"Enum Constant Summary table, listing "
                 + "enum constants, and an explanation\">");
 
         checkOutput("pkg2/C3.html", true,
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Required Element Summary table, "
+                "<table class=\"memberSummary\" summary=\"Required Element Summary table, "
                 + "listing required elements, and an explanation\">");
 
         checkOutput("pkg2/C4.html", true,
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Optional Element Summary table, "
+                "<table class=\"memberSummary\" summary=\"Optional Element Summary table, "
                 + "listing optional elements, and an explanation\">");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing packages, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">");
 
         checkOutput("pkg1/class-use/C1.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing fields, and an explanation\">",
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing methods, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing fields, and an explanation\">",
+                "<table class=\"useSummary\" summary=\"Use table, listing methods, and an explanation\">");
 
         checkOutput("pkg2/class-use/C2.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing fields, and an explanation\">",
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing methods, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing fields, and an explanation\">",
+                "<table class=\"useSummary\" summary=\"Use table, listing methods, and an explanation\">");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing packages, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing methods, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing methods, and an explanation\">");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing packages, and an explanation\">",
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing classes, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">",
+                "<table class=\"useSummary\" summary=\"Use table, listing classes, and an explanation\">");
 
         checkOutput("pkg2/package-use.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing packages, and an explanation\">",
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
-                + "table, listing classes, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">",
+                "<table class=\"useSummary\" summary=\"Use table, listing classes, and an explanation\">");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
-                + "summary=\"Deprecated Fields table, listing deprecated fields, "
+                "<table class=\"deprecatedSummary\" summary=\"Deprecated Fields table, listing deprecated fields, "
                 + "and an explanation\">",
-                "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
-                + "summary=\"Deprecated Methods table, listing deprecated methods, "
+                "<table class=\"deprecatedSummary\" summary=\"Deprecated Methods table, listing deprecated methods, "
                 + "and an explanation\">");
 
         // Constant values
         checkOutput("constant-values.html", true,
-                "<table class=\"constantsSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
-                + "summary=\"Constant Field Values table, listing "
+                "<table class=\"constantsSummary\" summary=\"Constant Field Values table, listing "
                 + "constant fields, and values\">");
 
         // Overview Summary
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Packages table, "
-                + "listing packages, and an explanation\">");
+                "<table class=\"overviewSummary\" "
+                + "summary=\"Packages table, listing packages, and an explanation\">");
     }
 
     /*

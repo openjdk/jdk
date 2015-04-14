@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,13 +149,17 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected void addIndexContents(Collection<PackageDoc> packages, String text,
             String tableSummary, Content body) {
         if (!packages.isEmpty()) {
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.addStyle(HtmlStyle.indexHeader);
-            addAllClassesLink(div);
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
+                    ? HtmlTree.NAV()
+                    : new HtmlTree(HtmlTag.DIV);
+            htmlTree.addStyle(HtmlStyle.indexNav);
+            HtmlTree ul = new HtmlTree(HtmlTag.UL);
+            addAllClassesLink(ul);
             if (configuration.showProfiles) {
-                addAllProfilesLink(div);
+                addAllProfilesLink(ul);
             }
-            body.addContent(div);
+            htmlTree.addContent(ul);
+            body.addContent(htmlTree);
             if (configuration.showProfiles && configuration.profilePackages.size() > 0) {
                 Content profileSummary = configuration.getResource("doclet.Profiles");
                 addProfilesList(profileSummary, body);
