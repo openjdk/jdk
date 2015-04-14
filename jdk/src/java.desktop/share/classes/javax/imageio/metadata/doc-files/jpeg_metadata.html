@@ -2,7 +2,7 @@
 <html>
 <head>
 <!--
-Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ JPEG Metadata Format Specification and Usage Notes
 <a href=#image>Image Metadata DTD</a><br>
 <a href=#stream>Stream Metadata DTD</a>
 <p>
-<bold>NOTE</bold>: It is important to call <code>dispose()</code> 
+<b>NOTE</b>: It is important to call <code>dispose()</code> 
 on the JPEG reader and writer objects when they are no longer needed, as 
 they consume significant native resources which are not adequately recovered 
 by garbage collection.  Both reader and writer call <code>dispose()</code> 
@@ -57,7 +57,6 @@ code has exhausted native memory.
 
 The JPEG writer does not support replacing pixels.
 
-<p>
 <h2>
 <a name=metadata>JPEG Metadata</a>
 </h2>
@@ -95,7 +94,7 @@ if it is a <code>JPEGImageWriteParam</code> and contains tables.  Otherwise,
 the returned object will contain default tables.
 
 <p>The <code>ImageWriter.getDefaultImageMetadata</code> method returns a 
-metadata object containing <bold>no</bold> tables if the 
+metadata object containing <b>no</b> tables if the 
 <code>ImageWriteParam</code> argument contains tables.  Otherwise the 
 returned metadata object will contain default visually lossless tables.  
 Of course, only a <code>JPEGImageWriteParam</code> may contain tables.
@@ -105,7 +104,6 @@ If <code>ignoreMetadata</code> is set to <code>true</code> when the input
 is set on the reader, stream metadata will not be available, but image
 metadata will.
 
-<p>
 <h2>
 <a name=abbrev>Abbreviated Streams</a>
 </h2>
@@ -194,7 +192,6 @@ stream being read.
 Note that if no image metadata object is specified for a particular image, a 
 default object is used, which includes default tables.
 
-<p>
 <h2>
 <a name=color>Colorspace Transformations and Conventional Markers</a>
 </h2>
@@ -235,7 +232,6 @@ JPEG conventions, as follows:
        the YCbCr is converted to RGB according to the formulas given in the
        JFIF spec, and the ICC profile is assumed to refer to the resulting RGB
        space.
-  <p>
   <li> If an Adobe <code>APP14</code> marker segment is present, the 
        colorspace is determined by consulting the <code>transform</code> flag.
        The <code>transform</code> flag takes one of three values:
@@ -249,7 +245,6 @@ JPEG conventions, as follows:
       <li> 0 - Unknown.  3-channel images are assumed to be RGB, 4-channel 
            images are assumed to be CMYK.
     </ul>
-   <p>
   <li> If neither marker segment is present, the following procedure is
        followed: Single-channel images are assumed to be grayscale, and
        2-channel images are assumed to be grayscale with an alpha channel.
@@ -273,13 +268,12 @@ JPEG conventions, as follows:
        subsampled images are assumed to be YCCK, and 4-channel, non-subsampled
        images are assumed to be CMYK.
 
-  <p>
   <li> All other images are declared uninterpretable and an exception is
        thrown if an attempt is made to read one as a 
        <code>BufferedImage</code>.  Such an image may be read only as a 
        <code>Raster</code>.  If an image is interpretable but there is no Java
        <code>ColorSpace</code> available corresponding to the encoded 
-       colorspace (<italic>e.g.</italic> YCbCr), then 
+       colorspace (<i>e.g.</i> YCbCr), then 
        <code>ImageReader.getRawImageType</code> will return <code>null</code>.
 </ul>
 
@@ -308,7 +302,7 @@ determined as follows:
 
   <li> An exception is thrown if an attempt is made to read an image in an 
        unsupported jpeg colorspace as a <code>BufferedImage</code> 
-       (<italic>e.g.</italic> CMYK).  Such images may be read as
+       (<i>e.g.</i> CMYK).  Such images may be read as
        <code>Raster</code>s.  If an image colorspace is unsupported or
        uninterpretable, then <code>ImageReader.getImageTypes</code> will
        return an empty <code>Iterator</code>.   If a subset of the raw bands
@@ -514,7 +508,6 @@ in the frame header node of the metadata object, regardless of color space.)
     </ul>
 </ul>
 
-<p>
 <h2>
 <a name=thumbs>Thumbnail Images</a>
 </h2>
@@ -591,7 +584,7 @@ whenever a thumbnail is clipped.
        that no thumbnail is placed in the JFIF <code>APP0</code> segment, and
        the <code>app0JFXX</code> node consulted for each thumbnail is the
        <code>app0JFXX</code> node from the metadata that occurs in the same
-       sequence as the thumbnail.  <italic>I.e.</italic> the first
+       sequence as the thumbnail.  <i>I.e.</i> the first
        <code>app0JFXX</code> node applies to the first thumbnail, the second
        node to the second thumbnail, and so on.  If there are fewer
        <code>app0JFXX</code> nodes in the metadata than thumbnails, then 
@@ -610,7 +603,6 @@ may have thumbnails.  If thumbnails are present when writing any other type
 of image, the thumbnails are ignored and a warning is sent to any warning
 listeners.
 
-<p>
 <h2>
 <a name=prog>Progressive Encoding</a>
 </h2>
@@ -631,7 +623,6 @@ all Huffman tables in the metadata or in the <code>ImageWriteParam</code>
 itself are ignored, and a warning will be sent to any warning listeners if 
 any such tables are present.
 
-<p>
 <h2>
 <a name=tree>Native Metadata Format Tree Structure and Editing</a>
 </h2>
@@ -673,7 +664,7 @@ children of an <code>app0JFIF</code> node.
 This is true regardless of where the JFXX <code>APP0</code> and 
 <code>APP2</code> marker segments actually occur in the stream.  The ordering 
 of nodes within the <code>markerSequence</code> node corresponds to the 
-ordering of marker segments found in the JPEG stream.  
+ordering of marker segments found in the JPEG stream.
 <p>
 On writing, any <code>JFXX</code> and <code>app2ICC</code> nodes must 
 occur as children of an <code>app0JFIF</code> node, itself a child of a 

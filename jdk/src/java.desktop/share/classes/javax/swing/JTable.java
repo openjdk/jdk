@@ -49,6 +49,7 @@ import javax.swing.border.*;
 import java.text.NumberFormat;
 import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.util.List;
 
 import javax.print.attribute.*;
 import javax.print.PrintService;
@@ -4419,8 +4420,13 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         if (sortManager != null) {
-            sortedTableChanged(null, e);
-            return;
+            List<? extends RowSorter.SortKey> sortKeys =
+                    sortManager.sorter.getSortKeys();
+            if (sortKeys.size() != 0 &&
+                    sortKeys.get(0).getSortOrder() != SortOrder.UNSORTED) {
+                sortedTableChanged(null, e);
+                return;
+            }
         }
 
         // The totalRowHeight calculated below will be incorrect if
