@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.awt.motif;
+package sun.font;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

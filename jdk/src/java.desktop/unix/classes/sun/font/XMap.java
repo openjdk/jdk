@@ -69,7 +69,7 @@ class XMap {
         boolean addAscii = false;
         boolean lowPartOnly = false;
         if (encoding.equals("dingbats")) {
-            jclass = "sun.awt.motif.X11Dingbats";
+            jclass = "sun.font.X11Dingbats";
             minU = 0x2701;
             maxU = 0x27be;
         } else if (encoding.equals("symbol")){
@@ -81,10 +81,10 @@ class XMap {
         } else if (encoding.equals("iso8859-2")) {
             jclass = "ISO8859_2";
         } else if (encoding.equals("jisx0208.1983-0")) {
-            jclass = "sun.awt.motif.X11JIS0208";
+            jclass = "JIS0208";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals("jisx0201.1976-0")) {
-            jclass = "sun.awt.motif.X11JIS0201";
+            jclass = "JIS0201";
             // this is mapping the latin supplement range 128->255 which
             // doesn't exist in JIS0201. This needs examination.
             // it was also overwriting a couple of the mappings of
@@ -94,7 +94,7 @@ class XMap {
             addAscii = true;
             lowPartOnly = true;
         } else if (encoding.equals("jisx0212.1990-0")) {
-            jclass = "sun.awt.motif.X11JIS0212";
+            jclass = "JIS0212";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals("iso8859-4")) {
             jclass = "ISO8859_4";
@@ -117,25 +117,25 @@ class XMap {
         } else if (encoding.equals("iso8859-15")) {
             jclass = "ISO8859_15";
         } else if (encoding.equals("ksc5601.1987-0")) {
-            jclass ="sun.awt.motif.X11KSC5601";
+            jclass ="sun.font.X11KSC5601";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals( "ksc5601.1992-3")) {
-            jclass ="sun.awt.motif.X11Johab";
+            jclass ="sun.font.X11Johab";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals( "ksc5601.1987-1")) {
             jclass ="EUC_KR";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals( "cns11643-1")) {
-            jclass = "sun.awt.motif.X11CNS11643P1";
+            jclass = "sun.font.X11CNS11643P1";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals("cns11643-2")) {
-            jclass = "sun.awt.motif.X11CNS11643P2";
+            jclass = "sun.font.X11CNS11643P2";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals("cns11643-3")) {
-            jclass = "sun.awt.motif.X11CNS11643P3";
+            jclass = "sun.font.X11CNS11643P3";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals("gb2312.1980-0")) {
-            jclass = "sun.awt.motif.X11GB2312";
+            jclass = "sun.font.X11GB2312";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.indexOf("big5") >= 0) {
             jclass = "Big5";
@@ -144,19 +144,19 @@ class XMap {
         } else if (encoding.equals("tis620.2533-0")) {
             jclass = "TIS620";
         } else if (encoding.equals("gbk-0")) {
-            jclass = "sun.awt.motif.X11GBK";
+            jclass = "sun.font.X11GBK";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.indexOf("sun.unicode-0") >= 0) {
-            jclass = "sun.awt.motif.X11SunUnicode_0";
+            jclass = "sun.font.X11SunUnicode_0";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.indexOf("gb18030.2000-1") >= 0) {
-            jclass = "sun.awt.motif.X11GB18030_1";
+            jclass = "sun.font.X11GB18030_1";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.indexOf( "gb18030.2000-0") >= 0) {
-            jclass = "sun.awt.motif.X11GB18030_0";
+            jclass = "sun.font.X11GB18030_0";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.indexOf("hkscs") >= 0) {
-            jclass = "sun.awt.HKSCS";
+            jclass = "MS950_HKSCS_XP";
             nBytes = DOUBLE_BYTE;
         }
         return new XMap(jclass, minU, maxU, nBytes, addAscii, lowPartOnly);

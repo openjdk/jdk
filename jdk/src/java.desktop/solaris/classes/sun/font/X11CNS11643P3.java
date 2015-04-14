@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
  * questions.
  */
 
+package sun.font;
 
-package sun.awt.motif;
-
-public class X11CNS11643P1 extends X11CNS11643 {
-    public X11CNS11643P1() {
-        super(1, "X11CNS11643P1");
+public class X11CNS11643P3 extends X11CNS11643 {
+    public X11CNS11643P3() {
+        super(3, "X11CNS11643P3");
     }
 }

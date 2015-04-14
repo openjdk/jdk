@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,44 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+package sun.font;
 
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CharsetDecoder;
+import java.nio.charset.*;
+import sun.nio.cs.*;
+import static sun.nio.cs.CharsetMapping.*;
 
-public class COMPOUND_TEXT extends Charset {
-    public COMPOUND_TEXT () {
-        super("x-COMPOUND_TEXT",
-              ExtendedCharsets.aliasesFor("x-COMPOUND_TEXT"));
+public class X11GBK extends Charset {
+    public X11GBK () {
+        super("X11GBK", null);
     }
-
     public CharsetEncoder newEncoder() {
-        return new COMPOUND_TEXT_Encoder(this);
+        return new Encoder(this);
     }
-
     public CharsetDecoder newDecoder() {
-        return new COMPOUND_TEXT_Decoder(this);
+        return new GBK().newDecoder();
     }
 
     public boolean contains(Charset cs) {
-        return cs instanceof COMPOUND_TEXT;
+        return cs instanceof X11GBK;
+    }
+
+    private class Encoder extends DoubleByte.Encoder {
+
+        private DoubleByte.Encoder enc = (DoubleByte.Encoder)new GBK().newEncoder();
+
+        Encoder(Charset cs) {
+            super(cs, (char[])null, (char[])null);
+        }
+
+        public boolean canEncode(char ch){
+            if (ch < 0x80) return false;
+            return enc.canEncode(ch);
+        }
+
+        public int encodeChar(char ch) {
+            if (ch < 0x80)
+                return UNMAPPABLE_ENCODING;
+            return enc.encodeChar(ch);
+        }
     }
 }
