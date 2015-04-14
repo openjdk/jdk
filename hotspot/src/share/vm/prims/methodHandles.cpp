@@ -994,22 +994,8 @@ void MemberNameTable::adjust_method_entries(Method** old_methods, Method** new_m
 // that intrinsic (non-JNI) native methods are defined in HotSpot.
 //
 
-JVM_ENTRY(jint, MHN_getConstant(JNIEnv *env, jobject igcls, jint which)) {
-  switch (which) {
-  case MethodHandles::GC_COUNT_GWT:
-#ifdef COMPILER2
-    return true;
-#else
-    return false;
-#endif
-  }
-  return 0;
-}
-JVM_END
-
 #ifndef PRODUCT
 #define EACH_NAMED_CON(template, requirement) \
-    template(MethodHandles,GC_COUNT_GWT) \
     template(java_lang_invoke_MemberName,MN_IS_METHOD) \
     template(java_lang_invoke_MemberName,MN_IS_CONSTRUCTOR) \
     template(java_lang_invoke_MemberName,MN_IS_FIELD) \
@@ -1019,7 +1005,6 @@ JVM_END
     template(java_lang_invoke_MemberName,MN_SEARCH_INTERFACES) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_SHIFT) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_MASK) \
-    template(MethodHandles,GC_LAMBDA_SUPPORT) \
     /*end*/
 
 #define IGNORE_REQ(req_expr) /* req_expr */
@@ -1313,7 +1298,6 @@ static JNINativeMethod MHN_methods[] = {
   {CC"init",                      CC"("MEM""OBJ")V",                     FN_PTR(MHN_init_Mem)},
   {CC"expand",                    CC"("MEM")V",                          FN_PTR(MHN_expand_Mem)},
   {CC"resolve",                   CC"("MEM""CLS")"MEM,                   FN_PTR(MHN_resolve_Mem)},
-  {CC"getConstant",               CC"(I)I",                              FN_PTR(MHN_getConstant)},
   //  static native int getNamedCon(int which, Object[] name)
   {CC"getNamedCon",               CC"(I["OBJ")I",                        FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
