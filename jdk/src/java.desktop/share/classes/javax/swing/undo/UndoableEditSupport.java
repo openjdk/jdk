@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,21 @@ import java.util.*;
  * @author Ray Ryan
  */
 public class UndoableEditSupport {
+    /**
+     * The update level.
+     */
     protected int updateLevel;
+    /**
+     * The compound edit.
+     */
     protected CompoundEdit compoundEdit;
+    /**
+     * The list of listeners.
+     */
     protected Vector<UndoableEditListener> listeners;
+    /**
+     * The real source.
+     */
     protected Object realSource;
 
     /**
