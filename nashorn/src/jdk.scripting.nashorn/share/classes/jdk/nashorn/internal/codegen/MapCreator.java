@@ -68,17 +68,17 @@ public class MapCreator<T> {
      * @param evalCode      is this property map created for 'eval' code?
      * @return New map populated with accessor properties.
      */
-    PropertyMap makeFieldMap(final boolean hasArguments, final int fieldCount, final int fieldMaximum, final boolean evalCode) {
+    PropertyMap makeFieldMap(final boolean hasArguments, final boolean dualFields, final int fieldCount, final int fieldMaximum, final boolean evalCode) {
         final List<Property> properties = new ArrayList<>();
         assert tuples != null;
 
         for (final MapTuple<T> tuple : tuples) {
             final String   key         = tuple.key;
             final Symbol   symbol      = tuple.symbol;
-            final Class<?> initialType = tuple.getValueType();
+            final Class<?> initialType = dualFields ? tuple.getValueType() : Object.class;
 
             if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
-                final int      flags    = getPropertyFlags(symbol, hasArguments, evalCode);
+                final int      flags    = getPropertyFlags(symbol, hasArguments, evalCode, dualFields);
                 final Property property = new AccessorProperty(
                         key,
                         flags,
@@ -92,7 +92,7 @@ public class MapCreator<T> {
         return PropertyMap.newMap(properties, structure.getName(), fieldCount, fieldMaximum, 0);
     }
 
-    PropertyMap makeSpillMap(final boolean hasArguments) {
+    PropertyMap makeSpillMap(final boolean hasArguments, final boolean dualFields) {
         final List<Property> properties = new ArrayList<>();
         int spillIndex = 0;
         assert tuples != null;
@@ -100,10 +100,10 @@ public class MapCreator<T> {
         for (final MapTuple<T> tuple : tuples) {
             final String key    = tuple.key;
             final Symbol symbol = tuple.symbol;
-            final Class<?> initialType = tuple.getValueType();
+            final Class<?> initialType = dualFields ? tuple.getValueType() : Object.class;
 
             if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
-                final int flags = getPropertyFlags(symbol, hasArguments, false);
+                final int flags = getPropertyFlags(symbol, hasArguments, false, dualFields);
                 properties.add(
                         new SpillProperty(
                                 key,
@@ -124,7 +124,7 @@ public class MapCreator<T> {
      *
      * @return flags to use for fields
      */
-    static int getPropertyFlags(final Symbol symbol, final boolean hasArguments, final boolean evalCode) {
+    static int getPropertyFlags(final Symbol symbol, final boolean hasArguments, final boolean evalCode, final boolean dualFields) {
         int flags = 0;
 
         if (symbol.isParam()) {
@@ -160,6 +160,10 @@ public class MapCreator<T> {
         // Mark symbol as needing declaration. Access before declaration will throw a ReferenceError.
         if (symbol.isBlockScoped() && symbol.isScope()) {
             flags |= Property.NEEDS_DECLARATION;
+        }
+
+        if (dualFields) {
+            flags |= Property.DUAL_FIELDS;
         }
 
         return flags;

@@ -51,16 +51,16 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  * The above code maps to the following XML:
- * <pre>
- * &lt;xs:element name="foo" xmlns:ref="http://ws-i.org/profiles/basic/1.1/xsd"&gt;
- *   &lt;xs:complexType&gt;
- *     &lt;xs:sequence&gt;
- *       &lt;xs:element name="body" type="ref:swaRef" minOccurs="0" /&gt;
- *     &lt;/xs:sequence&gt;
- *     &lt;xs:attribute name="data" type="ref:swaRef" use="optional" /&gt;
- *   &lt;/xs:complexType&gt;
- * &lt;/xs:element&gt;
- * </pre>
+ * <pre>{@code
+ * <xs:element name="foo" xmlns:ref="http://ws-i.org/profiles/basic/1.1/xsd">
+ *   <xs:complexType>
+ *     <xs:sequence>
+ *       <xs:element name="body" type="ref:swaRef" minOccurs="0" />
+ *     </xs:sequence>
+ *     <xs:attribute name="data" type="ref:swaRef" use="optional" />
+ *   </xs:complexType>
+ * </xs:element>
+ * }</pre>
  *
  * <p>
  * The above binding supports WS-I AP 1.0 <a href="http://www.ws-i.org/Profiles/AttachmentsProfile-1.0-2004-08-24.html#Referencing_Attachments_from_the_SOAP_Envelope">WS-I Attachments Profile Version 1.0.</a>

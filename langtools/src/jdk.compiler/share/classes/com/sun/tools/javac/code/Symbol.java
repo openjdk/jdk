@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,11 @@ import java.util.concurrent.Callable;
 import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Attribute.Compound;
+import com.sun.tools.javac.code.TypeAnnotations.AnnotationType;
+import com.sun.tools.javac.code.TypeMetadata.Entry;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr;
@@ -738,6 +743,13 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return list;
         }
 
+        public AnnotationTypeMetadata getAnnotationTypeMetadata() {
+            Assert.error("Only on ClassSymbol");
+            return null; //unreachable
+        }
+
+        public boolean isAnnotationType() { return false; }
+
         @Override
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitTypeSymbol(this, p);
@@ -958,6 +970,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
          */
         public Pool pool;
 
+        /** the annotation metadata attached to this class */
+        private AnnotationTypeMetadata annotationTypeMetadata;
+
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(TYP, flags, name, type, owner);
             this.members_field = null;
@@ -966,6 +981,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             this.sourcefile = null;
             this.classfile = null;
             this.pool = null;
+            this.annotationTypeMetadata = AnnotationTypeMetadata.notAnAnnotationType();
         }
 
         public ClassSymbol(long flags, Name name, Symbol owner) {
@@ -1202,8 +1218,24 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 t.all_interfaces_field = null;
             }
             metadata = null;
+            annotationTypeMetadata = AnnotationTypeMetadata.notAnAnnotationType();
         }
 
+        @Override
+        public AnnotationTypeMetadata getAnnotationTypeMetadata() {
+            return annotationTypeMetadata;
+        }
+
+        @Override
+        public boolean isAnnotationType() {
+            return (flags_field & Flags.ANNOTATION) != 0;
+        }
+
+        public void setAnnotationTypeMetadata(AnnotationTypeMetadata a) {
+            Assert.checkNonNull(a);
+            Assert.check(!annotationTypeMetadata.isMetadataForAnnotationType());
+            this.annotationTypeMetadata = a;
+        }
     }
 
 
@@ -1360,7 +1392,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         /** The names of the parameters */
         public List<Name> savedParameterNames;
 
-        /** For an attribute field accessor, its default value if any.
+        /** For an annotation type element, its default value if any.
          *  The value is null if none appeared in the method
          *  declaration.
          */

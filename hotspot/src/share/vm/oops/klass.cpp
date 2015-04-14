@@ -39,8 +39,8 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "trace/traceMacros.hpp"
-#include "utilities/stack.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"

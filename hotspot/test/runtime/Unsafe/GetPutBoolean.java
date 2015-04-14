@@ -25,6 +25,8 @@
  * @test
  * @summary Verify behaviour of Unsafe.get/putBoolean
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main GetPutBoolean
  */
 

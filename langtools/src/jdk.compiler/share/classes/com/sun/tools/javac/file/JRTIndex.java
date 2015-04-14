@@ -48,7 +48,6 @@ import java.util.Set;
 import javax.tools.FileObject;
 
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
-import com.sun.tools.javac.nio.PathFileObject;
 import com.sun.tools.javac.util.Context;
 
 /**

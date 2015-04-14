@@ -34,6 +34,14 @@ SUNWprivate_1.1 {
 		_environ;
 		__environ_lock;
 
+		# These are needed by the c runtime in SS12u4
+		___Argv;
+		__xargv;
+		__xargc;
+		_start;
+		__longdouble_used;
+		_lib_version;
+
 	local:
 		*;
 };

@@ -26,12 +26,11 @@
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "gc_implementation/parallelScavenge/psTasks.hpp"
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.psgc.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
@@ -291,7 +290,7 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
             Prefetch::write(p, interval);
             oop m = oop(p);
             assert(m->is_oop_or_null(), err_msg("Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m)));
-            m->push_contents(pm);
+            pm->push_contents(m);
             p += m->size();
           }
           pm->drain_stacks_cond_depth();
@@ -299,7 +298,7 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
           while (p < to) {
             oop m = oop(p);
             assert(m->is_oop_or_null(), err_msg("Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m)));
-            m->push_contents(pm);
+            pm->push_contents(m);
             p += m->size();
           }
           pm->drain_stacks_cond_depth();

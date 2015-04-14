@@ -134,7 +134,7 @@ public abstract class ObjectCreator<T> {
 
     MethodEmitter loadTuple(final MethodEmitter method, final MapTuple<T> tuple, final boolean pack) {
         loadValue(tuple.value, tuple.type);
-        if (pack && tuple.isPrimitive()) {
+        if (pack && codegen.useDualFields() && tuple.isPrimitive()) {
             method.pack();
         } else {
             method.convert(Type.OBJECT);

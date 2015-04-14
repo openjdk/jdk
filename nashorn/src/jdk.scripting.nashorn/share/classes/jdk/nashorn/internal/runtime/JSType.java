@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
@@ -1972,10 +1971,6 @@ public enum JSType {
      * @return primive type or Object.class if not primitive
      */
     public static Class<?> unboxedFieldType(final Object o) {
-        if (OBJECT_FIELDS_ONLY) {
-            return Object.class;
-        }
-
         if (o == null) {
             return Object.class;
         } else if (o.getClass() == Integer.class) {

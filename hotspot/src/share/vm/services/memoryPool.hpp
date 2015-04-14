@@ -25,15 +25,9 @@
 #ifndef SHARE_VM_SERVICES_MEMORYPOOL_HPP
 #define SHARE_VM_SERVICES_MEMORYPOOL_HPP
 
-#include "gc_implementation/shared/mutableSpace.hpp"
-#include "memory/defNewGeneration.hpp"
 #include "memory/heap.hpp"
-#include "memory/space.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // A memory pool represents the memory area that the VM manages.
 // The Java virtual machine has at least one memory pool
@@ -43,6 +37,8 @@
 // both heap and non-heap memory.
 
 // Forward declaration
+class CompactibleFreeListSpace;
+class ContiguousSpace;
 class MemoryManager;
 class SensorInfo;
 class Generation;
@@ -162,7 +158,7 @@ public:
 
   ContiguousSpace* space()              { return _space; }
   MemoryUsage get_memory_usage();
-  size_t used_in_bytes()                { return space()->used(); }
+  size_t used_in_bytes();
 };
 
 class SurvivorContiguousSpacePool : public CollectedMemoryPool {
@@ -178,12 +174,8 @@ public:
 
   MemoryUsage get_memory_usage();
 
-  size_t used_in_bytes() {
-    return _gen->from()->used();
-  }
-  size_t committed_in_bytes() {
-    return _gen->from()->capacity();
-  }
+  size_t used_in_bytes();
+  size_t committed_in_bytes();
 };
 
 #if INCLUDE_ALL_GCS
@@ -198,7 +190,7 @@ public:
                                bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
-  size_t used_in_bytes()            { return _space->used(); }
+  size_t used_in_bytes();
 };
 #endif // INCLUDE_ALL_GCS
 
@@ -210,7 +202,7 @@ public:
   GenerationPool(Generation* gen, const char* name, PoolType type, bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
-  size_t used_in_bytes()                { return _gen->used(); }
+  size_t used_in_bytes();
 };
 
 class CodeHeapPool: public MemoryPool {

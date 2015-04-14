@@ -25,6 +25,8 @@
  * @test
  * @summary Verifies the behaviour of Unsafe.fieldOffset
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main FieldOffset
  */
 

@@ -31,7 +31,10 @@ import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -79,11 +82,13 @@ public class Check {
     private final DeferredAttr deferredAttr;
     private final Infer infer;
     private final Types types;
+    private final TypeAnnotations typeAnnotations;
     private final JCDiagnostic.Factory diags;
     private boolean warnOnSyntheticConflicts;
     private boolean suppressAbortOnBadClassFile;
     private boolean enableSunApiLintControl;
     private final JavaFileManager fileManager;
+    private final Source source;
     private final Profile profile;
     private final boolean warnOnAccessToSensitiveMembers;
 
@@ -117,16 +122,18 @@ public class Check {
         deferredAttr = DeferredAttr.instance(context);
         infer = Infer.instance(context);
         types = Types.instance(context);
+        typeAnnotations = TypeAnnotations.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Options options = Options.instance(context);
         lint = Lint.instance(context);
         fileManager = context.get(JavaFileManager.class);
 
-        Source source = Source.instance(context);
+        source = Source.instance(context);
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
         allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
         allowPrivateSafeVarargs = source.allowPrivateSafeVarargs();
+        allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
         complexInference = options.isSet("complexinference");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
@@ -168,6 +175,10 @@ public class Check {
     /** Switch: can the @SafeVarargs annotation be applied to private methods?
      */
     boolean allowPrivateSafeVarargs;
+
+    /** Switch: can diamond inference be used in anonymous instance creation ?
+     */
+    boolean allowDiamondWithAnonymousClassCreation;
 
     /** Switch: -complexinference option set?
      */
@@ -518,7 +529,7 @@ public class Check {
      *  @param found      The type that was found.
      *  @param req        The type that was required.
      */
-    Type checkType(DiagnosticPosition pos, Type found, Type req) {
+    public Type checkType(DiagnosticPosition pos, Type found, Type req) {
         return checkType(pos, found, req, basicHandler);
     }
 
@@ -579,7 +590,7 @@ public class Check {
                 public void report() {
                     if (lint.isEnabled(Lint.LintCategory.CAST))
                         log.warning(Lint.LintCategory.CAST,
-                                tree.pos(), "redundant.cast", tree.expr.type);
+                                tree.pos(), "redundant.cast", tree.clazz.type);
                 }
             });
         }
@@ -773,10 +784,9 @@ public class Check {
         if (!TreeInfo.isDiamond(tree) ||
                 t.isErroneous()) {
             return checkClassType(tree.clazz.pos(), t, true);
-        } else if (tree.def != null) {
+        } else if (tree.def != null && !allowDiamondWithAnonymousClassCreation) {
             log.error(tree.clazz.pos(),
-                    "cant.apply.diamond.1",
-                    t, diags.fragment("diamond.and.anon.class", t));
+                    Errors.CantApplyDiamond1(t, Fragments.DiamondAndAnonClassNotSupportedInSource(source.name)));
             return types.createErrorType(t);
         } else if (t.tsym.type.getTypeArguments().isEmpty()) {
             log.error(tree.clazz.pos(),
@@ -793,6 +803,59 @@ public class Check {
             return t;
         }
     }
+
+    /** Check that the type inferred using the diamond operator does not contain
+     *  non-denotable types such as captured types or intersection types.
+     *  @param t the type inferred using the diamond operator
+     *  @return  the (possibly empty) list of non-denotable types.
+     */
+    List<Type> checkDiamondDenotable(ClassType t) {
+        ListBuffer<Type> buf = new ListBuffer<>();
+        for (Type arg : t.getTypeArguments()) {
+            if (!diamondTypeChecker.visit(arg, null)) {
+                buf.append(arg);
+            }
+        }
+        return buf.toList();
+    }
+        // where
+
+        /** diamondTypeChecker: A type visitor that descends down the given type looking for non-denotable
+         *  types. The visit methods return false as soon as a non-denotable type is encountered and true
+         *  otherwise.
+         */
+        private static final Types.SimpleVisitor<Boolean, Void> diamondTypeChecker = new Types.SimpleVisitor<Boolean, Void>() {
+            @Override
+            public Boolean visitType(Type t, Void s) {
+                return true;
+            }
+            @Override
+            public Boolean visitClassType(ClassType t, Void s) {
+                if (t.isCompound()) {
+                    return false;
+                }
+                for (Type targ : t.getTypeArguments()) {
+                    if (!visit(targ, s)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            @Override
+            public Boolean visitCapturedType(CapturedType t, Void s) {
+                return false;
+            }
+
+            @Override
+            public Boolean visitArrayType(ArrayType t, Void s) {
+                return visit(t.elemtype, s);
+            }
+
+            @Override
+            public Boolean visitWildcardType(WildcardType t, Void s) {
+                return visit(t.type, s);
+            }
+        };
 
     void checkVarargsMethodDecl(Env<AttrContext> env, JCMethodDecl tree) {
         MethodSymbol m = tree.sym;
@@ -1917,7 +1980,7 @@ public class Check {
      *                      for errors.
      *  @param m            The overriding method.
      */
-    void checkOverride(JCMethodDecl tree, MethodSymbol m) {
+    void checkOverride(Env<AttrContext> env, JCMethodDecl tree, MethodSymbol m) {
         ClassSymbol origin = (ClassSymbol)m.owner;
         if ((origin.flags() & ENUM) != 0 && names.finalize.equals(m.name))
             if (m.overrides(syms.enumFinalFinalize, origin, types, false)) {
@@ -1934,7 +1997,12 @@ public class Check {
             }
         }
 
-        if (m.attribute(syms.overrideType.tsym) != null && !isOverrider(m)) {
+        // Check if this method must override a super method due to being annotated with @Override
+        // or by virtue of being a member of a diamond inferred anonymous class. Latter case is to
+        // be treated "as if as they were annotated" with @Override.
+        boolean mustOverride = m.attribute(syms.overrideType.tsym) != null ||
+                (env.info.isAnonymousDiamond && !m.isConstructor() && !m.isPrivate());
+        if (mustOverride && !isOverrider(m)) {
             DiagnosticPosition pos = tree.pos();
             for (JCAnnotation a : tree.getModifiers().annotations) {
                 if (a.annotationType.type.tsym == syms.overrideType.tsym) {
@@ -2765,7 +2833,7 @@ public class Check {
         }
     }
 
-    private void validateRetention(Symbol container, Symbol contained, DiagnosticPosition pos) {
+    private void validateRetention(TypeSymbol container, TypeSymbol contained, DiagnosticPosition pos) {
         Attribute.RetentionPolicy containerRetention = types.getRetention(container);
         Attribute.RetentionPolicy containedRetention = types.getRetention(contained);
 
@@ -2804,7 +2872,7 @@ public class Check {
         }
     }
 
-    private void validateTarget(Symbol container, Symbol contained, DiagnosticPosition pos) {
+    private void validateTarget(TypeSymbol container, TypeSymbol contained, DiagnosticPosition pos) {
         // The set of targets the container is applicable to must be a subset
         // (with respect to annotation target semantics) of the set of targets
         // the contained is applicable to. The target sets may be implicit or
@@ -2931,32 +2999,18 @@ public class Check {
 
     /** Is the annotation applicable to types? */
     protected boolean isTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
-        Attribute.Compound atTarget =
-            a.annotationType.type.tsym.attribute(syms.annotationTargetType.tsym);
-        if (atTarget == null) {
-            // An annotation without @Target is not a type annotation.
-            return false;
-        }
-
-        Attribute atValue = atTarget.member(names.value);
-        if (!(atValue instanceof Attribute.Array)) {
-            return false; // error recovery
-        }
-
-        Attribute.Array arr = (Attribute.Array) atValue;
-        for (Attribute app : arr.values) {
-            if (!(app instanceof Attribute.Enum)) {
-                return false; // recovery
-            }
-            Attribute.Enum e = (Attribute.Enum) app;
-
-            if (e.value.name == names.TYPE_USE)
-                return true;
-            else if (isTypeParameter && e.value.name == names.TYPE_PARAMETER)
-                return true;
-        }
-        return false;
+        List<Attribute> targets = typeAnnotations.annotationTargets(a.attribute);
+        return (targets == null) ?
+                false :
+                targets.stream()
+                        .anyMatch(attr -> isTypeAnnotation(attr, isTypeParameter));
     }
+    //where
+        boolean isTypeAnnotation(Attribute a, boolean isTypeParameter) {
+            Attribute.Enum e = (Attribute.Enum)a;
+            return (e.value.name == names.TYPE_USE ||
+                    (isTypeParameter && e.value.name == names.TYPE_PARAMETER));
+        }
 
     /** Is the annotation applicable to the symbol? */
     boolean annotationApplicable(JCAnnotation a, Symbol s) {
@@ -2978,51 +3032,55 @@ public class Check {
             }
         }
         for (Name target : targets) {
-            if (target == names.TYPE)
-                { if (s.kind == TYP) return true; }
-            else if (target == names.FIELD)
-                { if (s.kind == VAR && s.owner.kind != MTH) return true; }
-            else if (target == names.METHOD)
-                { if (s.kind == MTH && !s.isConstructor()) return true; }
-            else if (target == names.PARAMETER)
-                { if (s.kind == VAR && s.owner.kind == MTH &&
-                      (s.flags() & PARAMETER) != 0)
+            if (target == names.TYPE) {
+                if (s.kind == TYP)
+                    return true;
+            } else if (target == names.FIELD) {
+                if (s.kind == VAR && s.owner.kind != MTH)
+                    return true;
+            } else if (target == names.METHOD) {
+                if (s.kind == MTH && !s.isConstructor())
+                    return true;
+            } else if (target == names.PARAMETER) {
+                if (s.kind == VAR && s.owner.kind == MTH &&
+                      (s.flags() & PARAMETER) != 0) {
                     return true;
                 }
-            else if (target == names.CONSTRUCTOR)
-                { if (s.kind == MTH && s.isConstructor()) return true; }
-            else if (target == names.LOCAL_VARIABLE)
-                { if (s.kind == VAR && s.owner.kind == MTH &&
-                      (s.flags() & PARAMETER) == 0)
+            } else if (target == names.CONSTRUCTOR) {
+                if (s.kind == MTH && s.isConstructor())
+                    return true;
+            } else if (target == names.LOCAL_VARIABLE) {
+                if (s.kind == VAR && s.owner.kind == MTH &&
+                      (s.flags() & PARAMETER) == 0) {
                     return true;
                 }
-            else if (target == names.ANNOTATION_TYPE)
-                { if (s.kind == TYP && (s.flags() & ANNOTATION) != 0)
+            } else if (target == names.ANNOTATION_TYPE) {
+                if (s.kind == TYP && (s.flags() & ANNOTATION) != 0) {
                     return true;
                 }
-            else if (target == names.PACKAGE)
-                { if (s.kind == PCK) return true; }
-            else if (target == names.TYPE_USE)
-                { if (s.kind == TYP || s.kind == VAR ||
-                      (s.kind == MTH && !s.isConstructor() &&
-                      !s.type.getReturnType().hasTag(VOID)) ||
-                      (s.kind == MTH && s.isConstructor()))
+            } else if (target == names.PACKAGE) {
+                if (s.kind == PCK)
+                    return true;
+            } else if (target == names.TYPE_USE) {
+                if (s.kind == TYP || s.kind == VAR ||
+                        (s.kind == MTH && !s.isConstructor() &&
+                                !s.type.getReturnType().hasTag(VOID)) ||
+                        (s.kind == MTH && s.isConstructor())) {
                     return true;
                 }
-            else if (target == names.TYPE_PARAMETER)
-                { if (s.kind == TYP && s.type.hasTag(TYPEVAR))
+            } else if (target == names.TYPE_PARAMETER) {
+                if (s.kind == TYP && s.type.hasTag(TYPEVAR))
                     return true;
-                }
-            else
-                return true; // recovery
+            } else
+                return true; // Unknown ElementType. This should be an error at declaration site,
+                             // assume applicable.
         }
         return false;
     }
 
 
-    Attribute.Array getAttributeTargetAttribute(Symbol s) {
-        Attribute.Compound atTarget =
-            s.attribute(syms.annotationTargetType.tsym);
+    Attribute.Array getAttributeTargetAttribute(TypeSymbol s) {
+        Attribute.Compound atTarget = s.getAnnotationTypeMetadata().getTarget();
         if (atTarget == null) return null; // ok, is applicable
         Attribute atValue = atTarget.member(names.value);
         if (!(atValue instanceof Attribute.Array)) return null; // error recovery
@@ -3052,32 +3110,33 @@ public class Check {
 
     private boolean validateAnnotation(JCAnnotation a) {
         boolean isValid = true;
+        AnnotationTypeMetadata metadata = a.annotationType.type.tsym.getAnnotationTypeMetadata();
+
         // collect an inventory of the annotation elements
-        Set<MethodSymbol> members = new LinkedHashSet<>();
-        for (Symbol sym : a.annotationType.type.tsym.members().getSymbols(NON_RECURSIVE))
-            if (sym.kind == MTH && sym.name != names.clinit &&
-                    (sym.flags() & SYNTHETIC) == 0)
-                members.add((MethodSymbol) sym);
+        Set<MethodSymbol> elements = metadata.getAnnotationElements();
 
         // remove the ones that are assigned values
         for (JCTree arg : a.args) {
             if (!arg.hasTag(ASSIGN)) continue; // recovery
-            JCAssign assign = (JCAssign) arg;
+            JCAssign assign = (JCAssign)arg;
             Symbol m = TreeInfo.symbol(assign.lhs);
             if (m == null || m.type.isErroneous()) continue;
-            if (!members.remove(m)) {
+            if (!elements.remove(m)) {
                 isValid = false;
                 log.error(assign.lhs.pos(), "duplicate.annotation.member.value",
-                          m.name, a.type);
+                        m.name, a.type);
             }
         }
 
         // all the remaining ones better have default values
         List<Name> missingDefaults = List.nil();
-        for (MethodSymbol m : members) {
-            if (m.defaultValue == null && !m.type.isErroneous()) {
+        Set<MethodSymbol> membersWithDefault = metadata.getAnnotationElementsWithDefault();
+        for (MethodSymbol m : elements) {
+            if (m.type.isErroneous())
+                continue;
+
+            if (!membersWithDefault.contains(m))
                 missingDefaults = missingDefaults.append(m.name);
-            }
         }
         missingDefaults = missingDefaults.reverse();
         if (missingDefaults.nonEmpty()) {
@@ -3088,12 +3147,18 @@ public class Check {
             log.error(a.pos(), key, a.type, missingDefaults);
         }
 
+        return isValid && validateTargetAnnotationValue(a);
+    }
+
+    /* Validate the special java.lang.annotation.Target annotation */
+    boolean validateTargetAnnotationValue(JCAnnotation a) {
         // special case: java.lang.annotation.Target must not have
         // repeated values in its value member
         if (a.annotationType.type.tsym != syms.annotationTargetType.tsym ||
-            a.args.tail == null)
-            return isValid;
+                a.args.tail == null)
+            return true;
 
+        boolean isValid = true;
         if (!a.args.head.hasTag(ASSIGN)) return false; // error recovery
         JCAssign assign = (JCAssign) a.args.head;
         Symbol m = TreeInfo.symbol(assign.lhs);

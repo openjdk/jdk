@@ -321,7 +321,7 @@ void G1CollectorPolicy::initialize_alignments() {
 
 void G1CollectorPolicy::initialize_flags() {
   if (G1HeapRegionSize != HeapRegion::GrainBytes) {
-    FLAG_SET_ERGO(uintx, G1HeapRegionSize, HeapRegion::GrainBytes);
+    FLAG_SET_ERGO(size_t, G1HeapRegionSize, HeapRegion::GrainBytes);
   }
 
   if (SurvivorRatio < 1) {
@@ -335,7 +335,7 @@ void G1CollectorPolicy::post_heap_initialize() {
   uintx max_regions = G1CollectedHeap::heap()->max_regions();
   size_t max_young_size = (size_t)_young_gen_sizer->max_young_length(max_regions) * HeapRegion::GrainBytes;
   if (max_young_size != MaxNewSize) {
-    FLAG_SET_ERGO(uintx, MaxNewSize, max_young_size);
+    FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
   }
 }
 
@@ -1073,7 +1073,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
   if (update_stats) {
     double cost_per_card_ms = 0.0;
     if (_pending_cards > 0) {
-      cost_per_card_ms = phase_times()->average_last_update_rs_time() / (double) _pending_cards;
+      cost_per_card_ms = phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
 
@@ -1081,7 +1081,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
-      cost_per_entry_ms = phase_times()->average_last_scan_rs_time() / (double) cards_scanned;
+      cost_per_entry_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ScanRS) / (double) cards_scanned;
       if (_last_gc_was_young) {
         _cost_per_entry_ms_seq->add(cost_per_entry_ms);
       } else {
@@ -1123,7 +1123,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
     double cost_per_byte_ms = 0.0;
 
     if (copied_bytes > 0) {
-      cost_per_byte_ms = phase_times()->average_last_obj_copy_time() / (double) copied_bytes;
+      cost_per_byte_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ObjCopy) / (double) copied_bytes;
       if (_in_marking_window) {
         _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
       } else {
@@ -1132,8 +1132,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
     }
 
     double all_other_time_ms = pause_time_ms -
-      (phase_times()->average_last_update_rs_time() + phase_times()->average_last_scan_rs_time()
-      + phase_times()->average_last_obj_copy_time() + phase_times()->average_last_termination_time());
+      (phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) + phase_times()->average_time_ms(G1GCPhaseTimes::ScanRS) +
+          phase_times()->average_time_ms(G1GCPhaseTimes::ObjCopy) + phase_times()->average_time_ms(G1GCPhaseTimes::Termination));
 
     double young_other_time_ms = 0.0;
     if (young_cset_region_length() > 0) {
@@ -1174,8 +1174,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
-  adjust_concurrent_refinement(phase_times()->average_last_update_rs_time(),
-                               phase_times()->sum_last_update_rs_processed_buffers(), update_rs_time_goal_ms);
+  adjust_concurrent_refinement(phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS),
+                               phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS), update_rs_time_goal_ms);
 
   _collectionSetChooser->verify();
 }
@@ -1201,11 +1201,21 @@ void G1CollectorPolicy::record_heap_size_info_at_start(bool full) {
   }
 }
 
+void G1CollectorPolicy::print_heap_transition(size_t bytes_before) {
+  size_t bytes_after = _g1->used();
+  size_t capacity = _g1->capacity();
+
+  gclog_or_tty->print(" " SIZE_FORMAT "%s->" SIZE_FORMAT "%s(" SIZE_FORMAT "%s)",
+      byte_size_in_proper_unit(bytes_before),
+      proper_unit_for_byte_size(bytes_before),
+      byte_size_in_proper_unit(bytes_after),
+      proper_unit_for_byte_size(bytes_after),
+      byte_size_in_proper_unit(capacity),
+      proper_unit_for_byte_size(capacity));
+}
+
 void G1CollectorPolicy::print_heap_transition() {
-  _g1->print_size_transition(gclog_or_tty,
-                             _heap_used_bytes_before_gc,
-                             _g1->used(),
-                             _g1->capacity());
+  print_heap_transition(_heap_used_bytes_before_gc);
 }
 
 void G1CollectorPolicy::print_detailed_heap_transition(bool full) {
@@ -2114,19 +2124,19 @@ void TraceYoungGenTimeData::record_end_collection(double pause_time_ms, G1GCPhas
     _other.add(pause_time_ms - phase_times->accounted_time_ms());
     _root_region_scan_wait.add(phase_times->root_region_scan_wait_time_ms());
     _parallel.add(phase_times->cur_collection_par_time_ms());
-    _ext_root_scan.add(phase_times->average_last_ext_root_scan_time());
-    _satb_filtering.add(phase_times->average_last_satb_filtering_times_ms());
-    _update_rs.add(phase_times->average_last_update_rs_time());
-    _scan_rs.add(phase_times->average_last_scan_rs_time());
-    _obj_copy.add(phase_times->average_last_obj_copy_time());
-    _termination.add(phase_times->average_last_termination_time());
+    _ext_root_scan.add(phase_times->average_time_ms(G1GCPhaseTimes::ExtRootScan));
+    _satb_filtering.add(phase_times->average_time_ms(G1GCPhaseTimes::SATBFiltering));
+    _update_rs.add(phase_times->average_time_ms(G1GCPhaseTimes::UpdateRS));
+    _scan_rs.add(phase_times->average_time_ms(G1GCPhaseTimes::ScanRS));
+    _obj_copy.add(phase_times->average_time_ms(G1GCPhaseTimes::ObjCopy));
+    _termination.add(phase_times->average_time_ms(G1GCPhaseTimes::Termination));
 
-    double parallel_known_time = phase_times->average_last_ext_root_scan_time() +
-      phase_times->average_last_satb_filtering_times_ms() +
-      phase_times->average_last_update_rs_time() +
-      phase_times->average_last_scan_rs_time() +
-      phase_times->average_last_obj_copy_time() +
-      + phase_times->average_last_termination_time();
+    double parallel_known_time = phase_times->average_time_ms(G1GCPhaseTimes::ExtRootScan) +
+      phase_times->average_time_ms(G1GCPhaseTimes::SATBFiltering) +
+      phase_times->average_time_ms(G1GCPhaseTimes::UpdateRS) +
+      phase_times->average_time_ms(G1GCPhaseTimes::ScanRS) +
+      phase_times->average_time_ms(G1GCPhaseTimes::ObjCopy) +
+      phase_times->average_time_ms(G1GCPhaseTimes::Termination);
 
     double parallel_other_time = phase_times->cur_collection_par_time_ms() - parallel_known_time;
     _parallel_other.add(parallel_other_time);

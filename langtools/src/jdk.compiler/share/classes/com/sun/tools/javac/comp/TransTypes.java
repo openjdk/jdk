@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -68,6 +69,7 @@ public class TransTypes extends TreeTranslator {
     private TreeMaker make;
     private Enter enter;
     private Types types;
+    private Annotate annotate;
     private final Resolve resolve;
     private final CompileStates compileStates;
 
@@ -91,6 +93,7 @@ public class TransTypes extends TreeTranslator {
         Source source = Source.instance(context);
         allowInterfaceBridges = source.allowDefaultMethods();
         allowGraphInference = source.allowGraphInference();
+        annotate = Annotate.instance(context);
     }
 
     /** A hashtable mapping bridge methods to the methods they override after
@@ -748,6 +751,15 @@ public class TransTypes extends TreeTranslator {
     public void visitBinary(JCBinary tree) {
         tree.lhs = translate(tree.lhs, tree.operator.type.getParameterTypes().head);
         tree.rhs = translate(tree.rhs, tree.operator.type.getParameterTypes().tail.head);
+        result = tree;
+    }
+
+    public void visitAnnotatedType(JCAnnotatedType tree) {
+        // For now, we need to keep the annotations in the tree because of the current
+        // MultiCatch implementation wrt type annotations
+        List<TypeCompound> mirrors = annotate.fromAnnotations(tree.annotations);
+        tree.underlyingType = translate(tree.underlyingType);
+        tree.type = tree.underlyingType.type.annotatedType(mirrors);
         result = tree;
     }
 

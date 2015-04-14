@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,6 @@ PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
 
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
 BASIC_SETUP_PATHS
-BASIC_SETUP_LOGGING
 
 # Check if it's a pure open build or if custom sources are to be used.
 JDKOPT_SETUP_OPEN_OR_CUSTOM
@@ -262,7 +261,7 @@ CUSTOM_LATE_HOOK
 
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.
-CONFIG_STATUS="$OUTPUT_ROOT/config.status"
+CONFIG_STATUS="$CONFIGURESUPPORT_OUTPUTDIR/config.status"
 
 # Create the actual output files. Now the main work of configure is done.
 AC_OUTPUT
@@ -270,7 +269,7 @@ CUSTOM_CONFIG_OUTPUT_GENERATED_HOOK
 
 # Try to move the config.log file to the output directory.
 if test -e ./config.log; then
-  $MV -f ./config.log "$OUTPUT_ROOT/config.log" 2> /dev/null
+  $MV -f ./config.log "$CONFIGURESUPPORT_OUTPUTDIR/config.log" 2> /dev/null
 fi
 
 # Make the compare script executable
