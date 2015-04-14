@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,14 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-#
-# Specify what global symbols we export.  Note that we're not really
-# interested in declaring a version, simply scoping the file is sufficient.
-#
+
+# Define library interface.
 
 SUNWprivate_1.1 {
 	global:
-		main;		# Provides basic adb symbol offsets
-		environ;	# Public symbols and required by Java run time
+		# These are needed by the c runtime in SS12u4
 		_environ;
 		__environ_lock;
-
-		# These are needed by the c runtime in SS12u4
 		___Argv;
 		__xargv;
 		__xargc;
@@ -43,5 +38,5 @@ SUNWprivate_1.1 {
 		_lib_version;
 
 	local:
-		*;
+	    *;
 };
