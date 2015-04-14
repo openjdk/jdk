@@ -2346,9 +2346,6 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
   assert(!THREAD->is_Compiler_thread(), "");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_(empty));
-  if (false) {  // FIXME: Decide if the Java upcall should resolve signatures.
-    method_type = java_lang_String::create_from_symbol(signature, CHECK_(empty));
-  }
 
   KlassHandle  mh_klass = SystemDictionary::MethodHandle_klass();
   int ref_kind = JVM_REF_invokeVirtual;
@@ -2380,6 +2377,24 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
   return unpack_method_and_appendix(mname, accessing_klass, appendix_box, appendix_result, THREAD);
 }
 
+// Decide if we can globally cache a lookup of this class, to be returned to any client that asks.
+// We must ensure that all class loaders everywhere will reach this class, for any client.
+// This is a safe bet for public classes in java.lang, such as Object and String.
+// We also include public classes in java.lang.invoke, because they appear frequently in system-level method types.
+// Out of an abundance of caution, we do not include any other classes, not even for packages like java.util.
+static bool is_always_visible_class(oop mirror) {
+  Klass* klass = java_lang_Class::as_Klass(mirror);
+  if (klass->oop_is_objArray()) {
+    klass = ObjArrayKlass::cast(klass)->bottom_klass(); // check element type
+  }
+  if (klass->oop_is_typeArray()) {
+    return true; // primitive array
+  }
+  assert(klass->oop_is_instance(), klass->external_name());
+  return klass->is_public() &&
+         (InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::Object_klass()) ||       // java.lang
+          InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
+}
 
 // Ask Java code to find or construct a java.lang.invoke.MethodType for the given
 // signature, as interpreted relative to the given class loader.
@@ -2402,32 +2417,33 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   }
 
   Handle class_loader, protection_domain;
-  bool is_on_bcp = true;  // keep this true as long as we can materialize from the boot classloader
+  if (accessing_klass.not_null()) {
+    class_loader      = Handle(THREAD, InstanceKlass::cast(accessing_klass())->class_loader());
+    protection_domain = Handle(THREAD, InstanceKlass::cast(accessing_klass())->protection_domain());
+  }
+  bool can_be_cached = true;
   int npts = ArgumentCount(signature).size();
   objArrayHandle pts = oopFactory::new_objArray(SystemDictionary::Class_klass(), npts, CHECK_(empty));
   int arg = 0;
-  Handle rt;                            // the return type from the signature
+  Handle rt; // the return type from the signature
   ResourceMark rm(THREAD);
   for (SignatureStream ss(signature); !ss.is_done(); ss.next()) {
     oop mirror = NULL;
-    if (is_on_bcp) {
-      // Note:  class_loader & protection_domain are both null at this point.
-      mirror = ss.as_java_mirror(class_loader, protection_domain,
+    if (can_be_cached) {
+      // Use neutral class loader to lookup candidate classes to be placed in the cache.
+      mirror = ss.as_java_mirror(Handle(), Handle(),
                                  SignatureStream::ReturnNull, CHECK_(empty));
-      if (mirror == NULL) {
-        // fall back from BCP to accessing_klass
-        if (accessing_klass.not_null()) {
-          class_loader      = Handle(THREAD, InstanceKlass::cast(accessing_klass())->class_loader());
-          protection_domain = Handle(THREAD, InstanceKlass::cast(accessing_klass())->protection_domain());
-        }
-        is_on_bcp = false;
+      if (mirror == NULL || (ss.is_object() && !is_always_visible_class(mirror))) {
+        // Fall back to accessing_klass context.
+        can_be_cached = false;
       }
     }
-    if (!is_on_bcp) {
+    if (!can_be_cached) {
       // Resolve, throwing a real error if it doesn't work.
       mirror = ss.as_java_mirror(class_loader, protection_domain,
                                  SignatureStream::NCDFError, CHECK_(empty));
     }
+    assert(!oopDesc::is_null(mirror), ss.as_symbol(THREAD)->as_C_string());
     if (ss.at_return_type())
       rt = Handle(THREAD, mirror);
     else
@@ -2459,7 +2475,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
                          &args, CHECK_(empty));
   Handle method_type(THREAD, (oop) result.get_jobject());
 
-  if (is_on_bcp) {
+  if (can_be_cached) {
     // We can cache this MethodType inside the JVM.
     MutexLocker ml(SystemDictionary_lock, THREAD);
     spe = invoke_method_table()->find_entry(index, hash, signature, null_iid);
