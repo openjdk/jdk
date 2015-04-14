@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @summary Tests argument processing for initial and maximum heap size for the
  * parallel collectors.
  * @library /testlibrary /../../test/lib
+ * @modules java.base/sun.misc
+ *          java.management
  * @build TestParallelHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

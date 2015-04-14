@@ -630,6 +630,30 @@ inline bool oopDesc::cas_forward_to(oop p, markOop compare) {
   return cas_set_mark(m, compare) == compare;
 }
 
+#if INCLUDE_ALL_GCS
+inline oop oopDesc::forward_to_atomic(oop p) {
+  markOop oldMark = mark();
+  markOop forwardPtrMark = markOopDesc::encode_pointer_as_mark(p);
+  markOop curMark;
+
+  assert(forwardPtrMark->decode_pointer() == p, "encoding must be reversable");
+  assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
+
+  while (!oldMark->is_marked()) {
+    curMark = (markOop)Atomic::cmpxchg_ptr(forwardPtrMark, &_mark, oldMark);
+    assert(is_forwarded(), "object should have been forwarded");
+    if (curMark == oldMark) {
+      return NULL;
+    }
+    // If the CAS was unsuccessful then curMark->is_marked()
+    // should return true as another thread has CAS'd in another
+    // forwarding pointer.
+    oldMark = curMark;
+  }
+  return forwardee();
+}
+#endif
+
 // Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
@@ -692,12 +716,10 @@ inline int oopDesc::adjust_pointers() {
 #define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                        \
                                                                            \
 inline int oopDesc::oop_iterate(OopClosureType* blk) {                     \
-  SpecializationStats::record_call();                                      \
   return klass()->oop_oop_iterate##nv_suffix(this, blk);               \
 }                                                                          \
                                                                            \
 inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {       \
-  SpecializationStats::record_call();                                      \
   return klass()->oop_oop_iterate##nv_suffix##_m(this, blk, mr);       \
 }
 
@@ -721,7 +743,6 @@ ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DEFN)
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
                                                                            \
 inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
-  SpecializationStats::record_call();                                      \
   return klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);     \
 }
 

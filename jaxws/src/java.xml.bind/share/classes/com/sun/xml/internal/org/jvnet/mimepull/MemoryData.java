@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,6 @@ final class MemoryData implements Data {
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.log(Level.FINE, "Created temp file = {0}", tempFile);
                 }
-                // delete the temp file when VM exits as a last resort for file clean up
-                tempFile.deleteOnExit();
-                if (LOGGER.isLoggable(Level.FINE)) {LOGGER.log(Level.FINE, "Created temp file = {0}", tempFile);}
                 dataHead.dataFile = new DataFile(tempFile);
             } catch (IOException ioe) {
                 throw new MIMEParsingException(ioe);

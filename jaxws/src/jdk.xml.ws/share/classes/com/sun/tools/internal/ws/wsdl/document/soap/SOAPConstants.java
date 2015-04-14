@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.tools.internal.ws.wsdl.document.soap;
 
+import com.sun.xml.internal.ws.encoding.soap.streaming.SOAPNamespaceConstants;
+
 import javax.xml.namespace.QName;
 
 /**
@@ -35,9 +37,7 @@ import javax.xml.namespace.QName;
 public interface SOAPConstants {
 
     // namespace URIs
-    public static final String URI_ENVELOPE =
-        "http://schemas.xmlsoap.org/soap/envelope/";
-
+    public static final String URI_ENVELOPE = SOAPNamespaceConstants.ENVELOPE;
     public static final String NS_WSDL_SOAP =
         "http://schemas.xmlsoap.org/wsdl/soap/";
     public static final String NS_SOAP_ENCODING = "http://schemas.xmlsoap.org/soap/encoding/";

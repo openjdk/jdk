@@ -30,46 +30,63 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
 import java.util.EnumMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * A super-interface for all type metadata elements.  Metadata classes
- * can be created for any metadata on types with the following
- * properties:
+ * TypeMetadata is essentially an immutable {@code EnumMap<Entry.Kind, <? extends Entry>>}
  *
- * <ul>
- * <li>They have a default value (preferably empty)</li>
- * <li>The field is usually the default value</li>
- * <li>Different values of the field are visible, and denote distinct
- *     types</li>
- * </ul>
+ * A metadata class represented by a subtype of Entry can express a property on a Type instance.
+ * Thers should be at most one instance of an Entry per Entry.Kind on any given Type instance.
+ *
+ * Metadata classes of a specific kind are responsible for how they combine themselvs.
+ *
+ * @implNote {@code Entry:combine} need not be commutative.
  */
 public class TypeMetadata {
+    public static final TypeMetadata EMPTY = new TypeMetadata();
 
-    public static final TypeMetadata empty = new TypeMetadata();
-    private final EnumMap<TypeMetadata.Element.Kind, TypeMetadata.Element> contents;
+    private final EnumMap<Entry.Kind, Entry> contents;
 
+    /**
+     * Create a new empty TypeMetadata map.
+     */
     private TypeMetadata() {
-        contents = new EnumMap<Element.Kind, Element>(Element.Kind.class);
+        contents = new EnumMap<>(Entry.Kind.class);
     }
 
-    public TypeMetadata(final Element elem) {
+    /**
+     * Create a new TypeMetadata map containing the Entry {@code elem}.
+     *
+     * @param elem the sole contents of this map
+     */
+    public TypeMetadata(Entry elem) {
         this();
+        Assert.checkNonNull(elem);
         contents.put(elem.kind(), elem);
     }
 
-    public TypeMetadata(final TypeMetadata other) {
+    /**
+     * Creates a copy of TypeMetadata {@code other} with a shallow copy the other's metadata contents.
+     *
+     * @param other the TypeMetadata to copy contents from.
+     */
+    public TypeMetadata(TypeMetadata other) {
+        Assert.checkNonNull(other);
         contents = other.contents.clone();
     }
 
-    public TypeMetadata copy() {
-        return new TypeMetadata(this);
-    }
+    /**
+     * Return a copy of this TypeMetadata with the metadata entry for {@code elem.kind()} combined
+     * with {@code elem}.
+     *
+     * @param elem the new value
+     * @return a new TypeMetadata updated with {@code Entry elem}
+     */
+    public TypeMetadata combine(Entry elem) {
+        Assert.checkNonNull(elem);
 
-    public TypeMetadata combine(final Element elem) {
-        final TypeMetadata out = new TypeMetadata(this);
-        final Element.Kind key = elem.kind();
+        TypeMetadata out = new TypeMetadata(this);
+        Entry.Kind key = elem.kind();
         if (contents.containsKey(key)) {
             out.add(key, this.contents.get(key).combine(elem));
         } else {
@@ -78,17 +95,26 @@ public class TypeMetadata {
         return out;
     }
 
-    public TypeMetadata combine(final TypeMetadata other) {
-        final TypeMetadata out = new TypeMetadata();
-        final Set<Element.Kind> keys = new HashSet<>(this.contents.keySet());
+    /**
+     * Return a copy of this TypeMetadata with the metadata entry for all kinds from {@code other}
+     * combined with the same kind from this.
+     *
+     * @param other the TypeMetadata to combine with this
+     * @return a new TypeMetadata updated with all entries from {@code other}
+     */
+    public TypeMetadata combineAll(TypeMetadata other) {
+        Assert.checkNonNull(other);
+
+        TypeMetadata out = new TypeMetadata();
+        Set<Entry.Kind> keys = new HashSet<>(contents.keySet());
         keys.addAll(other.contents.keySet());
 
-        for(final Element.Kind key : keys) {
-            if (this.contents.containsKey(key)) {
+        for(Entry.Kind key : keys) {
+            if (contents.containsKey(key)) {
                 if (other.contents.containsKey(key)) {
-                    out.add(key, this.contents.get(key).combine(other.contents.get(key)));
+                    out.add(key, contents.get(key).combine(other.contents.get(key)));
                 } else {
-                    out.add(key, this.contents.get(key));
+                    out.add(key, contents.get(key));
                 }
             } else if (other.contents.containsKey(key)) {
                 out.add(key, other.contents.get(key));
@@ -97,26 +123,35 @@ public class TypeMetadata {
         return out;
     }
 
-    public Element get(final Element.Kind kind) {
+    /**
+     * Return a TypeMetadata with the metadata entry for {@code kind} removed.
+     *
+     * This may be the same instance or a new TypeMetadata.
+     *
+     * @param kind the {@code Kind} to remove metadata for
+     * @return a new TypeMetadata without {@code Kind kind}
+     */
+    public TypeMetadata without(Entry.Kind kind) {
+        if (this == EMPTY || contents.get(kind) == null)
+            return this;
+
+        TypeMetadata out = new TypeMetadata(this);
+        out.contents.remove(kind);
+        return out.contents.isEmpty() ? EMPTY : out;
+    }
+
+    public Entry get(Entry.Kind kind) {
         return contents.get(kind);
     }
 
-    public boolean isEmpty() {
-        return contents.isEmpty();
-    }
-
-    private void add(final Element.Kind kind, final Element elem) {
+    private void add(Entry.Kind kind, Entry elem) {
         contents.put(kind, elem);
     }
 
-    private void addAll(final Map<? extends Element.Kind,? extends Element> m) {
-        contents.putAll(m);
-    }
-
-    public interface Element {
+    public interface Entry {
 
         public enum Kind {
-            ANNOTATIONS;
+            ANNOTATIONS
         }
 
         /**
@@ -131,16 +166,18 @@ public class TypeMetadata {
          * @param other The metadata with which to combine this one.
          * @return The combined metadata.
          */
-        public Element combine(Element other);
+        public Entry combine(Entry other);
     }
 
     /**
      * A type metadata object holding type annotations.
      */
-    public static class Annotations implements Element {
-        private final List<Attribute.TypeCompound> annos;
+    public static class Annotations implements Entry {
+        private List<Attribute.TypeCompound> annos;
 
-        public Annotations(final List<Attribute.TypeCompound> annos) {
+        public static final List<Attribute.TypeCompound> TO_BE_SET = List.nil();
+
+        public Annotations(List<Attribute.TypeCompound> annos) {
             this.annos = annos;
         }
 
@@ -154,18 +191,16 @@ public class TypeMetadata {
         }
 
         @Override
-        public Annotations combine(final Element other) {
-            // Temporary: we should append the lists, but that won't
-            // work with type annotations today.  Instead, we replace
-            // the list.
-            return new Annotations(((Annotations) other).annos);
+        public Annotations combine(Entry other) {
+            Assert.check(annos == TO_BE_SET);
+            annos = ((Annotations)other).annos;
+            return this;
         }
 
         @Override
         public Kind kind() { return Kind.ANNOTATIONS; }
 
         @Override
-        public String toString() { return "ANNOTATIONS { " + annos + " }"; }
+        public String toString() { return "ANNOTATIONS [ " + annos + " ]"; }
     }
-
 }

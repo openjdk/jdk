@@ -251,6 +251,64 @@ java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 # 8026393
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      generic-all
 
+# 8077138: Some PKCS11 tests fail because NSS library is not initialized
+sun/security/pkcs11/Cipher/ReinitCipher.java                    windows-all
+sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java           windows-all
+sun/security/pkcs11/Cipher/TestRSACipher.java                   windows-all
+sun/security/pkcs11/Cipher/TestRSACipherWrap.java               windows-all
+sun/security/pkcs11/Cipher/TestRawRSACipher.java                windows-all
+sun/security/pkcs11/Cipher/TestSymmCiphers.java                 windows-all
+sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java            windows-all
+sun/security/pkcs11/KeyAgreement/TestDH.java                    windows-all
+sun/security/pkcs11/KeyAgreement/TestInterop.java               windows-all
+sun/security/pkcs11/KeyAgreement/TestShort.java                 windows-all
+sun/security/pkcs11/KeyGenerator/DESParity.java                 windows-all
+sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          windows-all
+sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            windows-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 windows-all
+sun/security/pkcs11/Mac/MacKAT.java                             windows-all
+sun/security/pkcs11/Mac/MacSameTest.java                        windows-all
+sun/security/pkcs11/Mac/ReinitMac.java                          windows-all
+sun/security/pkcs11/MessageDigest/ByteBuffers.java              windows-all
+sun/security/pkcs11/MessageDigest/DigestKAT.java                windows-all
+sun/security/pkcs11/MessageDigest/ReinitDigest.java             windows-all
+sun/security/pkcs11/MessageDigest/TestCloning.java              windows-all
+sun/security/pkcs11/Provider/ConfigQuotedString.sh              windows-all
+sun/security/pkcs11/Provider/Login.sh                           windows-all
+sun/security/pkcs11/SampleTest.java                             windows-all
+sun/security/pkcs11/Secmod/AddPrivateKey.java                   windows-all
+sun/security/pkcs11/Secmod/AddTrustedCert.java                  windows-all
+sun/security/pkcs11/Secmod/Crypto.java                          windows-all
+sun/security/pkcs11/Secmod/GetPrivateKey.java                   windows-all
+sun/security/pkcs11/Secmod/JksSetPrivateKey.java                windows-all
+sun/security/pkcs11/SecureRandom/Basic.java                     windows-all
+sun/security/pkcs11/SecureRandom/TestDeserialization.java       windows-all
+sun/security/pkcs11/Serialize/SerializeProvider.java            windows-all
+sun/security/pkcs11/Signature/ByteBuffers.java                  windows-all
+sun/security/pkcs11/Signature/ReinitSignature.java              windows-all
+sun/security/pkcs11/Signature/TestDSA.java                      windows-all
+sun/security/pkcs11/Signature/TestDSAKeyLength.java             windows-all
+sun/security/pkcs11/Signature/TestRSAKeyLength.java             windows-all
+sun/security/pkcs11/ec/ReadCertificates.java                    windows-all
+sun/security/pkcs11/ec/ReadPKCS12.java                          windows-all
+sun/security/pkcs11/ec/TestCurves.java                          windows-all
+sun/security/pkcs11/ec/TestECDH.java                            windows-all
+sun/security/pkcs11/ec/TestECDH2.java                           windows-all
+sun/security/pkcs11/ec/TestECDSA.java                           windows-all
+sun/security/pkcs11/ec/TestECDSA2.java                          windows-all
+sun/security/pkcs11/ec/TestECGenSpec.java                       windows-all
+sun/security/pkcs11/rsa/KeyWrap.java                            windows-all
+sun/security/pkcs11/rsa/TestCACerts.java                        windows-all
+sun/security/pkcs11/rsa/TestKeyFactory.java                     windows-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java               windows-all
+sun/security/pkcs11/rsa/TestSignatures.java                     windows-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            windows-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                    windows-all
+sun/security/pkcs11/tls/TestLeadingZeroesP11.java               windows-all
+sun/security/pkcs11/tls/TestMasterSecret.java                   windows-all
+sun/security/pkcs11/tls/TestPRF.java                            windows-all
+sun/security/pkcs11/tls/TestPremaster.java                      windows-all
+
 ############################################################################
 
 # jdk_sound

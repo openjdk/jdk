@@ -36,17 +36,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-
+import com.sun.tools.javac.comp.Annotate;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.comp.Annotate;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.file.BaseFileObject;
 import com.sun.tools.javac.jvm.ClassFile.NameAndType;
 import com.sun.tools.javac.jvm.ClassFile.Version;
@@ -81,7 +81,7 @@ public class ClassReader {
 
     public static final int INITIAL_BUFFER_SIZE = 0x0fff0;
 
-    Annotate annotate;
+    private final Annotate annotate;
 
     /** Switch: verbose output.
      */
@@ -190,6 +190,18 @@ public class ClassReader {
      */
     Set<Name> warnedAttrs = new HashSet<>();
 
+    /**
+     * The prototype @Target Attribute.Compound if this class is an annotation annotated with
+     * @Target
+     */
+    CompoundAnnotationProxy target;
+
+    /**
+     * The prototype @Repetable Attribute.Compound if this class is an annotation annotated with
+     * @Repeatable
+     */
+    CompoundAnnotationProxy repeatable;
+
     /** Get the ClassReader instance for this invocation. */
     public static ClassReader instance(Context context) {
         ClassReader instance = context.get(classReaderKey);
@@ -201,6 +213,7 @@ public class ClassReader {
     /** Construct a new class reader. */
     protected ClassReader(Context context) {
         context.put(classReaderKey, this);
+        annotate = Annotate.instance(context);
         names = Names.instance(context);
         syms = Symtab.instance(context);
         types = Types.instance(context);
@@ -212,9 +225,8 @@ public class ClassReader {
         log = Log.instance(context);
 
         Options options = Options.instance(context);
-        annotate = Annotate.instance(context);
-        verbose        = options.isSet(VERBOSE);
-        checkClassFile = options.isSet("-checkclassfile");
+        verbose         = options.isSet(VERBOSE);
+        checkClassFile  = options.isSet("-checkclassfile");
 
         Source source = Source.instance(context);
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
@@ -1304,6 +1316,13 @@ public class ClassReader {
             ListBuffer<CompoundAnnotationProxy> proxies = new ListBuffer<>();
             for (int i = 0; i<numAttributes; i++) {
                 CompoundAnnotationProxy proxy = readCompoundAnnotation();
+
+                if (proxy.type.tsym == syms.annotationTargetType.tsym) {
+                    target = proxy;
+                } else if (proxy.type.tsym == syms.repeatableType.tsym) {
+                    repeatable = proxy;
+                }
+
                 proxies.append(proxy);
             }
             annotate.normal(new AnnotationCompleter(sym, proxies.toList()));
@@ -1705,8 +1724,11 @@ public class ClassReader {
     }
 
     class AnnotationDeproxy implements ProxyVisitor {
-        private ClassSymbol requestingOwner = currentOwner.kind == MTH
-            ? currentOwner.enclClass() : (ClassSymbol)currentOwner;
+        private ClassSymbol requestingOwner;
+
+        AnnotationDeproxy(ClassSymbol owner) {
+            this.requestingOwner = owner;
+        }
 
         List<Attribute.Compound> deproxyCompoundList(List<CompoundAnnotationProxy> pl) {
             // also must fill in types!!!!
@@ -1855,19 +1877,19 @@ public class ClassReader {
         }
     }
 
-    class AnnotationDefaultCompleter extends AnnotationDeproxy implements Annotate.Worker {
+    class AnnotationDefaultCompleter extends AnnotationDeproxy implements Runnable {
         final MethodSymbol sym;
         final Attribute value;
         final JavaFileObject classFile = currentClassFile;
-        @Override
-        public String toString() {
-            return " ClassReader store default for " + sym.owner + "." + sym + " is " + value;
-        }
+
         AnnotationDefaultCompleter(MethodSymbol sym, Attribute value) {
+            super(currentOwner.kind == MTH
+                    ? currentOwner.enclClass() : (ClassSymbol)currentOwner);
             this.sym = sym;
             this.value = value;
         }
-        // implement Annotate.Worker.run()
+
+        @Override
         public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
@@ -1880,22 +1902,27 @@ public class ClassReader {
                 currentClassFile = previousClassFile;
             }
         }
+
+        @Override
+        public String toString() {
+            return " ClassReader store default for " + sym.owner + "." + sym + " is " + value;
+        }
     }
 
-    class AnnotationCompleter extends AnnotationDeproxy implements Annotate.Worker {
+    class AnnotationCompleter extends AnnotationDeproxy implements Runnable {
         final Symbol sym;
         final List<CompoundAnnotationProxy> l;
         final JavaFileObject classFile;
-        @Override
-        public String toString() {
-            return " ClassReader annotate " + sym.owner + "." + sym + " with " + l;
-        }
+
         AnnotationCompleter(Symbol sym, List<CompoundAnnotationProxy> l) {
+            super(currentOwner.kind == MTH
+                    ? currentOwner.enclClass() : (ClassSymbol)currentOwner);
             this.sym = sym;
             this.l = l;
             this.classFile = currentClassFile;
         }
-        // implement Annotate.Worker.run()
+
+        @Override
         public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
@@ -1909,6 +1936,11 @@ public class ClassReader {
             } finally {
                 currentClassFile = previousClassFile;
             }
+        }
+
+        @Override
+        public String toString() {
+            return " ClassReader annotate " + sym.owner + "." + sym + " with " + l;
         }
     }
 
@@ -2298,6 +2330,8 @@ public class ClassReader {
         currentClassFile = c.classfile;
         warnedAttrs.clear();
         filling = true;
+        target = null;
+        repeatable = null;
         try {
             bp = 0;
             buf = readInputStream(buf, c.classfile.openInputStream());
@@ -2317,6 +2351,12 @@ public class ClassReader {
                        foundTypeVariables.isEmpty()) {
                 Name name = missingTypeVariables.head.tsym.name;
                 throw badClassFile("undecl.type.var", name);
+            }
+
+            if ((c.flags_field & Flags.ANNOTATION) != 0) {
+                c.setAnnotationTypeMetadata(new AnnotationTypeMetadata(c, new CompleterDeproxy(c, target, repeatable)));
+            } else {
+                c.setAnnotationTypeMetadata(AnnotationTypeMetadata.notAnAnnotationType());
             }
         } catch (IOException ex) {
             throw badClassFile("unable.to.access.file", ex.getMessage());
@@ -2513,6 +2553,44 @@ public class ClassReader {
         @Override
         public int hashCode() {
             return name.hashCode();
+        }
+    }
+
+    private class CompleterDeproxy implements AnnotationTypeCompleter {
+        ClassSymbol proxyOn;
+        CompoundAnnotationProxy target;
+        CompoundAnnotationProxy repeatable;
+
+        public CompleterDeproxy(ClassSymbol c, CompoundAnnotationProxy target,
+                CompoundAnnotationProxy repeatable)
+        {
+            this.proxyOn = c;
+            this.target = target;
+            this.repeatable = repeatable;
+        }
+
+        @Override
+        public void complete(ClassSymbol sym) {
+            Assert.check(proxyOn == sym);
+            Attribute.Compound theTarget = null, theRepeatable = null;
+            AnnotationDeproxy deproxy;
+
+            try {
+                if (target != null) {
+                    deproxy = new AnnotationDeproxy(proxyOn);
+                    theTarget = deproxy.deproxyCompound(target);
+                }
+
+                if (repeatable != null) {
+                    deproxy = new AnnotationDeproxy(proxyOn);
+                    theRepeatable = deproxy.deproxyCompound(repeatable);
+                }
+            } catch (Exception e) {
+                throw new CompletionFailure(sym, e.getMessage());
+            }
+
+            sym.getAnnotationTypeMetadata().setTarget(theTarget);
+            sym.getAnnotationTypeMetadata().setRepeatable(theRepeatable);
         }
     }
 }

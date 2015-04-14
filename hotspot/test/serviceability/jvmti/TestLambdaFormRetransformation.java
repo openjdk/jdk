@@ -27,6 +27,10 @@
  * @bug 8008678
  * @summary JSR 292: constant pool reconstitution must support pseudo strings
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.instrument
+ *          java.management
+ *          jdk.jartool/sun.tools.jar
  * @compile -XDignore.symbol.file TestLambdaFormRetransformation.java
  * @run main TestLambdaFormRetransformation
  */

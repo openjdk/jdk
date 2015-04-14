@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import java.security.Provider;
  * of this and recover cleanly by catching the exception.<p>
  *
  * It is envisioned that there will be three most common ways in which
- * providers will be used:<p>
+ * providers will be used:
  * <ol>
  * <li> The application does not care about what provider is used (the
  * default case).
@@ -87,7 +87,7 @@ import java.security.Provider;
  * the <code>addProviderAtFront</code> method on a GSSManager that has
  * already created an object.<p>
  *
- *  Here is some sample code showing how the GSSManager might be used: <p>
+ *  Here is some sample code showing how the GSSManager might be used:
  * <pre>
  *     GSSManager manager = GSSManager.getInstance();
  *
@@ -116,7 +116,7 @@ import java.security.Provider;
  *                                                GSSContext.DEFAULT_LIFETIME);
  * </pre><p>
  *
- * The server side might use the following variation of this source:<p>
+ * The server side might use the following variation of this source:
  *
  * <pre>
  *     // Acquire credentials for the server
@@ -387,7 +387,7 @@ public abstract class GSSManager {
      * Non-default values for lifetime cannot always be honored by the
      * underlying mechanisms, thus applications should be prepared to call
      * {@link GSSCredential#getRemainingLifetime() getRemainingLifetime}
-     * on the returned credential.<p>
+     * on the returned credential.
      *
      * @param name the name of the principal for whom this credential is to be
      * acquired.  Use <code>null</code> to specify the default principal.
@@ -442,7 +442,7 @@ public abstract class GSSManager {
      * Non-default values for lifetime cannot always be honored by the
      * underlying mechanisms, thus applications should be prepared to call
      * {@link GSSCredential#getRemainingLifetime() getRemainingLifetime}
-     * on the returned credential.<p>
+     * on the returned credential.
      *
      * @param name the name of the principal for whom this credential is to
      * be acquired.  Use <code>null</code> to specify the default
@@ -492,7 +492,7 @@ public abstract class GSSManager {
      * Non-default values for lifetime cannot always be honored by the
      * underlying mechanism, thus applications should be prepared to call
      * {@link GSSContext#getLifetime() getLifetime} on the returned
-     * context.<p>
+     * context.
      *
      * @param peer the name of the target peer.
      * @param mech the Oid of the desired mechanism.  Use <code>null</code>
@@ -610,7 +610,7 @@ public abstract class GSSManager {
      * operation is unavailable.<p>
      *
      * Suppose an application desired that the provider A always be checked
-     * first when any mechanism is needed, it would call:<p>
+     * first when any mechanism is needed, it would call:
      * <pre>
      *         GSSManager mgr = GSSManager.getInstance();
      *         // mgr may at this point have its own pre-configured list
@@ -621,7 +621,7 @@ public abstract class GSSManager {
      * </pre>
      * Now if it also desired that the mechanism of Oid m1 always be
      * obtained from the provider B before the previously set A was checked,
-     * it would call:<p>
+     * it would call:
      * <pre>
      *         mgr.addProviderAtFront(B, m1);
      * </pre>
@@ -632,7 +632,7 @@ public abstract class GSSManager {
      * directly.<p>
      *
      * Suppose at a later time the following call is made to the same
-     * GSSManager instance:<p>
+     * GSSManager instance:
      * <pre>
      *         mgr.addProviderAtFront(B, null)
      * </pre>
@@ -684,14 +684,14 @@ public abstract class GSSManager {
      * Suppose an application desired that when a mechanism of Oid m1 is
      * needed the system default providers always be checked first, and only
      * when they do not support m1 should a provider A be checked. It would
-     * then make the call:<p>
+     * then make the call:
      * <pre>
      *         GSSManager mgr = GSSManager.getInstance();
      *         mgr.addProviderAtEnd(A, m1);
      * </pre>
      * Now, if it also desired that for all mechanisms the provider B be
      * checked after all configured providers have been checked, it would
-     * then call:<p>
+     * then call:
      * <pre>
      *         mgr.addProviderAtEnd(B, null);
      * </pre>
@@ -699,7 +699,7 @@ public abstract class GSSManager {
      * null)}.<p>
      *
      * Suppose at a later time the following call is made to the same
-     * GSSManager instance:<p>
+     * GSSManager instance:
      * <pre>
      *         mgr.addProviderAtEnd(B, m2)
      * </pre>
@@ -708,7 +708,7 @@ public abstract class GSSManager {
      * request is made for the already existing pairs of (A, m1) or (B,
      * null).<p>
      *
-     * Please note, however, that the following call:<p>
+     * Please note, however, that the following call:
      * <pre>
      *         mgr.addProviderAtEnd(A, null)
      * </pre>

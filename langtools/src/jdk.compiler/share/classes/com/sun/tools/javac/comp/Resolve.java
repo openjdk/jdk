@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public class Resolve {
 
     void reportVerboseResolutionDiagnostic(DiagnosticPosition dpos, Name name, Type site,
             List<Type> argtypes, List<Type> typeargtypes, Symbol bestSoFar) {
-        boolean success = !bestSoFar.kind.isOverloadError();
+        boolean success = !bestSoFar.kind.isResolutionError();
 
         if (success && !verboseResolutionMode.contains(VerboseResolutionMode.SUCCESS)) {
             return;
@@ -1389,7 +1389,7 @@ public class Resolve {
                 if (currentSymbol.kind != VAR)
                     continue;
                 // invariant: sym.kind == Symbol.Kind.VAR
-                if (!bestSoFar.kind.isOverloadError() &&
+                if (!bestSoFar.kind.isResolutionError() &&
                     currentSymbol.owner != bestSoFar.owner)
                     return new AmbiguityError(bestSoFar, currentSymbol);
                 else if (!bestSoFar.kind.betterThan(VAR)) {
@@ -1432,11 +1432,11 @@ public class Resolve {
                 !sym.isInheritedIn(site.tsym, types)) {
             return bestSoFar;
         } else if (useVarargs && (sym.flags() & VARARGS) == 0) {
-            return bestSoFar.kind.isOverloadError() ?
+            return bestSoFar.kind.isResolutionError() ?
                     new BadVarargsMethod((ResolveError)bestSoFar.baseSymbol()) :
                     bestSoFar;
         }
-        Assert.check(!sym.kind.isOverloadError());
+        Assert.check(!sym.kind.isResolutionError());
         try {
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
                                allowBoxing, useVarargs, types.noWarnings);
@@ -1457,7 +1457,7 @@ public class Resolve {
                 ? new AccessError(env, site, sym)
                 : bestSoFar;
         }
-        return (bestSoFar.kind.isOverloadError() && bestSoFar.kind != AMBIGUOUS)
+        return (bestSoFar.kind.isResolutionError() && bestSoFar.kind != AMBIGUOUS)
             ? sym
             : mostSpecific(argtypes, sym, bestSoFar, env, site, useVarargs);
     }
@@ -1939,8 +1939,8 @@ public class Resolve {
              bestSoFar.kind != AMBIGUOUS && l.nonEmpty();
              l = l.tail) {
             sym = findMemberType(env, site, name, l.head.tsym);
-            if (!bestSoFar.kind.isOverloadError() &&
-                !sym.kind.isOverloadError() &&
+            if (!bestSoFar.kind.isResolutionError() &&
+                !sym.kind.isResolutionError() &&
                 sym.owner != bestSoFar.owner)
                 bestSoFar = new AmbiguityError(bestSoFar, sym);
             else
@@ -2176,7 +2176,7 @@ public class Resolve {
                   List<Type> argtypes,
                   List<Type> typeargtypes,
                   LogResolveHelper logResolveHelper) {
-        if (sym.kind.isOverloadError()) {
+        if (sym.kind.isResolutionError()) {
             ResolveError errSym = (ResolveError)sym.baseSymbol();
             sym = errSym.access(name, qualified ? site.tsym : syms.noSymbol);
             argtypes = logResolveHelper.getArgumentTypes(errSym, sym, name, argtypes);
@@ -2366,7 +2366,7 @@ public class Resolve {
             }
             @Override
             Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
-                if (sym.kind.isOverloadError()) {
+                if (sym.kind.isResolutionError()) {
                     sym = super.access(env, pos, location, sym);
                 } else if (allowMethodHandles) {
                     MethodSymbol msym = (MethodSymbol)sym;
@@ -2523,7 +2523,7 @@ public class Resolve {
                     }
                     @Override
                     Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
-                        if (sym.kind.isOverloadError()) {
+                        if (sym.kind.isResolutionError()) {
                             if (sym.kind != WRONG_MTH &&
                                 sym.kind != WRONG_MTHS) {
                                 sym = super.access(env, pos, location, sym);
@@ -2555,7 +2555,8 @@ public class Resolve {
                               boolean allowBoxing,
                               boolean useVarargs) {
         Symbol bestSoFar = methodNotFound;
-        for (final Symbol sym : site.tsym.members().getSymbolsByName(names.init)) {
+        TypeSymbol tsym = site.tsym.isInterface() ? syms.objectType.tsym : site.tsym;
+        for (final Symbol sym : tsym.members().getSymbolsByName(names.init)) {
             //- System.out.println(" e " + e.sym);
             if (sym.kind == MTH &&
                 (sym.flags_field & SYNTHETIC) == 0) {
@@ -2933,7 +2934,7 @@ public class Resolve {
          */
         final boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
             return phase.ordinal() > maxPhase.ordinal() ||
-                !sym.kind.isOverloadError() || sym.kind == AMBIGUOUS;
+                !sym.kind.isResolutionError() || sym.kind == AMBIGUOUS;
         }
 
         /**
@@ -2979,7 +2980,7 @@ public class Resolve {
 
         @Override
         Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
-            if (sym.kind.isOverloadError()) {
+            if (sym.kind.isResolutionError()) {
                 //if nothing is found return the 'first' error
                 sym = accessMethod(sym, pos, location, site, name, true, argtypes, typeargtypes);
             }
@@ -3321,7 +3322,7 @@ public class Resolve {
 
     boolean hasEnclosingInstance(Env<AttrContext> env, Type type) {
         Symbol encl = resolveSelfContainingInternal(env, type.tsym, false);
-        return encl != null && !encl.kind.isOverloadError();
+        return encl != null && !encl.kind.isResolutionError();
     }
 
     private Symbol resolveSelfContainingInternal(Env<AttrContext> env,
@@ -3503,7 +3504,7 @@ public class Resolve {
 
         @Override
         public Symbol access(Name name, TypeSymbol location) {
-            if (!sym.kind.isOverloadError() && sym.kind.matches(KindSelector.TYP))
+            if (!sym.kind.isResolutionError() && sym.kind.matches(KindSelector.TYP))
                 return types.createErrorType(name, location, sym.type).tsym;
             else
                 return sym;
@@ -4053,7 +4054,7 @@ public class Resolve {
             } else {
                 key = "bad.instance.method.in.unbound.lookup";
             }
-            return sym.kind.isOverloadError() ?
+            return sym.kind.isResolutionError() ?
                     ((ResolveError)sym).getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes) :
                     diags.create(dkind, log.currentSource(), pos, key, Kinds.kindName(sym), sym);
         }
@@ -4232,8 +4233,8 @@ public class Resolve {
             @Override
             public Symbol mergeResults(Symbol bestSoFar, Symbol sym) {
                 //Check invariants (see {@code LookupHelper.shouldStop})
-                Assert.check(bestSoFar.kind.isOverloadError() && bestSoFar.kind != AMBIGUOUS);
-                if (!sym.kind.isOverloadError()) {
+                Assert.check(bestSoFar.kind.isResolutionError() && bestSoFar.kind != AMBIGUOUS);
+                if (!sym.kind.isResolutionError()) {
                     //varargs resolution successful
                     return sym;
                 } else {

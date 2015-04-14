@@ -25,6 +25,10 @@
  * @test
  * @summary Test of diagnostic command GC.heap_dump -all=true
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
  * @build HeapDumpTest

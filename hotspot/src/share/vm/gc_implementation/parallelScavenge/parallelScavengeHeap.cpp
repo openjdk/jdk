@@ -203,17 +203,6 @@ bool ParallelScavengeHeap::is_scavengable(const void* addr) {
   return is_in_young((oop)addr);
 }
 
-#ifdef ASSERT
-// Don't implement this by using is_in_young().  This method is used
-// in some cases to check that is_in_young() is correct.
-bool ParallelScavengeHeap::is_in_partial_collection(const void *p) {
-  assert(is_in_reserved(p) || p == NULL,
-    "Does not work if address is non-null and outside of the heap");
-  // The order of the generations is old (low addr), young (high addr)
-  return p >= old_gen()->reserved().end();
-}
-#endif
-
 // There are two levels of allocation policy here.
 //
 // When an allocation request fails, the requesting thread must invoke a VM

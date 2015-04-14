@@ -61,13 +61,19 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   UNPACKEXE_LANG := C++
 endif
 
+UNPACK_MAPFILE_DIR := $(JDK_TOPDIR)/make/mapfiles/libunpack
+UNPACK_MAPFILE_PLATFORM_FILE := \
+    $(UNPACK_MAPFILE_DIR)/mapfile-vers-unpack200-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH)
+
 # The linker on older SuSE distros (e.g. on SLES 10) complains with:
 # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
 # if feeded with a version script which contains named tags.
 ifeq ($(USING_BROKEN_SUSE_LD), yes)
-  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200.anonymous
+  UNPACK_MAPFILE := $(UNPACK_MAPFILE_DIR)/mapfile-vers-unpack200.anonymous
+else ifneq ($(wildcard $(UNPACK_MAPFILE_PLATFORM_FILE)), )
+  UNPACK_MAPFILE := $(UNPACK_MAPFILE_PLATFORM_FILE)
 else
-  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200
+  UNPACK_MAPFILE := $(UNPACK_MAPFILE_DIR)/mapfile-vers-unpack200
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \

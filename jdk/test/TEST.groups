@@ -138,7 +138,6 @@ jdk_time = \
 
 jdk_rmi = \
     java/rmi \
-    javax/rmi/ssl \
     sun/rmi
 
 jdk_security1 = \
@@ -237,6 +236,7 @@ jdk_tools = \
 jdk_other = \
     java/sql \
     javax/sql \
+    javax/rmi \
     javax/naming \
     javax/script \
     javax/smartcardio \

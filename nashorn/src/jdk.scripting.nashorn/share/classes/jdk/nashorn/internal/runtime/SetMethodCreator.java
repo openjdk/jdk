@@ -232,14 +232,18 @@ final class SetMethodCreator {
     }
 
     private SetMethod createNewFieldSetter(final SwitchPoint builtinSwitchPoint) {
-        return createNewSetter(new AccessorProperty(getName(), 0, sobj.getClass(), getMap().getFreeFieldSlot(), type), builtinSwitchPoint);
+        return createNewSetter(new AccessorProperty(getName(), getFlags(sobj), sobj.getClass(), getMap().getFreeFieldSlot(), type), builtinSwitchPoint);
     }
 
     private SetMethod createNewSpillPropertySetter(final SwitchPoint builtinSwitchPoint) {
-        return createNewSetter(new SpillProperty(getName(), 0, getMap().getFreeSpillSlot(), type), builtinSwitchPoint);
+        return createNewSetter(new SpillProperty(getName(), getFlags(sobj), getMap().getFreeSpillSlot(), type), builtinSwitchPoint);
     }
 
     private PropertyMap getNewMap(final Property property) {
         return getMap().addProperty(property);
+    }
+
+    private static int getFlags(final ScriptObject scriptObject) {
+        return scriptObject.useDualFields() ? Property.DUAL_FIELDS : 0;
     }
 }

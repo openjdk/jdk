@@ -31,8 +31,6 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment) {
   _lgrp_spaces = new (ResourceObj::C_HEAP, mtGC) GrowableArray<LGRPSpace*>(0, true);
   _page_size = os::vm_page_size();
@@ -973,7 +971,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
       break;
     }
     if (e != scan_end) {
-      assert(e < scan_end, err_msg("e: " PTR_FORMAT " scan_end: " PTR_FORMAT, e, scan_end));
+      assert(e < scan_end, err_msg("e: " PTR_FORMAT " scan_end: " PTR_FORMAT, p2i(e), p2i(scan_end)));
 
       if ((page_expected.size != page_size || page_expected.lgrp_id != lgrp_id())
           && page_expected.size != 0) {

@@ -632,7 +632,6 @@ LIBOBJS
 CFLAGS_CCACHE
 CCACHE
 USE_PRECOMPILED_HEADER
-SJAVAC_SERVER_DIR
 ENABLE_SJAVAC
 SJAVAC_SERVER_JAVA_FLAGS
 SJAVAC_SERVER_JAVA
@@ -884,6 +883,7 @@ CHECK_TOOLSDIR_GMAKE
 CHECK_MAKE
 CHECK_GMAKE
 PKGHANDLER
+CONFIGURESUPPORT_OUTPUTDIR
 OUTPUT_ROOT
 CONF_NAME
 SPEC
@@ -907,9 +907,8 @@ JVM_VARIANTS
 JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
-BUILD_LOG_WRAPPER
-BUILD_LOG_PREVIOUS
-BUILD_LOG
+CANONICAL_TOPDIR
+ORIGINAL_TOPDIR
 TOPDIR
 PATH_SEP
 ZERO_ARCHDEF
@@ -3471,9 +3470,6 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-
-
-
 #%%% Simple tools %%%
 
 # Check if we have found a usable version of make
@@ -4369,7 +4365,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1428017006
+DATE_WHEN_GENERATED=1428676283
 
 ###############################################################################
 #
@@ -14141,6 +14137,10 @@ $as_echo_n "checking for top-level directory... " >&6; }
 $as_echo "$TOPDIR" >&6; }
 
 
+  # Save the original version of TOPDIR for string comparisons
+  ORIGINAL_TOPDIR="$TOPDIR"
+
+
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
 
   # Only process if variable expands to non-empty
@@ -14397,17 +14397,60 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
   # SRC_ROOT is a traditional alias for TOPDIR.
   SRC_ROOT=$TOPDIR
 
+  # Calculate a canonical version of TOPDIR for string comparisons
+  CANONICAL_TOPDIR=$TOPDIR
+
+  if test "x$OPENJDK_BUILD_OS" != xwindows; then
+    # Follow a chain of symbolic links. Use readlink
+    # where it exists, else fall back to horribly
+    # complicated shell code.
+    if test "x$READLINK_TESTED" != yes; then
+      # On MacOSX there is a readlink tool with a different
+      # purpose than the GNU readlink tool. Check the found readlink.
+      ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
+      if test "x$ISGNU" = x; then
+        # A readlink that we do not know how to use.
+        # Are there other non-GNU readlinks out there?
+        READLINK_TESTED=yes
+        READLINK=
+      fi
+    fi
+
+    if test "x$READLINK" != x; then
+      CANONICAL_TOPDIR=`$READLINK -f $CANONICAL_TOPDIR`
+    else
+      # Save the current directory for restoring afterwards
+      STARTDIR=$PWD
+      COUNTER=0
+      sym_link_dir=`$DIRNAME $CANONICAL_TOPDIR`
+      sym_link_file=`$BASENAME $CANONICAL_TOPDIR`
+      cd $sym_link_dir
+      # Use -P flag to resolve symlinks in directories.
+      cd `$THEPWDCMD -P`
+      sym_link_dir=`$THEPWDCMD -P`
+      # Resolve file symlinks
+      while test $COUNTER -lt 20; do
+        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+        if test "x$ISLINK" == x; then
+          # This is not a symbolic link! We are done!
+          break
+        fi
+        # Again resolve directory symlinks since the target of the just found
+        # link could be in a different directory
+        cd `$DIRNAME $ISLINK`
+        sym_link_dir=`$THEPWDCMD -P`
+        sym_link_file=`$BASENAME $ISLINK`
+        let COUNTER=COUNTER+1
+      done
+      cd $STARTDIR
+      CANONICAL_TOPDIR=$sym_link_dir/$sym_link_file
+    fi
+  fi
+
+
+
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
-
-
-  # Setup default logging of stdout and stderr to build.log in the output root.
-  BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-  BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-  BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
-
-
-
 
 
 # Check if it's a pure open build or if custom sources are to be used.
@@ -15223,6 +15266,8 @@ $as_echo "in build directory with custom name" >&6; }
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
+    CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
+    $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
     if test ! -d "$OUTPUT_ROOT"; then
       as_fn_error $? "Could not create build directory $OUTPUT_ROOT" "$LINENO" 5
     fi
@@ -15405,6 +15450,7 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
   CONF_NAME=$CONF_NAME
 
   OUTPUT_ROOT=$OUTPUT_ROOT
+
 
 
   # The spec.gmk file contains all variables for the make system.
@@ -27579,7 +27625,7 @@ $as_echo "$as_me: Rewriting VS_ENV_CMD to \"$new_complete\"" >&6;}
 $as_echo "$as_me: Trying to extract Visual Studio environment variables" >&6;}
 
     # We need to create a couple of temporary files.
-    VS_ENV_TMP_DIR="$OUTPUT_ROOT/vs-env"
+    VS_ENV_TMP_DIR="$CONFIGURESUPPORT_OUTPUTDIR/vs-env"
     $MKDIR -p $VS_ENV_TMP_DIR
 
     # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
@@ -43093,50 +43139,69 @@ $as_echo "no" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if fixpath can be created" >&5
 $as_echo_n "checking if fixpath can be created... " >&6; }
     FIXPATH_SRC="$SRC_ROOT/common/src/fixpath.c"
-    FIXPATH_BIN="$OUTPUT_ROOT/fixpath.exe"
+    FIXPATH_BIN="$CONFIGURESUPPORT_OUTPUTDIR/bin/fixpath.exe"
+    FIXPATH_DIR="$CONFIGURESUPPORT_OUTPUTDIR/fixpath"
     if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
-      FIXPATH_SRC=`$CYGPATH -m $FIXPATH_SRC`
-      FIXPATH_BIN=`$CYGPATH -m $FIXPATH_BIN`
       # Important to keep the .exe suffix on Cygwin for Hotspot makefiles
-      FIXPATH="$OUTPUT_ROOT/fixpath.exe -c"
+      FIXPATH="$FIXPATH_BIN -c"
     elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.msys; then
-      FIXPATH_SRC=`cmd //c echo $FIXPATH_SRC`
-      FIXPATH_BIN=`cmd //c echo $FIXPATH_BIN`
-
       # Take all collected prefixes and turn them into a -m/c/foo@/c/bar@... command line
       # @ was chosen as separator to minimize risk of other tools messing around with it
-      all_unique_prefixes=`echo "${all_fixpath_prefixes[@]}" | tr ' ' '\n' | grep '^/./' | sort | uniq`
+      all_unique_prefixes=`echo "${all_fixpath_prefixes[@]}" \
+          | tr ' ' '\n' | grep '^/./' | sort | uniq`
       fixpath_argument_list=`echo $all_unique_prefixes  | tr ' ' '@'`
-
-      FIXPATH="$OUTPUT_ROOT/fixpath -m$fixpath_argument_list"
+      FIXPATH="$FIXPATH_BIN -m$fixpath_argument_list"
     fi
-    rm -f $OUTPUT_ROOT/fixpath*
-    cd $OUTPUT_ROOT
-    $CC $FIXPATH_SRC -Fe$FIXPATH_BIN > $OUTPUT_ROOT/fixpath1.log 2>&1
+    FIXPATH_SRC_W="$FIXPATH_SRC"
+    FIXPATH_BIN_W="$FIXPATH_BIN"
+
+  unix_path="$FIXPATH_SRC_W"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    FIXPATH_SRC_W="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    FIXPATH_SRC_W="$windows_path"
+  fi
+
+
+  unix_path="$FIXPATH_BIN_W"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    FIXPATH_BIN_W="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    FIXPATH_BIN_W="$windows_path"
+  fi
+
+    $RM -rf $FIXPATH_BIN $FIXPATH_DIR
+    $MKDIR -p $FIXPATH_DIR $CONFIGURESUPPORT_OUTPUTDIR/bin
+    cd $FIXPATH_DIR
+    $CC $FIXPATH_SRC_W -Fe$FIXPATH_BIN_W > $FIXPATH_DIR/fixpath1.log 2>&1
     cd $CURDIR
 
-    if test ! -x $OUTPUT_ROOT/fixpath.exe; then
+    if test ! -x $FIXPATH_BIN; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-      cat $OUTPUT_ROOT/fixpath1.log
-      as_fn_error $? "Could not create $OUTPUT_ROOT/fixpath.exe" "$LINENO" 5
+      cat $FIXPATH_DIR/fixpath1.log
+      as_fn_error $? "Could not create $FIXPATH_BIN" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if fixpath.exe works" >&5
 $as_echo_n "checking if fixpath.exe works... " >&6; }
-    cd $OUTPUT_ROOT
-    $FIXPATH $CC $SRC_ROOT/common/src/fixpath.c -Fe$OUTPUT_ROOT/fixpath2.exe > $OUTPUT_ROOT/fixpath2.log 2>&1
+    cd $FIXPATH_DIR
+    $FIXPATH $CC $FIXPATH_SRC -Fe$FIXPATH_DIR/fixpath2.exe \
+        > $FIXPATH_DIR/fixpath2.log 2>&1
     cd $CURDIR
-    if test ! -x $OUTPUT_ROOT/fixpath2.exe; then
+    if test ! -x $FIXPATH_DIR/fixpath2.exe; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-      cat $OUTPUT_ROOT/fixpath2.log
+      cat $FIXPATH_DIR/fixpath2.log
       as_fn_error $? "fixpath did not work!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    rm -f $OUTPUT_ROOT/fixpath?.??? $OUTPUT_ROOT/fixpath.obj
   fi
 
 
@@ -51372,13 +51437,6 @@ $as_echo_n "checking whether to use sjavac... " >&6; }
 $as_echo "$ENABLE_SJAVAC" >&6; }
 
 
-  if test "x$ENABLE_SJAVAC" = xyes; then
-    SJAVAC_SERVER_DIR="$OUTPUT_ROOT/javacservers"
-  else
-    SJAVAC_SERVER_DIR=
-  fi
-
-
 
 # Can the C/C++ compiler use precompiled headers?
 
@@ -51806,7 +51864,7 @@ $as_echo "$OUTPUT_DIR_IS_LOCAL" >&6; }
 
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.
-CONFIG_STATUS="$OUTPUT_ROOT/config.status"
+CONFIG_STATUS="$CONFIGURESUPPORT_OUTPUTDIR/config.status"
 
 # Create the actual output files. Now the main work of configure is done.
 cat >confcache <<\_ACEOF
@@ -52974,7 +53032,7 @@ fi
 
 # Try to move the config.log file to the output directory.
 if test -e ./config.log; then
-  $MV -f ./config.log "$OUTPUT_ROOT/config.log" 2> /dev/null
+  $MV -f ./config.log "$CONFIGURESUPPORT_OUTPUTDIR/config.log" 2> /dev/null
 fi
 
 # Make the compare script executable
