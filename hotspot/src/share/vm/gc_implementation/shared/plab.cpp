@@ -23,21 +23,21 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/plab.hpp"
 #include "memory/threadLocalAllocBuffer.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
 
-size_t ParGCAllocBuffer::min_size() {
+size_t PLAB::min_size() {
   // Make sure that we return something that is larger than AlignmentReserve
   return align_object_size(MAX2(MinTLABSize / HeapWordSize, (uintx)oopDesc::header_size())) + AlignmentReserve;
 }
 
-size_t ParGCAllocBuffer::max_size() {
+size_t PLAB::max_size() {
   return ThreadLocalAllocBuffer::max_size();
 }
 
-ParGCAllocBuffer::ParGCAllocBuffer(size_t desired_plab_sz_) :
+PLAB::PLAB(size_t desired_plab_sz_) :
   _word_sz(desired_plab_sz_), _bottom(NULL), _top(NULL),
   _end(NULL), _hard_end(NULL), _allocated(0), _wasted(0)
 {
@@ -53,9 +53,9 @@ ParGCAllocBuffer::ParGCAllocBuffer(size_t desired_plab_sz_) :
 // the smallest object.  We can't allow that because the buffer must
 // look like it's full of objects when we retire it, so we make
 // sure we have enough space for a filler int array object.
-size_t ParGCAllocBuffer::AlignmentReserve;
+size_t PLAB::AlignmentReserve;
 
-void ParGCAllocBuffer::flush_and_retire_stats(PLABStats* stats) {
+void PLAB::flush_and_retire_stats(PLABStats* stats) {
   // Retire the last allocation buffer.
   size_t unused = retire_internal();
 
@@ -71,11 +71,11 @@ void ParGCAllocBuffer::flush_and_retire_stats(PLABStats* stats) {
   _wasted = 0;
 }
 
-void ParGCAllocBuffer::retire() {
+void PLAB::retire() {
   _wasted += retire_internal();
 }
 
-size_t ParGCAllocBuffer::retire_internal() {
+size_t PLAB::retire_internal() {
   size_t result = 0;
   if (_top < _hard_end) {
     CollectedHeap::fill_with_object(_top, _hard_end);
@@ -126,8 +126,8 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
 }
 
 #ifndef PRODUCT
-void ParGCAllocBuffer::print() {
-  gclog_or_tty->print_cr("parGCAllocBuffer: _bottom: " PTR_FORMAT "  _top: " PTR_FORMAT
+void PLAB::print() {
+  gclog_or_tty->print_cr("PLAB: _bottom: " PTR_FORMAT "  _top: " PTR_FORMAT
     "  _end: " PTR_FORMAT "  _hard_end: " PTR_FORMAT ")",
     p2i(_bottom), p2i(_top), p2i(_end), p2i(_hard_end));
 }

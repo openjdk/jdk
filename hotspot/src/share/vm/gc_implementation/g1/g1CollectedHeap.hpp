@@ -39,7 +39,6 @@
 #include "gc_implementation/g1/heapRegionManager.hpp"
 #include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
-#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
