@@ -50,9 +50,10 @@
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/workgroup.hpp"
-#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
@@ -905,17 +906,6 @@ bool GenCollectedHeap::is_in_young(oop p) {
 
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool GenCollectedHeap::is_in(const void* p) const {
-  #ifndef ASSERT
-  guarantee(VerifyBeforeGC      ||
-            VerifyDuringGC      ||
-            VerifyBeforeExit    ||
-            VerifyDuringStartup ||
-            PrintAssembly       ||
-            tty->count() != 0   ||   // already printing
-            VerifyAfterGC       ||
-    VMError::fatal_error_in_progress(), "too expensive");
-
-  #endif
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
 

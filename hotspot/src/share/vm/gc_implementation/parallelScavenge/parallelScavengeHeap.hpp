@@ -32,7 +32,7 @@
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "gc_implementation/shared/gcWhen.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/collectorPolicy.hpp"
 #include "memory/strongRootsScope.hpp"
 #include "utilities/ostream.hpp"

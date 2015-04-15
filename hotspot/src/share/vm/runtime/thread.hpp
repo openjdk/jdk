@@ -324,6 +324,8 @@ class Thread: public ThreadShadow {
 
   // Returns the current thread
   static inline Thread* current();
+  // ... without having to include thread.inline.hpp.
+  static Thread* current_noinline();
 
   // Common thread operations
   static void set_priority(Thread* thread, ThreadPriority priority);

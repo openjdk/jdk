@@ -53,6 +53,7 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/stack.inline.hpp"
 #include "utilities/workgroup.hpp"
 
 #ifdef _MSC_VER

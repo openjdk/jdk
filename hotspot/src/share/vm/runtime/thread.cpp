@@ -272,6 +272,11 @@ Thread::Thread() {
 #endif // ASSERT
 }
 
+// Non-inlined version to be used where thread.inline.hpp shouldn't be included.
+Thread* Thread::current_noinline() {
+  return Thread::current();
+}
+
 void Thread::initialize_thread_local_storage() {
   // Note: Make sure this method only calls
   // non-blocking operations. Otherwise, it might not work
