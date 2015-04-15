@@ -1505,8 +1505,8 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     // Iterate over the instructions 'node' expands into
     ExpandRule  *expand       = node->_exprule;
     NameAndList *expand_instr = NULL;
-    for(expand->reset_instructions();
-        (expand_instr = expand->iter_instructions()) != NULL; cnt++) {
+    for (expand->reset_instructions();
+         (expand_instr = expand->iter_instructions()) != NULL; cnt++) {
       new_id = expand_instr->name();
 
       InstructForm* expand_instruction = (InstructForm*)globalAD->globalNames()[new_id];
@@ -1517,30 +1517,25 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         continue;
       }
 
-      if (expand_instruction->has_temps()) {
-        globalAD->syntax_err(node->_linenum, "In %s: expand rules using instructs with TEMPs aren't supported: %s",
-                             node->_ident, new_id);
-      }
-
       // Build the node for the instruction
       fprintf(fp,"\n  %sNode *n%d = new %sNode();\n", new_id, cnt, new_id);
       // Add control edge for this node
       fprintf(fp,"  n%d->add_req(_in[0]);\n", cnt);
       // Build the operand for the value this node defines.
       Form *form = (Form*)_globalNames[new_id];
-      assert( form, "'new_id' must be a defined form name");
+      assert(form, "'new_id' must be a defined form name");
       // Grab the InstructForm for the new instruction
       new_inst = form->is_instruction();
-      assert( new_inst, "'new_id' must be an instruction name");
-      if( node->is_ideal_if() && new_inst->is_ideal_if() ) {
-        fprintf(fp, "  ((MachIfNode*)n%d)->_prob = _prob;\n",cnt);
-        fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n",cnt);
+      assert(new_inst, "'new_id' must be an instruction name");
+      if (node->is_ideal_if() && new_inst->is_ideal_if()) {
+        fprintf(fp, "  ((MachIfNode*)n%d)->_prob = _prob;\n", cnt);
+        fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n", cnt);
       }
 
-      if( node->is_ideal_fastlock() && new_inst->is_ideal_fastlock() ) {
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_counters = _counters;\n",cnt);
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n",cnt);
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n",cnt);
+      if (node->is_ideal_fastlock() && new_inst->is_ideal_fastlock()) {
+        fprintf(fp, "  ((MachFastLockNode*)n%d)->_counters = _counters;\n", cnt);
+        fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n", cnt);
+        fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n", cnt);
       }
 
       // Fill in the bottom_type where requested
