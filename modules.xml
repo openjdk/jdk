@@ -248,18 +248,24 @@
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.naming</to>
+      <to>java.prefs</to>
       <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
       <to>java.sql</to>
+      <to>java.xml</to>
+      <to>java.xml.ws</to>
       <to>jdk.charsets</to>
+      <to>jdk.crypto.pkcs11</to>
       <to>jdk.deploy.osx</to>
+      <to>jdk.httpserver</to>
       <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
       <to>jdk.jvmstat</to>
       <to>jdk.pack200</to>
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
+      <to>jdk.snmp</to>
     </export>
     <export>
       <name>sun.net.dns</name>
