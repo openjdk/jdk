@@ -220,7 +220,6 @@ private:
   // It keeps track of the humongous regions.
   HeapRegionSet _humongous_set;
 
-  void clear_humongous_is_live_table();
   void eagerly_reclaim_humongous_regions();
 
   // The number of regions we could create by expansion.
@@ -290,22 +289,26 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _g1mm;
 
-  // Records whether the region at the given index is kept live by roots or
-  // references from the young generation.
-  class HumongousIsLiveBiasedMappedArray : public G1BiasedMappedArray<bool> {
+  // Records whether the region at the given index is (still) a
+  // candidate for eager reclaim.  Only valid for humongous start
+  // regions; other regions have unspecified values.  Humongous start
+  // regions are initialized at start of collection pause, with
+  // candidates removed from the set as they are found reachable from
+  // roots or the young generation.
+  class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
    protected:
     bool default_value() const { return false; }
    public:
     void clear() { G1BiasedMappedArray<bool>::clear(); }
-    void set_live(uint region) {
-      set_by_index(region, true);
+    void set_candidate(uint region, bool value) {
+      set_by_index(region, value);
     }
-    bool is_live(uint region) {
+    bool is_candidate(uint region) {
       return get_by_index(region);
     }
   };
 
-  HumongousIsLiveBiasedMappedArray _humongous_is_live;
+  HumongousReclaimCandidates _humongous_reclaim_candidates;
   // Stores whether during humongous object registration we found candidate regions.
   // If not, we can skip a few steps.
   bool _has_humongous_reclaim_candidates;
@@ -643,18 +646,15 @@ public:
   void gc_prologue(bool full);
   void gc_epilogue(bool full);
 
+  // Modify the reclaim candidate set and test for presence.
+  // These are only valid for starts_humongous regions.
+  inline void set_humongous_reclaim_candidate(uint region, bool value);
+  inline bool is_humongous_reclaim_candidate(uint region);
+
+  // Remove from the reclaim candidate set.  Also remove from the
+  // collection set so that later encounters avoid the slow path.
   inline void set_humongous_is_live(oop obj);
 
-  bool humongous_is_live(uint region) {
-    return _humongous_is_live.is_live(region);
-  }
-
-  // Returns whether the given region (which must be a humongous (start) region)
-  // is to be considered conservatively live regardless of any other conditions.
-  bool humongous_region_is_always_live(uint index);
-  // Returns whether the given region (which must be a humongous (start) region)
-  // is considered a candidate for eager reclamation.
-  bool humongous_region_is_candidate(uint index);
   // Register the given region to be part of the collection set.
   inline void register_humongous_region_with_cset(uint index);
   // Register regions with humongous objects (actually on the start region) in
