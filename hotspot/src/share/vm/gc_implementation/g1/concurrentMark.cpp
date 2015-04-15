@@ -34,6 +34,7 @@
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"

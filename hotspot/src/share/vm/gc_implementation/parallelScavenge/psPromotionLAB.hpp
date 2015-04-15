@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONLAB_HPP
 
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 
 //

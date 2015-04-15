@@ -38,8 +38,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
 #include "services/memoryService.hpp"
-#include "utilities/bitMap.inline.hpp"
-#include "utilities/stack.inline.hpp"
+#include "utilities/bitMap.hpp"
+#include "utilities/stack.hpp"
 #include "utilities/taskqueue.hpp"
 #include "utilities/yieldingWorkgroup.hpp"
 

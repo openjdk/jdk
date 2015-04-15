@@ -170,27 +170,11 @@ size_t ParallelScavengeHeap::max_capacity() const {
 }
 
 bool ParallelScavengeHeap::is_in(const void* p) const {
-  if (young_gen()->is_in(p)) {
-    return true;
-  }
-
-  if (old_gen()->is_in(p)) {
-    return true;
-  }
-
-  return false;
+  return young_gen()->is_in(p) || old_gen()->is_in(p);
 }
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
-  if (young_gen()->is_in_reserved(p)) {
-    return true;
-  }
-
-  if (old_gen()->is_in_reserved(p)) {
-    return true;
-  }
-
-  return false;
+  return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
 }
 
 bool ParallelScavengeHeap::is_scavengable(const void* addr) {
