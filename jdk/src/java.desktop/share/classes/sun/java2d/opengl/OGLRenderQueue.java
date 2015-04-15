@@ -28,6 +28,8 @@ package sun.java2d.opengl;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
+import sun.misc.InnocuousThread;
+
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -48,9 +50,7 @@ public class OGLRenderQueue extends RenderQueue {
          * The thread must be a member of a thread group
          * which will not get GCed before VM exit.
          */
-        flusher = AccessController.doPrivileged((PrivilegedAction<QueueFlusher>) () -> {
-            return new QueueFlusher(ThreadGroupUtils.getRootThreadGroup());
-        });
+        flusher = AccessController.doPrivileged((PrivilegedAction<QueueFlusher>) QueueFlusher::new);
     }
 
     /**
@@ -115,7 +115,7 @@ public class OGLRenderQueue extends RenderQueue {
      * Returns true if the current thread is the OGL QueueFlusher thread.
      */
     public static boolean isQueueFlusherThread() {
-        return (Thread.currentThread() == getInstance().flusher);
+        return (Thread.currentThread() == getInstance().flusher.thread);
     }
 
     public void flushNow() {
@@ -153,16 +153,22 @@ public class OGLRenderQueue extends RenderQueue {
         refSet.clear();
     }
 
-    private class QueueFlusher extends Thread {
+    private class QueueFlusher implements Runnable {
         private boolean needsFlush;
         private Runnable task;
         private Error error;
+        private final Thread thread;
 
-        public QueueFlusher(ThreadGroup threadGroup) {
-            super(threadGroup, "Java2D Queue Flusher");
-            setDaemon(true);
-            setPriority(Thread.MAX_PRIORITY);
-            start();
+        public QueueFlusher() {
+            String name = "Java2D Queue Flusher";
+            if (System.getSecurityManager() == null) {
+                this.thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this, name);
+            } else {
+                this.thread = new InnocuousThread(this, name);
+            }
+            thread.setDaemon(true);
+            thread.setPriority(Thread.MAX_PRIORITY);
+            thread.start();
         }
 
         public synchronized void flushNow() {

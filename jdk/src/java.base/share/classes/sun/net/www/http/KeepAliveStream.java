@@ -26,6 +26,8 @@
 package sun.net.www.http;
 
 import java.io.*;
+
+import sun.misc.InnocuousThread;
 import sun.net.ProgressSource;
 import sun.net.www.MeteredStream;
 
@@ -171,15 +173,7 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
                 java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<Void>() {
                     public Void run() {
-                        // We want to create the Keep-Alive-SocketCleaner in the
-                        // system threadgroup
-                        ThreadGroup grp = Thread.currentThread().getThreadGroup();
-                        ThreadGroup parent = null;
-                        while ((parent = grp.getParent()) != null) {
-                            grp = parent;
-                        }
-
-                        cleanerThread = new Thread(grp, queue, "Keep-Alive-SocketCleaner");
+                        cleanerThread = new InnocuousThread(queue, "Keep-Alive-SocketCleaner");
                         cleanerThread.setDaemon(true);
                         cleanerThread.setPriority(Thread.MAX_PRIORITY - 2);
                         // Set the context class loader to null in order to avoid

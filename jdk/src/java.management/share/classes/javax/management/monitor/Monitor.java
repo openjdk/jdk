@@ -61,6 +61,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import static javax.management.monitor.MonitorNotification.*;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * Defines the part common to all monitor MBeans.
@@ -1636,12 +1637,12 @@ public abstract class Monitor
         }
 
         public Thread newThread(Runnable r) {
-            Thread t = new Thread(group,
-                                  r,
-                                  namePrefix +
-                                  threadNumber.getAndIncrement() +
-                                  nameSuffix,
-                                  0);
+            Thread t = new ManagedLocalsThread(
+                group,
+                r,
+                namePrefix + threadNumber.getAndIncrement() + nameSuffix
+            );
+
             t.setDaemon(true);
             if (t.getPriority() != Thread.NORM_PRIORITY)
                 t.setPriority(Thread.NORM_PRIORITY);
