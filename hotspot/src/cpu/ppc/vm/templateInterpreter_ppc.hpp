@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2013, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2013, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
   // Run with +PrintInterpreter to get the VM to print out the size.
   // Max size with JVMTI
 
-  const static int InterpreterCodeSize = 210*K;
+  const static int InterpreterCodeSize = 230*K;
 
 #endif // CPU_PPC_VM_TEMPLATEINTERPRETER_PPC_HPP
 

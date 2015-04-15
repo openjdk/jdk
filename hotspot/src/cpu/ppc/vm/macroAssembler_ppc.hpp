@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define CPU_PPC_VM_MACROASSEMBLER_PPC_HPP
 
 #include "asm/assembler.hpp"
+#include "runtime/rtmLocking.hpp"
 #include "utilities/macros.hpp"
 
 // MacroAssembler extends Assembler by a few frequently used macros.
@@ -432,8 +433,8 @@ class MacroAssembler: public Assembler {
                 int semantics, bool cmpxchgx_hint = false,
                 Register int_flag_success = noreg, bool contention_hint = false);
   void cmpxchgd(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                int semantics, bool cmpxchgx_hint = false,
+                Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base, int semantics, bool cmpxchgx_hint = false,
                 Register int_flag_success = noreg, Label* failed = NULL, bool contention_hint = false);
 
   // interface method calling
@@ -506,8 +507,42 @@ class MacroAssembler: public Assembler {
   // biased locking exit case failed.
   void biased_locking_exit(ConditionRegister cr_reg, Register mark_addr, Register temp_reg, Label& done);
 
-  void compiler_fast_lock_object(  ConditionRegister flag, Register oop, Register box, Register tmp1, Register tmp2, Register tmp3);
-  void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box, Register tmp1, Register tmp2, Register tmp3);
+  void atomic_inc_ptr(Register addr, Register result, int simm16 = 1);
+  void atomic_ori_int(Register addr, Register result, int uimm16);
+
+#if INCLUDE_RTM_OPT
+  void rtm_counters_update(Register abort_status, Register rtm_counters);
+  void branch_on_random_using_tb(Register tmp, int count, Label& brLabel);
+  void rtm_abort_ratio_calculation(Register rtm_counters_reg, RTMLockingCounters* rtm_counters,
+                                   Metadata* method_data);
+  void rtm_profiling(Register abort_status_Reg, Register temp_Reg,
+                     RTMLockingCounters* rtm_counters, Metadata* method_data, bool profile_rtm);
+  void rtm_retry_lock_on_abort(Register retry_count, Register abort_status,
+                               Label& retryLabel, Label* checkRetry = NULL);
+  void rtm_retry_lock_on_busy(Register retry_count, Register owner_addr, Label& retryLabel);
+  void rtm_stack_locking(ConditionRegister flag, Register obj, Register mark_word, Register tmp,
+                         Register retry_on_abort_count,
+                         RTMLockingCounters* stack_rtm_counters,
+                         Metadata* method_data, bool profile_rtm,
+                         Label& DONE_LABEL, Label& IsInflated);
+  void rtm_inflated_locking(ConditionRegister flag, Register obj, Register mark_word, Register box,
+                            Register retry_on_busy_count, Register retry_on_abort_count,
+                            RTMLockingCounters* rtm_counters,
+                            Metadata* method_data, bool profile_rtm,
+                            Label& DONE_LABEL);
+#endif
+
+  void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
+                                 Register tmp1, Register tmp2, Register tmp3,
+                                 bool try_bias = UseBiasedLocking,
+                                 RTMLockingCounters* rtm_counters = NULL,
+                                 RTMLockingCounters* stack_rtm_counters = NULL,
+                                 Metadata* method_data = NULL,
+                                 bool use_rtm = false, bool profile_rtm = false);
+
+  void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
+                                   Register tmp1, Register tmp2, Register tmp3,
+                                   bool try_bias = UseBiasedLocking, bool use_rtm = false);
 
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp1, Register tmp2);
@@ -576,7 +611,7 @@ class MacroAssembler: public Assembler {
                                       Register tmp = noreg);
 
   // Null allowed.
-  inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1 = noreg);
+  inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1 = noreg, Label *is_null = NULL);
 
   // Encode/decode heap oop. Oop may not be null, else en/decoding goes wrong.
   // src == d allowed.
@@ -593,7 +628,7 @@ class MacroAssembler: public Assembler {
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
   static int instr_size_for_decode_klass_not_null();
   void decode_klass_not_null(Register dst, Register src = noreg);
-  void encode_klass_not_null(Register dst, Register src = noreg);
+  Register encode_klass_not_null(Register dst, Register src = noreg);
 
   // Load common heap base into register.
   void reinit_heapbase(Register d, Register tmp = noreg);
