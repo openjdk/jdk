@@ -3943,21 +3943,23 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
         validated = true;
       }
 
-      newcopy = new_array(klass_node, length, 0);  // no arguments to push
+      if (!stopped()) {
+        newcopy = new_array(klass_node, length, 0);  // no arguments to push
 
-      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true,
-                                              load_object_klass(original), klass_node);
-      if (!is_copyOfRange) {
-        ac->set_copyof(validated);
-      } else {
-        ac->set_copyofrange(validated);
-      }
-      Node* n = _gvn.transform(ac);
-      if (n == ac) {
-        ac->connect_outputs(this);
-      } else {
-        assert(validated, "shouldn't transform if all arguments not validated");
-        set_all_memory(n);
+        ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true,
+                                                load_object_klass(original), klass_node);
+        if (!is_copyOfRange) {
+          ac->set_copyof(validated);
+        } else {
+          ac->set_copyofrange(validated);
+        }
+        Node* n = _gvn.transform(ac);
+        if (n == ac) {
+          ac->connect_outputs(this);
+        } else {
+          assert(validated, "shouldn't transform if all arguments not validated");
+          set_all_memory(n);
+        }
       }
     }
   } // original reexecute is set back here
