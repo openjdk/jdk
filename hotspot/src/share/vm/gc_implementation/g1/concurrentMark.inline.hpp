@@ -332,14 +332,28 @@ inline void CMTask::deal_with_reference(oop obj) {
           // be pushed on the stack. So, some duplicate work, but no
           // correctness problems.
           if (is_below_finger(objAddr, global_finger)) {
-            if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%u] below a finger (local: " PTR_FORMAT
-                                     ", global: " PTR_FORMAT ") pushing "
-                                     PTR_FORMAT " on mark stack",
-                                     _worker_id, p2i(_finger),
-                                     p2i(global_finger), p2i(objAddr));
+            if (obj->is_typeArray()) {
+              // Immediately process arrays of primitive types, rather
+              // than pushing on the mark stack.  This keeps us from
+              // adding humongous objects to the mark stack that might
+              // be reclaimed before the entry is processed - see
+              // selection of candidates for eager reclaim of humongous
+              // objects.  The cost of the additional type test is
+              // mitigated by avoiding a trip through the mark stack,
+              // by only doing a bookkeeping update and avoiding the
+              // actual scan of the object - a typeArray contains no
+              // references, and the metadata is built-in.
+              process_grey_object<false>(obj);
+            } else {
+              if (_cm->verbose_high()) {
+                gclog_or_tty->print_cr("[%u] below a finger (local: " PTR_FORMAT
+                                       ", global: " PTR_FORMAT ") pushing "
+                                       PTR_FORMAT " on mark stack",
+                                       _worker_id, p2i(_finger),
+                                       p2i(global_finger), p2i(objAddr));
+              }
+              push(obj);
             }
-            push(obj);
           }
         }
       }
