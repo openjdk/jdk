@@ -81,6 +81,9 @@ public class ConnectionTest {
         ssle1.setEnabledCipherSuites(new String [] {
             "SSL_RSA_WITH_RC4_128_MD5"});
 
+        ssle2.setEnabledCipherSuites(new String [] {
+            "SSL_RSA_WITH_RC4_128_MD5"});
+
         createBuffers();
     }
 

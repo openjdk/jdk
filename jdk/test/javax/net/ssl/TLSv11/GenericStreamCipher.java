@@ -93,6 +93,10 @@ public class GenericStreamCipher {
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
 
+        // enable a stream cipher
+        sslServerSocket.setEnabledCipherSuites(
+            new String[] {"SSL_RSA_WITH_RC4_128_MD5"});
+
         serverPort = sslServerSocket.getLocalPort();
 
         /*
