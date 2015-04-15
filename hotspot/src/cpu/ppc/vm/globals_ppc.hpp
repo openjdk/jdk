@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ define_pd_global(bool, UseMembar,             false);
 // GC Ergo Flags
 define_pd_global(size_t, CMSYoungGenPerWorker, 16*M);  // Default max size of CMS young gen, per GC worker thread.
 
-define_pd_global(uintx, TypeProfileLevel, 0);
+define_pd_global(uintx, TypeProfileLevel, 111);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct)  \
@@ -71,13 +71,25 @@ define_pd_global(uintx, TypeProfileLevel, 0);
                                                                             \
   product(uintx, PowerArchitecturePPC64, 0,                                 \
           "CPU Version: x for PowerX. Currently recognizes Power5 to "      \
-          "Power7. Default is 0. CPUs newer than Power7 will be "           \
-          "recognized as Power7.")                                          \
+          "Power8. Default is 0. Newer CPUs will be recognized as Power8.") \
                                                                             \
   /* Reoptimize code-sequences of calls at runtime, e.g. replace an */      \
   /* indirect call by a direct call.                                */      \
   product(bool, ReoptimizeCallSequences, true,                              \
           "Reoptimize code-sequences of calls at runtime.")                 \
+                                                                            \
+  /* Power 8: Configure Data Stream Control Register. */                    \
+  product(uint64_t,DSCR_PPC64, (uintx)-1,                                   \
+          "Power8 or later: Specify encoded value for Data Stream Control " \
+          "Register")                                                       \
+  product(uint64_t,DSCR_DPFD_PPC64, 8,                                      \
+          "Power8 or later: DPFD (default prefetch depth) value of the "    \
+          "Data Stream Control Register."                                   \
+          " 0: hardware default, 1: none, 2-7: min-max, 8: don't touch")    \
+  product(uint64_t,DSCR_URG_PPC64, 8,                                       \
+          "Power8 or later: URG (depth attainment urgency) value of the "   \
+          "Data Stream Control Register."                                   \
+          " 0: hardware default, 1: none, 2-7: min-max, 8: don't touch")    \
                                                                             \
   product(bool, UseLoadInstructionsForStackBangingPPC64, false,             \
           "Use load instructions for stack banging.")                       \
@@ -121,6 +133,41 @@ define_pd_global(uintx, TypeProfileLevel, 0);
                                                                             \
   product(bool, ZapMemory, false, "Write 0x0101... to empty memory."        \
           " Use this to ease debugging.")                                   \
-
+                                                                            \
+  /* Use Restricted Transactional Memory for lock eliding */                \
+  product(bool, UseRTMLocking, false,                                       \
+          "Enable RTM lock eliding for inflated locks in compiled code")    \
+                                                                            \
+  experimental(bool, UseRTMForStackLocks, false,                            \
+          "Enable RTM lock eliding for stack locks in compiled code")       \
+                                                                            \
+  product(bool, UseRTMDeopt, false,                                         \
+          "Perform deopt and recompilation based on RTM abort ratio")       \
+                                                                            \
+  product(uintx, RTMRetryCount, 5,                                          \
+          "Number of RTM retries on lock abort or busy")                    \
+                                                                            \
+  experimental(intx, RTMSpinLoopCount, 100,                                 \
+          "Spin count for lock to become free before RTM retry")            \
+                                                                            \
+  experimental(intx, RTMAbortThreshold, 1000,                               \
+          "Calculate abort ratio after this number of aborts")              \
+                                                                            \
+  experimental(intx, RTMLockingThreshold, 10000,                            \
+          "Lock count at which to do RTM lock eliding without "             \
+          "abort ratio calculation")                                        \
+                                                                            \
+  experimental(intx, RTMAbortRatio, 50,                                     \
+          "Lock abort ratio at which to stop use RTM lock eliding")         \
+                                                                            \
+  experimental(intx, RTMTotalCountIncrRate, 64,                             \
+          "Increment total RTM attempted lock count once every n times")    \
+                                                                            \
+  experimental(intx, RTMLockingCalculationDelay, 0,                         \
+          "Number of milliseconds to wait before start calculating aborts " \
+          "for RTM locking")                                                \
+                                                                            \
+  experimental(bool, UseRTMXendForLockBusy, true,                           \
+          "Use RTM Xend instead of Xabort when lock busy")                  \
 
 #endif // CPU_PPC_VM_GLOBALS_PPC_HPP
