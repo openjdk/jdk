@@ -25,15 +25,16 @@
 
 package com.apple.laf;
 
+
 import java.beans.*;
 import java.io.File;
 import java.util.*;
-
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.AbstractTableModel;
 
+import sun.misc.ManagedLocalsThread;
 /**
  * NavServices-like implementation of a file Table
  *
@@ -42,7 +43,7 @@ import javax.swing.table.AbstractTableModel;
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeListener {
     private final JTable fFileList;
-    private LoadFilesThread loadThread = null;
+    private FilesLoader filesLoader = null;
     private Vector<File> files = null;
 
     JFileChooser filechooser = null;
@@ -141,9 +142,9 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
 
     public void runWhenDone(final Runnable runnable){
          synchronized (fileCacheLock) {
-             if (loadThread != null) {
-                 if (loadThread.isAlive()) {
-                     loadThread.queuedTasks.add(runnable);
+             if (filesLoader != null) {
+                 if (filesLoader.loadThread.isAlive()) {
+                     filesLoader.queuedTasks.add(runnable);
                      return;
                  }
              }
@@ -160,9 +161,9 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             return;
         }
 
-        if (loadThread != null) {
+        if (filesLoader != null) {
             // interrupt
-            loadThread.interrupt();
+            filesLoader.loadThread.interrupt();
         }
 
         fetchID++;
@@ -173,8 +174,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             fileCache = new Vector<SortableFile>(50);
         }
 
-        loadThread = new LoadFilesThread(currentDirectory, fetchID);
-        loadThread.start();
+        filesLoader = new FilesLoader(currentDirectory, fetchID);
     }
 
     public int getColumnCount() {
@@ -373,17 +373,25 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         }
     }
 
-    class LoadFilesThread extends Thread {
-        Vector<Runnable> queuedTasks = new Vector<Runnable>();
+    class FilesLoader implements Runnable {
+        Vector<Runnable> queuedTasks = new Vector<>();
         File currentDirectory = null;
         int fid;
+        Thread loadThread;
 
-        public LoadFilesThread(final File currentDirectory, final int fid) {
-            super("Aqua L&F File Loading Thread");
+        public FilesLoader(final File currentDirectory, final int fid) {
             this.currentDirectory = currentDirectory;
             this.fid = fid;
+            String name = "Aqua L&F File Loading Thread";
+            if (System.getSecurityManager() == null) {
+                this.loadThread = new Thread(FilesLoader.this, name);
+            } else {
+                this.loadThread = new ManagedLocalsThread(FilesLoader.this, name);
+            }
+            this.loadThread.start();
         }
 
+        @Override
         public void run() {
             final Vector<DoChangeContents> runnables = new Vector<DoChangeContents>(10);
             final FileSystemView fileSystem = filechooser.getFileSystemView();
@@ -415,7 +423,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
                 runnables.addElement(runnable);
                 SwingUtilities.invokeLater(runnable);
                 chunk = new Vector<SortableFile>(10);
-                if (isInterrupted()) {
+                if (loadThread.isInterrupted()) {
                     // interrupted, cancel all runnables
                     cancelRunnables(runnables);
                     return;

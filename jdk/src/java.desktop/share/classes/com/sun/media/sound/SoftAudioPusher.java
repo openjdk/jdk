@@ -24,6 +24,8 @@
  */
 package com.sun.media.sound;
 
+import sun.misc.ManagedLocalsThread;
+
 import java.io.IOException;
 
 import javax.sound.sampled.AudioInputStream;
@@ -53,7 +55,11 @@ public final class SoftAudioPusher implements Runnable {
         if (active)
             return;
         active = true;
-        audiothread = new Thread(this);
+        if (System.getSecurityManager() == null) {
+            audiothread = new Thread(this);
+        } else {
+            audiothread = new ManagedLocalsThread(this);
+        }
         audiothread.setDaemon(true);
         audiothread.setPriority(Thread.MAX_PRIORITY);
         audiothread.start();

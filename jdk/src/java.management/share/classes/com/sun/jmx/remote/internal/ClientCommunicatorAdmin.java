@@ -30,6 +30,7 @@ import java.io.InterruptedIOException;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
+import sun.misc.ManagedLocalsThread;
 
 public abstract class ClientCommunicatorAdmin {
     private static volatile long threadNo = 1;
@@ -40,7 +41,11 @@ public abstract class ClientCommunicatorAdmin {
         if (period > 0) {
             checker = new Checker();
 
-            Thread t = new Thread(checker, "JMX client heartbeat " + ++threadNo);
+            Thread t = new ManagedLocalsThread(
+                checker,
+                "JMX client heartbeat " +  (++threadNo)
+            );
+
             t.setDaemon(true);
             t.start();
         } else
