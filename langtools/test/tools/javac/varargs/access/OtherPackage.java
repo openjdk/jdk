@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,15 @@
  */
 
 /*
- * @test
- * @bug 8049075
- * @summary javac, wildcards and generic vararg method invocation not accepted
- * @compile VarargsAndWildcardParameterizedTypeTest.java
+ * Auxiliary file for VarargsInferredPrivateType
  */
 
-class VarargsAndWildcardParameterizedTypeTest {
-    interface I<T> {
-        String m(T... t);
+package otherpackage;
+
+public class OtherPackage {
+    public static Private getPrivate() {
+        return new Private();
     }
 
-    void m() {
-        I<? super Integer> i = null;
-        i.m(Integer.valueOf(1), Integer.valueOf(1));
-    }
+    private static class Private {}
 }
