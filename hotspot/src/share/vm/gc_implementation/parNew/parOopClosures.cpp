@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,10 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
-#define SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
+#include "precompiled.hpp"
+#include "memory/iterator.inline.hpp"
+#include "memory/specialized_oop_closures.hpp"
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
 
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#endif // INCLUDE_ALL_GCS
-
-// ParallelScavengeHeap methods
-
-inline void oopDesc::push_contents(PSPromotionManager* pm) {
-  Klass* k = klass();
-  if (!k->oop_is_typeArray()) {
-    // It might contain oops beyond the header, so take the virtual call.
-    k->oop_push_contents(pm, this);
-  }
-  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
-}
-
-#endif // SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
+// Generate ParNew specialized oop_oop_iterate functions.
+SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(ALL_KLASS_OOP_OOP_ITERATE_DEFN);

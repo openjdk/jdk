@@ -220,6 +220,11 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   }
 }
 
+void CollectedHeap::set_barrier_set(BarrierSet* barrier_set) {
+  _barrier_set = barrier_set;
+  oopDesc::set_bs(_barrier_set);
+}
+
 void CollectedHeap::pre_initialize() {
   // Used for ReduceInitialCardMarks (when COMPILER2 is used);
   // otherwise remains unused.

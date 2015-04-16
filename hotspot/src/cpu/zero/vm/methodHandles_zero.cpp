@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -144,6 +144,7 @@ int MethodHandles::method_handle_entry_linkToVirtual(Method* method, intptr_t UN
   oop recv = STACK_OBJECT(-numArgs);
   Klass* clazz = recv->klass();
   Klass* klass_part = InstanceKlass::cast(clazz);
+  ResourceMark rm(THREAD);
   klassVtable* vtable = klass_part->vtable();
   Method* vmtarget = vtable->method_at(vmindex);
 

@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/g1StringDedupTable.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/padded.inline.hpp"
@@ -519,7 +520,7 @@ void G1StringDedupTable::verify() {
     while (*entry != NULL) {
       typeArrayOop value = (*entry)->obj();
       guarantee(value != NULL, "Object must not be NULL");
-      guarantee(Universe::heap()->is_in_reserved(value), "Object must be on the heap");
+      guarantee(G1CollectedHeap::heap()->is_in_reserved(value), "Object must be on the heap");
       guarantee(!value->is_forwarded(), "Object must not be forwarded");
       guarantee(value->is_typeArray(), "Object must be a typeArrayOop");
       unsigned int hash = hash_code(value);

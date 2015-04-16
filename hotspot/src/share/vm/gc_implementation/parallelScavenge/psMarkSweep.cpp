@@ -59,7 +59,7 @@ jlong               PSMarkSweep::_time_of_last_gc   = 0;
 CollectorCounters*  PSMarkSweep::_counters = NULL;
 
 void PSMarkSweep::initialize() {
-  MemRegion mr = Universe::heap()->reserved_region();
+  MemRegion mr = ParallelScavengeHeap::heap()->reserved_region();
   _ref_processor = new ReferenceProcessor(mr);     // a vanilla ref proc
   _counters = new CollectorCounters("PSMarkSweep", 1);
 }
@@ -81,9 +81,9 @@ void PSMarkSweep::initialize() {
 void PSMarkSweep::invoke(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!Universe::heap()->is_gc_active(), "not reentrant");
+  assert(!ParallelScavengeHeap::heap()->is_gc_active(), "not reentrant");
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   GCCause::Cause gc_cause = heap->gc_cause();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
@@ -110,8 +110,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     return false;
   }
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   GCCause::Cause gc_cause = heap->gc_cause();
 
   _gc_timer->register_gc_start();
@@ -487,9 +486,7 @@ bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
 }
 
 void PSMarkSweep::allocate_stacks() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
 
   MutableSpace* to_space = young_gen->to_space();
@@ -515,8 +512,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   GCTraceTime tm("phase 1", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
   trace(" 1");
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   // Need to clear claim bits before the tracing starts.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -582,9 +578,7 @@ void PSMarkSweep::mark_sweep_phase2() {
   // phase2, phase3 and phase4, but the ValidateMarkSweep live oops
   // tracking expects us to do so. See comment under phase4.
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
 
   // Begin compacting into the old gen
@@ -606,9 +600,7 @@ void PSMarkSweep::mark_sweep_phase3() {
   GCTraceTime tm("phase 3", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
   trace("3");
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
 
@@ -651,9 +643,7 @@ void PSMarkSweep::mark_sweep_phase4() {
 
   // All pointers are now adjusted, move objects accordingly
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
 

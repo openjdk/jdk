@@ -437,6 +437,14 @@ void TemplateTable::locals_index(Register Rdst, int offset) {
 }
 
 void TemplateTable::iload() {
+  iload_internal();
+}
+
+void TemplateTable::nofast_iload() {
+  iload_internal(may_not_rewrite);
+}
+
+void TemplateTable::iload_internal(RewriteControl rc) {
   transition(vtos, itos);
 
   // Get the local value into tos
@@ -445,7 +453,7 @@ void TemplateTable::iload() {
 
   // Rewrite iload,iload  pair into fast_iload2
   //         iload,caload pair into fast_icaload
-  if (RewriteFrequentPairs) {
+  if (RewriteFrequentPairs && rc == may_rewrite) {
     Label Lrewrite, Ldone;
     Register Rnext_byte  = R3_ARG1,
              Rrewrite_to = R6_ARG4,
@@ -709,6 +717,14 @@ void TemplateTable::aload(int n) {
 }
 
 void TemplateTable::aload_0() {
+  aload_0_internal();
+}
+
+void TemplateTable::nofast_aload_0() {
+  aload_0_internal(may_not_rewrite);
+}
+
+void TemplateTable::aload_0_internal(RewriteControl rc) {
   transition(vtos, atos);
   // According to bytecode histograms, the pairs:
   //
@@ -732,7 +748,7 @@ void TemplateTable::aload_0() {
   // These bytecodes with a small amount of code are most profitable
   // to rewrite.
 
-  if (RewriteFrequentPairs) {
+  if (RewriteFrequentPairs && rc == may_rewrite) {
 
     Label Lrewrite, Ldont_rewrite;
     Register Rnext_byte  = R3_ARG1,
@@ -2144,6 +2160,12 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
   __ get_cache_and_index_at_bcp(Rcache, 1, index_size);
   Label Lresolved, Ldone;
 
+  Bytecodes::Code code = bytecode();
+  switch (code) {
+  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  }
+
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
   // We are resolved if the indices offset contains the current bytecode.
 #if defined(VM_LITTLE_ENDIAN)
@@ -2152,24 +2174,11 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
   __ lbz(Rscratch, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()) + 7 - (byte_no + 1), Rcache);
 #endif
   // Acquire by cmp-br-isync (see below).
-  __ cmpdi(CCR0, Rscratch, (int)bytecode());
+  __ cmpdi(CCR0, Rscratch, (int)code);
   __ beq(CCR0, Lresolved);
 
-  address entry = NULL;
-  switch (bytecode()) {
-    case Bytecodes::_getstatic      : // fall through
-    case Bytecodes::_putstatic      : // fall through
-    case Bytecodes::_getfield       : // fall through
-    case Bytecodes::_putfield       : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_get_put); break;
-    case Bytecodes::_invokevirtual  : // fall through
-    case Bytecodes::_invokespecial  : // fall through
-    case Bytecodes::_invokestatic   : // fall through
-    case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke); break;
-    case Bytecodes::_invokehandle   : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokehandle); break;
-    case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic); break;
-    default                         : ShouldNotReachHere(); break;
-  }
-  __ li(R4_ARG2, (int)bytecode());
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ li(R4_ARG2, code);
   __ call_VM(noreg, entry, R4_ARG2, true);
 
   // Update registers with resolved info.
@@ -2350,7 +2359,7 @@ void TemplateTable::pop_and_check_object(Register Roop) {
 }
 
 // PPC64: implement volatile loads as fence-store-acquire.
-void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
+void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   transition(vtos, vtos);
 
   Label Lacquire, Lisync;
@@ -2366,7 +2375,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   static address field_branch_table[number_of_states],
                  static_branch_table[number_of_states];
 
-  address* branch_table = is_static ? static_branch_table : field_branch_table;
+  address* branch_table = (is_static || rc == may_not_rewrite) ? static_branch_table : field_branch_table;
 
   // Get field offset.
   resolve_cache_and_index(byte_no, Rcache, Rscratch, sizeof(u2));
@@ -2417,7 +2426,14 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
 #ifdef ASSERT
   __ bind(LFlagInvalid);
   __ stop("got invalid flag", 0x654);
+#endif
 
+  if (!is_static && rc == may_not_rewrite) {
+    // We reuse the code from is_static.  It's jumped to via the table above.
+    return;
+  }
+
+#ifdef ASSERT
   // __ bind(Lvtos);
   address pc_before_fence = __ pc();
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
@@ -2434,7 +2450,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   branch_table[dtos] = __ pc(); // non-volatile_entry point
   __ lfdx(F15_ftos, Rclass_or_obj, Roffset);
   __ push(dtos);
-  if (!is_static) patch_bytecode(Bytecodes::_fast_dgetfield, Rbc, Rscratch);
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_dgetfield, Rbc, Rscratch);
+  }
   {
     Label acquire_double;
     __ beq(CCR6, acquire_double); // Volatile?
@@ -2453,7 +2471,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   branch_table[ftos] = __ pc(); // non-volatile_entry point
   __ lfsx(F15_ftos, Rclass_or_obj, Roffset);
   __ push(ftos);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_fgetfield, Rbc, Rscratch); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_fgetfield, Rbc, Rscratch);
+  }
   {
     Label acquire_float;
     __ beq(CCR6, acquire_float); // Volatile?
@@ -2472,7 +2492,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   branch_table[itos] = __ pc(); // non-volatile_entry point
   __ lwax(R17_tos, Rclass_or_obj, Roffset);
   __ push(itos);
-  if (!is_static) patch_bytecode(Bytecodes::_fast_igetfield, Rbc, Rscratch);
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_igetfield, Rbc, Rscratch);
+  }
   __ beq(CCR6, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
@@ -2483,7 +2505,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   branch_table[ltos] = __ pc(); // non-volatile_entry point
   __ ldx(R17_tos, Rclass_or_obj, Roffset);
   __ push(ltos);
-  if (!is_static) patch_bytecode(Bytecodes::_fast_lgetfield, Rbc, Rscratch);
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_lgetfield, Rbc, Rscratch);
+  }
   __ beq(CCR6, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
@@ -2495,7 +2519,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ lbzx(R17_tos, Rclass_or_obj, Roffset);
   __ extsb(R17_tos, R17_tos);
   __ push(btos);
-  if (!is_static) patch_bytecode(Bytecodes::_fast_bgetfield, Rbc, Rscratch);
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_bgetfield, Rbc, Rscratch);
+  }
   __ beq(CCR6, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
@@ -2506,7 +2532,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   branch_table[ctos] = __ pc(); // non-volatile_entry point
   __ lhzx(R17_tos, Rclass_or_obj, Roffset);
   __ push(ctos);
-  if (!is_static) patch_bytecode(Bytecodes::_fast_cgetfield, Rbc, Rscratch);
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_cgetfield, Rbc, Rscratch);
+  }
   __ beq(CCR6, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
@@ -2517,7 +2545,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   branch_table[stos] = __ pc(); // non-volatile_entry point
   __ lhax(R17_tos, Rclass_or_obj, Roffset);
   __ push(stos);
-  if (!is_static) patch_bytecode(Bytecodes::_fast_sgetfield, Rbc, Rscratch);
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_sgetfield, Rbc, Rscratch);
+  }
   __ beq(CCR6, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
@@ -2530,7 +2560,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ verify_oop(R17_tos);
   __ push(atos);
   //__ dcbt(R17_tos); // prefetch
-  if (!is_static) patch_bytecode(Bytecodes::_fast_agetfield, Rbc, Rscratch);
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_agetfield, Rbc, Rscratch);
+  }
   __ beq(CCR6, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
@@ -2551,6 +2583,10 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
 
 void TemplateTable::getfield(int byte_no) {
   getfield_or_static(byte_no, false);
+}
+
+void TemplateTable::nofast_getfield(int byte_no) {
+  getfield_or_static(byte_no, false, may_not_rewrite);
 }
 
 void TemplateTable::getstatic(int byte_no) {
@@ -2643,7 +2679,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
 }
 
 // PPC64: implement volatile stores as release-store (return bytecode contains an additional release).
-void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
+void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   Label Lvolatile;
 
   const Register Rcache        = R5_ARG3,  // Do not use ARG1/2 (causes trouble in jvmti_post_field_mod).
@@ -2657,10 +2693,12 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
                  Rbc           = Rscratch3;
   const ConditionRegister CR_is_vol = CCR2; // Non-volatile condition register (survives runtime call in do_oop_store).
 
-  static address field_branch_table[number_of_states],
+  static address field_rw_branch_table[number_of_states],
+                 field_norw_branch_table[number_of_states],
                  static_branch_table[number_of_states];
 
-  address* branch_table = is_static ? static_branch_table : field_branch_table;
+  address* branch_table = is_static ? static_branch_table :
+    (rc == may_rewrite ? field_rw_branch_table : field_norw_branch_table);
 
   // Stack (grows up):
   //  value
@@ -2688,7 +2726,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
 
   // Load from branch table and dispatch (volatile case: one instruction ahead).
   __ sldi(Rflags, Rflags, LogBytesPerWord);
-  if (!support_IRIW_for_not_multiple_copy_atomic_cpu) { __ cmpwi(CR_is_vol, Rscratch, 1); } // Volatile?
+  if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ cmpwi(CR_is_vol, Rscratch, 1);  // Volatile?
+  }
   __ sldi(Rscratch, Rscratch, exact_log2(BytesPerInstWord)); // Volatile? size of instruction 1 : 0.
   __ ldx(Rbtable, Rbtable, Rflags);
 
@@ -2715,9 +2755,13 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   assert(branch_table[dtos] == 0, "can't compute twice");
   branch_table[dtos] = __ pc(); // non-volatile_entry point
   __ pop(dtos);
-  if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
+  if (!is_static) {
+    pop_and_check_object(Rclass_or_obj);  // Kills R11_scratch1.
+  }
   __ stfdx(F15_ftos, Rclass_or_obj, Roffset);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_dputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_dputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
   }
@@ -2731,7 +2775,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(ftos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
   __ stfsx(F15_ftos, Rclass_or_obj, Roffset);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_fputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_fputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
   }
@@ -2745,7 +2791,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(itos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
   __ stwx(R17_tos, Rclass_or_obj, Roffset);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_iputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_iputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
   }
@@ -2759,7 +2807,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(ltos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
   __ stdx(R17_tos, Rclass_or_obj, Roffset);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_lputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_lputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
   }
@@ -2773,7 +2823,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(btos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
   __ stbx(R17_tos, Rclass_or_obj, Roffset);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_bputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_bputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
   }
@@ -2787,7 +2839,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(ctos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1..
   __ sthx(R17_tos, Rclass_or_obj, Roffset);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_cputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_cputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
   }
@@ -2801,7 +2855,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(stos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
   __ sthx(R17_tos, Rclass_or_obj, Roffset);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_sputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_sputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
   }
@@ -2815,7 +2871,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(atos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // kills R11_scratch1
   do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, _bs->kind(), false /* precise */, true /* check null */);
-  if (!is_static) { patch_bytecode(Bytecodes::_fast_aputfield, Rbc, Rscratch, true, byte_no); }
+  if (!is_static && rc == may_rewrite) {
+    patch_bytecode(Bytecodes::_fast_aputfield, Rbc, Rscratch, true, byte_no);
+  }
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
     __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
@@ -2837,6 +2895,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
 
 void TemplateTable::putfield(int byte_no) {
   putfield_or_static(byte_no, false);
+}
+
+void TemplateTable::nofast_putfield(int byte_no) {
+  putfield_or_static(byte_no, false, may_not_rewrite);
 }
 
 void TemplateTable::putstatic(int byte_no) {
@@ -3259,7 +3321,9 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ testbitdi(CCR0, R0, Rflags, ConstantPoolCacheEntry::is_vfinal_shift);
   __ bfalse(CCR0, LnotFinal);
 
-  patch_bytecode(Bytecodes::_fast_invokevfinal, Rnew_bc, R12_scratch2);
+  if (RewriteBytecodes && !UseSharedSpaces) {
+    patch_bytecode(Bytecodes::_fast_invokevfinal, Rnew_bc, R12_scratch2);
+  }
   invokevfinal_helper(Rvtableindex_or_method, Rflags, R11_scratch1, R12_scratch2);
 
   __ align(32, 12);
