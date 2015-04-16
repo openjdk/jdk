@@ -286,11 +286,8 @@ bool Arguments::is_newly_obsolete(const char *s, JDK_Version* version) {
     // <flag>=xxx form
     // [-|+]<flag> form
     size_t len = strlen(flag_status.name);
-    if (((strncmp(flag_status.name, s, len) == 0) &&
-         (strlen(s) == len)) ||
-        ((s[0] == '+' || s[0] == '-') &&
-         (strncmp(flag_status.name, &s[1], len) == 0) &&
-         (strlen(&s[1]) == len))) {
+    if ((strncmp(flag_status.name, s, len) == 0) &&
+        (strlen(s) == len)){
       if (JDK_Version::current().compare(flag_status.accept_until) == -1) {
           *version = flag_status.obsoleted_in;
           return true;
@@ -806,17 +803,9 @@ bool Arguments::process_argument(const char* arg,
     return true;
   }
 
+  // Determine if the flag has '+', '-', or '=' characters.
   bool has_plus_minus = (*arg == '+' || *arg == '-');
   const char* const argname = has_plus_minus ? arg + 1 : arg;
-  if (is_newly_obsolete(arg, &since)) {
-    char version[256];
-    since.to_string(version, sizeof(version));
-    warning("ignoring option %s; support was removed in %s", argname, version);
-    return true;
-  }
-
-  // For locked flags, report a custom error message if available.
-  // Otherwise, report the standard unrecognized VM option.
 
   size_t arg_len;
   const char* equal_sign = strchr(argname, '=');
@@ -826,6 +815,20 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
+  // Construct a string which consists only of the argument name without '+', '-', or '='.
+  char stripped_argname[256];
+  strncpy(stripped_argname, argname, arg_len);
+  stripped_argname[arg_len] = '\0'; //strncpy doesn't null terminate.
+
+  if (is_newly_obsolete(stripped_argname, &since)) {
+    char version[256];
+    since.to_string(version, sizeof(version));
+    warning("ignoring option %s; support was removed in %s", stripped_argname, version);
+    return true;
+  }
+
+  // For locked flags, report a custom error message if available.
+  // Otherwise, report the standard unrecognized VM option.
   Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
@@ -854,15 +857,7 @@ bool Arguments::process_argument(const char* arg,
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
                   fuzzy_matched->_name,
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
-      if (is_newly_obsolete(fuzzy_matched->_name, &since)) {
-        char version[256];
-        since.to_string(version, sizeof(version));
-        jio_fprintf(defaultStream::error_stream(),
-                    "Warning: support for %s was removed in %s\n",
-                    fuzzy_matched->_name,
-                    version);
     }
-  }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
