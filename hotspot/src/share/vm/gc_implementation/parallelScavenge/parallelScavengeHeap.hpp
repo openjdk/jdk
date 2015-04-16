@@ -53,8 +53,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSAdaptiveSizePolicy*       _size_policy;
   static PSGCAdaptivePolicyCounters* _gc_policy_counters;
 
-  static ParallelScavengeHeap* _psh;
-
   GenerationSizer* _collector_policy;
 
   // Collection of generations that are adjacent in the

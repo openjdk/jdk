@@ -202,9 +202,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1CheckCSetFastTableClosure;
 
 private:
-  // The one and only G1CollectedHeap, so static functions can find it.
-  static G1CollectedHeap* _g1h;
-
   FlexibleWorkGang* _workers;
 
   static size_t _humongous_object_threshold_in_words;
