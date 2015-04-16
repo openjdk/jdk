@@ -936,8 +936,8 @@ class CommandLineFlags {
   product(bool, ShowMessageBoxOnError, false,                               \
           "Keep process alive on VM fatal error")                           \
                                                                             \
-  product(bool, CreateMinidumpOnCrash, false,                               \
-          "Create minidump on VM fatal error")                              \
+  product(bool, CreateCoredumpOnCrash, true,                                \
+          "Create core/mini dump on VM fatal error")                        \
                                                                             \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
