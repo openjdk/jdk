@@ -54,11 +54,7 @@ class GenCollectedHeap : public CollectedHeap {
 public:
   friend class VM_PopulateDumpSharedSpace;
 
- protected:
-  // Fields:
-  static GenCollectedHeap* _gch;
-
- private:
+private:
   Generation* _young_gen;
   Generation* _old_gen;
 
