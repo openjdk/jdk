@@ -319,6 +319,12 @@ define SetupNativeCompilationBody
     $1_CXX:=$(CXX)
   endif
 
+  ifneq ($$($1_MANIFEST), )
+    ifeq ($$($1_MANIFEST_VERSION), )
+      $$(error If MANIFEST is provided, then MANIFEST_VERSION is required in $1)
+    endif
+  endif
+
   # Make sure the dirs exist.
   $$(call MakeDir,$$($1_OBJECT_DIR) $$($1_OUTPUT_DIR))
   $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
@@ -505,14 +511,6 @@ define SetupNativeCompilationBody
 		&& $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw) > $$($1_RES_DEP)
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEP) > $$($1_RES_DEP_TARGETS)
     endif
-    ifneq (,$$($1_MANIFEST))
-      $1_GEN_MANIFEST:=$$($1_OBJECT_DIR)/$$($1_PROGRAM).manifest
-      IMVERSIONVALUE:=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VERSION).$(COOKED_BUILD_NUMBER)
-      $1_MANIFEST_VARDEPS_FILE := $$(call DependOnVariable, IMVERSIONVALUE, \
-          $$($1_GEN_MANIFEST).vardeps)
-      $$($1_GEN_MANIFEST): $$($1_MANIFEST) $$($1_MANIFEST_VARDEPS_FILE)
-		$(SED) 's%IMVERSION%$$(IMVERSIONVALUE)%g;s%PROGRAM%$$($1_PROGRAM)%g' $$< > $$@
-    endif
   endif
 
   # mapfile doesnt seem to be implemented on macosx (yet??)
@@ -661,19 +659,21 @@ define SetupNativeCompilationBody
     $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
 
     $1_VARDEPS := $$($1_LDEXE) $(SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX) $$($1_MANIFEST_VERSION)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
-    $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST) \
+    $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_DEBUGINFO_EXTRA_DEPS) $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)"
 		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(SYSROOT_LDFLAGS) \
 		    $(EXE_OUT_OPTION)$$($1_TARGET) \
 		    $$($1_EXPECTED_OBJS) $$($1_RES) \
 		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
-                ifneq (,$$($1_GEN_MANIFEST))
-		  $(MT) -nologo -manifest $$($1_GEN_MANIFEST) -outputresource:$$@;#1
+                ifeq ($(OPENJDK_TARGET_OS), windows)
+                  ifneq ($$($1_MANIFEST), )
+		    $(MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_PROGRAM).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1
+                  endif
                 endif
                 # This only works if the openjdk_codesign identity is present on the system. Let
                 # silently fail otherwise.
