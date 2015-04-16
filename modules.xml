@@ -1844,6 +1844,23 @@
     </export>
   </module>
   <module>
+    <name>jdk.xml.dom</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.xml</depend>
+    <export>
+      <name>org.w3c.dom.css</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.html</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.stylesheets</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.xpath</name>
+    </export>
+  </module>
+  <module>
     <name>jdk.xml.ws</name>
     <depend>java.base</depend>
     <depend>java.compiler</depend>
