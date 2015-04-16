@@ -99,9 +99,6 @@
           "the buffer will be enqueued for processing. A value of 0 "       \
           "specifies that mutator threads should not do such filtering.")   \
                                                                             \
-  develop(bool, G1SATBPrintStubs, false,                                    \
-          "If true, print generated stubs for the SATB barrier")            \
-                                                                            \
   experimental(intx, G1ExpandByPercentOfAvailable, 20,                      \
           "When expanding, % of uncommitted space to claim.")               \
                                                                             \
