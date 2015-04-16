@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,18 @@
  * questions.
  */
 
-/**
- * This is the second version of this class. The first version is in
- * RedefineMethodInBacktraceTargetB.java.
- */
-public class RedefineMethodInBacktraceTargetB {
-    public static void methodToRedefine() {
+import java.io.IOException;
+
+public class TestApp {
+    public static void doSomething() throws IOException{
+        int r = System.in.read();
+        System.out.println("read: " + r);
     }
 
-    public static void callMethodToDelete() {
+    public static void main(String args[]) throws Exception {
+        System.out.println("main enter");
+        System.out.flush();
+        doSomething();
+        System.out.println("main exit");
     }
 }

@@ -46,12 +46,15 @@ import sun.management.ManagementFactoryHelper;
  * could be freed, since class redefinition didn't know about the backtraces.
  */
 public class RedefineMethodInBacktraceApp {
+    static boolean failed = false;
+
     public static void main(String args[]) throws Exception {
         System.out.println("Hello from RedefineMethodInBacktraceApp!");
-
         new RedefineMethodInBacktraceApp().doTest();
 
-        System.exit(0);
+        if (failed) {
+            throw new Exception("ERROR: RedefineMethodInBacktraceApp failed.");
+        }
     }
 
     public static CountDownLatch stop = new CountDownLatch(1);
@@ -63,13 +66,18 @@ public class RedefineMethodInBacktraceApp {
     }
 
     private void doMethodInBacktraceTest() throws Exception {
-        Throwable t = getThrowableFromMethodToRedefine();
+        Throwable t1 = getThrowableFromMethodToRedefine();
+        Throwable t2 = getThrowableFromMethodToDelete();
 
         doRedefine(RedefineMethodInBacktraceTarget.class);
 
         doClassUnloading();
 
-        touchRedefinedMethodInBacktrace(t);
+        System.out.println("checking backtrace for throwable from methodToRedefine");
+        touchRedefinedMethodInBacktrace(t1);
+
+        System.out.println("checking backtrace for throwable from methodToDelete");
+        touchRedefinedMethodInBacktrace(t2);
     }
 
     private void doMethodInBacktraceTestB() throws Exception {
@@ -115,6 +123,10 @@ public class RedefineMethodInBacktraceApp {
             if (!(thrownFromMethodToRedefine instanceof RuntimeException)) {
                 throw e;
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("\nTest failed: unexpected exception: " + e.toString());
+            failed = true;
         }
         method = null;
         c = null;
@@ -122,15 +134,49 @@ public class RedefineMethodInBacktraceApp {
         return thrownFromMethodToRedefine;
     }
 
+    private static Throwable getThrowableFromMethodToDelete() throws Exception {
+        Class<RedefineMethodInBacktraceTarget> c =
+                RedefineMethodInBacktraceTarget.class;
+        Method method = c.getMethod("callMethodToDelete");
+
+        Throwable thrownFromMethodToDelete = null;
+        try {
+            method.invoke(null);
+        } catch (InvocationTargetException e) {
+            thrownFromMethodToDelete = e.getCause();
+            if (!(thrownFromMethodToDelete instanceof RuntimeException)) {
+                throw e;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("\nTest failed: unexpected exception: " + e.toString());
+            failed = true;
+        }
+        return thrownFromMethodToDelete;
+    }
+
+
     private static void doClassUnloading() {
         // This will clean out old, unused redefined methods.
         System.gc();
     }
 
     private static void touchRedefinedMethodInBacktrace(Throwable throwable) {
+        throwable.printStackTrace();
         // Make sure that we can convert the backtrace, which is referring to
         // the redefined method, to a  StrackTraceElement[] without crashing.
-        throwable.getStackTrace();
+        StackTraceElement[] stackTrace = throwable.getStackTrace();
+        for (int i = 0; i < stackTrace.length; i++) {
+          StackTraceElement frame = stackTrace[i];
+          if (frame.getClassName() == null) {
+              System.out.println("\nTest failed: trace[" + i + "].getClassName() returned null");
+              failed = true;
+          }
+          if (frame.getMethodName() == null) {
+              System.out.println("\nTest failed: trace[" + i + "].getMethodName() returned null");
+              failed = true;
+          }
+        }
     }
 
     private static void doRedefine(Class<?> clazz) throws Exception {

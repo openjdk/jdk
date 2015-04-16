@@ -77,7 +77,7 @@ fi
 
 cat output.log
 
-MESG="Exception"
+MESG="Test failed"
 grep "$MESG" output.log
 result=$?
 if [ "$result" = 0 ]; then
