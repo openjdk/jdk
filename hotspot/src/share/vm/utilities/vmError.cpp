@@ -217,7 +217,7 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 bool VMError::coredump_status;
 char VMError::coredump_message[O_BUFLEN];
 
-void VMError::report_coredump_status(const char* message, bool status) {
+void VMError::record_coredump_status(const char* message, bool status) {
   coredump_status = status;
   strncpy(coredump_message, message, sizeof(coredump_message));
   coredump_message[sizeof(coredump_message)-1] = 0;
@@ -525,10 +525,14 @@ void VMError::report(outputStream* st) {
      }
   STEP(63, "(printing core file information)")
     st->print("# ");
-    if (coredump_status) {
-      st->print("Core dump written. Default location: %s", coredump_message);
+    if (CreateCoredumpOnCrash) {
+      if (coredump_status) {
+        st->print("Core dump will be written. %s", coredump_message);
+      } else {
+        st->print("No core dump will be written. %s", coredump_message);
+      }
     } else {
-      st->print("Failed to write core dump. %s", coredump_message);
+      st->print("CreateCoredumpOnCrash turned off, no core file dumped");
     }
     st->cr();
     st->print_cr("#");
@@ -918,7 +922,7 @@ void VMError::report_and_die() {
   static bool transmit_report_done = false; // done error reporting
 
   if (SuppressFatalErrorMessage) {
-      os::abort();
+      os::abort(CreateCoredumpOnCrash);
   }
   jlong mytid = os::current_thread_id();
   if (first_error == NULL &&
@@ -936,8 +940,7 @@ void VMError::report_and_die() {
       ShowMessageBoxOnError = false;
     }
 
-    // Write a minidump on Windows, check core dump limits on Linux/Solaris
-    os::check_or_create_dump(_siginfo, _context, buffer, sizeof(buffer));
+    os::check_dump_limit(buffer, sizeof(buffer));
 
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
@@ -1108,7 +1111,7 @@ void VMError::report_and_die() {
     if (!skip_os_abort) {
       skip_os_abort = true;
       bool dump_core = should_report_bug(first_error->_id);
-      os::abort(dump_core);
+      os::abort(dump_core && CreateCoredumpOnCrash, _siginfo, _context);
     }
 
     // if os::abort() doesn't abort, try os::die();

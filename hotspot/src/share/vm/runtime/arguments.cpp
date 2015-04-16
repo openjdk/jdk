@@ -3241,6 +3241,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           "ManagementServer is not supported in this VM.\n");
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
+    // CreateMinidumpOnCrash is removed, and replaced by CreateCoredumpOnCrash
+    } else if (match_option(option, "-XX:+CreateMinidumpOnCrash")) {
+      FLAG_SET_CMDLINE(bool, CreateCoredumpOnCrash, true);
+      jio_fprintf(defaultStream::output_stream(),
+          "CreateMinidumpOnCrash is replaced by CreateCoredumpOnCrash: CreateCoredumpOnCrash is on\n");
+    } else if (match_option(option, "-XX:-CreateMinidumpOnCrash")) {
+      FLAG_SET_CMDLINE(bool, CreateCoredumpOnCrash, false);
+      jio_fprintf(defaultStream::output_stream(),
+          "CreateMinidumpOnCrash is replaced by CreateCoredumpOnCrash: CreateCoredumpOnCrash is off\n");
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
