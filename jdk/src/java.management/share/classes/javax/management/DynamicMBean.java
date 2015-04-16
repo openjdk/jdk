@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public interface DynamicMBean {
      *
      * @return  The value of the attribute retrieved.
      *
-     * @exception AttributeNotFoundException
+     * @exception AttributeNotFoundException if specified attribute does not exist or cannot be retrieved
      * @exception MBeanException  Wraps a <CODE>java.lang.Exception</CODE> thrown by the MBean's getter.
      * @exception ReflectionException  Wraps a <CODE>java.lang.Exception</CODE> thrown while trying to invoke the getter.
      *
@@ -58,8 +58,8 @@ public interface DynamicMBean {
      * @param attribute The identification of the attribute to
      * be set and  the value it is to be set to.
      *
-     * @exception AttributeNotFoundException
-     * @exception InvalidAttributeValueException
+     * @exception AttributeNotFoundException if specified attribute does not exist or cannot be retrieved
+     * @exception InvalidAttributeValueException if value specified is not valid for the attribute
      * @exception MBeanException Wraps a <CODE>java.lang.Exception</CODE> thrown by the MBean's setter.
      * @exception ReflectionException Wraps a <CODE>java.lang.Exception</CODE> thrown while trying to invoke the MBean's setter.
      *
