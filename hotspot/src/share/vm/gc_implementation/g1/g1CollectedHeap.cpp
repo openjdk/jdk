@@ -3109,12 +3109,6 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
       // print_extended_on() instead of print_on().
       print_extended_on(gclog_or_tty);
       gclog_or_tty->cr();
-#ifndef PRODUCT
-      if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
-        concurrent_mark()->print_reachable("at-verification-failure",
-                                           vo, false /* all */);
-      }
-#endif
       gclog_or_tty->flush();
     }
     guarantee(!failures, "there should not have been any failures");
