@@ -136,13 +136,6 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         macosx-all
 
 ############################################################################
 
-# jdk_management
-
-# 8058492
-java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
-
-############################################################################
-
 # jdk_jmx
 
 # 8030957
