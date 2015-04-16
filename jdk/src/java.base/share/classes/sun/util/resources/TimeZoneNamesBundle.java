@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -61,26 +62,6 @@ import java.util.Set;
 public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
 
     /**
-     * Returns a String array containing time zone names. The String array has
-     * at most size elements.
-     *
-     * @param key  the time zone ID for which names are obtained
-     * @param size the requested size of array for names
-     * @return a String array containing names
-     */
-    public String[] getStringArray(String key, int size) {
-        String[] names = handleGetObject(key, size);
-        if ((names == null || names.length != size) && parent != null) {
-            names = ((TimeZoneNamesBundle)parent).getStringArray(key, size);
-        }
-        if (names == null) {
-            throw new MissingResourceException("no time zone names", getClass().getName(), key);
-        }
-        return names;
-
-    }
-
-    /**
      * Maps time zone IDs to locale-specific names.
      * The value returned is an array of five strings:
      * <ul>
@@ -89,6 +70,8 @@ public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
      * <li>The short name of the time zone in standard time (localized).
      * <li>The long name of the time zone in daylight savings time (localized).
      * <li>The short name of the time zone in daylight savings time (localized).
+     * <li>The long name of the time zone in generic form (localized).
+     * <li>The short name of the time zone in generic form (localized).
      * </ul>
      * The localized names come from the subclasses's
      * <code>getContents</code> implementations, while the time zone
@@ -96,16 +79,12 @@ public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
      */
     @Override
     public Object handleGetObject(String key) {
-        return handleGetObject(key, 5);
-    }
-
-    private String[] handleGetObject(String key, int n) {
         String[] contents = (String[]) super.handleGetObject(key);
-        if (contents == null) {
+        if (Objects.isNull(contents)) {
             return null;
         }
-        int clen = Math.min(n - 1, contents.length);
-        String[] tmpobj = new String[clen+1];
+        int clen = contents.length;
+        String[] tmpobj = new String[7];
         tmpobj[0] = key;
         System.arraycopy(contents, 0, tmpobj, 1, clen);
         return tmpobj;
