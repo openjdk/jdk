@@ -3632,23 +3632,11 @@ static inline void generate_satb_log_enqueue_if_necessary(bool with_frame) {
     if (satb_log_enqueue_with_frame == 0) {
       generate_satb_log_enqueue(with_frame);
       assert(satb_log_enqueue_with_frame != 0, "postcondition.");
-      if (G1SATBPrintStubs) {
-        tty->print_cr("Generated with-frame satb enqueue:");
-        Disassembler::decode((u_char*)satb_log_enqueue_with_frame,
-                             satb_log_enqueue_with_frame_end,
-                             tty);
-      }
     }
   } else {
     if (satb_log_enqueue_frameless == 0) {
       generate_satb_log_enqueue(with_frame);
       assert(satb_log_enqueue_frameless != 0, "postcondition.");
-      if (G1SATBPrintStubs) {
-        tty->print_cr("Generated frameless satb enqueue:");
-        Disassembler::decode((u_char*)satb_log_enqueue_frameless,
-                             satb_log_enqueue_frameless_end,
-                             tty);
-      }
     }
   }
 }
@@ -3841,12 +3829,6 @@ generate_dirty_card_log_enqueue_if_necessary(jbyte* byte_map_base) {
   if (dirty_card_log_enqueue == 0) {
     generate_dirty_card_log_enqueue(byte_map_base);
     assert(dirty_card_log_enqueue != 0, "postcondition.");
-    if (G1SATBPrintStubs) {
-      tty->print_cr("Generated dirty_card enqueue:");
-      Disassembler::decode((u_char*)dirty_card_log_enqueue,
-                           dirty_card_log_enqueue_end,
-                           tty);
-    }
   }
 }
 
