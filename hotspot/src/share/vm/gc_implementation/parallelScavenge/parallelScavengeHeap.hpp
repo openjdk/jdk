@@ -74,7 +74,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* mem_allocate_old_gen(size_t size);
 
  public:
-  ParallelScavengeHeap() : CollectedHeap(), _death_march_count(0) { }
+  ParallelScavengeHeap(GenerationSizer* policy) :
+    CollectedHeap(), _collector_policy(policy), _death_march_count(0) { }
 
   // For use by VM operations
   enum CollectionType {
