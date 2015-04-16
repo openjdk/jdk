@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,7 +387,7 @@ public abstract class Monitor
      *
      * @return The name of the monitor MBean registered.
      *
-     * @exception Exception
+     * @exception Exception if something goes wrong
      */
     public ObjectName preRegister(MBeanServer server, ObjectName name)
         throws Exception {
@@ -416,7 +416,7 @@ public abstract class Monitor
      * <P>
      * Stops the monitor.
      *
-     * @exception Exception
+     * @exception Exception if something goes wrong
      */
     public void preDeregister() throws Exception {
 
