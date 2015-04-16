@@ -555,7 +555,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(GenerationSpec,              _init_size,                                    size_t)                                \
   nonstatic_field(GenerationSpec,              _max_size,                                     size_t)                                \
                                                                                                                                      \
-    static_field(GenCollectedHeap,             _gch,                                          GenCollectedHeap*)                     \
   nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
   nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
                                                                                                                                      \
