@@ -777,11 +777,11 @@ void LinkResolver::resolve_field(fieldDescriptor& fd, KlassHandle resolved_klass
                                  TRAPS) {
   assert(byte == Bytecodes::_getstatic || byte == Bytecodes::_putstatic ||
          byte == Bytecodes::_getfield  || byte == Bytecodes::_putfield  ||
+         byte == Bytecodes::_nofast_getfield  || byte == Bytecodes::_nofast_putfield  ||
          (byte == Bytecodes::_nop && !check_access), "bad field access bytecode");
 
   bool is_static = (byte == Bytecodes::_getstatic || byte == Bytecodes::_putstatic);
-  bool is_put    = (byte == Bytecodes::_putfield  || byte == Bytecodes::_putstatic);
-
+  bool is_put    = (byte == Bytecodes::_putfield  || byte == Bytecodes::_putstatic || byte == Bytecodes::_nofast_putfield);
   // Check if there's a resolved klass containing the field
   if (resolved_klass.is_null()) {
     ResourceMark rm(THREAD);

@@ -47,7 +47,7 @@
 //
 
 void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
   PSScavengeRootsClosure roots_closure(pm);
@@ -118,7 +118,7 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
 //
 
 void ThreadRootsTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
   PSScavengeRootsClosure roots_closure(pm);
@@ -143,7 +143,7 @@ StealTask::StealTask(ParallelTaskTerminator* t) :
   _terminator(t) {}
 
 void StealTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm =
     PSPromotionManager::gc_thread_promotion_manager(which);
@@ -181,10 +181,8 @@ void OldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
 
   {
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
-
-    assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
     CardTableExtension* card_table =
-      barrier_set_cast<CardTableExtension>(Universe::heap()->barrier_set());
+      barrier_set_cast<CardTableExtension>(ParallelScavengeHeap::heap()->barrier_set());
 
     card_table->scavenge_contents_parallel(_gen->start_array(),
                                            _gen->object_space(),

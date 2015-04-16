@@ -559,6 +559,7 @@
   template(startRemoteAgent_name,                      "startRemoteManagementAgent")                              \
   template(startLocalAgent_name,                       "startLocalManagementAgent")                               \
   template(stopRemoteAgent_name,                       "stopRemoteManagementAgent")                               \
+  template(getAgentStatus_name,                        "getManagementAgentStatus")                                \
   template(java_lang_management_ThreadInfo_constructor_signature, "(Ljava/lang/Thread;ILjava/lang/Object;Ljava/lang/Thread;JJJJ[Ljava/lang/StackTraceElement;)V") \
   template(java_lang_management_ThreadInfo_with_locks_constructor_signature, "(Ljava/lang/Thread;ILjava/lang/Object;Ljava/lang/Thread;JJJJ[Ljava/lang/StackTraceElement;[Ljava/lang/Object;[I[Ljava/lang/Object;)V") \
   template(long_long_long_long_void_signature,         "(JJJJ)V")                                                 \

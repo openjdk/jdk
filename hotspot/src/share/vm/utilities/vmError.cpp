@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,7 +768,7 @@ void VMError::report(outputStream* st) {
   STEP(220, "(printing environment variables)" )
 
      if (_verbose) {
-       os::print_environment_variables(st, env_list, buf, sizeof(buf));
+       os::print_environment_variables(st, env_list);
        st->cr();
      }
 

@@ -242,6 +242,9 @@ void Arguments::init_version_specific_system_properties() {
  * and ignoring the value.  Once the JDK version reaches the 'accept_until'
  * limit, we flatly refuse to admit the existence of the flag.  This allows
  * a flag to die correctly over JDK releases using HSX.
+ * But now that HSX is no longer supported only options with a future
+ * accept_until value need to be listed, and the list can be pruned
+ * on each major release.
  */
 typedef struct {
   const char* name;
@@ -250,63 +253,8 @@ typedef struct {
 } ObsoleteFlag;
 
 static ObsoleteFlag obsolete_jvm_flags[] = {
-  { "UseTrainGC",                    JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "UseSpecialLargeObjectHandling", JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "UseOversizedCarHandling",       JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "TraceCarAllocation",            JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "PrintTrainGCProcessingStats",   JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "LogOfCarSpaceSize",             JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "OversizedCarThreshold",         JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "MinTickInterval",               JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "DefaultTickInterval",           JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "MaxTickInterval",               JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "DelayTickAdjustment",           JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "ProcessingToTenuringRatio",     JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "MinTrainLength",                JDK_Version::jdk(5), JDK_Version::jdk(7) },
-  { "AppendRatio",         JDK_Version::jdk_update(6,10), JDK_Version::jdk(7) },
-  { "DefaultMaxRAM",       JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
-  { "DefaultInitialRAMFraction",
-                           JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
-  { "UseDepthFirstScavengeOrder",
-                           JDK_Version::jdk_update(6,22), JDK_Version::jdk(7) },
-  { "HandlePromotionFailure",
-                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
-  { "MaxLiveObjectEvacuationRatio",
-                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
-  { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
-  { "UseParallelOldGCCompacting",
-                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
-  { "UseParallelDensePrefixUpdate",
-                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
-  { "UseParallelOldGCDensePrefix",
-                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
-  { "AllowTransitionalJSR292",       JDK_Version::jdk(7), JDK_Version::jdk(8) },
-  { "UseCompressedStrings",          JDK_Version::jdk(7), JDK_Version::jdk(8) },
-  { "CMSPermGenPrecleaningEnabled", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "CMSTriggerPermRatio", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "CMSInitiatingPermOccupancyFraction", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "AdaptivePermSizeWeight", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "PermGenPadding", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "PermMarkSweepDeadRatio", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "PermSize", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "MaxPermSize", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "MinPermHeapExpansion", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "MaxPermHeapExpansion", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
-  { "CMSRevisitStackSize",           JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "PrintRevisitStats",             JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseVectoredExceptions",         JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseSplitVerifier",              JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseISM",                        JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UsePermISM",                    JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseMPSS",                       JDK_Version::jdk(8), JDK_Version::jdk(9) },
-  { "UseStringCache",                JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseOldInlining",                JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "SafepointPollOffset",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
-#ifdef PRODUCT
-  { "DesiredMethodLimit",
-                           JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
-#endif // PRODUCT
-  { "UseVMInterruptibleIO",          JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseBoundThreads",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "DefaultThreadPriority",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "NoYieldsInMicrolock",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
@@ -1910,15 +1858,8 @@ void Arguments::set_heap_size() {
   }
 }
 
-// This must be called after ergonomics because we want bytecode rewriting
-// if the server compiler is used, or if UseSharedSpaces is disabled.
+// This must be called after ergonomics.
 void Arguments::set_bytecode_flags() {
-  // Better not attempt to store into a read-only space.
-  if (UseSharedSpaces) {
-    FLAG_SET_DEFAULT(RewriteBytecodes, false);
-    FLAG_SET_DEFAULT(RewriteFrequentPairs, false);
-  }
-
   if (!RewriteBytecodes) {
     FLAG_SET_DEFAULT(RewriteFrequentPairs, false);
   }
@@ -3223,7 +3164,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       uintx max_tenuring_thresh = 0;
       if(!parse_uintx(tail, &max_tenuring_thresh, 0)) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid MaxTenuringThreshold: %s\n", option->optionString);
+          "Improperly specified VM option 'MaxTenuringThreshold=%s'\n", tail);
+        return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, max_tenuring_thresh);
 
@@ -3528,15 +3470,16 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   if (os::is_headless_jre()) {
     const char* headless = Arguments::get_property("java.awt.headless");
     if (headless == NULL) {
-      char envbuffer[128];
-      if (!os::getenv("JAVA_AWT_HEADLESS", envbuffer, sizeof(envbuffer))) {
+      const char *headless_env = ::getenv("JAVA_AWT_HEADLESS");
+      if (headless_env == NULL) {
         if (!add_property("java.awt.headless=true")) {
           return JNI_ENOMEM;
         }
       } else {
         char buffer[256];
-        strcpy(buffer, "java.awt.headless=");
-        strcat(buffer, envbuffer);
+        const char *key = "java.awt.headless=";
+        strcpy(buffer, key);
+        strncat(buffer, headless_env, 256 - strlen(key) - 1);
         if (!add_property(buffer)) {
           return JNI_ENOMEM;
         }
@@ -3567,75 +3510,95 @@ jint Arguments::parse_java_tool_options_environment_variable(SysClassPath* scp_p
 }
 
 jint Arguments::parse_options_environment_variable(const char* name, SysClassPath* scp_p, bool* scp_assembly_required_p) {
-  const int N_MAX_OPTIONS = 64;
-  const int OPTION_BUFFER_SIZE = 1024;
-  char buffer[OPTION_BUFFER_SIZE];
+  char *buffer = ::getenv(name);
 
-  // The variable will be ignored if it exceeds the length of the buffer.
   // Don't check this variable if user has special privileges
   // (e.g. unix su command).
-  if (os::getenv(name, buffer, sizeof(buffer)) &&
-      !os::have_special_privileges()) {
-    JavaVMOption options[N_MAX_OPTIONS];      // Construct option array
-    jio_fprintf(defaultStream::error_stream(),
-                "Picked up %s: %s\n", name, buffer);
-    char* rd = buffer;                        // pointer to the input string (rd)
-    int i;
-    for (i = 0; i < N_MAX_OPTIONS;) {         // repeat for all options in the input string
-      while (isspace(*rd)) rd++;              // skip whitespace
-      if (*rd == 0) break;                    // we re done when the input string is read completely
-
-      // The output, option string, overwrites the input string.
-      // Because of quoting, the pointer to the option string (wrt) may lag the pointer to
-      // input string (rd).
-      char* wrt = rd;
-
-      options[i++].optionString = wrt;        // Fill in option
-      while (*rd != 0 && !isspace(*rd)) {     // unquoted strings terminate with a space or NULL
-        if (*rd == '\'' || *rd == '"') {      // handle a quoted string
-          int quote = *rd;                    // matching quote to look for
-          rd++;                               // don't copy open quote
-          while (*rd != quote) {              // include everything (even spaces) up until quote
-            if (*rd == 0) {                   // string termination means unmatched string
-              jio_fprintf(defaultStream::error_stream(),
-                          "Unmatched quote in %s\n", name);
-              return JNI_ERR;
-            }
-            *wrt++ = *rd++;                   // copy to option string
-          }
-          rd++;                               // don't copy close quote
-        } else {
-          *wrt++ = *rd++;                     // copy to option string
-        }
-      }
-      // Need to check if we're done before writing a NULL,
-      // because the write could be to the byte that rd is pointing to.
-      if (*rd++ == 0) {
-        *wrt = 0;
-        break;
-      }
-      *wrt = 0;                               // Zero terminate option
-    }
-    // Construct JavaVMInitArgs structure and parse as if it was part of the command line
-    JavaVMInitArgs vm_args;
-    vm_args.version = JNI_VERSION_1_2;
-    vm_args.options = options;
-    vm_args.nOptions = i;
-    vm_args.ignoreUnrecognized = IgnoreUnrecognizedVMOptions;
-
-    if (PrintVMOptions) {
-      const char* tail;
-      for (int i = 0; i < vm_args.nOptions; i++) {
-        const JavaVMOption *option = vm_args.options + i;
-        if (match_option(option, "-XX:", &tail)) {
-          logOption(tail);
-        }
-      }
-    }
-
-    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, Flag::ENVIRON_VAR));
+  if (buffer == NULL || os::have_special_privileges()) {
+    return JNI_OK;
   }
-  return JNI_OK;
+
+  if ((buffer = os::strdup(buffer)) == NULL) {
+    return JNI_ENOMEM;
+  }
+
+  GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JavaVMOption>(2, true);    // Construct option array
+  jio_fprintf(defaultStream::error_stream(),
+              "Picked up %s: %s\n", name, buffer);
+  char* rd = buffer;                        // pointer to the input string (rd)
+  while (true) {                            // repeat for all options in the input string
+    while (isspace(*rd)) rd++;              // skip whitespace
+    if (*rd == 0) break;                    // we re done when the input string is read completely
+
+    // The output, option string, overwrites the input string.
+    // Because of quoting, the pointer to the option string (wrt) may lag the pointer to
+    // input string (rd).
+    char* wrt = rd;
+
+    JavaVMOption option;
+    option.optionString = wrt;
+    options->append(option);                // Fill in option
+    while (*rd != 0 && !isspace(*rd)) {     // unquoted strings terminate with a space or NULL
+      if (*rd == '\'' || *rd == '"') {      // handle a quoted string
+        int quote = *rd;                    // matching quote to look for
+        rd++;                               // don't copy open quote
+        while (*rd != quote) {              // include everything (even spaces) up until quote
+          if (*rd == 0) {                   // string termination means unmatched string
+            jio_fprintf(defaultStream::error_stream(),
+                        "Unmatched quote in %s\n", name);
+            delete options;
+            os::free(buffer);
+            return JNI_ERR;
+          }
+          *wrt++ = *rd++;                   // copy to option string
+        }
+        rd++;                               // don't copy close quote
+      } else {
+        *wrt++ = *rd++;                     // copy to option string
+      }
+    }
+    // Need to check if we're done before writing a NULL,
+    // because the write could be to the byte that rd is pointing to.
+    if (*rd++ == 0) {
+      *wrt = 0;
+      break;
+    }
+    *wrt = 0;                               // Zero terminate option
+  }
+  JavaVMOption* options_arr =
+      NEW_C_HEAP_ARRAY_RETURN_NULL(JavaVMOption, options->length(), mtInternal);
+  if (options_arr == NULL) {
+    delete options;
+    os::free(buffer);
+    return JNI_ENOMEM;
+  }
+  for (int i = 0; i < options->length(); i++) {
+    options_arr[i] = options->at(i);
+  }
+
+  // Construct JavaVMInitArgs structure and parse as if it was part of the command line
+  JavaVMInitArgs vm_args;
+  vm_args.version = JNI_VERSION_1_2;
+  vm_args.options = options_arr;
+  vm_args.nOptions = options->length();
+  vm_args.ignoreUnrecognized = IgnoreUnrecognizedVMOptions;
+
+  if (PrintVMOptions) {
+    const char* tail;
+    for (int i = 0; i < vm_args.nOptions; i++) {
+      const JavaVMOption *option = vm_args.options + i;
+      if (match_option(option, "-XX:", &tail)) {
+        logOption(tail);
+      }
+    }
+  }
+
+  jint result = parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p,
+                                       Flag::ENVIRON_VAR);
+  FREE_C_HEAP_ARRAY(JavaVMOption, options_arr);
+  delete options;
+  os::free(buffer);
+  return result;
 }
 
 void Arguments::set_shared_spaces_flags() {

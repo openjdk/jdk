@@ -34,6 +34,7 @@
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -46,6 +47,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -115,7 +117,7 @@ void CMBitMapRO::print_on_error(outputStream* st, const char* prefix) const {
 }
 
 size_t CMBitMap::compute_size(size_t heap_size) {
-  return heap_size / mark_distance();
+  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
 }
 
 size_t CMBitMap::mark_distance() {
@@ -1325,7 +1327,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
@@ -1352,7 +1354,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
-      Universe::heap()->prepare_for_verify();
+      g1h->prepare_for_verify();
       Universe::verify(VerifyOption_G1UsePrevMarking,
                        " VerifyDuringGC:(overflow)");
     }
@@ -1378,7 +1380,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
 
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
-      Universe::heap()->prepare_for_verify();
+      g1h->prepare_for_verify();
       Universe::verify(VerifyOption_G1UseNextMarking,
                        " VerifyDuringGC:(after)");
     }
@@ -1986,13 +1988,13 @@ void ConcurrentMark::cleanup() {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
   g1h->check_bitmaps("Cleanup Start");
 
-  G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
+  G1CollectorPolicy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
@@ -2097,7 +2099,7 @@ void ConcurrentMark::cleanup() {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(after)");
   }
@@ -2650,7 +2652,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   g1h->ensure_parsability(false);
 
-  G1CollectedHeap::StrongRootsScope srs(g1h);
+  StrongRootsScope srs;
   // this is remark, so we'll use up all active threads
   uint active_workers = g1h->workers()->active_workers();
   if (active_workers == 0) {
@@ -3392,21 +3394,28 @@ void ConcurrentMark::print_finger() {
 }
 #endif
 
-void CMTask::scan_object(oop obj) {
+template<bool scan>
+inline void CMTask::process_grey_object(oop obj) {
+  assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
   assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
 
   if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] we're scanning object "PTR_FORMAT,
+    gclog_or_tty->print_cr("[%u] processing grey object " PTR_FORMAT,
                            _worker_id, p2i((void*) obj));
   }
 
   size_t obj_size = obj->size();
   _words_scanned += obj_size;
 
-  obj->oop_iterate(_cm_oop_closure);
+  if (scan) {
+    obj->oop_iterate(_cm_oop_closure);
+  }
   statsOnly( ++_objs_scanned );
   check_limits();
 }
+
+template void CMTask::process_grey_object<true>(oop);
+template void CMTask::process_grey_object<false>(oop);
 
 // Closure for iteration over bitmaps
 class CMBitMapClosure : public BitMapClosure {

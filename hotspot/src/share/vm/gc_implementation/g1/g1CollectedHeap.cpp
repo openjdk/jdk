@@ -70,6 +70,7 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/stack.inline.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
@@ -1728,7 +1729,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
-  SharedHeap(),
+  CollectedHeap(),
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
   _into_cset_dirty_card_queue_set(false),
@@ -1746,7 +1747,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
   _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
   _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
-  _humongous_is_live(),
+  _humongous_reclaim_candidates(),
   _has_humongous_reclaim_candidates(false),
   _free_regions_coming(false),
   _young_list(new YoungList(this)),
@@ -1769,6 +1770,11 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()) {
 
   _g1h = this;
+
+  _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
+                          /* are_GC_task_threads */true,
+                          /* are_ConcurrentGC_threads */false);
+  _workers->initialize_workers();
 
   _allocator = G1Allocator::create_allocator(_g1h);
   _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
@@ -1795,6 +1801,26 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   NOT_PRODUCT(reset_evacuation_should_fail();)
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
+}
+
+G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
+                                                                 size_t size,
+                                                                 size_t translation_factor) {
+  size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
+  // Allocate a new reserved space, preferring to use large pages.
+  ReservedSpace rs(size, preferred_page_size);
+  G1RegionToSpaceMapper* result  =
+    G1RegionToSpaceMapper::create_mapper(rs,
+                                         size,
+                                         rs.alignment(),
+                                         HeapRegion::GrainBytes,
+                                         translation_factor,
+                                         mtGC);
+  if (TracePageSizes) {
+    gclog_or_tty->print_cr("G1 '%s': pg_sz=" SIZE_FORMAT " base=" PTR_FORMAT " size=" SIZE_FORMAT " alignment=" SIZE_FORMAT " reqsize=" SIZE_FORMAT,
+                           description, preferred_page_size, p2i(rs.base()), rs.size(), rs.alignment(), size);
+  }
+  return result;
 }
 
 jint G1CollectedHeap::initialize() {
@@ -1864,57 +1890,35 @@ jint G1CollectedHeap::initialize() {
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(g1_rs,
+                                         g1_rs.size(),
                                          UseLargePages ? os::large_page_size() : os::vm_page_size(),
                                          HeapRegion::GrainBytes,
                                          1,
                                          mtJavaHeap);
   heap_storage->set_mapping_changed_listener(&_listener);
 
-  // Reserve space for the block offset table. We do not support automatic uncommit
-  // for the card table at this time. BOT only.
-  ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
+  // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
-    G1RegionToSpaceMapper::create_mapper(bot_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Block offset table",
+                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
-    G1RegionToSpaceMapper::create_mapper(cardtable_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Card table",
+                             G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
-  // Reserve space for the card counts table.
-  ReservedSpace card_counts_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* card_counts_storage =
-    G1RegionToSpaceMapper::create_mapper(card_counts_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
-                                         mtGC);
+    create_aux_memory_mapper("Card counts table",
+                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetSharedArray::N_bytes);
 
-  // Reserve space for prev and next bitmap.
   size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
-
-  ReservedSpace prev_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
   G1RegionToSpaceMapper* prev_bitmap_storage =
-    G1RegionToSpaceMapper::create_mapper(prev_bitmap_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         CMBitMap::mark_distance(),
-                                         mtGC);
-
-  ReservedSpace next_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
+    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::mark_distance());
   G1RegionToSpaceMapper* next_bitmap_storage =
-    G1RegionToSpaceMapper::create_mapper(next_bitmap_rs,
-                                         os::vm_page_size(),
-                                         HeapRegion::GrainBytes,
-                                         CMBitMap::mark_distance(),
-                                         mtGC);
+    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::mark_distance());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);
@@ -1937,8 +1941,14 @@ jint G1CollectedHeap::initialize() {
 
   _g1h = this;
 
-  _in_cset_fast_test.initialize(_hrm.reserved().start(), _hrm.reserved().end(), HeapRegion::GrainBytes);
-  _humongous_is_live.initialize(_hrm.reserved().start(), _hrm.reserved().end(), HeapRegion::GrainBytes);
+  {
+    HeapWord* start = _hrm.reserved().start();
+    HeapWord* end = _hrm.reserved().end();
+    size_t granularity = HeapRegion::GrainBytes;
+
+    _in_cset_fast_test.initialize(start, end, granularity);
+    _humongous_reclaim_candidates.initialize(start, end, granularity);
+  }
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -2026,13 +2036,13 @@ void G1CollectedHeap::stop() {
   }
 }
 
-void G1CollectedHeap::clear_humongous_is_live_table() {
-  guarantee(G1EagerReclaimHumongousObjects, "Should only be called if true");
-  _humongous_is_live.clear();
-}
-
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
+}
+
+void G1CollectedHeap::post_initialize() {
+  CollectedHeap::post_initialize();
+  ref_processing_init();
 }
 
 void G1CollectedHeap::ref_processing_init() {
@@ -2071,7 +2081,6 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
-  SharedHeap::ref_processing_init();
   MemRegion mr = reserved_region();
 
   // Concurrent Mark ref processor
@@ -2128,6 +2137,7 @@ void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
 }
 
 #ifndef PRODUCT
+
 class CheckGCTimeStampsHRClosure : public HeapRegionClosure {
 private:
   unsigned _gc_time_stamp;
@@ -2462,11 +2472,6 @@ public:
   }
 };
 
-void G1CollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
-  IterateOopClosureRegionClosure blk(cl);
-  heap_region_iterate(&blk);
-}
-
 // Iterates an ObjectClosure over all objects within a HeapRegion.
 
 class IterateObjectClosureRegionClosure: public HeapRegionClosure {
@@ -2483,23 +2488,6 @@ public:
 
 void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
   IterateObjectClosureRegionClosure blk(cl);
-  heap_region_iterate(&blk);
-}
-
-// Calls a SpaceClosure on a HeapRegion.
-
-class SpaceClosureRegionClosure: public HeapRegionClosure {
-  SpaceClosure* _cl;
-public:
-  SpaceClosureRegionClosure(SpaceClosure* cl) : _cl(cl) {}
-  bool doHeapRegion(HeapRegion* r) {
-    _cl->do_space(r);
-    return false;
-  }
-};
-
-void G1CollectedHeap::space_iterate(SpaceClosure* cl) {
-  SpaceClosureRegionClosure blk(cl);
   heap_region_iterate(&blk);
 }
 
@@ -2639,23 +2627,19 @@ HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) cons
   return result;
 }
 
-Space* G1CollectedHeap::space_containing(const void* addr) const {
-  return heap_region_containing(addr);
-}
-
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_start(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_start(addr);
 }
 
 size_t G1CollectedHeap::block_size(const HeapWord* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_size(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_size(addr);
 }
 
 bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
-  Space* sp = space_containing(addr);
-  return sp->block_is_obj(addr);
+  HeapRegion* hr = heap_region_containing(addr);
+  return hr->block_is_obj(addr);
 }
 
 bool G1CollectedHeap::supports_tlab_allocation() const {
@@ -3336,8 +3320,8 @@ void G1CollectedHeap::print_all_rsets() {
 #endif // PRODUCT
 
 G1CollectedHeap* G1CollectedHeap::heap() {
-  assert(_sh->kind() == CollectedHeap::G1CollectedHeap,
-         "not a garbage-first heap");
+  assert(_g1h != NULL, "Uninitialized access to G1CollectedHeap::heap()");
+  assert(_g1h->kind() == CollectedHeap::G1CollectedHeap, "Not a G1 heap");
   return _g1h;
 }
 
@@ -3434,12 +3418,6 @@ size_t G1CollectedHeap::cards_scanned() {
   return g1_rem_set()->cardsScanned();
 }
 
-bool G1CollectedHeap::humongous_region_is_always_live(uint index) {
-  HeapRegion* region = region_at(index);
-  assert(region->is_starts_humongous(), "Must start a humongous object");
-  return oop(region->bottom())->is_objArray() || !region->rem_set()->is_empty();
-}
-
 class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
  private:
   size_t _total_humongous;
@@ -3447,14 +3425,59 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
 
   DirtyCardQueue _dcq;
 
-  bool humongous_region_is_candidate(uint index) {
-    HeapRegion* region = G1CollectedHeap::heap()->region_at(index);
-    assert(region->is_starts_humongous(), "Must start a humongous object");
+  // We don't nominate objects with many remembered set entries, on
+  // the assumption that such objects are likely still live.
+  bool is_remset_small(HeapRegion* region) const {
     HeapRegionRemSet* const rset = region->rem_set();
-    bool const allow_stale_refs = G1EagerReclaimHumongousObjectsWithStaleRefs;
-    return !oop(region->bottom())->is_objArray() &&
-           ((allow_stale_refs && rset->occupancy_less_or_equal_than(G1RSetSparseRegionEntries)) ||
-            (!allow_stale_refs && rset->is_empty()));
+    return G1EagerReclaimHumongousObjectsWithStaleRefs
+      ? rset->occupancy_less_or_equal_than(G1RSetSparseRegionEntries)
+      : rset->is_empty();
+  }
+
+  bool is_typeArray_region(HeapRegion* region) const {
+    return oop(region->bottom())->is_typeArray();
+  }
+
+  bool humongous_region_is_candidate(G1CollectedHeap* heap, HeapRegion* region) const {
+    assert(region->is_starts_humongous(), "Must start a humongous object");
+
+    // Candidate selection must satisfy the following constraints
+    // while concurrent marking is in progress:
+    //
+    // * In order to maintain SATB invariants, an object must not be
+    // reclaimed if it was allocated before the start of marking and
+    // has not had its references scanned.  Such an object must have
+    // its references (including type metadata) scanned to ensure no
+    // live objects are missed by the marking process.  Objects
+    // allocated after the start of concurrent marking don't need to
+    // be scanned.
+    //
+    // * An object must not be reclaimed if it is on the concurrent
+    // mark stack.  Objects allocated after the start of concurrent
+    // marking are never pushed on the mark stack.
+    //
+    // Nominating only objects allocated after the start of concurrent
+    // marking is sufficient to meet both constraints.  This may miss
+    // some objects that satisfy the constraints, but the marking data
+    // structures don't support efficiently performing the needed
+    // additional tests or scrubbing of the mark stack.
+    //
+    // However, we presently only nominate is_typeArray() objects.
+    // A humongous object containing references induces remembered
+    // set entries on other regions.  In order to reclaim such an
+    // object, those remembered sets would need to be cleaned up.
+    //
+    // We also treat is_typeArray() objects specially, allowing them
+    // to be reclaimed even if allocated before the start of
+    // concurrent mark.  For this we rely on mark stack insertion to
+    // exclude is_typeArray() objects, preventing reclaiming an object
+    // that is in the mark stack.  We also rely on the metadata for
+    // such objects to be built-in and so ensured to be kept live.
+    // Frequent allocation and drop of large binary blobs is an
+    // important use case for eager reclaim, and this special handling
+    // may reduce needed headroom.
+
+    return is_typeArray_region(region) && is_remset_small(region);
   }
 
  public:
@@ -3470,14 +3493,17 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
     }
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    uint region_idx = r->hrm_index();
-    bool is_candidate = humongous_region_is_candidate(region_idx);
-    // Is_candidate already filters out humongous object with large remembered sets.
-    // If we have a humongous object with a few remembered sets, we simply flush these
-    // remembered set entries into the DCQS. That will result in automatic
-    // re-evaluation of their remembered set entries during the following evacuation
-    // phase.
+    bool is_candidate = humongous_region_is_candidate(g1h, r);
+    uint rindex = r->hrm_index();
+    g1h->set_humongous_reclaim_candidate(rindex, is_candidate);
     if (is_candidate) {
+      _candidate_humongous++;
+      g1h->register_humongous_region_with_cset(rindex);
+      // Is_candidate already filters out humongous object with large remembered sets.
+      // If we have a humongous object with a few remembered sets, we simply flush these
+      // remembered set entries into the DCQS. That will result in automatic
+      // re-evaluation of their remembered set entries during the following evacuation
+      // phase.
       if (!r->rem_set()->is_empty()) {
         guarantee(r->rem_set()->occupancy_less_or_equal_than(G1RSetSparseRegionEntries),
                   "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
@@ -3499,8 +3525,6 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
         r->rem_set()->clear_locked();
       }
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
-      g1h->register_humongous_region_with_cset(region_idx);
-      _candidate_humongous++;
     }
     _total_humongous++;
 
@@ -3520,6 +3544,7 @@ void G1CollectedHeap::register_humongous_regions_with_cset() {
   }
   double time = os::elapsed_counter();
 
+  // Collect reclaim candidate information and register candidates with cset.
   RegisterHumongousWithInCSetFastTestClosure cl;
   heap_region_iterate(&cl);
 
@@ -3528,10 +3553,6 @@ void G1CollectedHeap::register_humongous_regions_with_cset() {
                                                                   cl.total_humongous(),
                                                                   cl.candidate_humongous());
   _has_humongous_reclaim_candidates = cl.candidate_humongous() > 0;
-
-  if (_has_humongous_reclaim_candidates || G1TraceEagerReclaimHumongousObjects) {
-    clear_humongous_is_live_table();
-  }
 
   // Finally flush all remembered set entries to re-check into the global DCQS.
   cl.flush_rem_set_entries();
@@ -5994,11 +6015,11 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     // required because stale remembered sets might reference locations that
     // are currently allocated into.
     uint region_idx = r->hrm_index();
-    if (g1h->humongous_is_live(region_idx) ||
-        g1h->humongous_region_is_always_live(region_idx)) {
+    if (!g1h->is_humongous_reclaim_candidate(region_idx) ||
+        !r->rem_set()->is_empty()) {
 
       if (G1TraceEagerReclaimHumongousObjects) {
-        gclog_or_tty->print_cr("Live humongous region %u size "SIZE_FORMAT" start "PTR_FORMAT" length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
+        gclog_or_tty->print_cr("Live humongous region %u size "SIZE_FORMAT" start "PTR_FORMAT" length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d reclaim candidate %d type array %d",
                                region_idx,
                                obj->size()*HeapWordSize,
                                r->bottom(),
@@ -6006,20 +6027,21 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                                r->rem_set()->occupied(),
                                r->rem_set()->strong_code_roots_list_length(),
                                next_bitmap->isMarked(r->bottom()),
-                               g1h->humongous_is_live(region_idx),
-                               obj->is_objArray()
+                               g1h->is_humongous_reclaim_candidate(region_idx),
+                               obj->is_typeArray()
                               );
       }
 
       return false;
     }
 
-    guarantee(!obj->is_objArray(),
-              err_msg("Eagerly reclaiming object arrays is not supported, but the object "PTR_FORMAT" is.",
+    guarantee(obj->is_typeArray(),
+              err_msg("Only eagerly reclaiming type arrays is supported, but the object "
+                      PTR_FORMAT " is not.",
                       r->bottom()));
 
     if (G1TraceEagerReclaimHumongousObjects) {
-      gclog_or_tty->print_cr("Dead humongous region %u size "SIZE_FORMAT" start "PTR_FORMAT" length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
+      gclog_or_tty->print_cr("Dead humongous region %u size "SIZE_FORMAT" start "PTR_FORMAT" length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d reclaim candidate %d type array %d",
                              region_idx,
                              obj->size()*HeapWordSize,
                              r->bottom(),
@@ -6027,8 +6049,8 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                              r->rem_set()->occupied(),
                              r->rem_set()->strong_code_roots_list_length(),
                              next_bitmap->isMarked(r->bottom()),
-                             g1h->humongous_is_live(region_idx),
-                             obj->is_objArray()
+                             g1h->is_humongous_reclaim_candidate(region_idx),
+                             obj->is_typeArray()
                             );
     }
     // Need to clear mark bit of the humongous object if already set.
@@ -6163,8 +6185,6 @@ void G1CollectedHeap::wait_while_free_regions_coming() {
 }
 
 void G1CollectedHeap::set_region_short_lived_locked(HeapRegion* hr) {
-  assert(heap_lock_held_for_gc(),
-              "the heap lock should already be held by or for this thread");
   _young_list->push_region(hr);
 }
 

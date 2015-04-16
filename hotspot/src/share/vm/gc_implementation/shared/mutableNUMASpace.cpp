@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/shared/mutableNUMASpace.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
-#include "memory/sharedHeap.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/thread.inline.hpp"

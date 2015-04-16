@@ -29,6 +29,9 @@
 #include "gc_implementation/g1/g1AllocRegion.hpp"
 #include "gc_implementation/g1/g1InCSetState.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_interface/collectedHeap.hpp"
+
+class EvacuationInfo;
 
 // Base class for G1 allocators.
 class G1Allocator : public CHeapObj<mtGC> {

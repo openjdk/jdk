@@ -158,9 +158,6 @@ static pid_t _initial_pid = 0;
 static int SR_signum = SIGUSR2;
 sigset_t SR_sigset;
 
-// Used to protect dlsym() calls
-static pthread_mutex_t dl_mutex;
-
 // Declarations
 static void unpackTime(timespec* absTime, bool isAbsolute, jlong time);
 
@@ -183,20 +180,6 @@ julong os::Linux::available_memory() {
 julong os::physical_memory() {
   return Linux::physical_memory();
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// environment support
-
-bool os::getenv(const char* name, char* buf, int len) {
-  const char* val = ::getenv(name);
-  if (val != NULL && strlen(val) < (size_t)len) {
-    strcpy(buf, val);
-    return true;
-  }
-  if (len > 0) buf[0] = 0;  // return a null string
-  return false;
-}
-
 
 // Return true if user is running as root.
 
@@ -2039,14 +2022,8 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   return result;
 }
 
-// glibc-2.0 libdl is not MT safe.  If you are building with any glibc,
-// chances are you might want to run the generated bits against glibc-2.0
-// libdl.so, so always use locking for any version of glibc.
-//
 void* os::dll_lookup(void* handle, const char* name) {
-  pthread_mutex_lock(&dl_mutex);
   void* res = dlsym(handle, name);
-  pthread_mutex_unlock(&dl_mutex);
   return res;
 }
 
@@ -4654,8 +4631,6 @@ void os::init(void) {
     }
   }
   // else it defaults to CLOCK_REALTIME
-
-  pthread_mutex_init(&dl_mutex, NULL);
 
   // If the pagesize of the VM is greater than 8K determine the appropriate
   // number of initial guard pages.  The user can change this with the

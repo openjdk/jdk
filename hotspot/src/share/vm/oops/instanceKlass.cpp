@@ -28,12 +28,10 @@
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
-#include "memory/genOopClosures.inline.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
@@ -41,7 +39,7 @@
 #include "memory/specialized_oop_closures.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -64,17 +62,6 @@
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/g1OopClosures.inline.hpp"
-#include "gc_implementation/g1/g1RemSet.inline.hpp"
-#include "gc_implementation/g1/heapRegionManager.inline.hpp"
-#include "gc_implementation/parNew/parOopClosures.inline.hpp"
-#include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
-#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -716,23 +703,6 @@ void InstanceKlass::link_methods(TRAPS) {
 
     // Set up method entry points for compiler and interpreter    .
     m->link_method(m, CHECK);
-
-    // This is for JVMTI and unrelated to relocator but the last thing we do
-#ifdef ASSERT
-    if (StressMethodComparator) {
-      ResourceMark rm(THREAD);
-      static int nmc = 0;
-      for (int j = i; j >= 0 && j >= i-4; j--) {
-        if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
-        bool z = MethodComparator::methods_EMCP(m(),
-                   methods()->at(j));
-        if (j == i && !z) {
-          tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
-          assert(z, "method must compare equal to itself");
-        }
-      }
-    }
-#endif //ASSERT
   }
 }
 
@@ -2009,288 +1979,6 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
   return false;
 }
 #endif //PRODUCT
-
-
-// Garbage collection
-
-#ifdef ASSERT
-template <class T> void assert_is_in(T *p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
-    assert(Universe::heap()->is_in(o), "should be in heap");
-  }
-}
-template <class T> void assert_is_in_closed_subset(T *p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
-    assert(Universe::heap()->is_in_closed_subset(o),
-           err_msg("should be in closed *p " INTPTR_FORMAT " " INTPTR_FORMAT, (address)p, (address)o));
-  }
-}
-template <class T> void assert_is_in_reserved(T *p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
-    assert(Universe::heap()->is_in_reserved(o), "should be in reserved");
-  }
-}
-template <class T> void assert_nothing(T *p) {}
-
-#else
-template <class T> void assert_is_in(T *p) {}
-template <class T> void assert_is_in_closed_subset(T *p) {}
-template <class T> void assert_is_in_reserved(T *p) {}
-template <class T> void assert_nothing(T *p) {}
-#endif // ASSERT
-
-//
-// Macros that iterate over areas of oops which are specialized on type of
-// oop pointer either narrow or wide, depending on UseCompressedOops
-//
-// Parameters are:
-//   T         - type of oop to point to (either oop or narrowOop)
-//   start_p   - starting pointer for region to iterate over
-//   count     - number of oops or narrowOops to iterate over
-//   do_oop    - action to perform on each oop (it's arbitrary C code which
-//               makes it more efficient to put in a macro rather than making
-//               it a template function)
-//   assert_fn - assert function which is template function because performance
-//               doesn't matter when enabled.
-#define InstanceKlass_SPECIALIZED_OOP_ITERATE( \
-  T, start_p, count, do_oop,                \
-  assert_fn)                                \
-{                                           \
-  T* p         = (T*)(start_p);             \
-  T* const end = p + (count);               \
-  while (p < end) {                         \
-    (assert_fn)(p);                         \
-    do_oop;                                 \
-    ++p;                                    \
-  }                                         \
-}
-
-#define InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE( \
-  T, start_p, count, do_oop,                \
-  assert_fn)                                \
-{                                           \
-  T* const start = (T*)(start_p);           \
-  T*       p     = start + (count);         \
-  while (start < p) {                       \
-    --p;                                    \
-    (assert_fn)(p);                         \
-    do_oop;                                 \
-  }                                         \
-}
-
-#define InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE( \
-  T, start_p, count, low, high,             \
-  do_oop, assert_fn)                        \
-{                                           \
-  T* const l = (T*)(low);                   \
-  T* const h = (T*)(high);                  \
-  assert(mask_bits((intptr_t)l, sizeof(T)-1) == 0 && \
-         mask_bits((intptr_t)h, sizeof(T)-1) == 0,   \
-         "bounded region must be properly aligned"); \
-  T* p       = (T*)(start_p);               \
-  T* end     = p + (count);                 \
-  if (p < l) p = l;                         \
-  if (end > h) end = h;                     \
-  while (p < end) {                         \
-    (assert_fn)(p);                         \
-    do_oop;                                 \
-    ++p;                                    \
-  }                                         \
-}
-
-
-// The following macros call specialized macros, passing either oop or
-// narrowOop as the specialization type.  These test the UseCompressedOops
-// flag.
-#define InstanceKlass_OOP_MAP_ITERATE(obj, do_oop, assert_fn)            \
-{                                                                        \
-  /* Compute oopmap block range. The common case                         \
-     is nonstatic_oop_map_size == 1. */                                  \
-  OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_count();          \
-  if (UseCompressedOops) {                                               \
-    while (map < end_map) {                                              \
-      InstanceKlass_SPECIALIZED_OOP_ITERATE(narrowOop,                   \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
-        do_oop, assert_fn)                                               \
-      ++map;                                                             \
-    }                                                                    \
-  } else {                                                               \
-    while (map < end_map) {                                              \
-      InstanceKlass_SPECIALIZED_OOP_ITERATE(oop,                         \
-        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
-        do_oop, assert_fn)                                               \
-      ++map;                                                             \
-    }                                                                    \
-  }                                                                      \
-}
-
-#define InstanceKlass_OOP_MAP_REVERSE_ITERATE(obj, do_oop, assert_fn)    \
-{                                                                        \
-  OopMapBlock* const start_map = start_of_nonstatic_oop_maps();          \
-  OopMapBlock* map             = start_map + nonstatic_oop_map_count();  \
-  if (UseCompressedOops) {                                               \
-    while (start_map < map) {                                            \
-      --map;                                                             \
-      InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(narrowOop,           \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
-        do_oop, assert_fn)                                               \
-    }                                                                    \
-  } else {                                                               \
-    while (start_map < map) {                                            \
-      --map;                                                             \
-      InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(oop,                 \
-        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
-        do_oop, assert_fn)                                               \
-    }                                                                    \
-  }                                                                      \
-}
-
-#define InstanceKlass_BOUNDED_OOP_MAP_ITERATE(obj, low, high, do_oop,    \
-                                              assert_fn)                 \
-{                                                                        \
-  /* Compute oopmap block range. The common case is                      \
-     nonstatic_oop_map_size == 1, so we accept the                       \
-     usually non-existent extra overhead of examining                    \
-     all the maps. */                                                    \
-  OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_count();          \
-  if (UseCompressedOops) {                                               \
-    while (map < end_map) {                                              \
-      InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop,           \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
-        low, high,                                                       \
-        do_oop, assert_fn)                                               \
-      ++map;                                                             \
-    }                                                                    \
-  } else {                                                               \
-    while (map < end_map) {                                              \
-      InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,                 \
-        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
-        low, high,                                                       \
-        do_oop, assert_fn)                                               \
-      ++map;                                                             \
-    }                                                                    \
-  }                                                                      \
-}
-
-void InstanceKlass::oop_follow_contents(oop obj) {
-  assert(obj != NULL, "can't follow the content of NULL object");
-  MarkSweep::follow_klass(obj->klass());
-  InstanceKlass_OOP_MAP_ITERATE( \
-    obj, \
-    MarkSweep::mark_and_push(p), \
-    assert_is_in_closed_subset)
-}
-
-#if INCLUDE_ALL_GCS
-void InstanceKlass::oop_follow_contents(ParCompactionManager* cm,
-                                        oop obj) {
-  assert(obj != NULL, "can't follow the content of NULL object");
-  PSParallelCompact::follow_klass(cm, obj->klass());
-  // Only mark the header and let the scan of the meta-data mark
-  // everything else.
-  InstanceKlass_OOP_MAP_ITERATE( \
-    obj, \
-    PSParallelCompact::mark_and_push(cm, p), \
-    assert_is_in)
-}
-#endif // INCLUDE_ALL_GCS
-
-// closure's do_metadata() method dictates whether the given closure should be
-// applied to the klass ptr in the object header.
-
-#define InstanceKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)        \
-                                                                             \
-int InstanceKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) { \
-  /* header */                                                          \
-  if_do_metadata_checked(closure, nv_suffix) {                          \
-    closure->do_klass##nv_suffix(obj->klass());                         \
-  }                                                                     \
-  InstanceKlass_OOP_MAP_ITERATE(                                        \
-    obj,                                                                \
-    (closure)->do_oop##nv_suffix(p),                                    \
-    assert_is_in_closed_subset)                                         \
-  return size_helper();                                                 \
-}
-
-#if INCLUDE_ALL_GCS
-#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
-                                                                                \
-int InstanceKlass::oop_oop_iterate_backwards##nv_suffix(oop obj,                \
-                                              OopClosureType* closure) {        \
-  assert_should_ignore_metadata(closure, nv_suffix);                            \
-                                                                                \
-  /* instance variables */                                                      \
-  InstanceKlass_OOP_MAP_REVERSE_ITERATE(                                        \
-    obj,                                                                        \
-    (closure)->do_oop##nv_suffix(p),                                            \
-    assert_is_in_closed_subset)                                                 \
-   return size_helper();                                                        \
-}
-#endif // INCLUDE_ALL_GCS
-
-#define InstanceKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix) \
-                                                                        \
-int InstanceKlass::oop_oop_iterate##nv_suffix##_m(oop obj,              \
-                                                  OopClosureType* closure, \
-                                                  MemRegion mr) {          \
-  if_do_metadata_checked(closure, nv_suffix) {                           \
-    if (mr.contains(obj)) {                                              \
-      closure->do_klass##nv_suffix(obj->klass());                        \
-    }                                                                    \
-  }                                                                      \
-  InstanceKlass_BOUNDED_OOP_MAP_ITERATE(                                 \
-    obj, mr.start(), mr.end(),                                           \
-    (closure)->do_oop##nv_suffix(p),                                     \
-    assert_is_in_closed_subset)                                          \
-  return size_helper();                                                  \
-}
-
-ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
-#if INCLUDE_ALL_GCS
-ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
-#endif // INCLUDE_ALL_GCS
-
-int InstanceKlass::oop_adjust_pointers(oop obj) {
-  int size = size_helper();
-  InstanceKlass_OOP_MAP_ITERATE( \
-    obj, \
-    MarkSweep::adjust_pointer(p), \
-    assert_is_in)
-  return size;
-}
-
-#if INCLUDE_ALL_GCS
-void InstanceKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
-  InstanceKlass_OOP_MAP_REVERSE_ITERATE( \
-    obj, \
-    if (PSScavenge::should_scavenge(p)) { \
-      pm->claim_or_forward_depth(p); \
-    }, \
-    assert_nothing )
-}
-
-int InstanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
-  int size = size_helper();
-  InstanceKlass_OOP_MAP_ITERATE( \
-    obj, \
-    PSParallelCompact::adjust_pointer(p), \
-    assert_is_in)
-  return size;
-}
-
-#endif // INCLUDE_ALL_GCS
 
 void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
   assert(class_loader_data()->is_alive(is_alive), "this klass should be live");
@@ -3768,6 +3456,37 @@ Method* InstanceKlass::method_with_idnum(int idnum) {
   }
   return m;
 }
+
+
+Method* InstanceKlass::method_with_orig_idnum(int idnum) {
+  if (idnum >= methods()->length()) {
+    return NULL;
+  }
+  Method* m = methods()->at(idnum);
+  if (m != NULL && m->orig_method_idnum() == idnum) {
+    return m;
+  }
+  // Obsolete method idnum does not match the original idnum
+  for (int index = 0; index < methods()->length(); ++index) {
+    m = methods()->at(index);
+    if (m->orig_method_idnum() == idnum) {
+      return m;
+    }
+  }
+  // None found, return null for the caller to handle.
+  return NULL;
+}
+
+
+Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
+  InstanceKlass* holder = get_klass_version(version);
+  if (holder == NULL) {
+    return NULL; // The version of klass is gone, no method is found
+  }
+  Method* method = holder->method_with_orig_idnum(idnum);
+  return method;
+}
+
 
 jint InstanceKlass::get_cached_class_file_len() {
   return VM_RedefineClasses::get_cached_class_file_len(_cached_class_file);

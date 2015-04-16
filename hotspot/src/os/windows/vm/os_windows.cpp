@@ -153,11 +153,6 @@ static inline double fileTimeAsDouble(FILETIME* time) {
 
 // Implementation of os
 
-bool os::getenv(const char* name, char* buffer, int len) {
-  int result = GetEnvironmentVariable(name, buffer, len);
-  return result > 0 && result < len;
-}
-
 bool os::unsetenv(const char* name) {
   assert(name != NULL, "Null pointer");
   return (SetEnvironmentVariable(name, NULL) == TRUE);
@@ -188,9 +183,13 @@ void os::init_system_properties_values() {
     char *dll_path;
     char *pslash;
     char *bin = "\\bin";
-    char home_dir[MAX_PATH];
+    char home_dir[MAX_PATH + 1];
+    char *alt_home_dir = ::getenv("_ALT_JAVA_HOME_DIR");
 
-    if (!getenv("_ALT_JAVA_HOME_DIR", home_dir, MAX_PATH)) {
+    if (alt_home_dir != NULL)  {
+      strncpy(home_dir, alt_home_dir, MAX_PATH + 1);
+      home_dir[MAX_PATH] = '\0';
+    } else {
       os::jvm_path(home_dir, sizeof(home_dir));
       // Found the full path to jvm.dll.
       // Now cut the path to <java_home>/jre if we can.
@@ -2695,17 +2694,6 @@ address os::win32::fast_jni_accessor_wrapper(BasicType type) {
   return (address)-1;
 }
 #endif
-
-void os::win32::call_test_func_with_wrapper(void (*funcPtr)(void)) {
-  // Install a win32 structured exception handler around the test
-  // function call so the VM can generate an error dump if needed.
-  __try {
-    (*funcPtr)();
-  } __except(topLevelExceptionFilter(
-                                     (_EXCEPTION_POINTERS*)_exception_info())) {
-    // Nothing to do.
-  }
-}
 
 // Virtual Memory
 
@@ -5930,4 +5918,3 @@ void TestReserveMemorySpecial_test() {
   UseNUMAInterleaving = old_use_numa_interleaving;
 }
 #endif // PRODUCT
-
