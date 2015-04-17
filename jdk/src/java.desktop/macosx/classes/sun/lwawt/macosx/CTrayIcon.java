@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.awt.peer.TrayIconPeer;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import static sun.awt.AWTAccessor.*;
+
 public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     private TrayIcon target;
     private PopupMenu popup;
@@ -68,15 +70,15 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         updateImage();
     }
 
-    @SuppressWarnings("deprecation")
     private CPopupMenu checkAndCreatePopupPeer() {
         CPopupMenu menuPeer = null;
         if (popup != null) {
             try {
-                menuPeer = (CPopupMenu)popup.getPeer();
+                final MenuComponentAccessor acc = getMenuComponentAccessor();
+                menuPeer = acc.getPeer(popup);
                 if (menuPeer == null) {
                     popup.addNotify();
-                    menuPeer = (CPopupMenu)popup.getPeer();
+                    menuPeer = acc.getPeer(popup);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

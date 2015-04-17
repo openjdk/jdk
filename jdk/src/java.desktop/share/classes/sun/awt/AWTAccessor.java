@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import sun.misc.Unsafe;
 
 import javax.accessibility.AccessibleContext;
 import java.awt.*;
-import java.awt.KeyboardFocusManager;
-import java.awt.DefaultKeyboardFocusManager;
 import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
@@ -38,6 +36,7 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferStrategy;
 import java.awt.peer.ComponentPeer;
 
+import java.awt.peer.MenuComponentPeer;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 
@@ -171,7 +170,7 @@ public final class AWTAccessor {
         /**
          * Returns the peer of the component.
          */
-        ComponentPeer getPeer(Component comp);
+        <T extends ComponentPeer> T getPeer(Component comp);
 
         /**
          * Sets the peer of the component to the specified peer.
@@ -479,6 +478,11 @@ public final class AWTAccessor {
          * Sets the appContext of the menu component.
          */
         void setAppContext(MenuComponent menuComp, AppContext appContext);
+
+        /**
+         * Returns the peer of the menu component.
+         */
+        <T extends MenuComponentPeer> T getPeer(MenuComponent menuComp);
 
         /**
          * Returns the menu container of the menu component.

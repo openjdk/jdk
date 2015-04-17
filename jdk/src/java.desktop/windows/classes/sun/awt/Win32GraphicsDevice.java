@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public synchronized void setFullScreenWindow(Window w) {
         Window old = getFullScreenWindow();
         if (w == old) {
@@ -353,7 +352,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                 // entering the fullscreen mode.
                 defaultDisplayMode = null;
             }
-            WWindowPeer peer = (WWindowPeer)old.getPeer();
+            WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(old);
             if (peer != null) {
                 peer.setFullScreenExclusiveModeState(false);
                 // we used to destroy the buffers on exiting fs mode, this
@@ -372,7 +371,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             defaultDisplayMode = getDisplayMode();
             addFSWindowListener(w);
             // Enter full screen exclusive mode.
-            WWindowPeer peer = (WWindowPeer)w.getPeer();
+            WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
             if (peer != null) {
                 synchronized(peer) {
                     enterFullScreenExclusive(screen, peer);
@@ -405,7 +404,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public synchronized void setDisplayMode(DisplayMode dm) {
         if (!isDisplayChangeSupported()) {
             super.setDisplayMode(dm);
@@ -419,7 +417,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         }
         Window w = getFullScreenWindow();
         if (w != null) {
-            WWindowPeer peer = (WWindowPeer)w.getPeer();
+            WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
             configDisplayMode(screen, peer, dm.getWidth(), dm.getHeight(),
                 dm.getBitDepth(), dm.getRefreshRate());
             // resize the fullscreen window to the dimensions of the new

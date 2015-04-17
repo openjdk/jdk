@@ -57,7 +57,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         }
     }
 
-    transient MenuComponentPeer peer;
+    transient volatile MenuComponentPeer peer;
     transient MenuContainer parent;
 
     /**
@@ -142,6 +142,11 @@ public abstract class MenuComponent implements java.io.Serializable {
                     menuComp.appContext = appContext;
                 }
                 @Override
+                @SuppressWarnings("unchecked")
+                public <T extends MenuComponentPeer> T getPeer(MenuComponent menuComp) {
+                    return (T) menuComp.peer;
+                }
+                @Override
                 public MenuContainer getParent(MenuComponent menuComp) {
                     return menuComp.parent;
                 }
@@ -223,16 +228,6 @@ public abstract class MenuComponent implements java.io.Serializable {
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     final MenuContainer getParent_NoClientCode() {
         return parent;
-    }
-
-    /**
-     * @deprecated As of JDK version 1.1,
-     * programs should not directly manipulate peers.
-     * @return the peer for this component
-     */
-    @Deprecated
-    public MenuComponentPeer getPeer() {
-        return peer;
     }
 
     /**

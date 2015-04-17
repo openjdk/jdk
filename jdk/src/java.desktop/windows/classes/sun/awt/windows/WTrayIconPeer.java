@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.awt.TrayIcon;
 import java.awt.Image;
 import java.awt.peer.TrayIconPeer;
 import java.awt.image.*;
+
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.awt.image.IntegerComponentRaster;
 
@@ -80,25 +82,23 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
         if (isDisposed())
             return;
 
-        SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
-                @Override
-                @SuppressWarnings("deprecation")
-                public void run() {
-                    PopupMenu newPopup = ((TrayIcon)target).getPopupMenu();
-                    if (popup != newPopup) {
-                        if (popup != null) {
-                            popupParent.remove(popup);
-                        }
-                        if (newPopup != null) {
-                            popupParent.add(newPopup);
-                        }
-                        popup = newPopup;
-                    }
-                    if (popup != null) {
-                        ((WPopupMenuPeer)popup.getPeer()).show(popupParent, new Point(x, y));
-                    }
+        SunToolkit.executeOnEventHandlerThread(target, () -> {
+            PopupMenu newPopup = ((TrayIcon)target).getPopupMenu();
+            if (popup != newPopup) {
+                if (popup != null) {
+                    popupParent.remove(popup);
                 }
-            });
+                if (newPopup != null) {
+                    popupParent.add(newPopup);
+                }
+                popup = newPopup;
+            }
+            if (popup != null) {
+                WPopupMenuPeer peer = AWTAccessor.getMenuComponentAccessor()
+                                                 .getPeer(popup);
+                peer.show(popupParent, new Point(x, y));
+            }
+        });
     }
 
     @Override
