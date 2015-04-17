@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Arrays;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.DropTargetContextAccessor;
 import sun.util.logging.PlatformLogger;
 
 import java.io.IOException;
@@ -313,9 +315,10 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         Point      hots = event.getPoint();
 
         local = getJVMLocalSourceTransferable();
-
+        DropTargetContextAccessor acc =
+                AWTAccessor.getDropTargetContextAccessor();
         if (currentDTC != null) { // some wreckage from last time
-            currentDTC.removeNotify();
+            acc.reset(currentDTC);
             currentDTC = null;
         }
 
@@ -323,7 +326,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
             currentDT  = dt;
             currentDTC = currentDT.getDropTargetContext();
 
-            currentDTC.addNotify(this);
+            acc.setDropTargetContextPeer(currentDTC, this);
 
             currentA   = dt.getDefaultActions();
 
@@ -370,13 +373,15 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         Component         c   = (Component)event.getSource();
         DropTarget        dt  = c.getDropTarget();
         DropTargetContext dtc = null;
+        DropTargetContextAccessor acc =
+                AWTAccessor.getDropTargetContextAccessor();
 
         if (dt == null) {
             currentDT = null;
             currentT  = null;
 
             if (currentDTC != null) {
-                currentDTC.removeNotify();
+                acc.reset(currentDTC);
             }
 
             currentDTC = null;
@@ -387,13 +392,13 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         if (dt != currentDT) {
 
             if (currentDTC != null) {
-                currentDTC.removeNotify();
+                acc.reset(currentDTC);
             }
 
             currentDT  = dt;
             currentDTC = dt.getDropTargetContext();
 
-            currentDTC.addNotify(this);
+            acc.setDropTargetContextPeer(currentDTC, this);
         }
 
         dtc = currentDTC;
@@ -409,7 +414,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
             currentDT = null;
             currentT  = null;
 
-            currentDTC.removeNotify();
+            acc.reset(currentDTC);
             currentDTC = null;
 
             local = null;
@@ -440,11 +445,13 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         int               id   = event.getID();
         DropTarget        dt   = c.getDropTarget();
         DropTargetContext dtc  = null;
+        DropTargetContextAccessor acc =
+                AWTAccessor.getDropTargetContextAccessor();
 
         if (c.isShowing() && (dt != null) && dt.isActive()) {
             if (currentDT != dt) {
                 if (currentDTC != null) {
-                    currentDTC.removeNotify();
+                    acc.reset(currentDTC);
                 }
 
                 currentDT  = dt;
@@ -454,11 +461,11 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
             dtc = currentDT.getDropTargetContext();
             if (dtc != currentDTC) {
                 if (currentDTC != null) {
-                    currentDTC.removeNotify();
+                    acc.reset(currentDTC);
                 }
 
                 currentDTC = dtc;
-                currentDTC.addNotify(this);
+                acc.setDropTargetContextPeer(currentDTC, this);
             }
 
             currentA = currentDT.getDefaultActions();
@@ -518,13 +525,15 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
             DropTargetContext dtc = dt.getDropTargetContext();
 
             currentDT = dt;
+            DropTargetContextAccessor acc =
+                    AWTAccessor.getDropTargetContextAccessor();
 
             if (currentDTC != null) {
-                currentDTC.removeNotify();
+                acc.reset(currentDTC);
             }
 
             currentDTC = dtc;
-            currentDTC.addNotify(this);
+            acc.setDropTargetContextPeer(currentDTC, this);
             currentA = dt.getDefaultActions();
 
             synchronized(_globalLock) {
@@ -687,7 +696,9 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
             throw new InvalidDnDOperationException("No Drop pending");
         }
 
-        if (currentDTC != null) currentDTC.removeNotify();
+        if (currentDTC != null) {
+            AWTAccessor.getDropTargetContextAccessor().reset(currentDTC);
+        }
 
         currentDT  = null;
         currentDTC = null;
