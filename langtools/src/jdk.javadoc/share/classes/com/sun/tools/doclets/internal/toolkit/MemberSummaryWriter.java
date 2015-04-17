@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,14 +100,22 @@ public interface MemberSummaryWriter {
     /**
      * Get inherited summary links.
      *
-     * @return a content tree conatining the inherited summary links
+     * @return a content tree containing the inherited summary links
      */
     public Content getInheritedSummaryLinksTree();
 
     /**
+     * Add the member tree to the member summary tree.
+     *
+     * @param memberSummaryTree the content tree representing the member summary
+     * @param memberTree the content tree representing the member
+     */
+    public void addMemberTree(Content memberSummaryTree, Content memberTree);
+
+    /**
      * Get the member tree.
      *
-     * @param memberTree the content tree representating the member
+     * @param memberTree the content tree representing the member
      * @return a content tree for the member
      */
     public Content getMemberTree(Content memberTree);

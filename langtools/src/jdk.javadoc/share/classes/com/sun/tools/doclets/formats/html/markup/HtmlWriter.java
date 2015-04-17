@@ -306,9 +306,8 @@ public class HtmlWriter {
      * @return an HtmlTree for the SCRIPT tag
      */
     protected HtmlTree getWinTitleScript(){
-        HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
+        HtmlTree script = HtmlTree.SCRIPT();
         if(winTitle != null && winTitle.length() > 0) {
-            script.addAttr(HtmlAttr.TYPE, "text/javascript");
             String scriptCode = "<!--" + DocletConstants.NL +
                     "    try {" + DocletConstants.NL +
                     "        if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
@@ -377,8 +376,7 @@ public class HtmlWriter {
      * @return a content for the SCRIPT tag
      */
     protected Content getFramesJavaScript() {
-        HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
-        script.addAttr(HtmlAttr.TYPE, "text/javascript");
+        HtmlTree script = HtmlTree.SCRIPT();
         String scriptCode = DocletConstants.NL +
                 "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
                 "    if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +

@@ -21,21 +21,20 @@
  * questions.
  */
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.sun.tools.doclint.DocLint;
-import com.sun.tools.doclint.DocLint.BadArgs;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.tools.doclint.DocLint;
+import com.sun.tools.doclint.DocLint.BadArgs;
 
 public class DocLintTester {
 
@@ -59,6 +58,8 @@ public class DocLintTester {
             } else if (arg.startsWith("-Xmsgs")) {
                 opts.add(arg);
             } else if (arg.startsWith("-XcustomTags")) {
+                opts.add(arg);
+            }  else if (arg.startsWith("-XhtmlVersion")) {
                 opts.add(arg);
             } else if (arg.startsWith("-")) {
                 opts.add(arg);
