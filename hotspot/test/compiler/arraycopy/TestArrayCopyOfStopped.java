@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,40 +19,46 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8074676
+ * @summary after guards in Arrays.copyOf() intrinsic, control may become top
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayCopyOfStopped
  *
  */
 
-package sun.jvm.hotspot.memory;
+import java.util.Arrays;
 
-import java.io.*;
-import java.util.*;
+public class TestArrayCopyOfStopped {
+    static class A {
+    }
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.gc_interface.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
+    static class B {
+    }
 
-public abstract class SharedHeap extends CollectedHeap {
-  private static VirtualConstructor ctor;
+    static final B[] array_of_bs = new B[10];
+    static final A[] array_of_as = new A[10];
 
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
+    static Object[] m1_helper(Object[] array, boolean flag) {
+        if (flag) {
+            return Arrays.copyOf(array, 10, A[].class);
         }
-      });
-  }
+        return null;
+    }
 
-  private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("SharedHeap");
-    ctor = new VirtualConstructor(db);
-  }
+    static Object[] m1(boolean flag) {
+        return m1_helper(array_of_bs, flag);
+    }
 
-  public SharedHeap(Address addr) {
-    super(addr);
-  }
+    public static void main(String[] args) {
+        for (int i = 0; i < 20000; i++) {
+            m1_helper(array_of_as, (i%2) == 0);
+        }
 
-  public CollectedHeapName kind() {
-    return CollectedHeapName.SHARED_HEAP;
-  }
-  }
+        for (int i = 0; i < 20000; i++) {
+            m1(false);
+        }
+    }
+}

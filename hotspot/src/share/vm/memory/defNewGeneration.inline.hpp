@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_MEMORY_DEFNEWGENERATION_INLINE_HPP
 #define SHARE_VM_MEMORY_DEFNEWGENERATION_INLINE_HPP
 
-#include "gc_interface/collectedHeap.hpp"
 #include "memory/cardTableRS.hpp"
 #include "memory/defNewGeneration.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/space.hpp"
 
@@ -60,7 +60,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   // We could check that p is also in an older generation, but
   // dirty cards in the youngest gen are never scanned, so the
   // extra check probably isn't worthwhile.
-  if (Universe::heap()->is_in_reserved(p)) {
+  if (GenCollectedHeap::heap()->is_in_reserved(p)) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     _rs->inline_write_ref_field_gc(p, obj);
   }
@@ -84,7 +84,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   // we set a younger_gen card if we have an older->youngest
   // generation pointer.
   oop obj = oopDesc::load_decode_heap_oop_not_null(p);
-  if (((HeapWord*)obj < _boundary) && Universe::heap()->is_in_reserved(p)) {
+  if (((HeapWord*)obj < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
     _rs->inline_write_ref_field_gc(p, obj);
   }
 }

@@ -3359,6 +3359,20 @@ void Assembler::vxorps(XMMRegister dst, XMMRegister nds, Address src, bool vecto
 
 
 // Integer vector arithmetic
+void Assembler::vphaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_38);
+  emit_int8(0x01);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::vphaddd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_38);
+  emit_int8(0x02);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::paddb(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   emit_simd_arith(0xFC, dst, src, VEX_SIMD_66);
@@ -3377,6 +3391,20 @@ void Assembler::paddd(XMMRegister dst, XMMRegister src) {
 void Assembler::paddq(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   emit_simd_arith(0xD4, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::phaddw(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse3(), ""));
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
+  emit_int8(0x01);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::phaddd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse3(), ""));
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
+  emit_int8(0x02);
+  emit_int8((unsigned char)(0xC0 | encode));
 }
 
 void Assembler::vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
@@ -3800,6 +3828,17 @@ void Assembler::vinsertf128h(XMMRegister dst, Address src) {
   vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
   emit_int8(0x18);
   emit_operand(dst, src);
+  // 0x01 - insert into upper 128 bits
+  emit_int8(0x01);
+}
+
+void Assembler::vextractf128h(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(src, xnoreg, dst, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
+  emit_int8(0x19);
+  emit_int8((unsigned char)(0xC0 | encode));
+  // 0x00 - insert into lower 128 bits
   // 0x01 - insert into upper 128 bits
   emit_int8(0x01);
 }

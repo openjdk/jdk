@@ -138,26 +138,9 @@ void ArchDesc::declare_register_masks(FILE *fp_hpp) {
     fprintf(fp_hpp,"// Register masks, one for each register class.\n");
     _register->_rclasses.reset();
     for (rc_name = NULL; (rc_name = _register->_rclasses.iter()) != NULL;) {
-      const char *prefix = "";
       RegClass *reg_class = _register->getRegClass(rc_name);
       assert(reg_class, "Using an undefined register class");
-
-      const char* rc_name_to_upper = toUpper(rc_name);
-
-      if (reg_class->_user_defined == NULL) {
-        fprintf(fp_hpp, "extern const RegMask _%s%s_mask;\n", prefix,  rc_name_to_upper);
-        fprintf(fp_hpp, "inline const RegMask &%s%s_mask() { return _%s%s_mask; }\n", prefix, rc_name_to_upper, prefix, rc_name_to_upper);
-      } else {
-        fprintf(fp_hpp, "inline const RegMask &%s%s_mask() { %s }\n", prefix, rc_name_to_upper, reg_class->_user_defined);
-      }
-
-      if (reg_class->_stack_or_reg) {
-        assert(reg_class->_user_defined == NULL, "no user defined reg class here");
-        fprintf(fp_hpp, "extern const RegMask _%sSTACK_OR_%s_mask;\n", prefix, rc_name_to_upper);
-        fprintf(fp_hpp, "inline const RegMask &%sSTACK_OR_%s_mask() { return _%sSTACK_OR_%s_mask; }\n", prefix, rc_name_to_upper, prefix, rc_name_to_upper);
-      }
-      delete[] rc_name_to_upper;
-
+      reg_class->declare_register_masks(fp_hpp);
     }
   }
 }
@@ -173,35 +156,9 @@ void ArchDesc::build_register_masks(FILE *fp_cpp) {
     fprintf(fp_cpp,"// Register masks, one for each register class.\n");
     _register->_rclasses.reset();
     for (rc_name = NULL; (rc_name = _register->_rclasses.iter()) != NULL;) {
-      const char *prefix = "";
       RegClass *reg_class = _register->getRegClass(rc_name);
       assert(reg_class, "Using an undefined register class");
-
-      if (reg_class->_user_defined != NULL) {
-        continue;
-      }
-
-      int len = RegisterForm::RegMask_Size();
-      const char* rc_name_to_upper = toUpper(rc_name);
-      fprintf(fp_cpp, "const RegMask _%s%s_mask(", prefix, rc_name_to_upper);
-
-      {
-        int i;
-        for(i = 0; i < len - 1; i++) {
-          fprintf(fp_cpp," 0x%x,", reg_class->regs_in_word(i, false));
-        }
-        fprintf(fp_cpp," 0x%x );\n", reg_class->regs_in_word(i, false));
-      }
-
-      if (reg_class->_stack_or_reg) {
-        int i;
-        fprintf(fp_cpp, "const RegMask _%sSTACK_OR_%s_mask(", prefix, rc_name_to_upper);
-        for(i = 0; i < len - 1; i++) {
-          fprintf(fp_cpp," 0x%x,",reg_class->regs_in_word(i, true));
-        }
-        fprintf(fp_cpp," 0x%x );\n",reg_class->regs_in_word(i, true));
-      }
-      delete[] rc_name_to_upper;
+      reg_class->build_register_masks(fp_cpp);
     }
   }
 }

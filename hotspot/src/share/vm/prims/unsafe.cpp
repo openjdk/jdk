@@ -324,6 +324,24 @@ UNSAFE_END
 
 #endif // not SUPPORTS_NATIVE_CX8
 
+UNSAFE_ENTRY(jboolean, Unsafe_isBigEndian0(JNIEnv *env, jobject unsafe))
+  UnsafeWrapper("Unsafe_IsBigEndian0");
+  {
+#ifdef VM_LITTLE_ENDIAN
+    return false;
+#else
+    return true;
+#endif
+  }
+UNSAFE_END
+
+UNSAFE_ENTRY(jint, Unsafe_unalignedAccess0(JNIEnv *env, jobject unsafe))
+  UnsafeWrapper("Unsafe_UnalignedAccess0");
+  {
+    return UseUnalignedAccesses;
+  }
+UNSAFE_END
+
 #define DEFINE_GETSETOOP(jboolean, Boolean) \
  \
 UNSAFE_ENTRY(jboolean, Unsafe_Get##Boolean##140(JNIEnv *env, jobject unsafe, jobject obj, jint offset)) \
@@ -1261,6 +1279,9 @@ static JNINativeMethod methods[] = {
     {CC"loadFence",          CC"()V",                    FN_PTR(Unsafe_LoadFence)},
     {CC"storeFence",         CC"()V",                    FN_PTR(Unsafe_StoreFence)},
     {CC"fullFence",          CC"()V",                    FN_PTR(Unsafe_FullFence)},
+
+    {CC"isBigEndian0",       CC"()Z",                    FN_PTR(Unsafe_isBigEndian0)},
+    {CC"unalignedAccess0",   CC"()Z",                    FN_PTR(Unsafe_unalignedAccess0)}
 };
 
 #undef CC

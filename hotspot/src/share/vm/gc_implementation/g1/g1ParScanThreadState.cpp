@@ -26,8 +26,10 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1ParScanThreadState.inline.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
   : _g1h(g1h),

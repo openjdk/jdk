@@ -31,7 +31,6 @@
 #include "gc_implementation/g1/survRateGroup.hpp"
 #include "gc_implementation/shared/ageTable.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
-#include "memory/space.inline.hpp"
 #include "memory/watermark.hpp"
 #include "utilities/macros.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,25 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
-#define SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
+#ifndef SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP
+#define SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP
 
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#endif // INCLUDE_ALL_GCS
+#include "memory/allocation.hpp"
 
-// ParallelScavengeHeap methods
+class MarkScope : public StackObj {
+ protected:
+  bool _active;
+ public:
+  MarkScope(bool activate = true);
+  ~MarkScope();
+};
 
-inline void oopDesc::push_contents(PSPromotionManager* pm) {
-  Klass* k = klass();
-  if (!k->oop_is_typeArray()) {
-    // It might contain oops beyond the header, so take the virtual call.
-    k->oop_push_contents(pm, this);
-  }
-  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
-}
+// Sets up and tears down the required state for parallel root processing.
 
-#endif // SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
+class StrongRootsScope : public MarkScope {
+ public:
+  StrongRootsScope(bool activate = true);
+  ~StrongRootsScope();
+};
+
+#endif // SHARE_VM_MEMORY_STRONGROOTSSCOPE_HPP

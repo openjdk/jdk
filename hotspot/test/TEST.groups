@@ -394,6 +394,7 @@ hotspot_compiler_closed = \
 hotspot_gc = \
   sanity/ExecuteInternalVMTests.java \
   gc/ \
+  -gc/g1/TestGreyReclaimedHumongousObjects.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
 
 hotspot_gc_closed = \

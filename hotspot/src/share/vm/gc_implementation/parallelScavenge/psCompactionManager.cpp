@@ -30,7 +30,10 @@
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
-#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.inline.hpp"
+#include "memory/iterator.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -57,8 +60,7 @@ ParCompactionManager::ParCompactionManager() :
     _region_stack(NULL),
     _region_stack_index((uint)max_uintx) {
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _old_gen = heap->old_gen();
   _start_array = old_gen()->start_array();
@@ -172,6 +174,142 @@ ParCompactionManager::gc_thread_compaction_manager(int index) {
   assert(index >= 0 && index < (int)ParallelGCThreads, "index out of range");
   assert(_manager_array != NULL, "Sanity");
   return _manager_array[index];
+}
+
+void InstanceKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
+  assert(obj != NULL, "can't follow the content of NULL object");
+
+  PSParallelCompact::follow_klass(cm, this);
+  // Only mark the header and let the scan of the meta-data mark
+  // everything else.
+
+  PSParallelCompact::MarkAndPushClosure cl(cm);
+  InstanceKlass::oop_oop_iterate_oop_maps<true>(obj, &cl);
+}
+
+void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
+  InstanceKlass::oop_pc_follow_contents(obj, cm);
+
+  // Follow the klass field in the mirror.
+  Klass* klass = java_lang_Class::as_Klass(obj);
+  if (klass != NULL) {
+    // An anonymous class doesn't have its own class loader, so the call
+    // to follow_klass will mark and push its java mirror instead of the
+    // class loader. When handling the java mirror for an anonymous class
+    // we need to make sure its class loader data is claimed, this is done
+    // by calling follow_class_loader explicitly. For non-anonymous classes
+    // the call to follow_class_loader is made when the class loader itself
+    // is handled.
+    if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
+      PSParallelCompact::follow_class_loader(cm, klass->class_loader_data());
+    } else {
+      PSParallelCompact::follow_klass(cm, klass);
+    }
+  } else {
+    // If klass is NULL then this a mirror for a primitive type.
+    // We don't have to follow them, since they are handled as strong
+    // roots in Universe::oops_do.
+    assert(java_lang_Class::is_primitive(obj), "Sanity check");
+  }
+
+  PSParallelCompact::MarkAndPushClosure cl(cm);
+  oop_oop_iterate_statics<true>(obj, &cl);
+}
+
+void InstanceClassLoaderKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
+  InstanceKlass::oop_pc_follow_contents(obj, cm);
+
+  ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
+  if (loader_data != NULL) {
+    PSParallelCompact::follow_class_loader(cm, loader_data);
+  }
+}
+
+template <class T>
+static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj, ParCompactionManager* cm) {
+  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
+  T heap_oop = oopDesc::load_heap_oop(referent_addr);
+  debug_only(
+    if(TraceReferenceGC && PrintGCDetails) {
+      gclog_or_tty->print_cr("InstanceRefKlass::oop_pc_follow_contents " PTR_FORMAT, p2i(obj));
+    }
+  )
+  if (!oopDesc::is_null(heap_oop)) {
+    oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (PSParallelCompact::mark_bitmap()->is_unmarked(referent) &&
+        PSParallelCompact::ref_processor()->discover_reference(obj, klass->reference_type())) {
+      // reference already enqueued, referent will be traversed later
+      klass->InstanceKlass::oop_pc_follow_contents(obj, cm);
+      debug_only(
+        if(TraceReferenceGC && PrintGCDetails) {
+          gclog_or_tty->print_cr("       Non NULL enqueued " PTR_FORMAT, p2i(obj));
+        }
+      )
+      return;
+    } else {
+      // treat referent as normal oop
+      debug_only(
+        if(TraceReferenceGC && PrintGCDetails) {
+          gclog_or_tty->print_cr("       Non NULL normal " PTR_FORMAT, p2i(obj));
+        }
+      )
+      PSParallelCompact::mark_and_push(cm, referent_addr);
+    }
+  }
+  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
+  if (ReferenceProcessor::pending_list_uses_discovered_field()) {
+    // Treat discovered as normal oop, if ref is not "active",
+    // i.e. if next is non-NULL.
+    T  next_oop = oopDesc::load_heap_oop(next_addr);
+    if (!oopDesc::is_null(next_oop)) { // i.e. ref is not "active"
+      T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
+      debug_only(
+        if(TraceReferenceGC && PrintGCDetails) {
+          gclog_or_tty->print_cr("   Process discovered as normal "
+                                 PTR_FORMAT, p2i(discovered_addr));
+        }
+      )
+      PSParallelCompact::mark_and_push(cm, discovered_addr);
+    }
+  } else {
+#ifdef ASSERT
+    // In the case of older JDKs which do not use the discovered
+    // field for the pending list, an inactive ref (next != NULL)
+    // must always have a NULL discovered field.
+    T next = oopDesc::load_heap_oop(next_addr);
+    oop discovered = java_lang_ref_Reference::discovered(obj);
+    assert(oopDesc::is_null(next) || oopDesc::is_null(discovered),
+           err_msg("Found an inactive reference " PTR_FORMAT " with a non-NULL discovered field",
+                   p2i(obj)));
+#endif
+  }
+  PSParallelCompact::mark_and_push(cm, next_addr);
+  klass->InstanceKlass::oop_pc_follow_contents(obj, cm);
+}
+
+
+void InstanceRefKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
+  if (UseCompressedOops) {
+    oop_pc_follow_contents_specialized<narrowOop>(this, obj, cm);
+  } else {
+    oop_pc_follow_contents_specialized<oop>(this, obj, cm);
+  }
+}
+
+void ObjArrayKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
+  PSParallelCompact::follow_klass(cm, this);
+
+  if (UseCompressedOops) {
+    oop_pc_follow_contents_specialized<narrowOop>(objArrayOop(obj), 0, cm);
+  } else {
+    oop_pc_follow_contents_specialized<oop>(objArrayOop(obj), 0, cm);
+  }
+}
+
+void TypeArrayKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
+  assert(obj->is_typeArray(),"must be a type array");
+  // Performance tweak: We skip iterating over the klass pointer since we
+  // know that Universe::TypeArrayKlass never moves.
 }
 
 void ParCompactionManager::follow_marking_stacks() {
