@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 
 import java.awt.*;
-import java.awt.peer.ButtonPeer;
 
 /**
  * @test
@@ -66,23 +65,16 @@ public final class ButtonRepaint extends Button {
         setLabel("");
         setLabel(null);
         setLabel(getLabel());
-        ((ButtonPeer) getPeer()).setLabel("");
-        ((ButtonPeer) getPeer()).setLabel(null);
-        ((ButtonPeer) getPeer()).setLabel(getLabel());
 
         setFont(null);
         setFont(getFont());
-        getPeer().setFont(getFont());
 
         setBackground(null);
         setBackground(getBackground());
-        getPeer().setBackground(getBackground());
 
         setForeground(null);
         setForeground(getForeground());
-        getPeer().setForeground(getForeground());
 
         setEnabled(isEnabled());
-        getPeer().setEnabled(isEnabled());
     }
 }

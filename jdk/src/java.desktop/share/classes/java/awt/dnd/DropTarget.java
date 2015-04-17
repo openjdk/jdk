@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ import javax.swing.Timer;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
 import java.awt.dnd.peer.DropTargetPeer;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 
 
 /**
@@ -499,15 +502,15 @@ public class DropTarget implements DropTargetListener, Serializable {
      *
      */
 
-    @SuppressWarnings("deprecation")
     public void addNotify(ComponentPeer peer) {
         if (peer == componentPeer) return;
 
         componentPeer = peer;
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
 
         for (Component c = component;
              c != null && peer instanceof LightweightPeer; c = c.getParent()) {
-            peer = c.getPeer();
+            peer = acc.getPeer(c);
         }
 
         if (peer instanceof DropTargetPeer) {

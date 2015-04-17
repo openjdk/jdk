@@ -605,7 +605,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     Component owner =
                         XKeyboardFocusManagerPeer.getInstance().getCurrentFocusOwner();
                     if (owner != null) {
-                        XWindow ownerWindow = (XWindow) AWTAccessor.getComponentAccessor().getPeer(owner);
+                        XWindow ownerWindow = AWTAccessor.getComponentAccessor().getPeer(owner);
                         if (ownerWindow != null) {
                             w = ownerWindow.getContentWindow();
                         }
@@ -2449,17 +2449,17 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             awtUnlock();
         }
     }
-    @SuppressWarnings("deprecation")
     public void grab(Window w) {
-        if (w.getPeer() != null) {
-            ((XWindowPeer)w.getPeer()).setGrab(true);
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((XWindowPeer) peer).setGrab(true);
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void ungrab(Window w) {
-        if (w.getPeer() != null) {
-           ((XWindowPeer)w.getPeer()).setGrab(false);
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((XWindowPeer) peer).setGrab(false);
         }
     }
     /**

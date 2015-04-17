@@ -84,12 +84,10 @@ Java_java_awt_Font_initIDs
   (JNIEnv *env, jclass cls)
 {
 #ifndef HEADLESS
-    /** We call "NoClientCode" methods because they won't invoke client
-        code on the privileged toolkit thread **/
     CHECK_NULL(fontIDs.pData = (*env)->GetFieldID(env, cls, "pData", "J"));
     CHECK_NULL(fontIDs.style = (*env)->GetFieldID(env, cls, "style", "I"));
     CHECK_NULL(fontIDs.size = (*env)->GetFieldID(env, cls, "size", "I"));
-    CHECK_NULL(fontIDs.getPeer = (*env)->GetMethodID(env, cls, "getPeer_NoClientCode",
+    CHECK_NULL(fontIDs.getPeer = (*env)->GetMethodID(env, cls, "getFontPeer",
                                                      "()Ljava/awt/peer/FontPeer;"));
     CHECK_NULL(fontIDs.getFamily = (*env)->GetMethodID(env, cls, "getFamily_NoClientCode",
                                                        "()Ljava/lang/String;"));

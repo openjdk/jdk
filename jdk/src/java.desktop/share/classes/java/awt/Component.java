@@ -198,7 +198,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #addNotify
      * @see #removeNotify
      */
-    transient ComponentPeer peer;
+    transient volatile ComponentPeer peer;
 
     /**
      * The parent of the object. It may be <code>null</code>
@@ -924,8 +924,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
             public Cursor getCursor(Component comp) {
                 return comp.getCursor_NoClientCode();
             }
-            public ComponentPeer getPeer(Component comp) {
-                return comp.peer;
+            @SuppressWarnings("unchecked")
+            public <T extends ComponentPeer> T getPeer(Component comp) {
+                return (T) comp.peer;
             }
             public void setPeer(Component comp, ComponentPeer peer) {
                 comp.peer = peer;
@@ -1069,17 +1070,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * @deprecated As of JDK version 1.1,
-     * programs should not directly manipulate peers;
-     * replaced by <code>boolean isDisplayable()</code>.
-     * @return the peer for this component
-     */
-    @Deprecated
-    public ComponentPeer getPeer() {
-        return peer;
-    }
-
-    /**
      * Associate a <code>DropTarget</code> with this component.
      * The <code>Component</code> will receive drops only if it
      * is enabled.
@@ -1179,7 +1169,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         graphicsConfig = gc;
 
-        ComponentPeer peer = getPeer();
+        ComponentPeer peer = this.peer;
         if (peer != null) {
             return peer.updateGraphicsData(gc);
         }
@@ -1281,7 +1271,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.2
      */
     public boolean isDisplayable() {
-        return getPeer() != null;
+        return peer != null;
     }
 
     /**
@@ -2582,7 +2572,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.2
      */
     public boolean isOpaque() {
-        if (getPeer() == null) {
+        if (peer == null) {
             return false;
         }
         else {
@@ -2608,7 +2598,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.2
      */
     public boolean isLightweight() {
-        return getPeer() instanceof LightweightPeer;
+        return peer instanceof LightweightPeer;
     }
 
 
@@ -3126,7 +3116,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          obtained
      * @return the font metrics for <code>font</code>
      * @see       #getFont
-     * @see       #getPeer
      * @see       java.awt.peer.ComponentPeer#getFontMetrics(Font)
      * @see       Toolkit#getFontMetrics(Font)
      * @since     1.0
@@ -3186,7 +3175,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
             if (nativeContainer == null) return;
 
-            ComponentPeer cPeer = nativeContainer.getPeer();
+            ComponentPeer cPeer = nativeContainer.peer;
 
             if (cPeer != null) {
                 cPeer.updateCursorImmediately();
@@ -5019,7 +5008,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 if (source != null) {
                     Container target = source.getNativeContainer();
                     if (target != null) {
-                        tpeer = target.getPeer();
+                        tpeer = target.peer;
                     }
                 }
             }
@@ -9851,7 +9840,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         if (!isLightweight()) {
-            ComponentPeer peer = getPeer();
+            ComponentPeer peer = this.peer;
             if (peer != null) {
                 // The Region class has some optimizations. That's why
                 // we should manually check whether it's empty and
@@ -9975,7 +9964,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             for (int i = indexAbove; i > -1; i--) {
                 Component comp = cont.getComponent(i);
                 if (comp != null && comp.isDisplayable() && !comp.isLightweight()) {
-                    return comp.getPeer();
+                    return comp.peer;
                 }
             }
             // traversing the hierarchy up to the closest HW container;

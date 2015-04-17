@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ import javax.swing.RepaintManager;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
 
+import sun.awt.AWTAccessor;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
 import sun.security.action.GetPropertyAction;
@@ -241,7 +242,6 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void notifyDisplayChanged(final int scaleFactor) {
         if (scaleFactor != this.scaleFactor) {
             if (!copyBufferEnabled) content.paintLock();
@@ -254,18 +254,19 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             }
             this.scaleFactor = scaleFactor;
         }
-        if (getPeer() instanceof DisplayChangedListener) {
-            ((DisplayChangedListener)getPeer()).displayChanged();
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(this);
+        if (peer instanceof DisplayChangedListener) {
+            ((DisplayChangedListener) peer).displayChanged();
         }
         repaint();
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void addNotify() {
         super.addNotify();
-        if (getPeer() instanceof DisplayChangedListener) {
-            ((DisplayChangedListener)getPeer()).displayChanged();
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(this);
+        if (peer instanceof DisplayChangedListener) {
+            ((DisplayChangedListener) peer).displayChanged();
         }
     }
 

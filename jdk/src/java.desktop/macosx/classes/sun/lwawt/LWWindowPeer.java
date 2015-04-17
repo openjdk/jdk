@@ -33,6 +33,7 @@ import java.util.List;
 import javax.swing.*;
 
 import sun.awt.*;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.java2d.*;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.CompositeType;
@@ -505,7 +506,7 @@ public class LWWindowPeer
     @Override
     public void repositionSecurityWarning() {
         if (warningWindow != null) {
-            AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+            ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
             Window target = getTarget();
             int x = compAccessor.getX(target);
             int y = compAccessor.getY(target);
@@ -563,8 +564,7 @@ public class LWWindowPeer
     public void blockWindows(List<Window> windows) {
         //TODO: LWX will probably need some collectJavaToplevels to speed this up
         for (Window w : windows) {
-            WindowPeer wp =
-                    (WindowPeer) AWTAccessor.getComponentAccessor().getPeer(w);
+            WindowPeer wp = AWTAccessor.getComponentAccessor().getPeer(w);
             if (wp != null) {
                 wp.setModalBlocked((Dialog)getTarget(), true);
             }
@@ -1247,7 +1247,8 @@ public class LWWindowPeer
     private boolean isOneOfOwnersOf(LWWindowPeer peer) {
         Window owner = (peer != null ? peer.getTarget().getOwner() : null);
         while (owner != null) {
-            if ((LWWindowPeer)owner.getPeer() == this) {
+            final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+            if (acc.getPeer(owner) == this) {
                 return true;
             }
             owner = owner.getOwner();
@@ -1321,8 +1322,8 @@ public class LWWindowPeer
         while (owner != null && !(owner instanceof Frame || owner instanceof Dialog)) {
             owner = owner.getOwner();
         }
-        return owner == null ? null :
-               (LWWindowPeer) AWTAccessor.getComponentAccessor().getPeer(owner);
+        return owner == null ? null : AWTAccessor.getComponentAccessor()
+                                                 .getPeer(owner);
     }
 
     /**

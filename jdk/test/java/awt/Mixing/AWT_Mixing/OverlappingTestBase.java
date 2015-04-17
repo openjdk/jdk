@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import javax.swing.*;
+
+import sun.awt.AWTAccessor;
 import sun.awt.EmbeddedFrame;
 import java.io.*;
 import test.java.awt.regtesthelpers.Util;
@@ -243,8 +245,9 @@ public abstract class OverlappingTestBase {
                 if (Toolkit.getDefaultToolkit().getClass().getName().contains("XToolkit")) {
                     getWindowMethodName = "getWindow";
                 }
-                ComponentPeer peer = embedder.getPeer();
-//                System.err.println("Peer: " + peer);
+                ComponentPeer peer = AWTAccessor.getComponentAccessor()
+                                                .getPeer(embedder);
+                //  System.err.println("Peer: " + peer);
                 Method getWindowMethod = peer.getClass().getMethod(getWindowMethodName);
                 frameWindow = (Long) getWindowMethod.invoke(peer);
 //                System.err.println("frame peer ID: " + frameWindow);
