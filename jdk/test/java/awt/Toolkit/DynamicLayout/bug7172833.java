@@ -23,16 +23,13 @@
 
 
 import java.awt.*;
+import java.awt.Frame;
 import java.awt.datatransfer.Clipboard;
-import java.awt.dnd.DragGestureEvent;
-import java.awt.dnd.InvalidDnDOperationException;
-import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
-import java.awt.peer.*;
 import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
@@ -67,130 +64,6 @@ public final class bug7172833 {
             return super.isDynamicLayoutSet();
         }
 
-        @Override
-        protected DesktopPeer createDesktopPeer(final Desktop target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ButtonPeer createButton(final Button target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected TextFieldPeer createTextField(final TextField target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected LabelPeer createLabel(final Label target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ListPeer createList(final List target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected CheckboxPeer createCheckbox(final Checkbox target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ScrollbarPeer createScrollbar(final Scrollbar target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ScrollPanePeer createScrollPane(final ScrollPane target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected TextAreaPeer createTextArea(final TextArea target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ChoicePeer createChoice(final Choice target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected FramePeer createFrame(final Frame target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected CanvasPeer createCanvas(final Canvas target) {
-            return null;
-        }
-
-        @Override
-        protected PanelPeer createPanel(final Panel target) {
-            return null;
-        }
-
-        @Override
-        protected WindowPeer createWindow(final Window target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected DialogPeer createDialog(final Dialog target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected MenuBarPeer createMenuBar(final MenuBar target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected MenuPeer createMenu(final Menu target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected PopupMenuPeer createPopupMenu(final PopupMenu target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected MenuItemPeer createMenuItem(final MenuItem target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected FileDialogPeer createFileDialog(final FileDialog target)
-                throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected CheckboxMenuItemPeer createCheckboxMenuItem(
-                final CheckboxMenuItem target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected FontPeer getFontPeer(final String name, final int style) {
-            return null;
-        }
 
         @Override
         public Dimension getScreenSize() throws HeadlessException {
@@ -284,12 +157,6 @@ public final class bug7172833 {
 
         @Override
         protected EventQueue getSystemEventQueueImpl() {
-            return null;
-        }
-
-        @Override
-        public DragSourceContextPeer createDragSourceContextPeer(
-                final DragGestureEvent dge) throws InvalidDnDOperationException {
             return null;
         }
 

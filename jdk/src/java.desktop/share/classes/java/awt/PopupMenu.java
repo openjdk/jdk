@@ -121,7 +121,7 @@ public class PopupMenu extends Menu {
             }
             else {
                 if (peer == null)
-                    peer = Toolkit.getDefaultToolkit().createPopupMenu(this);
+                    peer = getComponentFactory().createPopupMenu(this);
                 int nitems = getItemCount();
                 for (int i = 0 ; i < nitems ; i++) {
                     MenuItem mi = getItem(i);

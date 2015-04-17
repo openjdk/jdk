@@ -320,7 +320,7 @@ public class FileDialog extends Dialog {
                 parent.addNotify();
             }
             if (peer == null)
-                peer = getToolkit().createFileDialog(this);
+                peer = getComponentFactory().createFileDialog(this);
             super.addNotify();
         }
     }

@@ -61,6 +61,7 @@ import java.security.AccessControlContext;
 import javax.accessibility.*;
 import java.applet.Applet;
 
+import sun.awt.ComponentFactory;
 import sun.security.action.GetPropertyAction;
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
@@ -1229,6 +1230,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return Toolkit.getDefaultToolkit();
     }
 
+    final ComponentFactory getComponentFactory() {
+        final Toolkit toolkit = getToolkit();
+        if (toolkit instanceof ComponentFactory) {
+            return (ComponentFactory) toolkit;
+        }
+        throw new AWTError("UI components are unsupported by: " + toolkit);
+    }
+
     /**
      * Determines whether this component is valid. A component is valid
      * when it is correctly sized and positioned within its parent
@@ -1326,7 +1335,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
             return null;
         }
         Window win = getContainingWindow();
-        if (!Toolkit.getDefaultToolkit().getMouseInfoPeer().isWindowUnderMouse(win)) {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (!(toolkit instanceof ComponentFactory)) {
+            return null;
+        }
+        if (!((ComponentFactory) toolkit).getMouseInfoPeer().isWindowUnderMouse(win)) {
             return null;
         }
         final boolean INCLUDE_DISABLED = true;
@@ -6961,7 +6974,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 if (peer == null) {
                     // Update both the Component's peer variable and the local
                     // variable we use for thread safety.
-                    this.peer = peer = getToolkit().createComponent(this);
+                    this.peer = peer = getComponentFactory().createComponent(this);
                 }
 
                 // This is a lightweight component which means it won't be

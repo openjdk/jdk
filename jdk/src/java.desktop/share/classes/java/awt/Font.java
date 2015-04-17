@@ -44,6 +44,8 @@ import java.text.CharacterIterator;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
+
+import sun.awt.ComponentFactory;
 import sun.font.StandardGlyphVector;
 
 import sun.font.AttributeMap;
@@ -442,11 +444,12 @@ public class Font implements java.io.Serializable
      *
      * @return the peer of the {@code Font}.
      */
-    @SuppressWarnings("deprecation")
     private FontPeer getFontPeer() {
         if(peer == null) {
             Toolkit tk = Toolkit.getDefaultToolkit();
-            peer = tk.getFontPeer(name, style);
+            if (tk instanceof ComponentFactory) {
+                peer = ((ComponentFactory) tk).getFontPeer(name, style);
+            }
         }
         return peer;
     }

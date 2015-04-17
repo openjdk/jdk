@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.awt.dnd;
 
+import java.awt.AWTError;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Image;
@@ -42,6 +43,7 @@ import java.io.Serializable;
 import java.util.TooManyListenersException;
 
 import sun.awt.AWTAccessor;
+import sun.awt.ComponentFactory;
 
 /**
  * The <code>DragSourceContext</code> class is responsible for managing the
@@ -184,8 +186,12 @@ public class DragSourceContext
     public DragSourceContext(DragGestureEvent trigger, Cursor dragCursor,
                              Image dragImage, Point offset, Transferable t,
                              DragSourceListener dsl) {
-        DragSourceContextPeer dscp = Toolkit.getDefaultToolkit()
-                .createDragSourceContextPeer(trigger);
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (!(toolkit instanceof ComponentFactory)) {
+            throw new AWTError("Unsupported toolkit: " + toolkit);
+        }
+        DragSourceContextPeer dscp = ((ComponentFactory) toolkit).
+                createDragSourceContextPeer(trigger);
 
         if (dscp == null) {
             throw new NullPointerException("DragSourceContextPeer");

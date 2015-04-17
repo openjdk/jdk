@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
+import sun.awt.ComponentFactory;
+
 import javax.accessibility.*;
 
 import java.security.AccessControlContext;
@@ -182,6 +184,14 @@ public abstract class MenuComponent implements java.io.Serializable {
         return null; // For strict compliance with prior platform versions, a MenuComponent
                      // that doesn't set its name should return null from
                      // getName()
+    }
+
+    final ComponentFactory getComponentFactory() {
+        final Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (toolkit instanceof ComponentFactory) {
+            return (ComponentFactory) toolkit;
+        }
+        throw new AWTError("UI components are unsupported by: " + toolkit);
     }
 
     /**

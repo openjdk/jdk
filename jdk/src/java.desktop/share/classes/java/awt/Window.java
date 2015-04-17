@@ -760,7 +760,7 @@ public class Window extends Container implements Accessible {
                 parent.addNotify();
             }
             if (peer == null) {
-                peer = getToolkit().createWindow(this);
+                peer = getComponentFactory().createWindow(this);
             }
             synchronized (allWindows) {
                 allWindows.add(this);
