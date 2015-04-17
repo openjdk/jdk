@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,21 +93,27 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
             winTitle.append(sep);
             String pkgName = configuration.utils.getPackageName(packageDoc);
             winTitle.append(pkgName);
-            Content body = profpackgen.getBody(false,
+            HtmlTree body = profpackgen.getBody(false,
                     profpackgen.getWindowTitle(winTitle.toString()));
             Content profName = new StringContent(profileName);
             Content sepContent = new StringContent(sep);
             Content pkgNameContent = new RawHtml(pkgName);
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                    ? HtmlTree.MAIN()
+                    : body;
             Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
                     profpackgen.getTargetProfileLink("classFrame", profName, profileName));
             heading.addContent(sepContent);
             heading.addContent(profpackgen.getTargetProfilePackageLink(packageDoc,
                     "classFrame", pkgNameContent, profileName));
-            body.addContent(heading);
+            htmlTree.addContent(heading);
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.addStyle(HtmlStyle.indexContainer);
             profpackgen.addClassListing(div, profileValue);
-            body.addContent(div);
+            htmlTree.addContent(div);
+            if (configuration.allowTag(HtmlTag.MAIN)) {
+                body.addContent(htmlTree);
+            }
             profpackgen.printHtmlDocument(
                     configuration.metakeywords.getMetaKeywords(packageDoc), false, body);
             profpackgen.close();
@@ -127,7 +133,7 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the listing will be added
      * @param profileValue the value of the profile being documented
      */
-    protected void addClassListing(Content contentTree, int profileValue) {
+    protected void addClassListing(HtmlTree contentTree, int profileValue) {
         if (packageDoc.isIncluded()) {
             addClassKindListing(packageDoc.interfaces(),
                 getResource("doclet.Interfaces"), contentTree, profileValue);
@@ -153,10 +159,13 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
      * @param profileValue the value of the profile being documented
      */
     protected void addClassKindListing(ClassDoc[] arr, Content labelContent,
-            Content contentTree, int profileValue) {
+            HtmlTree contentTree, int profileValue) {
         if(arr.length > 0) {
             Arrays.sort(arr);
             boolean printedHeader = false;
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
+                    ? HtmlTree.SECTION()
+                    : contentTree;
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.setTitle(labelContent);
             for (ClassDoc classDoc : arr) {
@@ -170,7 +179,7 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
                 if (!printedHeader) {
                     Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                                                        true, labelContent);
-                    contentTree.addContent(heading);
+                    htmlTree.addContent(heading);
                     printedHeader = true;
                 }
                 Content arr_i_name = new StringContent(classDoc.name());
@@ -181,7 +190,10 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
                 Content li = HtmlTree.LI(link);
                 ul.addContent(li);
             }
-            contentTree.addContent(ul);
+            htmlTree.addContent(ul);
+            if (configuration.allowTag(HtmlTag.SECTION)) {
+                contentTree.addContent(htmlTree);
+            }
         }
     }
 }

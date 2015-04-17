@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,11 @@ public class TestHref extends JavadocTester {
                 //Member summary table link.
                 "href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\"",
                 //Anchor test.
-                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
+                "<a id=\"method-int-int-java.util.ArrayList-\">\n"
                 + "<!--   -->\n"
                 + "</a>",
                 //Backward compatibility anchor test."pkg/C1.html",
-                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
+                "<a id=\"method-int-int-java.util.ArrayList-\">\n"
                 + "<!--   -->\n"
                 + "</a>");
 

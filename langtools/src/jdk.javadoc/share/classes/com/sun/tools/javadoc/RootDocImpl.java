@@ -377,8 +377,9 @@ public class RootDocImpl extends DocImpl implements RootDoc {
         return env.fileManager;
     }
 
-    public void initDocLint(Collection<String> opts, Collection<String> customTagNames) {
-        env.initDoclint(opts, customTagNames);
+    public void initDocLint(Collection<String> opts, Collection<String> customTagNames,
+            String htmlVersion) {
+        env.initDoclint(opts, customTagNames, htmlVersion);
     }
 
     public boolean isFunctionalInterface(AnnotationDesc annotationDesc) {
