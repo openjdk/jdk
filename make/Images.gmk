@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,10 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   PROVIDER_MODULES += jdk.crypto.ucrypto
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  MAIN_MODULES += jdk.accessibility
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)

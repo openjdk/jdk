@@ -262,6 +262,26 @@ java.scripting_CLEAN := .properties
 
 ################################################################################
 
+java.instrument_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.logging_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.management_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.prefs_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.transaction_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
 java.sql_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
@@ -337,6 +357,14 @@ java.naming_CLEAN := jndiprovider.properties
 
 java.security.saaj_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.security.saaj_CLEAN := .properties
+
+################################################################################
+
+java.security.jgss_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.smartcardio_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
