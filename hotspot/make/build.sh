@@ -40,7 +40,7 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-if [ "${JAVA_HOME-}" = ""  -o  ! -d "${JAVA_HOME-}" -o ! -d ${JAVA_HOME-}/jre/lib/ ]; then
+if [ "${JAVA_HOME-}" = ""  -o  ! -d "${JAVA_HOME-}" ]; then
     echo "JAVA_HOME needs to be set to a valid JDK path"
     echo "JAVA_HOME: ${JAVA_HOME-}"
     exit 1

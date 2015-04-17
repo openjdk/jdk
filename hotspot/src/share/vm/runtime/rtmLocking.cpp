@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#if INCLUDE_RTM_OPT
+
 #include "memory/allocation.inline.hpp"
 #include "runtime/task.hpp"
 #include "runtime/rtmLocking.hpp"
+
 
 // One-shot PeriodicTask subclass for enabling RTM locking
 uintx RTMLockingCounters::_calculation_flag = 0;
@@ -58,3 +63,5 @@ void RTMLockingCounters::print_on(outputStream* st) {
     tty->print_cr("# rtm lock aborts %d: " UINTX_FORMAT, i, _abortX_count[i]);
   }
 }
+
+#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,11 +125,6 @@ class MethodHandles: AllStatic {
     return signature_polymorphic_name_id(klass, name) != vmIntrinsics::_none;
   }
 
-  enum {
-    // format of query to getConstant:
-    GC_COUNT_GWT = 4,
-    GC_LAMBDA_SUPPORT = 5
-  };
   static int get_named_constant(int which, Handle name_box, TRAPS);
 
 public:

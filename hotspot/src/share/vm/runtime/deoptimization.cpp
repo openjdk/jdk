@@ -1861,6 +1861,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "speculate_null_check",
   "rtm_state_change",
   "unstable_if",
+  "unstable_fused_if",
   "tenured"
 };
 const char* Deoptimization::_trap_action_name[] = {

@@ -868,9 +868,12 @@
                                                                                                                         \
   /* Custom branch frequencies profiling support for JSR292 */                                                          \
   do_class(java_lang_invoke_MethodHandleImpl,               "java/lang/invoke/MethodHandleImpl")                        \
-  do_intrinsic(_profileBoolean, java_lang_invoke_MethodHandleImpl, profileBoolean_name, profileBoolean_signature,    F_S)  \
-   do_name(     profileBoolean_name,                               "profileBoolean")                                     \
-   do_signature(profileBoolean_signature,                           "(Z[I)Z")                                            \
+  do_intrinsic(_profileBoolean, java_lang_invoke_MethodHandleImpl, profileBoolean_name, profileBoolean_signature, F_S)  \
+   do_name(     profileBoolean_name,                             "profileBoolean")                                      \
+   do_signature(profileBoolean_signature,                        "(Z[I)Z")                                              \
+  do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
+   do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
+   do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getObject_signature,       "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -949,6 +952,20 @@
   do_intrinsic(_putLongVolatile,          sun_misc_Unsafe,        putLongVolatile_name, putLong_signature,       F_RN)  \
   do_intrinsic(_putFloatVolatile,         sun_misc_Unsafe,        putFloatVolatile_name, putFloat_signature,     F_RN)  \
   do_intrinsic(_putDoubleVolatile,        sun_misc_Unsafe,        putDoubleVolatile_name, putDouble_signature,   F_RN)  \
+                                                                                                                        \
+  do_name(getShortUnaligned_name,"getShortUnaligned")     do_name(putShortUnaligned_name,"putShortUnaligned")           \
+  do_name(getCharUnaligned_name,"getCharUnaligned")       do_name(putCharUnaligned_name,"putCharUnaligned")             \
+  do_name(getIntUnaligned_name,"getIntUnaligned")         do_name(putIntUnaligned_name,"putIntUnaligned")               \
+  do_name(getLongUnaligned_name,"getLongUnaligned")       do_name(putLongUnaligned_name,"putLongUnaligned")             \
+                                                                                                                        \
+  do_intrinsic(_getShortUnaligned,         sun_misc_Unsafe,        getShortUnaligned_name, getShort_signature,     F_R)  \
+  do_intrinsic(_getCharUnaligned,          sun_misc_Unsafe,        getCharUnaligned_name, getChar_signature,       F_R)  \
+  do_intrinsic(_getIntUnaligned,           sun_misc_Unsafe,        getIntUnaligned_name, getInt_signature,         F_R)  \
+  do_intrinsic(_getLongUnaligned,          sun_misc_Unsafe,        getLongUnaligned_name, getLong_signature,       F_R)  \
+  do_intrinsic(_putShortUnaligned,         sun_misc_Unsafe,        putShortUnaligned_name, putShort_signature,     F_R)  \
+  do_intrinsic(_putCharUnaligned,          sun_misc_Unsafe,        putCharUnaligned_name, putChar_signature,       F_R)  \
+  do_intrinsic(_putIntUnaligned,           sun_misc_Unsafe,        putIntUnaligned_name, putInt_signature,         F_R)  \
+  do_intrinsic(_putLongUnaligned,          sun_misc_Unsafe,        putLongUnaligned_name, putLong_signature,       F_R)  \
                                                                                                                         \
   /* %%% these are redundant except perhaps for getAddress, but Unsafe has native methods for them */                   \
   do_signature(getByte_raw_signature,     "(J)B")                                                                       \

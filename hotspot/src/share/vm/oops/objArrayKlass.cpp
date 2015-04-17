@@ -26,9 +26,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
-#include "memory/genOopClosures.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -45,17 +43,6 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/g1OopClosures.inline.hpp"
-#include "gc_implementation/g1/g1RemSet.inline.hpp"
-#include "gc_implementation/g1/heapRegionManager.inline.hpp"
-#include "gc_implementation/parNew/parOopClosures.inline.hpp"
-#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
-#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#endif // INCLUDE_ALL_GCS
 
 ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, KlassHandle klass_handle, Symbol* name, TRAPS) {
   assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
@@ -409,179 +396,6 @@ bool ObjArrayKlass::compute_is_subtype_of(Klass* k) {
 void ObjArrayKlass::initialize(TRAPS) {
   bottom_klass()->initialize(THREAD);  // dispatches to either InstanceKlass or TypeArrayKlass
 }
-
-#define ObjArrayKlass_SPECIALIZED_OOP_ITERATE(T, a, p, do_oop) \
-{                                   \
-  T* p         = (T*)(a)->base();   \
-  T* const end = p + (a)->length(); \
-  while (p < end) {                 \
-    do_oop;                         \
-    p++;                            \
-  }                                 \
-}
-
-#define ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(T, a, p, low, high, do_oop) \
-{                                   \
-  T* const l = (T*)(low);           \
-  T* const h = (T*)(high);          \
-  T* p       = (T*)(a)->base();     \
-  T* end     = p + (a)->length();   \
-  if (p < l) p = l;                 \
-  if (end > h) end = h;             \
-  while (p < end) {                 \
-    do_oop;                         \
-    ++p;                            \
-  }                                 \
-}
-
-#define ObjArrayKlass_OOP_ITERATE(a, p, do_oop)      \
-  if (UseCompressedOops) {                           \
-    ObjArrayKlass_SPECIALIZED_OOP_ITERATE(narrowOop, \
-      a, p, do_oop)                                  \
-  } else {                                           \
-    ObjArrayKlass_SPECIALIZED_OOP_ITERATE(oop,       \
-      a, p, do_oop)                                  \
-  }
-
-#define ObjArrayKlass_BOUNDED_OOP_ITERATE(a, p, low, high, do_oop) \
-  if (UseCompressedOops) {                                   \
-    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop, \
-      a, p, low, high, do_oop)                               \
-  } else {                                                   \
-    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,       \
-      a, p, low, high, do_oop)                               \
-  }
-
-void ObjArrayKlass::oop_follow_contents(oop obj) {
-  assert (obj->is_array(), "obj must be array");
-  MarkSweep::follow_klass(obj->klass());
-  if (UseCompressedOops) {
-    objarray_follow_contents<narrowOop>(obj, 0);
-  } else {
-    objarray_follow_contents<oop>(obj, 0);
-  }
-}
-
-#if INCLUDE_ALL_GCS
-void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm,
-                                        oop obj) {
-  assert(obj->is_array(), "obj must be array");
-  PSParallelCompact::follow_klass(cm, obj->klass());
-  if (UseCompressedOops) {
-    objarray_follow_contents<narrowOop>(cm, obj, 0);
-  } else {
-    objarray_follow_contents<oop>(cm, obj, 0);
-  }
-}
-#endif // INCLUDE_ALL_GCS
-
-#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)           \
-                                                                                \
-int ObjArrayKlass::oop_oop_iterate##nv_suffix(oop obj,                          \
-                                              OopClosureType* closure) {        \
-  assert (obj->is_array(), "obj must be array");                                \
-  objArrayOop a = objArrayOop(obj);                                             \
-  /* Get size before changing pointers. */                                      \
-  /* Don't call size() or oop_size() since that is a virtual call. */           \
-  int size = a->object_size();                                                  \
-  if_do_metadata_checked(closure, nv_suffix) {                                  \
-    closure->do_klass##nv_suffix(obj->klass());                                 \
-  }                                                                             \
-  ObjArrayKlass_OOP_ITERATE(a, p, (closure)->do_oop##nv_suffix(p))              \
-  return size;                                                                  \
-}
-
-#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)         \
-                                                                                \
-int ObjArrayKlass::oop_oop_iterate##nv_suffix##_m(oop obj,                      \
-                                                  OopClosureType* closure,      \
-                                                  MemRegion mr) {               \
-  assert(obj->is_array(), "obj must be array");                                 \
-  objArrayOop a  = objArrayOop(obj);                                            \
-  /* Get size before changing pointers. */                                      \
-  /* Don't call size() or oop_size() since that is a virtual call */            \
-  int size = a->object_size();                                                  \
-  if_do_metadata_checked(closure, nv_suffix) {                                  \
-    /* SSS: Do we need to pass down mr here? */                                 \
-    closure->do_klass##nv_suffix(a->klass());                                   \
-  }                                                                             \
-  ObjArrayKlass_BOUNDED_OOP_ITERATE(                                            \
-    a, p, mr.start(), mr.end(), (closure)->do_oop##nv_suffix(p))                \
-  return size;                                                                  \
-}
-
-// Like oop_oop_iterate but only iterates over a specified range and only used
-// for objArrayOops.
-#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r(OopClosureType, nv_suffix)         \
-                                                                                \
-int ObjArrayKlass::oop_oop_iterate_range##nv_suffix(oop obj,                    \
-                                                  OopClosureType* closure,      \
-                                                  int start, int end) {         \
-  assert(obj->is_array(), "obj must be array");                                 \
-  objArrayOop a  = objArrayOop(obj);                                            \
-  /* Get size before changing pointers. */                                      \
-  /* Don't call size() or oop_size() since that is a virtual call */            \
-  int size = a->object_size();                                                  \
-  if (UseCompressedOops) {                                                      \
-    HeapWord* low = start == 0 ? (HeapWord*)a : (HeapWord*)a->obj_at_addr<narrowOop>(start);\
-    /* this might be wierd if end needs to be aligned on HeapWord boundary */   \
-    HeapWord* high = (HeapWord*)((narrowOop*)a->base() + end);                  \
-    MemRegion mr(low, high);                                                    \
-    if_do_metadata_checked(closure, nv_suffix) {                                \
-      /* SSS: Do we need to pass down mr here? */                               \
-      closure->do_klass##nv_suffix(a->klass());                                 \
-    }                                                                           \
-    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop,                    \
-      a, p, low, high, (closure)->do_oop##nv_suffix(p))                         \
-  } else {                                                                      \
-    HeapWord* low = start == 0 ? (HeapWord*)a : (HeapWord*)a->obj_at_addr<oop>(start);  \
-    HeapWord* high = (HeapWord*)((oop*)a->base() + end);                        \
-    MemRegion mr(low, high);                                                    \
-    if_do_metadata_checked(closure, nv_suffix) {                                \
-      /* SSS: Do we need to pass down mr here? */                               \
-      closure->do_klass##nv_suffix(a->klass());                                 \
-    }                                                                           \
-    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,                          \
-      a, p, low, high, (closure)->do_oop##nv_suffix(p))                         \
-  }                                                                             \
-  return size;                                                                  \
-}
-
-ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m)
-ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r)
-
-int ObjArrayKlass::oop_adjust_pointers(oop obj) {
-  assert(obj->is_objArray(), "obj must be obj array");
-  objArrayOop a = objArrayOop(obj);
-  // Get size before changing pointers.
-  // Don't call size() or oop_size() since that is a virtual call.
-  int size = a->object_size();
-  ObjArrayKlass_OOP_ITERATE(a, p, MarkSweep::adjust_pointer(p))
-  return size;
-}
-
-#if INCLUDE_ALL_GCS
-void ObjArrayKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_objArray(), "obj must be obj array");
-  ObjArrayKlass_OOP_ITERATE( \
-    objArrayOop(obj), p, \
-    if (PSScavenge::should_scavenge(p)) { \
-      pm->claim_or_forward_depth(p); \
-    })
-}
-
-int ObjArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
-  assert (obj->is_objArray(), "obj must be obj array");
-  objArrayOop a = objArrayOop(obj);
-  int size = a->object_size();
-  ObjArrayKlass_OOP_ITERATE(a, p, PSParallelCompact::adjust_pointer(p))
-  return size;
-}
-#endif // INCLUDE_ALL_GCS
 
 // JVM support
 

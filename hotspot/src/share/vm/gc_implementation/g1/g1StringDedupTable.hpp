@@ -29,6 +29,7 @@
 #include "runtime/mutexLocker.hpp"
 
 class G1StringDedupEntryCache;
+class G1StringDedupUnlinkOrOopsDoClosure;
 
 //
 // Table entry in the deduplication hashtable. Points weakly to the

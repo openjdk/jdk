@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
  protected:
   // Interpreter specific version of call_VM_base
+  using MacroAssembler::call_VM_leaf_base;
+
   virtual void call_VM_leaf_base(address entry_point,
                                  int number_of_arguments);
 

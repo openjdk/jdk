@@ -490,7 +490,7 @@ source_hpp %{
 class NativeJump;
 
 class CallStubImpl {
- 
+
   //--------------------------------------------------------------
   //---<  Used for optimization in Compile::shorten_branches  >---
   //--------------------------------------------------------------
@@ -500,9 +500,9 @@ class CallStubImpl {
   static uint size_call_trampoline() {
     return 0; // no call trampolines on this platform
   }
-  
+
   // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() { 
+  static uint reloc_call_trampoline() {
     return 0; // no call trampolines on this platform
   }
 };
@@ -621,6 +621,22 @@ const bool Matcher::match_rule_supported(int opcode) {
     break;
     case Op_MulVI:
       if ((UseSSE < 4) && (UseAVX < 1)) // only with SSE4_1 or AVX
+        return false;
+    break;
+    case Op_AddReductionVL:
+      if (UseAVX < 3) // only EVEX : vector connectivity becomes an issue here
+        return false;
+    case Op_AddReductionVI:
+      if (UseSSE < 3) // requires at least SSE3
+        return false;
+    case Op_MulReductionVI:
+      if (UseSSE < 4) // requires at least SSE4
+        return false;
+    case Op_AddReductionVF:
+    case Op_AddReductionVD:
+    case Op_MulReductionVF:
+    case Op_MulReductionVD:
+      if (UseSSE < 1) // requires at least SSE
         return false;
     break;
     case Op_CompareAndSwapL:
@@ -2530,6 +2546,574 @@ instruct Repl4D_zero(vecY dst, immD0 zero) %{
     __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
   %}
   ins_pipe( fpu_reg_reg );
+%}
+
+// ====================REDUCTION ARITHMETIC=======================================
+
+instruct rsadd2I_reduction_reg(rRegI dst, rRegI src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE > 2 && UseAVX == 0);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP tmp2, TEMP tmp);
+  format %{ "movdqu  $tmp2,$src2\n\t"
+            "phaddd  $tmp2,$tmp2\n\t"
+            "movd    $tmp,$src1\n\t"
+            "paddd   $tmp,$tmp2\n\t"
+            "movd    $dst,$tmp\t! add reduction2I" %}
+  ins_encode %{
+    __ movdqu($tmp2$$XMMRegister, $src2$$XMMRegister);
+    __ phaddd($tmp2$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdl($tmp$$XMMRegister, $src1$$Register);
+    __ paddd($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdl($dst$$Register, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvadd2I_reduction_reg(rRegI dst, rRegI src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vphaddd $tmp,$src2,$src2\n\t"
+            "movd    $tmp2,$src1\n\t"
+            "vpaddd  $tmp2,$tmp2,$tmp\n\t"
+            "movd    $dst,$tmp2\t! add reduction2I" %}
+  ins_encode %{
+    __ vphaddd($tmp$$XMMRegister, $src2$$XMMRegister, $src2$$XMMRegister, false);
+    __ movdl($tmp2$$XMMRegister, $src1$$Register);
+    __ vpaddd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, false);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsadd4I_reduction_reg(rRegI dst, rRegI src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE > 2 && UseAVX == 0);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP tmp2, TEMP tmp);
+  format %{ "movdqu  $tmp2,$src2\n\t"
+            "phaddd  $tmp2,$tmp2\n\t"
+            "phaddd  $tmp2,$tmp2\n\t"
+            "movd    $tmp,$src1\n\t"
+            "paddd   $tmp,$tmp2\n\t"
+            "movd    $dst,$tmp\t! add reduction4I" %}
+  ins_encode %{
+    __ movdqu($tmp2$$XMMRegister, $src2$$XMMRegister);
+    __ phaddd($tmp2$$XMMRegister, $tmp2$$XMMRegister);
+    __ phaddd($tmp2$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdl($tmp$$XMMRegister, $src1$$Register);
+    __ paddd($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdl($dst$$Register, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvadd4I_reduction_reg(rRegI dst, rRegI src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vphaddd $tmp,$src2,$src2\n\t"
+            "vphaddd $tmp,$tmp,$tmp2\n\t"
+            "movd    $tmp2,$src1\n\t"
+            "vpaddd  $tmp2,$tmp2,$tmp\n\t"
+            "movd    $dst,$tmp2\t! add reduction4I" %}
+  ins_encode %{
+    __ vphaddd($tmp$$XMMRegister, $src2$$XMMRegister, $src2$$XMMRegister, false);
+    __ vphaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($tmp2$$XMMRegister, $src1$$Register);
+    __ vpaddd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, false);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvadd8I_reduction_reg(rRegI dst, rRegI src1, vecY src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vphaddd $tmp,$src2,$src2\n\t"
+            "vphaddd $tmp,$tmp,$tmp2\n\t"
+            "vextractf128  $tmp2,$tmp\n\t"
+            "vpaddd  $tmp,$tmp,$tmp2\n\t"
+            "movd    $tmp2,$src1\n\t"
+            "vpaddd  $tmp2,$tmp2,$tmp\n\t"
+            "movd    $dst,$tmp2\t! add reduction8I" %}
+  ins_encode %{
+    __ vphaddd($tmp$$XMMRegister, $src2$$XMMRegister, $src2$$XMMRegister, true);
+    __ vphaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, true);
+    __ vextractf128h($tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ vpaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($tmp2$$XMMRegister, $src1$$Register);
+    __ vpaddd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, false);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsadd2F_reduction_reg(regF dst, regF src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE >= 1 && UseAVX == 0);
+  match(Set dst (AddReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "movdqu  $tmp,$src1\n\t"
+            "addss   $tmp,$src2\n\t"
+            "pshufd  $tmp2,$src2,0x01\n\t"
+            "addss   $tmp,$tmp2\n\t"
+            "movdqu  $dst,$tmp\t! add reduction2F" %}
+  ins_encode %{
+    __ movdqu($tmp$$XMMRegister, $src1$$XMMRegister);
+    __ addss($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ addss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdqu($dst$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvadd2F_reduction_reg(regF dst, regF src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVF src1 src2));
+  effect(TEMP tmp2, TEMP tmp);
+  format %{ "vaddss  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0x01\n\t"
+            "vaddss  $dst,$tmp2,$tmp\t! add reduction2F" %}
+  ins_encode %{
+    __ vaddss($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ vaddss($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsadd4F_reduction_reg(regF dst, regF src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE >= 1 && UseAVX == 0);
+  match(Set dst (AddReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "movdqu  $tmp,$src1\n\t"
+            "addss   $tmp,$src2\n\t"
+            "pshufd  $tmp2,$src2,0x01\n\t"
+            "addss   $tmp,$tmp2\n\t"
+            "pshufd  $tmp2,$src2,0x02\n\t"
+            "addss   $tmp,$tmp2\n\t"
+            "pshufd  $tmp2,$src2,0x03\n\t"
+            "addss   $tmp,$tmp2\n\t"
+            "movdqu  $dst,$tmp\t! add reduction4F" %}
+  ins_encode %{
+    __ movdqu($tmp$$XMMRegister, $src1$$XMMRegister);
+    __ addss($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ addss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x02);
+    __ addss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x03);
+    __ addss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdqu($dst$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvadd4F_reduction_reg(regF dst, regF src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vaddss  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0x01\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x02\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x03\n\t"
+            "vaddss  $dst,$tmp2,$tmp\t! add reduction4F" %}
+  ins_encode %{
+    __ vaddss($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x02);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
+    __ vaddss($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct radd8F_reduction_reg(regF dst, regF src1, vecY src2, regF tmp, regF tmp2, regF tmp3) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
+  format %{ "vaddss  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0x01\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x02\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x03\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp\n\t"
+            "vextractf128  $tmp3,$src2\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp3\n\t"
+            "pshufd  $tmp,$tmp3,0x01\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$tmp3,0x02\n\t"
+            "vaddss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$tmp3,0x03\n\t"
+            "vaddss  $dst,$tmp2,$tmp\t! add reduction8F" %}
+  ins_encode %{
+    __ vaddss($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x02);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ vextractf128h($tmp3$$XMMRegister, $src2$$XMMRegister);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0x01);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0x02);
+    __ vaddss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0x03);
+    __ vaddss($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsadd2D_reduction_reg(regD dst, regD src1, vecX src2, regD tmp) %{
+  predicate(UseSSE >= 1 && UseAVX == 0);
+  match(Set dst (AddReductionVD src1 src2));
+  effect(TEMP tmp, TEMP dst);
+  format %{ "movdqu  $tmp,$src1\n\t"
+            "addsd   $tmp,$src2\n\t"
+            "pshufd  $dst,$src2,0xE\n\t"
+            "addsd   $dst,$tmp\t! add reduction2D" %}
+  ins_encode %{
+    __ movdqu($tmp$$XMMRegister, $src1$$XMMRegister);
+    __ addsd($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($dst$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ addsd($dst$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvadd2D_reduction_reg(regD dst, regD src1, vecX src2, regD tmp, regD tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVD src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vaddsd  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0xE\n\t"
+            "vaddsd  $dst,$tmp2,$tmp\t! add reduction2D" %}
+  ins_encode %{
+    __ vaddsd($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ vaddsd($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvadd4D_reduction_reg(regD dst, regD src1, vecY src2, regD tmp, regD tmp2, regD tmp3) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddReductionVD src1 src2));
+  effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
+  format %{ "vaddsd  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0xE\n\t"
+            "vaddsd  $tmp2,$tmp2,$tmp\n\t"
+            "vextractf128  $tmp3,$src2\n\t"
+            "vaddsd  $tmp2,$tmp2,$tmp3\n\t"
+            "pshufd  $tmp,$tmp3,0xE\n\t"
+            "vaddsd  $dst,$tmp2,$tmp\t! add reduction4D" %}
+  ins_encode %{
+    __ vaddsd($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ vaddsd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ vextractf128h($tmp3$$XMMRegister, $src2$$XMMRegister);
+    __ vaddsd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0xE);
+    __ vaddsd($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsmul2I_reduction_reg(rRegI dst, rRegI src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE > 3 && UseAVX == 0);
+  match(Set dst (MulReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "pshufd  $tmp2,$src2,0x1\n\t"
+            "pmulld  $tmp2,$src2\n\t"
+            "movd    $tmp,$src1\n\t"
+            "pmulld  $tmp2,$tmp\n\t"
+            "movd    $dst,$tmp2\t! mul reduction2I" %}
+  ins_encode %{
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
+    __ pmulld($tmp2$$XMMRegister, $src2$$XMMRegister);
+    __ movdl($tmp$$XMMRegister, $src1$$Register);
+    __ pmulld($tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul2I_reduction_reg(rRegI dst, rRegI src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "pshufd  $tmp2,$src2,0x1\n\t"
+            "vpmulld $tmp,$src2,$tmp2\n\t"
+            "movd    $tmp2,$src1\n\t"
+            "vpmulld $tmp2,$tmp,$tmp2\n\t"
+            "movd    $dst,$tmp2\t! mul reduction2I" %}
+  ins_encode %{
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
+    __ vpmulld($tmp$$XMMRegister, $src2$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($tmp2$$XMMRegister, $src1$$Register);
+    __ vpmulld($tmp2$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsmul4I_reduction_reg(rRegI dst, rRegI src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE > 3 && UseAVX == 0);
+  match(Set dst (MulReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "pshufd  $tmp2,$src2,0xE\n\t"
+            "pmulld  $tmp2,$src2\n\t"
+            "pshufd  $tmp,$tmp2,0x1\n\t"
+            "pmulld  $tmp2,$tmp\n\t"
+            "movd    $tmp,$src1\n\t"
+            "pmulld  $tmp2,$tmp\n\t"
+            "movd    $dst,$tmp2\t! mul reduction4I" %}
+  ins_encode %{
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ pmulld($tmp2$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x1);
+    __ pmulld($tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ movdl($tmp$$XMMRegister, $src1$$Register);
+    __ pmulld($tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul4I_reduction_reg(rRegI dst, rRegI src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "pshufd  $tmp2,$src2,0xE\n\t"
+            "vpmulld $tmp,$src2,$tmp2\n\t"
+            "pshufd  $tmp2,$tmp,0x1\n\t"
+            "vpmulld $tmp,$tmp,$tmp2\n\t"
+            "movd    $tmp2,$src1\n\t"
+            "vpmulld $tmp2,$tmp,$tmp2\n\t"
+            "movd    $dst,$tmp2\t! mul reduction4I" %}
+  ins_encode %{
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ vpmulld($tmp$$XMMRegister, $src2$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ pshufd($tmp2$$XMMRegister, $tmp$$XMMRegister, 0x1);
+    __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($tmp2$$XMMRegister, $src1$$Register);
+    __ vpmulld($tmp2$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul8I_reduction_reg(rRegI dst, rRegI src1, vecY src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVI src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vextractf128  $tmp,$src2\n\t"
+            "vpmulld $tmp,$tmp,$src2\n\t"
+            "pshufd  $tmp2,$tmp,0xE\n\t"
+            "vpmulld $tmp,$tmp,$tmp2\n\t"
+            "pshufd  $tmp2,$tmp,0x1\n\t"
+            "vpmulld $tmp,$tmp,$tmp2\n\t"
+            "movd    $tmp2,$src1\n\t"
+            "vpmulld $tmp2,$tmp,$tmp2\n\t"
+            "movd    $dst,$tmp2\t! mul reduction8I" %}
+  ins_encode %{
+    __ vextractf128h($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $src2$$XMMRegister, false);
+    __ pshufd($tmp2$$XMMRegister, $tmp$$XMMRegister, 0xE);
+    __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ pshufd($tmp2$$XMMRegister, $tmp$$XMMRegister, 0x1);
+    __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($tmp2$$XMMRegister, $src1$$Register);
+    __ vpmulld($tmp2$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, false);
+    __ movdl($dst$$Register, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsmul2F_reduction_reg(regF dst, regF src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE >= 1 && UseAVX == 0);
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "movdqu  $tmp,$src1\n\t"
+            "mulss   $tmp,$src2\n\t"
+            "pshufd  $tmp2,$src2,0x01\n\t"
+            "mulss   $tmp,$tmp2\n\t"
+            "movdqu  $dst,$tmp\t! add reduction2F" %}
+  ins_encode %{
+    __ movdqu($tmp$$XMMRegister, $src1$$XMMRegister);
+    __ mulss($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ mulss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdqu($dst$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul2F_reduction_reg(regF dst, regF src1, vecD src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vmulss  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0x01\n\t"
+            "vmulss  $dst,$tmp2,$tmp\t! add reduction2F" %}
+  ins_encode %{
+    __ vmulss($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ vmulss($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsmul4F_reduction_reg(regF dst, regF src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseSSE >= 1 && UseAVX == 0);
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "movdqu  $tmp,$src1\n\t"
+            "mulss   $tmp,$src2\n\t"
+            "pshufd  $tmp2,$src2,0x01\n\t"
+            "mulss   $tmp,$tmp2\n\t"
+            "pshufd  $tmp2,$src2,0x02\n\t"
+            "mulss   $tmp,$tmp2\n\t"
+            "pshufd  $tmp2,$src2,0x03\n\t"
+            "mulss   $tmp,$tmp2\n\t"
+            "movdqu  $dst,$tmp\t! add reduction4F" %}
+  ins_encode %{
+    __ movdqu($tmp$$XMMRegister, $src1$$XMMRegister);
+    __ mulss($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ mulss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x02);
+    __ mulss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ pshufd($tmp2$$XMMRegister, $src2$$XMMRegister, 0x03);
+    __ mulss($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ movdqu($dst$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul4F_reduction_reg(regF dst, regF src1, vecX src2, regF tmp, regF tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vmulss  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0x01\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x02\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x03\n\t"
+            "vmulss  $dst,$tmp2,$tmp\t! add reduction4F" %}
+  ins_encode %{
+    __ vmulss($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x02);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
+    __ vmulss($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul8F_reduction_reg(regF dst, regF src1, vecY src2, regF tmp, regF tmp2, regF tmp3) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
+  format %{ "vmulss  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0x01\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x02\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$src2,0x03\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp\n\t"
+            "vextractf128  $tmp3,$src2\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp3\n\t"
+            "pshufd  $tmp,$tmp3,0x01\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$tmp3,0x02\n\t"
+            "vmulss  $tmp2,$tmp2,$tmp\n\t"
+            "pshufd  $tmp,$tmp3,0x03\n\t"
+            "vmulss  $dst,$tmp2,$tmp\t! mul reduction8F" %}
+  ins_encode %{
+    __ vmulss($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x01);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x02);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ vextractf128h($tmp3$$XMMRegister, $src2$$XMMRegister);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0x01);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0x02);
+    __ vmulss($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0x03);
+    __ vmulss($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rsmul2D_reduction_reg(regD dst, regD src1, vecX src2, regD tmp) %{
+  predicate(UseSSE >= 1 && UseAVX == 0);
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP tmp, TEMP dst);
+  format %{ "movdqu  $tmp,$src1\n\t"
+            "mulsd   $tmp,$src2\n\t"
+            "pshufd  $dst,$src2,0xE\n\t"
+            "mulsd   $dst,$tmp\t! add reduction2D" %}
+  ins_encode %{
+    __ movdqu($tmp$$XMMRegister, $src1$$XMMRegister);
+    __ mulsd($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($dst$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ mulsd($dst$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul2D_reduction_reg(regD dst, regD src1, vecX src2, regD tmp, regD tmp2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "vmulsd  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0xE\n\t"
+            "vmulsd  $dst,$tmp2,$tmp\t! mul reduction2D" %}
+  ins_encode %{
+    __ vmulsd($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ vmulsd($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rvmul4D_reduction_reg(regD dst, regD src1, vecY src2, regD tmp, regD tmp2, regD tmp3) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
+  format %{ "vmulsd  $tmp2,$src1,$src2\n\t"
+            "pshufd  $tmp,$src2,0xE\n\t"
+            "vmulsd  $tmp2,$tmp2,$tmp\n\t"
+            "vextractf128  $tmp3,$src2\n\t"
+            "vmulsd  $tmp2,$tmp2,$tmp3\n\t"
+            "pshufd  $tmp,$tmp3,0xE\n\t"
+            "vmulsd  $dst,$tmp2,$tmp\t! mul reduction4D" %}
+  ins_encode %{
+    __ vmulsd($tmp2$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
+    __ vmulsd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ vextractf128h($tmp3$$XMMRegister, $src2$$XMMRegister);
+    __ vmulsd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister);
+    __ pshufd($tmp$$XMMRegister, $tmp3$$XMMRegister, 0xE);
+    __ vmulsd($dst$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // ====================VECTOR ARITHMETIC=======================================

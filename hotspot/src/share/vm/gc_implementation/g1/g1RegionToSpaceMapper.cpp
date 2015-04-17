@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,16 @@
 #include "utilities/bitMap.inline.hpp"
 
 G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
-                                             size_t commit_granularity,
+                                             size_t used_size,
+                                             size_t page_size,
                                              size_t region_granularity,
                                              MemoryType type) :
-  _storage(),
-  _commit_granularity(commit_granularity),
+  _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
   _listener(NULL),
   _commit_map() {
-  guarantee(is_power_of_2(commit_granularity), "must be");
+  guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");
-  _storage.initialize_with_granularity(rs, commit_granularity);
 
   MemTracker::record_virtual_memory_type((address)rs.base(), type);
 }
@@ -55,25 +54,26 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
  public:
   G1RegionsLargerThanCommitSizeMapper(ReservedSpace rs,
-                                      size_t os_commit_granularity,
+                                      size_t actual_size,
+                                      size_t page_size,
                                       size_t alloc_granularity,
                                       size_t commit_factor,
                                       MemoryType type) :
-     G1RegionToSpaceMapper(rs, os_commit_granularity, alloc_granularity, type),
-    _pages_per_region(alloc_granularity / (os_commit_granularity * commit_factor)) {
+    G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, type),
+    _pages_per_region(alloc_granularity / (page_size * commit_factor)) {
 
-    guarantee(alloc_granularity >= os_commit_granularity, "allocation granularity smaller than commit granularity");
+    guarantee(alloc_granularity >= page_size, "allocation granularity smaller than commit granularity");
     _commit_map.resize(rs.size() * commit_factor / alloc_granularity, /* in_resource_area */ false);
   }
 
-  virtual void commit_regions(uintptr_t start_idx, size_t num_regions) {
-    bool zero_filled = _storage.commit(start_idx * _pages_per_region, num_regions * _pages_per_region);
+  virtual void commit_regions(uint start_idx, size_t num_regions) {
+    bool zero_filled = _storage.commit((size_t)start_idx * _pages_per_region, num_regions * _pages_per_region);
     _commit_map.set_range(start_idx, start_idx + num_regions);
     fire_on_commit(start_idx, num_regions, zero_filled);
   }
 
-  virtual void uncommit_regions(uintptr_t start_idx, size_t num_regions) {
-    _storage.uncommit(start_idx * _pages_per_region, num_regions * _pages_per_region);
+  virtual void uncommit_regions(uint start_idx, size_t num_regions) {
+    _storage.uncommit((size_t)start_idx * _pages_per_region, num_regions * _pages_per_region);
     _commit_map.clear_range(start_idx, start_idx + num_regions);
   }
 };
@@ -98,22 +98,23 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
  public:
   G1RegionsSmallerThanCommitSizeMapper(ReservedSpace rs,
-                                       size_t os_commit_granularity,
+                                       size_t actual_size,
+                                       size_t page_size,
                                        size_t alloc_granularity,
                                        size_t commit_factor,
                                        MemoryType type) :
-     G1RegionToSpaceMapper(rs, os_commit_granularity, alloc_granularity, type),
-    _regions_per_page((os_commit_granularity * commit_factor) / alloc_granularity), _refcounts() {
+    G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, type),
+    _regions_per_page((page_size * commit_factor) / alloc_granularity), _refcounts() {
 
-    guarantee((os_commit_granularity * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
-    _refcounts.initialize((HeapWord*)rs.base(), (HeapWord*)(rs.base() + rs.size()), os_commit_granularity);
+    guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
+    _refcounts.initialize((HeapWord*)rs.base(), (HeapWord*)(rs.base() + align_size_up(rs.size(), page_size)), page_size);
     _commit_map.resize(rs.size() * commit_factor / alloc_granularity, /* in_resource_area */ false);
   }
 
-  virtual void commit_regions(uintptr_t start_idx, size_t num_regions) {
-    for (uintptr_t i = start_idx; i < start_idx + num_regions; i++) {
-      assert(!_commit_map.at(i), err_msg("Trying to commit storage at region "INTPTR_FORMAT" that is already committed", i));
-      uintptr_t idx = region_idx_to_page_idx(i);
+  virtual void commit_regions(uint start_idx, size_t num_regions) {
+    for (uint i = start_idx; i < start_idx + num_regions; i++) {
+      assert(!_commit_map.at(i), err_msg("Trying to commit storage at region %u that is already committed", i));
+      size_t idx = region_idx_to_page_idx(i);
       uint old_refcount = _refcounts.get_by_index(idx);
       bool zero_filled = false;
       if (old_refcount == 0) {
@@ -125,10 +126,10 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     }
   }
 
-  virtual void uncommit_regions(uintptr_t start_idx, size_t num_regions) {
-    for (uintptr_t i = start_idx; i < start_idx + num_regions; i++) {
-      assert(_commit_map.at(i), err_msg("Trying to uncommit storage at region "INTPTR_FORMAT" that is not committed", i));
-      uintptr_t idx = region_idx_to_page_idx(i);
+  virtual void uncommit_regions(uint start_idx, size_t num_regions) {
+    for (uint i = start_idx; i < start_idx + num_regions; i++) {
+      assert(_commit_map.at(i), err_msg("Trying to uncommit storage at region %u that is not committed", i));
+      size_t idx = region_idx_to_page_idx(i);
       uint old_refcount = _refcounts.get_by_index(idx);
       assert(old_refcount > 0, "must be");
       if (old_refcount == 1) {
@@ -147,14 +148,15 @@ void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions, b
 }
 
 G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_mapper(ReservedSpace rs,
-                                                            size_t os_commit_granularity,
+                                                            size_t actual_size,
+                                                            size_t page_size,
                                                             size_t region_granularity,
                                                             size_t commit_factor,
                                                             MemoryType type) {
 
-  if (region_granularity >= (os_commit_granularity * commit_factor)) {
-    return new G1RegionsLargerThanCommitSizeMapper(rs, os_commit_granularity, region_granularity, commit_factor, type);
+  if (region_granularity >= (page_size * commit_factor)) {
+    return new G1RegionsLargerThanCommitSizeMapper(rs, actual_size, page_size, region_granularity, commit_factor, type);
   } else {
-    return new G1RegionsSmallerThanCommitSizeMapper(rs, os_commit_granularity, region_granularity, commit_factor, type);
+    return new G1RegionsSmallerThanCommitSizeMapper(rs, actual_size, page_size, region_granularity, commit_factor, type);
   }
 }

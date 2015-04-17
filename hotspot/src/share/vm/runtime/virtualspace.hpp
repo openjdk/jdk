@@ -51,7 +51,11 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
  public:
   // Constructor
   ReservedSpace();
-  ReservedSpace(size_t size);
+  // Initialize the reserved space with the given size. If preferred_page_size
+  // is set, use this as minimum page size/alignment. This may waste some space
+  // if the given size is not aligned to that value, as the reservation will be
+  // aligned up to the final alignment in this case.
+  ReservedSpace(size_t size, size_t preferred_page_size = 0);
   ReservedSpace(size_t size, size_t alignment, bool large,
                 char* requested_address = NULL);
   ReservedSpace(size_t size, size_t alignment, bool large, bool executable);

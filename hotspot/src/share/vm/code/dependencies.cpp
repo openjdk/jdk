@@ -845,7 +845,13 @@ class ClassHierarchyWalker {
     assert((uint)n <= (uint)_num_participants, "oob");
     Method* fm = _found_methods[n];
     assert(n == _num_participants || fm != NULL, "proper usage");
-    assert(fm == NULL || fm->method_holder() == _participants[n], "sanity");
+    if (fm != NULL && fm->method_holder() != _participants[n]) {
+      // Default methods from interfaces can be added to classes. In
+      // that case the holder of the method is not the class but the
+      // interface where it's defined.
+      assert(fm->is_default_method(), "sanity");
+      return NULL;
+    }
     return fm;
   }
 

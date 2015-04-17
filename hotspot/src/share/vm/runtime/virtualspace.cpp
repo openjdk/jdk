@@ -37,13 +37,22 @@ ReservedSpace::ReservedSpace() : _base(NULL), _size(0), _noaccess_prefix(0),
     _alignment(0), _special(false), _executable(false) {
 }
 
-ReservedSpace::ReservedSpace(size_t size) {
+ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) {
+  bool has_preferred_page_size = preferred_page_size != 0;
   // Want to use large pages where possible and pad with small pages.
-  size_t page_size = os::page_size_for_region_unaligned(size, 1);
+  size_t page_size = has_preferred_page_size ? preferred_page_size : os::page_size_for_region_unaligned(size, 1);
   bool large_pages = page_size != (size_t)os::vm_page_size();
-  // Don't force the alignment to be large page aligned,
-  // since that will waste memory.
-  size_t alignment = os::vm_allocation_granularity();
+  size_t alignment;
+  if (large_pages && has_preferred_page_size) {
+    alignment = MAX2(page_size, (size_t)os::vm_allocation_granularity());
+    // ReservedSpace initialization requires size to be aligned to the given
+    // alignment. Align the size up.
+    size = align_size_up(size, alignment);
+  } else {
+    // Don't force the alignment to be large page aligned,
+    // since that will waste memory.
+    alignment = os::vm_allocation_granularity();
+  }
   initialize(size, alignment, large_pages, NULL, false);
 }
 

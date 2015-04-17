@@ -272,6 +272,11 @@ Thread::Thread() {
 #endif // ASSERT
 }
 
+// Non-inlined version to be used where thread.inline.hpp shouldn't be included.
+Thread* Thread::current_noinline() {
+  return Thread::current();
+}
+
 void Thread::initialize_thread_local_storage() {
   // Note: Make sure this method only calls
   // non-blocking operations. Otherwise, it might not work
@@ -754,13 +759,9 @@ bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
       return true;
     } else {
       guarantee(res == strong_roots_parity, "Or else what?");
-      assert(SharedHeap::heap()->workers()->active_workers() > 0,
-             "Should only fail when parallel.");
       return false;
     }
   }
-  assert(SharedHeap::heap()->workers()->active_workers() > 0,
-         "Should only fail when parallel.");
   return false;
 }
 
@@ -4056,7 +4057,7 @@ void Threads::change_thread_claim_parity() {
          "Not in range.");
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
     const int thread_parity = p->oops_do_parity();
@@ -4064,22 +4065,9 @@ void Threads::assert_all_threads_claimed() {
         err_msg("Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity));
   }
 }
-#endif // PRODUCT
+#endif // ASSERT
 
-void Threads::possibly_parallel_oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
-  // Introduce a mechanism allowing parallel threads to claim threads as
-  // root groups.  Overhead should be small enough to use all the time,
-  // even in sequential code.
-  SharedHeap* sh = SharedHeap::heap();
-  // Cannot yet substitute active_workers for n_par_threads
-  // because of G1CollectedHeap::verify() use of
-  // SharedHeap::process_roots().  n_par_threads == 0 will
-  // turn off parallelism in process_roots while active_workers
-  // is being used for parallelism elsewhere.
-  bool is_par = sh->n_par_threads() > 0;
-  assert(!is_par ||
-         (SharedHeap::heap()->n_par_threads() ==
-         SharedHeap::heap()->workers()->active_workers()), "Mismatch");
+void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   int cp = Threads::thread_claim_parity();
   ALL_JAVA_THREADS(p) {
     if (p->claim_oops_do(is_par, cp)) {
