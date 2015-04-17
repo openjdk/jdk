@@ -2290,9 +2290,6 @@ class CommandLineFlags {
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
                                                                             \
-  notproduct(bool, TraceMarkSweep, false,                                   \
-          "Trace mark sweep")                                               \
-                                                                            \
   product(bool, PrintReferenceGC, false,                                    \
           "Print times spent handling reference objects during GC "         \
           "(enabled only when PrintGCDetails)")                             \

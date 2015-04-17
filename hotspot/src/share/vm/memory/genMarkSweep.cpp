@@ -187,7 +187,6 @@ void GenMarkSweep::mark_sweep_phase1(int level,
                                      bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
   GCTraceTime tm("phase 1", PrintGC && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace(" 1");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
@@ -258,7 +257,6 @@ void GenMarkSweep::mark_sweep_phase2() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   GCTraceTime tm("phase 2", PrintGC && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace("2");
 
   gch->prepare_for_compaction();
 }
@@ -275,7 +273,6 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
 
   // Adjust the pointers to reflect the new locations
   GCTraceTime tm("phase 3", PrintGC && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace("3");
 
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -325,7 +322,6 @@ void GenMarkSweep::mark_sweep_phase4() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   GCTraceTime tm("phase 4", PrintGC && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace("4");
 
   GenCompactClosure blk;
   gch->generation_iterate(&blk, true);
