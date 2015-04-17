@@ -51,7 +51,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(BUILD_LIBMLIB_SRC), \
     EXCLUDE_FILES := mlib_c_ImageBlendTable.c, \
-    LANG := C, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBMLIB_CFLAGS), \
@@ -124,7 +123,6 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
       LIBRARY := mlib_image_v, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBMLIB_IMAGE_V_SRC), \
-      LANG := C, \
       EXCLUDE_FILES := $(BUILD_LIBMLIB_IMAGE_V_EXFILES), \
       OPTIMIZATION := HIGHEST, \
       CFLAGS := -xarch=sparcvis \
@@ -204,8 +202,6 @@ ifneq ($(OPENJDK_TARGET_OS), solaris)
   LIBAWT_CFLAGS += -DMLIB_NO_LIBSUNMATH
 endif
 
-LIBAWT_LANG := C
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/native/common/font \
       $(JDK_TOPDIR)/src/java.desktop/share/native/common/java2d/opengl \
@@ -222,7 +218,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       awt/image/cvutils/img_colors.c \
       #
 
-  LIBAWT_LANG := C++
   LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE
   ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
     LIBAWT_CFLAGS += -DMLIB_OS64BIT
@@ -247,7 +242,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     SRC := $(LIBAWT_DIRS), \
     EXCLUDES := $(LIBAWT_EXCLUDES), \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
-    LANG := $(LIBAWT_LANG), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     DISABLED_WARNINGS_gcc := sign-compare unused-result maybe-uninitialized \
@@ -355,7 +349,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(LIBAWT_XAWT_DIRS), \
         EXCLUDES := $(LIBAWT_XAWT_EXCLUDES), \
-        LANG := C, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_XAWT_CFLAGS) \
             $(X_CFLAGS), \
@@ -413,7 +406,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBLCMS_SRC), \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
-    LANG := C, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(filter-out -xc99=%none, $(CFLAGS_JDKLIB)) \
         $(SHARED_LIBRARY_FLAGS) $(LIBLCMS_CPPFLAGS) \
@@ -496,7 +488,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVAJPEG_SRC), \
     INCLUDE_FILES := $(BUILD_LIBJAVAJPEG_INCLUDE_FILES), \
-    LANG := C, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJAVAJPEG_SRC)) \
         $(LIBJAVA_HEADER_FLAGS) \
@@ -564,7 +555,6 @@ ifeq ($(BUILD_HEADLESS), true)
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(LIBAWT_HEADLESS_DIRS), \
         EXCLUDES := $(LIBAWT_HEADLESS_EXCLUDES), \
-        LANG := C, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) \
             -DHEADLESS=true \
@@ -651,7 +641,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     SRC := $(LIBFONTMANAGER_SRC), \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
         AccelGlyphCache.c, \
-    LANG := C++, \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
@@ -712,7 +702,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJAWT_SRC), \
       INCLUDE_FILES := $(LIBJAWT_INCLUDE_FILES), \
-      LANG := C++, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CXXFLAGS_JDKLIB) \
           -EHsc -DUNICODE -D_UNICODE \
@@ -771,7 +760,6 @@ else # OPENJDK_TARGET_OS not windows
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJAWT_SRC), \
       INCLUDE_FILES := $(JAWT_FILES), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBJAWT_CFLAGS), \
@@ -889,7 +877,6 @@ ifndef BUILD_HEADLESS_ONLY
       SRC := $(LIBSPLASHSCREEN_DIRS), \
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) \
                 $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS), \
@@ -958,7 +945,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LIBRARY := awt_lwawt, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBAWT_LWAWT_DIRS), \
-      LANG := C, \
       INCLUDE_FILES := $(LIBAWT_LWAWT_FILES), \
       EXCLUDE_FILES := $(LIBAWT_LWAWT_EXFILES), \
       EXCLUDES := $(LIBAWT_LWAWT_EXCLUDES), \
@@ -1008,7 +994,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LIBRARY := osxui, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxui, \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxui \
