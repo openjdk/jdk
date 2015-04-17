@@ -42,6 +42,7 @@ import sun.awt.FontConfiguration;
 import sun.awt.HeadlessToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.lwawt.macosx.*;
+import sun.misc.InnocuousThread;
 
 public final class CFontManager extends SunFontManager {
     private static Hashtable<String, Font2D> genericFonts = new Hashtable<String, Font2D>();
@@ -211,14 +212,18 @@ public final class CFontManager extends SunFontManager {
                                 });
                     }
                 };
-                AccessController.doPrivileged(
-                        (PrivilegedAction<Void>) () -> {
-                            /* The thread must be a member of a thread group
-                             * which will not get GCed before VM exit.
-                             * Make its parent the top-level thread group.
-                             */
-                            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                            fileCloser = new Thread(rootTG, fileCloserRunnable);
+                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                            if (System.getSecurityManager() == null) {
+                                /* The thread must be a member of a thread group
+                                 * which will not get GCed before VM exit.
+                                 * Make its parent the top-level thread group.
+                                 */
+                                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                                fileCloser = new Thread(rootTG, fileCloserRunnable);
+                            } else {
+                                /* InnocuousThread is a member of a correct TG by default */
+                                fileCloser = new InnocuousThread(fileCloserRunnable);
+                            }
                             fileCloser.setContextClassLoader(null);
                             Runtime.getRuntime().addShutdownHook(fileCloser);
                             return null;

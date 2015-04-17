@@ -29,6 +29,7 @@ import java.util.*;
 import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.misc.ManagedLocalsThread;
 // These imports needed only as a workaround for a JavaDoc bug
 import java.lang.Integer;
 import java.lang.Long;
@@ -1470,7 +1471,7 @@ public abstract class AbstractPreferences extends Preferences {
      * A single background thread ("the event notification thread") monitors
      * the event queue and delivers events that are placed on the queue.
      */
-    private static class EventDispatchThread extends Thread {
+    private static class EventDispatchThread extends ManagedLocalsThread {
         public void run() {
             while(true) {
                 // Wait on eventQueue till an event is present

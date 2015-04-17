@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,25 +132,32 @@ class EndEntityChecker {
         return new EndEntityChecker(type, variant);
     }
 
-    void check(X509Certificate cert, Object parameter)
-            throws CertificateException {
+    void check(X509Certificate cert, Object parameter,
+            boolean checkUnresolvedCritExts) throws CertificateException {
         if (variant.equals(Validator.VAR_GENERIC)) {
-            // no checks
-            return;
-        } else if (variant.equals(Validator.VAR_TLS_SERVER)) {
-            checkTLSServer(cert, (String)parameter);
+            return; // no checks
+        }
+
+        Set<String> exts = getCriticalExtensions(cert);
+        if (variant.equals(Validator.VAR_TLS_SERVER)) {
+            checkTLSServer(cert, (String)parameter, exts);
         } else if (variant.equals(Validator.VAR_TLS_CLIENT)) {
-            checkTLSClient(cert);
+            checkTLSClient(cert, exts);
         } else if (variant.equals(Validator.VAR_CODE_SIGNING)) {
-            checkCodeSigning(cert);
+            checkCodeSigning(cert, exts);
         } else if (variant.equals(Validator.VAR_JCE_SIGNING)) {
-            checkCodeSigning(cert);
+            checkCodeSigning(cert, exts);
         } else if (variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING)) {
-            checkCodeSigning(cert);
+            checkCodeSigning(cert, exts);
         } else if (variant.equals(Validator.VAR_TSA_SERVER)) {
-            checkTSAServer(cert);
+            checkTSAServer(cert, exts);
         } else {
             throw new CertificateException("Unknown variant: " + variant);
+        }
+
+        // if neither VAR_GENERIC variant nor unknown variant
+        if (checkUnresolvedCritExts) {
+            checkRemainingExtensions(exts);
         }
     }
 
@@ -219,10 +226,8 @@ class EndEntityChecker {
      * authentication.
      * @throws CertificateException if not.
      */
-    private void checkTLSClient(X509Certificate cert)
+    private void checkTLSClient(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        Set<String> exts = getCriticalExtensions(cert);
-
         if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
             throw new ValidatorException
                 ("KeyUsage does not allow digital signatures",
@@ -245,8 +250,6 @@ class EndEntityChecker {
         exts.remove(SimpleValidator.OID_KEY_USAGE);
         exts.remove(SimpleValidator.OID_EXTENDED_KEY_USAGE);
         exts.remove(SimpleValidator.OID_NETSCAPE_CERT_TYPE);
-
-        checkRemainingExtensions(exts);
     }
 
     /**
@@ -255,10 +258,8 @@ class EndEntityChecker {
      * specification for details.
      * @throws CertificateException if not.
      */
-    private void checkTLSServer(X509Certificate cert, String parameter)
-            throws CertificateException {
-        Set<String> exts = getCriticalExtensions(cert);
-
+    private void checkTLSServer(X509Certificate cert, String parameter,
+            Set<String> exts) throws CertificateException {
         if (KU_SERVER_ENCRYPTION.contains(parameter)) {
             if (checkKeyUsage(cert, KU_KEY_ENCIPHERMENT) == false) {
                 throw new ValidatorException
@@ -303,18 +304,14 @@ class EndEntityChecker {
         exts.remove(SimpleValidator.OID_KEY_USAGE);
         exts.remove(SimpleValidator.OID_EXTENDED_KEY_USAGE);
         exts.remove(SimpleValidator.OID_NETSCAPE_CERT_TYPE);
-
-        checkRemainingExtensions(exts);
     }
 
     /**
      * Check whether this certificate can be used for code signing.
      * @throws CertificateException if not.
      */
-    private void checkCodeSigning(X509Certificate cert)
+    private void checkCodeSigning(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        Set<String> exts = getCriticalExtensions(cert);
-
         if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
             throw new ValidatorException
                 ("KeyUsage does not allow digital signatures",
@@ -341,8 +338,6 @@ class EndEntityChecker {
         // remove extensions we checked
         exts.remove(SimpleValidator.OID_KEY_USAGE);
         exts.remove(SimpleValidator.OID_EXTENDED_KEY_USAGE);
-
-        checkRemainingExtensions(exts);
     }
 
     /**
@@ -350,10 +345,8 @@ class EndEntityChecker {
      * server (see RFC 3161, section 2.3).
      * @throws CertificateException if not.
      */
-    private void checkTSAServer(X509Certificate cert)
+    private void checkTSAServer(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        Set<String> exts = getCriticalExtensions(cert);
-
         if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
             throw new ValidatorException
                 ("KeyUsage does not allow digital signatures",
@@ -376,7 +369,5 @@ class EndEntityChecker {
         // remove extensions we checked
         exts.remove(SimpleValidator.OID_KEY_USAGE);
         exts.remove(SimpleValidator.OID_EXTENDED_KEY_USAGE);
-
-        checkRemainingExtensions(exts);
     }
 }

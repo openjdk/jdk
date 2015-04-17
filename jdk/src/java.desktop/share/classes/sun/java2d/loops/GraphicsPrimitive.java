@@ -33,6 +33,7 @@ import java.awt.image.BufferedImage;
 import java.awt.AlphaComposite;
 import java.awt.Rectangle;
 import sun.awt.image.BufImgSurfaceData;
+import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
 import java.lang.reflect.Field;
@@ -46,6 +47,8 @@ import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import sun.misc.InnocuousThread;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -413,15 +416,19 @@ public abstract class GraphicsPrimitive {
         return traceout;
     }
 
-    public static class TraceReporter extends Thread {
+    public static class TraceReporter implements Runnable {
         public static void setShutdownHook() {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    TraceReporter t = new TraceReporter();
-                    t.setContextClassLoader(null);
-                    Runtime.getRuntime().addShutdownHook(t);
-                    return null;
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                TraceReporter t = new TraceReporter();
+                Thread thread;
+                if (System.getSecurityManager() == null) {
+                    thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), t);
+                } else {
+                    thread = new InnocuousThread(t);
                 }
+                thread.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(thread);
+                return null;
             });
         }
 

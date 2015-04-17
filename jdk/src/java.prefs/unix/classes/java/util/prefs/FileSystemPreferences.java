@@ -30,7 +30,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
-
+import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -450,7 +450,7 @@ class FileSystemPreferences extends AbstractPreferences {
         // Add shutdown hook to flush cached prefs on normal termination
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                Runtime.getRuntime().addShutdownHook(new Thread() {
+                Runtime.getRuntime().addShutdownHook(new ManagedLocalsThread() {
                     public void run() {
                         syncTimer.cancel();
                         syncWorld();

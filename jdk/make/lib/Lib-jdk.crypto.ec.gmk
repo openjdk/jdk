@@ -47,7 +47,7 @@ ifeq ($(ENABLE_INTREE_EC), yes)
       LIBRARY := sunec, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBSUNEC_SRC), \
-      LANG := C++, \
+      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(filter-out $(ECC_JNI_SOLSPARC_FILTER), $(CFLAGS_JDKLIB)) \
           $(BUILD_LIBSUNEC_FLAGS) \
