@@ -3720,12 +3720,11 @@ void CMTask::drain_satb_buffers() {
 
   CMObjectClosure oc(this);
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  satb_mq_set.set_closure(_worker_id, &oc);
 
   // This keeps claiming and applying the closure to completed buffers
   // until we run out of buffers or we need to abort.
   while (!has_aborted() &&
-         satb_mq_set.apply_closure_to_completed_buffer(_worker_id)) {
+         satb_mq_set.apply_closure_to_completed_buffer(&oc)) {
     if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%u] processed an SATB buffer", _worker_id);
     }
@@ -3738,8 +3737,6 @@ void CMTask::drain_satb_buffers() {
   assert(has_aborted() ||
          concurrent() ||
          satb_mq_set.completed_buffers_num() == 0, "invariant");
-
-  satb_mq_set.set_closure(_worker_id, NULL);
 
   // again, this was a potentially expensive operation, decrease the
   // limits to get the regular clock call early

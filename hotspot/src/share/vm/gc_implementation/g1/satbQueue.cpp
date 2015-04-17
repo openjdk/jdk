@@ -225,7 +225,7 @@ void ObjPtrQueue::print(const char* name,
 #endif // _MSC_VER
 
 SATBMarkQueueSet::SATBMarkQueueSet() :
-  PtrQueueSet(), _closures(NULL),
+  PtrQueueSet(),
   _shared_satb_queue(this, true /*perm*/) { }
 
 void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
@@ -233,7 +233,6 @@ void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
                                   Mutex* lock) {
   PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold, -1);
   _shared_satb_queue.set_lock(lock);
-  _closures = NEW_C_HEAP_ARRAY(ObjectClosure*, ParallelGCThreads, mtGC);
 }
 
 void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
@@ -296,13 +295,7 @@ void SATBMarkQueueSet::filter_thread_buffers() {
   shared_satb_queue()->filter();
 }
 
-void SATBMarkQueueSet::set_closure(uint worker, ObjectClosure* closure) {
-  assert(_closures != NULL, "Precondition");
-  assert(worker < ParallelGCThreads, "Worker index must be in range [0...ParallelGCThreads)");
-  _closures[worker] = closure;
-}
-
-bool SATBMarkQueueSet::apply_closure_to_completed_buffer(uint worker) {
+bool SATBMarkQueueSet::apply_closure_to_completed_buffer(ObjectClosure* cl) {
   BufferNode* nd = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
@@ -314,7 +307,6 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(uint worker) {
       if (_n_completed_buffers == 0) _process_completed = false;
     }
   }
-  ObjectClosure* cl = _closures[worker];
   if (nd != NULL) {
     void **buf = BufferNode::make_buffer_from_node(nd);
     ObjPtrQueue::apply_closure_to_buffer(cl, buf, 0, _sz);
