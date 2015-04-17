@@ -745,8 +745,6 @@ JT_HOME
 JTREGEXE
 USING_BROKEN_SUSE_LD
 PACKAGE_PATH
-LDEXECXX
-LDEXE
 USE_CLANG
 HOTSPOT_LD
 HOTSPOT_CXX
@@ -4365,7 +4363,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1428676283
+DATE_WHEN_GENERATED=1429271657
 
 ###############################################################################
 #
@@ -15266,8 +15264,6 @@ $as_echo "in build directory with custom name" >&6; }
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
-    CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
-    $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
     if test ! -d "$OUTPUT_ROOT"; then
       as_fn_error $? "Could not create build directory $OUTPUT_ROOT" "$LINENO" 5
     fi
@@ -15445,6 +15441,9 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
   fi
 
 
+  CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
+  $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
+
   SPEC=$OUTPUT_ROOT/spec.gmk
 
   CONF_NAME=$CONF_NAME
@@ -15530,6 +15529,16 @@ done
 
   MAKE_CANDIDATE=""$MAKE""
   DESCRIPTION="user supplied MAKE=$MAKE"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
   if test "x$MAKE_CANDIDATE" != x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
 $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
@@ -15539,10 +15548,10 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[12]' -e '4\.'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
       if test "x$IS_MODERN_MAKE" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
-$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
       else
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -15855,7 +15864,7 @@ $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
   fi
 
     if test "x$FOUND_MAKE" = x; then
-      as_fn_error $? "The specified make (by MAKE=$MAKE) is not GNU make 3.81 or newer." "$LINENO" 5
+      as_fn_error $? "The specified make (by MAKE=$MAKE) is not GNU make $MAKE_REQUIRED_VERSION or newer." "$LINENO" 5
     fi
   else
     # Try our hardest to locate a correct version of GNU make
@@ -15907,6 +15916,16 @@ done
 
   MAKE_CANDIDATE=""$CHECK_GMAKE""
   DESCRIPTION="gmake in PATH"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
   if test "x$MAKE_CANDIDATE" != x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
 $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
@@ -15916,10 +15935,10 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[12]' -e '4\.'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
       if test "x$IS_MODERN_MAKE" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
-$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
       else
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -16281,6 +16300,16 @@ done
 
   MAKE_CANDIDATE=""$CHECK_MAKE""
   DESCRIPTION="make in PATH"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
   if test "x$MAKE_CANDIDATE" != x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
 $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
@@ -16290,10 +16319,10 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[12]' -e '4\.'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
       if test "x$IS_MODERN_MAKE" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
-$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
       else
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -16660,6 +16689,16 @@ done
 
   MAKE_CANDIDATE=""$CHECK_TOOLSDIR_GMAKE""
   DESCRIPTION="gmake in tools-dir"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
   if test "x$MAKE_CANDIDATE" != x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
 $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
@@ -16669,10 +16708,10 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[12]' -e '4\.'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
       if test "x$IS_MODERN_MAKE" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
-$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
       else
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -17033,6 +17072,16 @@ done
 
   MAKE_CANDIDATE=""$CHECK_TOOLSDIR_MAKE""
   DESCRIPTION="make in tools-dir"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
   if test "x$MAKE_CANDIDATE" != x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
 $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
@@ -17042,10 +17091,10 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[12]' -e '4\.'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
       if test "x$IS_MODERN_MAKE" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
-$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
       else
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -17363,14 +17412,14 @@ $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
     fi
 
     if test "x$FOUND_MAKE" = x; then
-      as_fn_error $? "Cannot find GNU make 3.81 or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure." "$LINENO" 5
+      as_fn_error $? "Cannot find GNU make $MAKE_REQUIRED_VERSION or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure." "$LINENO" 5
     fi
   fi
 
   MAKE=$FOUND_MAKE
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)" >&5
-$as_echo "$as_me: Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using GNU make at $FOUND_MAKE (version: $MAKE_VERSION_STRING)" >&5
+$as_echo "$as_me: Using GNU make at $FOUND_MAKE (version: $MAKE_VERSION_STRING)" >&6;}
 
 
   # Check if make supports the output sync option and if so, setup using it.
@@ -40835,13 +40884,6 @@ $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
   if test  "x$TOOLCHAIN_TYPE" = xclang; then
     USE_CLANG=true
   fi
-
-
-  # LDEXE is the linker to use, when creating executables. Not really used.
-  # FIXME: These should just be removed!
-  LDEXE="$LD"
-  LDEXECXX="$LDCXX"
-
 
 
 
