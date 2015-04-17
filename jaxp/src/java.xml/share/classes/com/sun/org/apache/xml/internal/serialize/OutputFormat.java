@@ -36,7 +36,6 @@ import java.io.UnsupportedEncodingException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Node;
-import org.w3c.dom.html.HTMLDocument;
 
 
 /**
@@ -272,45 +271,6 @@ public class OutputFormat
         setEncoding( encoding );
         setIndenting( indenting );
     }
-
-
-    /**
-     * Constructs a new output format with the proper method,
-     * document type identifiers and media type for the specified
-     * document.
-     *
-     * @param doc The document to output
-     * @see #whichMethod
-     */
-    public OutputFormat( Document doc )
-    {
-        setMethod( whichMethod( doc ) );
-        setDoctype( whichDoctypePublic( doc ), whichDoctypeSystem( doc ) );
-        setMediaType( whichMediaType( getMethod() ) );
-    }
-
-
-    /**
-     * Constructs a new output format with the proper method,
-     * document type identifiers and media type for the specified
-     * document, and with the specified encoding. If <tt>indent</tt>
-     * is true, the document will be pretty printed with the default
-     * indentation level and default line wrapping.
-     *
-     * @param doc The document to output
-     * @param encoding The specified encoding
-     * @param indenting True for pretty printing
-     * @see #setEncoding
-     * @see #setIndenting
-     * @see #whichMethod
-     */
-    public OutputFormat( Document doc, String encoding, boolean indenting )
-    {
-        this( doc );
-        setEncoding( encoding );
-        setIndenting( indenting );
-    }
-
 
     /**
      * Returns the method specified for this output format.
@@ -837,110 +797,6 @@ public class OutputFormat
             return 0xFF;
         else
             return 0xFFFF;
-    }
-
-
-    /**
-     * Determine the output method for the specified document.
-     * If the document is an instance of {@link org.w3c.dom.html.HTMLDocument}
-     * then the method is said to be <tt>html</tt>. If the root
-     * element is 'html' and all text nodes preceding the root
-     * element are all whitespace, then the method is said to be
-     * <tt>html</tt>. Otherwise the method is <tt>xml</tt>.
-     *
-     * @param doc The document to check
-     * @return The suitable method
-     */
-    public static String whichMethod( Document doc )
-    {
-        Node    node;
-        String  value;
-        int     i;
-
-        // If document is derived from HTMLDocument then the default
-        // method is html.
-        if ( doc instanceof HTMLDocument )
-            return Method.HTML;
-
-        // Lookup the root element and the text nodes preceding it.
-        // If root element is html and all text nodes contain whitespace
-        // only, the method is html.
-
-        // FIXME (SM) should we care about namespaces here?
-
-        node = doc.getFirstChild();
-        while (node != null) {
-            // If the root element is html, the method is html.
-            if ( node.getNodeType() == Node.ELEMENT_NODE ) {
-                if ( node.getNodeName().equalsIgnoreCase( "html" ) ) {
-                    return Method.HTML;
-                } else if ( node.getNodeName().equalsIgnoreCase( "root" ) ) {
-                    return Method.FOP;
-                } else {
-                    return Method.XML;
-                }
-            } else if ( node.getNodeType() == Node.TEXT_NODE ) {
-                // If a text node preceding the root element contains
-                // only whitespace, this might be html, otherwise it's
-                // definitely xml.
-                value = node.getNodeValue();
-                for ( i = 0 ; i < value.length() ; ++i )
-                    if ( value.charAt( i ) != 0x20 && value.charAt( i ) != 0x0A &&
-                         value.charAt( i ) != 0x09 && value.charAt( i ) != 0x0D )
-                        return Method.XML;
-            }
-            node = node.getNextSibling();
-        }
-        // Anything else, the method is xml.
-        return Method.XML;
-    }
-
-
-    /**
-     * Returns the document type public identifier
-     * specified for this document, or null.
-     */
-    public static String whichDoctypePublic( Document doc )
-    {
-        DocumentType doctype;
-
-           /*  DOM Level 2 was introduced into the code base*/
-           doctype = doc.getDoctype();
-           if ( doctype != null ) {
-           // Note on catch: DOM Level 1 does not specify this method
-           // and the code will throw a NoSuchMethodError
-           try {
-           return doctype.getPublicId();
-           } catch ( Error except ) {  }
-           }
-
-        if ( doc instanceof HTMLDocument )
-            return DTD.XHTMLPublicId;
-        return null;
-    }
-
-
-    /**
-     * Returns the document type system identifier
-     * specified for this document, or null.
-     */
-    public static String whichDoctypeSystem( Document doc )
-    {
-        DocumentType doctype;
-
-        /* DOM Level 2 was introduced into the code base*/
-           doctype = doc.getDoctype();
-           if ( doctype != null ) {
-           // Note on catch: DOM Level 1 does not specify this method
-           // and the code will throw a NoSuchMethodError
-           try {
-           return doctype.getSystemId();
-           } catch ( Error except ) { }
-           }
-
-        if ( doc instanceof HTMLDocument )
-            return DTD.XHTMLSystemId;
-        return null;
     }
 
 

@@ -47,6 +47,8 @@ package org.w3c.dom.xpath;
  * <p>See also the <a href='http://www.w3.org/2002/08/WD-DOM-Level-3-XPath-20020820'>Document Object Model (DOM) Level 3 XPath Specification</a>.
  */
 public class XPathException extends RuntimeException {
+    private static final long serialVersionUID = 3471034171575979943L;
+
     public XPathException(short code, String message) {
        super(message);
        this.code = code;
