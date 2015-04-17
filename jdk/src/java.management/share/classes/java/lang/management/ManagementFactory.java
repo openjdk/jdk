@@ -582,7 +582,7 @@ public class ManagementFactory {
         final Class<?> cls = mxbeanInterface;
         ClassLoader loader =
             AccessController.doPrivileged(
-                    (PrivilegedAction<ClassLoader>) () -> cls.getClassLoader());
+                (PrivilegedAction<ClassLoader>) () -> cls.getClassLoader());
         if (!sun.misc.VM.isSystemDomainLoader(loader)) {
             throw new IllegalArgumentException(mxbeanName +
                 " is not a platform MXBean");
@@ -883,7 +883,7 @@ public class ManagementFactory {
                      all.add(new DefaultPlatformMBeanProvider());
                      return all;
                 }, null, new FilePermission("<<ALL FILES>>", "read"),
-                         new RuntimePermission("sun.management.spi.PlatformMBeanProvider"));
+                         new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
 
             // load all platform components into a map
             componentMap = providers.stream()
@@ -969,5 +969,12 @@ public class ManagementFactory {
             }
             return singleton;
         }
+    }
+
+    static {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            System.loadLibrary("management");
+            return null;
+        });
     }
 }
