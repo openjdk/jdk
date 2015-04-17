@@ -338,15 +338,6 @@ void marksweep_init() {
   MarkSweep::_gc_tracer = new (ResourceObj::C_HEAP, mtGC) SerialOldTracer();
 }
 
-#ifndef PRODUCT
-
-void MarkSweep::trace(const char* msg) {
-  if (TraceMarkSweep)
-    gclog_or_tty->print("%s", msg);
-}
-
-#endif
-
 int InstanceKlass::oop_ms_adjust_pointers(oop obj) {
   int size = size_helper();
   oop_oop_iterate_oop_maps<true>(obj, &MarkSweep::adjust_pointer_closure);
