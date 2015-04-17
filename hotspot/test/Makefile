@@ -279,6 +279,8 @@ endif
 # Default JTREG to run
 JTREG = $(JT_HOME)/bin/jtreg
 
+# Use agent mode
+JTREG_BASIC_OPTIONS += -agentvm
 # Only run automatic tests
 JTREG_BASIC_OPTIONS += -a
 # Report details on all failed or error tests, times too
