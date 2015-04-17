@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.lang.management.ThreadInfo;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
-import sun.management.ManagementFactoryHelper;
+import javax.management.JMX;
+import javax.management.ObjectName;
 
 /**
  * When an exception is thrown, the JVM collects just enough information
@@ -103,8 +104,11 @@ public class RedefineMethodInBacktraceApp {
         String[] threadPrintArgs = {};
         Object[] dcmdArgs = {threadPrintArgs};
         String[] signature = {String[].class.getName()};
-        DiagnosticCommandMBean dcmd = ManagementFactoryHelper.getDiagnosticCommandMBean();
-        System.out.println(dcmd.invoke("threadPrint", dcmdArgs, signature));
+        System.out.println(ManagementFactory.getPlatformMBeanServer().invoke(
+                ObjectName.getInstance("com.sun.management:type=DiagnosticCommand"),
+                "threadPrint",
+                dcmdArgs,
+                signature));
 
         // release the thread
         stop.countDown();
