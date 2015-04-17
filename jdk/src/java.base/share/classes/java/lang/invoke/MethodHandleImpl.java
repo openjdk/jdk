@@ -722,6 +722,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return result;
     }
 
+    // Intrinsified by C2. Returns true if obj is a compile-time constant.
+    @LambdaForm.Hidden
+    static
+    boolean isCompileConstant(Object obj) {
+        return false;
+    }
+
     static
     MethodHandle makeGuardWithTest(MethodHandle test,
                                    MethodHandle target,
