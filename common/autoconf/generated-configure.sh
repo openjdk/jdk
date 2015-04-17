@@ -745,8 +745,6 @@ JT_HOME
 JTREGEXE
 USING_BROKEN_SUSE_LD
 PACKAGE_PATH
-LDEXECXX
-LDEXE
 USE_CLANG
 HOTSPOT_LD
 HOTSPOT_CXX
@@ -4365,7 +4363,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1429260097
+DATE_WHEN_GENERATED=1429271657
 
 ###############################################################################
 #
@@ -40886,13 +40884,6 @@ $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
   if test  "x$TOOLCHAIN_TYPE" = xclang; then
     USE_CLANG=true
   fi
-
-
-  # LDEXE is the linker to use, when creating executables. Not really used.
-  # FIXME: These should just be removed!
-  LDEXE="$LD"
-  LDEXECXX="$LDCXX"
-
 
 
 

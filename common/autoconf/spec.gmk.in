@@ -355,10 +355,6 @@ USING_BROKEN_SUSE_LD:=@USING_BROKEN_SUSE_LD@
 LDFLAGS_JDKLIB:=@LDFLAGS_JDKLIB@
 LDFLAGS_JDKLIB_SUFFIX:=@LDFLAGS_JDKLIB_SUFFIX@
 
-# On some platforms the linker cannot be used to create executables, thus
-# the need for a separate LDEXE command.
-LDEXE:=@FIXPATH@ @LDEXE@
-
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE:=@LDFLAGS_JDKEXE@
 LDFLAGS_JDKEXE_SUFFIX:=@LDFLAGS_JDKEXE_SUFFIX@
@@ -370,9 +366,6 @@ LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
 LDCXX:=@FIXPATH@ @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX:=@LIBCXX@
-
-# Sometimes a different linker is needed for c++ executables
-LDEXECXX:=@FIXPATH@ @LDEXECXX@
 
 # Compiler and linker flags used when building native tests
 CFLAGS_TESTLIB:=@CFLAGS_TESTLIB@
