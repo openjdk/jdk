@@ -292,6 +292,7 @@
   template(setTargetNormal_name,                      "setTargetNormal")                          \
   template(setTargetVolatile_name,                    "setTargetVolatile")                        \
   template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
+  template(DEFAULT_CONTEXT_name,                      "DEFAULT_CONTEXT")                          \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
                                                                                                   \
@@ -501,6 +502,7 @@
   template(class_signature,                           "Ljava/lang/Class;")                                        \
   template(string_signature,                          "Ljava/lang/String;")                                       \
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
+  template(sun_misc_Cleaner_signature,                "Lsun/misc/Cleaner;")                                       \
   template(executable_signature,                      "Ljava/lang/reflect/Executable;")                           \
   template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \
   template(String_StringBuilder_signature,            "(Ljava/lang/String;)Ljava/lang/StringBuilder;")            \
@@ -554,7 +556,7 @@
   template(createGarbageCollectorMBean_signature,      "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/management/GarbageCollectorMBean;") \
   template(trigger_name,                               "trigger")                                                 \
   template(clear_name,                                 "clear")                                                   \
-  template(trigger_method_signature,                   "(ILjava/lang/management/MemoryUsage;)V")                                                 \
+  template(trigger_method_signature,                   "(ILjava/lang/management/MemoryUsage;)V")                  \
   template(startAgent_name,                            "startAgent")                                              \
   template(startRemoteAgent_name,                      "startRemoteManagementAgent")                              \
   template(startLocalAgent_name,                       "startLocalManagementAgent")                               \
