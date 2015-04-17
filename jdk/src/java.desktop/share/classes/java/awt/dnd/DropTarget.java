@@ -207,19 +207,13 @@ public class DropTarget implements DropTargetListener, Serializable {
         if (component == c || component != null && component.equals(c))
             return;
 
-        Component     old;
-        ComponentPeer oldPeer = null;
+        final Component old = component;
 
-        if ((old = component) != null) {
+        if (old  != null) {
             clearAutoscroll();
 
             component = null;
-
-            if (componentPeer != null) {
-                oldPeer = componentPeer;
-                removeNotify(componentPeer);
-            }
-
+            removeNotify();
             old.setDropTarget(null);
 
         }
@@ -229,7 +223,7 @@ public class DropTarget implements DropTargetListener, Serializable {
         } catch (Exception e) { // undo the change
             if (old != null) {
                 old.setDropTarget(this);
-                addNotify(oldPeer);
+                addNotify();
             }
         }
     }
@@ -497,16 +491,16 @@ public class DropTarget implements DropTargetListener, Serializable {
      * association of the ComponentPeer with the Component may result in
      * a malfunction of the DnD system.
      **********************************************************************
-     *
-     * @param peer The Peer of the Component we are associated with!
-     *
      */
-
-    public void addNotify(ComponentPeer peer) {
-        if (peer == componentPeer) return;
+    public void addNotify() {
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        ComponentPeer peer = acc.getPeer(component);
+        if (peer == null || peer == componentPeer) {
+            return;
+        }
 
         componentPeer = peer;
-        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+
 
         for (Component c = component;
              c != null && peer instanceof LightweightPeer; c = c.getParent()) {
@@ -514,7 +508,7 @@ public class DropTarget implements DropTargetListener, Serializable {
         }
 
         if (peer instanceof DropTargetPeer) {
-            nativePeer = peer;
+            nativePeer = (DropTargetPeer) peer;
             ((DropTargetPeer)peer).addDropTarget(this);
         } else {
             nativePeer = null;
@@ -533,15 +527,14 @@ public class DropTarget implements DropTargetListener, Serializable {
      * disassociation of the ComponentPeer from the Component may result in
      * a malfunction of the DnD system.
      **********************************************************************
-     *
-     * @param peer The Peer of the Component we are being disassociated from!
      */
 
-    public void removeNotify(ComponentPeer peer) {
-        if (nativePeer != null)
-            ((DropTargetPeer)nativePeer).removeDropTarget(this);
-
-        componentPeer = nativePeer = null;
+    public void removeNotify() {
+        if (nativePeer != null) {
+            nativePeer.removeDropTarget(this);
+        }
+        componentPeer = null;
+        nativePeer = null;
 
         synchronized (this) {
             if (isDraggingInside) {
@@ -837,7 +830,7 @@ public class DropTarget implements DropTargetListener, Serializable {
     /*
      * That Component's "native" Peer
      */
-    private transient ComponentPeer nativePeer;
+    private transient DropTargetPeer nativePeer;
 
 
     /**

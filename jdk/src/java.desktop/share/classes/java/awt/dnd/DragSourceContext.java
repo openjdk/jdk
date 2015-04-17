@@ -29,20 +29,19 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Image;
 import java.awt.Point;
-
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-
 import java.awt.dnd.peer.DragSourceContextPeer;
-
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
 import java.util.TooManyListenersException;
+
+import sun.awt.AWTAccessor;
 
 /**
  * The <code>DragSourceContext</code> class is responsible for managing the
@@ -123,6 +122,10 @@ public class DragSourceContext
 
     protected static final int CHANGED = 3;
 
+    static {
+        AWTAccessor.setDragSourceContextAccessor(dsc -> dsc.peer);
+    }
+
     /**
      * Called from <code>DragSource</code>, this constructor creates a new
      * <code>DragSourceContext</code> given the
@@ -155,7 +158,6 @@ public class DragSourceContext
      * If <code>DragSourceListener</code> is <code>null</code> no exception
      * is thrown.
      *
-     * @param dscp       the <code>DragSourceContextPeer</code> for this drag
      * @param trigger    the triggering event
      * @param dragCursor     the initial {@code Cursor} for this drag operation
      *                       or {@code null} for the default cursor handling;
@@ -179,10 +181,12 @@ public class DragSourceContext
      * @throws NullPointerException if dscp, trigger, or t are null, or
      *         if dragImage is non-null and offset is null
      */
-    public DragSourceContext(DragSourceContextPeer dscp,
-                             DragGestureEvent trigger, Cursor dragCursor,
+    public DragSourceContext(DragGestureEvent trigger, Cursor dragCursor,
                              Image dragImage, Point offset, Transferable t,
                              DragSourceListener dsl) {
+        DragSourceContextPeer dscp = Toolkit.getDefaultToolkit()
+                .createDragSourceContextPeer(trigger);
+
         if (dscp == null) {
             throw new NullPointerException("DragSourceContextPeer");
         }
@@ -623,8 +627,7 @@ public class DragSourceContext
     /*
      * fields
      */
-
-    private transient DragSourceContextPeer peer;
+    private final transient DragSourceContextPeer peer;
 
     /**
      * The event which triggered the start of the drag.

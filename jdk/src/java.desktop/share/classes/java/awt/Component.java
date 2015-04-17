@@ -1085,7 +1085,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         DropTarget old;
 
         if ((old = dropTarget) != null) {
-            if (peer != null) dropTarget.removeNotify(peer);
+            dropTarget.removeNotify();
 
             DropTarget t = dropTarget;
 
@@ -1103,12 +1103,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if ((dropTarget = dt) != null) {
             try {
                 dropTarget.setComponent(this);
-                if (peer != null) dropTarget.addNotify(peer);
+                dropTarget.addNotify();
             } catch (IllegalArgumentException iae) {
                 if (old != null) {
                     try {
                         old.setComponent(this);
-                        if (peer != null) dropTarget.addNotify(peer);
+                        dropTarget.addNotify();
                     } catch (IllegalArgumentException iae1) {
                         // ignore it!
                     }
@@ -7011,7 +7011,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 popup.addNotify();
             }
 
-            if (dropTarget != null) dropTarget.addNotify(peer);
+            if (dropTarget != null) dropTarget.addNotify();
 
             peerFont = getFont();
 
@@ -7098,7 +7098,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     ((FlipBufferStrategy)bufferStrategy).destroyBuffers();
                 }
 
-                if (dropTarget != null) dropTarget.removeNotify(peer);
+                if (dropTarget != null) dropTarget.removeNotify();
 
                 // Hide peer first to stop system events such as cursor moves.
                 if (visible) {

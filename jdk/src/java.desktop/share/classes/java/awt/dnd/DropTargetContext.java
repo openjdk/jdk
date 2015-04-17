@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.DropTargetContextAccessor;
 
 /**
  * A <code>DropTargetContext</code> is created
@@ -58,6 +60,19 @@ public class DropTargetContext implements Serializable {
 
     private static final long serialVersionUID = -634158968993743371L;
 
+    static {
+        AWTAccessor.setDropTargetContextAccessor(new DropTargetContextAccessor() {
+            @Override
+            public void reset(DropTargetContext dtc) {
+                dtc.reset();
+            }
+            @Override
+            public void setDropTargetContextPeer(DropTargetContext dtc,
+                                                 DropTargetContextPeer dtcp) {
+                dtc.setDropTargetContextPeer(dtcp);
+            }
+        });
+    }
     /**
      * Construct a <code>DropTargetContext</code>
      * given a specified <code>DropTarget</code>.
@@ -90,20 +105,9 @@ public class DropTargetContext implements Serializable {
     public Component getComponent() { return dropTarget.getComponent(); }
 
     /**
-     * Called when associated with the <code>DropTargetContextPeer</code>.
-     *
-     * @param dtcp the <code>DropTargetContextPeer</code>
-     */
-
-    public void addNotify(DropTargetContextPeer dtcp) {
-        dropTargetContextPeer = dtcp;
-    }
-
-    /**
      * Called when disassociated with the <code>DropTargetContextPeer</code>.
      */
-
-    public void removeNotify() {
+    void reset() {
         dropTargetContextPeer = null;
         transferable          = null;
     }
@@ -282,9 +286,15 @@ public class DropTargetContext implements Serializable {
      *
      * @return the platform peer
      */
-
     DropTargetContextPeer getDropTargetContextPeer() {
         return dropTargetContextPeer;
+    }
+
+    /**
+     * Sets the {@code DropTargetContextPeer}
+     */
+    void setDropTargetContextPeer(final DropTargetContextPeer dtcp) {
+        dropTargetContextPeer = dtcp;
     }
 
     /**
@@ -412,7 +422,7 @@ public class DropTargetContext implements Serializable {
      *
      * @serial
      */
-    private DropTarget dropTarget;
+    private final DropTarget dropTarget;
 
     private transient DropTargetContextPeer dropTargetContextPeer;
 
