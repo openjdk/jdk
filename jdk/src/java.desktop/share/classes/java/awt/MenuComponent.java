@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,6 +328,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * Its use is discouraged, and it may not be supported
      * in the future.
      * @param evt the event which is to take place
+     * @return unconditionally returns false
      * @deprecated As of JDK version 1.1, replaced by {@link
      * #dispatchEvent(AWTEvent) dispatchEvent}.
      */

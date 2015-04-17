@@ -39,6 +39,7 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.PageRanges;
 
 import sun.java2d.*;
+import sun.misc.ManagedLocalsThread;
 import sun.print.*;
 
 public final class CPrinterJob extends RasterPrinterJob {
@@ -731,9 +732,12 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     // upcall from native
     private static void detachPrintLoop(final long target, final long arg) {
-        new Thread() { public void run() {
-            _safePrintLoop(target, arg);
-        }}.start();
+        Runnable task = () -> _safePrintLoop(target, arg);
+        if (System.getSecurityManager() == null) {
+            new Thread(task).start();
+        } else {
+            new ManagedLocalsThread(task).start();
+        }
     }
     private static native void _safePrintLoop(long target, long arg);
 

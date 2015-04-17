@@ -293,7 +293,7 @@ final class ClientHandshaker extends Handshaker {
             case K_ECDH_RSA:
                 throw new SSLProtocolException(
                     "Protocol violation: server sent a server key exchange"
-                    + "message for key exchange " + keyExchange);
+                    + " message for key exchange " + keyExchange);
             case K_KRB5:
             case K_KRB5_EXPORT:
                 throw new SSLProtocolException(

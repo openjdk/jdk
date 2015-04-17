@@ -119,7 +119,7 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
 
             offset = action & lafComponentOffsetMask;
             if (offset != 0) {
-                if(componentGlyph > glyphStorage.getGlyphCount()) {
+                if(componentGlyph >= glyphStorage.getGlyphCount()) {
                   LE_DEBUG_BAD_FONT("preposterous componentGlyph");
                   currGlyph+= dir;
                   return nextStateIndex; // get out! bad font

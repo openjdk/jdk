@@ -4,7 +4,7 @@ java.corba
 java.transaction
 java.xml.bind
 java.xml.ws
-jdk.accessbridge
+jdk.accessibility
 jdk.crypto.ec
 jdk.crypto.mscapi
 jdk.crypto.pkcs11

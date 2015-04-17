@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,10 @@
  * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5
  */
 import java.io.*;
-import java.net.InetAddress;
-import java.security.AccessControlException;
 import java.security.Permission;
 import javax.net.ssl.*;
 import java.security.Principal;
+import java.security.Security;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
@@ -82,6 +81,9 @@ public class SSL extends SecurityManager {
     }
 
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
         krb5Cipher = args[0];
 

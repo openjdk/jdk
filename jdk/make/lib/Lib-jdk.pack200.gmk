@@ -32,7 +32,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(JDK_TOPDIR)/src/jdk.pack200/share/native/libunpack \
         $(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack, \
-    LANG := C++, \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CXXFLAGS_JDKLIB) \
         -DNO_ZLIB -DUNPACK_JNI -DFULL \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,8 @@ public class ReasonFlags {
      * @param position the position in the bit string to check.
      */
     private boolean isSet(int position) {
-        return bitString[position];
+        return (position < bitString.length) &&
+                bitString[position];
     }
 
     /**
@@ -199,23 +200,38 @@ public class ReasonFlags {
      * Returns a printable representation of the ReasonFlags.
      */
     public String toString() {
-        String s = "Reason Flags [\n";
+        StringBuilder sb = new StringBuilder("Reason Flags [\n");
 
-        try {
-            if (isSet(0)) s += "  Unused\n";
-            if (isSet(1)) s += "  Key Compromise\n";
-            if (isSet(2)) s += "  CA Compromise\n";
-            if (isSet(3)) s += "  Affiliation_Changed\n";
-            if (isSet(4)) s += "  Superseded\n";
-            if (isSet(5)) s += "  Cessation Of Operation\n";
-            if (isSet(6)) s += "  Certificate Hold\n";
-            if (isSet(7)) s += "  Privilege Withdrawn\n";
-            if (isSet(8)) s += "  AA Compromise\n";
-        } catch (ArrayIndexOutOfBoundsException ex) {}
+        if (isSet(0)) {
+            sb.append("  Unused\n");
+        }
+        if (isSet(1)) {
+            sb.append("  Key Compromise\n");
+        }
+        if (isSet(2)) {
+            sb.append("  CA Compromise\n");
+        }
+        if (isSet(3)) {
+            sb.append("  Affiliation_Changed\n");
+        }
+        if (isSet(4)) {
+            sb.append("  Superseded\n");
+        }
+        if (isSet(5)) {
+            sb.append("  Cessation Of Operation\n");
+        }
+        if (isSet(6)) {
+            sb.append("  Certificate Hold\n");
+        }
+        if (isSet(7)) {
+            sb.append("  Privilege Withdrawn\n");
+        }
+        if (isSet(8)) {
+            sb.append("  AA Compromise\n");
+        }
+        sb.append("]\n");
 
-        s += "]\n";
-
-        return (s);
+        return sb.toString();
     }
 
     /**

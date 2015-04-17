@@ -56,23 +56,28 @@ else
 
 endif
 
-UNPACKEXE_LANG := C
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  UNPACKEXE_LANG := C++
+  UNPACKEXE_TOOLCHAIN := TOOLCHAIN_LINK_CXX
 endif
+
+UNPACK_MAPFILE_DIR := $(JDK_TOPDIR)/make/mapfiles/libunpack
+UNPACK_MAPFILE_PLATFORM_FILE := \
+    $(UNPACK_MAPFILE_DIR)/mapfile-vers-unpack200-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH)
 
 # The linker on older SuSE distros (e.g. on SLES 10) complains with:
 # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
 # if feeded with a version script which contains named tags.
 ifeq ($(USING_BROKEN_SUSE_LD), yes)
-  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200.anonymous
+  UNPACK_MAPFILE := $(UNPACK_MAPFILE_DIR)/mapfile-vers-unpack200.anonymous
+else ifneq ($(wildcard $(UNPACK_MAPFILE_PLATFORM_FILE)), )
+  UNPACK_MAPFILE := $(UNPACK_MAPFILE_PLATFORM_FILE)
 else
-  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200
+  UNPACK_MAPFILE := $(UNPACK_MAPFILE_DIR)/mapfile-vers-unpack200
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     SRC := $(UNPACKEXE_SRC), \
-    LANG := $(UNPACKEXE_LANG), \
+    TOOLCHAIN := $(UNPACKEXE_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE) -DFULL, \
     CFLAGS_release := -DPRODUCT, \
@@ -96,7 +101,9 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         -D "JDK_INTERNAL_NAME=unpack200" \
         -D "JDK_FTYPE=0x1L", \
     DEBUG_SYMBOLS := true, \
-    MANIFEST := $(JDK_TOPDIR)/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest))
+    MANIFEST := $(JDK_TOPDIR)/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest, \
+    MANIFEST_VERSION := $(JDK_VERSION_FOR_MANIFEST), \
+))
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
 

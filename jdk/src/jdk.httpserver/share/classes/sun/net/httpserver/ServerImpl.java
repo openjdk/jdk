@@ -36,6 +36,7 @@ import javax.net.ssl.*;
 import com.sun.net.httpserver.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.misc.ManagedLocalsThread;
 import sun.net.httpserver.HttpConnection.State;
 
 /**
@@ -142,7 +143,7 @@ class ServerImpl implements TimeSource {
         if (executor == null) {
             executor = new DefaultExecutor();
         }
-        dispatcherThread = new Thread (dispatcher);
+        dispatcherThread = new ManagedLocalsThread(dispatcher);
         started = true;
         dispatcherThread.start();
     }
