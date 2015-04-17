@@ -1832,6 +1832,8 @@ public class ObjectInputStream
         throws IOException
     {
         SerialCallbackContext oldContext = curContext;
+        if (oldContext != null)
+            oldContext.check();
         curContext = null;
         try {
             boolean blocked = desc.hasBlockExternalData();
@@ -1856,6 +1858,8 @@ public class ObjectInputStream
                 skipCustomData();
             }
         } finally {
+            if (oldContext != null)
+                oldContext.check();
             curContext = oldContext;
         }
         /*
@@ -1910,7 +1914,8 @@ public class ObjectInputStream
                     defaultReadFields(null, slotDesc); // skip field values
                 } else if (slotDesc.hasReadObjectMethod()) {
                     SerialCallbackContext oldContext = curContext;
-
+                    if (oldContext != null)
+                        oldContext.check();
                     try {
                         curContext = new SerialCallbackContext(obj, slotDesc);
 
@@ -1927,6 +1932,8 @@ public class ObjectInputStream
                         handles.markException(passHandle, ex);
                     } finally {
                         curContext.setUsed();
+                        if (oldContext!= null)
+                            oldContext.check();
                         curContext = oldContext;
                     }
 
