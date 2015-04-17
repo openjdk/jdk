@@ -33,8 +33,8 @@ import com.oracle.java.testlibrary.DynamicVMOption;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
-import sun.management.ManagementFactoryHelper;
 import static com.oracle.java.testlibrary.Asserts.assertLessThan;
+import com.sun.management.HotSpotDiagnosticMXBean;
 
 public class TestDynShrinkHeap {
 
@@ -63,9 +63,11 @@ public class TestDynShrinkHeap {
                 "committed free heap size is not less than committed full heap size, heap hasn't been shrunk?%n"
                 + "%s = %s%n%s = %s",
                 MIN_FREE_RATIO_FLAG_NAME,
-                ManagementFactoryHelper.getDiagnosticMXBean().getVMOption(MIN_FREE_RATIO_FLAG_NAME).getValue(),
+                ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption(MIN_FREE_RATIO_FLAG_NAME).getValue(),
                 MAX_FREE_RATIO_FLAG_NAME,
-                ManagementFactoryHelper.getDiagnosticMXBean().getVMOption(MAX_FREE_RATIO_FLAG_NAME).getValue()
+                ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption(MAX_FREE_RATIO_FLAG_NAME).getValue()
         ));
     }
 
