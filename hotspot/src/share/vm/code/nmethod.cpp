@@ -2325,6 +2325,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
             // Dependency checking failed. Print out information about the failed
             // dependency and finally fail with an assert. We can fail here, since
             // dependency checking is never done in a product build.
+            tty->print_cr("Failed dependency:");
             changes.print();
             nm->print();
             nm->print_dependencies();

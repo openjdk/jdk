@@ -68,6 +68,9 @@ class MethodHandles: AllStatic {
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
+  // CallSite support
+  static InstanceKlass* get_call_site_context(oop call_site);
+
   // Generate MethodHandles adapters.
   static bool generate_adapters();
 
