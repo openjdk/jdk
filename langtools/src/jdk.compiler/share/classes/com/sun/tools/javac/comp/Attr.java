@@ -4657,7 +4657,7 @@ public class Attr extends JCTree.Visitor {
             for (JCAnnotation ai : annotations) {
                 if (!ai.type.isErroneous() &&
                         typeAnnotations.annotationTargetType(ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
-                    log.error(ai.pos(), "annotation.type.not.applicable");
+                    log.error(ai.pos(), Errors.AnnotationTypeNotApplicableToType(ai.type));
                 }
             }
         }
