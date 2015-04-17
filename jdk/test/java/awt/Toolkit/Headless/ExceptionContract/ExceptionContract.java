@@ -36,12 +36,9 @@ import java.util.Properties;
 import test.java.awt.regtesthelpers.Sysout;
 
 import java.awt.datatransfer.Clipboard;
-import java.awt.dnd.*;
-import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.image.*;
-import java.awt.peer.*;
 import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
@@ -109,116 +106,6 @@ public class ExceptionContract {
         @Override
         public void loadSystemColors(int[] systemColors) throws HeadlessException {
             return;
-        }
-
-        @Override
-        protected DesktopPeer createDesktopPeer(Desktop target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ButtonPeer createButton(Button target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected TextFieldPeer createTextField(TextField target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected LabelPeer createLabel(Label target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ListPeer createList(List target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected CheckboxPeer createCheckbox(Checkbox target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ScrollbarPeer createScrollbar(Scrollbar target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ScrollPanePeer createScrollPane(ScrollPane target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected TextAreaPeer createTextArea(TextArea target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected ChoicePeer createChoice(Choice target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected FramePeer createFrame(Frame target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected CanvasPeer createCanvas(Canvas target) {
-            return null;
-        }
-
-        @Override
-        protected PanelPeer createPanel(Panel target) {
-            return null;
-        }
-
-        @Override
-        protected WindowPeer createWindow(Window target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected DialogPeer createDialog(Dialog target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected MenuBarPeer createMenuBar(MenuBar target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected MenuPeer createMenu(Menu target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected PopupMenuPeer createPopupMenu(PopupMenu target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected MenuItemPeer createMenuItem(MenuItem target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected FileDialogPeer createFileDialog(FileDialog target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected CheckboxMenuItemPeer createCheckboxMenuItem(CheckboxMenuItem target) throws HeadlessException {
-            return null;
-        }
-
-        @Override
-        protected FontPeer getFontPeer(String name, int style) {
-            return null;
         }
 
         @Override
@@ -308,11 +195,6 @@ public class ExceptionContract {
 
         @Override
         protected EventQueue getSystemEventQueueImpl() {
-            return null;
-        }
-
-        @Override
-        public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
             return null;
         }
 

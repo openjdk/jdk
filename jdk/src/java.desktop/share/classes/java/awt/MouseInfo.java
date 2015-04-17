@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt;
 
 import sun.awt.AWTPermissions;
+import sun.awt.ComponentFactory;
 
 /**
  * <code>MouseInfo</code>  provides methods for getting information about the mouse,
@@ -80,8 +81,13 @@ public class MouseInfo {
             security.checkPermission(AWTPermissions.WATCH_MOUSE_PERMISSION);
         }
 
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
         Point point = new Point(0, 0);
-        int deviceNum = Toolkit.getDefaultToolkit().getMouseInfoPeer().fillPointWithCoords(point);
+        int deviceNum = 0;
+        if (toolkit instanceof ComponentFactory) {
+            deviceNum = ((ComponentFactory) toolkit).getMouseInfoPeer().fillPointWithCoords(point);
+        }
+
         GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment().
                                    getScreenDevices();
         PointerInfo retval = null;

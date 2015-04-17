@@ -754,7 +754,7 @@ public class Dialog extends Window {
             }
 
             if (peer == null) {
-                peer = getToolkit().createDialog(this);
+                peer = getComponentFactory().createDialog(this);
             }
             super.addNotify();
         }
