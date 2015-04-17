@@ -36,7 +36,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupNativeCompilation,BUILD_JABSWITCH, \
       SRC := $(JABSWITCH_SRC), \
       INCLUDE_FILES := jabswitch.cpp, \
-      LANG := C++, \
       CFLAGS := $(filter-out -Zc:wchar_t-, $(CFLAGS_JDKEXE)) -Zc:wchar_t \
           -analyze- -Od -Gd -D_WINDOWS \
           -D_UNICODE -DUNICODE -RTC1 -EHsc, \

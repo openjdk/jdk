@@ -45,7 +45,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
         LIBRARY = javaaccessbridge$1, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(JAVA_AB_SRCDIR), \
-        LANG := C++, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS) \
             $(addprefix -I,$(JAVA_AB_SRCDIR)) \
@@ -76,7 +75,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
         LIBRARY = windowsaccessbridge$1, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(WIN_AB_SRCDIR), \
-        LANG := C++, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT $(ACCESSBRIDGE_CFLAGS) \
             $(addprefix -I,$(WIN_AB_SRCDIR)) \
@@ -105,7 +103,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
         LIBRARY = jabsysinfo, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(SYSINFO_SRCDIR), \
-        LANG := C++, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS), \
         LDFLAGS := $(LDFLAGS_JDKLIB) \

@@ -161,7 +161,6 @@ define SetupLauncher
   $(call SetupNativeCompilation,BUILD_LAUNCHER_$1, \
       SRC := $(LAUNCHER_SRC), \
       INCLUDE_FILES := main.c, \
-      LANG := C, \
       OPTIMIZATION := $$($1_OPTIMIZATION_ARG), \
       CFLAGS := $$($1_CFLAGS) \
           $(LAUNCHER_CFLAGS) \
