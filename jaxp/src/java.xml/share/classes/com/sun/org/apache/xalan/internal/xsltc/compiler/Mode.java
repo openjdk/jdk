@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,12 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Vector;
-
-import com.sun.org.apache.bcel.internal.generic.Instruction;
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.DUP;
@@ -38,6 +32,7 @@ import com.sun.org.apache.bcel.internal.generic.ILOAD;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.ISTORE;
+import com.sun.org.apache.bcel.internal.generic.Instruction;
 import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
@@ -51,6 +46,12 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.NamedMethodGenerato
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.dtm.Axis;
 import com.sun.org.apache.xml.internal.dtm.DTM;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
 
 /**
  * Mode gathers all the templates belonging to a given mode;
@@ -128,22 +129,22 @@ final class Mode implements Constants {
     /**
      * A mapping between templates and test sequences.
      */
-    private Hashtable _neededTemplates = new Hashtable();
+    private Map<Template, Object> _neededTemplates = new HashMap<>();
 
     /**
      * A mapping between named templates and Mode objects.
      */
-    private Hashtable _namedTemplates = new Hashtable();
+    private Map<Template, Mode> _namedTemplates = new HashMap<>();
 
     /**
      * A mapping between templates and instruction handles.
      */
-    private Hashtable _templateIHs = new Hashtable();
+    private Map<Template, InstructionHandle> _templateIHs = new HashMap<>();
 
     /**
      * A mapping between templates and instruction lists.
      */
-    private Hashtable _templateILs = new Hashtable();
+    private Map<Template, InstructionList> _templateILs = new HashMap<>();
 
     /**
      * A reference to the pattern matching the root node.
@@ -152,14 +153,14 @@ final class Mode implements Constants {
 
     /**
      * Stores ranges of template precendences for the compilation
-     * of apply-imports (a Hashtable for historical reasons).
+     * of apply-imports.
      */
-    private Hashtable _importLevels = null;
+    private Map<Integer, Integer> _importLevels = null;
 
     /**
      * A mapping between key names and keys.
      */
-    private Hashtable _keys = null;
+    private Map<String, Key> _keys = null;
 
     /**
      * Variable index for the current node used in code generation.
@@ -195,9 +196,9 @@ final class Mode implements Constants {
 
     public String functionName(int min, int max) {
         if (_importLevels == null) {
-            _importLevels = new Hashtable();
+            _importLevels = new HashMap<>();
         }
-        _importLevels.put(new Integer(max), new Integer(min));
+        _importLevels.put(max, min);
         return _methodName + '_' + max;
     }
 
@@ -244,7 +245,7 @@ final class Mode implements Constants {
     /**
      * Process all the test patterns in this mode
      */
-    public void processPatterns(Hashtable keys) {
+    public void processPatterns(Map<String, Key> keys) {
         _keys = keys;
 
 /*
@@ -300,7 +301,7 @@ for (int i = 0; i < _templates.size(); i++) {
      */
     private void flattenAlternative(Pattern pattern,
                                     Template template,
-                                    Hashtable keys) {
+                                    Map<String, Key> keys) {
         // Patterns on type id() and key() are special since they do not have
         // any kernel node type (it can be anything as long as the node is in
         // the id's or key's index).
@@ -560,15 +561,13 @@ for (int i = 0; i < _templates.size(); i++) {
                                   MethodGenerator methodGen,
                                   InstructionHandle next)
     {
-        Enumeration templates = _namedTemplates.keys();
-        while (templates.hasMoreElements()) {
-            final Template template = (Template)templates.nextElement();
+        Set<Template> templates = _namedTemplates.keySet();
+        for (Template template : templates) {
             compileNamedTemplate(template, classGen);
         }
 
-        templates = _neededTemplates.keys();
-        while (templates.hasMoreElements()) {
-            final Template template = (Template)templates.nextElement();
+        templates = _neededTemplates.keySet();
+        for (Template template : templates) {
             if (template.hasContents()) {
                 // !!! TODO templates both named and matched
                 InstructionList til = template.compile(classGen, methodGen);
@@ -584,13 +583,12 @@ for (int i = 0; i < _templates.size(); i++) {
     }
 
     private void appendTemplateCode(InstructionList body) {
-        final Enumeration templates = _neededTemplates.keys();
-        while (templates.hasMoreElements()) {
-            final Object iList =
-                _templateILs.get(templates.nextElement());
+        for (Template template : _neededTemplates.keySet()) {
+            final InstructionList iList = _templateILs.get(template);
             if (iList != null) {
-                body.append((InstructionList)iList);
+                body.append(iList);
             }
+
         }
     }
 
@@ -1043,11 +1041,8 @@ for (int i = 0; i < _templates.size(); i++) {
 
         // Compile method(s) for <xsl:apply-imports/> for this mode
         if (_importLevels != null) {
-            Enumeration levels = _importLevels.keys();
-            while (levels.hasMoreElements()) {
-                Integer max = (Integer)levels.nextElement();
-                Integer min = (Integer)_importLevels.get(max);
-                compileApplyImports(classGen, min.intValue(), max.intValue());
+            for (Map.Entry<Integer, Integer> entry : _importLevels.entrySet()) {
+                compileApplyImports(classGen, entry.getValue(), entry.getKey());
             }
         }
     }
@@ -1055,9 +1050,7 @@ for (int i = 0; i < _templates.size(); i++) {
     private void compileTemplateCalls(ClassGenerator classGen,
                                       MethodGenerator methodGen,
                                       InstructionHandle next, int min, int max){
-        Enumeration templates = _neededTemplates.keys();
-        while (templates.hasMoreElements()) {
-            final Template template = (Template)templates.nextElement();
+        _neededTemplates.keySet().stream().forEach((template) -> {
             final int prec = template.getImportPrecedence();
             if ((prec >= min) && (prec < max)) {
                 if (template.hasContents()) {
@@ -1071,7 +1064,7 @@ for (int i = 0; i < _templates.size(); i++) {
                     _templateIHs.put(template, next);
                 }
             }
-        }
+        });
     }
 
 
@@ -1081,10 +1074,10 @@ for (int i = 0; i < _templates.size(); i++) {
         final Vector names      = xsltc.getNamesIndex();
 
         // Clear some datastructures
-        _namedTemplates = new Hashtable();
-        _neededTemplates = new Hashtable();
-        _templateIHs = new Hashtable();
-        _templateILs = new Hashtable();
+        _namedTemplates = new HashMap<>();
+        _neededTemplates = new HashMap<>();
+        _templateIHs = new HashMap<>();
+        _templateILs = new HashMap<>();
         _patternGroups = new Vector[32];
         _rootPattern = null;
 
@@ -1503,7 +1496,7 @@ for (int i = 0; i < _templates.size(); i++) {
     }
 
     public InstructionHandle getTemplateInstructionHandle(Template template) {
-        return (InstructionHandle)_templateIHs.get(template);
+        return _templateIHs.get(template);
     }
 
     /**

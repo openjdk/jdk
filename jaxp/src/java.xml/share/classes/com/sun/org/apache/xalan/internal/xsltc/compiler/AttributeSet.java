@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,9 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Enumeration;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
@@ -37,6 +34,11 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.utils.XML11Char;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
+
 
 /**
  * @author Jacek Ambroziak
@@ -111,10 +113,10 @@ final class AttributeSet extends TopLevelElement {
 
         // Parse the contents of this node. All child elements must be
         // <xsl:attribute> elements. Other elements cause an error.
-        final Vector contents = getContents();
+        final List<SyntaxTreeNode> contents = getContents();
         final int count = contents.size();
         for (int i=0; i<count; i++) {
-            SyntaxTreeNode child = (SyntaxTreeNode)contents.elementAt(i);
+            SyntaxTreeNode child = (SyntaxTreeNode)contents.get(i);
             if (child instanceof XslAttribute) {
                 parser.getSymbolTable().setCurrentNode(child);
                 child.parseContents(parser);
@@ -181,9 +183,9 @@ final class AttributeSet extends TopLevelElement {
         if (_useSets != null) _useSets.translate(classGen, methodGen);
 
         // Translate all local attributes
-        final Enumeration attributes = elements();
-        while (attributes.hasMoreElements()) {
-            SyntaxTreeNode element = (SyntaxTreeNode)attributes.nextElement();
+        final Iterator<SyntaxTreeNode> attributes = elements();
+        while (attributes.hasNext()) {
+            SyntaxTreeNode element = (SyntaxTreeNode)attributes.next();
             if (element instanceof XslAttribute) {
                 final XslAttribute attribute = (XslAttribute)element;
                 attribute.translate(classGen, methodGen);
@@ -198,10 +200,10 @@ final class AttributeSet extends TopLevelElement {
     public String toString() {
         StringBuffer buf = new StringBuffer("attribute-set: ");
         // Translate all local attributes
-        final Enumeration attributes = elements();
-        while (attributes.hasMoreElements()) {
+        final Iterator<SyntaxTreeNode> attributes = elements();
+        while (attributes.hasNext()) {
             final XslAttribute attribute =
-                (XslAttribute)attributes.nextElement();
+                (XslAttribute)attributes.next();
             buf.append(attribute);
         }
         return(buf.toString());

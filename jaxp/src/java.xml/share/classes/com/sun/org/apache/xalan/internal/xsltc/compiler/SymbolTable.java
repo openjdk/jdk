@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,12 +23,12 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Hashtable;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Vector;
-
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
 
 /**
  * @author Jacek Ambroziak
@@ -37,67 +37,67 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
  */
 final class SymbolTable {
 
-    // These hashtables are used for all stylesheets
-    private final Hashtable _stylesheets = new Hashtable();
-    private final Hashtable _primops     = new Hashtable();
+    // These maps are used for all stylesheets
+    private final Map<String, Stylesheet> _stylesheets = new HashMap<>();
+    private final Map<String, Vector> _primops     = new HashMap<>();
 
-    // These hashtables are used for some stylesheets
-    private Hashtable _variables = null;
-    private Hashtable _templates = null;
-    private Hashtable _attributeSets = null;
-    private Hashtable _aliases = null;
-    private Hashtable _excludedURI = null;
-    private Stack     _excludedURIStack = null;
-    private Hashtable _decimalFormats = null;
-    private Hashtable _keys = null;
+    // These maps are used for some stylesheets
+    private Map<String, VariableBase> _variables = null;
+    private Map<String, Template> _templates = null;
+    private Map<String, AttributeSet> _attributeSets = null;
+    private Map<String, String> _aliases = null;
+    private Map<String, Integer> _excludedURI = null;
+    private Stack<Map<String, Integer>>     _excludedURIStack = null;
+    private Map<String, DecimalFormatting> _decimalFormats = null;
+    private Map<String, Key> _keys = null;
 
     public DecimalFormatting getDecimalFormatting(QName name) {
         if (_decimalFormats == null) return null;
-        return((DecimalFormatting)_decimalFormats.get(name));
+        return(_decimalFormats.get(name.getStringRep()));
     }
 
     public void addDecimalFormatting(QName name, DecimalFormatting symbols) {
-        if (_decimalFormats == null) _decimalFormats = new Hashtable();
-        _decimalFormats.put(name, symbols);
+        if (_decimalFormats == null) _decimalFormats = new HashMap<>();
+        _decimalFormats.put(name.getStringRep(), symbols);
     }
 
     public Key getKey(QName name) {
         if (_keys == null) return null;
-        return (Key) _keys.get(name);
+        return _keys.get(name.getStringRep());
     }
 
     public void addKey(QName name, Key key) {
-        if (_keys == null) _keys = new Hashtable();
-        _keys.put(name, key);
+        if (_keys == null) _keys = new HashMap<>();
+        _keys.put(name.getStringRep(), key);
     }
 
     public Stylesheet addStylesheet(QName name, Stylesheet node) {
-        return (Stylesheet)_stylesheets.put(name, node);
+        return _stylesheets.put(name.getStringRep(), node);
     }
 
     public Stylesheet lookupStylesheet(QName name) {
-        return (Stylesheet)_stylesheets.get(name);
+        return _stylesheets.get(name.getStringRep());
     }
 
     public Template addTemplate(Template template) {
         final QName name = template.getName();
-        if (_templates == null) _templates = new Hashtable();
-        return (Template)_templates.put(name, template);
+        if (_templates == null) _templates = new HashMap<>();
+        return _templates.put(name.getStringRep(), template);
     }
 
     public Template lookupTemplate(QName name) {
         if (_templates == null) return null;
-        return (Template)_templates.get(name);
+        return _templates.get(name.getStringRep());
     }
 
     public Variable addVariable(Variable variable) {
-        if (_variables == null) _variables = new Hashtable();
+        if (_variables == null) _variables = new HashMap<>();
         final String name = variable.getName().getStringRep();
         return (Variable)_variables.put(name, variable);
     }
 
     public Param addParam(Param parameter) {
-        if (_variables == null) _variables = new Hashtable();
+        if (_variables == null) _variables = new HashMap<>();
         final String name = parameter.getName().getStringRep();
         return (Param)_variables.put(name, parameter);
     }
@@ -105,14 +105,14 @@ final class SymbolTable {
     public Variable lookupVariable(QName qname) {
         if (_variables == null) return null;
         final String name = qname.getStringRep();
-        final Object obj = _variables.get(name);
+        final VariableBase obj = _variables.get(name);
         return obj instanceof Variable ? (Variable)obj : null;
     }
 
     public Param lookupParam(QName qname) {
         if (_variables == null) return null;
         final String name = qname.getStringRep();
-        final Object obj = _variables.get(name);
+        final VariableBase obj = _variables.get(name);
         return obj instanceof Param ? (Param)obj : null;
     }
 
@@ -123,13 +123,13 @@ final class SymbolTable {
     }
 
     public AttributeSet addAttributeSet(AttributeSet atts) {
-        if (_attributeSets == null) _attributeSets = new Hashtable();
-        return (AttributeSet)_attributeSets.put(atts.getName(), atts);
+        if (_attributeSets == null) _attributeSets = new HashMap<>();
+        return _attributeSets.put(atts.getName().getStringRep(), atts);
     }
 
     public AttributeSet lookupAttributeSet(QName name) {
         if (_attributeSets == null) return null;
-        return (AttributeSet)_attributeSets.get(name);
+        return _attributeSets.get(name.getStringRep());
     }
 
     /**
@@ -138,7 +138,7 @@ final class SymbolTable {
      * is prepended.
      */
     public void addPrimop(String name, MethodType mtype) {
-        Vector methods = (Vector)_primops.get(name);
+        Vector methods = _primops.get(name);
         if (methods == null) {
             _primops.put(name, methods = new Vector());
         }
@@ -150,7 +150,7 @@ final class SymbolTable {
      * prepending the prefix <tt>PrimopPrefix</tt>.
      */
     public Vector lookupPrimop(String name) {
-        return (Vector)_primops.get(name);
+        return _primops.get(name);
     }
 
     /**
@@ -181,7 +181,7 @@ final class SymbolTable {
      * Adds an alias for a namespace prefix
      */
     public void addPrefixAlias(String prefix, String alias) {
-        if (_aliases == null) _aliases = new Hashtable();
+        if (_aliases == null) _aliases = new HashMap<>();
         _aliases.put(prefix,alias);
     }
 
@@ -190,7 +190,7 @@ final class SymbolTable {
      */
     public String lookupPrefixAlias(String prefix) {
         if (_aliases == null) return null;
-        return (String)_aliases.get(prefix);
+        return _aliases.get(prefix);
     }
 
     /**
@@ -201,15 +201,15 @@ final class SymbolTable {
         // The null-namespace cannot be excluded
         if (uri == null) return;
 
-        // Create new hashtable of exlcuded URIs if none exists
-        if (_excludedURI == null) _excludedURI = new Hashtable();
+        // Create a new map of exlcuded URIs if none exists
+        if (_excludedURI == null) _excludedURI = new HashMap<>();
 
         // Register the namespace URI
-        Integer refcnt = (Integer)_excludedURI.get(uri);
+        Integer refcnt = _excludedURI.get(uri);
         if (refcnt == null)
-            refcnt = new Integer(1);
+            refcnt = 1;
         else
-            refcnt = new Integer(refcnt.intValue() + 1);
+            refcnt = refcnt + 1;
         _excludedURI.put(uri,refcnt);
     }
 
@@ -237,8 +237,8 @@ final class SymbolTable {
      */
     public boolean isExcludedNamespace(String uri) {
         if (uri != null && _excludedURI != null) {
-            final Integer refcnt = (Integer)_excludedURI.get(uri);
-            return (refcnt != null && refcnt.intValue() > 0);
+            final Integer refcnt = _excludedURI.get(uri);
+            return (refcnt != null && refcnt > 0);
         }
         return false;
     }
@@ -257,9 +257,9 @@ final class SymbolTable {
                     uri = lookupNamespace(Constants.EMPTYSTRING);
                 else
                     uri = lookupNamespace(prefix);
-                Integer refcnt = (Integer)_excludedURI.get(uri);
+                Integer refcnt = _excludedURI.get(uri);
                 if (refcnt != null)
-                    _excludedURI.put(uri, new Integer(refcnt.intValue() - 1));
+                    _excludedURI.put(uri, refcnt - 1);
             }
         }
     }
@@ -286,7 +286,7 @@ final class SymbolTable {
      * the current stylesheet.
      */
     public void popExcludedNamespacesContext() {
-        _excludedURI = (Hashtable) _excludedURIStack.pop();
+        _excludedURI = _excludedURIStack.pop();
         if (_excludedURIStack.isEmpty()) {
             _excludedURIStack = null;
         }

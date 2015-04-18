@@ -1,15 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the  "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -27,21 +25,6 @@ package com.sun.org.apache.xalan.internal.xsltc.runtime;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.BufferedOutputStream;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import javax.xml.transform.Templates;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.DOMImplementation;
-import javax.xml.parsers.ParserConfigurationException;
-
-import com.sun.org.apache.xml.internal.dtm.DTM;
-
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
 import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
@@ -50,9 +33,24 @@ import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.dom.DOMAdapter;
 import com.sun.org.apache.xalan.internal.xsltc.dom.KeyIndex;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.output.TransletOutputHandlerFactory;
+import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xml.internal.serializer.ToStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Templates;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
 
 /**
  * @author Jacek Ambroziak
@@ -273,15 +271,15 @@ public abstract class AbstractTranslet implements Translet {
      ************************************************************************/
 
     // Contains decimal number formatting symbols used by FormatNumberCall
-    public Hashtable _formatSymbols = null;
+    public Map<String, DecimalFormat> _formatSymbols = null;
 
     /**
-     * Adds a DecimalFormat object to the _formatSymbols hashtable.
+     * Adds a DecimalFormat object to the _formatSymbols map.
      * The entry is created with the input DecimalFormatSymbols.
      */
     public void addDecimalFormat(String name, DecimalFormatSymbols symbols) {
-        // Instanciate hashtable for formatting symbols if needed
-        if (_formatSymbols == null) _formatSymbols = new Hashtable();
+        // Instanciate map for formatting symbols if needed
+        if (_formatSymbols == null) _formatSymbols = new HashMap<>();
 
         // The name cannot be null - use empty string instead
         if (name == null) name = EMPTYSTRING;
@@ -295,7 +293,7 @@ public abstract class AbstractTranslet implements Translet {
     }
 
     /**
-     * Retrieves a named DecimalFormat object from _formatSymbols hashtable.
+     * Retrieves a named DecimalFormat object from the _formatSymbols map.
      */
     public final DecimalFormat getDecimalFormat(String name) {
 
@@ -303,8 +301,8 @@ public abstract class AbstractTranslet implements Translet {
             // The name cannot be null - use empty string instead
             if (name == null) name = EMPTYSTRING;
 
-            DecimalFormat df = (DecimalFormat)_formatSymbols.get(name);
-            if (df == null) df = (DecimalFormat)_formatSymbols.get(EMPTYSTRING);
+            DecimalFormat df = _formatSymbols.get(name);
+            if (df == null) df = _formatSymbols.get(EMPTYSTRING);
             return df;
         }
         return(null);
@@ -340,26 +338,19 @@ public abstract class AbstractTranslet implements Translet {
                 return;
             }
             else {
-                final Hashtable elementsByID = enhancedDOM.getElementsWithIDs();
+                final Map<String, Integer> elementsByID = enhancedDOM.getElementsWithIDs();
 
                 if (elementsByID == null) {
                     return;
                 }
 
-                // Given a Hashtable of DTM nodes indexed by ID attribute values,
+                // Given a Map of DTM nodes indexed by ID attribute values,
                 // loop through the table copying information to a KeyIndex
                 // for the mapping from ID attribute value to DTM node
-                final Enumeration idValues = elementsByID.keys();
                 boolean hasIDValues = false;
-
-                while (idValues.hasMoreElements()) {
-                    final Object idValue = idValues.nextElement();
-                    final int element =
-                            document.getNodeHandle(
-                                        ((Integer)elementsByID.get(idValue))
-                                                .intValue());
-
-                    buildKeyIndex(ID_INDEX_NAME, element, idValue);
+                for (Map.Entry<String, Integer> entry : elementsByID.entrySet()) {
+                    final int element = document.getNodeHandle(entry.getValue());
+                    buildKeyIndex(ID_INDEX_NAME, element, entry.getKey());
                     hasIDValues = true;
                 }
 
@@ -427,7 +418,7 @@ public abstract class AbstractTranslet implements Translet {
      ************************************************************************/
 
     // Container for all indexes for xsl:key elements
-    private Hashtable _keyIndexes = null;
+    private Map<String, KeyIndex> _keyIndexes = null;
     private KeyIndex  _emptyKeyIndex = null;
     private int       _indexSize = 0;
     private int       _currentRootForKeys = 0;
@@ -453,13 +444,8 @@ public abstract class AbstractTranslet implements Translet {
      *   @param node is the node handle of the node to insert
      *   @param value is the value that will look up the node in the given index
      */
-    public void buildKeyIndex(String name, int node, Object value) {
-        if (_keyIndexes == null) _keyIndexes = new Hashtable();
-
-        KeyIndex index = (KeyIndex)_keyIndexes.get(name);
-        if (index == null) {
-            _keyIndexes.put(name, index = new KeyIndex(_indexSize));
-        }
+    public void buildKeyIndex(String name, int node, String value) {
+        KeyIndex index = buildKeyIndexHelper(name);
         index.add(value, node, _currentRootForKeys);
     }
 
@@ -469,18 +455,33 @@ public abstract class AbstractTranslet implements Translet {
      *   @param dom is the DOM
      */
     public void buildKeyIndex(String name, DOM dom) {
-        if (_keyIndexes == null) _keyIndexes = new Hashtable();
+        KeyIndex index = buildKeyIndexHelper(name);
+        index.setDom(dom, dom.getDocument());
+    }
 
-        KeyIndex index = (KeyIndex)_keyIndexes.get(name);
+    /**
+     * Return KeyIndex for the buildKeyIndex methods. Note the difference from the
+     * public getKeyIndex method, this method creates a new Map if keyIndexes does
+     * not exist.
+     *
+     * @param name the name of the index (the key or ##id)
+     * @return a KeyIndex.
+     */
+    private KeyIndex buildKeyIndexHelper(String name) {
+        if (_keyIndexes == null) _keyIndexes = new HashMap<>();
+
+        KeyIndex index = _keyIndexes.get(name);
         if (index == null) {
             _keyIndexes.put(name, index = new KeyIndex(_indexSize));
         }
-        index.setDom(dom, dom.getDocument());
+        return index;
     }
 
     /**
      * Returns the index for a given key (or id).
      * The index implements our internal iterator interface
+     * @param name the name of the index (the key or ##id)
+     * @return a KeyIndex.
      */
     public KeyIndex getKeyIndex(String name) {
         // Return an empty key index iterator if none are defined
@@ -491,7 +492,7 @@ public abstract class AbstractTranslet implements Translet {
         }
 
         // Look up the requested key index
-        final KeyIndex index = (KeyIndex)_keyIndexes.get(name);
+        final KeyIndex index = _keyIndexes.get(name);
 
         // Return an empty key index iterator if the requested index not found
         if (index == null) {
@@ -708,14 +709,14 @@ public abstract class AbstractTranslet implements Translet {
         }
     }
 
-    private Hashtable _auxClasses = null;
+    private Map<String, Class<?>> _auxClasses = null;
 
     public void addAuxiliaryClass(Class auxClass) {
-        if (_auxClasses == null) _auxClasses = new Hashtable();
+        if (_auxClasses == null) _auxClasses = new HashMap<>();
         _auxClasses.put(auxClass.getName(), auxClass);
     }
 
-    public void setAuxiliaryClasses(Hashtable auxClasses) {
+    public void setAuxiliaryClasses(Map<String, Class<?>> auxClasses) {
         _auxClasses = auxClasses;
     }
 

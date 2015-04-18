@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,20 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
-import java.util.Date;
-import java.util.Hashtable;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.sax.SAXSource;
-
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
 import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
@@ -45,7 +31,19 @@ import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Constants;
 import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
-
+import java.io.File;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.sax.SAXSource;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -56,7 +54,7 @@ import org.xml.sax.XMLReader;
 public final class DocumentCache implements DOMCache {
 
     private int       _size;
-    private Hashtable _references;
+    private Map<String, CachedDocument> _references;
     private String[]  _URIs;
     private int       _count;
     private int       _current;
@@ -170,7 +168,7 @@ public final class DocumentCache implements DOMCache {
         _count = 0;
         _current = 0;
         _size  = size;
-        _references = new Hashtable(_size+2);
+        _references = new HashMap<>(_size+2);
         _URIs = new String[_size];
 
         try {
@@ -217,7 +215,7 @@ public final class DocumentCache implements DOMCache {
      *
      */
     private CachedDocument lookupDocument(String uri) {
-        return((CachedDocument)_references.get(uri));
+        return(_references.get(uri));
     }
 
     /**
@@ -230,7 +228,7 @@ public final class DocumentCache implements DOMCache {
             _current = 0;
         }
         else {
-            // Remove oldest URI from reference Hashtable
+            // Remove oldest URI from reference map
             _references.remove(_URIs[_current]);
             // Insert our URI in circular buffer
             _URIs[_current] = uri;
@@ -243,7 +241,6 @@ public final class DocumentCache implements DOMCache {
      *
      */
     private synchronized void replaceDocument(String uri, CachedDocument doc) {
-        CachedDocument old = (CachedDocument)_references.get(uri);
         if (doc == null)
             insertDocument(uri, doc);
         else
@@ -324,7 +321,7 @@ public final class DocumentCache implements DOMCache {
                     "<td><center><b>Last modified</b></center></td></tr>");
 
         for (int i=0; i<_count; i++) {
-            CachedDocument doc = (CachedDocument)_references.get(_URIs[i]);
+            CachedDocument doc = _references.get(_URIs[i]);
             out.print("<tr><td><a href=\""+_URIs[i]+"\">"+
                       "<font size=-1>"+_URIs[i]+"</font></a></td>");
             out.print("<td><center>"+doc.getLatency()+"ms</center></td>");

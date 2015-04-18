@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,9 +19,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl;
-import java.util.Hashtable;
-import java.util.Locale;
-
 import com.sun.org.apache.xerces.internal.util.DefaultErrorHandler;
 import com.sun.org.apache.xerces.internal.util.ErrorHandlerProxy;
 import com.sun.org.apache.xerces.internal.util.MessageFormatter;
@@ -33,6 +29,9 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import org.xml.sax.ErrorHandler;
 
 /**
@@ -148,7 +147,7 @@ public class XMLErrorReporter
     protected Locale fLocale;
 
     /** Mapping of Message formatters for domains. */
-    protected Hashtable fMessageFormatters;
+    protected Map<String, MessageFormatter> fMessageFormatters;
 
     /** Error handler. */
     protected XMLErrorHandler fErrorHandler;
@@ -192,7 +191,7 @@ public class XMLErrorReporter
         //       caller to specify the location of the error being
         //       reported. -Ac
 
-        fMessageFormatters = new Hashtable();
+        fMessageFormatters = new HashMap<>();
 
     } // <init>()
 
@@ -250,7 +249,7 @@ public class XMLErrorReporter
      * @param domain The domain of the message formatter.
      */
     public MessageFormatter getMessageFormatter(String domain) {
-        return (MessageFormatter)fMessageFormatters.get(domain);
+        return fMessageFormatters.get(domain);
     } // getMessageFormatter(String):MessageFormatter
 
     /**
@@ -260,7 +259,7 @@ public class XMLErrorReporter
      * @param domain The domain of the message formatter.
      */
     public MessageFormatter removeMessageFormatter(String domain) {
-        return (MessageFormatter) fMessageFormatters.remove(domain);
+        return fMessageFormatters.remove(domain);
     } // removeMessageFormatter(String):MessageFormatter
 
     /**

@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -28,7 +31,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -84,7 +88,7 @@ public class SAXCatalogReader implements CatalogReader, ContentHandler, Document
      * or "{namespaceuri}elementname". The former is used if the
      * namespace URI is null.</p>
      */
-    protected Hashtable namespaceMap = new Hashtable();
+    protected Map<String, String> namespaceMap = new HashMap<>();
 
     /** The parser in use for the current catalog. */
     private SAXCatalogParser saxParser = null;
@@ -164,7 +168,7 @@ public class SAXCatalogReader implements CatalogReader, ContentHandler, Document
     public String getCatalogParser(String namespaceURI,
             String rootElement) {
         namespaceURI = namespaceURI != null ? namespaceURI.trim() : "";
-        return (String) namespaceMap.get("{"+namespaceURI+"}"+rootElement);
+        return namespaceMap.get("{"+namespaceURI+"}"+rootElement);
     }
 
     /**
