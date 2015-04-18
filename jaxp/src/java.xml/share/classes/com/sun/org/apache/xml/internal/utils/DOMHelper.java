@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,18 +22,16 @@
  */
 package com.sun.org.apache.xml.internal.utils;
 
-import java.util.Hashtable;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeProxy;
+import com.sun.org.apache.xml.internal.res.XMLErrorResources;
+import com.sun.org.apache.xml.internal.res.XMLMessages;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
-
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
-import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeProxy;
-import com.sun.org.apache.xml.internal.res.XMLErrorResources;
-import com.sun.org.apache.xml.internal.res.XMLMessages;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -565,7 +563,7 @@ public class DOMHelper
   /**
    * An experiment for the moment.
    */
-  Hashtable m_NSInfos = new Hashtable();
+  Map<Node, NSInfo> m_NSInfos = new HashMap<>();
 
   /** Object to put into the m_NSInfos table that tells that a node has not been
    *  processed, but has xmlns namespace decls.  */
@@ -623,9 +621,7 @@ public class DOMHelper
 
     if (Node.ATTRIBUTE_NODE != ntype)
     {
-      Object nsObj = m_NSInfos.get(n);  // return value
-
-      nsInfo = (nsObj == null) ? null : (NSInfo) nsObj;
+      nsInfo = m_NSInfos.get(n);
       hasProcessedNS = (nsInfo == null) ? false : nsInfo.m_hasProcessedNS;
     }
     else
@@ -751,9 +747,7 @@ public class DOMHelper
 
           if (null != parent)
           {
-            Object nsObj = m_NSInfos.get(parent);  // return value
-
-            nsInfo = (nsObj == null) ? null : (NSInfo) nsObj;
+            nsInfo = m_NSInfos.get(parent);
           }
         }
 
@@ -770,12 +764,12 @@ public class DOMHelper
 
               if (candidateInfo == m_NSInfoUnProcWithoutXMLNS)
               {
-                m_NSInfos.put(m_candidateNoAncestorXMLNS.elementAt(i),
+                m_NSInfos.put((Node)m_candidateNoAncestorXMLNS.elementAt(i),
                               m_NSInfoUnProcNoAncestorXMLNS);
               }
               else if (candidateInfo == m_NSInfoNullWithoutXMLNS)
               {
-                m_NSInfos.put(m_candidateNoAncestorXMLNS.elementAt(i),
+                m_NSInfos.put((Node)m_candidateNoAncestorXMLNS.elementAt(i),
                               m_NSInfoNullNoAncestorXMLNS);
               }
             }

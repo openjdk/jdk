@@ -1,68 +1,24 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * The Apache Software License, Version 1.1
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Copyright (c) 1999-2002 The Apache Software Foundation.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Xerces" and "Apache Software Foundation" must
- *    not be used to endorse or promote products derived from this
- *    software without prior written permission. For written
- *    permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    nor may "Apache" appear in their name, without prior written
- *    permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation and was
- * originally based on software copyright (c) 1999, International
- * Business Machines, Inc., http://www.apache.org.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.sun.org.apache.xerces.internal.impl.dtd;
-
-import java.util.ArrayList;
-import java.util.Hashtable;
 
 import com.sun.org.apache.xerces.internal.impl.dtd.models.CMAny;
 import com.sun.org.apache.xerces.internal.impl.dtd.models.CMBinOp;
@@ -88,10 +44,14 @@ import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDContentModelSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * A DTD grammar. This class implements the XNI handler interfaces
- * for DTD information so that it can build the approprate validation
+ * for DTD information so that it can build the appropriate validation
  * structures automatically from the callbacks.
  *
  * @xerces.internal
@@ -250,13 +210,13 @@ public class DTDGrammar
     // other information
 
     /** Element index mapping table. */
-    private QNameHashtable fElementIndexMap = new QNameHashtable();
+    private final Map<String, Integer> fElementIndexMap = new HashMap<>();
 
     /** Entity index mapping table. */
-    private QNameHashtable fEntityIndexMap = new QNameHashtable();
+    private final Map<String, Integer> fEntityIndexMap = new HashMap<>();
 
     /** Notation index mapping table. */
-    private QNameHashtable fNotationIndexMap = new QNameHashtable();
+    private final Map<String, Integer> fNotationIndexMap = new HashMap<>();
 
     // temp variables
 
@@ -290,7 +250,7 @@ public class DTDGrammar
     private XMLContentSpec fContentSpec = new XMLContentSpec();
 
     /** table of XMLElementDecl   */
-    Hashtable   fElementDeclTab     = new Hashtable();
+    Map<String, XMLElementDecl> fElementDeclTab = new HashMap<>();
 
     /** Children content model operation stack. */
     private short[] fOpStack = null;
@@ -515,7 +475,7 @@ public class DTDGrammar
     public void elementDecl(String name, String contentModel, Augmentations augs)
         throws XNIException {
 
-        XMLElementDecl tmpElementDecl = (XMLElementDecl) fElementDeclTab.get(name) ;
+        XMLElementDecl tmpElementDecl = fElementDeclTab.get(name) ;
 
         // check if it is already defined
         if ( tmpElementDecl != null ) {
@@ -605,7 +565,7 @@ public class DTDGrammar
                               String defaultType, XMLString defaultValue,
                               XMLString nonNormalizedDefaultValue, Augmentations augs) throws XNIException {
 
-        if ( this.fElementDeclTab.containsKey( (String) elementName) ) {
+        if ( this.fElementDeclTab.containsKey(elementName) ) {
             //if ElementDecl has already being created in the Grammar then remove from table,
             //this.fElementDeclTab.remove( (String) elementName );
         }
@@ -988,7 +948,7 @@ public class DTDGrammar
     public void startContentModel(String elementName, Augmentations augs)
         throws XNIException {
 
-        XMLElementDecl elementDecl = (XMLElementDecl) this.fElementDeclTab.get( elementName);
+        XMLElementDecl elementDecl = this.fElementDeclTab.get(elementName);
         if ( elementDecl != null ) {
             fElementDecl = elementDecl;
         }
@@ -1215,7 +1175,10 @@ public class DTDGrammar
      * @return index of the elementDeclName in scope
      */
     public int getElementDeclIndex(String elementDeclName) {
-        int mapping = fElementIndexMap.get(elementDeclName);
+        Integer mapping = fElementIndexMap.get(elementDeclName);
+        if (mapping == null) {
+            mapping = -1;
+        }
         //System.out.println("getElementDeclIndex("+elementDeclName+") -> "+mapping);
         return mapping;
     } // getElementDeclIndex(String):int
@@ -1392,7 +1355,7 @@ public class DTDGrammar
      * @return the index of the EntityDecl
      */
     public int getEntityDeclIndex(String entityDeclName) {
-        if (entityDeclName == null) {
+        if (entityDeclName == null || fEntityIndexMap.get(entityDeclName) == null) {
             return -1;
         }
 
@@ -1435,7 +1398,7 @@ public class DTDGrammar
      * @return the index if found a notation with the name, otherwise -1.
      */
     public int getNotationDeclIndex(String notationDeclName) {
-        if (notationDeclName == null) {
+        if (notationDeclName == null || fNotationIndexMap.get(notationDeclName) == null) {
             return -1;
         }
 
@@ -2667,108 +2630,6 @@ public class DTDGrammar
         public ChildrenList () {}
 
     } // class ChildrenList
-
-    //
-    // Classes
-    //
-
-    /**
-     * A simple Hashtable implementation that takes a tuple (String, String)
-     * as the key and a int as value.
-     *
-     * @xerces.internal
-     *
-     * @author Eric Ye, IBM
-     * @author Andy Clark, IBM
-     */
-    protected static final class QNameHashtable {
-
-        //
-        // Constants
-        //
-
-        /** Initial bucket size (4). */
-        private static final int INITIAL_BUCKET_SIZE = 4;
-
-        // NOTE: Changed previous hashtable size from 512 to 101 so
-        //       that we get a better distribution for hashing. -Ac
-        /** Hashtable size (101). */
-        private static final int HASHTABLE_SIZE = 101;
-
-        //
-        // Data
-        //
-        private Object[][] fHashTable = new Object[HASHTABLE_SIZE][];
-
-        //
-        // Public methods
-        //
-        /** Associates the given value with the specified key tuple. */
-        public void put(String key, int value) {
-
-            int hash = (key.hashCode() & 0x7FFFFFFF) % HASHTABLE_SIZE;
-            Object[] bucket = fHashTable[hash];
-
-            if (bucket == null) {
-                bucket = new Object[1 + 2*INITIAL_BUCKET_SIZE];
-                bucket[0] = new int[]{1};
-                bucket[1] = key;
-                bucket[2] = new int[]{value};
-                fHashTable[hash] = bucket;
-            } else {
-                int count = ((int[])bucket[0])[0];
-                int offset = 1 + 2*count;
-                if (offset == bucket.length) {
-                    int newSize = count + INITIAL_BUCKET_SIZE;
-                    Object[] newBucket = new Object[1 + 2*newSize];
-                    System.arraycopy(bucket, 0, newBucket, 0, offset);
-                    bucket = newBucket;
-                    fHashTable[hash] = bucket;
-                }
-                boolean found = false;
-                int j=1;
-                for (int i=0; i<count; i++){
-                    if ((String)bucket[j] == key) {
-                        ((int[])bucket[j+1])[0] = value;
-                        found = true;
-                        break;
-                    }
-                    j += 2;
-                }
-                if (! found) {
-                    bucket[offset++] = key;
-                    bucket[offset]= new int[]{value};
-                    ((int[])bucket[0])[0] = ++count;
-                }
-
-            }
-            //System.out.println("put("+key+" -> "+value+')');
-            //System.out.println("get("+key+") -> "+get(key));
-
-        } // put(int,String,String,int)
-
-        /** Returns the value associated with the specified key tuple. */
-        public int get(String key) {
-            int hash = (key.hashCode() & 0x7FFFFFFF) % HASHTABLE_SIZE;
-            Object[] bucket = fHashTable[hash];
-
-            if (bucket == null) {
-                return -1;
-            }
-            int count = ((int[])bucket[0])[0];
-
-            int j=1;
-            for (int i=0; i<count; i++){
-                if ((String)bucket[j] == key) {
-                    return ((int[])bucket[j+1])[0];
-                }
-                j += 2;
-            }
-            return -1;
-
-        } // get(int,String,String)
-
-    }  // class QNameHashtable
 
     //
     // EntityState methods

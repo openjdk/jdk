@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -54,6 +53,12 @@ implements XMLAttributes, XMLBufferListener {
     /** Default table size. */
     protected static final int TABLE_SIZE = 101;
 
+    /** Maximum hash collisions per bucket. */
+    protected static final int MAX_HASH_COLLISIONS = 40;
+
+    protected static final int MULTIPLIERS_SIZE = 1 << 5;
+    protected static final int MULTIPLIERS_MASK = MULTIPLIERS_SIZE - 1;
+
     /**
      * Threshold at which an instance is treated
      * as a large attribute list.
@@ -85,7 +90,6 @@ implements XMLAttributes, XMLBufferListener {
     protected Attribute[] fAttributes = new Attribute[4];
 
     /**
-     * Hashtable of attribute information.
      * Provides an alternate view of the attribute specification.
      */
     protected Attribute[] fAttributeTableView;
@@ -107,6 +111,12 @@ implements XMLAttributes, XMLBufferListener {
      * Indicates whether the table view contains consistent data.
      */
     protected boolean fIsTableViewConsistent;
+
+    /**
+     * Array of randomly selected hash function multipliers or <code>null</code>
+     * if the default String.hashCode() function should be used.
+     */
+    protected int[] fHashMultipliers;
 
     //
     // Constructors
@@ -210,7 +220,8 @@ implements XMLAttributes, XMLBufferListener {
              * the user of this class adds attributes, removes them, and
              * then adds more.
              */
-            if (!fIsTableViewConsistent || fLength == SIZE_LIMIT) {
+            if (!fIsTableViewConsistent || fLength == SIZE_LIMIT ||
+                (fLength > SIZE_LIMIT && fLength > fTableViewBuckets)) {
                 prepareAndPopulateTableView();
                 fIsTableViewConsistent = true;
             }
@@ -239,12 +250,14 @@ implements XMLAttributes, XMLBufferListener {
             // We need to check if any of the attributes has the same rawname.
             else {
                 // Search the table.
+                int collisionCount = 0;
                 Attribute found = fAttributeTableView[bucket];
                 while (found != null) {
                     if (found.name.rawname == name.rawname) {
                         break;
                     }
                     found = found.next;
+                    ++collisionCount;
                 }
                 // This attribute is unique.
                 if (found == null) {
@@ -258,9 +271,19 @@ implements XMLAttributes, XMLBufferListener {
                         fAttributes = attributes;
                     }
 
-                    // Update table view
-                    fAttributes[index].next = fAttributeTableView[bucket];
-                    fAttributeTableView[bucket] = fAttributes[index];
+                    // Select a new hash function and rehash the table view
+                    // if the collision threshold is exceeded.
+                    if (collisionCount >= MAX_HASH_COLLISIONS) {
+                        // The current attribute will be processed in the rehash.
+                        // Need to set its name first.
+                        fAttributes[index].name.setValues(name);
+                        rebalanceTableView(fLength);
+                    }
+                    else {
+                        // Update table view
+                        fAttributes[index].next = fAttributeTableView[bucket];
+                        fAttributeTableView[bucket] = fAttributes[index];
+                    }
                 }
                 // Duplicate. We still need to find the index.
                 else {
@@ -766,56 +789,79 @@ implements XMLAttributes, XMLBufferListener {
      */
     public QName checkDuplicatesNS() {
         // If the list is small check for duplicates using pairwise comparison.
-        if (fLength <= SIZE_LIMIT) {
-            for (int i = 0; i < fLength - 1; ++i) {
-                Attribute att1 = fAttributes[i];
-                for (int j = i + 1; j < fLength; ++j) {
-                    Attribute att2 = fAttributes[j];
+        final int length = fLength;
+        if (length <= SIZE_LIMIT) {
+            final Attribute[] attributes = fAttributes;
+            for (int i = 0; i < length - 1; ++i) {
+                Attribute att1 = attributes[i];
+                for (int j = i + 1; j < length; ++j) {
+                    Attribute att2 = attributes[j];
                     if (att1.name.localpart == att2.name.localpart &&
                         att1.name.uri == att2.name.uri) {
                         return att2.name;
                     }
                 }
             }
+            return null;
         }
         // If the list is large check duplicates using a hash table.
         else {
-            // We don't want this table view to be read if someone calls
-            // addAttribute so we invalidate it up front.
-            fIsTableViewConsistent = false;
+            return checkManyDuplicatesNS();
+        }
+    }
 
-            prepareTableView();
+    private QName checkManyDuplicatesNS() {
+        // We don't want this table view to be read if someone calls
+        // addAttribute so we invalidate it up front.
+        fIsTableViewConsistent = false;
 
-            Attribute attr;
-            int bucket;
+        prepareTableView();
 
-            for (int i = fLength - 1; i >= 0; --i) {
-                attr = fAttributes[i];
-                bucket = getTableViewBucket(attr.name.localpart, attr.name.uri);
+        Attribute attr;
+        int bucket;
 
-                // The chain is stale.
-                // This must be a unique attribute.
-                if (fAttributeTableViewChainState[bucket] != fLargeCount) {
-                    fAttributeTableViewChainState[bucket] = fLargeCount;
-                    attr.next = null;
-                    fAttributeTableView[bucket] = attr;
-                }
-                // This chain is active.
-                // We need to check if any of the attributes has the same name.
-                else {
-                    // Search the table.
-                    Attribute found = fAttributeTableView[bucket];
-                    while (found != null) {
-                        if (found.name.localpart == attr.name.localpart &&
-                            found.name.uri == attr.name.uri) {
-                            return attr.name;
-                        }
-                        found = found.next;
+        final int length = fLength;
+        final Attribute[] attributes = fAttributes;
+        final Attribute[] attributeTableView = fAttributeTableView;
+        final int[] attributeTableViewChainState = fAttributeTableViewChainState;
+        int largeCount = fLargeCount;
+
+        for (int i = 0; i < length; ++i) {
+            attr = attributes[i];
+            bucket = getTableViewBucket(attr.name.localpart, attr.name.uri);
+
+            // The chain is stale.
+            // This must be a unique attribute.
+            if (attributeTableViewChainState[bucket] != largeCount) {
+                attributeTableViewChainState[bucket] = largeCount;
+                attr.next = null;
+                attributeTableView[bucket] = attr;
+            }
+            // This chain is active.
+            // We need to check if any of the attributes has the same name.
+            else {
+                // Search the table.
+                int collisionCount = 0;
+                Attribute found = attributeTableView[bucket];
+                while (found != null) {
+                    if (found.name.localpart == attr.name.localpart &&
+                        found.name.uri == attr.name.uri) {
+                        return attr.name;
                     }
-
+                    found = found.next;
+                    ++collisionCount;
+                }
+                // Select a new hash function and rehash the table view
+                // if the collision threshold is exceeded.
+                if (collisionCount >= MAX_HASH_COLLISIONS) {
+                    // The current attribute will be processed in the rehash.
+                    rebalanceTableViewNS(i+1);
+                    largeCount = fLargeCount;
+                }
+                else {
                     // Update table view
-                    attr.next = fAttributeTableView[bucket];
-                    fAttributeTableView[bucket] = attr;
+                    attr.next = attributeTableView[bucket];
+                    attributeTableView[bucket] = attr;
                 }
             }
         }
@@ -870,7 +916,7 @@ implements XMLAttributes, XMLBufferListener {
      * would be hashed
      */
     protected int getTableViewBucket(String qname) {
-        return (qname.hashCode() & 0x7FFFFFFF) % fTableViewBuckets;
+        return (hash(qname) & 0x7FFFFFFF) % fTableViewBuckets;
     }
 
     /**
@@ -884,13 +930,36 @@ implements XMLAttributes, XMLBufferListener {
      */
     protected int getTableViewBucket(String localpart, String uri) {
         if (uri == null) {
-            return (localpart.hashCode() & 0x7FFFFFFF) % fTableViewBuckets;
+            return (hash(localpart) & 0x7FFFFFFF) % fTableViewBuckets;
         }
         else {
-            return ((localpart.hashCode() + uri.hashCode())
-               & 0x7FFFFFFF) % fTableViewBuckets;
+            return (hash(localpart, uri) & 0x7FFFFFFF) % fTableViewBuckets;
         }
     }
+
+    private int hash(String localpart) {
+        if (fHashMultipliers == null) {
+            return localpart.hashCode();
+        }
+        return hash0(localpart);
+    } // hash(String):int
+
+    private int hash(String localpart, String uri) {
+        if (fHashMultipliers == null) {
+            return localpart.hashCode() + uri.hashCode() * 31;
+        }
+        return hash0(localpart) + hash0(uri) * fHashMultipliers[MULTIPLIERS_SIZE];
+    } // hash(String,String):int
+
+    private int hash0(String symbol) {
+        int code = 0;
+        final int length = symbol.length();
+        final int[] multipliers = fHashMultipliers;
+        for (int i = 0; i < length; ++i) {
+            code = code * multipliers[i & MULTIPLIERS_MASK] + symbol.charAt(i);
+        }
+        return code;
+    } // hash0(String):int
 
     /**
      * Purges all elements from the table view.
@@ -907,10 +976,32 @@ implements XMLAttributes, XMLBufferListener {
         }
     }
 
+     /**
+     * Increases the capacity of the table view.
+     */
+    private void growTableView() {
+        final int length = fLength;
+        int tableViewBuckets = fTableViewBuckets;
+        do {
+            tableViewBuckets = (tableViewBuckets << 1) + 1;
+            if (tableViewBuckets < 0) {
+                tableViewBuckets = Integer.MAX_VALUE;
+                break;
+            }
+        }
+       while (length > tableViewBuckets);
+        fTableViewBuckets = tableViewBuckets;
+        fAttributeTableView = null;
+        fLargeCount = 1;
+    }
+
     /**
      * Prepares the table view of the attributes list for use.
      */
     protected void prepareTableView() {
+        if (fLength > fTableViewBuckets) {
+            growTableView();
+        }
         if (fAttributeTableView == null) {
             fAttributeTableView = new Attribute[fTableViewBuckets];
             fAttributeTableViewChainState = new int[fTableViewBuckets];
@@ -926,11 +1017,15 @@ implements XMLAttributes, XMLBufferListener {
      * previously read.
      */
     protected void prepareAndPopulateTableView() {
+        prepareAndPopulateTableView(fLength);
+    }
+
+    private void prepareAndPopulateTableView(final int count) {
         prepareTableView();
-        // Need to populate the hash table with the attributes we've scanned so far.
+        // Need to populate the hash table with the attributes we've processed so far.
         Attribute attr;
         int bucket;
-        for (int i = 0; i < fLength; ++i) {
+        for (int i = 0; i < count; ++i) {
             attr = fAttributes[i];
             bucket = getTableViewBucket(attr.name.rawname);
             if (fAttributeTableViewChainState[bucket] != fLargeCount) {
@@ -1071,7 +1166,56 @@ implements XMLAttributes, XMLBufferListener {
         }
     }
     public void refresh(int pos) {
+    }
+
+    private void prepareAndPopulateTableViewNS(final int count) {
+        prepareTableView();
+        // Need to populate the hash table with the attributes we've processed so far.
+        Attribute attr;
+        int bucket;
+        for (int i = 0; i < count; ++i) {
+            attr = fAttributes[i];
+            bucket = getTableViewBucket(attr.name.localpart, attr.name.uri);
+            if (fAttributeTableViewChainState[bucket] != fLargeCount) {
+                fAttributeTableViewChainState[bucket] = fLargeCount;
+                attr.next = null;
+                fAttributeTableView[bucket] = attr;
+            }
+            else {
+                // Update table view
+                attr.next = fAttributeTableView[bucket];
+                fAttributeTableView[bucket] = attr;
+            }
         }
+    }
+
+    /**
+     * Randomly selects a new hash function and reorganizes the table view
+     * in order to more evenly distribute its entries. This method is called
+     * automatically when the number of attributes in one bucket exceeds
+     * MAX_HASH_COLLISIONS.
+     */
+    private void rebalanceTableView(final int count) {
+        if (fHashMultipliers == null) {
+            fHashMultipliers = new int[MULTIPLIERS_SIZE + 1];
+        }
+        PrimeNumberSequenceGenerator.generateSequence(fHashMultipliers);
+        prepareAndPopulateTableView(count);
+    }
+
+    /**
+     * Randomly selects a new hash function and reorganizes the table view
+     * in order to more evenly distribute its entries. This method is called
+     * automatically when the number of attributes in one bucket exceeds
+     * MAX_HASH_COLLISIONS.
+     */
+    private void rebalanceTableViewNS(final int count) {
+        if (fHashMultipliers == null) {
+            fHashMultipliers = new int[MULTIPLIERS_SIZE + 1];
+        }
+        PrimeNumberSequenceGenerator.generateSequence(fHashMultipliers);
+        prepareAndPopulateTableViewNS(count);
+    }
 
     //
     // Classes

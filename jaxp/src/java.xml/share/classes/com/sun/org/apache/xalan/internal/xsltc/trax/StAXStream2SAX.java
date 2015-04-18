@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,6 @@
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import java.io.IOException;
-import java.util.Hashtable;
-import java.util.Stack;
-import java.util.Vector;
-import java.util.Iterator;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
@@ -53,14 +48,6 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.Namespace;
-import javax.xml.stream.events.ProcessingInstruction;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.StartDocument;
-import javax.xml.stream.events.XMLEvent;
 
 
 
@@ -80,7 +67,6 @@ public class StAXStream2SAX implements XMLReader, Locator {
     private ContentHandler _sax = null;
     private LexicalHandler _lex = null;
     private SAXImpl _saxImpl = null;
-    //private Hashtable _nsPrefixes = new Hashtable();
 
     public StAXStream2SAX(XMLStreamReader staxSrc) {
             staxStreamReader = staxSrc;

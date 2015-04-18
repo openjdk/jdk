@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,8 +20,9 @@
 
 package com.sun.org.apache.xerces.internal.impl.xpath.regex;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * A regular expression parser for the XML Schema.
@@ -368,12 +369,12 @@ class ParserForXMLSchema extends RegexParser {
         return c;
     }
 
-    static private Hashtable ranges = null;
-    static private Hashtable ranges2 = null;
+    static private Map<String, Token> ranges = null;
+    static private Map<String, Token> ranges2 = null;
     static synchronized protected RangeToken getRange(String name, boolean positive) {
         if (ranges == null) {
-            ranges = new Hashtable();
-            ranges2 = new Hashtable();
+            ranges = new HashMap<>();
+            ranges2 = new HashMap<>();
 
             Token tok = Token.createRange();
             setupRange(tok, SPACES);
@@ -389,7 +390,7 @@ class ParserForXMLSchema extends RegexParser {
             tok = Token.createRange();
             setupRange(tok, LETTERS);
             setupRange(tok, LETTERS_INT);
-            tok.mergeRanges((Token)ranges.get("xml:isDigit"));
+            tok.mergeRanges(ranges.get("xml:isDigit"));
             ranges.put("xml:isWord", tok);
             ranges2.put("xml:isWord", Token.complementRanges(tok));
 
