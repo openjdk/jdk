@@ -380,7 +380,11 @@ public class X11GraphicsDevice
     @Override
     public synchronized DisplayMode getDisplayMode() {
         if (isFullScreenSupported()) {
-            return getCurrentDisplayMode(screen);
+            DisplayMode mode = getCurrentDisplayMode(screen);
+            if (mode == null) {
+                mode = getDefaultDisplayMode();
+            }
+            return mode;
         } else {
             if (origDisplayMode == null) {
                 origDisplayMode = getDefaultDisplayMode();
