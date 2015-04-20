@@ -714,7 +714,6 @@ jint Universe::initialize_heap() {
     fatal("UseG1GC not supported in this VM.");
   } else if (UseConcMarkSweepGC) {
     fatal("UseConcMarkSweepGC not supported in this VM.");
-  }
 #else
   if (UseParallelGC) {
     status = Universe::create_heap<ParallelScavengeHeap, GenerationSizer>();
@@ -722,12 +721,11 @@ jint Universe::initialize_heap() {
     status = Universe::create_heap<G1CollectedHeap, G1CollectorPolicyExt>();
   } else if (UseConcMarkSweepGC) {
     status = Universe::create_heap<GenCollectedHeap, ConcurrentMarkSweepPolicy>();
-  }
 #endif
-  else { // UseSerialGC
-    // Don't assert that UseSerialGC is set here because there are cases
-    // where no GC it set and we then fall back to using SerialGC.
+  } else if (UseSerialGC) {
     status = Universe::create_heap<GenCollectedHeap, MarkSweepPolicy>();
+  } else {
+    ShouldNotReachHere();
   }
 
   if (status != JNI_OK) {
