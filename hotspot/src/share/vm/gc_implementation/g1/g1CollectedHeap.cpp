@@ -2921,35 +2921,6 @@ public:
   size_t live_bytes() { return _live_bytes; }
 };
 
-class PrintObjsInRegionClosure : public ObjectClosure {
-  HeapRegion *_hr;
-  G1CollectedHeap *_g1;
-public:
-  PrintObjsInRegionClosure(HeapRegion *hr) : _hr(hr) {
-    _g1 = G1CollectedHeap::heap();
-  };
-
-  void do_object(oop o) {
-    if (o != NULL) {
-      HeapWord *start = (HeapWord *) o;
-      size_t word_sz = o->size();
-      gclog_or_tty->print("\nPrinting obj "PTR_FORMAT" of size " SIZE_FORMAT
-                          " isMarkedPrev %d isMarkedNext %d isAllocSince %d\n",
-                          (void*) o, word_sz,
-                          _g1->isMarkedPrev(o),
-                          _g1->isMarkedNext(o),
-                          _hr->obj_allocated_since_prev_marking(o));
-      HeapWord *end = start + word_sz;
-      HeapWord *cur;
-      int *val;
-      for (cur = start; cur < end; cur++) {
-        val = (int *) cur;
-        gclog_or_tty->print("\t "PTR_FORMAT":%d\n", val, *val);
-      }
-    }
-  }
-};
-
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
   bool             _par;
