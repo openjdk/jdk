@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -582,6 +582,10 @@ ECDH_Derive(SECItem  *publicValue,
     if (!publicValue || !ecParams || !privateValue ||
         !derivedSecret) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    if (EC_ValidatePublicKey(ecParams, publicValue, kmflag) != SECSuccess) {
         return SECFailure;
     }
 
