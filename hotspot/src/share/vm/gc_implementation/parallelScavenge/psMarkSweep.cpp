@@ -510,7 +510,6 @@ void PSMarkSweep::deallocate_stacks() {
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
   GCTraceTime tm("phase 1", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace(" 1");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -570,7 +569,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
 void PSMarkSweep::mark_sweep_phase2() {
   GCTraceTime tm("phase 2", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace("2");
 
   // Now all live objects are marked, compute the new object addresses.
 
@@ -598,7 +596,6 @@ static PSAlwaysTrueClosure always_true;
 void PSMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
   GCTraceTime tm("phase 3", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace("3");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
@@ -639,7 +636,6 @@ void PSMarkSweep::mark_sweep_phase3() {
 void PSMarkSweep::mark_sweep_phase4() {
   EventMark m("4 compact heap");
   GCTraceTime tm("phase 4", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
-  trace("4");
 
   // All pointers are now adjusted, move objects accordingly
 

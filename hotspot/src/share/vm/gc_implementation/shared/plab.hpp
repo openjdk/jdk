@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_PLAB_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_PLAB_HPP
 
 #include "gc_implementation/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
@@ -34,7 +34,7 @@
 class PLABStats;
 
 // A per-thread allocation buffer used during GC.
-class ParGCAllocBuffer: public CHeapObj<mtGC> {
+class PLAB: public CHeapObj<mtGC> {
 protected:
   char      head[32];
   size_t    _word_sz;          // In HeapWord units
@@ -65,8 +65,8 @@ protected:
 public:
   // Initializes the buffer to be empty, but with the given "word_sz".
   // Must get initialized with "set_buf" for an allocation to succeed.
-  ParGCAllocBuffer(size_t word_sz);
-  virtual ~ParGCAllocBuffer() {}
+  PLAB(size_t word_sz);
+  virtual ~PLAB() {}
 
   // Minimum PLAB size.
   static size_t min_size();
@@ -166,11 +166,11 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
   { }
 
   static const size_t min_size() {
-    return ParGCAllocBuffer::min_size();
+    return PLAB::min_size();
   }
 
   static const size_t max_size() {
-    return ParGCAllocBuffer::max_size();
+    return PLAB::max_size();
   }
 
   size_t desired_plab_sz() {
@@ -194,4 +194,4 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
   }
 };
 
-#endif // SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_PLAB_HPP

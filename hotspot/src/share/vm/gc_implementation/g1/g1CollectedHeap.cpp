@@ -410,10 +410,6 @@ bool G1CollectedHeap::is_scavengable(const void* p) {
   return !hr->is_humongous();
 }
 
-// Private class members.
-
-G1CollectedHeap* G1CollectedHeap::_g1h;
-
 // Private methods.
 
 HeapRegion*
@@ -1769,14 +1765,12 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
   _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()) {
 
-  _g1h = this;
-
   _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
                           /* are_ConcurrentGC_threads */false);
   _workers->initialize_workers();
 
-  _allocator = G1Allocator::create_allocator(_g1h);
+  _allocator = G1Allocator::create_allocator(this);
   _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
 
   int n_queues = MAX2((int)ParallelGCThreads, 1);
@@ -1938,8 +1932,6 @@ jint G1CollectedHeap::initialize() {
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
   _bot_shared = new G1BlockOffsetSharedArray(reserved_region(), bot_storage);
-
-  _g1h = this;
 
   {
     HeapWord* start = _hrm.reserved().start();
@@ -3109,12 +3101,6 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
       // print_extended_on() instead of print_on().
       print_extended_on(gclog_or_tty);
       gclog_or_tty->cr();
-#ifndef PRODUCT
-      if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
-        concurrent_mark()->print_reachable("at-verification-failure",
-                                           vo, false /* all */);
-      }
-#endif
       gclog_or_tty->flush();
     }
     guarantee(!failures, "there should not have been any failures");
@@ -3320,9 +3306,10 @@ void G1CollectedHeap::print_all_rsets() {
 #endif // PRODUCT
 
 G1CollectedHeap* G1CollectedHeap::heap() {
-  assert(_g1h != NULL, "Uninitialized access to G1CollectedHeap::heap()");
-  assert(_g1h->kind() == CollectedHeap::G1CollectedHeap, "Not a G1 heap");
-  return _g1h;
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "Uninitialized access to G1CollectedHeap::heap()");
+  assert(heap->kind() == CollectedHeap::G1CollectedHeap, "Not a G1CollectedHeap");
+  return (G1CollectedHeap*)heap;
 }
 
 void G1CollectedHeap::gc_prologue(bool full /* Ignored */) {
@@ -4877,7 +4864,7 @@ void G1CollectedHeap::parallel_cleaning(BoolObjectClosure* is_alive,
 void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
                                                      bool process_strings, bool process_symbols) {
   {
-    uint n_workers = _g1h->workers()->active_workers();
+    uint n_workers = workers()->active_workers();
     G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
     set_par_threads(n_workers);
     workers()->run_task(&g1_unlink_task);
@@ -4909,7 +4896,7 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
 void G1CollectedHeap::redirty_logged_cards() {
   double redirty_logged_cards_start = os::elapsedTime();
 
-  uint n_workers = _g1h->workers()->active_workers();
+  uint n_workers = workers()->active_workers();
 
   G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set());
   dirty_card_queue_set().reset_for_par_iteration();
@@ -5342,7 +5329,7 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
 
   OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
-  if (_g1h->g1_policy()->during_initial_mark_pause()) {
+  if (g1_policy()->during_initial_mark_pause()) {
     // We also need to mark copied objects.
     copy_non_heap_cl = &copy_mark_non_heap_cl;
   }
@@ -6097,12 +6084,12 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   HeapRegionSetCount empty_set;
   remove_from_old_sets(empty_set, cl.humongous_free_count());
 
-  G1HRPrinter* hr_printer = _g1h->hr_printer();
-  if (hr_printer->is_active()) {
+  G1HRPrinter* hrp = hr_printer();
+  if (hrp->is_active()) {
     FreeRegionListIterator iter(&local_cleanup_list);
     while (iter.more_available()) {
       HeapRegion* hr = iter.get_next();
-      hr_printer->cleanup(hr);
+      hrp->cleanup(hr);
     }
   }
 

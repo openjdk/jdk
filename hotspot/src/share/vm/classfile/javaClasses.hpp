@@ -1181,8 +1181,6 @@ public:
   // Accessors
   static oop              target(         oop site);
   static void         set_target(         oop site, oop target);
-
-  static volatile oop     target_volatile(oop site);
   static void         set_target_volatile(oop site, oop target);
 
   // Testers
