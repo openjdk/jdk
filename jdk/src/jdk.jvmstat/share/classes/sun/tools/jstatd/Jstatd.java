@@ -64,15 +64,9 @@ public class Jstatd {
                 int localport = (port < 0) ? Registry.REGISTRY_PORT : port;
                 registry = LocateRegistry.createRegistry(localport);
                 bind(name, remoteHost);
+            } else {
+                throw e;
             }
-            else {
-                System.out.println("Could not contact registry\n"
-                                   + e.getMessage());
-                e.printStackTrace();
-            }
-        } catch (RemoteException e) {
-            System.err.println("Could not bind " + name + " to RMI Registry");
-            e.printStackTrace();
         }
     }
 
@@ -148,19 +142,22 @@ public class Jstatd {
             if (rminame != null) {
                 System.out.println("Bad RMI server name: " + rminame);
             } else {
-                System.out.println("Bad RMI URL: " + name + " : "
-                                   + e.getMessage());
+                System.out.println("Bad RMI URL: " + name);
             }
+            e.printStackTrace(System.out);
             System.exit(1);
         } catch (java.rmi.ConnectException e) {
             // could not attach to or create a registry
-            System.out.println("Could not contact RMI registry\n"
-                               + e.getMessage());
+            System.out.println("Could not contact RMI registry");
+            e.printStackTrace(System.out);
+            System.exit(1);
+        } catch (RemoteException e) {
+            System.out.println("Could not bind " + name + " to RMI Registry");
+            e.printStackTrace(System.out);
             System.exit(1);
         } catch (Exception e) {
-            System.out.println("Could not create remote object\n"
-                               + e.getMessage());
-            e.printStackTrace();
+            System.out.println("Could not create remote object");
+            e.printStackTrace(System.out);
             System.exit(1);
         }
     }

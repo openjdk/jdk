@@ -135,27 +135,9 @@ public final class JstatdTest {
         log("Start jps", cmd);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-        OutputAnalyzer output = waitForJstatdRMI(processBuilder);
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());
 
-        return output;
-    }
-
-    private OutputAnalyzer waitForJstatdRMI(ProcessBuilder pb) throws Exception {
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
-
-        String remoteHost = (serverName != null) ? serverName : "JStatRemoteHost";
-        while (output.getExitValue() != 0) {
-            String out = output.getOutput();
-
-            if (out.contains("RMI Registry not available") ||
-                out.contains("RMI Server " + remoteHost + " not available")) {
-                Thread.sleep(100);
-                output = ProcessTools.executeProcess(pb);
-            } else {
-                output.shouldHaveExitValue(0);
-            }
-        }
         return output;
     }
 
@@ -208,7 +190,7 @@ public final class JstatdTest {
         log("Start jstat", cmd);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-        OutputAnalyzer output = waitForJstatdRMI(processBuilder);
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());
 
         return output;
@@ -282,6 +264,9 @@ public final class JstatdTest {
             launcher.addToolArg("-n");
             launcher.addToolArg(serverName);
         }
+        if (withExternalRegistry) {
+            launcher.addToolArg("-nr");
+        }
 
         String[] cmd = launcher.getCommand();
         log("Start jstatd", cmd);
@@ -315,17 +300,21 @@ public final class JstatdTest {
     }
 
     public void doTest() throws Throwable {
+        if (useDefaultPort) {
+            verifyNoRmiRegistryOnDefaultPort();
+        }
+
         ProcessThread jstatdThread = null;
         try {
             while (jstatdThread == null) {
-                if (!useDefaultPort || withExternalRegistry) {
+                if (!useDefaultPort) {
                     port = String.valueOf(Utils.getFreePort());
                 }
 
                 if (withExternalRegistry) {
                     Registry registry = startRegistry();
                     if (registry == null) {
-                        // The port is already in use. Cancel and try with new one.
+                        // The port is already in use. Cancel and try with a new one.
                         continue;
                     }
                 }
@@ -345,6 +334,16 @@ public final class JstatdTest {
                 + Utils.NEW_LINE + output.getOutput());
         assertNotEquals(output.getExitValue(), 0,
                 "jstatd process exited with unexpected exit code");
+    }
+
+    private void verifyNoRmiRegistryOnDefaultPort() throws Exception {
+        try {
+            Registry registry = LocateRegistry.getRegistry();
+            registry.list();
+            throw new Exception("There is already RMI registry on the default port: " + registry);
+        } catch (RemoteException e) {
+            // No RMI registry on default port is detected
+        }
     }
 
 }
