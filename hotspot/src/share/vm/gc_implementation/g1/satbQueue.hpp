@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,9 @@ public:
   void print(const char* name);
   static void print(const char* name, void** buf, size_t index, size_t sz);
 #endif // PRODUCT
-
-  void verify_oops_in_buffer() NOT_DEBUG_RETURN;
 };
 
 class SATBMarkQueueSet: public PtrQueueSet {
-  ObjectClosure** _closures;  // One per ParGCThread.
-
   ObjPtrQueue _shared_satb_queue;
 
 #ifdef ASSERT
@@ -104,16 +100,10 @@ public:
   // Filter all the currently-active SATB buffers.
   void filter_thread_buffers();
 
-  // Register closure for the given worker thread. The "apply_closure_to_completed_buffer"
-  // method will apply this closure to a completed buffer, and "iterate_closure_all_threads"
-  // applies it to partially-filled buffers (the latter should only be done
-  // with the world stopped).
-  void set_closure(uint worker, ObjectClosure* closure);
-
   // If there exists some completed buffer, pop it, then apply the
-  // registered closure to all its elements, and return true.  If no
+  // closure to all its elements, and return true.  If no
   // completed buffers exist, return false.
-  bool apply_closure_to_completed_buffer(uint worker);
+  bool apply_closure_to_completed_buffer(ObjectClosure* closure);
 
   // Apply the given closure on enqueued and currently-active buffers
   // respectively. Both methods are read-only, i.e., they do not
