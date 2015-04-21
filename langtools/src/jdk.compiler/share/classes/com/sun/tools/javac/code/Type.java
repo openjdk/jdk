@@ -1293,9 +1293,21 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(elemtype);
-            appendAnnotationsString(sb, true);
-            sb.append("[]");
+
+            // First append root component type
+            Type t = elemtype;
+            while (t.getKind() == TypeKind.ARRAY)
+                t = ((ArrayType) t).getComponentType();
+            sb.append(t);
+
+            // then append @Anno[] @Anno[] ... @Anno[]
+            t = this;
+            do {
+                t.appendAnnotationsString(sb, true);
+                sb.append("[]");
+                t = ((ArrayType) t).getComponentType();
+            } while (t.getKind() == TypeKind.ARRAY);
+
             return sb.toString();
         }
 
