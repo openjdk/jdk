@@ -85,6 +85,15 @@ public class ResolverConfigurationImpl
                     if (val.charAt(0) == '#' || val.charAt(0) == ';') {
                         break;
                     }
+                    if ("nameserver".equals(keyword)) {
+                        if (val.indexOf(':') >= 0 &&
+                            val.indexOf('.') < 0 && // skip for IPv4 literals with port
+                            val.indexOf('[') < 0 &&
+                            val.indexOf(']') < 0 ) {
+                            // IPv6 literal, in non-BSD-style.
+                            val = "[" + val + "]";
+                        }
+                    }
                     ll.add(val);
                     if (--maxvalues == 0) {
                         break;
