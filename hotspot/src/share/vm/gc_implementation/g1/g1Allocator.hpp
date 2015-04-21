@@ -28,7 +28,7 @@
 #include "gc_implementation/g1/g1AllocationContext.hpp"
 #include "gc_implementation/g1/g1AllocRegion.hpp"
 #include "gc_implementation/g1/g1InCSetState.hpp"
-#include "gc_implementation/shared/plab.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 
 class EvacuationInfo;
@@ -147,18 +147,18 @@ public:
   }
 };
 
-class G1PLAB: public PLAB {
+class G1ParGCAllocBuffer: public ParGCAllocBuffer {
 private:
   bool _retired;
 
 public:
-  G1PLAB(size_t gclab_word_size);
-  virtual ~G1PLAB() {
+  G1ParGCAllocBuffer(size_t gclab_word_size);
+  virtual ~G1ParGCAllocBuffer() {
     guarantee(_retired, "Allocation buffer has not been retired");
   }
 
   virtual void set_buf(HeapWord* buf) {
-    PLAB::set_buf(buf);
+    ParGCAllocBuffer::set_buf(buf);
     _retired = false;
   }
 
@@ -166,7 +166,7 @@ public:
     if (_retired) {
       return;
     }
-    PLAB::retire();
+    ParGCAllocBuffer::retire();
     _retired = true;
   }
 };
@@ -190,7 +190,7 @@ protected:
   void add_to_undo_waste(size_t waste)         { _undo_waste += waste; }
 
   virtual void retire_alloc_buffers() = 0;
-  virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
+  virtual G1ParGCAllocBuffer* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
 
   // Calculate the survivor space object alignment in bytes. Returns that or 0 if
   // there are no restrictions on survivor alignment.
@@ -229,7 +229,7 @@ public:
   HeapWord* plab_allocate(InCSetState dest,
                           size_t word_sz,
                           AllocationContext_t context) {
-    G1PLAB* buffer = alloc_buffer(dest, context);
+    G1ParGCAllocBuffer* buffer = alloc_buffer(dest, context);
     if (_survivor_alignment_bytes == 0) {
       return buffer->allocate(word_sz);
     } else {
@@ -259,14 +259,14 @@ public:
 };
 
 class G1DefaultParGCAllocator : public G1ParGCAllocator {
-  G1PLAB  _surviving_alloc_buffer;
-  G1PLAB  _tenured_alloc_buffer;
-  G1PLAB* _alloc_buffers[InCSetState::Num];
+  G1ParGCAllocBuffer  _surviving_alloc_buffer;
+  G1ParGCAllocBuffer  _tenured_alloc_buffer;
+  G1ParGCAllocBuffer* _alloc_buffers[InCSetState::Num];
 
 public:
   G1DefaultParGCAllocator(G1CollectedHeap* g1h);
 
-  virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) {
+  virtual G1ParGCAllocBuffer* alloc_buffer(InCSetState dest, AllocationContext_t context) {
     assert(dest.is_valid(),
            err_msg("Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value()));
     assert(_alloc_buffers[dest.value()] != NULL,

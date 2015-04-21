@@ -34,7 +34,7 @@
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/gcTraceTime.hpp"
-#include "gc_implementation/shared/plab.inline.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.inline.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "memory/defNewGeneration.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
@@ -226,7 +226,7 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
   // buffer.
   HeapWord* obj = NULL;
   if (!_to_space_full) {
-    PLAB* const plab = to_space_alloc_buffer();
+    ParGCAllocBuffer* const plab = to_space_alloc_buffer();
     Space*            const sp   = to_space();
     if (word_sz * 100 <
         ParallelGCBufferWastePct * plab->word_sz()) {
@@ -236,7 +236,7 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
       HeapWord* buf_space = sp->par_allocate(buf_size);
       if (buf_space == NULL) {
         const size_t min_bytes =
-          PLAB::min_size() << LogHeapWordSize;
+          ParGCAllocBuffer::min_size() << LogHeapWordSize;
         size_t free_bytes = sp->free();
         while(buf_space == NULL && free_bytes >= min_bytes) {
           buf_size = free_bytes >> LogHeapWordSize;
@@ -252,7 +252,7 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
         record_survivor_plab(buf_space, buf_size);
         obj = plab->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
         // Note that we cannot compare buf_size < word_sz below
-        // because of AlignmentReserve (see PLAB::allocate()).
+        // because of AlignmentReserve (see ParGCAllocBuffer::allocate()).
         assert(obj != NULL || plab->words_remaining() < word_sz,
                "Else should have been able to allocate");
         // It's conceivable that we may be able to use the

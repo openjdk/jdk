@@ -27,7 +27,7 @@
 
 #include "gc_implementation/parNew/parOopClosures.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
-#include "gc_implementation/shared/plab.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "memory/defNewGeneration.hpp"
 #include "memory/padded.hpp"
@@ -65,7 +65,7 @@ class ParScanThreadState {
   ObjToScanQueue *_work_queue;
   Stack<oop, mtGC>* const _overflow_stack;
 
-  PLAB _to_space_alloc_buffer;
+  ParGCAllocBuffer _to_space_alloc_buffer;
 
   ParScanWithoutBarrierClosure         _to_space_closure; // scan_without_gc_barrier
   ParScanWithBarrierClosure            _old_gen_closure; // scan_with_gc_barrier
@@ -140,7 +140,7 @@ class ParScanThreadState {
 
   ObjToScanQueue* work_queue() { return _work_queue; }
 
-  PLAB* to_space_alloc_buffer() {
+  ParGCAllocBuffer* to_space_alloc_buffer() {
     return &_to_space_alloc_buffer;
   }
 
