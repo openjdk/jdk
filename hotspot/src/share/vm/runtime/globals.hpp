@@ -1960,7 +1960,7 @@ class CommandLineFlags {
           "collection")                                                     \
                                                                             \
   develop(uintx, PromotionFailureALotCount, 1000,                           \
-          "Number of promotion failures occurring at PLAB "     \
+          "Number of promotion failures occurring at ParGCAllocBuffer "     \
           "refill attempts (ParNew) or promotion attempts "                 \
           "(other young collectors)")                                       \
                                                                             \
