@@ -26,7 +26,6 @@
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "gc_implementation/parallelScavenge/vmPSOperations.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "utilities/dtrace.hpp"
