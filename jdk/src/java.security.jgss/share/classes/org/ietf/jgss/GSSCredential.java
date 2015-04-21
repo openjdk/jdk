@@ -35,7 +35,7 @@ package org.ietf.jgss;
  * may be used to perform context initiation, acceptance, or both.<p>
  *
  * Credentials are instantiated using one of the
- * <code>createCredential</code> methods in the {@link GSSManager
+ * {@code createCredential} methods in the {@link GSSManager
  * GSSManager} class. GSS-API credential creation is not
  * intended to provide a "login to the network" function, as such a
  * function would involve the creation of new credentials rather than
@@ -75,7 +75,7 @@ package org.ietf.jgss;
  *
  *    Oid [] mechs = cred.getMechs();
  *    if (mechs != null) {
- *            for (int i = 0; i < mechs.length; i++)
+ *            for (int i = 0; i{@literal <} mechs.length; i++)
  *                    System.out.println(mechs[i].toString());
  *    }
  *
@@ -297,8 +297,8 @@ public interface GSSCredential extends Cloneable{
      * with a variety of clients using different security mechanisms.<p>
      *
      * This routine adds the new credential element "in-place".  To add the
-     * element in a new credential, first call <code>clone</code> to obtain a
-     * copy of this credential, then call its <code>add</code> method.<p>
+     * element in a new credential, first call {@code clone} to obtain a
+     * copy of this credential, then call its {@code add} method.<p>
      *
      * As always, GSS-API implementations must impose a local access-control
      * policy on callers to prevent unauthorized callers from acquiring
@@ -311,7 +311,7 @@ public interface GSSCredential extends Cloneable{
      * getRemainingAcceptLifetime} on the credential.
      *
      * @param name the name of the principal for whom this credential is to
-     * be acquired.  Use <code>null</code> to specify the default
+     * be acquired.  Use {@code null} to specify the default
      * principal.
      * @param initLifetime the number of seconds that the credential element
      * should remain valid for initiating of security contexts. Use {@link
@@ -354,8 +354,8 @@ public interface GSSCredential extends Cloneable{
      * object.  The two credentials must be acquired over the same
      * mechanisms and must refer to the same principal.
      *
-     * @return <code>true</code> if the two GSSCredentials assert the same
-     * entity; <code>false</code> otherwise.
+     * @return {@code true} if the two GSSCredentials assert the same
+     * entity; {@code false} otherwise.
      * @param another another GSSCredential for comparison to this one
      */
     public boolean equals(Object another);
