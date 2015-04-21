@@ -3020,8 +3020,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xnoagent")) {
       // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
     } else if (match_option(option, "-Xboundthreads")) {
-      // Bind user level threads to kernel threads (Solaris only)
-      FLAG_SET_CMDLINE(bool, UseBoundThreads, true);
+      // Ignore silently for compatibility
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Redirect GC output to the file. -Xloggc:<filename>
       // ostream_init_log(), when called will use this filename
