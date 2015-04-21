@@ -114,10 +114,12 @@ static FILETIME process_kernel_time;
 
 #ifdef _M_IA64
   #define __CPU__ ia64
-#elif _M_AMD64
-  #define __CPU__ amd64
 #else
-  #define __CPU__ i486
+  #ifdef _M_AMD64
+    #define __CPU__ amd64
+  #else
+    #define __CPU__ i486
+  #endif
 #endif
 
 // save DLL module handle, used by GetModuleFileName
@@ -2090,20 +2092,22 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   // at the beginning of the target bundle.
   exceptionInfo->ContextRecord->StIPSR &= 0xFFFFF9FFFFFFFFFF;
   assert(((DWORD64)handler & 0xF) == 0, "Target address must point to the beginning of a bundle!");
-#elif _M_AMD64
+#else
+  #ifdef _M_AMD64
   // Do not blow up if no thread info available.
   if (thread) {
     thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
-#else
+  #else
   // Do not blow up if no thread info available.
   if (thread) {
     thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
+  #endif
 #endif
 
   // Continue the execution
@@ -2202,7 +2206,8 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // (division by zero is handled explicitly)
 #ifdef _M_IA64
   assert(0, "Fix Handle_IDiv_Exception");
-#elif _M_AMD64
+#else
+  #ifdef  _M_AMD64
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
   assert(pc[0] == 0xF7, "not an idiv opcode");
@@ -2213,7 +2218,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   ctx->Rax = (DWORD)min_jint;      // result
   ctx->Rdx = (DWORD)0;             // remainder
   // Continue the execution
-#else
+  #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
   assert(pc[0] == 0xF7, "not an idiv opcode");
@@ -2224,6 +2229,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   ctx->Eax = (DWORD)min_jint;      // result
   ctx->Edx = (DWORD)0;             // remainder
   // Continue the execution
+  #endif
 #endif
   return EXCEPTION_CONTINUE_EXECUTION;
 }
@@ -2296,10 +2302,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // This is needed for IA64 because "relocation" / "implicit null check" / "poll instruction"
   // information is saved in the Unix format.
   address pc_unix_format = (address) ((((uint64_t)pc) & 0xFFFFFFFFFFFFFFF0) | ((((uint64_t)pc) & 0xF) >> 2));
-#elif _M_AMD64
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
+  #ifdef _M_AMD64
+  address pc = (address) exceptionInfo->ContextRecord->Rip;
+  #else
   address pc = (address) exceptionInfo->ContextRecord->Eip;
+  #endif
 #endif
   Thread* t = ThreadLocalStorage::get_thread_slow();          // slow & steady
 
