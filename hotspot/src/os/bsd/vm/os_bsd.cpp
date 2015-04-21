@@ -1185,12 +1185,18 @@ pid_t os::Bsd::gettid() {
   guarantee(retval != 0, "just checking");
   return retval;
 
-#elif __FreeBSD__
+#else
+  #ifdef __FreeBSD__
   retval = syscall(SYS_thr_self);
-#elif __OpenBSD__
+  #else
+    #ifdef __OpenBSD__
   retval = syscall(SYS_getthrid);
-#elif __NetBSD__
+    #else
+      #ifdef __NetBSD__
   retval = (pid_t) syscall(SYS__lwp_self);
+      #endif
+    #endif
+  #endif
 #endif
 
   if (retval == -1) {
