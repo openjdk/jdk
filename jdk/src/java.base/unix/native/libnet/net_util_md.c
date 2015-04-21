@@ -1524,6 +1524,7 @@ NET_Bind(int fd, struct sockaddr *him, int len)
     int exclbind = -1;
 #endif
     int rv;
+    int arg, alen;
 
 #ifdef __linux__
     /*
@@ -1540,7 +1541,7 @@ NET_Bind(int fd, struct sockaddr *him, int len)
     }
 #endif
 
-#if defined(__solaris__) && defined(AF_INET6)
+#if defined(__solaris__)
     /*
      * Solaris has separate IPv4 and IPv6 port spaces so we
      * use an exclusive bind when SO_REUSEADDR is not used to
@@ -1550,35 +1551,31 @@ NET_Bind(int fd, struct sockaddr *him, int len)
      * results in a late bind that fails because the
      * corresponding IPv4 port is in use.
      */
-    if (ipv6_available()) {
-        int arg;
-        socklen_t len;
+    alen = sizeof(arg);
 
-        len = sizeof(arg);
-        if (useExclBind || getsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
-                       (char *)&arg, &len) == 0) {
-            if (useExclBind || arg == 0) {
-                /*
-                 * SO_REUSEADDR is disabled or sun.net.useExclusiveBind
-                 * property is true so enable TCP_EXCLBIND or
-                 * UDP_EXCLBIND
-                 */
-                len = sizeof(arg);
-                if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&arg,
-                               &len) == 0) {
-                    if (arg == SOCK_STREAM) {
-                        level = IPPROTO_TCP;
-                        exclbind = TCP_EXCLBIND;
-                    } else {
-                        level = IPPROTO_UDP;
-                        exclbind = UDP_EXCLBIND;
-                    }
+    if (useExclBind || getsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                   (char *)&arg, &alen) == 0) {
+        if (useExclBind || arg == 0) {
+            /*
+             * SO_REUSEADDR is disabled or sun.net.useExclusiveBind
+             * property is true so enable TCP_EXCLBIND or
+             * UDP_EXCLBIND
+             */
+            alen = sizeof(arg);
+            if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&arg,
+                           &alen) == 0) {
+                if (arg == SOCK_STREAM) {
+                    level = IPPROTO_TCP;
+                    exclbind = TCP_EXCLBIND;
+                } else {
+                    level = IPPROTO_UDP;
+                    exclbind = UDP_EXCLBIND;
                 }
-
-                arg = 1;
-                setsockopt(fd, level, exclbind, (char *)&arg,
-                           sizeof(arg));
             }
+
+            arg = 1;
+            setsockopt(fd, level, exclbind, (char *)&arg,
+                       sizeof(arg));
         }
     }
 
