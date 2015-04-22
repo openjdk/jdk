@@ -541,7 +541,7 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048
-jdk.tls.disabledAlgorithms=SSLv3, RC4
+jdk.tls.disabledAlgorithms=SSLv3, RC4, DH keySize < 768
 
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
 # processing in JSSE implementation.
@@ -580,7 +580,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4
 #     1. JSSE cipher suite name, e.g., TLS_RSA_WITH_AES_128_CBC_SHA
 #     2. JSSE key exchange algorithm name, e.g., RSA
 #     3. JSSE cipher (encryption) algorithm name, e.g., AES_128_CBC
-#     4. JSSE message digest algorithm name, e.g., SHA-1
+#     4. JSSE message digest algorithm name, e.g., SHA
 #
 # See SSL/TLS specifications and "Java Cryptography Architecture Standard
 # Algorithm Name Documentation" for information about the algorithm names.
