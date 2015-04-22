@@ -108,7 +108,6 @@ SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
 bool      PSParallelCompact::_print_phases = false;
 
 ReferenceProcessor* PSParallelCompact::_ref_processor = NULL;
-Klass*              PSParallelCompact::_updated_int_array_klass_obj = NULL;
 
 double PSParallelCompact::_dwl_mean;
 double PSParallelCompact::_dwl_std_dev;
