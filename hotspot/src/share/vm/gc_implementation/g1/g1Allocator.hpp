@@ -169,6 +169,11 @@ public:
     PLAB::retire();
     _retired = true;
   }
+
+  virtual void flush_and_retire_stats(PLABStats* stats) {
+    PLAB::flush_and_retire_stats(stats);
+    _retired = true;
+  }
 };
 
 class G1ParGCAllocator : public CHeapObj<mtGC> {
@@ -211,6 +216,7 @@ public:
     _g1h(g1h), _survivor_alignment_bytes(calc_survivor_alignment_bytes()),
     _alloc_buffer_waste(0), _undo_waste(0) {
   }
+  virtual ~G1ParGCAllocator() { }
 
   static G1ParGCAllocator* create_allocator(G1CollectedHeap* g1h);
 

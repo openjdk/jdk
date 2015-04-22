@@ -133,7 +133,7 @@ public:
   // Flush allocation statistics into the given PLABStats supporting ergonomic
   // sizing of PLAB's and retire the current buffer. To be called at the end of
   // GC.
-  void flush_and_retire_stats(PLABStats* stats);
+  virtual void flush_and_retire_stats(PLABStats* stats);
 
   // Fills in the unallocated portion of the buffer with a garbage object and updates
   // statistics. To be called during GC.
