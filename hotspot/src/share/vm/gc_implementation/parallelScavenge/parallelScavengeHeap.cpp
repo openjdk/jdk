@@ -57,17 +57,11 @@ jint ParallelScavengeHeap::initialize() {
   const size_t heap_size = _collector_policy->max_heap_byte_size();
 
   ReservedSpace heap_rs = Universe::reserve_heap(heap_size, _collector_policy->heap_alignment());
-  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtJavaHeap);
 
   os::trace_page_sizes("ps main", _collector_policy->min_heap_byte_size(),
                        heap_size, generation_alignment(),
                        heap_rs.base(),
                        heap_rs.size());
-  if (!heap_rs.is_reserved()) {
-    vm_shutdown_during_initialization(
-      "Could not reserve enough space for object heap");
-    return JNI_ENOMEM;
-  }
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
