@@ -820,9 +820,6 @@ PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 
-void PSParallelCompact::KeepAliveClosure::do_oop(oop* p)       { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
-void PSParallelCompact::KeepAliveClosure::do_oop(narrowOop* p) { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
-
 PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closure;
 PSParallelCompact::AdjustKlassClosure PSParallelCompact::_adjust_klass_closure;
 

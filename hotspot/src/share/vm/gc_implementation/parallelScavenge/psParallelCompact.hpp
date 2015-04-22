@@ -933,17 +933,6 @@ class PSParallelCompact : AllStatic {
     virtual bool do_object_b(oop p);
   };
 
-  class KeepAliveClosure: public OopClosure {
-   private:
-    ParCompactionManager* _compaction_manager;
-   protected:
-    template <class T> inline void do_oop_work(T* p);
-   public:
-    KeepAliveClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-  };
-
   class FollowStackClosure: public VoidClosure {
    private:
     ParCompactionManager* _compaction_manager;
@@ -967,7 +956,6 @@ class PSParallelCompact : AllStatic {
     void do_klass(Klass* klass);
   };
 
-  friend class KeepAliveClosure;
   friend class FollowStackClosure;
   friend class AdjustPointerClosure;
   friend class AdjustKlassClosure;
@@ -1335,11 +1323,6 @@ inline bool PSParallelCompact::mark_obj(oop obj) {
 
 inline bool PSParallelCompact::is_marked(oop obj) {
   return mark_bitmap()->is_marked(obj);
-}
-
-template <class T>
-inline void PSParallelCompact::KeepAliveClosure::do_oop_work(T* p) {
-  mark_and_push(_compaction_manager, p);
 }
 
 inline bool PSParallelCompact::print_phases() {
