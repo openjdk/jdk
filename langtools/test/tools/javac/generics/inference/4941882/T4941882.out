@@ -1,2 +1,2 @@
-T4941882.java:13:17: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Object&java.io.Serializable&java.lang.Cloneable, java.lang.Object[],java.lang.Object)
+T4941882.java:13:17: compiler.err.prob.found.req: (compiler.misc.incompatible.upper.lower.bounds: T, java.lang.Object[],java.lang.Object, float[],int[])
 1 error

@@ -1,6 +1,6 @@
 /**
  * @test /nodynamiccopyright/
- * @bug 6611449
+ * @bug 6611449 8078024
  * @summary Internal Error thrown during generic method/constructor invocation
  * @compile/fail/ref=T6611449.out -XDrawDiagnostics T6611449.java
  */

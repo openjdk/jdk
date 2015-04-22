@@ -1,6 +1,6 @@
 /**
  * @test /nodynamiccopyright/
- * @bug     6722234
+ * @bug     6722234 8078024
  * @summary javac diagnostics need better integration with the type-system
  * @author  mcimadamore
  * @compile/fail/ref=T6722234b_1.out -XDrawDiagnostics -XDdiags=simpleNames T6722234b.java
