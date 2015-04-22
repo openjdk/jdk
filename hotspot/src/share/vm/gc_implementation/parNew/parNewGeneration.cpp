@@ -272,16 +272,8 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
 }
 
 
-void ParScanThreadState::undo_alloc_in_to_space(HeapWord* obj,
-                                                size_t word_sz) {
-  // Is the alloc in the current alloc buffer?
-  if (to_space_alloc_buffer()->contains(obj)) {
-    assert(to_space_alloc_buffer()->contains(obj + word_sz - 1),
-           "Should contain whole object.");
-    to_space_alloc_buffer()->undo_allocation(obj, word_sz);
-  } else {
-    CollectedHeap::fill_with_object(obj, word_sz);
-  }
+void ParScanThreadState::undo_alloc_in_to_space(HeapWord* obj, size_t word_sz) {
+  to_space_alloc_buffer()->undo_allocation(obj, word_sz);
 }
 
 void ParScanThreadState::print_promotion_failure_size() {

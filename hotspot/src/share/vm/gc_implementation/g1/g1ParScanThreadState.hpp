@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,6 @@ class G1ParScanThreadState : public StackObj {
   uint              _tenuring_threshold;
   G1ParScanClosure  _scanner;
 
-  size_t            _alloc_buffer_waste;
-  size_t            _undo_waste;
-
   OopsInHeapRegionClosure*      _evac_failure_cl;
 
   int  _hash_seed;
@@ -77,9 +74,6 @@ class G1ParScanThreadState : public StackObj {
   size_t* _surviving_young_words;
 
 #define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
-
-  void   add_to_alloc_buffer_waste(size_t waste) { _alloc_buffer_waste += waste; }
-  void   add_to_undo_waste(size_t waste)         { _undo_waste += waste; }
 
   DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
   G1SATBCardTableModRefBS* ctbs()                { return _ct_bs; }
