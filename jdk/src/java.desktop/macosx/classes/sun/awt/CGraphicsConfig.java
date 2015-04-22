@@ -72,7 +72,8 @@ public abstract class CGraphicsConfig extends GraphicsConfiguration
 
     @Override
     public AffineTransform getDefaultTransform() {
-        return new AffineTransform();
+        double scaleFactor = device.getScaleFactor();
+        return AffineTransform.getScaleInstance(scaleFactor, scaleFactor);
     }
 
     @Override
