@@ -179,11 +179,11 @@ ParCompactionManager::gc_thread_compaction_manager(int index) {
 void InstanceKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
   assert(obj != NULL, "can't follow the content of NULL object");
 
-  PSParallelCompact::follow_klass(cm, this);
+  cm->follow_klass(this);
   // Only mark the header and let the scan of the meta-data mark
   // everything else.
 
-  PSParallelCompact::MarkAndPushClosure cl(cm);
+  ParCompactionManager::MarkAndPushClosure cl(cm);
   InstanceKlass::oop_oop_iterate_oop_maps<true>(obj, &cl);
 }
 
@@ -201,9 +201,9 @@ void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* 
     // the call to follow_class_loader is made when the class loader itself
     // is handled.
     if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
-      PSParallelCompact::follow_class_loader(cm, klass->class_loader_data());
+      cm->follow_class_loader(klass->class_loader_data());
     } else {
-      PSParallelCompact::follow_klass(cm, klass);
+      cm->follow_klass(klass);
     }
   } else {
     // If klass is NULL then this a mirror for a primitive type.
@@ -212,7 +212,7 @@ void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* 
     assert(java_lang_Class::is_primitive(obj), "Sanity check");
   }
 
-  PSParallelCompact::MarkAndPushClosure cl(cm);
+  ParCompactionManager::MarkAndPushClosure cl(cm);
   oop_oop_iterate_statics<true>(obj, &cl);
 }
 
@@ -221,7 +221,7 @@ void InstanceClassLoaderKlass::oop_pc_follow_contents(oop obj, ParCompactionMana
 
   ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
   if (loader_data != NULL) {
-    PSParallelCompact::follow_class_loader(cm, loader_data);
+    cm->follow_class_loader(loader_data);
   }
 }
 
@@ -253,7 +253,7 @@ static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj,
           gclog_or_tty->print_cr("       Non NULL normal " PTR_FORMAT, p2i(obj));
         }
       )
-      PSParallelCompact::mark_and_push(cm, referent_addr);
+      cm->mark_and_push(referent_addr);
     }
   }
   T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
@@ -269,7 +269,7 @@ static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj,
                                  PTR_FORMAT, p2i(discovered_addr));
         }
       )
-      PSParallelCompact::mark_and_push(cm, discovered_addr);
+      cm->mark_and_push(discovered_addr);
     }
   } else {
 #ifdef ASSERT
@@ -283,7 +283,7 @@ static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj,
                    p2i(obj)));
 #endif
   }
-  PSParallelCompact::mark_and_push(cm, next_addr);
+  cm->mark_and_push(next_addr);
   klass->InstanceKlass::oop_pc_follow_contents(obj, cm);
 }
 
@@ -297,7 +297,7 @@ void InstanceRefKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm)
 }
 
 void ObjArrayKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
-  PSParallelCompact::follow_klass(cm, this);
+  cm->follow_klass(this);
 
   if (UseCompressedOops) {
     oop_pc_follow_contents_specialized<narrowOop>(objArrayOop(obj), 0, cm);
