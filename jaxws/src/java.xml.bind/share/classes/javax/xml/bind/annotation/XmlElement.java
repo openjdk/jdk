@@ -36,7 +36,7 @@ import static java.lang.annotation.RetentionPolicy.*;
 /**
  * Maps a JavaBean property to a XML element derived from property name.
  *
- * <p> <b>Usage</b> </p>
+ * <p> <b>Usage</b>
  * <p>
  * <tt>@XmlElement</tt> annotation can be used with the following program
  * elements:
@@ -44,8 +44,6 @@ import static java.lang.annotation.RetentionPolicy.*;
  *   <li> a JavaBean property </li>
  *   <li> non static, non transient field </li>
  *   <li> within {@link XmlElements}
- * <p>
- *
  * </ul>
  *
  * The usage is subject to the following constraints:
@@ -79,7 +77,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * <pre>
  *     //Example: Code fragment
  *     public class USPrice {
- *         &#64;XmlElement(name="itemprice")
+ *        {@literal @}XmlElement(name="itemprice")
  *         public java.math.BigDecimal price;
  *     }
  * {@code
@@ -95,10 +93,9 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * <b> Example 2: </b> Map a field to a nillable element.
  *   <pre>
- *
  *     //Example: Code fragment
  *     public class USPrice {
- *         &#64;XmlElement(nillable=true)
+ *        {@literal @}XmlElement(nillable=true)
  *         public java.math.BigDecimal price;
  *     }
  * {@code
@@ -113,10 +110,9 @@ import static java.lang.annotation.RetentionPolicy.*;
  * <p>
  * <b> Example 3: </b> Map a field to a nillable, required element.
  *   <pre>
- *
  *     //Example: Code fragment
  *     public class USPrice {
- *         &#64;XmlElement(nillable=true, required=true)
+ *        {@literal @}XmlElement(nillable=true, required=true)
  *         public java.math.BigDecimal price;
  *     }
  * {@code
@@ -134,7 +130,6 @@ import static java.lang.annotation.RetentionPolicy.*;
  * <p>
  * See Example 6 in @{@link XmlType}.
  *
- * <p>
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @since 1.6, JAXB 2.0
  */
