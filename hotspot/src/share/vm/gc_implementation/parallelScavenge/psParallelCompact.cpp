@@ -822,11 +822,6 @@ bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap(
 PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closure;
 PSParallelCompact::AdjustKlassClosure PSParallelCompact::_adjust_klass_closure;
 
-void PSParallelCompact::FollowStackClosure::do_void() { _compaction_manager->follow_marking_stacks(); }
-
-void PSParallelCompact::FollowKlassClosure::do_klass(Klass* klass) {
-  klass->oops_do(_mark_and_push_closure);
-}
 void PSParallelCompact::AdjustKlassClosure::do_klass(Klass* klass) {
   klass->oops_do(&PSParallelCompact::_adjust_pointer_closure);
 }
@@ -2346,8 +2341,8 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   TaskQueueSetSuper* qset = ParCompactionManager::region_array();
   ParallelTaskTerminator terminator(active_gc_threads, qset);
 
-  PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
-  PSParallelCompact::FollowStackClosure follow_stack_closure(cm);
+  ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
+  ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
 
   // Need new claim bits before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -2419,14 +2414,6 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
-}
-
-void PSParallelCompact::follow_class_loader(ParCompactionManager* cm,
-                                            ClassLoaderData* cld) {
-  PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
-  PSParallelCompact::FollowKlassClosure follow_klass_closure(&mark_and_push_closure);
-
-  cld->oops_do(&mark_and_push_closure, &follow_klass_closure, true);
 }
 
 // This should be moved to the shared markSweep code!

@@ -28,7 +28,6 @@
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
-#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
 #include "gc_interface/collectedHeap.hpp"
@@ -933,14 +932,6 @@ class PSParallelCompact : AllStatic {
     virtual bool do_object_b(oop p);
   };
 
-  class FollowStackClosure: public VoidClosure {
-   private:
-    ParCompactionManager* _compaction_manager;
-   public:
-    FollowStackClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
-    virtual void do_void();
-  };
-
   class AdjustPointerClosure: public ExtendedOopClosure {
    public:
     template <typename T> void do_oop_nv(T* p);
@@ -956,11 +947,8 @@ class PSParallelCompact : AllStatic {
     void do_klass(Klass* klass);
   };
 
-  friend class FollowStackClosure;
   friend class AdjustPointerClosure;
   friend class AdjustKlassClosure;
-  friend class FollowKlassClosure;
-  friend class InstanceClassLoaderKlass;
   friend class RefProcTaskProxy;
 
  private:
@@ -1127,30 +1115,6 @@ class PSParallelCompact : AllStatic {
   static void reset_millis_since_last_gc();
 
  public:
-  class MarkAndPushClosure: public ExtendedOopClosure {
-   private:
-    ParCompactionManager* _compaction_manager;
-   public:
-    MarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
-
-    template <typename T> void do_oop_nv(T* p);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-
-    // This closure provides its own oop verification code.
-    debug_only(virtual bool should_verify_oops() { return false; })
-  };
-
-  // The one and only place to start following the classes.
-  // Should only be applied to the ClassLoaderData klasses list.
-  class FollowKlassClosure : public KlassClosure {
-   private:
-    MarkAndPushClosure* _mark_and_push_closure;
-   public:
-    FollowKlassClosure(MarkAndPushClosure* mark_and_push_closure) :
-        _mark_and_push_closure(mark_and_push_closure) { }
-    void do_klass(Klass* klass);
-  };
 
   PSParallelCompact();
 
@@ -1182,15 +1146,8 @@ class PSParallelCompact : AllStatic {
   // Marking support
   static inline bool mark_obj(oop obj);
   static inline bool is_marked(oop obj);
-  // Check mark and maybe push on marking stack
-  template <class T> static inline void mark_and_push(ParCompactionManager* cm,
-                                                      T* p);
+
   template <class T> static inline void adjust_pointer(T* p);
-
-  static inline void follow_klass(ParCompactionManager* cm, Klass* klass);
-
-  static void follow_class_loader(ParCompactionManager* cm,
-                                  ClassLoaderData* klass);
 
   // Compaction support.
   // Return true if p is in the range [beg_addr, end_addr).

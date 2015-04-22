@@ -170,9 +170,16 @@ private:
   bool should_copy();
 
   // Save for later processing.  Must not fail.
-  inline void push(oop obj) { _marking_stack.push(obj); }
+  inline void push(oop obj);
   inline void push_objarray(oop objarray, size_t index);
   inline void push_region(size_t index);
+
+  // Check mark and maybe push on marking stack.
+  template <typename T> inline void mark_and_push(T* p);
+
+  inline void follow_klass(Klass* klass);
+
+  void follow_class_loader(ClassLoaderData* klass);
 
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(int index);
@@ -200,6 +207,39 @@ private:
   void follow_contents(objArrayOop array, int index);
 
   void update_contents(oop obj);
+
+  class MarkAndPushClosure: public ExtendedOopClosure {
+   private:
+    ParCompactionManager* _compaction_manager;
+   public:
+    MarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+
+    template <typename T> void do_oop_nv(T* p);
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
+
+    // This closure provides its own oop verification code.
+    debug_only(virtual bool should_verify_oops() { return false; })
+  };
+
+  class FollowStackClosure: public VoidClosure {
+   private:
+    ParCompactionManager* _compaction_manager;
+   public:
+    FollowStackClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+    virtual void do_void();
+  };
+
+  // The one and only place to start following the classes.
+  // Should only be applied to the ClassLoaderData klasses list.
+  class FollowKlassClosure : public KlassClosure {
+   private:
+    MarkAndPushClosure* _mark_and_push_closure;
+   public:
+    FollowKlassClosure(MarkAndPushClosure* mark_and_push_closure) :
+        _mark_and_push_closure(mark_and_push_closure) { }
+    void do_klass(Klass* klass);
+  };
 };
 
 inline ParCompactionManager* ParCompactionManager::manager_array(int index) {

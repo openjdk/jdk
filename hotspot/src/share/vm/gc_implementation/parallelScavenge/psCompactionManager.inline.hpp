@@ -32,6 +32,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+inline void ParCompactionManager::push(oop obj) {
+  _marking_stack.push(obj);
+}
+
 void ParCompactionManager::push_objarray(oop obj, size_t index)
 {
   ObjArrayTask task(obj, index);
@@ -48,6 +52,47 @@ void ParCompactionManager::push_region(size_t index)
   assert(region_ptr->_pushed++ == 0, "should only be pushed once");
 #endif
   region_stack()->push(index);
+}
+
+template <typename T>
+inline void ParCompactionManager::mark_and_push(T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
+
+    if (mark_bitmap()->is_unmarked(obj) && PSParallelCompact::mark_obj(obj)) {
+      push(obj);
+    }
+  }
+}
+
+template <typename T>
+inline void ParCompactionManager::MarkAndPushClosure::do_oop_nv(T* p) {
+  _compaction_manager->mark_and_push(p);
+}
+
+inline void ParCompactionManager::MarkAndPushClosure::do_oop(oop* p)       { do_oop_nv(p); }
+inline void ParCompactionManager::MarkAndPushClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
+
+inline void ParCompactionManager::follow_klass(Klass* klass) {
+  oop holder = klass->klass_holder();
+  mark_and_push(&holder);
+}
+
+inline void ParCompactionManager::FollowStackClosure::do_void() {
+  _compaction_manager->follow_marking_stacks();
+}
+
+inline void ParCompactionManager::FollowKlassClosure::do_klass(Klass* klass) {
+  klass->oops_do(_mark_and_push_closure);
+}
+
+inline void ParCompactionManager::follow_class_loader(ClassLoaderData* cld) {
+  MarkAndPushClosure mark_and_push_closure(this);
+  FollowKlassClosure follow_klass_closure(&mark_and_push_closure);
+
+  cld->oops_do(&mark_and_push_closure, &follow_klass_closure, true);
 }
 
 inline void ParCompactionManager::follow_contents(oop obj) {
@@ -69,7 +114,7 @@ inline void oop_pc_follow_contents_specialized(objArrayOop obj, int index, ParCo
 
   // Push the non-NULL elements of the next stride on the marking stack.
   for (T* e = beg; e < end; e++) {
-    PSParallelCompact::mark_and_push<T>(cm, e);
+    cm->mark_and_push<T>(e);
   }
 
   if (end_index < len) {
