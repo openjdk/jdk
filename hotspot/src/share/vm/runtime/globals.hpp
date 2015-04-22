@@ -2235,6 +2235,9 @@ class CommandLineFlags {
           "When +ReduceInitialCardMarks, explicitly defer any that "        \
           "may arise from new_pre_store_barrier")                           \
                                                                             \
+  product(bool, UseCondCardMark, false,                                     \
+          "Check for already marked card before updating card table")       \
+                                                                            \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
                                                                             \
