@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,10 @@ import java.security.Security;
 public class TestEC {
 
     public static void main(String[] args) throws Exception {
-        // reset the security property to make sure that the algorithms
+        // reset security properties to make sure that the algorithms
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
-
-        // MD5 is used in this test case, don't disable MD5 algorithm.
-        Security.setProperty(
-                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
 
         ProvidersSnapshot snapshot = ProvidersSnapshot.create();
         try {
