@@ -982,9 +982,6 @@ class PSParallelCompact : AllStatic {
   // Reference processing (used in ...follow_contents)
   static ReferenceProcessor*  _ref_processor;
 
-  // Updated location of intArrayKlassObj.
-  static Klass* _updated_int_array_klass_obj;
-
   // Values computed at initialization and used by dead_wood_limiter().
   static double _dwl_mean;
   static double _dwl_std_dev;
@@ -1181,9 +1178,6 @@ class PSParallelCompact : AllStatic {
 
   // Used to add tasks
   static GCTaskManager* const gc_task_manager();
-  static Klass* updated_int_array_klass_obj() {
-    return _updated_int_array_klass_obj;
-  }
 
   // Marking support
   static inline bool mark_obj(oop obj);
