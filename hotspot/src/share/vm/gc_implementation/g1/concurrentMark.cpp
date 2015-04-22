@@ -2793,9 +2793,7 @@ ConcurrentMark::claim_region(uint worker_id) {
 #ifndef PRODUCT
 enum VerifyNoCSetOopsPhase {
   VerifyNoCSetOopsStack,
-  VerifyNoCSetOopsQueues,
-  VerifyNoCSetOopsSATBCompleted,
-  VerifyNoCSetOopsSATBThread
+  VerifyNoCSetOopsQueues
 };
 
 class VerifyNoCSetOopsClosure : public OopClosure, public ObjectClosure  {
@@ -2808,8 +2806,6 @@ private:
     switch (_phase) {
     case VerifyNoCSetOopsStack:         return "Stack";
     case VerifyNoCSetOopsQueues:        return "Queue";
-    case VerifyNoCSetOopsSATBCompleted: return "Completed SATB Buffers";
-    case VerifyNoCSetOopsSATBThread:    return "Thread SATB Buffers";
     default:                            ShouldNotReachHere();
     }
     return NULL;
@@ -2836,7 +2832,7 @@ public:
 
   virtual void do_oop(narrowOop* p) {
     // We should not come across narrow oops while scanning marking
-    // stacks and SATB buffers.
+    // stacks
     ShouldNotReachHere();
   }
 
@@ -2845,10 +2841,7 @@ public:
   }
 };
 
-void ConcurrentMark::verify_no_cset_oops(bool verify_stacks,
-                                         bool verify_enqueued_buffers,
-                                         bool verify_thread_buffers,
-                                         bool verify_fingers) {
+void ConcurrentMark::verify_no_cset_oops() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
   if (!G1CollectedHeap::heap()->mark_in_progress()) {
     return;
@@ -2856,65 +2849,47 @@ void ConcurrentMark::verify_no_cset_oops(bool verify_stacks,
 
   VerifyNoCSetOopsClosure cl;
 
-  if (verify_stacks) {
-    // Verify entries on the global mark stack
-    cl.set_phase(VerifyNoCSetOopsStack);
-    _markStack.oops_do(&cl);
+  // Verify entries on the global mark stack
+  cl.set_phase(VerifyNoCSetOopsStack);
+  _markStack.oops_do(&cl);
 
-    // Verify entries on the task queues
-    for (uint i = 0; i < _max_worker_id; i += 1) {
-      cl.set_phase(VerifyNoCSetOopsQueues, i);
-      CMTaskQueue* queue = _task_queues->queue(i);
-      queue->oops_do(&cl);
-    }
+  // Verify entries on the task queues
+  for (uint i = 0; i < _max_worker_id; i += 1) {
+    cl.set_phase(VerifyNoCSetOopsQueues, i);
+    CMTaskQueue* queue = _task_queues->queue(i);
+    queue->oops_do(&cl);
   }
 
-  SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
-
-  // Verify entries on the enqueued SATB buffers
-  if (verify_enqueued_buffers) {
-    cl.set_phase(VerifyNoCSetOopsSATBCompleted);
-    satb_qs.iterate_completed_buffers_read_only(&cl);
+  // Verify the global finger
+  HeapWord* global_finger = finger();
+  if (global_finger != NULL && global_finger < _heap_end) {
+    // The global finger always points to a heap region boundary. We
+    // use heap_region_containing_raw() to get the containing region
+    // given that the global finger could be pointing to a free region
+    // which subsequently becomes continues humongous. If that
+    // happens, heap_region_containing() will return the bottom of the
+    // corresponding starts humongous region and the check below will
+    // not hold any more.
+    // Since we always iterate over all regions, we might get a NULL HeapRegion
+    // here.
+    HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
+    guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
+              err_msg("global finger: "PTR_FORMAT" region: "HR_FORMAT,
+                      p2i(global_finger), HR_FORMAT_PARAMS(global_hr)));
   }
 
-  // Verify entries on the per-thread SATB buffers
-  if (verify_thread_buffers) {
-    cl.set_phase(VerifyNoCSetOopsSATBThread);
-    satb_qs.iterate_thread_buffers_read_only(&cl);
-  }
-
-  if (verify_fingers) {
-    // Verify the global finger
-    HeapWord* global_finger = finger();
-    if (global_finger != NULL && global_finger < _heap_end) {
-      // The global finger always points to a heap region boundary. We
-      // use heap_region_containing_raw() to get the containing region
-      // given that the global finger could be pointing to a free region
-      // which subsequently becomes continues humongous. If that
-      // happens, heap_region_containing() will return the bottom of the
-      // corresponding starts humongous region and the check below will
-      // not hold any more.
-      // Since we always iterate over all regions, we might get a NULL HeapRegion
-      // here.
-      HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
-      guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
-                err_msg("global finger: "PTR_FORMAT" region: "HR_FORMAT,
-                        p2i(global_finger), HR_FORMAT_PARAMS(global_hr)));
-    }
-
-    // Verify the task fingers
-    assert(parallel_marking_threads() <= _max_worker_id, "sanity");
-    for (int i = 0; i < (int) parallel_marking_threads(); i += 1) {
-      CMTask* task = _tasks[i];
-      HeapWord* task_finger = task->finger();
-      if (task_finger != NULL && task_finger < _heap_end) {
-        // See above note on the global finger verification.
-        HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
-        guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
-                  !task_hr->in_collection_set(),
-                  err_msg("task finger: "PTR_FORMAT" region: "HR_FORMAT,
-                          p2i(task_finger), HR_FORMAT_PARAMS(task_hr)));
-      }
+  // Verify the task fingers
+  assert(parallel_marking_threads() <= _max_worker_id, "sanity");
+  for (int i = 0; i < (int) parallel_marking_threads(); i += 1) {
+    CMTask* task = _tasks[i];
+    HeapWord* task_finger = task->finger();
+    if (task_finger != NULL && task_finger < _heap_end) {
+      // See above note on the global finger verification.
+      HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
+      guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
+                !task_hr->in_collection_set(),
+                err_msg("task finger: "PTR_FORMAT" region: "HR_FORMAT,
+                        p2i(task_finger), HR_FORMAT_PARAMS(task_hr)));
     }
   }
 }

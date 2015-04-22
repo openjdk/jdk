@@ -41,9 +41,6 @@ private:
   // Filter out unwanted entries from the buffer.
   void filter();
 
-  // Apply the closure to all elements.
-  void apply_closure(ObjectClosure* cl);
-
   // Apply the closure to all elements and empty the buffer;
   void apply_closure_and_empty(ObjectClosure* cl);
 
@@ -104,12 +101,6 @@ public:
   // closure to all its elements, and return true.  If no
   // completed buffers exist, return false.
   bool apply_closure_to_completed_buffer(ObjectClosure* closure);
-
-  // Apply the given closure on enqueued and currently-active buffers
-  // respectively. Both methods are read-only, i.e., they do not
-  // modify any of the buffers.
-  void iterate_completed_buffers_read_only(ObjectClosure* cl);
-  void iterate_thread_buffers_read_only(ObjectClosure* cl);
 
 #ifndef PRODUCT
   // Helpful for debugging
