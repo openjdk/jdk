@@ -180,12 +180,6 @@ bool ObjPtrQueue::should_enqueue_buffer() {
   return should_enqueue;
 }
 
-void ObjPtrQueue::apply_closure(ObjectClosure* cl) {
-  if (_buf != NULL) {
-    apply_closure_to_buffer(cl, _buf, _index, _sz);
-  }
-}
-
 void ObjPtrQueue::apply_closure_and_empty(ObjectClosure* cl) {
   if (_buf != NULL) {
     apply_closure_to_buffer(cl, _buf, _index, _sz);
@@ -315,28 +309,6 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(ObjectClosure* cl) {
   } else {
     return false;
   }
-}
-
-void SATBMarkQueueSet::iterate_completed_buffers_read_only(ObjectClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  assert(cl != NULL, "pre-condition");
-
-  BufferNode* nd = _completed_buffers_head;
-  while (nd != NULL) {
-    void** buf = BufferNode::make_buffer_from_node(nd);
-    ObjPtrQueue::apply_closure_to_buffer(cl, buf, 0, _sz);
-    nd = nd->next();
-  }
-}
-
-void SATBMarkQueueSet::iterate_thread_buffers_read_only(ObjectClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  assert(cl != NULL, "pre-condition");
-
-  for (JavaThread* t = Threads::first(); t; t = t->next()) {
-    t->satb_mark_queue().apply_closure(cl);
-  }
-  shared_satb_queue()->apply_closure(cl);
 }
 
 #ifndef PRODUCT

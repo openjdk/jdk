@@ -3806,14 +3806,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         assert(check_cset_fast_test(), "Inconsistency in the InCSetState table.");
 
         _cm->note_start_of_gc();
-        // We should not verify the per-thread SATB buffers given that
-        // we have not filtered them yet (we'll do so during the
-        // GC). We also call this after finalize_cset() to
+        // We call this after finalize_cset() to
         // ensure that the CSet has been finalized.
-        _cm->verify_no_cset_oops(true  /* verify_stacks */,
-                                 true  /* verify_enqueued_buffers */,
-                                 false /* verify_thread_buffers */,
-                                 true  /* verify_fingers */);
+        _cm->verify_no_cset_oops();
 
         if (_hr_printer.is_active()) {
           HeapRegion* hr = g1_policy()->collection_set();
@@ -3835,16 +3830,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         // Actually do the work...
         evacuate_collection_set(evacuation_info);
-
-        // We do this to mainly verify the per-thread SATB buffers
-        // (which have been filtered by now) since we didn't verify
-        // them earlier. No point in re-checking the stacks / enqueued
-        // buffers given that the CSet has not changed since last time
-        // we checked.
-        _cm->verify_no_cset_oops(false /* verify_stacks */,
-                                 false /* verify_enqueued_buffers */,
-                                 true  /* verify_thread_buffers */,
-                                 true  /* verify_fingers */);
 
         free_collection_set(g1_policy()->collection_set(), evacuation_info);
 
@@ -3928,10 +3913,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         // We redo the verification but now wrt to the new CSet which
         // has just got initialized after the previous CSet was freed.
-        _cm->verify_no_cset_oops(true  /* verify_stacks */,
-                                 true  /* verify_enqueued_buffers */,
-                                 true  /* verify_thread_buffers */,
-                                 true  /* verify_fingers */);
+        _cm->verify_no_cset_oops();
         _cm->note_end_of_gc();
 
         // This timing is only used by the ergonomics to handle our pause target.

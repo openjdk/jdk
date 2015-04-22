@@ -785,14 +785,9 @@ public:
   }
 
   // Verify that there are no CSet oops on the stacks (taskqueues /
-  // global mark stack), enqueued SATB buffers, per-thread SATB
-  // buffers, and fingers (global / per-task). The boolean parameters
-  // decide which of the above data structures to verify. If marking
-  // is not in progress, it's a no-op.
-  void verify_no_cset_oops(bool verify_stacks,
-                           bool verify_enqueued_buffers,
-                           bool verify_thread_buffers,
-                           bool verify_fingers) PRODUCT_RETURN;
+  // global mark stack) and fingers (global / per-task).
+  // If marking is not in progress, it's a no-op.
+  void verify_no_cset_oops() PRODUCT_RETURN;
 
   bool isPrevMarked(oop p) const {
     assert(p != NULL && p->is_oop(), "expected an oop");
