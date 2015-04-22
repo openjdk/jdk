@@ -1606,13 +1606,26 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
   } else {
     __ unsigned_shift_right(addr, CardTableModRefBS::card_shift, tmp);
   }
+
+  LIR_Address* card_addr;
   if (can_inline_as_constant(card_table_base)) {
-    __ move(LIR_OprFact::intConst(0),
-              new LIR_Address(tmp, card_table_base->as_jint(), T_BYTE));
+    card_addr = new LIR_Address(tmp, card_table_base->as_jint(), T_BYTE);
   } else {
-    __ move(LIR_OprFact::intConst(0),
-              new LIR_Address(tmp, load_constant(card_table_base),
-                              T_BYTE));
+    card_addr = new LIR_Address(tmp, load_constant(card_table_base), T_BYTE);
+  }
+
+  LIR_Opr dirty = LIR_OprFact::intConst(CardTableModRefBS::dirty_card_val());
+  if (UseCondCardMark) {
+    LIR_Opr cur_value = new_register(T_INT);
+    __ move(card_addr, cur_value);
+
+    LabelObj* L_already_dirty = new LabelObj();
+    __ cmp(lir_cond_equal, cur_value, dirty);
+    __ branch(lir_cond_equal, T_BYTE, L_already_dirty->label());
+    __ move(dirty, card_addr);
+    __ branch_destination(L_already_dirty->label());
+  } else {
+    __ move(dirty, card_addr);
   }
 #endif
 }
