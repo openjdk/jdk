@@ -303,9 +303,10 @@ public final class WToolkit extends SunToolkit implements Runnable {
     public void run() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             Thread.currentThread().setContextClassLoader(null);
+            Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
             return null;
         });
-        Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
+
         boolean startPump = init();
 
         if (startPump) {
