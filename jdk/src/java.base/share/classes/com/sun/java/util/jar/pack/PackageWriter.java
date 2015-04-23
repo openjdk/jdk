@@ -829,7 +829,7 @@ class PackageWriter extends BandStructure {
         maxFlags = new int[ATTR_CONTEXT_LIMIT];
         allLayouts = new FixedList<>(ATTR_CONTEXT_LIMIT);
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
-            allLayouts.set(i, new HashMap<Attribute.Layout, int[]>());
+            allLayouts.set(i, new HashMap<>());
         }
         // Collect maxFlags and allLayouts.
         for (Class cls : pkg.classes) {
@@ -892,7 +892,7 @@ class PackageWriter extends BandStructure {
             // Sort by count, most frequent first.
             // Predefs. participate in this sort, though it does not matter.
             Arrays.sort(layoutsAndCounts,
-                        new Comparator<Map.Entry<Attribute.Layout, int[]>>() {
+                        new Comparator<>() {
                 public int compare(Map.Entry<Attribute.Layout, int[]> e0,
                                    Map.Entry<Attribute.Layout, int[]> e1) {
                     // Primary sort key is count, reversed.
@@ -1010,7 +1010,7 @@ class PackageWriter extends BandStructure {
         int numAttrDefs = defList.size();
         Object[][] defs = new Object[numAttrDefs][];
         defList.toArray(defs);
-        Arrays.sort(defs, new Comparator<Object[]>() {
+        Arrays.sort(defs, new Comparator<>() {
             public int compare(Object[] a0, Object[] a1) {
                 // Primary sort key is attr def header.
                 @SuppressWarnings("unchecked")

@@ -1158,7 +1158,7 @@ public final class URL implements java.io.Serializable {
 
     private static URLStreamHandler lookupViaProperty(String protocol) {
         String packagePrefixList = java.security.AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
+                new PrivilegedAction<>() {
                     public String run() {
                         return System.getProperty(protocolPathProp, "");
                     }
@@ -1190,7 +1190,7 @@ public final class URL implements java.io.Serializable {
     }
 
     private static Iterator<URLStreamHandlerProvider> providers() {
-        return new Iterator<URLStreamHandlerProvider>() {
+        return new Iterator<>() {
 
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             ServiceLoader<URLStreamHandlerProvider> sl =
@@ -1243,7 +1243,7 @@ public final class URL implements java.io.Serializable {
         gate.set(gate);
         try {
             return AccessController.doPrivileged(
-                new PrivilegedAction<URLStreamHandler>() {
+                new PrivilegedAction<>() {
                     public URLStreamHandler run() {
                         Iterator<URLStreamHandlerProvider> itr = providers();
                         while (itr.hasNext()) {

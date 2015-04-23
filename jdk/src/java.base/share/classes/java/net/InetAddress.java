@@ -270,7 +270,7 @@ class InetAddress implements java.io.Serializable {
         preferIPv6Address = java.security.AccessController.doPrivileged(
             new GetBooleanAction("java.net.preferIPv6Addresses")).booleanValue();
         AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
+            new java.security.PrivilegedAction<>() {
                 public Void run() {
                     System.loadLibrary("net");
                     return null;
@@ -852,7 +852,7 @@ class InetAddress implements java.io.Serializable {
             final String providerName = provider;
             try {
                 nameService = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedExceptionAction<NameService>() {
+                    new java.security.PrivilegedExceptionAction<>() {
                         public NameService run() {
                             Iterator<NameServiceDescriptor> itr =
                                 ServiceLoader.load(NameServiceDescriptor.class)
@@ -892,7 +892,7 @@ class InetAddress implements java.io.Serializable {
         String provider = null;;
         String propPrefix = "sun.net.spi.nameservice.provider.";
         int n = 1;
-        nameServices = new ArrayList<NameService>();
+        nameServices = new ArrayList<>();
         provider = AccessController.doPrivileged(
                 new GetPropertyAction(propPrefix + n));
         while (provider != null) {
