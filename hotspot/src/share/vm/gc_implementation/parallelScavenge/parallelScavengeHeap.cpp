@@ -49,30 +49,19 @@ PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
 PSOldGen*    ParallelScavengeHeap::_old_gen = NULL;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = NULL;
 PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
-ParallelScavengeHeap* ParallelScavengeHeap::_psh = NULL;
 GCTaskManager* ParallelScavengeHeap::_gc_task_manager = NULL;
 
 jint ParallelScavengeHeap::initialize() {
   CollectedHeap::pre_initialize();
 
-  // Initialize collector policy
-  _collector_policy = new GenerationSizer();
-  _collector_policy->initialize_all();
-
   const size_t heap_size = _collector_policy->max_heap_byte_size();
 
   ReservedSpace heap_rs = Universe::reserve_heap(heap_size, _collector_policy->heap_alignment());
-  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtJavaHeap);
 
   os::trace_page_sizes("ps main", _collector_policy->min_heap_byte_size(),
                        heap_size, generation_alignment(),
                        heap_rs.base(),
                        heap_rs.size());
-  if (!heap_rs.is_reserved()) {
-    vm_shutdown_during_initialization(
-      "Could not reserve enough space for object heap");
-    return JNI_ENOMEM;
-  }
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
@@ -89,7 +78,6 @@ jint ParallelScavengeHeap::initialize() {
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
   double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
-  _psh = this;
   _gens = new AdjoiningGenerations(heap_rs, _collector_policy, generation_alignment());
 
   _old_gen = _gens->old_gen();
@@ -634,9 +622,10 @@ void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_trac
 }
 
 ParallelScavengeHeap* ParallelScavengeHeap::heap() {
-  assert(_psh != NULL, "Uninitialized access to ParallelScavengeHeap::heap()");
-  assert(_psh->kind() == CollectedHeap::ParallelScavengeHeap, "not a parallel scavenge heap");
-  return _psh;
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "Uninitialized access to ParallelScavengeHeap::heap()");
+  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Not a ParallelScavengeHeap");
+  return (ParallelScavengeHeap*)heap;
 }
 
 // Before delegating the resize to the young generation,

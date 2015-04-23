@@ -39,7 +39,6 @@
 #include "gc_implementation/g1/heapRegionManager.hpp"
 #include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
-#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
@@ -202,9 +201,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1CheckCSetFastTableClosure;
 
 private:
-  // The one and only G1CollectedHeap, so static functions can find it.
-  static G1CollectedHeap* _g1h;
-
   FlexibleWorkGang* _workers;
 
   static size_t _humongous_object_threshold_in_words;
