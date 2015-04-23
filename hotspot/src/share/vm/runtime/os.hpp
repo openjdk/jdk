@@ -492,6 +492,7 @@ class os: AllStatic {
 
   // Terminate with an error.  Default is to generate a core file on platforms
   // that support such things.  This calls shutdown() and then aborts.
+  static void abort(bool dump_core, void *siginfo, void *context);
   static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
@@ -716,8 +717,13 @@ class os: AllStatic {
   // Structured OS Exception support
   static void os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
-  // On Windows this will create an actual minidump, on Linux/Solaris it will simply check core dump limits
-  static void check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize);
+  // On Posix compatible OS it will simply check core dump limits while on Windows
+  // it will check if dump file can be created. Check or prepare a core dump to be
+  // taken at a later point in the same thread in os::abort(). Use the caller
+  // provided buffer as a scratch buffer. The status message which will be written
+  // into the error log either is file location or a short error message, depending
+  // on the checking result.
+  static void check_dump_limit(char* buffer, size_t bufferSize);
 
   // Get the default path to the core file
   // Returns the length of the string

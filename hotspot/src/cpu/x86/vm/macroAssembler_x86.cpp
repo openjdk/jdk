@@ -1958,6 +1958,11 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
 // Programmer's Guide and Specification" claims that an object locked by jni_monitorenter
 // should not be unlocked by "normal" java-level locking and vice-versa.  The specification
 // doesn't specify what will occur if a program engages in such mixed-mode locking, however.
+// Arguably given that the spec legislates the JNI case as undefined our implementation
+// could reasonably *avoid* checking owner in Fast_Unlock().
+// In the interest of performance we elide m->Owner==Self check in unlock.
+// A perfectly viable alternative is to elide the owner check except when
+// Xcheck:jni is enabled.
 
 void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg, bool use_rtm) {
   assert(boxReg == rax, "");
@@ -1966,24 +1971,6 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   if (EmitSync & 4) {
     // Disable - inhibit all inlining.  Force control through the slow-path
     cmpptr (rsp, 0);
-  } else
-  if (EmitSync & 8) {
-    Label DONE_LABEL;
-    if (UseBiasedLocking) {
-       biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-    }
-    // Classic stack-locking code ...
-    // Check whether the displaced header is 0
-    //(=> recursive unlock)
-    movptr(tmpReg, Address(boxReg, 0));
-    testptr(tmpReg, tmpReg);
-    jccb(Assembler::zero, DONE_LABEL);
-    // If not recursive lock, reset the header to displaced header
-    if (os::is_MP()) {
-      lock();
-    }
-    cmpxchgptr(tmpReg, Address(objReg, 0));   // Uses RAX which is box
-    bind(DONE_LABEL);
   } else {
     Label DONE_LABEL, Stacked, CheckSucc;
 
@@ -2060,9 +2047,9 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     // the number of loads below (currently 4) to just 2 or 3.
     // Refer to the comments in synchronizer.cpp.
     // In practice the chain of fetches doesn't seem to impact performance, however.
+    xorptr(boxReg, boxReg);
     if ((EmitSync & 65536) == 0 && (EmitSync & 256)) {
        // Attempt to reduce branch density - AMD's branch predictor.
-       xorptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
        orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
        orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
        orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
@@ -2070,7 +2057,6 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
        movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
        jmpb  (DONE_LABEL);
     } else {
-       xorptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
        orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
        jccb  (Assembler::notZero, DONE_LABEL);
        movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
@@ -2093,10 +2079,8 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
        bind  (CheckSucc);
 
        // Optional pre-test ... it's safe to elide this
-       if ((EmitSync & 16) == 0) {
-          cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
-          jccb  (Assembler::zero, LGoSlowPath);
-       }
+       cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
+       jccb(Assembler::zero, LGoSlowPath);
 
        // We have a classic Dekker-style idiom:
        //    ST m->_owner = 0 ; MEMBAR; LD m->_succ
@@ -2109,7 +2093,8 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
        //     In older IA32 processors MFENCE is slower than lock:add or xchg
        //     particularly if the write-buffer is full as might be the case if
        //     if stores closely precede the fence or fence-equivalent instruction.
-       //     In more modern implementations MFENCE appears faster, however.
+       //     See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
+       //     as the situation has changed with Nehalem and Shanghai.
        // (3) In lieu of an explicit fence, use lock:addl to the top-of-stack
        //     The $lines underlying the top-of-stack should be in M-state.
        //     The locked add instruction is serializing, of course.
@@ -2126,11 +2111,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 
        movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
        if (os::is_MP()) {
-          if (VM_Version::supports_sse2() && 1 == FenceInstruction) {
-            mfence();
-          } else {
-            lock (); addptr(Address(rsp, 0), 0);
-          }
+         lock(); addptr(Address(rsp, 0), 0);
        }
        // Ratify _succ remains non-null
        cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), 0);
@@ -2179,8 +2160,17 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     }
 #else // _LP64
     // It's inflated
-    movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    xorptr(boxReg, r15_thread);
+    if (EmitSync & 1024) {
+      // Emit code to check that _owner == Self
+      // We could fold the _owner test into subsequent code more efficiently
+      // than using a stand-alone check, but since _owner checking is off by
+      // default we don't bother. We also might consider predicating the
+      // _owner==Self check on Xcheck:jni or running on a debug build.
+      movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+      xorptr(boxReg, r15_thread);
+    } else {
+      xorptr(boxReg, boxReg);
+    }
     orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
     jccb  (Assembler::notZero, DONE_LABEL);
     movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
@@ -2190,23 +2180,51 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     jmpb  (DONE_LABEL);
 
     if ((EmitSync & 65536) == 0) {
+      // Try to avoid passing control into the slow_path ...
       Label LSuccess, LGoSlowPath ;
       bind  (CheckSucc);
+
+      // The following optional optimization can be elided if necessary
+      // Effectively: if (succ == null) goto SlowPath
+      // The code reduces the window for a race, however,
+      // and thus benefits performance.
       cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
       jccb  (Assembler::zero, LGoSlowPath);
 
-      // I'd much rather use lock:andl m->_owner, 0 as it's faster than the
-      // the explicit ST;MEMBAR combination, but masm doesn't currently support
-      // "ANDQ M,IMM".  Don't use MFENCE here.  lock:add to TOS, xchg, etc
-      // are all faster when the write buffer is populated.
-      movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
-      if (os::is_MP()) {
-         lock (); addl (Address(rsp, 0), 0);
+      if ((EmitSync & 16) && os::is_MP()) {
+        orptr(boxReg, boxReg);
+        xchgptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+      } else {
+        movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
+        if (os::is_MP()) {
+          // Memory barrier/fence
+          // Dekker pivot point -- fulcrum : ST Owner; MEMBAR; LD Succ
+          // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
+          // This is faster on Nehalem and AMD Shanghai/Barcelona.
+          // See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
+          // We might also restructure (ST Owner=0;barrier;LD _Succ) to
+          // (mov box,0; xchgq box, &m->Owner; LD _succ) .
+          lock(); addl(Address(rsp, 0), 0);
+        }
       }
       cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
       jccb  (Assembler::notZero, LSuccess);
 
-      movptr (boxReg, (int32_t)NULL_WORD);                   // box is really EAX
+      // Rare inopportune interleaving - race.
+      // The successor vanished in the small window above.
+      // The lock is contended -- (cxq|EntryList) != null -- and there's no apparent successor.
+      // We need to ensure progress and succession.
+      // Try to reacquire the lock.
+      // If that fails then the new owner is responsible for succession and this
+      // thread needs to take no further action and can exit via the fast path (success).
+      // If the re-acquire succeeds then pass control into the slow path.
+      // As implemented, this latter mode is horrible because we generated more
+      // coherence traffic on the lock *and* artifically extended the critical section
+      // length while by virtue of passing control into the slow path.
+
+      // box is really RAX -- the following CMPXCHG depends on that binding
+      // cmpxchg R,[M] is equivalent to rax = CAS(M,rax,R)
+      movptr(boxReg, (int32_t)NULL_WORD);
       if (os::is_MP()) { lock(); }
       cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
       jccb  (Assembler::notEqual, LSuccess);
@@ -2231,10 +2249,6 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     }
 #endif
     bind(DONE_LABEL);
-    // Avoid branch to branch on AMD processors
-    if (EmitSync & 32768) {
-       nop();
-    }
   }
 }
 #endif // COMPILER2

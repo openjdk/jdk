@@ -198,14 +198,20 @@ bool os::have_special_privileges() {
 // i386: 224, ia64: 1105, amd64: 186, sparc 143
   #ifdef __ia64__
     #define SYS_gettid 1105
-  #elif __i386__
-    #define SYS_gettid 224
-  #elif __amd64__
-    #define SYS_gettid 186
-  #elif __sparc__
-    #define SYS_gettid 143
   #else
-    #error define gettid for the arch
+    #ifdef __i386__
+      #define SYS_gettid 224
+    #else
+      #ifdef __amd64__
+        #define SYS_gettid 186
+      #else
+        #ifdef __sparc__
+          #define SYS_gettid 143
+        #else
+          #error define gettid for the arch
+        #endif
+      #endif
+    #endif
   #endif
 #endif
 
@@ -1473,6 +1479,10 @@ void os::shutdown() {
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
 void os::abort(bool dump_core) {
+  abort(dump_core, NULL, NULL);
+}
+
+void os::abort(bool dump_core, void* siginfo, void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT

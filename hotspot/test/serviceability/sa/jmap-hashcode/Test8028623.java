@@ -30,7 +30,6 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @ignore 8044416
  * @build com.oracle.java.testlibrary.*
  * @compile -encoding utf8 Test8028623.java
  * @run main Test8028623

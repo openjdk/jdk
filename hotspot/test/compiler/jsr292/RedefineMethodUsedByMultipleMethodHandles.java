@@ -30,7 +30,7 @@
  *          java.instrument
  *          java.management
  * @compile -XDignore.symbol.file RedefineMethodUsedByMultipleMethodHandles.java
- * @run main RedefineMethodUsedByMultipleMethodHandles
+ * @run main/othervm RedefineMethodUsedByMultipleMethodHandles
  */
 
 import java.io.*;
