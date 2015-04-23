@@ -29,7 +29,7 @@ import static java.lang.annotation.ElementType.*;
 
 /**
  * @since 1.6
- * @Deprecated
+ * @deprecated
  */
 @Retention(value=RetentionPolicy.RUNTIME)
 @Target({TYPE})
