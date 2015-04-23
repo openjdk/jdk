@@ -35,8 +35,6 @@ import java.security.cert.PKIXReason;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Set;
@@ -47,8 +45,7 @@ import static sun.security.x509.PKIXExtensions.*;
 import sun.security.util.Debug;
 
 /**
- * This class is able to build certification paths in either the forward
- * or reverse directions.
+ * This class builds certification paths in the forward direction.
  *
  * <p> If successful, it returns a certification path which has successfully
  * satisfied all the constraints and requirements specified in the
@@ -102,10 +99,8 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
     /**
      * Attempts to build a certification path using the Sun build
      * algorithm from a trusted anchor(s) to a target subject, which must both
-     * be specified in the input parameter set. By default, this method will
-     * attempt to build in the forward direction. In order to build in the
-     * reverse direction, the caller needs to pass in an instance of
-     * SunCertPathBuilderParameters with the buildForward flag set to false.
+     * be specified in the input parameter set. This method will
+     * attempt to build in the forward direction: from the target to the CA.
      *
      * <p>The certification path that is constructed is validated
      * according to the PKIX specification.
@@ -162,11 +157,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         policyTreeResult = null;
         LinkedList<X509Certificate> certPathList = new LinkedList<>();
         try {
-            if (buildParams.buildForward()) {
-                buildForward(adjList, certPathList, searchAllCertStores);
-            } else {
-                buildReverse(adjList, certPathList);
-            }
+            buildForward(adjList, certPathList, searchAllCertStores);
         } catch (GeneralSecurityException | IOException e) {
             if (debug != null) {
                 debug.println("SunCertPathBuilder.engineBuild() exception in "
@@ -207,81 +198,6 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         }
 
         return null;
-    }
-
-    /*
-     * Private build reverse method.
-     */
-    private void buildReverse(List<List<Vertex>> adjacencyList,
-                              LinkedList<X509Certificate> certPathList)
-        throws GeneralSecurityException, IOException
-    {
-        if (debug != null) {
-            debug.println("SunCertPathBuilder.buildReverse()...");
-            debug.println("SunCertPathBuilder.buildReverse() InitialPolicies: "
-                + buildParams.initialPolicies());
-        }
-
-        ReverseState currentState = new ReverseState();
-        /* Initialize adjacency list */
-        adjacencyList.clear();
-        adjacencyList.add(new LinkedList<Vertex>());
-
-        /*
-         * Perform a search using each trust anchor, until a valid
-         * path is found
-         */
-        Iterator<TrustAnchor> iter = buildParams.trustAnchors().iterator();
-        while (iter.hasNext()) {
-            TrustAnchor anchor = iter.next();
-
-            /* check if anchor satisfies target constraints */
-            if (anchorIsTarget(anchor, buildParams.targetCertConstraints())) {
-                this.trustAnchor = anchor;
-                this.pathCompleted = true;
-                this.finalPublicKey = anchor.getTrustedCert().getPublicKey();
-                break;
-            }
-
-            // skip anchor if it contains a DSA key with no DSA params
-            X509Certificate trustedCert = anchor.getTrustedCert();
-            PublicKey pubKey = trustedCert != null ? trustedCert.getPublicKey()
-                                                   : anchor.getCAPublicKey();
-
-            if (PKIX.isDSAPublicKeyWithoutParams(pubKey)) {
-                continue;
-            }
-
-            /* Initialize current state */
-            currentState.initState(buildParams);
-            currentState.updateState(anchor, buildParams);
-
-            currentState.algorithmChecker = new AlgorithmChecker(anchor);
-            currentState.untrustedChecker = new UntrustedChecker();
-            try {
-                depthFirstSearchReverse(null, currentState,
-                                        new ReverseBuilder(buildParams),
-                                        adjacencyList, certPathList);
-            } catch (GeneralSecurityException | IOException e) {
-                // continue on error if more anchors to try
-                if (iter.hasNext())
-                    continue;
-                else
-                    throw e;
-            }
-
-            // break out of loop if search is successful
-            if (pathCompleted) {
-                break;
-            }
-        }
-
-        if (debug != null) {
-            debug.println("SunCertPathBuilder.buildReverse() returned from "
-                + "depthFirstSearchReverse()");
-            debug.println("SunCertPathBuilder.buildReverse() "
-                + "certPathList.size: " + certPathList.size());
-        }
     }
 
     /*
@@ -629,147 +545,6 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 builder.removeFinalCertFromPath(cpList);
             }
         }
-    }
-
-    /*
-     * This method performs a depth first search for a certification
-     * path while building reverse which meets the requirements set in
-     * the parameters object.
-     * It uses an adjacency list to store all certificates which were
-     * tried (i.e. at one time added to the path - they may not end up in
-     * the final path if backtracking occurs). This information can
-     * be used later to debug or demo the build.
-     *
-     * See "Data Structure and Algorithms, by Aho, Hopcroft, and Ullman"
-     * for an explanation of the DFS algorithm.
-     *
-     * @param dN the distinguished name being currently searched for certs
-     * @param currentState the current PKIX validation state
-     */
-    private void depthFirstSearchReverse(X500Principal dN,
-                                         ReverseState currentState,
-                                         ReverseBuilder builder,
-                                         List<List<Vertex>> adjList,
-                                         LinkedList<X509Certificate> cpList)
-        throws GeneralSecurityException, IOException
-    {
-        if (debug != null)
-            debug.println("SunCertPathBuilder.depthFirstSearchReverse(" + dN
-                + ", " + currentState.toString() + ")");
-
-        /*
-         * Find all the certificates issued by dN which
-         * satisfy the PKIX certification path constraints.
-         */
-        Collection<X509Certificate> certs =
-            builder.getMatchingCerts(currentState, buildParams.certStores());
-        List<Vertex> vertices = addVertices(certs, adjList);
-        if (debug != null)
-            debug.println("SunCertPathBuilder.depthFirstSearchReverse(): "
-                + "certs.size=" + vertices.size());
-
-        /*
-         * For each cert in the collection, verify anything
-         * that hasn't been checked yet (signature, revocation, etc)
-         * and check for loops. Call depthFirstSearchReverse()
-         * recursively for each good cert.
-         */
-        for (Vertex vertex : vertices) {
-            /**
-             * Restore state to currentState each time through the loop.
-             * This is important because some of the user-defined
-             * checkers modify the state, which MUST be restored if
-             * the cert eventually fails to lead to the target and
-             * the next matching cert is tried.
-             */
-            ReverseState nextState = (ReverseState) currentState.clone();
-            X509Certificate cert = vertex.getCertificate();
-            try {
-                builder.verifyCert(cert, nextState, cpList);
-            } catch (GeneralSecurityException gse) {
-                if (debug != null)
-                    debug.println("SunCertPathBuilder.depthFirstSearchReverse()"
-                        + ": validation failed: " + gse);
-                vertex.setThrowable(gse);
-                continue;
-            }
-
-            /*
-             * Certificate is good, add it to the path (if it isn't a
-             * self-signed cert) and update state
-             */
-            if (!currentState.isInitial())
-                builder.addCertToPath(cert, cpList);
-            // save trust anchor
-            this.trustAnchor = currentState.trustAnchor;
-
-            /*
-             * Check if path is completed, return ASAP if so.
-             */
-            if (builder.isPathCompleted(cert)) {
-                if (debug != null)
-                    debug.println("SunCertPathBuilder.depthFirstSearchReverse()"
-                        + ": path completed!");
-                pathCompleted = true;
-
-                PolicyNodeImpl rootNode = nextState.rootNode;
-
-                if (rootNode == null)
-                    policyTreeResult = null;
-                else {
-                    policyTreeResult = rootNode.copyTree();
-                    ((PolicyNodeImpl)policyTreeResult).setImmutable();
-                }
-
-                /*
-                 * Extract and save the final target public key
-                 */
-                finalPublicKey = cert.getPublicKey();
-                if (PKIX.isDSAPublicKeyWithoutParams(finalPublicKey)) {
-                    finalPublicKey =
-                        BasicChecker.makeInheritedParamsKey
-                            (finalPublicKey, currentState.pubKey);
-                }
-
-                return;
-            }
-
-            /* Update the PKIX state */
-            nextState.updateState(cert);
-
-            /*
-             * Append an entry for cert in adjacency list and
-             * set index for current vertex.
-             */
-            adjList.add(new LinkedList<Vertex>());
-            vertex.setIndex(adjList.size() - 1);
-
-            /* recursively search for matching certs at next dN */
-            depthFirstSearchReverse(cert.getSubjectX500Principal(), nextState,
-                                    builder, adjList, cpList);
-
-            /*
-             * If path has been completed, return ASAP!
-             */
-            if (pathCompleted) {
-                return;
-            } else {
-                /*
-                 * If we get here, it means we have searched all possible
-                 * certs issued by the dN w/o finding any matching certs. This
-                 * means we have to backtrack to the previous cert in the path
-                 * and try some other paths.
-                 */
-                if (debug != null)
-                    debug.println("SunCertPathBuilder.depthFirstSearchReverse()"
-                        + ": backtracking");
-                if (!currentState.isInitial())
-                    builder.removeFinalCertFromPath(cpList);
-            }
-        }
-        if (debug != null)
-            debug.println("SunCertPathBuilder.depthFirstSearchReverse() all "
-                + "certs in this adjacency list checked");
     }
 
     /*

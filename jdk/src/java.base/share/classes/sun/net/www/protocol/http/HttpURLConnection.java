@@ -244,7 +244,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 new sun.security.action.GetBooleanAction(
                     "sun.net.http.allowRestrictedHeaders")).booleanValue();
         if (!allowRestrictedHeaders) {
-            restrictedHeaderSet = new HashSet<String>(restrictedHeaders.length);
+            restrictedHeaderSet = new HashSet<>(restrictedHeaders.length);
             for (int i=0; i < restrictedHeaders.length; i++) {
                 restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase());
             }
@@ -413,7 +413,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             final URL url,
                             final RequestorType authType) {
         return java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<PasswordAuthentication>() {
+            new java.security.PrivilegedAction<>() {
                 public PasswordAuthentication run() {
                     if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                         logger.finest("Requesting Authentication: host =" + host + " url = " + url);
@@ -817,14 +817,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             } catch (SecurityException se) { /* swallow exception */ }
         } else {
             cookieHandler = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<CookieHandler>() {
+                new java.security.PrivilegedAction<>() {
                 public CookieHandler run() {
                     return CookieHandler.getDefault();
                 }
             });
         }
         cacheHandler = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<ResponseCache>() {
+            new java.security.PrivilegedAction<>() {
                 public ResponseCache run() {
                 return ResponseCache.getDefault();
             }
@@ -909,7 +909,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         final boolean result[] = {false};
 
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
+            new java.security.PrivilegedAction<>() {
                 public Void run() {
                 try {
                     InetAddress a1 = InetAddress.getByName(h1);
@@ -954,7 +954,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         try {
             // lookup hostname and use IP address if available
             host = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<String>() {
+                new PrivilegedExceptionAction<>() {
                     public String run() throws IOException {
                             InetAddress addr = InetAddress.getByName(hostarg);
                             return addr.getHostAddress();
@@ -984,7 +984,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (p != null) {
             try {
                 AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
+                    new PrivilegedExceptionAction<>() {
                         public Void run() throws IOException {
                             plainConnect0();
                             return null;
@@ -1086,7 +1086,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                  */
                 ProxySelector sel =
                     java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction<ProxySelector>() {
+                        new java.security.PrivilegedAction<>() {
                             public ProxySelector run() {
                                      return ProxySelector.getDefault();
                                  }
@@ -1245,7 +1245,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (p != null) {
             try {
                 return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<OutputStream>() {
+                    new PrivilegedExceptionAction<>() {
                         public OutputStream run() throws IOException {
                             return getOutputStream0();
                         }
@@ -1423,7 +1423,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (p != null) {
             try {
                 return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<InputStream>() {
+                    new PrivilegedExceptionAction<>() {
                         public InputStream run() throws IOException {
                             return getInputStream0();
                         }
@@ -1877,7 +1877,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             final Object[] args = { rememberedException.getMessage() };
             IOException chainedException =
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedExceptionAction<IOException>() {
+                    new java.security.PrivilegedExceptionAction<>() {
                         public IOException run() throws Exception {
                             return (IOException)
                                 rememberedException.getClass()
@@ -2204,7 +2204,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     try {
                         final String finalHost = host;
                         addr = java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedExceptionAction<InetAddress>() {
+                            new java.security.PrivilegedExceptionAction<>() {
                                 public InetAddress run()
                                     throws java.net.UnknownHostException {
                                     return InetAddress.getByName(finalHost);
@@ -2566,7 +2566,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (p != null) {
             try {
                 return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Boolean>() {
+                    new PrivilegedExceptionAction<>() {
                         public Boolean run() throws IOException {
                             return followRedirect0(loc, stat, locUrl0);
                         }

@@ -296,7 +296,7 @@ public abstract class AsynchronousFileChannel
     public static AsynchronousFileChannel open(Path file, OpenOption... options)
         throws IOException
     {
-        Set<OpenOption> set = new HashSet<OpenOption>(options.length);
+        Set<OpenOption> set = new HashSet<>(options.length);
         Collections.addAll(set, options);
         return open(file, set, null, NO_ATTRIBUTES);
     }
