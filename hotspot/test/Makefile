@@ -399,15 +399,6 @@ PHONY_LIST += hotspot_servertest servertest
 
 ################################################################
 
-# internalvmtests (run internal unit tests inside the VM)
-
-hotspot_internalvmtests internalvmtests: prep $(PRODUCT_HOME)
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -XX:+ExecuteInternalVMTests -version
-
-PHONY_LIST += hotspot_internalvmtests internalvmtests
-
-################################################################
-
 # Phony targets (e.g. these are not filenames)
 .PHONY: all clean prep $(PHONY_LIST)
 
