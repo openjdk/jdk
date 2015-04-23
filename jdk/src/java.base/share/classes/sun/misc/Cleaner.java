@@ -142,7 +142,7 @@ public class Cleaner
         try {
             thunk.run();
         } catch (final Throwable x) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                     public Void run() {
                         if (System.err != null)
                             new Error("Cleaner terminated abnormally", x)

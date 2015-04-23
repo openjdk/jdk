@@ -105,7 +105,7 @@ final class EPollPort
 
         // create the queue and offer the special event to ensure that the first
         // threads polls
-        this.queue = new ArrayBlockingQueue<Event>(MAX_EPOLL_EVENTS);
+        this.queue = new ArrayBlockingQueue<>(MAX_EPOLL_EVENTS);
         this.queue.offer(NEED_TO_POLL);
     }
 

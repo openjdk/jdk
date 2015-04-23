@@ -216,7 +216,7 @@ class UnixAsynchronousServerSocketChannelImpl
         // permission check must always be in initiator's context
         try {
             if (acc != null) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                AccessController.doPrivileged(new PrivilegedAction<>() {
                     public Void run() {
                         SecurityManager sm = System.getSecurityManager();
                         if (sm != null) {
@@ -287,7 +287,7 @@ class UnixAsynchronousServerSocketChannelImpl
                 synchronized (updateLock) {
                     if (handler == null) {
                         this.acceptHandler = null;
-                        result = new PendingFuture<AsynchronousSocketChannel,Object>(this);
+                        result = new PendingFuture<>(this);
                         this.acceptFuture = result;
                     } else {
                         this.acceptHandler = handler;

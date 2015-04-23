@@ -12,4 +12,5 @@ jdk.crypto.ucrypto
 jdk.localedata
 jdk.naming.dns
 jdk.scripting.nashorn
+jdk.xml.dom
 jdk.zipfs

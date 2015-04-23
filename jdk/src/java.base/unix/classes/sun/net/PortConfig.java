@@ -42,7 +42,7 @@ public final class PortConfig {
 
     static {
         AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
+            new java.security.PrivilegedAction<>() {
                 public Void run() {
                     System.loadLibrary("net");
                     String os = System.getProperty("os.name");
