@@ -114,10 +114,12 @@ static FILETIME process_kernel_time;
 
 #ifdef _M_IA64
   #define __CPU__ ia64
-#elif _M_AMD64
-  #define __CPU__ amd64
 #else
-  #define __CPU__ i486
+  #ifdef _M_AMD64
+    #define __CPU__ amd64
+  #else
+    #define __CPU__ i486
+  #endif
 #endif
 
 // save DLL module handle, used by GetModuleFileName
@@ -987,7 +989,34 @@ static BOOL (WINAPI *_MiniDumpWriteDump)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE,
                                          PMINIDUMP_USER_STREAM_INFORMATION,
                                          PMINIDUMP_CALLBACK_INFORMATION);
 
-void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize) {
+static HANDLE dumpFile = NULL;
+
+// Check if dump file can be created.
+void os::check_dump_limit(char* buffer, size_t buffsz) {
+  bool status = true;
+  if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
+    jio_snprintf(buffer, buffsz, "CreateCoredumpOnCrash is disabled from command line");
+    status = false;
+  } else {
+    const char* cwd = get_current_directory(NULL, 0);
+    int pid = current_process_id();
+    if (cwd != NULL) {
+      jio_snprintf(buffer, buffsz, "%s\\hs_err_pid%u.mdmp", cwd, pid);
+    } else {
+      jio_snprintf(buffer, buffsz, ".\\hs_err_pid%u.mdmp", pid);
+    }
+
+    if (dumpFile == NULL &&
+       (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
+                 == INVALID_HANDLE_VALUE) {
+      jio_snprintf(buffer, buffsz, "Failed to create minidump file (0x%x).", GetLastError());
+      status = false;
+    }
+  }
+  VMError::record_coredump_status(buffer, status);
+}
+
+void os::abort(bool dump_core, void* siginfo, void* context) {
   HINSTANCE dbghelp;
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
@@ -995,33 +1024,22 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
 
   HANDLE hProcess = GetCurrentProcess();
   DWORD processId = GetCurrentProcessId();
-  HANDLE dumpFile;
   MINIDUMP_TYPE dumpType;
-  static const char* cwd;
 
-// Default is to always create dump for debug builds, on product builds only dump on server versions of Windows.
-#ifndef ASSERT
-  // If running on a client version of Windows and user has not explicitly enabled dumping
-  if (!os::win32::is_windows_server() && !CreateMinidumpOnCrash) {
-    VMError::report_coredump_status("Minidumps are not enabled by default on client versions of Windows", false);
-    return;
-    // If running on a server version of Windows and user has explictly disabled dumping
-  } else if (os::win32::is_windows_server() && !FLAG_IS_DEFAULT(CreateMinidumpOnCrash) && !CreateMinidumpOnCrash) {
-    VMError::report_coredump_status("Minidump has been disabled from the command line", false);
-    return;
+  shutdown();
+  if (!dump_core || dumpFile == NULL) {
+    if (dumpFile != NULL) {
+      CloseHandle(dumpFile);
+    }
+    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
   }
-#else
-  if (!FLAG_IS_DEFAULT(CreateMinidumpOnCrash) && !CreateMinidumpOnCrash) {
-    VMError::report_coredump_status("Minidump has been disabled from the command line", false);
-    return;
-  }
-#endif
 
   dbghelp = os::win32::load_Windows_dll("DBGHELP.DLL", NULL, 0);
 
   if (dbghelp == NULL) {
-    VMError::report_coredump_status("Failed to load dbghelp.dll", false);
-    return;
+    jio_fprintf(stderr, "Failed to load dbghelp.dll\n");
+    CloseHandle(dumpFile);
+    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
   }
 
   _MiniDumpWriteDump =
@@ -1033,30 +1051,23 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
                                     "MiniDumpWriteDump"));
 
   if (_MiniDumpWriteDump == NULL) {
-    VMError::report_coredump_status("Failed to find MiniDumpWriteDump() in module dbghelp.dll", false);
-    return;
+    jio_fprintf(stderr, "Failed to find MiniDumpWriteDump() in module dbghelp.dll.\n");
+    CloseHandle(dumpFile);
+    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
   }
 
   dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData);
 
-// Older versions of dbghelp.h doesn't contain all the dumptypes we want, dbghelp.h with
-// API_VERSION_NUMBER 11 or higher contains the ones we want though
+  // Older versions of dbghelp.h do not contain all the dumptypes we want, dbghelp.h with
+  // API_VERSION_NUMBER 11 or higher contains the ones we want though
 #if API_VERSION_NUMBER >= 11
   dumpType = (MINIDUMP_TYPE)(dumpType | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo |
                              MiniDumpWithUnloadedModules);
 #endif
 
-  cwd = get_current_directory(NULL, 0);
-  jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp", cwd, current_process_id());
-  dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-  if (dumpFile == INVALID_HANDLE_VALUE) {
-    VMError::report_coredump_status("Failed to create file for dumping", false);
-    return;
-  }
-  if (exceptionRecord != NULL && contextRecord != NULL) {
-    ep.ContextRecord = (PCONTEXT) contextRecord;
-    ep.ExceptionRecord = (PEXCEPTION_RECORD) exceptionRecord;
+  if (siginfo != NULL && context != NULL) {
+    ep.ContextRecord = (PCONTEXT) context;
+    ep.ExceptionRecord = (PEXCEPTION_RECORD) siginfo;
 
     mei.ThreadId = GetCurrentThreadId();
     mei.ExceptionPointers = &ep;
@@ -1065,38 +1076,18 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     pmei = NULL;
   }
 
-
   // Older versions of dbghelp.dll (the one shipped with Win2003 for example) may not support all
   // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
   if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) == false &&
       _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL) == false) {
-    DWORD error = GetLastError();
-    LPTSTR msgbuf = NULL;
-
-    if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                      FORMAT_MESSAGE_FROM_SYSTEM |
-                      FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL, error, 0, (LPTSTR)&msgbuf, 0, NULL) != 0) {
-
-      jio_snprintf(buffer, bufferSize, "Call to MiniDumpWriteDump() failed (Error 0x%x: %s)", error, msgbuf);
-      LocalFree(msgbuf);
-    } else {
-      // Call to FormatMessage failed, just include the result from GetLastError
-      jio_snprintf(buffer, bufferSize, "Call to MiniDumpWriteDump() failed (Error 0x%x)", error);
-    }
-    VMError::report_coredump_status(buffer, false);
-  } else {
-    VMError::report_coredump_status(buffer, true);
+    jio_fprintf(stderr, "Call to MiniDumpWriteDump() failed (Error 0x%x)\n", GetLastError());
   }
-
   CloseHandle(dumpFile);
+  win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
 }
 
-
 void os::abort(bool dump_core) {
-  os::shutdown();
-  // no core dump on Windows
-  win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
+  abort(dump_core, NULL, NULL);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
@@ -2101,20 +2092,22 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   // at the beginning of the target bundle.
   exceptionInfo->ContextRecord->StIPSR &= 0xFFFFF9FFFFFFFFFF;
   assert(((DWORD64)handler & 0xF) == 0, "Target address must point to the beginning of a bundle!");
-#elif _M_AMD64
+#else
+  #ifdef _M_AMD64
   // Do not blow up if no thread info available.
   if (thread) {
     thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
-#else
+  #else
   // Do not blow up if no thread info available.
   if (thread) {
     thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
+  #endif
 #endif
 
   // Continue the execution
@@ -2213,7 +2206,8 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // (division by zero is handled explicitly)
 #ifdef _M_IA64
   assert(0, "Fix Handle_IDiv_Exception");
-#elif _M_AMD64
+#else
+  #ifdef  _M_AMD64
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
   assert(pc[0] == 0xF7, "not an idiv opcode");
@@ -2224,7 +2218,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   ctx->Rax = (DWORD)min_jint;      // result
   ctx->Rdx = (DWORD)0;             // remainder
   // Continue the execution
-#else
+  #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
   assert(pc[0] == 0xF7, "not an idiv opcode");
@@ -2235,6 +2229,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   ctx->Eax = (DWORD)min_jint;      // result
   ctx->Edx = (DWORD)0;             // remainder
   // Continue the execution
+  #endif
 #endif
   return EXCEPTION_CONTINUE_EXECUTION;
 }
@@ -2307,10 +2302,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // This is needed for IA64 because "relocation" / "implicit null check" / "poll instruction"
   // information is saved in the Unix format.
   address pc_unix_format = (address) ((((uint64_t)pc) & 0xFFFFFFFFFFFFFFF0) | ((((uint64_t)pc) & 0xF) >> 2));
-#elif _M_AMD64
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
+  #ifdef _M_AMD64
+  address pc = (address) exceptionInfo->ContextRecord->Rip;
+  #else
   address pc = (address) exceptionInfo->ContextRecord->Eip;
+  #endif
 #endif
   Thread* t = ThreadLocalStorage::get_thread_slow();          // slow & steady
 

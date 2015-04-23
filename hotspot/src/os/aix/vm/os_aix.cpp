@@ -1268,6 +1268,10 @@ void os::shutdown() {
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
 void os::abort(bool dump_core) {
+  abort(dump_core, NULL, NULL);
+}
+
+void os::abort(bool dump_core, void* siginfo, void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -2474,7 +2478,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   if (!os::Aix::xpg_sus_mode()) {
 
-    if (StubRoutines::SafeFetch32_stub()) {
+    if (CanUseSafeFetch32()) {
 
       const bool read_protected =
         (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&

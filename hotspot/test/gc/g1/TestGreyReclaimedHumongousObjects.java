@@ -82,9 +82,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import sun.management.ManagementFactoryHelper;
 import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
+import java.lang.management.ManagementFactory;
 
 public class TestGreyReclaimedHumongousObjects {
 
@@ -130,7 +129,8 @@ public class TestGreyReclaimedHumongousObjects {
     }
 
     public static void main(String[] args) throws Exception {
-        HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
+        HotSpotDiagnosticMXBean diagnostic =
+                ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
 
         System.out.println("Max memory= " + MAX_MEMORY + " bytes");
 
@@ -173,4 +173,3 @@ public class TestGreyReclaimedHumongousObjects {
     private static final int THREAD_COUNT = 12;
     private static final String THREAD_NAME = "TestGreyRH-";
 }
-

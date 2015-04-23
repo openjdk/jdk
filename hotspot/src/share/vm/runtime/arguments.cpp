@@ -288,11 +288,8 @@ bool Arguments::is_newly_obsolete(const char *s, JDK_Version* version) {
     // <flag>=xxx form
     // [-|+]<flag> form
     size_t len = strlen(flag_status.name);
-    if (((strncmp(flag_status.name, s, len) == 0) &&
-         (strlen(s) == len)) ||
-        ((s[0] == '+' || s[0] == '-') &&
-         (strncmp(flag_status.name, &s[1], len) == 0) &&
-         (strlen(&s[1]) == len))) {
+    if ((strncmp(flag_status.name, s, len) == 0) &&
+        (strlen(s) == len)){
       if (JDK_Version::current().compare(flag_status.accept_until) == -1) {
           *version = flag_status.obsoleted_in;
           return true;
@@ -808,17 +805,9 @@ bool Arguments::process_argument(const char* arg,
     return true;
   }
 
+  // Determine if the flag has '+', '-', or '=' characters.
   bool has_plus_minus = (*arg == '+' || *arg == '-');
   const char* const argname = has_plus_minus ? arg + 1 : arg;
-  if (is_newly_obsolete(arg, &since)) {
-    char version[256];
-    since.to_string(version, sizeof(version));
-    warning("ignoring option %s; support was removed in %s", argname, version);
-    return true;
-  }
-
-  // For locked flags, report a custom error message if available.
-  // Otherwise, report the standard unrecognized VM option.
 
   size_t arg_len;
   const char* equal_sign = strchr(argname, '=');
@@ -828,6 +817,20 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
+  // Construct a string which consists only of the argument name without '+', '-', or '='.
+  char stripped_argname[256];
+  strncpy(stripped_argname, argname, arg_len);
+  stripped_argname[arg_len] = '\0'; //strncpy doesn't null terminate.
+
+  if (is_newly_obsolete(stripped_argname, &since)) {
+    char version[256];
+    since.to_string(version, sizeof(version));
+    warning("ignoring option %s; support was removed in %s", stripped_argname, version);
+    return true;
+  }
+
+  // For locked flags, report a custom error message if available.
+  // Otherwise, report the standard unrecognized VM option.
   Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
@@ -856,15 +859,7 @@ bool Arguments::process_argument(const char* arg,
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
                   fuzzy_matched->_name,
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
-      if (is_newly_obsolete(fuzzy_matched->_name, &since)) {
-        char version[256];
-        since.to_string(version, sizeof(version));
-        jio_fprintf(defaultStream::error_stream(),
-                    "Warning: support for %s was removed in %s\n",
-                    fuzzy_matched->_name,
-                    version);
     }
-  }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
@@ -3026,8 +3021,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xnoagent")) {
       // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
     } else if (match_option(option, "-Xboundthreads")) {
-      // Bind user level threads to kernel threads (Solaris only)
-      FLAG_SET_CMDLINE(bool, UseBoundThreads, true);
+      // Ignore silently for compatibility
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Redirect GC output to the file. -Xloggc:<filename>
       // ostream_init_log(), when called will use this filename
@@ -3257,6 +3251,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           "ManagementServer is not supported in this VM.\n");
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
+    // CreateMinidumpOnCrash is removed, and replaced by CreateCoredumpOnCrash
+    } else if (match_option(option, "-XX:+CreateMinidumpOnCrash")) {
+      FLAG_SET_CMDLINE(bool, CreateCoredumpOnCrash, true);
+      jio_fprintf(defaultStream::output_stream(),
+          "CreateMinidumpOnCrash is replaced by CreateCoredumpOnCrash: CreateCoredumpOnCrash is on\n");
+    } else if (match_option(option, "-XX:-CreateMinidumpOnCrash")) {
+      FLAG_SET_CMDLINE(bool, CreateCoredumpOnCrash, false);
+      jio_fprintf(defaultStream::output_stream(),
+          "CreateMinidumpOnCrash is replaced by CreateCoredumpOnCrash: CreateCoredumpOnCrash is off\n");
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
@@ -3730,8 +3733,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
-#if INCLUDE_NMT
     if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
+#if INCLUDE_NMT
       // The launcher did not setup nmt environment variable properly.
       if (!MemTracker::check_launcher_nmt_support(tail)) {
         warning("Native Memory Tracking did not setup properly, using wrong launcher?");
@@ -3747,9 +3750,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
         vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
       }
       continue;
-    }
+#else
+      jio_fprintf(defaultStream::error_stream(),
+        "Native Memory Tracking is not supported in this VM\n");
+      return JNI_ERR;
 #endif
-
+    }
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments")) {

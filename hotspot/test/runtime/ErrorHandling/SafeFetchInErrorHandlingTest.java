@@ -53,6 +53,7 @@ public class SafeFetchInErrorHandlingTest {
         "-Xmx100M",
         "-XX:ErrorHandlerTest=14",
         "-XX:+TestSafeFetchInErrorHandler",
+        "-XX:-CreateCoredumpOnCrash",
         "-version");
 
     OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());

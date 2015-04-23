@@ -144,7 +144,9 @@ void PhaseMacroExpand::copy_predefined_input_for_runtime_call(Node * ctrl, CallN
 }
 
 //------------------------------make_slow_call---------------------------------
-CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call, const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1) {
+CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type,
+                                           address slow_call, const char* leaf_name, Node* slow_path,
+                                           Node* parm0, Node* parm1, Node* parm2) {
 
   // Slow-path call
  CallNode *call = leaf_name
@@ -155,6 +157,7 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
   copy_predefined_input_for_runtime_call(slow_path, oldcall, call );
   if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
   if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
+  if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
   copy_call_debug_info(oldcall, call);
   call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   _igvn.replace_node(oldcall, call);
@@ -2328,7 +2331,9 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   }
 
   // Make slow path call
-  CallNode *call = make_slow_call( (CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(), OptoRuntime::complete_monitor_locking_Java(), NULL, slow_path, obj, box );
+  CallNode *call = make_slow_call((CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(),
+                                  OptoRuntime::complete_monitor_locking_Java(), NULL, slow_path,
+                                  obj, box, NULL);
 
   extract_call_projections(call);
 
@@ -2395,8 +2400,11 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   funlock = transform_later( funlock )->as_FastUnlock();
   // Optimize test; set region slot 2
   Node *slow_path = opt_bits_test(ctrl, region, 2, funlock, 0, 0);
+  Node *thread = transform_later(new ThreadLocalNode());
 
-  CallNode *call = make_slow_call( (CallNode *) unlock, OptoRuntime::complete_monitor_exit_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C), "complete_monitor_unlocking_C", slow_path, obj, box );
+  CallNode *call = make_slow_call((CallNode *) unlock, OptoRuntime::complete_monitor_exit_Type(),
+                                  CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C),
+                                  "complete_monitor_unlocking_C", slow_path, obj, box, thread);
 
   extract_call_projections(call);
 

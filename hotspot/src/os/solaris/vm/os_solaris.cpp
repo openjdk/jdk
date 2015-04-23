@@ -1521,6 +1521,10 @@ void os::shutdown() {
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
 void os::abort(bool dump_core) {
+  abort(dump_core, NULL, NULL);
+}
+
+void os::abort(bool dump_core, void* siginfo, void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
