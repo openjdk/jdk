@@ -218,7 +218,7 @@ public final class SerializedLambda implements Serializable {
 
     private Object readResolve() throws ReflectiveOperationException {
         try {
-            Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
+            Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 @Override
                 public Method run() throws Exception {
                     Method m = capturingClass.getDeclaredMethod("$deserializeLambda$", SerializedLambda.class);

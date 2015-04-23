@@ -198,7 +198,7 @@ public class SdpProvider extends NetHooks.Provider {
     {
         Scanner scanner = new Scanner(new File(file));
         try {
-            List<Rule> result = new ArrayList<Rule>();
+            List<Rule> result = new ArrayList<>();
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine().trim();
 

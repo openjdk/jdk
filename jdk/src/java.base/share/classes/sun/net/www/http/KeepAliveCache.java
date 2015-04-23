@@ -94,7 +94,7 @@ public class KeepAliveCache
              */
             final KeepAliveCache cache = this;
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
+                new java.security.PrivilegedAction<>() {
                 public Void run() {
                     keepAliveTimer = new InnocuousThread(cache, "Keep-Alive-Timer");
                     keepAliveTimer.setDaemon(true);
@@ -178,7 +178,7 @@ public class KeepAliveCache
                 long currentTime = System.currentTimeMillis();
 
                 ArrayList<KeepAliveKey> keysToRemove
-                    = new ArrayList<KeepAliveKey>();
+                    = new ArrayList<>();
 
                 for (KeepAliveKey key : keySet()) {
                     ClientVector v = get(key);

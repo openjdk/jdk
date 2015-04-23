@@ -122,7 +122,7 @@ public class AuthenticationHeader {
         this.dontUseNegotiate = dontUseNegotiate;
         rsp = response;
         this.hdrname = hdrname;
-        schemes = new HashMap<String,SchemeMapValue>();
+        schemes = new HashMap<>();
         parse();
     }
 

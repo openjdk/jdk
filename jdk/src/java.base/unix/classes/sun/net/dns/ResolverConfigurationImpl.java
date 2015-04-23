@@ -131,7 +131,7 @@ public class ResolverConfigurationImpl
         // get the name servers from /etc/resolv.conf
         nameservers =
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<LinkedList<String>>() {
+                new java.security.PrivilegedAction<>() {
                     public LinkedList<String> run() {
                         // typically MAXNS is 3 but we've picked 5 here
                         // to allow for additional servers if required.
@@ -156,7 +156,7 @@ public class ResolverConfigurationImpl
         // first try the search keyword in /etc/resolv.conf
 
         sl = java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction<LinkedList<String>>() {
+                 new java.security.PrivilegedAction<>() {
                     public LinkedList<String> run() {
                         LinkedList<String> ll;
 
@@ -182,7 +182,7 @@ public class ResolverConfigurationImpl
 
         String localDomain = localDomain0();
         if (localDomain != null && localDomain.length() > 0) {
-            sl = new LinkedList<String>();
+            sl = new LinkedList<>();
             sl.add(localDomain);
             return sl;
         }
@@ -190,7 +190,7 @@ public class ResolverConfigurationImpl
         // try domain keyword in /etc/resolv.conf
 
         sl = java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction<LinkedList<String>>() {
+                 new java.security.PrivilegedAction<>() {
                     public LinkedList<String> run() {
                         LinkedList<String> ll;
 
@@ -260,7 +260,7 @@ public class ResolverConfigurationImpl
 
     static {
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
+            new java.security.PrivilegedAction<>() {
                 public Void run() {
                     System.loadLibrary("net");
                     return null;
