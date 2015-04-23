@@ -27,6 +27,7 @@
 #include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 
 void MethodHandles::invoke_target(Method* method, TRAPS) {
