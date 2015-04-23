@@ -57,9 +57,9 @@ import javax.xml.namespace.QName;
  * javax.xml.stream.notations and javax.xml.stream.entities.
  * When the current event is a DTD the following call will return a
  * list of Notations
- *  <code>List l = (List) getProperty("javax.xml.stream.notations");</code>
+ * {@code List l = (List) getProperty("javax.xml.stream.notations");}
  * The following call will return a list of entity declarations:
- * <code>List l = (List) getProperty("javax.xml.stream.entities");</code>
+ * {@code List l = (List) getProperty("javax.xml.stream.entities");}
  * These properties can only be accessed during a DTD event and
  * are defined to return null if the information is not available.
  *
@@ -97,12 +97,13 @@ import javax.xml.namespace.QName;
  *            getElementText(), nextTag()
  *       </td>
  *     </tr>
+ *     <tr>
  *       <td> ATTRIBUTE  </td>
  *       <td> next(), nextTag()
  *            getAttributeXXX(), isAttributeSpecified(),
  *       </td>
  *     </tr>
- *     </tr>
+ *     <tr>
  *       <td> NAMESPACE  </td>
  *       <td> next(), nextTag()
  *            getNamespaceXXX()
@@ -184,7 +185,7 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * If element content is empty (i.e. content is "") then no CHARACTERS event will be reported.
    *
    * <p>Given the following XML:<br>
-   * &lt;foo>&lt;!--description-->content text&lt;![CDATA[&lt;greeting>Hello&lt;/greeting>]]>other content&lt;/foo><br>
+   * {@code <foo><!--description-->content text<![CDATA[<greeting>Hello>/greeting>]]>other content>/foo>}<br>
    * The behavior of calling next() when being on foo will be:<br>
    * 1- the comment (COMMENT)<br>
    * 2- then the characters section (CHARACTERS)<br>
@@ -192,14 +193,14 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * 4- then the next characters section (another CHARACTERS)<br>
    * 5- then the END_ELEMENT<br>
    *
-   * <p><b>NOTE:</b> empty element (such as &lt;tag/>) will be reported
+   * <p><b>NOTE:</b> empty element (such as {@code <tag/>}) will be reported
    *  with  two separate events: START_ELEMENT, END_ELEMENT - This preserves
-   *   parsing equivalency of empty element to &lt;tag>&lt;/tag>.
+   *   parsing equivalency of empty element to {@code <tag></tag>}.
    *
    * This method will throw an IllegalStateException if it is called after hasNext() returns false.
    * @see javax.xml.stream.events.XMLEvent
    * @return the integer code corresponding to the current parse event
-   * @throws NoSuchElementException if this is called when hasNext() returns false
+   * @throws java.util.NoSuchElementException if this is called when hasNext() returns false
    * @throws XMLStreamException  if there is an error processing the underlying XML source
    */
   public int next() throws XMLStreamException;
@@ -219,38 +220,39 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * Reads the content of a text-only element, an exception is thrown if this is
    * not a text-only element.
    * Regardless of value of javax.xml.stream.isCoalescing this method always returns coalesced content.
-   * <br /> Precondition: the current event is START_ELEMENT.
-   * <br /> Postcondition: the current event is the corresponding END_ELEMENT.
+   * <br> Precondition: the current event is START_ELEMENT.
+   * <br> Postcondition: the current event is the corresponding END_ELEMENT.
    *
-   * <br />The method does the following (implementations are free to optimized
+   * <br>The method does the following (implementations are free to optimized
    * but must do equivalent processing):
    * <pre>
    * if(getEventType() != XMLStreamConstants.START_ELEMENT) {
-   * throw new XMLStreamException(
-   * "parser must be on START_ELEMENT to read next text", getLocation());
+   *     throw new XMLStreamException(
+   *     "parser must be on START_ELEMENT to read next text", getLocation());
    * }
+   *
    * int eventType = next();
    * StringBuffer content = new StringBuffer();
-   * while(eventType != XMLStreamConstants.END_ELEMENT ) {
-   * if(eventType == XMLStreamConstants.CHARACTERS
-   * || eventType == XMLStreamConstants.CDATA
-   * || eventType == XMLStreamConstants.SPACE
-   * || eventType == XMLStreamConstants.ENTITY_REFERENCE) {
-   * buf.append(getText());
-   * } else if(eventType == XMLStreamConstants.PROCESSING_INSTRUCTION
-   * || eventType == XMLStreamConstants.COMMENT) {
-   * // skipping
-   * } else if(eventType == XMLStreamConstants.END_DOCUMENT) {
-   * throw new XMLStreamException(
-   * "unexpected end of document when reading element text content", this);
-   * } else if(eventType == XMLStreamConstants.START_ELEMENT) {
-   * throw new XMLStreamException(
-   * "element text content may not contain START_ELEMENT", getLocation());
-   * } else {
-   * throw new XMLStreamException(
-   * "Unexpected event type "+eventType, getLocation());
-   * }
-   * eventType = next();
+   * while(eventType != XMLStreamConstants.END_ELEMENT) {
+   *     if(eventType == XMLStreamConstants.CHARACTERS
+   *        || eventType == XMLStreamConstants.CDATA
+   *        || eventType == XMLStreamConstants.SPACE
+   *        || eventType == XMLStreamConstants.ENTITY_REFERENCE) {
+   *           buf.append(getText());
+   *     } else if(eventType == XMLStreamConstants.PROCESSING_INSTRUCTION
+   *               || eventType == XMLStreamConstants.COMMENT) {
+   *         // skipping
+   *     } else if(eventType == XMLStreamConstants.END_DOCUMENT) {
+   *         throw new XMLStreamException(
+   *         "unexpected end of document when reading element text content", this);
+   *     } else if(eventType == XMLStreamConstants.START_ELEMENT) {
+   *         throw new XMLStreamException(
+   *         "element text content may not contain START_ELEMENT", getLocation());
+   *     } else {
+   *         throw new XMLStreamException(
+   *         "Unexpected event type "+eventType, getLocation());
+   *     }
+   *     eventType = next();
    * }
    * return buf.toString();
    * </pre>
@@ -268,33 +270,33 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * are encountered, an exception is thrown. This method should
    * be used when processing element-only content seperated by white space.
    *
-   * <br /> Precondition: none
-   * <br /> Postcondition: the current event is START_ELEMENT or END_ELEMENT
+   * <br> Precondition: none
+   * <br> Postcondition: the current event is START_ELEMENT or END_ELEMENT
    * and cursor may have moved over any whitespace event.
    *
-   * <br />Essentially it does the following (implementations are free to optimized
+   * <br>Essentially it does the following (implementations are free to optimized
    * but must do equivalent processing):
-   * <pre>
+   * <pre> {@code
    * int eventType = next();
-   * while((eventType == XMLStreamConstants.CHARACTERS &amp;&amp; isWhiteSpace()) // skip whitespace
-   * || (eventType == XMLStreamConstants.CDATA &amp;&amp; isWhiteSpace())
+   * while((eventType == XMLStreamConstants.CHARACTERS && isWhiteSpace()) // skip whitespace
+   * || (eventType == XMLStreamConstants.CDATA && isWhiteSpace())
    * // skip whitespace
    * || eventType == XMLStreamConstants.SPACE
    * || eventType == XMLStreamConstants.PROCESSING_INSTRUCTION
    * || eventType == XMLStreamConstants.COMMENT
    * ) {
-   * eventType = next();
+   *     eventType = next();
    * }
-   * if (eventType != XMLStreamConstants.START_ELEMENT &amp;&amp; eventType != XMLStreamConstants.END_ELEMENT) {
-   * throw new String XMLStreamException("expected start or end tag", getLocation());
+   * if (eventType != XMLStreamConstants.START_ELEMENT && eventType != XMLStreamConstants.END_ELEMENT) {
+   *     throw new String XMLStreamException("expected start or end tag", getLocation());
    * }
-   * return eventType;
+   * return eventType; }
    * </pre>
    *
    * @return the event type of the element read (START_ELEMENT or END_ELEMENT)
    * @throws XMLStreamException if the current event is not white space, PROCESSING_INSTRUCTION,
    * START_ELEMENT or END_ELEMENT
-   * @throws NoSuchElementException if this is called when hasNext() returns false
+   * @throws java.util.NoSuchElementException if this is called when hasNext() returns false
    */
   public int nextTag() throws XMLStreamException;
 
@@ -309,7 +311,7 @@ public interface XMLStreamReader extends XMLStreamConstants {
   public boolean hasNext() throws XMLStreamException;
 
   /**
-   * Frees any resources associated with this Reader.  This method does not close the
+   * Frees any resources associated with this Reader. This method does not close the
    * underlying input source.
    * @throws XMLStreamException if there are errors freeing associated resources
    */
@@ -542,7 +544,7 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * If the number of characters actually copied is less than the "length", then there is no more text.
    * Otherwise, subsequent calls need to be made until all text has been retrieved. For example:
    *
-   *<code>
+   * <pre>{@code
    * int length = 1024;
    * char[] myBuffer = new char[ length ];
    *
@@ -553,7 +555,7 @@ public interface XMLStreamReader extends XMLStreamConstants {
    *   if (nCopied < length)
    *       break;
    * }
-   * </code>
+   * } </pre>
    * XMLStreamException may be thrown if there are any XML errors in the underlying source.
    * The "targetStart" argument must be greater than or equal to 0 and less than the length of "target",
    * Length must be greater than 0 and "targetStart + length" must be less than or equal to length of "target".
@@ -564,8 +566,8 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * @param length the number of characters to copy
    * @return the number of characters actually copied
    * @throws XMLStreamException if the underlying XML source is not well-formed
-   * @throws IndexOutOfBoundsException if targetStart < 0 or > than the length of target
-   * @throws IndexOutOfBoundsException if length < 0 or targetStart + length > length of target
+   * @throws IndexOutOfBoundsException if targetStart {@literal <} 0 or {@literal >} than the length of target
+   * @throws IndexOutOfBoundsException if length {@literal <} 0 or targetStart + length {@literal >} length of target
    * @throws UnsupportedOperationException if this method is not supported
    * @throws NullPointerException is if target is null
    */
