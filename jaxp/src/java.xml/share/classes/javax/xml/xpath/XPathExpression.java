@@ -29,9 +29,9 @@ import javax.xml.namespace.QName;
 import org.xml.sax.InputSource;
 
 /**
- * <p>{@code XPathExpression} provides access to compiled XPath expressions.</p>
+ * {@code XPathExpression} provides access to compiled XPath expressions.
  *
- * <a name="XPathExpression-evaluation"/>
+ * <a name="XPathExpression-evaluation"></a>
  * <table border="1" cellpadding="2">
  *   <thead>
  *     <tr>
@@ -54,7 +54,7 @@ import org.xml.sax.InputSource;
  *        If the expression contains a variable reference, its value will be found through the {@link XPathVariableResolver}.
  *        An {@link XPathExpressionException} is raised if the variable resolver is undefined or
  *        the resolver returns {@code null} for the variable.
- *        The value of a variable must be immutable through the course of any single evaluation.</p>
+ *        The value of a variable must be immutable through the course of any single evaluation.
  *      </td>
  *    </tr>
  *    <tr>
@@ -62,7 +62,7 @@ import org.xml.sax.InputSource;
  *      <td>
  *        If the expression contains a function reference, the function will be found through the {@link XPathFunctionResolver}.
  *        An {@link XPathExpressionException} is raised if the function resolver is undefined or
- *        the function resolver returns {@code null} for the function.</p>
+ *        the function resolver returns {@code null} for the function.
  *      </td>
  *    </tr>
  *    <tr>
@@ -76,9 +76,10 @@ import org.xml.sax.InputSource;
  *      <td>
  *        This result of evaluating an expression is converted to an instance of the desired return type.
  *        Valid return types are defined in {@link XPathConstants}.
- *        Conversion to the return type follows XPath conversion rules.</p>
+ *        Conversion to the return type follows XPath conversion rules.
  *      </td>
  *    </tr>
+ *   </tbody>
  * </table>
  *
  * <p>An XPath expression is not thread-safe and not reentrant.
@@ -87,7 +88,6 @@ import org.xml.sax.InputSource;
  * more than one thread at any given time, and while the {@code evaluate}
  * method is invoked, applications may not recursively call
  * the {@code evaluate} method.
- * <p>
  *
  * @author  <a href="mailto:Norman.Walsh@Sun.com">Norman Walsh</a>
  * @author  <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
@@ -98,10 +98,10 @@ public interface XPathExpression {
 
 
     /**
-     * <p>Evaluate the compiled XPath expression in the specified context and return the result as the specified type.</p>
+     * Evaluate the compiled XPath expression in the specified context and return the result as the specified type.
      *
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
-     * variable, function and QName resolution and return type conversion.</p>
+     * variable, function and QName resolution and return type conversion.
      *
      * <p>
      * The parameter {@code item} represents the context the XPath expression
@@ -126,13 +126,13 @@ public interface XPathExpression {
         throws XPathExpressionException;
 
     /**
-     * <p>Evaluate the compiled XPath expression in the specified context and return the result as a {@code String}.</p>
+     * Evaluate the compiled XPath expression in the specified context and return the result as a {@code String}.
      *
      * <p>This method calls {@link #evaluate(Object item, QName returnType)} with a {@code returnType} of
-     * {@link XPathConstants#STRING}.</p>
+     * {@link XPathConstants#STRING}.
      *
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
-     * variable, function and QName resolution and return type conversion.</p>
+     * variable, function and QName resolution and return type conversion.
      *
      * <p>
      * The parameter {@code item} represents the context the XPath expression
@@ -153,20 +153,21 @@ public interface XPathExpression {
         throws XPathExpressionException;
 
     /**
-     * <p>Evaluate the compiled XPath expression in the context of the specified {@code InputSource} and return the result as the
-     * specified type.</p>
+     * Evaluate the compiled XPath expression in the context
+     * of the specified {@code InputSource} and return the result as the
+     * specified type.
      *
      * <p>This method builds a data model for the {@link InputSource} and calls
-     * {@link #evaluate(Object item, QName returnType)} on the resulting document object.</p>
+     * {@link #evaluate(Object item, QName returnType)} on the resulting document object.
      *
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
-     * variable, function and QName resolution and return type conversion.</p>
+     * variable, function and QName resolution and return type conversion.
      *
      * <p>If {@code returnType} is not one of the types defined in {@link XPathConstants},
-     * then an {@code IllegalArgumentException} is thrown.</p>
+     * then an {@code IllegalArgumentException} is thrown.
      *
      * <p>If {@code source} or {@code returnType} is {@code null},
-     * then a {@code NullPointerException} is thrown.</p>
+     * then a {@code NullPointerException} is thrown.
      *
      * @param source The {@code InputSource} of the document to evaluate over.
      * @param returnType The desired return type.
@@ -182,16 +183,17 @@ public interface XPathExpression {
         throws XPathExpressionException;
 
     /**
-     * <p>Evaluate the compiled XPath expression in the context of the specified {@code InputSource} and return the result as a
-     * {@code String}.</p>
+     * Evaluate the compiled XPath expression in the context
+     * of the specified {@code InputSource} and return the result as a
+     * {@code String}.
      *
      * <p>This method calls {@link #evaluate(InputSource source, QName returnType)} with a {@code returnType} of
-     * {@link XPathConstants#STRING}.</p>
+     * {@link XPathConstants#STRING}.
      *
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
-     * variable, function and QName resolution and return type conversion.</p>
+     * variable, function and QName resolution and return type conversion.
      *
-     * <p>If {@code source} is {@code null}, then a {@code NullPointerException} is thrown.</p>
+     * <p>If {@code source} is {@code null}, then a {@code NullPointerException} is thrown.
      *
      * @param source The {@code InputSource} of the document to evaluate over.
      *
@@ -351,7 +353,6 @@ public interface XPathExpression {
      * <pre> {@code
      *     evaluateExpression(source, XPathEvaluationResult.class);
      * }</pre>
-     * <p>
      *
      * @implSpec
      * The default implementation in the XPath API is equivalent to:
