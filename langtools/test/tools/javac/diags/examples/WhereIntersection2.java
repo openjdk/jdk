@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,26 @@
  * questions.
  */
 
-/*
- * @test
- * @bug     6650759 8078024
- * @summary Inference of formal type parameter (unused in formal parameters) is not performed
- * @compile/fail/ref=T6650759m.out T6650759m.java -XDrawDiagnostics
- */
+// key: compiler.err.intf.expected.here
+// key: compiler.misc.inconvertible.types
+// key: compiler.misc.where.description.typevar
+// key: compiler.misc.where.typevar
+// key: compiler.misc.intersection.type
+// key: compiler.misc.where.description.intersection
+// key: compiler.misc.where.intersection
+// key: compiler.err.prob.found.req
+// options: -XDdiags=where
+// run: simple
 
-import java.util.*;
-
-class T6650759m {
-    <Z> List<? super Z> m(List<? extends List<? super Z>> ls) {
-        return ls.get(0);
-    }
-
-    void test() {
-        ArrayList<ArrayList<Integer>> lli = new ArrayList<ArrayList<Integer>>();
-        ArrayList<Integer> li = new ArrayList<Integer>();
-        li.add(2);
-        lli.add(li);
-        List<? super String> ls = m(lli); //here
-        ls.add("crash");
-        Integer i = li.get(1);
+class WhereIntersection2 {
+    interface I1 {}
+    interface I2 {}
+    class A implements I1, I2 {}
+    class B implements I1, I2 {}
+    class Test {
+        <Z extends A&B> Z m(Z z1, Z z2) { return null; }
+        <T extends I1 & I2> T m2(){
+            return m(new A(), new B());
+        }
     }
 }

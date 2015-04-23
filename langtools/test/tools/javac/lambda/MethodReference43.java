@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 8003280 8078024
  * @summary Add lambda tests
  *  check that diamond inference is applied when using raw constructor reference qualifier
  * @compile/fail/ref=MethodReference43.out -XDrawDiagnostics MethodReference43.java
