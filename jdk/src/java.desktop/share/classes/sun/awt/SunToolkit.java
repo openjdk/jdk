@@ -843,14 +843,17 @@ public abstract class SunToolkit extends Toolkit
     }
 
     protected static boolean imageExists(String filename) {
-        checkPermissions(filename);
-        return filename != null && new File(filename).exists();
+        if (filename != null) {
+            checkPermissions(filename);
+            return new File(filename).exists();
+        }
+        return false;
     }
 
     @SuppressWarnings("try")
     protected static boolean imageExists(URL url) {
-        checkPermissions(url);
         if (url != null) {
+            checkPermissions(url);
             try (InputStream is = url.openStream()) {
                 return true;
             }catch(IOException e){
