@@ -315,7 +315,7 @@
 # include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 # include "gc_implementation/shared/gcAdaptivePolicyCounters.hpp"
 # include "gc_implementation/shared/gcPolicyCounters.hpp"
-# include "gc_implementation/shared/parGCAllocBuffer.hpp"
+# include "gc_implementation/shared/plab.hpp"
 #endif // INCLUDE_ALL_GCS
 
 #endif // !DONT_USE_PRECOMPILED_HEADER

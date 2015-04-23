@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,29 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Used when initializing the _name field.
   static inline const char* select_name();
 
+#ifdef ASSERT
+  void assert_block_in_covered_region(MemRegion new_memregion) {
+    // Explictly capture current covered_region in a local
+    MemRegion covered_region = this->start_array()->covered_region();
+    assert(covered_region.contains(new_memregion),
+           err_msg("new region is not in covered_region [ "PTR_FORMAT", "PTR_FORMAT" ], "
+                   "new region [ "PTR_FORMAT", "PTR_FORMAT" ], "
+                   "object space [ "PTR_FORMAT", "PTR_FORMAT" ]",
+                   p2i(covered_region.start()),
+                   p2i(covered_region.end()),
+                   p2i(new_memregion.start()),
+                   p2i(new_memregion.end()),
+                   p2i(this->object_space()->used_region().start()),
+                   p2i(this->object_space()->used_region().end())));
+  }
+#endif
+
   HeapWord* allocate_noexpand(size_t word_size) {
     // We assume the heap lock is held here.
     assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->allocate(word_size);
     if (res != NULL) {
+      DEBUG_ONLY(assert_block_in_covered_region(MemRegion(res, word_size)));
       _start_array.allocate_block(res);
     }
     return res;
@@ -77,6 +95,7 @@ class PSOldGen : public CHeapObj<mtGC> {
     assert(SafepointSynchronize::is_at_safepoint(), "Must only be called at safepoint");
     HeapWord* res = object_space()->cas_allocate(word_size);
     if (res != NULL) {
+      DEBUG_ONLY(assert_block_in_covered_region(MemRegion(res, word_size)));
       _start_array.allocate_block(res);
     }
     return res;

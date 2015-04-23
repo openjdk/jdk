@@ -131,9 +131,6 @@ class MarkSweep : AllStatic {
   // Non public closures
   static KeepAliveClosure keep_alive;
 
-  // Debugging
-  static void trace(const char* msg) PRODUCT_RETURN;
-
  public:
   // Public closures
   static IsAliveClosure       is_alive;
