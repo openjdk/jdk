@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280 8029718
+ * @bug 8003280 8029718 8078024
  * @summary Add lambda tests
  *  check overload resolution and target type inference w.r.t. generic methods
  * Should always use lambda body structure to disambiguate overload resolution

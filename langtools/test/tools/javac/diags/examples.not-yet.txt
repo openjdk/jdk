@@ -93,7 +93,6 @@ compiler.misc.verbose.retro.with                        # UNUSED
 compiler.misc.verbose.retro.with.list                   # UNUSED
 compiler.misc.version.not.available                     # JavaCompiler; implies build error
 compiler.misc.where.description.captured
-compiler.misc.where.description.intersection.1
 compiler.misc.where.typevar.1
 compiler.misc.wrong.version                             # ClassReader
 compiler.warn.annotation.method.not.found               # ClassReader
@@ -115,3 +114,4 @@ compiler.warn.file.from.future                          # warning for future mod
 compiler.err.cant.inherit.from.anon                     # error for subclass of anonymous class
 compiler.misc.bad.class.file                            # class file is malformed
 compiler.misc.bad.const.pool.entry                      # constant pool entry has wrong type
+compiler.misc.incompatible.upper.eq.bounds
