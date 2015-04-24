@@ -63,47 +63,47 @@ package com.sun.jdi;
  *   <TH id="type"     align="left">{@link Type} of value<br>{@link #type() Value.type()}</TH>
  * <TR>
  *   <TD headers="primval kind">     a boolean</TD>
- *   <TD headers="primval example">  <CODE>true</CODE></TD>
+ *   <TD headers="primval example">  {@code true}</TD>
  *   <TD headers="primval mirrored"> {@link BooleanValue}</TD>
  *   <TD headers="primval type">     {@link BooleanType}</TD>
  * <TR>
  *   <TD headers="primval kind">     a byte</TD>
- *   <TD headers="primval example">  <CODE>(byte)4</CODE></TD>
+ *   <TD headers="primval example">  {@code (byte)4}</TD>
  *   <TD headers="primval mirrored"> {@link ByteValue}</TD>
  *   <TD headers="primval type">     {@link ByteType}</TD>
  * <TR>
  *   <TD headers="primval kind">     a char</TD>
- *   <TD headers="primval example">  <CODE>'a'</CODE></TD>
+ *   <TD headers="primval example">  {@code 'a'}</TD>
  *   <TD headers="primval mirrored"> {@link CharValue}</TD>
  *   <TD headers="primval type">     {@link CharType}</TD>
  * <TR>
  *   <TD headers="primval kind">     a double</TD>
- *   <TD headers="primval example">  <CODE>3.1415926</CODE></TD>
+ *   <TD headers="primval example">  {@code 3.1415926}</TD>
  *   <TD headers="primval mirrored"> {@link DoubleValue}</TD>
  *   <TD headers="primval type">     {@link DoubleType}</TD>
  * <TR>
  *   <TD headers="primval kind">     a float</TD>
- *   <TD headers="primval example">  <CODE>2.5f</CODE></TD>
+ *   <TD headers="primval example">  {@code 2.5f}</TD>
  *   <TD headers="primval mirrored"> {@link FloatValue}</TD>
  *   <TD headers="primval type">     {@link FloatType}</TD>
  * <TR>
  *   <TD headers="primval kind">     an int</TD>
- *   <TD headers="primval example">  <CODE>22</CODE></TD>
+ *   <TD headers="primval example">  {@code 22}</TD>
  *   <TD headers="primval mirrored"> {@link IntegerValue}</TD>
  *   <TD headers="primval type">     {@link IntegerType}</TD>
  * <TR>
  *   <TD headers="primval kind">     a long</TD>
- *   <TD headers="primval example">  <CODE>1024L</CODE></TD>
+ *   <TD headers="primval example">  {@code 1024L}</TD>
  *   <TD headers="primval mirrored"> {@link LongValue}</TD>
  *   <TD headers="primval type">     {@link LongType}</TD>
  * <TR>
  *   <TD headers="primval kind">     a short</TD>
- *   <TD headers="primval example">  <CODE>(short)12</CODE></TD>
+ *   <TD headers="primval example">  {@code (short)12}</TD>
  *   <TD headers="primval mirrored"> {@link ShortValue}</TD>
  *   <TD headers="primval type">     {@link ShortType}</TD>
  * <TR>
  *   <TD headers="primval kind">     a void</TD>
- *   <TD headers="primval example">  <CODE>&nbsp;</CODE></TD>
+ *   <TD headers="primval example">  </TD>
  *   <TD headers="primval mirrored"> {@link VoidValue}</TD>
  *   <TD headers="primval type">     {@link VoidType}</TD>
  * <TR BGCOLOR="#EEEEFF">
@@ -115,50 +115,50 @@ package com.sun.jdi;
  *   <TH id="type2"     align="left">{@link Type} of value<br>{@link #type() Value.type()}</TH>
  * <TR>
  *   <TD headers="objref kind2">     a class instance</TD>
- *   <TD headers="objref example2">  <CODE>this</CODE></TD>
+ *   <TD headers="objref example2">  {@code this}</TD>
  *   <TD headers="objref mirrored2"> {@link ObjectReference}</TD>
  *   <TD headers="objref type2">     {@link ClassType}</TD>
  * <TR>
  *   <TD headers="objref kind2">     an array</TD>
- *   <TD headers="objref example2">  <CODE>new int[5]</CODE></TD>
+ *   <TD headers="objref example2">  {@code new int[5]}</TD>
  *   <TD headers="objref mirrored2"> {@link ArrayReference}</TD>
  *   <TD headers="objref type2">     {@link ArrayType}</TD>
  * <TR>
  *   <TD headers="objref kind2">     a string</TD>
- *   <TD headers="objref example2">  <CODE>"hello"</CODE></TD>
+ *   <TD headers="objref example2">  {@code "hello"}</TD>
  *   <TD headers="objref mirrored2"> {@link StringReference}</TD>
  *   <TD headers="objref type2">     {@link ClassType}</TD>
  * <TR>
  *   <TD headers="objref kind2">     a thread</TD>
- *   <TD headers="objref example2">  <CODE>Thread.currentThread()</CODE></TD>
+ *   <TD headers="objref example2">  {@code Thread.currentThread()}</TD>
  *   <TD headers="objref mirrored2"> {@link ThreadReference}</TD>
  *   <TD headers="objref type2">     {@link ClassType}</TD>
  * <TR>
  *   <TD headers="objref kind2">     a thread group</TD>
- *   <TD headers="objref example2">  <CODE>Thread.currentThread()<br>&nbsp;&nbsp;.getThreadGroup()</CODE></TD>
+ *   <TD headers="objref example2">  {@code Thread.currentThread()}<br>&nbsp;&nbsp;{@code .getThreadGroup()}</TD>
  *   <TD headers="objref mirrored2"> {@link ThreadGroupReference}</TD>
  *   <TD headers="objref type2">     {@link ClassType}</TD>
  * <TR>
- *   <TD headers="objref kind2">     a <CODE>java.lang.Class</CODE><br>instance</TD>
- *   <TD headers="objref example2">  <CODE>this.getClass()</CODE></TD>
+ *   <TD headers="objref kind2">     a {@code java.lang.Class}<br>instance</TD>
+ *   <TD headers="objref example2">  {@code this.getClass()}</TD>
  *   <TD headers="objref mirrored2"> {@link ClassObjectReference}</TD>
  *   <TD headers="objref type2">     {@link ClassType}</TD>
  * <TR>
  *   <TD headers="objref kind2">     a class loader</TD>
- *   <TD headers="objref example2">  <CODE>this.getClass()<br>&nbsp;&nbsp;.getClassLoader() </CODE></TD>
+ *   <TD headers="objref example2">  {@code this.getClass()}<br>&nbsp;&nbsp;{@code .getClassLoader()}</TD>
  *   <TD headers="objref mirrored2"> {@link ClassLoaderReference}</TD>
  *   <TD headers="objref type2">     {@link ClassType}</TD>
  * <TR BGCOLOR="#EEEEFF">
  *   <TH id="other" colspan=4>Other</TH>
  * <TR BGCOLOR="#EEEEFF">
- *   <TH id="kind3"     align="left">Kind of value</TD>
- *   <TH id="example3"  align="left">For example -<br>expression in target</TD>
- *   <TH id="mirrored3" align="left">Is mirrored as</TD>
- *   <TH id="type3"     align="left">{@link Type} of value</TD>
+ *   <TD id="kind3"     align="left">Kind of value</TD>
+ *   <TD id="example3"  align="left">For example -<br>expression in target</TD>
+ *   <TD id="mirrored3" align="left">Is mirrored as</TD>
+ *   <TD id="type3"     align="left">{@link Type} of value</TD>
  * <TR>
  *   <TD headers="other kind3">     null</TD>
- *   <TD headers="other example3">  <CODE>null</CODE></TD>
- *   <TD headers="other mirrored3"> <CODE>null</CODE></TD>
+ *   <TD headers="other example3">  {@code null}</TD>
+ *   <TD headers="other mirrored3"> {@code null}</TD>
  *   <TD headers="other type3">     n/a</TD>
  * </TABLE>
  *
