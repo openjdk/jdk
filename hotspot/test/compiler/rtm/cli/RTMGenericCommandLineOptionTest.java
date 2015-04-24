@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public abstract class RTMGenericCommandLineOptionTest
 
     @Override
     public void runTestCases() throws Throwable {
-        if (Platform.isX86() || Platform.isX64()) {
+        if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
             if (Platform.isServer() && !Platform.isEmbedded()) {
                 runX86SupportedVMTestCases();
             } else {
@@ -108,7 +108,7 @@ public abstract class RTMGenericCommandLineOptionTest
     }
 
     /**
-     * Runs test cases on non-X86 CPU if VM does not support RTM locking.
+     * Runs test cases on X86 CPU if VM does not support RTM locking.
      * @throws Throwable
      */
     protected void runX86UnsupportedVMTestCases() throws Throwable {
