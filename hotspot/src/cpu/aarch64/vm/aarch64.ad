@@ -758,6 +758,8 @@ definitions %{
 
 source_hpp %{
 
+#include "memory/cardTableModRefBS.hpp"
+
 class CallStubImpl {
 
   //--------------------------------------------------------------
