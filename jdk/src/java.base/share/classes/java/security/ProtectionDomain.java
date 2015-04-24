@@ -367,7 +367,7 @@ public class ProtectionDomain {
 
         PermissionCollection perms =
             java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<PermissionCollection>() {
+            (new java.security.PrivilegedAction<>() {
                     public PermissionCollection run() {
                         Policy p = Policy.getPolicyNoCheck();
                         return p.getPermissions(ProtectionDomain.this);

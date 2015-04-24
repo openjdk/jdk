@@ -61,7 +61,7 @@ implements java.io.Serializable
      *
      */
     public UnresolvedPermissionCollection() {
-        perms = new HashMap<String, List<UnresolvedPermission>>(11);
+        perms = new HashMap<>(11);
     }
 
     /**
@@ -82,7 +82,7 @@ implements java.io.Serializable
         synchronized (this) {
             v = perms.get(up.getName());
             if (v == null) {
-                v = new ArrayList<UnresolvedPermission>();
+                v = new ArrayList<>();
                 perms.put(up.getName(), v);
             }
         }
@@ -203,7 +203,7 @@ implements java.io.Serializable
         Hashtable<String, Vector<UnresolvedPermission>> permissions =
                 (Hashtable<String, Vector<UnresolvedPermission>>)
                 gfields.get("permissions", null);
-        perms = new HashMap<String, List<UnresolvedPermission>>(permissions.size()*2);
+        perms = new HashMap<>(permissions.size()*2);
 
         // Convert each entry (Vector) into a List
         Set<Map.Entry<String, Vector<UnresolvedPermission>>> set = permissions.entrySet();

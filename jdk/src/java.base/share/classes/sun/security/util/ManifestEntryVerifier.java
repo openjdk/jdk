@@ -77,9 +77,9 @@ public class ManifestEntryVerifier {
      */
     public ManifestEntryVerifier(Manifest man)
     {
-        createdDigests = new HashMap<String, MessageDigest>(11);
-        digests = new ArrayList<MessageDigest>();
-        manifestHashes = new ArrayList<byte[]>();
+        createdDigests = new HashMap<>(11);
+        digests = new ArrayList<>();
+        manifestHashes = new ArrayList<>();
         this.man = man;
     }
 
