@@ -115,7 +115,7 @@ public final class SunJCE extends Provider {
         final String BLOCK_PADS = "NOPADDING|PKCS5PADDING|ISO10126PADDING";
 
         AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
+            new java.security.PrivilegedAction<>() {
                 public Object run() {
 
                     /*
