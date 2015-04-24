@@ -76,7 +76,7 @@ public abstract class AsynchronousChannelProvider {
 
         private static AsynchronousChannelProvider load() {
             return AccessController
-                .doPrivileged(new PrivilegedAction<AsynchronousChannelProvider>() {
+                .doPrivileged(new PrivilegedAction<>() {
                     public AsynchronousChannelProvider run() {
                         AsynchronousChannelProvider p;
                         p = loadProviderFromProperty();

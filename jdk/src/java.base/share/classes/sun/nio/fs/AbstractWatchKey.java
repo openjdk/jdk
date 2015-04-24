@@ -70,8 +70,8 @@ abstract class AbstractWatchKey implements WatchKey {
         this.watcher = watcher;
         this.dir = dir;
         this.state = State.READY;
-        this.events = new ArrayList<WatchEvent<?>>();
-        this.lastModifyEvents = new HashMap<Object,WatchEvent<?>>();
+        this.events = new ArrayList<>();
+        this.lastModifyEvents = new HashMap<>();
     }
 
     final AbstractWatchService watcher() {
@@ -146,7 +146,7 @@ abstract class AbstractWatchKey implements WatchKey {
 
             // non-repeated event
             Event<Object> ev =
-                new Event<Object>((WatchEvent.Kind<Object>)kind, context);
+                new Event<>((WatchEvent.Kind<Object>)kind, context);
             if (isModify) {
                 lastModifyEvents.put(context, ev);
             } else if (kind == StandardWatchEventKinds.OVERFLOW) {
@@ -163,7 +163,7 @@ abstract class AbstractWatchKey implements WatchKey {
     public final List<WatchEvent<?>> pollEvents() {
         synchronized (this) {
             List<WatchEvent<?>> result = events;
-            events = new ArrayList<WatchEvent<?>>();
+            events = new ArrayList<>();
             lastModifyEvents.clear();
             return result;
         }

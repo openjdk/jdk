@@ -3579,7 +3579,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         ZoneInfo zi = null;
         try {
             zi = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<ZoneInfo>() {
+                    new PrivilegedExceptionAction<>() {
                         @Override
                         public ZoneInfo run() throws Exception {
                             return (ZoneInfo) input.readObject();

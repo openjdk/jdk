@@ -201,7 +201,7 @@ public final class FilePermission extends Permission implements Serializable {
         }
 
         // store only the canonical cpath if possible
-        cpath = AccessController.doPrivileged(new PrivilegedAction<String>() {
+        cpath = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {
                 try {
                     String path = cpath;
