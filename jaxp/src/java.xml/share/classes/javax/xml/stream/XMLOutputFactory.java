@@ -54,17 +54,18 @@ import javax.xml.transform.Result;
  *        <th>Default Value</th>
  *        <th>Required</th>
  *              </tr>
- *         <tr><td>javax.xml.stream.isRepairingNamespaces</td><td>defaults prefixes on the output side</td><td>Boolean</td><td>False</td><td>Yes</td></tr>
+ *         <tr><td>javax.xml.stream.isRepairingNamespaces</td><td>defaults prefixes
+ *                 on the output side</td><td>Boolean</td><td>False</td><td>Yes</td></tr>
  *      </tbody>
  *   </table>
  *
- * <p>The following paragraphs describe the namespace and prefix repair algorithm:</p>
+ * <p>The following paragraphs describe the namespace and prefix repair algorithm:
  *
  * <p>The property can be set with the following code line:
- * <code>setProperty("javax.xml.stream.isRepairingNamespaces",new Boolean(true|false));</code></p>
+ * {@code setProperty("javax.xml.stream.isRepairingNamespaces", new Boolean(true|false));}
  *
  * <p>This property specifies that the writer default namespace prefix declarations.
- * The default value is false. </p>
+ * The default value is false.
  *
  * <p>If a writer isRepairingNamespaces it will create a namespace declaration
  * on the current StartElement for
@@ -74,11 +75,11 @@ import javax.xml.transform.Result;
  * has not been declared in a parent of the current StartElement it will be declared
  * on the current StartElement.  If the defaultNamespace is bound and in scope
  * and the default namespace matches the URI of the attribute or StartElement
- * QName no prefix will be assigned.</p>
+ * QName no prefix will be assigned.
  *
  * <p>If an element or attribute name has a prefix, but is not
  * bound to any namespace URI, then the prefix will be removed
- * during serialization.</p>
+ * during serialization.
  *
  * <p>If element and/or attribute names in the same start or
  * empty-element tag are bound to different namespace URIs and
@@ -86,20 +87,20 @@ import javax.xml.transform.Result;
  * occurring attribute retains the original prefix and the
  * following attributes have their prefixes replaced with a
  * new prefix that is bound to the namespace URIs of those
- * attributes. </p>
+ * attributes.
  *
  * <p>If an element or attribute name uses a prefix that is
  * bound to a different URI than that inherited from the
  * namespace context of the parent of that element and there
  * is no namespace declaration in the context of the current
- * element then such a namespace declaration is added. </p>
+ * element then such a namespace declaration is added.
  *
  * <p>If an element or attribute name is bound to a prefix and
  * there is a namespace declaration that binds that prefix
  * to a different URI then that namespace declaration is
  * either removed if the correct mapping is inherited from
  * the parent context of that element, or changed to the
- * namespace URI of the element or attribute using that prefix.</p>
+ * namespace URI of the element or attribute using that prefix.
  *
  * @version 1.2
  * @author Copyright (c) 2009, 2015 by Oracle Corporation. All Rights Reserved.
@@ -136,7 +137,6 @@ public abstract class XMLOutputFactory {
    * This static method creates a new factory instance. This method uses the
    * following ordered lookup procedure to determine the XMLOutputFactory
    * implementation class to load:
-   * <p>
    * <ul>
    * <li>
    *   Use the javax.xml.stream.XMLOutputFactory system property.
@@ -177,6 +177,7 @@ public abstract class XMLOutputFactory {
    *   <p>
    *   Otherwise, the system-default implementation is returned.
    * </li>
+   * </ul>
    * <p>
    * Once an application has obtained a reference to a XMLOutputFactory it
    * can use the factory to configure and obtain stream instances.
@@ -222,7 +223,6 @@ public abstract class XMLOutputFactory {
    * <p>
    * This method uses the following ordered lookup procedure to determine
    * the XMLOutputFactory implementation class to load:
-   * <p>
    * <ul>
    * <li>
    *   Use the value of the system property identified by {@code factoryId}.

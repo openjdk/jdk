@@ -29,29 +29,32 @@ import javax.xml.transform.Result;
 import org.w3c.dom.Node;
 
 /**
- * <p>Acts as a holder for a transformation result tree in the form of a Document Object Model (DOM) tree.</p>
+ * Acts as a holder for a transformation result tree
+ * in the form of a Document Object Model (DOM) tree.
  *
- * <p>If no output DOM source is set, the transformation will create a Document node as the holder for the result of the transformation,
- * which may be retrieved with {@link #getNode()}.</p>
+ * <p>If no output DOM source is set, the transformation will create
+ * a Document node as the holder for the result of the transformation,
+ * which may be retrieved with {@link #getNode()}.
  *
  * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
  * @since 1.4
  */
 public class DOMResult implements Result {
 
-    /** <p>If {@link javax.xml.transform.TransformerFactory#getFeature}
-     * returns <code>true</code> when passed this value as an argument,
-     * the <code>Transformer</code> supports <code>Result</code> output of this type.</p>
+    /**
+     * If {@link javax.xml.transform.TransformerFactory#getFeature}
+     * returns {@code true} when passed this value as an argument,
+     * the {@code Transformer} supports {@code Result} output of this type.
      */
     public static final String FEATURE = "http://javax.xml.transform.dom.DOMResult/feature";
 
     /**
-     * <p>Zero-argument default constructor.</p>
+     * Zero-argument default constructor.
      *
-     * <p><code>node</code>,
-     * <code>siblingNode</code> and
-     * <code>systemId</code>
-     * will be set to <code>null</code>.</p>
+     * <p>{@code node},
+     * {@code siblingNode} and
+     * {@code systemId}
+     * will be set to {@code null}.
      */
     public DOMResult() {
         setNode(null);
@@ -60,17 +63,17 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Use a DOM node to create a new output target.</p>
+     * Use a DOM node to create a new output target.
      *
      * <p>In practice, the node should be
      * a {@link org.w3c.dom.Document} node,
      * a {@link org.w3c.dom.DocumentFragment} node, or
      * a {@link org.w3c.dom.Element} node.
-     * In other words, a node that accepts children.</p>
+     * In other words, a node that accepts children.
      *
-     * <p><code>siblingNode</code> and
-     * <code>systemId</code>
-     * will be set to <code>null</code>.</p>
+     * <p>{@code siblingNode} and
+     * {@code systemId}
+     * will be set to {@code null}.
      *
      * @param node The DOM node that will contain the result tree.
      */
@@ -81,15 +84,15 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Use a DOM node to create a new output target with the specified System ID.<p>
+     * Use a DOM node to create a new output target with the specified System ID.
      *
      * <p>In practice, the node should be
      * a {@link org.w3c.dom.Document} node,
      * a {@link org.w3c.dom.DocumentFragment} node, or
      * a {@link org.w3c.dom.Element} node.
-     * In other words, a node that accepts children.</p>
+     * In other words, a node that accepts children.
      *
-     * <p><code>siblingNode</code> will be set to <code>null</code>.</p>
+     * <p>{@code siblingNode} will be set to {@code null}.
      *
      * @param node The DOM node that will contain the result tree.
      * @param systemId The system identifier which may be used in association with this node.
@@ -101,32 +104,33 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Use a DOM node to create a new output target specifying the child node where the result nodes should be inserted before.</p>
+     * Use a DOM node to create a new output target specifying
+     * the child node where the result nodes should be inserted before.
      *
-     * <p>In practice, <code>node</code> and <code>nextSibling</code> should be
+     * <p>In practice, {@code node} and {@code nextSibling} should be
      * a {@link org.w3c.dom.Document} node,
      * a {@link org.w3c.dom.DocumentFragment} node, or
      * a {@link org.w3c.dom.Element} node.
-     * In other words, a node that accepts children.</p>
+     * In other words, a node that accepts children.
      *
-     * <p>Use <code>nextSibling</code> to specify the child node
+     * <p>Use {@code nextSibling} to specify the child node
      * where the result nodes should be inserted before.
-     * If <code>nextSibling</code> is not a sibling of <code>node</code>,
-     * then an <code>IllegalArgumentException</code> is thrown.
-     * If <code>node</code> is <code>null</code> and <code>nextSibling</code> is not <code>null</code>,
-     * then an <code>IllegalArgumentException</code> is thrown.
-     * If <code>nextSibling</code> is <code>null</code>,
+     * If {@code nextSibling} is not a sibling of {@code node},
+     * then an {@code IllegalArgumentException} is thrown.
+     * If {@code node} is {@code null} and {@code nextSibling} is not {@code null},
+     * then an {@code IllegalArgumentException} is thrown.
+     * If {@code nextSibling} is {@code null},
      * then the behavior is the same as calling {@link #DOMResult(Node node)},
-     * i.e. append the result nodes as the last child of the specified <code>node</code>.</p>
+     * i.e. append the result nodes as the last child of the specified {@code node}.
      *
-     * <p><code>systemId</code> will be set to <code>null</code>.</p>
+     * <p>{@code systemId} will be set to {@code null}.
      *
      * @param node The DOM node that will contain the result tree.
      * @param nextSibling The child node where the result nodes should be inserted before.
      *
-     * @throws IllegalArgumentException If <code>nextSibling</code> is not a sibling of <code>node</code> or
-     *   <code>node</code> is <code>null</code> and <code>nextSibling</code>
-     *   is not <code>null</code>.
+     * @throws IllegalArgumentException If {@code nextSibling} is not a sibling of {@code node} or
+     *   {@code node} is {@code null} and {@code nextSibling}
+     *   is not {@code null}.
      *
      * @since 1.5
      */
@@ -151,33 +155,35 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Use a DOM node to create a new output target specifying the child node where the result nodes should be inserted before and
-     * the specified System ID.</p>
+     * Use a DOM node to create a new output target specifying the child
+     * node where the result nodes should be inserted before and
+     * the specified System ID.
      *
-     * <p>In practice, <code>node</code> and <code>nextSibling</code> should be
+     * <p>In practice, {@code node} and {@code nextSibling} should be
      * a {@link org.w3c.dom.Document} node,
      * a {@link org.w3c.dom.DocumentFragment} node, or a
      * {@link org.w3c.dom.Element} node.
-     * In other words, a node that accepts children.</p>
+     * In other words, a node that accepts children.
      *
-     * <p>Use <code>nextSibling</code> to specify the child node
+     * <p>Use {@code nextSibling} to specify the child node
      * where the result nodes should be inserted before.
-     * If <code>nextSibling</code> is not a sibling of <code>node</code>,
-     * then an <code>IllegalArgumentException</code> is thrown.
-     * If <code>node</code> is <code>null</code> and <code>nextSibling</code> is not <code>null</code>,
-     * then an <code>IllegalArgumentException</code> is thrown.
-     * If <code>nextSibling</code> is <code>null</code>,
+     * If {@code nextSibling} is not a sibling of {@code node},
+     * then an {@code IllegalArgumentException} is thrown.
+     * If {@code node} is {@code null} and {@code nextSibling} is not {@code null},
+     * then an {@code IllegalArgumentException} is thrown.
+     * If {@code nextSibling} is {@code null},
      * then the behavior is the same as calling {@link #DOMResult(Node node, String systemId)},
-     * i.e. append the result nodes as the last child of the specified node and use the specified System ID.</p>
+     * i.e. append the result nodes as the last child of the specified
+     * node and use the specified System ID.
      *
      * @param node The DOM node that will contain the result tree.
      * @param nextSibling The child node where the result nodes should be inserted before.
      * @param systemId The system identifier which may be used in association with this node.
      *
-     * @throws IllegalArgumentException If <code>nextSibling</code> is not a
-     *   sibling of <code>node</code> or
-     *   <code>node</code> is <code>null</code> and <code>nextSibling</code>
-     *   is not <code>null</code>.
+     * @throws IllegalArgumentException If {@code nextSibling} is not a
+     *   sibling of {@code node} or
+     *   {@code node} is {@code null} and {@code nextSibling}
+     *   is not {@code null}.
      *
      * @since 1.5
      */
@@ -202,27 +208,27 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Set the node that will contain the result DOM tree.<p>
+     * Set the node that will contain the result DOM tree.
      *
      * <p>In practice, the node should be
      * a {@link org.w3c.dom.Document} node,
      * a {@link org.w3c.dom.DocumentFragment} node, or
      * a {@link org.w3c.dom.Element} node.
-     * In other words, a node that accepts children.</p>
+     * In other words, a node that accepts children.
      *
-     * <p>An <code>IllegalStateException</code> is thrown if
-     * <code>nextSibling</code> is not <code>null</code> and
-     * <code>node</code> is not a parent of <code>nextSibling</code>.
-     * An <code>IllegalStateException</code> is thrown if <code>node</code> is <code>null</code> and
-     * <code>nextSibling</code> is not <code>null</code>.</p>
+     * <p>An {@code IllegalStateException} is thrown if
+     * {@code nextSibling} is not {@code null} and
+     * {@code node} is not a parent of {@code nextSibling}.
+     * An {@code IllegalStateException} is thrown if {@code node} is {@code null} and
+     * {@code nextSibling} is not {@code null}.
      *
      * @param node The node to which the transformation will be appended.
      *
-     * @throws IllegalStateException If <code>nextSibling</code> is not
-     *   <code>null</code> and
-     *   <code>nextSibling</code> is not a child of <code>node</code> or
-     *   <code>node</code> is <code>null</code> and
-     *   <code>nextSibling</code> is not <code>null</code>.
+     * @throws IllegalStateException If {@code nextSibling} is not
+     *   {@code null} and
+     *   {@code nextSibling} is not a child of {@code node} or
+     *   {@code node} is {@code null} and
+     *   {@code nextSibling} is not {@code null}.
      */
     public void setNode(Node node) {
         // does the corrent parent/child relationship exist?
@@ -242,7 +248,7 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Get the node that will contain the result DOM tree.</p>
+     * Get the node that will contain the result DOM tree.
      *
      * <p>If no node was set via
      * {@link #DOMResult(Node node)},
@@ -251,7 +257,7 @@ public class DOMResult implements Result {
      * {@link #DOMResult(Node node, Node nextSibling, String systemId)} or
      * {@link #setNode(Node node)},
      * then the node will be set by the transformation, and may be obtained from this method once the transformation is complete.
-     * Calling this method before the transformation will return <code>null</code>.</p>
+     * Calling this method before the transformation will return {@code null}.
      *
      * @return The node to which the transformation will be appended.
      */
@@ -260,24 +266,24 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Set the child node before which the result nodes will be inserted.</p>
+     * Set the child node before which the result nodes will be inserted.
      *
-     * <p>Use <code>nextSibling</code> to specify the child node
+     * <p>Use {@code nextSibling} to specify the child node
      * before which the result nodes should be inserted.
-     * If <code>nextSibling</code> is not a descendant of <code>node</code>,
-     * then an <code>IllegalArgumentException</code> is thrown.
-     * If <code>node</code> is <code>null</code> and <code>nextSibling</code> is not <code>null</code>,
-     * then an <code>IllegalStateException</code> is thrown.
-     * If <code>nextSibling</code> is <code>null</code>,
+     * If {@code nextSibling} is not a descendant of {@code node},
+     * then an {@code IllegalArgumentException} is thrown.
+     * If {@code node} is {@code null} and {@code nextSibling} is not {@code null},
+     * then an {@code IllegalStateException} is thrown.
+     * If {@code nextSibling} is {@code null},
      * then the behavior is the same as calling {@link #DOMResult(Node node)},
-     * i.e. append the result nodes as the last child of the specified <code>node</code>.</p>
+     * i.e. append the result nodes as the last child of the specified {@code node}.
      *
      * @param nextSibling The child node before which the result nodes will be inserted.
      *
-     * @throws IllegalArgumentException If <code>nextSibling</code> is not a
-     *   descendant of <code>node</code>.
-     * @throws IllegalStateException If <code>node</code> is <code>null</code>
-     *   and <code>nextSibling</code> is not <code>null</code>.
+     * @throws IllegalArgumentException If {@code nextSibling} is not a
+     *   descendant of {@code node}.
+     * @throws IllegalStateException If {@code node} is {@code null}
+     *   and {@code nextSibling} is not {@code null}.
      *
      * @since 1.5
      */
@@ -300,13 +306,13 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Get the child node before which the result nodes will be inserted.</p>
+     * Get the child node before which the result nodes will be inserted.
      *
      * <p>If no node was set via
      * {@link #DOMResult(Node node, Node nextSibling)},
      * {@link #DOMResult(Node node, Node nextSibling, String systemId)} or
      * {@link #setNextSibling(Node nextSibling)},
-     * then <code>null</code> will be returned.</p>
+     * then {@code null} will be returned.
      *
      * @return The child node before which the result nodes will be inserted.
      *
@@ -317,7 +323,7 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Set the systemId that may be used in association with the node.</p>
+     * Set the systemId that may be used in association with the node.
      *
      * @param systemId The system identifier as a URI string.
      */
@@ -326,13 +332,13 @@ public class DOMResult implements Result {
     }
 
     /**
-     * <p>Get the System Identifier.</p>
+     * Get the System Identifier.
      *
      * <p>If no System ID was set via
      * {@link #DOMResult(Node node, String systemId)},
      * {@link #DOMResult(Node node, Node nextSibling, String systemId)} or
      * {@link #setSystemId(String systemId)},
-     * then <code>null</code> will be returned.</p>
+     * then {@code null} will be returned.
      *
      * @return The system identifier.
      */
@@ -345,19 +351,19 @@ public class DOMResult implements Result {
     //////////////////////////////////////////////////////////////////////
 
     /**
-     * <p>The node to which the transformation will be appended.</p>
+     * The node to which the transformation will be appended.
      */
     private Node node = null;
 
     /**
-     * <p>The child node before which the result nodes will be inserted.</p>
+     * The child node before which the result nodes will be inserted.
      *
      * @since 1.5
      */
     private Node nextSibling = null;
 
     /**
-     * <p>The System ID that may be used in association with the node.</p>
+     * The System ID that may be used in association with the node.
      */
     private String systemId = null;
 }

@@ -1,6 +1,6 @@
 /**
  * @test /nodynamiccopyright/
- * @bug     6315770
+ * @bug     6315770 8078024
  * @summary javac inference allows creation of strange types: Integer & Runnable
  * @author Maurizio Cimadamore
  *

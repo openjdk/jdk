@@ -54,11 +54,11 @@ import java.awt.datatransfer.UnsupportedFlavorException;
  *
  * <b>DataHandler and CommandMaps</b><p>
  * The DataHandler keeps track of the current CommandMap that it uses to
- * service requests for commands (<code>getCommand</code>,
- * <code>getAllCommands</code>, <code>getPreferredCommands</code>).
+ * service requests for commands ({@code getCommand, getAllCommands,
+ * getPreferredCommands}).
  * Each instance of a DataHandler may have a CommandMap associated with
- * it using the <code>setCommandMap</code> method.  If a CommandMap was
- * not set, DataHandler calls the <code>getDefaultCommandMap</code>
+ * it using the {@code setCommandMap} method.  If a CommandMap was
+ * not set, DataHandler calls the {@code getDefaultCommandMap}
  * method in CommandMap and uses the value it returns. See
  * <i>CommandMap</i> for more information. <p>
  *
@@ -105,7 +105,7 @@ public class DataHandler implements Transferable {
     private String shortType = null;
 
     /**
-     * Create a <code>DataHandler</code> instance referencing the
+     * Create a {@code DataHandler} instance referencing the
      * specified DataSource.  The data exists in a byte stream form.
      * The DataSource will provide an InputStream to access the data.
      *
@@ -118,7 +118,7 @@ public class DataHandler implements Transferable {
     }
 
     /**
-     * Create a <code>DataHandler</code> instance representing an object
+     * Create a {@code DataHandler} instance representing an object
      * of this MIME type.  This constructor is
      * used when the application already has an in-memory representation
      * of the data in the form of a Java Object.
@@ -133,8 +133,8 @@ public class DataHandler implements Transferable {
     }
 
     /**
-     * Create a <code>DataHandler</code> instance referencing a URL.
-     * The DataHandler internally creates a <code>URLDataSource</code>
+     * Create a {@code DataHandler} instance referencing a URL.
+     * The DataHandler internally creates a {@code URLDataSource}
      * instance to represent the URL.
      *
      * @param url       a URL object
@@ -181,7 +181,7 @@ public class DataHandler implements Transferable {
     /**
      * Return the name of the data object. If this DataHandler
      * was created with a DataSource, this method calls through
-     * to the <code>DataSource.getName</code> method, otherwise it
+     * to the {@code DataSource.getName} method, otherwise it
      * returns <i>null</i>.
      *
      * @return  the name of the object
@@ -211,7 +211,7 @@ public class DataHandler implements Transferable {
      * Get the InputStream for this object. <p>
      *
      * For DataHandlers instantiated with a DataSource, the DataHandler
-     * calls the <code>DataSource.getInputStream</code> method and
+     * calls the {@code DataSource.getInputStream} method and
      * returns the result to the caller.
      * <p>
      * For DataHandlers instantiated with an Object, the DataHandler
@@ -219,11 +219,11 @@ public class DataHandler implements Transferable {
      * the DataHandler can not find a DataContentHandler for this MIME
      * type, it throws an UnsupportedDataTypeException.  If it is
      * successful, it creates a pipe and a thread.  The thread uses the
-     * DataContentHandler's <code>writeTo</code> method to write the
+     * DataContentHandler's {@code writeTo} method to write the
      * stream data into one end of the pipe.  The other end of the pipe
      * is returned to the caller.  Because a thread is created to copy
      * the data, IOExceptions that may occur during the copy can not be
-     * propagated back to the caller. The result is an empty stream.<p>
+     * propagated back to the caller. The result is an empty stream.
      *
      * @return  the InputStream representing this data
      * @exception IOException   if an I/O error occurs
@@ -281,7 +281,7 @@ public class DataHandler implements Transferable {
     }
 
     /**
-     * Write the data to an <code>OutputStream</code>.<p>
+     * Write the data to an {@code OutputStream}.<p>
      *
      * If the DataHandler was created with a DataSource, writeTo
      * retrieves the InputStream and copies the bytes from the
@@ -290,7 +290,7 @@ public class DataHandler implements Transferable {
      * If the DataHandler was created with an object, writeTo
      * retrieves the DataContentHandler for the object's type.
      * If the DataContentHandler was found, it calls the
-     * <code>writeTo</code> method on the <code>DataContentHandler</code>.
+     * {@code writeTo} method on the {@code DataContentHandler}.
      *
      * @param os        the OutputStream to write to
      * @exception IOException   if an I/O error occurs
@@ -322,8 +322,8 @@ public class DataHandler implements Transferable {
      * Get an OutputStream for this DataHandler to allow overwriting
      * the underlying data.
      * If the DataHandler was created with a DataSource, the
-     * DataSource's <code>getOutputStream</code> method is called.
-     * Otherwise, <code>null</code> is returned.
+     * DataSource's {@code getOutputStream} method is called.
+     * Otherwise, {@code null} is returned.
      *
      * @return the OutputStream
      *
@@ -348,12 +348,12 @@ public class DataHandler implements Transferable {
      * The DataHandler attempts to find a DataContentHandler that
      * corresponds to the MIME type of the data. If one is located,
      * the DataHandler calls the DataContentHandler's
-     * <code>getTransferDataFlavors</code> method. <p>
+     * {@code getTransferDataFlavors} method. <p>
      *
      * If a DataContentHandler can <i>not</i> be located, and if the
      * DataHandler was created with a DataSource (or URL), one
      * DataFlavor is returned that represents this object's MIME type
-     * and the <code>java.io.InputStream</code> class.  If the
+     * and the {@code java.io.InputStream} class.  If the
      * DataHandler was created with an object and a MIME type,
      * getTransferDataFlavors returns one DataFlavor that represents
      * this object's MIME type and the object's class.
@@ -381,7 +381,7 @@ public class DataHandler implements Transferable {
      * for this object.<p>
      *
      * This method iterates through the DataFlavors returned from
-     * <code>getTransferDataFlavors</code>, comparing each with
+     * {@code getTransferDataFlavors}, comparing each with
      * the specified flavor.
      *
      * @param flavor    the requested flavor for the data
@@ -407,10 +407,10 @@ public class DataHandler implements Transferable {
      *
      * The DataHandler attempts to locate a DataContentHandler
      * for this MIME type. If one is found, the passed in DataFlavor
-     * and the type of the data are passed to its <code>getTransferData</code>
+     * and the type of the data are passed to its {@code getTransferData}
      * method. If the DataHandler fails to locate a DataContentHandler
      * and the flavor specifies this object's MIME type and the
-     * <code>java.io.InputStream</code> class, this object's InputStream
+     * {@code java.io.InputStream} class, this object's InputStream
      * is returned.
      * Otherwise it throws an UnsupportedFlavorException. <p>
      *
@@ -438,10 +438,10 @@ public class DataHandler implements Transferable {
 
     /**
      * Set the CommandMap for use by this DataHandler.
-     * Setting it to <code>null</code> causes the CommandMap to revert
+     * Setting it to {@code null} causes the CommandMap to revert
      * to the CommandMap returned by the
-     * <code>CommandMap.getDefaultCommandMap</code> method.
-     * Changing the CommandMap, or setting it to <code>null</code>,
+     * {@code CommandMap.getDefaultCommandMap} method.
+     * Changing the CommandMap, or setting it to {@code null},
      * clears out any data cached from the previous CommandMap.
      *
      * @param commandMap        the CommandMap to use in this DataHandler
@@ -460,7 +460,7 @@ public class DataHandler implements Transferable {
 
     /**
      * Return the <i>preferred</i> commands for this type of data.
-     * This method calls the <code>getPreferredCommands</code> method
+     * This method calls the {@code getPreferredCommands} method
      * in the CommandMap associated with this instance of DataHandler.
      * This method returns an array that represents a subset of
      * available commands. In cases where multiple commands for the
@@ -484,7 +484,7 @@ public class DataHandler implements Transferable {
      * This method returns an array containing all commands
      * for the type of data represented by this DataHandler. The
      * MIME type for the underlying data represented by this DataHandler
-     * is used to call through to the <code>getAllCommands</code> method
+     * is used to call through to the {@code getAllCommands} method
      * of the CommandMap associated with this DataHandler.
      *
      * @return  the CommandInfo objects representing all the commands
@@ -502,7 +502,7 @@ public class DataHandler implements Transferable {
      * Get the command <i>cmdName</i>. Use the search semantics as
      * defined by the CommandMap installed in this DataHandler. The
      * MIME type for the underlying data represented by this DataHandler
-     * is used to call through to the <code>getCommand</code> method
+     * is used to call through to the {@code getCommand} method
      * of the CommandMap associated with this DataHandler.
      *
      * @param cmdName   the command name
@@ -527,7 +527,7 @@ public class DataHandler implements Transferable {
      * If the DataHandler was instantiated with a DataSource,
      * this method uses a DataContentHandler to return the content
      * object for the data represented by this DataHandler. If no
-     * <code>DataContentHandler</code> can be found for the
+     * {@code DataContentHandler} can be found for the
      * the type of this data, the DataHandler returns an
      * InputStream for the data.
      *
@@ -547,9 +547,9 @@ public class DataHandler implements Transferable {
      * and instantiates the corresponding command, usually
      * a JavaBean component.
      * <p>
-     * This method calls the CommandInfo's <code>getCommandObject</code>
-     * method with the <code>ClassLoader</code> used to load
-     * the <code>javax.activation.DataHandler</code> class itself.
+     * This method calls the CommandInfo's {@code getCommandObject}
+     * method with the {@code ClassLoader} used to load
+     * the {@code javax.activation.DataHandler} class itself.
      *
      * @param cmdinfo   the CommandInfo corresponding to a command
      * @return  the instantiated command object
@@ -701,16 +701,16 @@ class DataHandlerDataSource implements DataSource {
     }
 
     /**
-     * Returns an <code>InputStream</code> representing this object.
-     * @return  the <code>InputStream</code>
+     * Returns an {@code InputStream} representing this object.
+     * @return  the {@code InputStream}
      */
     public InputStream getInputStream() throws IOException {
         return dataHandler.getInputStream();
     }
 
     /**
-     * Returns the <code>OutputStream</code> for this object.
-     * @return  the <code>OutputStream</code>
+     * Returns the {@code OutputStream} for this object.
+     * @return  the {@code OutputStream}
      */
     public OutputStream getOutputStream() throws IOException {
         return dataHandler.getOutputStream();
@@ -754,7 +754,7 @@ class DataSourceDataContentHandler implements DataContentHandler {
     }
 
     /**
-     * Return the DataFlavors for this <code>DataContentHandler</code>.
+     * Return the DataFlavors for this {@code DataContentHandler}.
      * @return  the DataFlavors
      */
     public DataFlavor[] getTransferDataFlavors() {
@@ -842,7 +842,7 @@ class ObjectDataContentHandler implements DataContentHandler {
     }
 
     /**
-     * Return the DataFlavors for this <code>DataContentHandler</code>.
+     * Return the DataFlavors for this {@code DataContentHandler}.
      * @return  the DataFlavors
      */
     public synchronized DataFlavor[] getTransferDataFlavors() {
