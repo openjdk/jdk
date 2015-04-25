@@ -841,6 +841,15 @@ public class Check {
                 }
                 return true;
             }
+
+            @Override
+            public Boolean visitTypeVar(TypeVar t, Void s) {
+                /* Any type variable mentioned in the inferred type must have been declared as a type parameter
+                  (i.e cannot have been produced by capture conversion (5.1.10) or by inference (18.4)
+                */
+                return t.tsym.owner.type.getTypeArguments().contains(t);
+            }
+
             @Override
             public Boolean visitCapturedType(CapturedType t, Void s) {
                 return false;
