@@ -226,8 +226,18 @@ public class Analyzer {
         @Override
         void process(JCNewClass oldTree, JCNewClass newTree, boolean hasErrors) {
             if (!hasErrors) {
-                List<Type> inferredArgs = newTree.type.getTypeArguments();
-                List<Type> explicitArgs = oldTree.type.getTypeArguments();
+                List<Type> inferredArgs, explicitArgs;
+                if (oldTree.def != null) {
+                    inferredArgs = newTree.def.implementing.nonEmpty()
+                                      ? newTree.def.implementing.get(0).type.getTypeArguments()
+                                      : newTree.def.extending.type.getTypeArguments();
+                    explicitArgs = oldTree.def.implementing.nonEmpty()
+                                      ? oldTree.def.implementing.get(0).type.getTypeArguments()
+                                      : oldTree.def.extending.type.getTypeArguments();
+                } else {
+                    inferredArgs = newTree.type.getTypeArguments();
+                    explicitArgs = oldTree.type.getTypeArguments();
+                }
                 for (Type t : inferredArgs) {
                     if (!types.isSameType(t, explicitArgs.head)) {
                         log.warning(oldTree.clazz, "diamond.redundant.args.1",
