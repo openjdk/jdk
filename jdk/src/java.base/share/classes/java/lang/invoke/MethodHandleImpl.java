@@ -51,7 +51,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     private static final int MAX_ARITY;
     static {
         final Object[] values = { 255 };
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
                 values[0] = Integer.getInteger(MethodHandleImpl.class.getName()+".MAX_ARITY", 255);
@@ -1234,7 +1234,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         private static final byte[] T_BYTES;
         static {
             final Object[] values = {null};
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                     public Void run() {
                         try {
                             Class<T> tClass = T.class;

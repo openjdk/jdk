@@ -56,9 +56,8 @@ else
 
 endif
 
-UNPACKEXE_LANG := C
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  UNPACKEXE_LANG := C++
+  UNPACKEXE_TOOLCHAIN := TOOLCHAIN_LINK_CXX
 endif
 
 UNPACK_MAPFILE_DIR := $(JDK_TOPDIR)/make/mapfiles/libunpack
@@ -78,7 +77,7 @@ endif
 
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     SRC := $(UNPACKEXE_SRC), \
-    LANG := $(UNPACKEXE_LANG), \
+    TOOLCHAIN := $(UNPACKEXE_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE) -DFULL, \
     CFLAGS_release := -DPRODUCT, \
@@ -102,7 +101,9 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         -D "JDK_INTERNAL_NAME=unpack200" \
         -D "JDK_FTYPE=0x1L", \
     DEBUG_SYMBOLS := true, \
-    MANIFEST := $(JDK_TOPDIR)/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest))
+    MANIFEST := $(JDK_TOPDIR)/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest, \
+    MANIFEST_VERSION := $(JDK_VERSION_FOR_MANIFEST), \
+))
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
 

@@ -32,7 +32,6 @@ import org.w3c.dom.Node;
  * evaluation of an XPath expression within the context of a particular node.
  * The evaluation of an XPath expression can result in various result types as
  * defined in XML Path Language (XPath) Version 1.0.
- * <p>
  *
  * @param <T> the object type returned by the XPath evaluation.
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version
@@ -121,7 +120,7 @@ public interface XPathEvaluationResult<T> {
     public XPathResultType type();
 
     /**
-     * Returns the value of the result as the type &lt;T&gt; specified for the class.
+     * Returns the value of the result as the type {@code <T>} specified for the class.
      *
      * @return The value of the result.
      */

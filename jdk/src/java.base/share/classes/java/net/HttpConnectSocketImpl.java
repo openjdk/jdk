@@ -64,7 +64,7 @@ import java.util.Set;
             serverSocketField = netClientClazz.getDeclaredField("serverSocket");
 
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
+                new java.security.PrivilegedAction<>() {
                     public Void run() {
                         httpField.setAccessible(true);
                         serverSocketField.setAccessible(true);
@@ -146,7 +146,7 @@ import java.util.Set;
     {
         try {
             return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<Socket>() {
+                new java.security.PrivilegedExceptionAction<>() {
                     public Socket run() throws IOException {
                         return doTunnel(urlString, timeout);
                 }

@@ -1,2 +1,2 @@
-MethodReference58.java:41:23: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.method, (compiler.misc.cant.apply.symbol: kindname.method, g, Z, X, kindname.class, MethodReference58, (compiler.misc.inferred.do.not.conform.to.upper.bounds: X, java.lang.Number)))
+MethodReference58.java:41:23: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.method, (compiler.misc.cant.apply.symbol: kindname.method, g, Z, X, kindname.class, MethodReference58, (compiler.misc.incompatible.upper.lower.bounds: Z, java.lang.Number, X)))
 1 error

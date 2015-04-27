@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 package com.sun.corba.se.impl.io;
 
 import java.io.IOException;
+import java.io.NotActiveException;
 import java.io.OutputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectOutput;
@@ -154,7 +155,9 @@ public abstract class OutputStreamHook extends ObjectOutputStream
 
     public ObjectOutputStream.PutField putFields()
         throws IOException {
-        putFields = new HookPutFields();
+        if (putFields == null) {
+            putFields = new HookPutFields();
+        }
         return putFields;
     }
 
@@ -175,8 +178,11 @@ public abstract class OutputStreamHook extends ObjectOutputStream
         throws IOException {
 
         writeObjectState.defaultWriteObject(this);
-
-        putFields.write(this);
+        if (putFields != null) {
+            putFields.write(this);
+        } else {
+            throw new NotActiveException("no current PutField object");
+        }
     }
 
     abstract org.omg.CORBA_2_3.portable.OutputStream getOrbStream();

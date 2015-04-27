@@ -51,7 +51,6 @@ import java.util.Set;
  * <P>
  * The events that are grouped in an EventSet are restricted in the
  * following ways:
- * <P>
  * <UL>
  * <LI>Always singleton sets:
  *     <UL>

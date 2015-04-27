@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,15 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      */
     protected void generateIndexFile() throws IOException {
         String title = configuration.getText("doclet.Window_Single_Index");
-        Content body = getBody(true, getWindowTitle(title));
-        addTop(body);
-        addNavLinks(true, body);
+        HtmlTree body = getBody(true, getWindowTitle(title));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : body;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            body.addContent(htmlTree);
+        }
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.addStyle(HtmlStyle.contentContainer);
         addLinksForIndexes(divTree);
@@ -100,9 +106,17 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
         }
         addLinksForIndexes(divTree);
-        body.addContent(divTree);
-        addNavLinks(false, body);
-        addBottom(body);
+        body.addContent((configuration.allowTag(HtmlTag.MAIN))
+                ? HtmlTree.MAIN(divTree)
+                : divTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            htmlTree = HtmlTree.FOOTER();
+        }
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            body.addContent(htmlTree);
+        }
         printHtmlDocument(null, true, body);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
             writer.getTagletWriterInstance(false), tagContent);
         Content dlTags = new HtmlTree(HtmlTag.DL);
         dlTags.addContent(tagContent);
-        methodsContentTree.addContent(dlTags);  // TODO: what if empty?
+        methodsContentTree.addContent(dlTags);
         MethodDoc method = member;
         if (method.name().compareTo("writeExternal") == 0
                 && method.tags("serialData").length == 0) {

@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620 7020044 8062373
+ * @bug 6939620 7020044 8062373 8078024
  *
  * @summary  Check that diamond works where LHS is supertype of RHS (1-ary constructor)
  * @author mcimadamore

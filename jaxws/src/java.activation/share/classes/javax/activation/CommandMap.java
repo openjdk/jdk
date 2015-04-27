@@ -46,7 +46,6 @@ public abstract class CommandMap {
 
     /**
      * Get the default CommandMap.
-     * <p>
      *
      * <ul>
      * <li> In cases where a CommandMap instance has been previously set
@@ -54,7 +53,7 @@ public abstract class CommandMap {
      *  return the CommandMap.
      * <li>
      *  In cases where no CommandMap has been set, the CommandMap
-     *       creates an instance of <code>MailcapCommandMap</code> and
+     *       creates an instance of {@code MailcapCommandMap} and
      *       set that to the default, returning its value.
      *
      * </ul>
@@ -77,7 +76,7 @@ public abstract class CommandMap {
 
     /**
      * Set the default CommandMap. Reset the CommandMap to the default by
-     * calling this method with <code>null</code>.
+     * calling this method with {@code null}.
      *
      * @param commandMap The new default CommandMap.
      * @exception SecurityException if the caller doesn't have permission
@@ -118,10 +117,10 @@ public abstract class CommandMap {
      * Get the preferred command list from a MIME Type. The actual semantics
      * are determined by the implementation of the CommandMap. <p>
      *
-     * The <code>DataSource</code> provides extra information, such as
+     * The {@code DataSource} provides extra information, such as
      * the file name, that a CommandMap implementation may use to further
      * refine the list of commands that are returned.  The implementation
-     * in this class simply calls the <code>getPreferredCommands</code>
+     * in this class simply calls the {@code getPreferredCommands}
      * method that ignores this argument.
      *
      * @param mimeType  the MIME type
@@ -146,10 +145,10 @@ public abstract class CommandMap {
      * Get all the available commands for this type. This method
      * should return all the possible commands for this MIME type. <p>
      *
-     * The <code>DataSource</code> provides extra information, such as
+     * The {@code DataSource} provides extra information, such as
      * the file name, that a CommandMap implementation may use to further
      * refine the list of commands that are returned.  The implementation
-     * in this class simply calls the <code>getAllCommands</code>
+     * in this class simply calls the {@code getAllCommands}
      * method that ignores this argument.
      *
      * @param mimeType  the MIME type
@@ -173,10 +172,10 @@ public abstract class CommandMap {
     /**
      * Get the default command corresponding to the MIME type. <p>
      *
-     * The <code>DataSource</code> provides extra information, such as
+     * The {@code DataSource} provides extra information, such as
      * the file name, that a CommandMap implementation may use to further
      * refine the command that is chosen.  The implementation
-     * in this class simply calls the <code>getCommand</code>
+     * in this class simply calls the {@code getCommand}
      * method that ignores this argument.
      *
      * @param mimeType  the MIME type
@@ -206,10 +205,10 @@ public abstract class CommandMap {
      * The mechanism and semantics for determining this are determined
      * by the implementation of the particular CommandMap. <p>
      *
-     * The <code>DataSource</code> provides extra information, such as
+     * The {@code DataSource} provides extra information, such as
      * the file name, that a CommandMap implementation may use to further
      * refine the choice of DataContentHandler.  The implementation
-     * in this class simply calls the <code>createDataContentHandler</code>
+     * in this class simply calls the {@code createDataContentHandler}
      * method that ignores this argument.
      *
      * @param mimeType  the MIME type
