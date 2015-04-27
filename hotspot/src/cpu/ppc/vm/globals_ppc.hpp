@@ -55,6 +55,8 @@ define_pd_global(bool, RewriteFrequentPairs,  true);
 
 define_pd_global(bool, UseMembar,             false);
 
+define_pd_global(bool, PreserveFramePointer,  false);
+
 // GC Ergo Flags
 define_pd_global(size_t, CMSYoungGenPerWorker, 16*M);  // Default max size of CMS young gen, per GC worker thread.
 

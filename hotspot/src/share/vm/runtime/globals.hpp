@@ -3918,7 +3918,11 @@ class CommandLineFlags {
           "Use locked-tracing when doing event-based tracing")              \
                                                                             \
   diagnostic(bool, UseUnalignedAccesses, false,                             \
-          "Use unaligned memory accesses in sun.misc.Unsafe")
+          "Use unaligned memory accesses in sun.misc.Unsafe")               \
+                                                                            \
+  product_pd(bool, PreserveFramePointer,                                    \
+             "Use the FP register for holding the frame pointer "           \
+             "and not as a general purpose register.")
 
 /*
  *  Macros for factoring of globals
