@@ -204,13 +204,13 @@ public class CoderResult {
             WeakReference<CoderResult> w;
             CoderResult e = null;
             if (cache == null) {
-                cache = new HashMap<Integer,WeakReference<CoderResult>>();
+                cache = new HashMap<>();
             } else if ((w = cache.get(k)) != null) {
                 e = w.get();
             }
             if (e == null) {
                 e = create(len);
-                cache.put(k, new WeakReference<CoderResult>(e));
+                cache.put(k, new WeakReference<>(e));
             }
             return e;
         }

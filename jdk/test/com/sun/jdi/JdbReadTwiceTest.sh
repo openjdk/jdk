@@ -206,39 +206,6 @@ fi
 
 echo
 echo "+++++++++++++++++++++++++++++++++++"
-echo "Read an unreadable file - verify the read fails."
-
-canMakeUnreadable=No
-id > $HOME/jdb.ini
-if chmod a-r $HOME/jdb.ini 
-then
-  grep -q 'uid=0(' $HOME/jdb.ini 2> /dev/null
-  case $? in
-    0)
-      echo "Error! Can't make file unreadable running as root"
-    ;;
-    1)
-      echo "Error! Can't make file unreadable for some other reason (windows?)"
-    ;;
-    *)
-      echo "OK. the file is unreadable"
-      canMakeUnreadable=Yes 
-    ;;
-   esac
-else    
-  echo "Error! Can't create or chmod file"
-fi  
-
-if [ "$canMakeUnreadable" = "Yes" ]
-then
-    doit
-    failIfNot 1 "open: $HOME/jdb.ini"
-fi
-clean
-
-
-echo
-echo "+++++++++++++++++++++++++++++++++++"
 echo "Read a directory - verify the read fails"
 # If the file (IE. directory) exists, we try to read it.  The
 # read will fail.

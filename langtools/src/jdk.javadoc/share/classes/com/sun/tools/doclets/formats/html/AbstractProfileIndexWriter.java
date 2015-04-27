@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,11 +194,15 @@ public abstract class AbstractProfileIndexWriter extends HtmlDocletWriter {
     protected void addIndexContents(Profiles profiles, String text,
             String tableSummary, Content body) {
         if (profiles.getProfileCount() > 0) {
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.addStyle(HtmlStyle.indexHeader);
-            addAllClassesLink(div);
-            addAllPackagesLink(div);
-            body.addContent(div);
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
+                    ? HtmlTree.NAV()
+                    : new HtmlTree(HtmlTag.DIV);
+            htmlTree.addStyle(HtmlStyle.indexNav);
+            HtmlTree ul = new HtmlTree(HtmlTag.UL);
+            addAllClassesLink(ul);
+            addAllPackagesLink(ul);
+            htmlTree.addContent(ul);
+            body.addContent(htmlTree);
             addProfilesList(profiles, text, tableSummary, body);
         }
     }
@@ -215,12 +219,16 @@ public abstract class AbstractProfileIndexWriter extends HtmlDocletWriter {
      */
     protected void addProfilePackagesIndexContents(Profiles profiles, String text,
             String tableSummary, Content body, String profileName) {
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.indexHeader);
-        addAllClassesLink(div);
-        addAllPackagesLink(div);
-        addAllProfilesLink(div);
-        body.addContent(div);
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
+                ? HtmlTree.NAV()
+                : new HtmlTree(HtmlTag.DIV);
+        htmlTree.addStyle(HtmlStyle.indexNav);
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        addAllClassesLink(ul);
+        addAllPackagesLink(ul);
+        addAllProfilesLink(ul);
+        htmlTree.addContent(ul);
+        body.addContent(htmlTree);
         addProfilePackagesList(profiles, text, tableSummary, body, profileName);
     }
 

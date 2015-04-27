@@ -49,9 +49,12 @@ import javax.swing.border.*;
 import java.text.NumberFormat;
 import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.util.List;
 
 import javax.print.attribute.*;
 import javax.print.PrintService;
+
+import sun.misc.ManagedLocalsThread;
 import sun.reflect.misc.ReflectUtil;
 
 import sun.swing.SwingUtilities2;
@@ -4419,8 +4422,13 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         if (sortManager != null) {
-            sortedTableChanged(null, e);
-            return;
+            List<? extends RowSorter.SortKey> sortKeys =
+                    sortManager.sorter.getSortKeys();
+            if (sortKeys.size() != 0 &&
+                    sortKeys.get(0).getSortOrder() != SortOrder.UNSORTED) {
+                sortedTableChanged(null, e);
+                return;
+            }
         }
 
         // The totalRowHeight calculated below will be incorrect if
@@ -6378,25 +6386,28 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
         // this runnable will be used to do the printing
         // (and save any throwables) on another thread
-        Runnable runnable = new Runnable() {
-            public void run() {
-                try {
-                    // do the printing
-                    job.print(copyAttr);
-                } catch (Throwable t) {
-                    // save any Throwable to be rethrown
-                    synchronized(lock) {
-                        printError = t;
-                    }
-                } finally {
-                    // we're finished - hide the dialog
-                    printingStatus.dispose();
+        Runnable runnable = () -> {
+            try {
+                // do the printing
+                job.print(copyAttr);
+            } catch (Throwable t) {
+                // save any Throwable to be rethrown
+                synchronized(lock) {
+                    printError = t;
                 }
+            } finally {
+                // we're finished - hide the dialog
+                printingStatus.dispose();
             }
         };
 
         // start printing on another thread
-        Thread th = new Thread(runnable);
+        Thread th;
+        if  (System.getSecurityManager() == null) {
+            th = new Thread(runnable);
+        } else {
+            th = new ManagedLocalsThread(runnable);
+        }
         th.start();
 
         printingStatus.showModal(true);

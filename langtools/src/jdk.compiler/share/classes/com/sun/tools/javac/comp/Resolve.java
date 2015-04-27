@@ -833,20 +833,19 @@ public class Resolve {
                                     List<Type> formals,
                                     Warner warn) {
             super.argumentsAcceptable(env, deferredAttrContext, argtypes, formals, warn);
-            //should we expand formals?
+            // should we check varargs element type accessibility?
             if (deferredAttrContext.phase.isVarargsRequired()) {
-                Type typeToCheck = null;
-                if (!checkVarargsAccessAfterResolution) {
-                    typeToCheck = types.elemtype(formals.last());
-                } else if (deferredAttrContext.mode == AttrMode.CHECK) {
-                    typeToCheck = types.erasure(types.elemtype(formals.last()));
-                }
-                if (typeToCheck != null) {
-                    varargsAccessible(env, typeToCheck, deferredAttrContext.inferenceContext);
+                if (deferredAttrContext.mode == AttrMode.CHECK || !checkVarargsAccessAfterResolution) {
+                    varargsAccessible(env, types.elemtype(formals.last()), deferredAttrContext.inferenceContext);
                 }
             }
         }
 
+        /**
+         * Test that the runtime array element type corresponding to 't' is accessible.  't' should be the
+         * varargs element type of either the method invocation type signature (after inference completes)
+         * or the method declaration signature (before inference completes).
+         */
         private void varargsAccessible(final Env<AttrContext> env, final Type t, final InferenceContext inferenceContext) {
             if (inferenceContext.free(t)) {
                 inferenceContext.addFreeTypeListener(List.of(t), new FreeTypeListener() {
@@ -856,7 +855,7 @@ public class Resolve {
                     }
                 });
             } else {
-                if (!isAccessible(env, t)) {
+                if (!isAccessible(env, types.erasure(t))) {
                     Symbol location = env.enclClass.sym;
                     reportMC(env.tree, MethodCheckDiag.INACCESSIBLE_VARARGS, inferenceContext, t, Kinds.kindName(location), location);
                 }

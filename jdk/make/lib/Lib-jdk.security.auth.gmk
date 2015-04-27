@@ -42,7 +42,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
     LIBRARY := $(LIBJAAS_NAME), \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(call FindSrcDirsForLib, jdk.security.auth, jaas), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.security.auth, \
     MAPFILE := $(LIBJAAS_MAPFILE), \

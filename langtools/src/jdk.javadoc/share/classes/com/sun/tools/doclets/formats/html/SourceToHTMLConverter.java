@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public class SourceToHTMLConverter {
             }
             addBlankLines(pre);
             Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
-            body.addContent(div);
+            body.addContent((configuration.allowTag(HtmlTag.MAIN)) ? HtmlTree.MAIN(div) : div);
             writeToFile(body, outputdir.resolve(DocPath.forClass(cd)));
         } catch (IOException e) {
             e.printStackTrace();
@@ -190,7 +190,9 @@ public class SourceToHTMLConverter {
      * @param path the path for the file.
      */
     private void writeToFile(Content body, DocPath path) throws IOException {
-        Content htmlDocType = DocType.TRANSITIONAL;
+        Content htmlDocType = configuration.isOutputHtml5()
+                ? DocType.HTML5
+                : DocType.TRANSITIONAL;
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(HtmlTree.TITLE(new StringContent(
                 configuration.getText("doclet.Window_Source_title"))));
@@ -262,8 +264,8 @@ public class SourceToHTMLConverter {
      */
     private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            pre.addContent(utils.replaceTabs(configuration, line));
-            Content anchor = HtmlTree.A_NAME("line." + Integer.toString(currentLineNo));
+            Content anchor = HtmlTree.A_ID("line." + Integer.toString(currentLineNo),
+                    new StringContent(utils.replaceTabs(configuration, line)));
             pre.addContent(anchor);
             pre.addContent(NEW_LINE);
         }

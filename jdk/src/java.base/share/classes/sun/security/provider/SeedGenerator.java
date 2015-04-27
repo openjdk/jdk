@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
+import sun.misc.ManagedLocalsThread;
 import sun.security.util.Debug;
 
 abstract class SeedGenerator {
@@ -304,7 +305,7 @@ abstract class SeedGenerator {
                             }
                             finalsg[0] = new ThreadGroup
                                 (group, "SeedGenerator ThreadGroup");
-                            Thread newT = new Thread(finalsg[0],
+                            Thread newT = new ManagedLocalsThread(finalsg[0],
                                 ThreadedSeedGenerator.this,
                                 "SeedGenerator Thread");
                             newT.setPriority(Thread.MIN_PRIORITY);
@@ -341,7 +342,7 @@ abstract class SeedGenerator {
                         // Start some noisy threads
                         try {
                             BogusThread bt = new BogusThread();
-                            Thread t = new Thread
+                            Thread t = new ManagedLocalsThread
                                 (seedGroup, bt, "SeedGenerator Thread");
                             t.start();
                         } catch (Exception e) {

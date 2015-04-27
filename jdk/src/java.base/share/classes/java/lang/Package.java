@@ -595,7 +595,7 @@ public class Package implements java.lang.reflect.AnnotatedElement {
 
         CachedManifest(final String fileName) {
             this.fileName = fileName;
-            this.url = AccessController.doPrivileged(new PrivilegedAction<URL>() {
+            this.url = AccessController.doPrivileged(new PrivilegedAction<>() {
                 public URL run() {
                     final File file = new File(fileName);
                     if (file.isFile()) {
@@ -626,7 +626,7 @@ public class Package implements java.lang.reflect.AnnotatedElement {
                 if (m != null) {
                     return m;
                 }
-                m = AccessController.doPrivileged(new PrivilegedAction<Manifest>() {
+                m = AccessController.doPrivileged(new PrivilegedAction<>() {
                     public Manifest run() {
                         try (FileInputStream fis = new FileInputStream(fileName);
                              JarInputStream jis = new JarInputStream(fis, false)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      */
     protected final ClassTree classtree;
 
-    private static final String LI_CIRCLE  = "circle";
-
     /**
      * Constructor initializes classtree variable. This constructor will be used
      * while generating global tree file "overview-tree.html".
@@ -88,7 +86,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             Content ul = new HtmlTree(HtmlTag.UL);
             for (ClassDoc local : list) {
                 HtmlTree li = new HtmlTree(HtmlTag.LI);
-                li.addAttr(HtmlAttr.TYPE, LI_CIRCLE);
+                li.addStyle(HtmlStyle.circle);
                 addPartialInfo(local, li);
                 addExtendsImplements(parent, local, li);
                 addLevelInfo(local, classtree.subs(local, isEnum),
@@ -108,14 +106,24 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param heading heading for the tree
      * @param div the content tree to which the tree will be added
      */
-    protected void addTree(SortedSet<ClassDoc> list, String heading, Content div) {
+    protected void addTree(SortedSet<ClassDoc> list, String heading, HtmlTree div) {
         if (!list.isEmpty()) {
             ClassDoc firstClassDoc = list.first();
             Content headingContent = getResource(heading);
-            div.addContent(HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
-                    headingContent));
+            Content sectionHeading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
+                    headingContent);
+            HtmlTree htmlTree;
+            if (configuration.allowTag(HtmlTag.SECTION)) {
+                htmlTree = HtmlTree.SECTION(sectionHeading);
+            } else {
+                div.addContent(sectionHeading);
+                htmlTree = div;
+            }
             addLevelInfo(!firstClassDoc.isInterface()? firstClassDoc : null,
-                    list, list == classtree.baseEnums(), div);
+                    list, list == classtree.baseEnums(), htmlTree);
+            if (configuration.allowTag(HtmlTag.SECTION)) {
+                div.addContent(htmlTree);
+            }
         }
     }
 

@@ -37,16 +37,15 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
 /**
- * <p>A processor that checks an XML document against {@link Schema}.</p>
+ * A processor that checks an XML document against {@link Schema}.
  *
  * <p>
  * A validator object is not thread-safe and not reentrant.
  * In other words, it is the application's responsibility to make
  * sure that one {@link Validator} object is not used from
- * more than one thread at any given time, and while the <code>validate</code>
+ * more than one thread at any given time, and while the {@code validate}
  * method is invoked, applications may not recursively call
- * the <code>validate</code> method.
- * <p>
+ * the {@code validate} method.
  *
  *
  * @author  <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
@@ -57,27 +56,28 @@ public abstract class Validator {
     /**
      * Constructor for derived classes.
      *
-     * <p>The constructor does nothing.</p>
+     * <p>The constructor does nothing.
      *
      * <p>Derived classes must create {@link Validator} objects that have
-     * <code>null</code> {@link ErrorHandler} and
-     * <code>null</code> {@link LSResourceResolver}.
-     * </p>
+     * {@code null} {@link ErrorHandler} and
+     * {@code null} {@link LSResourceResolver}.
      */
     protected Validator() {
     }
 
         /**
-         * <p>Reset this <code>Validator</code> to its original configuration.</p>
+         * Reset this {@code Validator} to its original configuration.
          *
-         * <p><code>Validator</code> is reset to the same state as when it was created with
+         * <p>{@code Validator} is reset to the same state as when it was created with
          * {@link Schema#newValidator()}.
-         * <code>reset()</code> is designed to allow the reuse of existing <code>Validator</code>s
-         * thus saving resources associated with the creation of new <code>Validator</code>s.</p>
+         * {@code reset()} is designed to allow the reuse of existing {@code Validator}s
+         * thus saving resources associated with the creation of new {@code Validator}s.
          *
-         * <p>The reset <code>Validator</code> is not guaranteed to have the same {@link LSResourceResolver} or {@link ErrorHandler}
-         * <code>Object</code>s, e.g. {@link Object#equals(Object obj)}.  It is guaranteed to have a functionally equal
-         * <code>LSResourceResolver</code> and <code>ErrorHandler</code>.</p>
+         * <p>The reset {@code Validator} is not guaranteed to have
+         * the same {@link LSResourceResolver} or {@link ErrorHandler}
+         * {@code Object}s, e.g. {@link Object#equals(Object obj)}.
+         * It is guaranteed to have a functionally equal
+         * {@code LSResourceResolver} and {@code ErrorHandler}.
          */
         public abstract void reset();
 
@@ -86,7 +86,7 @@ public abstract class Validator {
      *
      * <p>This is just a convenience method for
      * {@link #validate(Source source, Result result)}
-     * with <code>result</code> of <code>null</code>.</p>
+     * with {@code result} of {@code null}.
      *
      * @param source
      *      XML to be validated. Must be an XML document or
@@ -97,7 +97,7 @@ public abstract class Validator {
      *      or throw an IllegalArgumentException.
      *
      * @throws IllegalArgumentException
-     *      If the <code>Source</code>
+     *      If the {@code Source}
      *      is an XML artifact that the implementation cannot
      *      validate (for example, a processing instruction).
      *
@@ -113,8 +113,8 @@ public abstract class Validator {
      *      {@link IOException}.
      *
      *
-     * @throws NullPointerException If <code>source</code> is
-     *   <code>null</code>.
+     * @throws NullPointerException If {@code source} is
+     *   {@code null}.
      *
      * @see #validate(Source source, Result result)
      */
@@ -125,16 +125,16 @@ public abstract class Validator {
     }
 
     /**
-     * <p>Validates the specified input and send the augmented validation
-     * result to the specified output.</p>
+     * Validates the specified input and send the augmented validation
+     * result to the specified output.
      *
      * <p>This method places the following restrictions on the types of
-     * the {@link Source}/{@link Result} accepted.</p>
+     * the {@link Source}/{@link Result} accepted.
      *
      * <table border=1>
      * <thead>
      *  <tr>
-     *   <th colspan="5"><code>Source</code> / <code>Result</code> Accepted</th>
+     *   <th colspan="5">{@code Source} / {@code Result} Accepted</th>
      *  </tr>
      *  <tr>
      *   <th></th>
@@ -146,7 +146,7 @@ public abstract class Validator {
      * </thead>
      * <tbody align="center">
      *  <tr>
-     *   <td><code>null</code></td>
+     *   <td>{@code null}</td>
      *   <td>OK</td>
      *   <td>OK</td>
      *   <td>OK</td>
@@ -155,44 +155,44 @@ public abstract class Validator {
      *  <tr>
      *   <th>{@link javax.xml.transform.stream.StreamResult}</th>
      *   <td>OK</td>
-     *   <td><code>IllegalArgumentException</code></td>
-     *   <td><code>IllegalArgumentException</code></td>
-     *   <td><code>IllegalArgumentException</code></td>
+     *   <td>{@code IllegalArgumentException}</td>
+     *   <td>{@code IllegalArgumentException}</td>
+     *   <td>{@code IllegalArgumentException}</td>
      *  </tr>
      *  <tr>
      *   <th>{@link javax.xml.transform.sax.SAXResult}</th>
-     *   <td><code>IllegalArgumentException</code></td>
+     *   <td>{@code IllegalArgumentException}</td>
      *   <td>OK</td>
-     *   <td><code>IllegalArgumentException</code></td>
-     *   <td><code>IllegalArgumentException</code></td>
+     *   <td>{@code IllegalArgumentException}</td>
+     *   <td>{@code IllegalArgumentException}</td>
      *  </tr>
      *  <tr>
      *   <th>{@link javax.xml.transform.dom.DOMResult}</th>
-     *   <td><code>IllegalArgumentException</code></td>
-     *   <td><code>IllegalArgumentException</code></td>
+     *   <td>{@code IllegalArgumentException}</td>
+     *   <td>{@code IllegalArgumentException}</td>
      *   <td>OK</td>
-     *   <td><code>IllegalArgumentException</code></td>
+     *   <td>{@code IllegalArgumentException}</td>
      *  </tr>
      *  <tr>
      *   <th>{@link javax.xml.transform.stax.StAXResult}</th>
-     *   <td><code>IllegalArgumentException</code></td>
-     *   <td><code>IllegalArgumentException</code></td>
-     *   <td><code>IllegalArgumentException</code></td>
+     *   <td>{@code IllegalArgumentException}</td>
+     *   <td>{@code IllegalArgumentException}</td>
+     *   <td>{@code IllegalArgumentException}</td>
      *   <td>OK</td>
      *  </tr>
      * </tbody>
      * </table>
      *
-     * <p>To validate one <code>Source</code> into another kind of
-     * <code>Result</code>, use the identity transformer (see
-     * {@link javax.xml.transform.TransformerFactory#newTransformer()}).</p>
+     * <p>To validate one {@code Source} into another kind of
+     * {@code Result}, use the identity transformer (see
+     * {@link javax.xml.transform.TransformerFactory#newTransformer()}).
      *
      * <p>Errors found during the validation is sent to the specified
-     * {@link ErrorHandler}.</p>
+     * {@link ErrorHandler}.
      *
      * <p>If a document is valid, or if a document contains some errors
-     * but none of them were fatal and the <code>ErrorHandler</code> didn't
-     * throw any exception, then the method returns normally.</p>
+     * but none of them were fatal and the {@code ErrorHandler} didn't
+     * throw any exception, then the method returns normally.
      *
      * @param source
      *      XML to be validated. Must be an XML document or
@@ -203,34 +203,34 @@ public abstract class Validator {
      *      or throw an IllegalArgumentException.
      *
      * @param result
-     *      The <code>Result</code> object that receives (possibly augmented)
+     *      The {@code Result} object that receives (possibly augmented)
      *      XML. This parameter can be null if the caller is not interested
      *      in it.
      *
-     *      Note that when a <code>DOMResult</code> is used,
+     *      Note that when a {@code DOMResult} is used,
      *      a validator might just pass the same DOM node from
-     *      <code>DOMSource</code> to <code>DOMResult</code>
-     *      (in which case <code>source.getNode()==result.getNode()</code>),
+     *      {@code DOMSource} to {@code DOMResult}
+     *      (in which case {@code source.getNode()==result.getNode()}),
      *      it might copy the entire DOM tree, or it might alter the
      *      node given by the source.
      *
      * @throws IllegalArgumentException
-     *      If the <code>Result</code> type doesn't match the
-     *      <code>Source</code> type of if the <code>Source</code>
+     *      If the {@code Result} type doesn't match the
+     *      {@code Source} type of if the {@code Source}
      *      is an XML artifact that the implementation cannot
      *      validate (for example, a processing instruction).
      * @throws SAXException
-     *      If the <code>ErrorHandler</code> throws a
-     *      <code>SAXException</code> or
-     *      if a fatal error is found and the <code>ErrorHandler</code> returns
+     *      If the {@code ErrorHandler} throws a
+     *      {@code SAXException} or
+     *      if a fatal error is found and the {@code ErrorHandler} returns
      *      normally.
      * @throws IOException
      *      If the validator is processing a
-     *      <code>SAXSource</code> and the
+     *      {@code SAXSource} and the
      *      underlying {@link org.xml.sax.XMLReader} throws an
-     *      <code>IOException</code>.
+     *      {@code IOException}.
      * @throws NullPointerException
-     *      If the <code>source</code> parameter is <code>null</code>.
+     *      If the {@code source} parameter is {@code null}.
      *
      * @see #validate(Source source)
      */
@@ -239,7 +239,7 @@ public abstract class Validator {
 
     /**
      * Sets the {@link ErrorHandler} to receive errors encountered
-     * during the <code>validate</code> method invocation.
+     * during the {@code validate} method invocation.
      *
      * <p>
      * Error handler can be used to customize the error handling process
@@ -255,7 +255,7 @@ public abstract class Validator {
      *
      * <p>
      * If any {@link Throwable} is thrown from an {@link ErrorHandler},
-     * the caller of the <code>validate</code> method will be thrown
+     * the caller of the {@code validate} method will be thrown
      * the same {@link Throwable} object.
      *
      * <p>
@@ -329,7 +329,7 @@ public abstract class Validator {
      * If a {@link LSResourceResolver} throws a {@link RuntimeException}
      *  (or instances of its derived classes),
      * then the {@link Validator} will abort the parsing and
-     * the caller of the <code>validate</code> method will receive
+     * the caller of the {@code validate} method will receive
      * the same {@link RuntimeException}.
      *
      * <p>
@@ -366,7 +366,7 @@ public abstract class Validator {
      * contexts, such as before, during, or after a validation.
      *
      * <p>Implementors are free (and encouraged) to invent their own features,
-     * using names built on their own URIs.</p>
+     * using names built on their own URIs.
      *
      * @param name The feature name, which is a non-null fully-qualified URI.
      *
@@ -398,14 +398,14 @@ public abstract class Validator {
      * <p>
      * Feature can be used to control the way a {@link Validator}
      * parses schemas, although {@link Validator}s are not required
-     * to recognize any specific feature names.</p>
+     * to recognize any specific feature names.
      *
      * <p>The feature name is any fully-qualified URI.  It is
      * possible for a {@link Validator} to expose a feature value but
      * to be unable to change the current value.
      * Some feature values may be immutable or mutable only
      * in specific contexts, such as before, during, or after
-     * a validation.</p>
+     * a validation.
      *
      * @param name The feature name, which is a non-null fully-qualified URI.
      * @param value The requested value of the feature (true or false).
@@ -438,27 +438,27 @@ public abstract class Validator {
      * to be unable to change the current value.
      * Some property values may be immutable or mutable only
      * in specific contexts, such as before, during, or after
-     * a validation.</p>
+     * a validation.
      *
      * <p>
      * All implementations that implement JAXP 1.5 or newer are required to
      * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} and
      * {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} properties.
-     * </p>
+     *
      * <ul>
      *   <li>
      *      <p>Access to external DTDs in source or Schema file is restricted to
      *      the protocols specified by the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD}
      *      property.  If access is denied during validation due to the restriction
      *      of this property, {@link org.xml.sax.SAXException} will be thrown by the
-     *      {@link #validate(Source)} method.</p>
+     *      {@link #validate(Source)} method.
      *
      *      <p>Access to external reference set by the schemaLocation attribute is
      *      restricted to the protocols specified by the
      *      {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} property.
      *      If access is denied during validation due to the restriction of this property,
      *      {@link org.xml.sax.SAXException} will be thrown by the
-     *      {@link #validate(Source)} method.</p>
+     *      {@link #validate(Source)} method.
      *   </li>
      * </ul>
      *
@@ -490,13 +490,13 @@ public abstract class Validator {
      * possible for a {@link Validator} to recognize a property name but
      * temporarily be unable to return its value.
      * Some property values may be available only in specific
-     * contexts, such as before, during, or after a validation.</p>
+     * contexts, such as before, during, or after a validation.
      *
      * <p>{@link Validator}s are not required to recognize any specific
-     * property names.</p>
+     * property names.
      *
      * <p>Implementors are free (and encouraged) to invent their own properties,
-     * using names built on their own URIs.</p>
+     * using names built on their own URIs.
      *
      * @param name The property name, which is a non-null fully-qualified URI.
      *

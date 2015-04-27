@@ -52,6 +52,7 @@ import java.security.PermissionCollection;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.misc.IOUtils;
+import sun.misc.ManagedLocalsThread;
 import sun.net.www.ParseUtil;
 import sun.security.util.SecurityConstants;
 
@@ -855,13 +856,13 @@ public     void grab() {
  * this operation to complete before continuing, wait for the notifyAll()
  * operation on the syncObject to occur.
  */
-class AppContextCreator extends Thread  {
+class AppContextCreator extends ManagedLocalsThread {
     Object syncObject = new Object();
     AppContext appContext = null;
     volatile boolean created = false;
 
     AppContextCreator(ThreadGroup group)  {
-        super(group, "AppContextCreator");
+        super(group, null, "AppContextCreator");
     }
 
     public void run()  {

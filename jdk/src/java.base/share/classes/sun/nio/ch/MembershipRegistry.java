@@ -84,13 +84,13 @@ class MembershipRegistry {
         InetAddress group = key.group();
         List<MembershipKeyImpl> keys;
         if (groups == null) {
-            groups = new HashMap<InetAddress,List<MembershipKeyImpl>>();
+            groups = new HashMap<>();
             keys = null;
         } else {
             keys = groups.get(group);
         }
         if (keys == null) {
-            keys = new LinkedList<MembershipKeyImpl>();
+            keys = new LinkedList<>();
             groups.put(group, keys);
         }
         keys.add(key);
