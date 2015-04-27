@@ -44,6 +44,7 @@
 // The solution is to remove this method from the definition
 // of a Space.
 
+class G1CollectedHeap;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
 class HeapRegion;

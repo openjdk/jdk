@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_PARGCALLOCBUFFER_INLINE_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_SHARED_PARGCALLOCBUFFER_INLINE_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_PLAB_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_PLAB_INLINE_HPP
 
-#include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/plab.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 
-HeapWord* ParGCAllocBuffer::allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes) {
+HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes) {
 
   HeapWord* res = CollectedHeap::align_allocation_or_fail(_top, _end, alignment_in_bytes);
   if (res == NULL) {
@@ -41,4 +41,4 @@ HeapWord* ParGCAllocBuffer::allocate_aligned(size_t word_sz, unsigned short alig
   return allocate(word_sz);
 }
 
-#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_PARGCALLOCBUFFER_INLINE_HPP
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_PLAB_INLINE_HPP

@@ -1954,7 +1954,7 @@ class CommandLineFlags {
           "collection")                                                     \
                                                                             \
   develop(uintx, PromotionFailureALotCount, 1000,                           \
-          "Number of promotion failures occurring at ParGCAllocBuffer "     \
+          "Number of promotion failures occurring at PLAB "     \
           "refill attempts (ParNew) or promotion attempts "                 \
           "(other young collectors)")                                       \
                                                                             \
@@ -2283,9 +2283,6 @@ class CommandLineFlags {
   develop(intx, ConcGCYieldTimeout, 0,                                      \
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
-                                                                            \
-  notproduct(bool, TraceMarkSweep, false,                                   \
-          "Trace mark sweep")                                               \
                                                                             \
   product(bool, PrintReferenceGC, false,                                    \
           "Print times spent handling reference objects during GC "         \
