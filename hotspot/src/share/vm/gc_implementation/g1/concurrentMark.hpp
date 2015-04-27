@@ -671,9 +671,7 @@ public:
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(uint worker_id, int* hash_seed, oop& obj) {
-    return _task_queues->steal(worker_id, hash_seed, obj);
-  }
+  bool try_stealing(uint worker_id, int* hash_seed, oop& obj);
 
   ConcurrentMark(G1CollectedHeap* g1h,
                  G1RegionToSpaceMapper* prev_bitmap_storage,

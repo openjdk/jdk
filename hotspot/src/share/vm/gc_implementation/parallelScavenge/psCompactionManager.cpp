@@ -37,7 +37,7 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
-#include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 PSOldGen*            ParCompactionManager::_old_gen = NULL;
 ParCompactionManager**  ParCompactionManager::_manager_array = NULL;
