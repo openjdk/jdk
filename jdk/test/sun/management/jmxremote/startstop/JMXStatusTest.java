@@ -37,7 +37,7 @@ import jdk.testlibrary.ProcessTools;
  *          The test asserts that the expected text is being printed.
  * @library /lib/testlibrary
  * @build jdk.testlibrary.* PortAllocator TestApp ManagementAgentJcmd
- * @run testng JMXStatusTest
+ * @run testng/othervm -XX:+UsePerfData JMXStatusTest
  */
 public class JMXStatusTest {
     private final static String TEST_APP_NAME = "TestApp";
@@ -74,6 +74,7 @@ public class JMXStatusTest {
     public static void setupClass() throws Exception {
         testAppPb = ProcessTools.createJavaProcessBuilder(
             "-cp", System.getProperty("test.class.path"),
+            "-XX:+UsePerfData",
             TEST_APP_NAME
         );
     }

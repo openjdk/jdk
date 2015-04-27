@@ -363,7 +363,8 @@ public class JMXStartStopTest {
             throws Exception {
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
-                System.getProperty("test.class.path")
+                System.getProperty("test.class.path"),
+                "-XX:+UsePerfData"
         ));
         pbArgs.addAll(Arrays.asList(args));
         pbArgs.add(TEST_APP_NAME);
