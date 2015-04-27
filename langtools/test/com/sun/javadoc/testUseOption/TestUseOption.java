@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public class TestUseOption extends JavadocTester {
                 + "UsedInC</a> in <a href=\"../package-summary.html\">&lt;Unnamed&gt;</a>"
         );
         checkOutput("class-use/UsedInC.html", true,
-                "<li class=\"blockList\"><a name=\"unnamed.package\">"
+                "<li class=\"blockList\"><a id=\"unnamed.package\">"
         );
         checkOutput("package-use.html", true,
                 "<td class=\"colOne\">"

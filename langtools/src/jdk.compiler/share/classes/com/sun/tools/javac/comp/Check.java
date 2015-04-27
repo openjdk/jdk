@@ -2783,7 +2783,7 @@ public class Check {
         if (a.hasTag(TYPE_ANNOTATION) &&
                 !a.annotationType.type.isErroneous() &&
                 !isTypeAnnotation(a, isTypeParameter)) {
-            log.error(a.pos(), "annotation.type.not.applicable");
+            log.error(a.pos(), Errors.AnnotationTypeNotApplicableToType(a.type));
         }
     }
 

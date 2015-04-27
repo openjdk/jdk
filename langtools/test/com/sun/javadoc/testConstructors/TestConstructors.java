@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,21 +58,21 @@ public class TestConstructors extends JavadocTester {
                 + "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\"><code>"
                 + "NestedInner(int)</code></a>",
                 "<a href=\"../pkg1/Outer.html#Outer--\">Outer</a></span>()",
-                "<a name=\"Outer--\">",
+                "<a id=\"Outer--\">",
                 "<a href=\"../pkg1/Outer.html#Outer-int-\">Outer</a></span>(int&nbsp;i)",
-                "<a name=\"Outer-int-\">");
+                "<a id=\"Outer-int-\">");
 
         checkOutput("pkg1/Outer.Inner.html", true,
                 "<a href=\"../pkg1/Outer.Inner.html#Inner--\">Inner</a></span>()",
-                "<a name=\"Inner--\">",
+                "<a id=\"Inner--\">",
                 "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\">Inner</a></span>(int&nbsp;i)",
-                "<a name=\"Inner-int-\">");
+                "<a id=\"Inner-int-\">");
 
         checkOutput("pkg1/Outer.Inner.NestedInner.html", true,
                 "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\">NestedInner</a></span>()",
-                "<a name=\"NestedInner--\">",
+                "<a id=\"NestedInner--\">",
                 "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\">NestedInner</a></span>(int&nbsp;i)",
-                "<a name=\"NestedInner-int-\">");
+                "<a id=\"NestedInner-int-\">");
 
         checkOutput("pkg1/Outer.Inner.html", false,
                 "Outer.Inner--",

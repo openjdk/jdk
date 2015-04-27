@@ -64,7 +64,7 @@ final class ProxyClassesDumper {
         try {
             path = path.trim();
             final Path dir = Paths.get(path.length() == 0 ? "." : path);
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                     @Override
                     public Void run() {
                         validateDumpDir(dir);

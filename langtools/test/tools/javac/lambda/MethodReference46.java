@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 8003280 8078024
  * @summary Add lambda tests
  *  check that generic method reference is inferred when type parameters are omitted
  * @compile/fail/ref=MethodReference46.out -XDrawDiagnostics MethodReference46.java

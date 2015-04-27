@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,8 +415,10 @@ public abstract class AbstractMemberWriter {
     protected void addDeprecatedAPI(List<Doc> deprmembers, String headingKey,
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
-            Content table = HtmlTree.TABLE(HtmlStyle.deprecatedSummary, 0, 3, 0, tableSummary,
-                writer.getTableCaption(configuration.getResource(headingKey)));
+            Content caption = writer.getTableCaption(configuration.getResource(headingKey));
+            Content table = (configuration.isOutputHtml5())
+                    ? HtmlTree.TABLE(HtmlStyle.deprecatedSummary, caption)
+                    : HtmlTree.TABLE(HtmlStyle.deprecatedSummary, tableSummary, caption);
             table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprmembers.size(); i++) {
@@ -455,8 +457,10 @@ public abstract class AbstractMemberWriter {
         List<? extends ProgramElementDoc> members = mems;
         boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, tableSummary,
-                    writer.getTableCaption(heading));
+            Content caption = writer.getTableCaption(heading);
+            Content table = (configuration.isOutputHtml5())
+                    ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
+                    : HtmlTree.TABLE(HtmlStyle.useSummary, tableSummary, caption);
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<? extends ProgramElementDoc> it = members.iterator();
             for (int i = 0; it.hasNext(); i++) {

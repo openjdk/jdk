@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public class Timer extends NotificationBroadcasterSupport
      *
      * @return The name of the timer MBean registered.
      *
-     * @exception java.lang.Exception
+     * @exception java.lang.Exception if something goes wrong
      */
     public ObjectName preRegister(MBeanServer server, ObjectName name)
         throws java.lang.Exception {
@@ -217,7 +217,7 @@ public class Timer extends NotificationBroadcasterSupport
      * <P>
      * Stops the timer.
      *
-     * @exception java.lang.Exception
+     * @exception java.lang.Exception if something goes wrong
      */
     public void preDeregister() throws java.lang.Exception {
 

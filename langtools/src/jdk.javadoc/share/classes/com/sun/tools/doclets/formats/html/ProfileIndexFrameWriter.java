@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,9 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
             String tableSummary, Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.PROFILE_HEADING, true,
                 profilesLabel);
-        Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                ? HtmlTree.MAIN(HtmlStyle.indexContainer, heading)
+                : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(profilesLabel);
         String profileName;
@@ -96,8 +98,8 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
             if (configuration.shouldDocumentProfile(profileName))
                 ul.addContent(getProfile(profileName));
         }
-        div.addContent(ul);
-        body.addContent(div);
+        htmlTree.addContent(ul);
+        body.addContent(htmlTree);
     }
 
     /**
@@ -141,26 +143,26 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
      * Adds "All Classes" link for the top of the left-hand frame page to the
      * documentation tree.
      *
-     * @param div the Content object to which the all classes link should be added
+     * @param ul the Content object to which the all classes link should be added
      */
-    protected void addAllClassesLink(Content div) {
+    protected void addAllClassesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
                 allclassesLabel, "", "packageFrame");
-        Content span = HtmlTree.SPAN(linkContent);
-        div.addContent(span);
+        Content li = HtmlTree.LI(linkContent);
+        ul.addContent(li);
     }
 
     /**
      * Adds "All Packages" link for the top of the left-hand frame page to the
      * documentation tree.
      *
-     * @param div the Content object to which the all packages link should be added
+     * @param ul the Content object to which the all packages link should be added
      */
-    protected void addAllPackagesLink(Content div) {
+    protected void addAllPackagesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.OVERVIEW_FRAME,
                 allpackagesLabel, "", "packageListFrame");
-        Content span = HtmlTree.SPAN(linkContent);
-        div.addContent(span);
+        Content li = HtmlTree.LI(linkContent);
+        ul.addContent(li);
     }
 
     /**

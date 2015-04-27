@@ -35,7 +35,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LIBRARY := AppleScriptEngine, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBAPPLESCRIPTENGINE_SRC), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(LIBAPPLESCRIPTENGINE_SRC) \
@@ -68,7 +67,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LIBRARY := osx, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBOSX_DIRS), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBOSX_CFLAGS), \

@@ -62,9 +62,9 @@ class InMemoryCookieStore implements CookieStore {
      * The default ctor
      */
     public InMemoryCookieStore() {
-        cookieJar = new ArrayList<HttpCookie>();
-        domainIndex = new HashMap<String, List<HttpCookie>>();
-        uriIndex = new HashMap<URI, List<HttpCookie>>();
+        cookieJar = new ArrayList<>();
+        domainIndex = new HashMap<>();
+        uriIndex = new HashMap<>();
 
         lock = new ReentrantLock(false);
     }
@@ -115,7 +115,7 @@ class InMemoryCookieStore implements CookieStore {
             throw new NullPointerException("uri is null");
         }
 
-        List<HttpCookie> cookies = new ArrayList<HttpCookie>();
+        List<HttpCookie> cookies = new ArrayList<>();
         boolean secureLink = "https".equalsIgnoreCase(uri.getScheme());
         lock.lock();
         try {
@@ -157,7 +157,7 @@ class InMemoryCookieStore implements CookieStore {
      * of this cookie store.
      */
     public List<URI> getURIs() {
-        List<URI> uris = new ArrayList<URI>();
+        List<URI> uris = new ArrayList<>();
 
         lock.lock();
         try {
@@ -281,7 +281,7 @@ class InMemoryCookieStore implements CookieStore {
             String host, boolean secureLink) {
         // Use a separate list to handle cookies that need to be removed so
         // that there is no conflict with iterators.
-        ArrayList<HttpCookie> toRemove = new ArrayList<HttpCookie>();
+        ArrayList<HttpCookie> toRemove = new ArrayList<>();
         for (Map.Entry<String, List<HttpCookie>> entry : cookieIndex.entrySet()) {
             String domain = entry.getKey();
             List<HttpCookie> lst = entry.getValue();
@@ -368,7 +368,7 @@ class InMemoryCookieStore implements CookieStore {
 
                 cookies.add(cookie);
             } else {
-                cookies = new ArrayList<HttpCookie>();
+                cookies = new ArrayList<>();
                 cookies.add(cookie);
                 indexStore.put(index, cookies);
             }

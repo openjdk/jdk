@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,8 @@ implements CertAttrSet<String> {
      * @param position the position in the bit string to check.
      */
     private boolean isSet(int position) {
-        return bitString[position];
+        return (position < bitString.length) &&
+                bitString[position];
     }
 
     /**
@@ -275,41 +276,40 @@ implements CertAttrSet<String> {
      * Returns a printable representation of the KeyUsage.
      */
     public String toString() {
-        String s = super.toString() + "KeyUsage [\n";
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString());
+        sb.append("KeyUsage [\n");
 
-        try {
-            if (isSet(0)) {
-                s += "  DigitalSignature\n";
-            }
-            if (isSet(1)) {
-                s += "  Non_repudiation\n";
-            }
-            if (isSet(2)) {
-                s += "  Key_Encipherment\n";
-            }
-            if (isSet(3)) {
-                s += "  Data_Encipherment\n";
-            }
-            if (isSet(4)) {
-                s += "  Key_Agreement\n";
-            }
-            if (isSet(5)) {
-                s += "  Key_CertSign\n";
-            }
-            if (isSet(6)) {
-                s += "  Crl_Sign\n";
-            }
-            if (isSet(7)) {
-                s += "  Encipher_Only\n";
-            }
-            if (isSet(8)) {
-                s += "  Decipher_Only\n";
-            }
-        } catch (ArrayIndexOutOfBoundsException ex) {}
+        if (isSet(0)) {
+            sb.append("  DigitalSignature\n");
+        }
+        if (isSet(1)) {
+            sb.append("  Non_repudiation\n");
+        }
+        if (isSet(2)) {
+            sb.append("  Key_Encipherment\n");
+        }
+        if (isSet(3)) {
+            sb.append("  Data_Encipherment\n");
+        }
+        if (isSet(4)) {
+            sb.append("  Key_Agreement\n");
+        }
+        if (isSet(5)) {
+            sb.append("  Key_CertSign\n");
+        }
+        if (isSet(6)) {
+            sb.append("  Crl_Sign\n");
+        }
+        if (isSet(7)) {
+            sb.append("  Encipher_Only\n");
+        }
+        if (isSet(8)) {
+            sb.append("  Decipher_Only\n");
+        }
+        sb.append("]\n");
 
-        s += "]\n";
-
-        return (s);
+        return sb.toString();
     }
 
     /**

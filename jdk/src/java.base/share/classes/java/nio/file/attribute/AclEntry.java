@@ -306,7 +306,7 @@ public final class AclEntry {
      * @return the permissions component
      */
     public Set<AclEntryPermission> permissions() {
-        return new HashSet<AclEntryPermission>(perms);
+        return new HashSet<>(perms);
     }
 
     /**
@@ -317,7 +317,7 @@ public final class AclEntry {
      * @return the flags component
      */
     public Set<AclEntryFlag> flags() {
-        return new HashSet<AclEntryFlag>(flags);
+        return new HashSet<>(flags);
     }
 
     /**

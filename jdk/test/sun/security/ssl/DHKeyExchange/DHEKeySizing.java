@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,10 @@ import java.io.*;
 import java.nio.*;
 import java.security.KeyStore;
 import java.security.KeyFactory;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.*;
 import java.security.interfaces.*;
 import java.util.Base64;
 
@@ -377,6 +377,10 @@ public class DHEKeySizing {
     }
 
     public static void main(String args[]) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         if (args.length != 4) {
             System.out.println(
                 "Usage: java DHEKeySizing cipher-suite " +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,11 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * List to store the order groups as specified on the command line.
      */
     private List<String> groupList;
+
+    /**
+     * HTML tree for main tag.
+     */
+    private HtmlTree htmlTree = HtmlTree.MAIN();
 
     /**
      * Construct the PackageIndexWriter. Also constructs the grouping
@@ -140,7 +145,11 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         }
         profilesDiv.addContent(ul);
         Content div = HtmlTree.DIV(HtmlStyle.contentContainer, profilesDiv);
-        body.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            htmlTree.addContent(div);
+        } else {
+            body.addContent(div);
+        }
     }
 
     /**
@@ -148,14 +157,19 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     protected void addPackagesList(Collection<PackageDoc> packages, String text,
             String tableSummary, Content body) {
-        Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0, tableSummary,
-                getTableCaption(new RawHtml(text)));
+        Content table = (configuration.isOutputHtml5())
+                ? HtmlTree.TABLE(HtmlStyle.overviewSummary, getTableCaption(new RawHtml(text)))
+                : HtmlTree.TABLE(HtmlStyle.overviewSummary, tableSummary, getTableCaption(new RawHtml(text)));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         addPackagesList(packages, tbody);
         table.addContent(tbody);
         Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
-        body.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            htmlTree.addContent(div);
+        } else {
+            body.addContent(div);
+        }
     }
 
     /**
@@ -192,6 +206,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param body the documentation tree to which the overview header will be added
      */
     protected void addOverviewHeader(Content body) {
+        addConfigurationTitle(body);
         if (root.inlineTags().length > 0) {
             HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
             subTitleDiv.addStyle(HtmlStyle.subTitle);
@@ -205,7 +220,11 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
                     descriptionLabel, "", "");
             descPara.addContent(descLink);
             div.addContent(descPara);
-            body.addContent(div);
+            if (configuration.allowTag(HtmlTag.MAIN)) {
+                htmlTree.addContent(div);
+            } else {
+                body.addContent(div);
+            }
         }
     }
 
@@ -235,7 +254,12 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         div.addStyle(HtmlStyle.contentContainer);
         addOverviewComment(div);
         addTagsInfo(root, div);
-        body.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            htmlTree.addContent(div);
+            body.addContent(htmlTree);
+        } else {
+            body.addContent(div);
+        }
     }
 
     /**
@@ -246,9 +270,14 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @body the documentation tree to which the navigation bar header will be added
      */
     protected void addNavigationBarHeader(Content body) {
-        addTop(body);
-        addNavLinks(true, body);
-        addConfigurationTitle(body);
+        Content htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : body;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            body.addContent(htmlTree);
+        }
     }
 
     /**
@@ -258,7 +287,13 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param body the documentation tree to which the navigation bar footer will be added
      */
     protected void addNavigationBarFooter(Content body) {
-        addNavLinks(false, body);
-        addBottom(body);
+        Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : body;
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            body.addContent(htmlTree);
+        }
     }
 }

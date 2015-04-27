@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import sun.awt.AppContext;
 import sun.awt.util.ThreadGroupUtils;
+import sun.misc.InnocuousThread;
 
 public class CreatedFontTracker {
 
@@ -115,18 +116,25 @@ public class CreatedFontTracker {
         static void init() {
             if (t == null) {
                 // Add a shutdown hook to remove the temp file.
-                AccessController.doPrivileged(
-                        (PrivilegedAction<Void>) () -> {
-                            /* The thread must be a member of a thread group
-                             * which will not get GCed before VM exit.
-                             * Make its parent the top-level thread group.
-                             */
-                            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                            t = new Thread(rootTG, TempFileDeletionHook::runHooks);
-                            t.setContextClassLoader(null);
-                            Runtime.getRuntime().addShutdownHook(t);
-                            return null;
-                        });
+                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    if (System.getSecurityManager() == null) {
+                        /* The thread must be a member of a thread group
+                         * which will not get GCed before VM exit.
+                         * Make its parent the top-level thread group.
+                         */
+                        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                        t = new Thread(rootTG, TempFileDeletionHook::runHooks);
+                    } else {
+                        /* InnocuousThread is a member of a correct TG by default */
+                        t = new InnocuousThread(TempFileDeletionHook::runHooks);
+                    }
+                    /* Set context class loader to null in order to avoid
+                     * keeping a strong reference to an application classloader.
+                     */
+                    t.setContextClassLoader(null);
+                    Runtime.getRuntime().addShutdownHook(t);
+                    return null;
+                });
             }
         }
 
