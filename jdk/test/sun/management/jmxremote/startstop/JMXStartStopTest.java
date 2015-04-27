@@ -311,9 +311,7 @@ public class JMXStartStopTest {
                                 error.set(line.contains("BindException"));
 
                                 return ok || error.get();
-                            },
-                            5,
-                            TimeUnit.SECONDS
+                            }
                     );
                     if (error.get()) {
                         throw new BindException("Starting process failed due to " +
@@ -321,8 +319,10 @@ public class JMXStartStopTest {
                     }
                     pid = p.getPid();
                 } catch (TimeoutException e) {
-                    p.destroy();
-                    p.waitFor();
+                    if (p != null) {
+                        p.destroy();
+                        p.waitFor();
+                    }
                     throw e;
                 }
             }
