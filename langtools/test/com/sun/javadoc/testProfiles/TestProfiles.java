@@ -47,16 +47,16 @@ public class TestProfiles extends JavadocTester {
 
         // Tests for profile-overview-frame.html listing all profiles.
         checkOutput("profile-overview-frame.html", true,
-                "<span><a href=\"overview-frame.html\" "
-                + "target=\"packageListFrame\">All&nbsp;Packages</a></span>",
+                "<li><a href=\"overview-frame.html\" "
+                + "target=\"packageListFrame\">All&nbsp;Packages</a></li>",
                 "<li><a href=\"compact1-frame.html\" target=\"packageListFrame\">"
                 + "compact1</a></li>");
 
         // Tests for profileName-frame.html listing all packages in a profile.
         checkOutput("compact2-frame.html", true,
-                "<span><a href=\"overview-frame.html\" target=\"packageListFrame\">"
-                + "All&nbsp;Packages</a></span><span><a href=\"profile-overview-frame.html\" "
-                + "target=\"packageListFrame\">All&nbsp;Profiles</a></span>",
+                "<li><a href=\"overview-frame.html\" target=\"packageListFrame\">"
+                + "All&nbsp;Packages</a></li>\n<li><a href=\"profile-overview-frame.html\" "
+                + "target=\"packageListFrame\">All&nbsp;Profiles</a></li>",
                 "<li><a href=\"pkg4/compact2-package-frame.html\" "
                 + "target=\"packageFrame\">pkg4</a></li>");
 
@@ -78,15 +78,13 @@ public class TestProfiles extends JavadocTester {
                 + "<li class=\"blockList\">\n"
                 + "<h3><a href=\"pkg2/compact2-package-summary.html\" target=\"classFrame\">"
                 + "pkg2</a></h3>\n"
-                + "<table class=\"typeSummary\" border=\"0\" "
-                + "cellpadding=\"3\" cellspacing=\"0\" summary=\"Class Summary table, "
+                + "<table class=\"typeSummary\" summary=\"Class Summary table, "
                 + "listing classes, and an explanation\">",
                 "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<h3><a href=\"pkg4/compact2-package-summary.html\" target=\"classFrame\">"
                 + "pkg4</a></h3>\n"
-                + "<table class=\"typeSummary\" border=\"0\" "
-                + "cellpadding=\"3\" cellspacing=\"0\" summary=\"Class Summary table, "
+                + "<table class=\"typeSummary\" summary=\"Class Summary table, "
                 + "listing classes, and an explanation\">");
 
 
@@ -98,14 +96,13 @@ public class TestProfiles extends JavadocTester {
                 "<div class=\"subTitle\">compact3</div>",
                 "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
-                + "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Interface Summary table, listing "
+                + "<table class=\"typeSummary\" summary=\"Interface Summary table, listing "
                 + "interfaces, and an explanation\">");
 
         // Test for "overview-frame.html" showing the "All Profiles" link.
         checkOutput("overview-frame.html", true,
-                "<span><a href=\"profile-overview-frame.html\" "
-                + "target=\"packageListFrame\">All&nbsp;Profiles</a></span>");
+                "<li><a href=\"profile-overview-frame.html\" "
+                + "target=\"packageListFrame\">All&nbsp;Profiles</a></li>");
 
         // Test for "className.html" showing the profile information for the type.
         checkOutput("pkg2/Class1Pkg2.html", true,
@@ -150,7 +147,6 @@ public class TestProfiles extends JavadocTester {
         // Test exception in profiles
         checkOutput("compact1-summary.html", true,
                 "<table class=\"typeSummary\" "
-                + "border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
                 + "summary=\"Exception Summary table, listing exceptions, and an explanation\">\n"
                 + "<caption><span>Exception Summary</span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>\n"
@@ -166,8 +162,7 @@ public class TestProfiles extends JavadocTester {
 
         //Test errors in profiles
         checkOutput("compact1-summary.html", true,
-                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
-                + "summary=\"Error Summary table, listing errors, and an explanation\">\n"
+                "<table class=\"typeSummary\" summary=\"Error Summary table, listing errors, and an explanation\">\n"
                 + "<caption><span>Error Summary</span><span class=\"tabEnd\">&nbsp;"
                 + "</span></caption>\n"
                 + "<tr>\n"
@@ -199,16 +194,14 @@ public class TestProfiles extends JavadocTester {
             + "<h3><a href=\"pkg2/compact2-package-summary.html\" target=\"classFrame\">"
             + "pkg2</a></h3>\n" +
             "<li class=\"blockList\">\n"
-            + "<table class=\"typeSummary\" border=\"0\" "
-            + "cellpadding=\"3\" cellspacing=\"0\" summary=\"Class Summary table, "
+            + "<table class=\"typeSummary\" summary=\"Class Summary table, "
             + "listing classes, and an explanation\">");
 
         checkOutput("pkg5/compact3-package-summary.html", false,
             "<ul class=\"blockList\">\n" +
             "<li class=\"blockList\">\n"
             + "<li class=\"blockList\">\n"
-            + "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\" "
-            + "cellspacing=\"0\" summary=\"Interface Summary table, listing "
+            + "<table class=\"typeSummary\" summary=\"Interface Summary table, listing "
             + "interfaces, and an explanation\">");
     }
 

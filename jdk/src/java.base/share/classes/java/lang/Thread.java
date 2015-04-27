@@ -1661,7 +1661,7 @@ class Thread implements Runnable {
      */
     private static boolean auditSubclass(final Class<?> subcl) {
         Boolean result = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
+            new PrivilegedAction<>() {
                 public Boolean run() {
                     for (Class<?> cl = subcl;
                          cl != Thread.class;

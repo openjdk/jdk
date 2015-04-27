@@ -172,7 +172,7 @@ public abstract class SelectorProvider {
             if (provider != null)
                 return provider;
             return AccessController.doPrivileged(
-                new PrivilegedAction<SelectorProvider>() {
+                new PrivilegedAction<>() {
                     public SelectorProvider run() {
                             if (loadProviderFromProperty())
                                 return provider;

@@ -76,7 +76,7 @@ final class JceSecurity {
     static {
         try {
             AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void> () {
+                new PrivilegedExceptionAction<> () {
                     @Override
                     public Void run() throws Exception {
                         setupJurisdictionPolicies();
@@ -225,7 +225,7 @@ final class JceSecurity {
             URL url = codeBaseCacheRef.get(clazz);
             if (url == null) {
                 url = AccessController.doPrivileged(
-                    new PrivilegedAction<URL>() {
+                    new PrivilegedAction<>() {
                         @Override
                         public URL run() {
                             ProtectionDomain pd = clazz.getProtectionDomain();

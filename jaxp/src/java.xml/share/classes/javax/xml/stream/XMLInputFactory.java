@@ -160,7 +160,7 @@ public abstract class XMLInputFactory {
    * This static method creates a new factory instance.
    * This method uses the following ordered lookup procedure to determine
    * the XMLInputFactory implementation class to load:
-   * </p>
+   *
    * <ul>
    * <li>
    *   <p>Use the javax.xml.stream.XMLInputFactory system property.
@@ -201,12 +201,11 @@ public abstract class XMLInputFactory {
    * <p>
    *   Once an application has obtained a reference to a XMLInputFactory it
    *   can use the factory to configure and obtain stream instances.
-   * </p>
    * <p>
    *   Note that this is a new method that replaces the deprecated newInstance() method.
    *     No changes in behavior are defined by this replacement method relative to
    *     the deprecated method.
-   * </p>
+   *
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
@@ -245,7 +244,6 @@ public abstract class XMLInputFactory {
    * <p>
    * This method uses the following ordered lookup procedure to determine
    * the XMLInputFactory implementation class to load:
-   * <p>
    * <ul>
    * <li>
    *   <p>
@@ -488,7 +486,6 @@ public abstract class XMLInputFactory {
    * <p>
    * All implementations that implement JAXP 1.5 or newer are required to
    * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property.
-   * </p>
    * <ul>
    *   <li>
    *        <p>
@@ -497,7 +494,7 @@ public abstract class XMLInputFactory {
    *        due to the restriction of this property, {@link javax.xml.stream.XMLStreamException}
    *        will be thrown by the {@link javax.xml.stream.XMLStreamReader#next()} or
    *        {@link javax.xml.stream.XMLEventReader#nextEvent()} method.
-   *        </p>
+   *
    *   </li>
    * </ul>
    * @param name The name of the property (may not be null)

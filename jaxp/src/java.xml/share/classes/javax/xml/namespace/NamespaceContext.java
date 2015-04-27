@@ -28,44 +28,44 @@ package javax.xml.namespace;
 import java.util.Iterator;
 
 /**
- * <p>Interface for read only XML Namespace context processing.</p>
+ * Interface for read only XML Namespace context processing.
  *
- * <p>An XML Namespace has the properties:</p>
+ * <p>An XML Namespace has the properties:
  * <ul>
  *   <li>Namespace URI:
  *       Namespace name expressed as a URI to which the prefix is bound</li>
  *   <li>prefix: syntactically, this is the part of the attribute name
- *       following the <code>XMLConstants.XMLNS_ATTRIBUTE</code>
+ *       following the {@code XMLConstants.XMLNS_ATTRIBUTE}
  *       ("xmlns") in the Namespace declaration</li>
  * </ul>
  * <p>example:
- * <code>&lt;element xmlns:prefix="http://Namespace-name-URI"&gt;</code></p>
+ * {@code <element xmlns:prefix="http://Namespace-name-URI">}
  *
- * <p>All <code>get*(*)</code> methods operate in the current scope
- * for Namespace URI and prefix resolution.</p>
+ * <p>All {@code get*(*)} methods operate in the current scope
+ * for Namespace URI and prefix resolution.
  *
  * <p>Note that a Namespace URI can be bound to
  * <strong>multiple</strong> prefixes in the current scope.  This can
- * occur when multiple <code>XMLConstants.XMLNS_ATTRIBUTE</code>
+ * occur when multiple {@code XMLConstants.XMLNS_ATTRIBUTE}
  * ("xmlns") Namespace declarations occur in the same Start-Tag and
- * refer to the same Namespace URI. e.g.<br />
- * <pre>
- * &lt;element xmlns:prefix1="http://Namespace-name-URI"
- *          xmlns:prefix2="http://Namespace-name-URI"&gt;
+ * refer to the same Namespace URI. e.g.<br>
+ * <pre> {@code
+ * <element xmlns:prefix1="http://Namespace-name-URI"
+ *          xmlns:prefix2="http://Namespace-name-URI"> }
  * </pre>
  * This can also occur when the same Namespace URI is used in multiple
- * <code>XMLConstants.XMLNS_ATTRIBUTE</code> ("xmlns") Namespace
- * declarations in the logical parent element hierarchy.  e.g.<br />
- * <pre>
- * &lt;parent xmlns:prefix1="http://Namespace-name-URI">
- *   &lt;child xmlns:prefix2="http://Namespace-name-URI"&gt;
+ * {@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns") Namespace
+ * declarations in the logical parent element hierarchy.  e.g.<br>
+ * <pre> {@code
+ * <parent xmlns:prefix1="http://Namespace-name-URI">
+ *   <child xmlns:prefix2="http://Namespace-name-URI">
  *     ...
- *   &lt;/child&gt;
- * &lt;/parent&gt;
- * </pre></p>
+ *   </child>
+ * </parent> }
+ * </pre>
  *
  * <p>A prefix can only be bound to a <strong>single</strong>
- * Namespace URI in the current scope.</p>
+ * Namespace URI in the current scope.
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
  * @see javax.xml.XMLConstants
@@ -82,17 +82,17 @@ import java.util.Iterator;
 public interface NamespaceContext {
 
     /**
-     * <p>Get Namespace URI bound to a prefix in the current scope.</p>
+     * Get Namespace URI bound to a prefix in the current scope.
      *
      * <p>When requesting a Namespace URI by prefix, the following
      * table describes the returned Namespace URI value for all
-     * possible prefix values:</p>
+     * possible prefix values:
      *
      * <table border="2" rules="all" cellpadding="4">
      *   <thead>
      *     <tr>
      *       <td align="center" colspan="2">
-     *         <code>getNamespaceURI(prefix)</code>
+     *         {@code getNamespaceURI(prefix)}
      *         return value for specified prefixes
      *       </td>
      *     </tr>
@@ -103,9 +103,9 @@ public interface NamespaceContext {
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td><code>DEFAULT_NS_PREFIX</code> ("")</td>
+     *       <td>{@code DEFAULT_NS_PREFIX} ("")</td>
      *       <td>default Namespace URI in the current scope or
-     *         <code>{@link
+     *         <code> {@link
      *         javax.xml.XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI("")}
      *         </code>
      *         when there is no default Namespace URI in the current scope</td>
@@ -117,24 +117,24 @@ public interface NamespaceContext {
      *     <tr>
      *       <td>unbound prefix</td>
      *       <td>
-     *         <code>{@link
+     *         <code> {@link
      *         javax.xml.XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI("")}
      *         </code>
      *       </td>
      *     </tr>
      *     <tr>
-     *       <td><code>XMLConstants.XML_NS_PREFIX</code> ("xml")</td>
-     *       <td><code>XMLConstants.XML_NS_URI</code>
+     *       <td>{@code XMLConstants.XML_NS_PREFIX} ("xml")</td>
+     *       <td>{@code XMLConstants.XML_NS_URI}
      *           ("http://www.w3.org/XML/1998/namespace")</td>
      *     </tr>
      *     <tr>
-     *       <td><code>XMLConstants.XMLNS_ATTRIBUTE</code> ("xmlns")</td>
-     *       <td><code>XMLConstants.XMLNS_ATTRIBUTE_NS_URI</code>
+     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns")</td>
+     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
      *         ("http://www.w3.org/2000/xmlns/")</td>
      *     </tr>
      *     <tr>
-     *       <td><code>null</code></td>
-     *       <td><code>IllegalArgumentException</code> is thrown</td>
+     *       <td>{@code null}</td>
+     *       <td>{@code IllegalArgumentException} is thrown</td>
      *     </tr>
      *    </tbody>
      * </table>
@@ -143,26 +143,26 @@ public interface NamespaceContext {
      *
      * @return Namespace URI bound to prefix in the current scope
      *
-     * @throws IllegalArgumentException When <code>prefix</code> is
-     *   <code>null</code>
+     * @throws IllegalArgumentException When {@code prefix} is
+     *   {@code null}
      */
     String getNamespaceURI(String prefix);
 
     /**
-     * <p>Get prefix bound to Namespace URI in the current scope.</p>
+     * Get prefix bound to Namespace URI in the current scope.
      *
      * <p>To get all prefixes bound to a Namespace URI in the current
-     * scope, use {@link #getPrefixes(String namespaceURI)}.</p>
+     * scope, use {@link #getPrefixes(String namespaceURI)}.
      *
      * <p>When requesting a prefix by Namespace URI, the following
      * table describes the returned prefix value for all Namespace URI
-     * values:</p>
+     * values:
      *
      * <table border="2" rules="all" cellpadding="4">
      *   <thead>
      *     <tr>
      *       <th align="center" colspan="2">
-     *         <code>getPrefix(namespaceURI)</code> return value for
+     *         {@code getPrefix(namespaceURI)} return value for
      *         specified Namespace URIs
      *       </th>
      *     </tr>
@@ -173,8 +173,8 @@ public interface NamespaceContext {
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>&lt;default Namespace URI&gt;</td>
-     *       <td><code>XMLConstants.DEFAULT_NS_PREFIX</code> ("")
+     *       <td>{@code <default Namespace URI>}</td>
+     *       <td>{@code XMLConstants.DEFAULT_NS_PREFIX} ("")
      *       </td>
      *     </tr>
      *     <tr>
@@ -186,21 +186,21 @@ public interface NamespaceContext {
      *     </tr>
      *     <tr>
      *       <td>unbound Namespace URI</td>
-     *       <td><code>null</code></td>
+     *       <td>{@code null}</td>
      *     </tr>
      *     <tr>
-     *       <td><code>XMLConstants.XML_NS_URI</code>
+     *       <td>{@code XMLConstants.XML_NS_URI}
      *           ("http://www.w3.org/XML/1998/namespace")</td>
-     *       <td><code>XMLConstants.XML_NS_PREFIX</code> ("xml")</td>
+     *       <td>{@code XMLConstants.XML_NS_PREFIX} ("xml")</td>
      *     </tr>
      *     <tr>
-     *       <td><code>XMLConstants.XMLNS_ATTRIBUTE_NS_URI</code>
+     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
      *           ("http://www.w3.org/2000/xmlns/")</td>
-     *       <td><code>XMLConstants.XMLNS_ATTRIBUTE</code> ("xmlns")</td>
+     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns")</td>
      *     </tr>
      *     <tr>
-     *       <td><code>null</code></td>
-     *       <td><code>IllegalArgumentException</code> is thrown</td>
+     *       <td>{@code null}</td>
+     *       <td>{@code IllegalArgumentException} is thrown</td>
      *     </tr>
      *   </tbody>
      * </table>
@@ -209,32 +209,32 @@ public interface NamespaceContext {
      *
      * @return prefix bound to Namespace URI in current context
      *
-     * @throws IllegalArgumentException When <code>namespaceURI</code> is
-     *   <code>null</code>
+     * @throws IllegalArgumentException When {@code namespaceURI} is
+     *   {@code null}
      */
     String getPrefix(String namespaceURI);
 
     /**
-     * <p>Get all prefixes bound to a Namespace URI in the current
-     * scope.</p>
+     * Get all prefixes bound to a Namespace URI in the current
+     * scope.
      *
      * <p>An Iterator over String elements is returned in an arbitrary,
-     * <strong>implementation dependent</strong>, order.</p>
+     * <strong>implementation dependent</strong>, order.
      *
-     * <p><strong>The <code>Iterator</code> is
+     * <p><strong>The {@code Iterator} is
      * <em>not</em> modifiable.  e.g. the
-     * <code>remove()</code> method will throw
-     * <code>UnsupportedOperationException</code>.</strong></p>
+     * {@code remove()} method will throw
+     * {@code UnsupportedOperationException}.</strong>
      *
      * <p>When requesting prefixes by Namespace URI, the following
      * table describes the returned prefixes value for all Namespace
-     * URI values:</p>
+     * URI values:
      *
      * <table border="2" rules="all" cellpadding="4">
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="2"><code>
-     *         getPrefixes(namespaceURI)</code> return value for
+     *       <th align="center" colspan="2">{@code
+     *         getPrefixes(namespaceURI)} return value for
      *         specified Namespace URIs</th>
      *     </tr>
      *     <tr>
@@ -245,9 +245,9 @@ public interface NamespaceContext {
      *   <tbody>
      *     <tr>
      *       <td>bound Namespace URI,
-     *         including the &lt;default Namespace URI&gt;</td>
+     *         including the {@code <default Namespace URI>}</td>
      *       <td>
-     *         <code>Iterator</code> over prefixes bound to Namespace URI in
+     *         {@code Iterator} over prefixes bound to Namespace URI in
      *         the current scope in an arbitrary,
      *         <strong>implementation dependent</strong>,
      *         order
@@ -255,34 +255,34 @@ public interface NamespaceContext {
      *     </tr>
      *     <tr>
      *       <td>unbound Namespace URI</td>
-     *       <td>empty <code>Iterator</code></td>
+     *       <td>empty {@code Iterator}</td>
      *     </tr>
      *     <tr>
-     *       <td><code>XMLConstants.XML_NS_URI</code>
+     *       <td>{@code XMLConstants.XML_NS_URI}
      *           ("http://www.w3.org/XML/1998/namespace")</td>
-     *       <td><code>Iterator</code> with one element set to
-     *         <code>XMLConstants.XML_NS_PREFIX</code> ("xml")</td>
+     *       <td>{@code Iterator} with one element set to
+     *         {@code XMLConstants.XML_NS_PREFIX} ("xml")</td>
      *     </tr>
      *     <tr>
-     *       <td><code>XMLConstants.XMLNS_ATTRIBUTE_NS_URI</code>
+     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
      *           ("http://www.w3.org/2000/xmlns/")</td>
-     *       <td><code>Iterator</code> with one element set to
-     *         <code>XMLConstants.XMLNS_ATTRIBUTE</code> ("xmlns")</td>
+     *       <td>{@code Iterator} with one element set to
+     *         {@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns")</td>
      *     </tr>
      *     <tr>
-     *       <td><code>null</code></td>
-     *       <td><code>IllegalArgumentException</code> is thrown</td>
+     *       <td>{@code null}</td>
+     *       <td>{@code IllegalArgumentException} is thrown</td>
      *     </tr>
      *   </tbody>
      * </table>
      *
      * @param namespaceURI URI of Namespace to lookup
      *
-     * @return <code>Iterator</code> for all prefixes bound to the
+     * @return {@code Iterator} for all prefixes bound to the
      *   Namespace URI in the current scope
      *
-     * @throws IllegalArgumentException When <code>namespaceURI</code> is
-     *   <code>null</code>
+     * @throws IllegalArgumentException When {@code namespaceURI} is
+     *   {@code null}
      */
     Iterator getPrefixes(String namespaceURI);
 }

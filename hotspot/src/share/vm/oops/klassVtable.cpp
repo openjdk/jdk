@@ -404,13 +404,15 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
       // get super_klass for method_holder for the found method
       InstanceKlass* super_klass =  super_method->method_holder();
 
-      if (is_default
+      // private methods are also never overridden
+      if (!super_method->is_private() &&
+          (is_default
           || ((super_klass->is_override(super_method, target_loader, target_classname, THREAD))
           || ((klass->major_version() >= VTABLE_TRANSITIVE_OVERRIDE_VERSION)
           && ((super_klass = find_transitive_override(super_klass,
                              target_method, i, target_loader,
                              target_classname, THREAD))
-                             != (InstanceKlass*)NULL))))
+                             != (InstanceKlass*)NULL)))))
         {
         // Package private methods always need a new entry to root their own
         // overriding. They may also override other methods.
@@ -692,9 +694,15 @@ bool klassVtable::is_miranda_entry_at(int i) {
 // check if a method is a miranda method, given a class's methods table,
 // its default_method table  and its super
 // Miranda methods are calculated twice:
-// first: before vtable size calculation: including abstract and default
+// first: before vtable size calculation: including abstract and superinterface default
+// We include potential default methods to give them space in the vtable.
+// During the first run, the default_methods list is empty
 // This is seen by default method creation
-// Second: recalculated during vtable initialization: only abstract
+// Second: recalculated during vtable initialization: only include abstract methods.
+// During the second run, default_methods is set up, so concrete methods from
+// superinterfaces with matching names/signatures to default_methods are already
+// in the default_methods list and do not need to be appended to the vtable
+// as mirandas
 // This is seen by link resolution and selection.
 // "miranda" means not static, not defined by this class.
 // private methods in interfaces do not belong in the miranda list.
@@ -709,8 +717,9 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   }
   Symbol* name = m->name();
   Symbol* signature = m->signature();
+  Method* mo;
 
-  if (InstanceKlass::find_instance_method(class_methods, name, signature) == NULL) {
+  if ((mo = InstanceKlass::find_instance_method(class_methods, name, signature)) == NULL) {
     // did not find it in the method table of the current class
     if ((default_methods == NULL) ||
         InstanceKlass::find_method(default_methods, name, signature) == NULL) {
@@ -719,7 +728,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
         return true;
       }
 
-      Method* mo = InstanceKlass::cast(super)->lookup_method(name, signature);
+      mo = InstanceKlass::cast(super)->lookup_method(name, signature);
       while (mo != NULL && mo->access_flags().is_static()
              && mo->method_holder() != NULL
              && mo->method_holder()->super() != NULL)
@@ -730,6 +739,18 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
         // super class hierarchy does not implement it or protection is different
         return true;
       }
+    }
+  } else {
+     // if the local class has a private method, the miranda will not
+     // override it, so a vtable slot is needed
+     if (mo->access_flags().is_private()) {
+
+       // Second round, weed out any superinterface methods that turned
+       // into default methods, i.e. were concrete not abstract in the end
+       if ((default_methods == NULL) ||
+         InstanceKlass::find_method(default_methods, name, signature) == NULL) {
+         return true;
+       }
     }
   }
 

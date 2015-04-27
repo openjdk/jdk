@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ import com.sun.tools.javac.util.StringUtils;
  */
 public enum HtmlAttr {
     ALT,
-    BORDER,
-    CELLPADDING,
-    CELLSPACING,
     CLASS,
     CLEAR,
     COLS,
@@ -53,6 +50,7 @@ public enum HtmlAttr {
     NAME,
     ONLOAD,
     REL,
+    ROLE,
     ROWS,
     SCOPE,
     SCROLLING,
@@ -64,6 +62,25 @@ public enum HtmlAttr {
     WIDTH;
 
     private final String value;
+
+    public enum Role {
+
+        BANNER,
+        CONTENTINFO,
+        MAIN,
+        NAVIGATION,
+        REGION;
+
+        private final String role;
+
+        Role() {
+            role = StringUtils.toLowerCase(name());
+        }
+
+        public String toString() {
+            return role;
+        }
+    }
 
     HtmlAttr() {
         this.value = StringUtils.toLowerCase(name());

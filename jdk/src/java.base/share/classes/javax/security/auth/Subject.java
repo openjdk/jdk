@@ -154,11 +154,11 @@ public final class Subject implements java.io.Serializable {
     public Subject() {
 
         this.principals = Collections.synchronizedSet
-                        (new SecureSet<Principal>(this, PRINCIPAL_SET));
+                        (new SecureSet<>(this, PRINCIPAL_SET));
         this.pubCredentials = Collections.synchronizedSet
-                        (new SecureSet<Object>(this, PUB_CREDENTIAL_SET));
+                        (new SecureSet<>(this, PUB_CREDENTIAL_SET));
         this.privCredentials = Collections.synchronizedSet
-                        (new SecureSet<Object>(this, PRIV_CREDENTIAL_SET));
+                        (new SecureSet<>(this, PRIV_CREDENTIAL_SET));
     }
 
     /**
@@ -206,11 +206,11 @@ public final class Subject implements java.io.Serializable {
         collectionNullClean(pubCredentials);
         collectionNullClean(privCredentials);
 
-        this.principals = Collections.synchronizedSet(new SecureSet<Principal>
+        this.principals = Collections.synchronizedSet(new SecureSet<>
                                 (this, PRINCIPAL_SET, principals));
-        this.pubCredentials = Collections.synchronizedSet(new SecureSet<Object>
+        this.pubCredentials = Collections.synchronizedSet(new SecureSet<>
                                 (this, PUB_CREDENTIAL_SET, pubCredentials));
-        this.privCredentials = Collections.synchronizedSet(new SecureSet<Object>
+        this.privCredentials = Collections.synchronizedSet(new SecureSet<>
                                 (this, PRIV_CREDENTIAL_SET, privCredentials));
         this.readOnly = readOnly;
     }
@@ -292,7 +292,7 @@ public final class Subject implements java.io.Serializable {
 
         // return the Subject from the DomainCombiner of the provided context
         return AccessController.doPrivileged
-            (new java.security.PrivilegedAction<Subject>() {
+            (new java.security.PrivilegedAction<>() {
             public Subject run() {
                 DomainCombiner dc = acc.getDomainCombiner();
                 if (!(dc instanceof SubjectDomainCombiner)) {
@@ -555,7 +555,7 @@ public final class Subject implements java.io.Serializable {
 
 
         return java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<AccessControlContext>() {
+            (new java.security.PrivilegedAction<>() {
             public AccessControlContext run() {
                 if (subject == null) {
                     return new AccessControlContext(acc, null);
@@ -801,7 +801,7 @@ public final class Subject implements java.io.Serializable {
             Set<Principal> thatPrincipals;
             synchronized(that.principals) {
                 // avoid deadlock from dual locks
-                thatPrincipals = new HashSet<Principal>(that.principals);
+                thatPrincipals = new HashSet<>(that.principals);
             }
             if (!principals.equals(thatPrincipals)) {
                 return false;
@@ -810,7 +810,7 @@ public final class Subject implements java.io.Serializable {
             Set<Object> thatPubCredentials;
             synchronized(that.pubCredentials) {
                 // avoid deadlock from dual locks
-                thatPubCredentials = new HashSet<Object>(that.pubCredentials);
+                thatPubCredentials = new HashSet<>(that.pubCredentials);
             }
             if (!pubCredentials.equals(thatPubCredentials)) {
                 return false;
@@ -819,7 +819,7 @@ public final class Subject implements java.io.Serializable {
             Set<Object> thatPrivCredentials;
             synchronized(that.privCredentials) {
                 // avoid deadlock from dual locks
-                thatPrivCredentials = new HashSet<Object>(that.privCredentials);
+                thatPrivCredentials = new HashSet<>(that.privCredentials);
             }
             if (!privCredentials.equals(thatPrivCredentials)) {
                 return false;
@@ -970,21 +970,21 @@ public final class Subject implements java.io.Serializable {
 
         // Rewrap the principals into a SecureSet
         try {
-            principals = Collections.synchronizedSet(new SecureSet<Principal>
+            principals = Collections.synchronizedSet(new SecureSet<>
                                 (this, PRINCIPAL_SET, inputPrincs));
         } catch (NullPointerException npe) {
             // Sometimes people deserialize the principals set only.
             // Subject is not accessible, so just don't fail.
             principals = Collections.synchronizedSet
-                        (new SecureSet<Principal>(this, PRINCIPAL_SET));
+                        (new SecureSet<>(this, PRINCIPAL_SET));
         }
 
         // The Credential {@code Set} is not serialized, but we do not
         // want the default deserialization routine to set it to null.
         this.pubCredentials = Collections.synchronizedSet
-                        (new SecureSet<Object>(this, PUB_CREDENTIAL_SET));
+                        (new SecureSet<>(this, PUB_CREDENTIAL_SET));
         this.privCredentials = Collections.synchronizedSet
-                        (new SecureSet<Object>(this, PRIV_CREDENTIAL_SET));
+                        (new SecureSet<>(this, PRIV_CREDENTIAL_SET));
     }
 
     /**
@@ -1497,7 +1497,7 @@ public final class Subject implements java.io.Serializable {
                 Object next;
                 if (which == Subject.PRIV_CREDENTIAL_SET) {
                     next = java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction<Object>() {
+                        (new java.security.PrivilegedAction<>() {
                         public Object run() {
                             return iterator.next();
                         }

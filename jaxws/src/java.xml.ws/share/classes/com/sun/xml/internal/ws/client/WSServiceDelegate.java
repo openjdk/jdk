@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -892,15 +892,6 @@ public class WSServiceDelegate extends WSService {
 
     public WSDLService getWsdlService() {
         return wsdlService;
-    }
-
-    static class DaemonThreadFactory implements ThreadFactory {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread daemonThread = new Thread(r);
-            daemonThread.setDaemon(Boolean.TRUE);
-            return daemonThread;
-        }
     }
 
     protected static final WebServiceFeature[] EMPTY_FEATURES = new WebServiceFeature[0];

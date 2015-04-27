@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,14 @@ public interface ClassWriter {
      * @return a content tree for the member tree header
      */
     public Content getMemberTreeHeader();
+
+    /**
+     * Add the class content tree.
+     *
+     * @param contentTree content tree to which the class content will be added
+     * @param classContentTree class content tree which will be added to the content tree
+     */
+    public void addClassContentTree(Content contentTree, Content classContentTree);
 
     /**
      * Add the footer of the page.

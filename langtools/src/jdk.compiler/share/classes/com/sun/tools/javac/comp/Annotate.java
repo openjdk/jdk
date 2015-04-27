@@ -31,6 +31,7 @@ import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -778,9 +779,10 @@ public class Annotate {
                 Attribute.Compound c = new Attribute.Compound(targetContainerType, List.of(p));
                 JCAnnotation annoTree = m.Annotation(c);
 
-                if (!chk.annotationApplicable(annoTree, on))
-                    log.error(annoTree.pos(), "invalid.repeatable.annotation.incompatible.target",
-                            targetContainerType, origAnnoType);
+                if (!chk.annotationApplicable(annoTree, on)) {
+                    log.error(annoTree.pos(),
+                              Errors.InvalidRepeatableAnnotationNotApplicable(targetContainerType, on));
+                }
 
                 if (!chk.validateAnnotationDeferErrors(annoTree))
                     log.error(annoTree.pos(), "duplicate.annotation.invalid.repeated", origAnnoType);

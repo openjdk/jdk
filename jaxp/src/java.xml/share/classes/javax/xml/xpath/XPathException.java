@@ -33,7 +33,7 @@ import java.io.ObjectStreamField;
 import java.io.InvalidClassException;
 
 /**
- * <code>XPathException</code> represents a generic XPath exception.</p>
+ * {@code XPathException} represents a generic XPath exception.
  *
  * @author  <a href="Norman.Walsh@Sun.com">Norman Walsh</a>
  * @author <a href="mailto:Jeff.Suttor@Sun.COM">Jeff Suttor</a>
@@ -46,23 +46,23 @@ public class XPathException extends Exception {
     };
 
     /**
-     * <p>Stream Unique Identifier.</p>
+     * Stream Unique Identifier.
      */
     private static final long serialVersionUID = -1837080260374986980L;
 
     /**
-     * <p>Constructs a new <code>XPathException</code>
-     * with the specified detail <code>message</code>.</p>
+     * Constructs a new {@code XPathException}
+     * with the specified detail {@code message}.
      *
-     * <p>The <code>cause</code> is not initialized.</p>
+     * <p>The {@code cause} is not initialized.
      *
-     * <p>If <code>message</code> is <code>null</code>,
-     * then a <code>NullPointerException</code> is thrown.</p>
+     * <p>If {@code message} is {@code null},
+     * then a {@code NullPointerException} is thrown.
      *
      * @param message The detail message.
      *
-     * @throws NullPointerException When <code>message</code> is
-     *   <code>null</code>.
+     * @throws NullPointerException When {@code message} is
+     *   {@code null}.
      */
     public XPathException(String message) {
         super(message);
@@ -72,15 +72,15 @@ public class XPathException extends Exception {
     }
 
     /**
-     * <p>Constructs a new <code>XPathException</code>
-     * with the specified <code>cause</code>.</p>
+     * Constructs a new {@code XPathException}
+     * with the specified {@code cause}.
      *
-     * <p>If <code>cause</code> is <code>null</code>,
-     * then a <code>NullPointerException</code> is thrown.</p>
+     * <p>If {@code cause} is {@code null},
+     * then a {@code NullPointerException} is thrown.
      *
      * @param cause The cause.
      *
-     * @throws NullPointerException if <code>cause</code> is <code>null</code>.
+     * @throws NullPointerException if {@code cause} is {@code null}.
      */
     public XPathException(Throwable cause) {
         super(cause);
@@ -90,7 +90,7 @@ public class XPathException extends Exception {
     }
 
     /**
-     * <p>Get the cause of this XPathException.</p>
+     * Get the cause of this XPathException.
      *
      * @return Cause of this XPathException.
      */
@@ -103,7 +103,7 @@ public class XPathException extends Exception {
      * The cause is got from the parent class.
      *
      * @param out stream used for serialization.
-     * @throws IOException thrown by <code>ObjectOutputStream</code>
+     * @throws IOException thrown by {@code ObjectOutputStream}
      *
      */
     private void writeObject(ObjectOutputStream out)
@@ -120,8 +120,8 @@ public class XPathException extends Exception {
      * done before.
      *
      * @param in stream used for deserialization
-     * @throws IOException thrown by <code>ObjectInputStream</code>
-     * @throws ClassNotFoundException  thrown by <code>ObjectInputStream</code>
+     * @throws IOException thrown by {@code ObjectInputStream}
+     * @throws ClassNotFoundException  thrown by {@code ObjectInputStream}
      */
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException
@@ -139,9 +139,9 @@ public class XPathException extends Exception {
     }
 
     /**
-     * <p>Print stack trace to specified <code>PrintStream</code>.</p>
+     * Print stack trace to specified {@code PrintStream}.
      *
-     * @param s Print stack trace to this <code>PrintStream</code>.
+     * @param s Print stack trace to this {@code PrintStream}.
      */
     public void printStackTrace(java.io.PrintStream s) {
         if (getCause() != null) {
@@ -153,16 +153,16 @@ public class XPathException extends Exception {
     }
 
     /**
-     * <p>Print stack trace to <code>System.err</code>.</p>
+     * Print stack trace to {@code System.err}.
      */
     public void printStackTrace() {
         printStackTrace(System.err);
     }
 
     /**
-     * <p>Print stack trace to specified <code>PrintWriter</code>.</p>
+     * Print stack trace to specified {@code PrintWriter}.
      *
-     * @param s Print stack trace to this <code>PrintWriter</code>.
+     * @param s Print stack trace to this {@code PrintWriter}.
      */
     public void printStackTrace(PrintWriter s) {
 

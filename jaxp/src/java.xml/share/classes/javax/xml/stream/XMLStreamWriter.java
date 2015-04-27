@@ -33,9 +33,9 @@ import javax.xml.namespace.NamespaceContext;
 /**
  * The XMLStreamWriter interface specifies how to write XML.  The XMLStreamWriter  does
  * not perform well formedness checking on its input.  However
- * the writeCharacters method is required to escape &amp; , &lt; and &gt;
+ * the writeCharacters method is required to escape {@literal &, < and >}
  * For attribute values the writeAttribute method will escape the
- * above characters plus &quot; to ensure that all character content
+ * above characters plus {@literal "} to ensure that all character content
  * and attribute values are well formed.
  *
  * Each NAMESPACE
@@ -44,12 +44,12 @@ import javax.xml.namespace.NamespaceContext;
  * <table border="1" cellpadding="2" cellspacing="0">
  *     <thead>
  *         <tr>
- *             <th colspan="5">XML Namespaces, <code>javax.xml.stream.isRepairingNamespaces</code> and write method behaviour</th>
+ *             <th colspan="5">XML Namespaces, {@code javax.xml.stream.isRepairingNamespaces} and write method behaviour</th>
  *         </tr>
  *         <tr>
  *             <th>Method</th> <!-- method -->
- *             <th colspan="2"><code>isRepairingNamespaces</code> == true</th>
- *             <th colspan="2"><code>isRepairingNamespaces</code> == false</th>
+ *             <th colspan="2">{@code isRepairingNamespaces} == true</th>
+ *             <th colspan="2">{@code isRepairingNamespaces} == false</th>
  *         </tr>
  *         <tr>
  *             <th></th> <!-- method -->
@@ -62,7 +62,7 @@ import javax.xml.namespace.NamespaceContext;
  *
  *     <tbody>
  *         <tr>
- *             <th><code>writeAttribute(namespaceURI, localName, value)</code></th>
+ *             <th>{@code writeAttribute(namespaceURI, localName, value)}</th>
  *             <!-- isRepairingNamespaces == true -->
  *             <td>
  *                 <!-- namespaceURI bound -->
@@ -79,19 +79,19 @@ import javax.xml.namespace.NamespaceContext;
  *             </td>
  *             <td>
  *                 <!-- namespaceURI unbound -->
- *                 <code>XMLStreamException</code>
+ *                 {@code XMLStreamException}
  *             </td>
  *         </tr>
  *
  *         <tr>
- *             <th><code>writeAttribute(prefix, namespaceURI, localName, value)</code></th>
+ *             <th>{@code writeAttribute(prefix, namespaceURI, localName, value)}</th>
  *             <!-- isRepairingNamespaces == true -->
  *             <td>
  *                 <!-- namespaceURI bound -->
- *                 bound to same prefix:<br />
- *                 prefix:localName="value"&nbsp;<sup>[1]</sup><br />
- *                 <br />
- *                 bound to different prefix:<br />
+ *                 bound to same prefix:<br>
+ *                 prefix:localName="value"&nbsp;<sup>[1]</sup><br>
+ *                 <br>
+ *                 bound to different prefix:<br>
  *                 xmlns:{generated}="namespaceURI" {generated}:localName="value"
  *             </td>
  *             <td>
@@ -101,11 +101,11 @@ import javax.xml.namespace.NamespaceContext;
  *             <!-- isRepairingNamespaces == false -->
  *             <td>
  *                 <!-- namespaceURI bound -->
- *                 bound to same prefix:<br />
- *                 prefix:localName="value"&nbsp;<sup>[1][2]</sup><br />
- *                 <br />
- *                 bound to different prefix:<br />
- *                 <code>XMLStreamException</code><sup>[2]</sup>
+ *                 bound to same prefix:<br>
+ *                 prefix:localName="value"&nbsp;<sup>[1][2]</sup><br>
+ *                 <br>
+ *                 bound to different prefix:<br>
+ *                 {@code XMLStreamException}<sup>[2]</sup>
  *             </td>
  *             <td>
  *                 <!-- namespaceURI unbound -->
@@ -114,58 +114,58 @@ import javax.xml.namespace.NamespaceContext;
  *         </tr>
  *
  *         <tr>
- *             <th><code>writeStartElement(namespaceURI, localName)</code><br />
- *                 <br />
- *                 <code>writeEmptyElement(namespaceURI, localName)</code></th>
+ *             <th>{@code writeStartElement(namespaceURI, localName)}<br>
+ *                 <br>
+ *                 {@code writeEmptyElement(namespaceURI, localName)}</th>
  *             <!-- isRepairingNamespaces == true -->
  *             <td >
  *                 <!-- namespaceURI bound -->
- *                 &lt;prefix:localName&gt;&nbsp;<sup>[1]</sup>
+ *                 {@code <prefix:localName>}&nbsp;<sup>[1]</sup>
  *             </td>
  *             <td>
  *                 <!-- namespaceURI unbound -->
- *                 &lt;{generated}:localName xmlns:{generated}="namespaceURI"&gt;
+ *                 {@code <{generated}:localName xmlns:{generated}="namespaceURI">}
  *             </td>
  *             <!-- isRepairingNamespaces == false -->
  *             <td>
  *                 <!-- namespaceURI bound -->
- *                 &lt;prefix:localName&gt;&nbsp;<sup>[1]</sup>
+ *                 {@code prefix:localName>}&nbsp;<sup>[1]</sup>
  *             </td>
  *             <td>
  *                 <!-- namespaceURI unbound -->
- *                 <code>XMLStreamException</code>
+ *                 {@code XMLStreamException}
  *             </td>
  *         </tr>
  *
  *         <tr>
- *             <th><code>writeStartElement(prefix, localName, namespaceURI)</code><br />
- *                 <br />
- *                 <code>writeEmptyElement(prefix, localName, namespaceURI)</code></th>
+ *             <th>{@code writeStartElement(prefix, localName, namespaceURI)}<br>
+ *                 <br>
+ *                 {@code writeEmptyElement(prefix, localName, namespaceURI)}</th>
  *             <!-- isRepairingNamespaces == true -->
  *             <td>
  *                 <!-- namespaceURI bound -->
- *                 bound to same prefix:<br />
- *                 &lt;prefix:localName&gt;&nbsp;<sup>[1]</sup><br />
- *                 <br />
- *                 bound to different prefix:<br />
- *                 &lt;{generated}:localName xmlns:{generated}="namespaceURI"&gt;
+ *                 bound to same prefix:<br>
+ *                 {@code <prefix:localName>}&nbsp;<sup>[1]</sup><br>
+ *                 <br>
+ *                 bound to different prefix:<br>
+ *                 {@code <{generated}:localName xmlns:{generated}="namespaceURI">}
  *             </td>
  *             <td>
  *                 <!-- namespaceURI unbound -->
- *                 &lt;prefix:localName xmlns:prefix="namespaceURI"&gt;&nbsp;<sup>[4]</sup>
+ *                 {@code <prefix:localName xmlns:prefix="namespaceURI">}&nbsp;<sup>[4]</sup>
  *             </td>
  *             <!-- isRepairingNamespaces == false -->
  *             <td>
  *                 <!-- namespaceURI bound -->
- *                 bound to same prefix:<br />
- *                 &lt;prefix:localName&gt;&nbsp;<sup>[1]</sup><br />
- *                 <br />
- *                 bound to different prefix:<br />
- *                 <code>XMLStreamException</code>
+ *                 bound to same prefix:<br>
+ *                 {@code <prefix:localName>}&nbsp;<sup>[1]</sup><br>
+ *                 <br>
+ *                 bound to different prefix:<br>
+ *                 {@code XMLStreamException}
  *             </td>
  *             <td>
  *                 <!-- namespaceURI unbound -->
- *                 &lt;prefix:localName&gt;&nbsp;
+ *                 {@code <prefix:localName>}&nbsp;
  *             </td>
  *         </tr>
  *     </tbody>
@@ -175,10 +175,14 @@ import javax.xml.namespace.NamespaceContext;
  *                 Notes:
  *                 <ul>
  *                     <li>[1] if namespaceURI == default Namespace URI, then no prefix is written</li>
- *                     <li>[2] if prefix == "" || null && namespaceURI == "", then no prefix or Namespace declaration is generated or written</li>
+ *                     <li>[2] if prefix == "" || null {@literal &&} namespaceURI == "", then
+ *                        no prefix or Namespace declaration is generated or written</li>
  *                     <li>[3] if prefix == "" || null, then a prefix is randomly generated</li>
- *                     <li>[4] if prefix == "" || null, then it is treated as the default Namespace and no prefix is generated or written, an xmlns declaration is generated and written if the namespaceURI is unbound</li>
- *                     <li>[5] if prefix == "" || null, then it is treated as an invalid attempt to define the default Namespace and an XMLStreamException is thrown</li>
+ *                     <li>[4] if prefix == "" || null, then it is treated as the default Namespace and
+ *                        no prefix is generated or written, an xmlns declaration is generated
+ *                        and written if the namespaceURI is unbound</li>
+ *                     <li>[5] if prefix == "" || null, then it is treated as an invalid attempt to
+ *                        define the default Namespace and an XMLStreamException is thrown</li>
  *                 </ul>
  *             </td>
  *         </tr>

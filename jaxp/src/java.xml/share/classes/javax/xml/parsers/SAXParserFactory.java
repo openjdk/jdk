@@ -42,17 +42,17 @@ import org.xml.sax.SAXNotSupportedException;
 public abstract class SAXParserFactory {
 
     /**
-     * <p>Should Parsers be validating?</p>
+     * Should Parsers be validating?
      */
     private boolean validating = false;
 
     /**
-     * <p>Should Parsers be namespace aware?</p>
+     * Should Parsers be namespace aware?
      */
     private boolean namespaceAware = false;
 
     /**
-     * <p>Protected constructor to force use of {@link #newInstance()}.</p>
+     * Protected constructor to force use of {@link #newInstance()}.
      */
     protected SAXParserFactory () {
 
@@ -64,7 +64,6 @@ public abstract class SAXParserFactory {
      * This method uses the following ordered lookup procedure to determine
      * the {@code SAXParserFactory} implementation class to
      * load:
-     * <p>
      * <ul>
      * <li>
      * Use the {@code javax.xml.parsers.SAXParserFactory} system
@@ -138,19 +137,19 @@ public abstract class SAXParserFactory {
     }
 
     /**
-     * <p>Obtain a new instance of a {@code SAXParserFactory} from class name.
+     * Obtain a new instance of a {@code SAXParserFactory} from class name.
      * This function is useful when there are multiple providers in the classpath.
      * It gives more control to the application as it can specify which provider
-     * should be loaded.</p>
+     * should be loaded.
      *
      * <p>Once an application has obtained a reference to a {@code SAXParserFactory}
-     * it can use the factory to configure and obtain parser instances.</p>
+     * it can use the factory to configure and obtain parser instances.
      *
      *
      * <h2>Tip for Trouble-shooting</h2>
      * <p>Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
-     * to {@code System.err} about what it is doing and where it is looking at.</p>
+     * to {@code System.err} about what it is doing and where it is looking at.
      *
      * <p>
      * If you have problems, try:
@@ -160,12 +159,12 @@ public abstract class SAXParserFactory {
      *
      * @param factoryClassName fully qualified factory class name that provides implementation of {@code javax.xml.parsers.SAXParserFactory}.
      *
-     * @param classLoader <code>ClassLoader</code> used to load the factory class. If <code>null</code>
-     *                     current <code>Thread</code>'s context classLoader is used to load the factory class.
+     * @param classLoader {@code ClassLoader} used to load the factory class. If {@code null}
+     *                     current {@code Thread}'s context classLoader is used to load the factory class.
      *
      * @return New instance of a {@code SAXParserFactory}
      *
-     * @throws FactoryConfigurationError if <code>factoryClassName</code> is <code>null</code>, or
+     * @throws FactoryConfigurationError if {@code factoryClassName} is {@code null}, or
      *                                   the factory class cannot be loaded, instantiated.
      *
      * @see #newInstance()
@@ -179,8 +178,8 @@ public abstract class SAXParserFactory {
     }
 
     /**
-     * <p>Creates a new instance of a SAXParser using the currently
-     * configured factory parameters.</p>
+     * Creates a new instance of a SAXParser using the currently
+     * configured factory parameters.
      *
      * @return A new instance of a SAXParser.
      *
@@ -196,7 +195,7 @@ public abstract class SAXParserFactory {
     /**
      * Specifies that the parser produced by this code will
      * provide support for XML namespaces. By default the value of this is set
-     * to <code>false</code>.
+     * to {@code false}.
      *
      * @param awareness true if the parser produced by this code will
      *                  provide support for XML namespaces; false otherwise.
@@ -209,7 +208,7 @@ public abstract class SAXParserFactory {
     /**
      * Specifies that the parser produced by this code will
      * validate documents as they are parsed. By default the value of this is
-     * set to <code>false</code>.
+     * set to {@code false}.
      *
      * <p>
      * Note that "the validation" here means
@@ -217,15 +216,13 @@ public abstract class SAXParserFactory {
      * parser</a> as defined in the XML recommendation.
      * In other words, it essentially just controls the DTD validation.
      * (except the legacy two properties defined in JAXP 1.2.)
-     * </p>
      *
      * <p>
      * To use modern schema languages such as W3C XML Schema or
      * RELAX NG instead of DTD, you can configure your parser to be
      * a non-validating parser by leaving the {@link #setValidating(boolean)}
-     * method <code>false</code>, then use the {@link #setSchema(Schema)}
+     * method {@code false}, then use the {@link #setSchema(Schema)}
      * method to associate a schema to a parser.
-     * </p>
      *
      * @param validating true if the parser produced by this code will
      *                   validate documents as they are parsed; false otherwise.
@@ -260,24 +257,23 @@ public abstract class SAXParserFactory {
     }
 
     /**
-     *
-     * <p>Sets the particular feature in the underlying implementation of
+     * Sets the particular feature in the underlying implementation of
      * org.xml.sax.XMLReader.
      * A list of the core features and properties can be found at
-     * <a href="http://www.saxproject.org/">http://www.saxproject.org/</a></p>
+     * <a href="http://www.saxproject.org/">http://www.saxproject.org/</a>
      *
      * <p>All implementations are required to support the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature.
-     * When the feature is</p>
+     * When the feature is
      * <ul>
      *   <li>
-     *     <code>true</code>: the implementation will limit XML processing to conform to implementation limits.
+     *     {@code true}: the implementation will limit XML processing to conform to implementation limits.
      *     Examples include entity expansion limits and XML Schema constructs that would consume large amounts of resources.
      *     If XML processing is limited for security reasons, it will be reported via a call to the registered
      *     {@link org.xml.sax.ErrorHandler#fatalError(SAXParseException exception)}.
-     *     See {@link SAXParser} <code>parse</code> methods for handler specification.
+     *     See {@link SAXParser} {@code parse} methods for handler specification.
      *   </li>
      *   <li>
-     *     When the feature is <code>false</code>, the implementation will processing XML according to the XML specifications without
+     *     When the feature is {@code false}, the implementation will processing XML according to the XML specifications without
      *     regard to possible implementation limits.
      *   </li>
      * </ul>
@@ -292,7 +288,7 @@ public abstract class SAXParserFactory {
      * @throws SAXNotSupportedException When the underlying XMLReader
      *            recognizes the property name but doesn't support the
      *            property.
-     * @throws NullPointerException If the <code>name</code> parameter is null.
+     * @throws NullPointerException If the {@code name} parameter is null.
      *
      * @see org.xml.sax.XMLReader#setFeature
      */
@@ -302,8 +298,8 @@ public abstract class SAXParserFactory {
 
     /**
      *
-     * <p>Returns the particular property requested for in the underlying
-     * implementation of org.xml.sax.XMLReader.</p>
+     * Returns the particular property requested for in the underlying
+     * implementation of org.xml.sax.XMLReader.
      *
      * @param name The name of the property to be retrieved.
      *
@@ -347,12 +343,12 @@ public abstract class SAXParserFactory {
     }
 
     /**
-     * <p>Set the {@link Schema} to be used by parsers created
-     * from this factory.</p>
+     * Set the {@link Schema} to be used by parsers created
+     * from this factory.
      *
      * <p>When a {@link Schema} is non-null, a parser will use a validator
      * created from it to validate documents before it passes information
-     * down to the application.</p>
+     * down to the application.
      *
      * <p>When warnings/errors/fatal errors are found by the validator, the parser must
      * handle them as if those errors were found by the parser itself.
@@ -364,29 +360,28 @@ public abstract class SAXParserFactory {
      * <p>A validator may modify the SAX event stream (for example by
      * adding default values that were missing in documents), and a parser
      * is responsible to make sure that the application will receive
-     * those modified event stream.</p>
+     * those modified event stream.
      *
-     * <p>Initially, <code>null</code> is set as the {@link Schema}.</p>
+     * <p>Initially, {@code null} is set as the {@link Schema}.
      *
      * <p>This processing will take effect even if
-     * the {@link #isValidating()} method returns <code>false</code>.
+     * the {@link #isValidating()} method returns {@code false}.
      *
      * <p>It is an error to use
-     * the <code>http://java.sun.com/xml/jaxp/properties/schemaSource</code>
-     * property and/or the <code>http://java.sun.com/xml/jaxp/properties/schemaLanguage</code>
+     * the {@code http://java.sun.com/xml/jaxp/properties/schemaSource}
+     * property and/or the {@code http://java.sun.com/xml/jaxp/properties/schemaLanguage}
      * property in conjunction with a non-null {@link Schema} object.
      * Such configuration will cause a {@link SAXException}
-     * exception when those properties are set on a {@link SAXParser}.</p>
+     * exception when those properties are set on a {@link SAXParser}.
      *
-     * <h4>Note for implementors</h4>
+     * <h3>Note for implementors</h3>
      * <p>
      * A parser must be able to work with any {@link Schema}
      * implementation. However, parsers and schemas are allowed
      * to use implementation-specific custom mechanisms
      * as long as they yield the result described in the specification.
-     * </p>
      *
-     * @param schema <code>Schema</code> to use, <code>null</code> to remove a schema.
+     * @param schema {@code Schema} to use, {@code null} to remove a schema.
      *
      * @throws UnsupportedOperationException When implementation does not
      *   override this method
@@ -404,16 +399,16 @@ public abstract class SAXParserFactory {
     }
 
     /**
-     * <p>Set state of XInclude processing.</p>
+     * Set state of XInclude processing.
      *
      * <p>If XInclude markup is found in the document instance, should it be
      * processed as specified in <a href="http://www.w3.org/TR/xinclude/">
-     * XML Inclusions (XInclude) Version 1.0</a>.</p>
+     * XML Inclusions (XInclude) Version 1.0</a>.
      *
-     * <p>XInclude processing defaults to <code>false</code>.</p>
+     * <p>XInclude processing defaults to {@code false}.
      *
-     * @param state Set XInclude processing to <code>true</code> or
-     *   <code>false</code>
+     * @param state Set XInclude processing to {@code true} or
+     *   {@code false}
      *
      * @throws UnsupportedOperationException When implementation does not
      *   override this method
@@ -429,7 +424,7 @@ public abstract class SAXParserFactory {
     }
 
     /**
-     * <p>Get state of XInclude processing.</p>
+     * Get state of XInclude processing.
      *
      * @return current state of XInclude processing
      *

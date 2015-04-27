@@ -152,7 +152,7 @@ abstract class UnixFileSystem
     public final Iterable<Path> getRootDirectories() {
         final List<Path> allowedList =
            Collections.unmodifiableList(Arrays.asList((Path)rootDirectory));
-        return new Iterable<Path>() {
+        return new Iterable<>() {
             public Iterator<Path> iterator() {
                 try {
                     SecurityManager sm = System.getSecurityManager();
@@ -254,7 +254,7 @@ abstract class UnixFileSystem
                 return Collections.emptyList();
             }
         }
-        return new Iterable<FileStore>() {
+        return new Iterable<>() {
             public Iterator<FileStore> iterator() {
                 return new FileStoreIterator();
             }
