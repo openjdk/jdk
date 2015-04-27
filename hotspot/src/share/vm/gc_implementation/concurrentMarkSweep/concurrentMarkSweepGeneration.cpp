@@ -66,6 +66,7 @@
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 // statics
 CMSCollector* ConcurrentMarkSweepGeneration::_collector = NULL;

@@ -31,6 +31,19 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/taskqueue.inline.hpp"
+
+inline bool ParCompactionManager::steal(int queue_num, int* seed, oop& t) {
+  return stack_array()->steal(queue_num, seed, t);
+}
+
+inline bool ParCompactionManager::steal_objarray(int queue_num, int* seed, ObjArrayTask& t) {
+  return _objarray_queues->steal(queue_num, seed, t);
+}
+
+inline bool ParCompactionManager::steal(int queue_num, int* seed, size_t& region) {
+  return region_array()->steal(queue_num, seed, region);
+}
 
 inline void ParCompactionManager::push(oop obj) {
   _marking_stack.push(obj);

@@ -27,6 +27,7 @@
 
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 // Utility routine to set an exclusive range of cards on the given
 // card liveness bitmap
