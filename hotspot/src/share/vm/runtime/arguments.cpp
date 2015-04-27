@@ -1560,12 +1560,15 @@ void Arguments::select_gc_ergonomically() {
     } else {
       FLAG_SET_ERGO(bool, UseParallelGC, true);
     }
+  } else {
+    FLAG_SET_ERGO(bool, UseSerialGC, true);
   }
 }
 
 void Arguments::select_gc() {
   if (!gc_selected()) {
     select_gc_ergonomically();
+    guarantee(gc_selected(), "No GC selected");
   }
 }
 
@@ -2091,10 +2094,8 @@ bool Arguments::check_gc_consistency() {
   }
 
   if (UseParNewGC && !UseConcMarkSweepGC) {
-    // !UseConcMarkSweepGC means that we are using serial old gc. Unfortunately we don't
-    // set up UseSerialGC properly, so that can't be used in the check here.
     jio_fprintf(defaultStream::error_stream(),
-        "It is not possible to combine the ParNew young collector with the Serial old collector.\n");
+        "It is not possible to combine the ParNew young collector with any collector other than CMS.\n");
     return false;
   }
 

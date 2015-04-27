@@ -59,7 +59,6 @@
 #include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
 #endif // INCLUDE_ALL_GCS
 
-GenCollectedHeap* GenCollectedHeap::_gch;
 NOT_PRODUCT(size_t GenCollectedHeap::_skip_header_HeapWords = 0;)
 
 // The set of potentially parallel tasks in root scanning.
@@ -126,8 +125,6 @@ jint GenCollectedHeap::initialize() {
 
   _rem_set = collector_policy()->create_rem_set(reserved_region());
   set_barrier_set(rem_set()->bs());
-
-  _gch = this;
 
   ReservedSpace young_rs = heap_rs.first_part(gen_policy()->young_gen_spec()->max_size(), false, false);
   _young_gen = gen_policy()->young_gen_spec()->init(young_rs, 0, rem_set());
@@ -1103,9 +1100,10 @@ void GenCollectedHeap::save_marks() {
 }
 
 GenCollectedHeap* GenCollectedHeap::heap() {
-  assert(_gch != NULL, "Uninitialized access to GenCollectedHeap::heap()");
-  assert(_gch->kind() == CollectedHeap::GenCollectedHeap, "not a generational heap");
-  return _gch;
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "Uninitialized access to GenCollectedHeap::heap()");
+  assert(heap->kind() == CollectedHeap::GenCollectedHeap, "Not a GenCollectedHeap");
+  return (GenCollectedHeap*)heap;
 }
 
 void GenCollectedHeap::prepare_for_compaction() {
