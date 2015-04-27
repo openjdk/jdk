@@ -6090,6 +6090,10 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
     // We always push rbp, so that on return to interpreter rbp, will be
     // restored correctly and we can correct the stack.
     push(rbp);
+    // Save caller's stack pointer into RBP if the frame pointer is preserved.
+    if (PreserveFramePointer) {
+      mov(rbp, rsp);
+    }
     // Remove word for ebp
     framesize -= wordSize;
 
@@ -6104,6 +6108,11 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
     // Save RBP register now.
     framesize -= wordSize;
     movptr(Address(rsp, framesize), rbp);
+    // Save caller's stack pointer into RBP if the frame pointer is preserved.
+    if (PreserveFramePointer) {
+      movptr(rbp, rsp);
+      addptr(rbp, framesize + wordSize);
+    }
   }
 
   if (VerifyStackAtCalls) { // Majik cookie to verify stack depth

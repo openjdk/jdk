@@ -2875,7 +2875,7 @@ LIRItemList* LIRGenerator::invoke_visit_arguments(Invoke* x) {
 //   g) lock result registers and emit call operation
 //
 // Before issuing a call, we must spill-save all values on stack
-// that are in caller-save register. "spill-save" moves thos registers
+// that are in caller-save register. "spill-save" moves those registers
 // either in a free callee-save register or spills them if no free
 // callee save register is available.
 //
@@ -2883,7 +2883,7 @@ LIRItemList* LIRGenerator::invoke_visit_arguments(Invoke* x) {
 // - if invoked between e) and f), we may lock callee save
 //   register in "spill-save" that destroys the receiver register
 //   before f) is executed
-// - if we rearange the f) to be earlier, by loading %o0, it
+// - if we rearrange f) to be earlier (by loading %o0) it
 //   may destroy a value on the stack that is currently in %o0
 //   and is waiting to be spilled
 // - if we keep the receiver locked while doing spill-save,
@@ -2916,14 +2916,16 @@ void LIRGenerator::do_Invoke(Invoke* x) {
   assert(receiver->is_illegal() || receiver->is_equal(LIR_Assembler::receiverOpr()), "must match");
 
   // JSR 292
-  // Preserve the SP over MethodHandle call sites.
+  // Preserve the SP over MethodHandle call sites, if needed.
   ciMethod* target = x->target();
   bool is_method_handle_invoke = (// %%% FIXME: Are both of these relevant?
                                   target->is_method_handle_intrinsic() ||
                                   target->is_compiled_lambda_form());
   if (is_method_handle_invoke) {
     info->set_is_method_handle_invoke(true);
-    __ move(FrameMap::stack_pointer(), FrameMap::method_handle_invoke_SP_save_opr());
+    if(FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr) {
+        __ move(FrameMap::stack_pointer(), FrameMap::method_handle_invoke_SP_save_opr());
+    }
   }
 
   switch (x->code()) {
@@ -2963,8 +2965,9 @@ void LIRGenerator::do_Invoke(Invoke* x) {
   }
 
   // JSR 292
-  // Restore the SP after MethodHandle call sites.
-  if (is_method_handle_invoke) {
+  // Restore the SP after MethodHandle call sites, if needed.
+  if (is_method_handle_invoke
+      && FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr) {
     __ move(FrameMap::method_handle_invoke_SP_save_opr(), FrameMap::stack_pointer());
   }
 

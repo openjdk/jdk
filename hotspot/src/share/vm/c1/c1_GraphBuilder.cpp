@@ -4083,7 +4083,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
       ValueType* type = apop()->type();
       if (type->is_constant()) {
         ciMethod* target = type->as_ObjectType()->constant_value()->as_member_name()->get_vmtarget();
-        // If the target is another method handle invoke try recursivly to get
+        // If the target is another method handle invoke, try to recursively get
         // a better target.
         if (target->is_method_handle_intrinsic()) {
           if (try_method_handle_inline(target)) {
