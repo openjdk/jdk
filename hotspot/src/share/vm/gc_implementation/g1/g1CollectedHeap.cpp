@@ -1890,24 +1890,24 @@ jint G1CollectedHeap::initialize() {
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block offset table",
                              G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1BlockOffsetSharedArray::heap_map_factor());
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
     create_aux_memory_mapper("Card table",
                              G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1SATBCardTableLoggingModRefBS::heap_map_factor());
 
   G1RegionToSpaceMapper* card_counts_storage =
     create_aux_memory_mapper("Card counts table",
-                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1CardCounts::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardCounts::heap_map_factor());
 
   size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
   G1RegionToSpaceMapper* prev_bitmap_storage =
-    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::mark_distance());
+    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::heap_map_factor());
   G1RegionToSpaceMapper* next_bitmap_storage =
-    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::mark_distance());
+    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::heap_map_factor());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);

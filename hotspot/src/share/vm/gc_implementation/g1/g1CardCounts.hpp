@@ -101,6 +101,14 @@ class G1CardCounts: public CHeapObj<mtGC> {
  public:
   G1CardCounts(G1CollectedHeap* g1h);
 
+  // Return the number of slots needed for a card counts table
+  // that covers mem_region_words words.
+  static size_t compute_size(size_t mem_region_size_in_words);
+
+  // Returns how many bytes of the heap a single byte of the card counts table
+  // corresponds to.
+  static size_t heap_map_factor();
+
   void initialize(G1RegionToSpaceMapper* mapper);
 
   // Increments the refinement count for the given card.
