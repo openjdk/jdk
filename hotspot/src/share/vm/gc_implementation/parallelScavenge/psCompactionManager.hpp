@@ -29,11 +29,6 @@
 #include "utilities/stack.hpp"
 #include "utilities/taskqueue.hpp"
 
-// Move to some global location
-#define HAS_BEEN_MOVED 0x1501d01d
-// End move to some global location
-
-
 class MutableSpace;
 class PSOldGen;
 class ParCompactionManager;

@@ -45,10 +45,6 @@
 // FIX ME FIX ME Add a destructor, and don't rely on the user to drain/flush/deallocate!
 //
 
-// Move to some global location
-#define HAS_BEEN_MOVED 0x1501d01d
-// End move to some global location
-
 class MutableSpace;
 class PSOldGen;
 class ParCompactionManager;
