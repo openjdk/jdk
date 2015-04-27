@@ -183,7 +183,7 @@ public final class Unsafe {
      * <p>
      * Unless the reference {@code x} being stored is either null
      * or matches the field type, the results are undefined.
-     * If the reference {@code o} is non-null, car marks or
+     * If the reference {@code o} is non-null, card marks or
      * other store barriers for that object (if the VM requires them)
      * are updated.
      * @see #putInt(Object, long, int)
@@ -218,6 +218,35 @@ public final class Unsafe {
     public native double  getDouble(Object o, long offset);
     /** @see #putInt(Object, long, int) */
     public native void    putDouble(Object o, long offset, double x);
+
+    // These read VM internal data.
+
+    /**
+     * Fetches an uncompressed reference value from a given native variable
+     * ignoring the VM's compressed references mode.
+     *
+     * @param address a memory address locating the variable
+     * @return the value fetched from the indicated native variable
+     */
+    public native Object getUncompressedObject(long address);
+
+    /**
+     * Fetches the {@link java.lang.Class} Java mirror for the given native
+     * metaspace {@code Klass} pointer.
+     *
+     * @param metaspaceKlass a native metaspace {@code Klass} pointer
+     * @return the {@link java.lang.Class} Java mirror
+     */
+    public native Class<?> getJavaMirror(long metaspaceKlass);
+
+    /**
+     * Fetches a native metaspace {@code Klass} pointer for the given Java
+     * object.
+     *
+     * @param o Java heap object for which to fetch the class pointer
+     * @return a native metaspace {@code Klass} pointer
+     */
+    public native long getKlassPointer(Object o);
 
     // These work on values in the C heap.
 
