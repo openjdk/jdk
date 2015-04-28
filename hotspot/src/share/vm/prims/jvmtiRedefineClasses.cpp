@@ -3433,10 +3433,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
          pv_node = pv_node->previous_versions()) {
       cp_cache = pv_node->constants()->cache();
       if (cp_cache != NULL) {
-        cp_cache->adjust_method_entries(_matching_old_methods,
-                                        _matching_new_methods,
-                                        _matching_methods_length,
-                                        &trace_name_printed);
+        cp_cache->adjust_method_entries(pv_node, &trace_name_printed);
       }
     }
   }
@@ -4085,10 +4082,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   MemberNameTable* mnt = the_class->member_names();
   if (mnt != NULL) {
     bool trace_name_printed = false;
-    mnt->adjust_method_entries(_matching_old_methods,
-                               _matching_new_methods,
-                               _matching_methods_length,
-                               &trace_name_printed);
+    mnt->adjust_method_entries(the_class(), &trace_name_printed);
   }
 
   // Fix Resolution Error table also to remove old constant pools
