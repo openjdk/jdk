@@ -29,7 +29,7 @@
 #include "gc_implementation/g1/g1StringDedup.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
   : _g1h(g1h),

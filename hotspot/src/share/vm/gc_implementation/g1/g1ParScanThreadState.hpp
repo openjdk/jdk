@@ -100,10 +100,7 @@ class G1ParScanThreadState : public StackObj {
   bool verify_task(StarTask ref) const;
 #endif // ASSERT
 
-  template <class T> void push_on_queue(T* ref) {
-    assert(verify_ref(ref), "sanity");
-    _refs->push(ref);
-  }
+  template <class T> void push_on_queue(T* ref);
 
   template <class T> void update_rs(HeapRegion* from, T* p, uint tid) {
     // If the new value of the field points to the same region or
