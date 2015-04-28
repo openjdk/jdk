@@ -42,8 +42,8 @@ import javax.net.ssl.*;
  * the default configuration.
  * <p>
  * The following <a name="example">example</a> shows how this may be done:
- * <p>
- * <pre><blockquote>
+ *
+ * <blockquote><pre>
  * SSLContext sslContext = SSLContext.getInstance (....);
  * HttpsServer server = HttpsServer.create();
  *
@@ -64,7 +64,7 @@ import javax.net.ssl.*;
  *         params.setSSLParameters(sslparams);
  *     }
  * });
- * </blockquote></pre>
+ * </pre></blockquote>
  * @since 1.6
  */
 @jdk.Exported
@@ -102,7 +102,7 @@ public class HttpsConfigurator {
     * <p>
     * The default implementation of this method uses the
     * SSLParameters returned from <p>
-    * <code>getSSLContext().getDefaultSSLParameters()</code>
+    * {@code getSSLContext().getDefaultSSLParameters()}
     * <p>
     * configure() may be overridden in order to modify this behavior.
     * See, the example <a href="#example">above</a>.
