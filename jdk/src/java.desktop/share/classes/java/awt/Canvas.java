@@ -58,11 +58,13 @@ public class Canvas extends Component implements Accessible {
     }
 
     /**
-     * Constructs a new Canvas given a GraphicsConfiguration object.
+     * Constructs a new Canvas given a GraphicsConfiguration object. If null is
+     * passed, then the default GraphicsConfiguration will be used.
      *
-     * @param config a reference to a GraphicsConfiguration object.
+     * @param config a reference to a GraphicsConfiguration object or null
      *
      * @see GraphicsConfiguration
+     * @see Component#getGraphicsConfiguration()
      */
     public Canvas(GraphicsConfiguration config) {
         this();
