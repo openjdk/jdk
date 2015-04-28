@@ -150,13 +150,13 @@ public:
 
 // PLAB book-keeping.
 class PLABStats VALUE_OBJ_CLASS_SPEC {
-  size_t _allocated;      // Total allocated
-  size_t _wasted;         // of which wasted (internal fragmentation)
-  size_t _undo_wasted;    // of which wasted on undo (is not used for calculation of PLAB size)
-  size_t _unused;         // Unused in last buffer
-  size_t _desired_plab_sz;// Output of filter (below), suitably trimmed and quantized
+  size_t _allocated;           // Total allocated
+  size_t _wasted;              // of which wasted (internal fragmentation)
+  size_t _undo_wasted;         // of which wasted on undo (is not used for calculation of PLAB size)
+  size_t _unused;              // Unused in last buffer
+  size_t _desired_net_plab_sz; // Output of filter (below), suitably trimmed and quantized
   AdaptiveWeightedAverage
-         _filter;         // Integrator with decay
+         _filter;              // Integrator with decay
 
   void reset() {
     _allocated   = 0;
@@ -165,12 +165,12 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     _unused      = 0;
   }
  public:
-  PLABStats(size_t desired_plab_sz_, unsigned wt) :
+  PLABStats(size_t desired_net_plab_sz_, unsigned wt) :
     _allocated(0),
     _wasted(0),
     _undo_wasted(0),
     _unused(0),
-    _desired_plab_sz(desired_plab_sz_),
+    _desired_net_plab_sz(desired_net_plab_sz_),
     _filter(wt)
   { }
 
@@ -182,13 +182,12 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     return PLAB::max_size();
   }
 
-  size_t desired_plab_sz() {
-    return _desired_plab_sz;
-  }
+  // Calculates plab size for current number of gc worker threads.
+  size_t desired_plab_sz(uint no_of_gc_workers);
 
-  // Updates the current desired PLAB size. Computes the new desired PLAB size,
+  // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
   // updates _desired_plab_sz and clears sensor accumulators.
-  void adjust_desired_plab_sz(uint no_of_gc_workers);
+  void adjust_desired_plab_sz();
 
   void add_allocated(size_t v) {
     Atomic::add_ptr(v, &_allocated);
