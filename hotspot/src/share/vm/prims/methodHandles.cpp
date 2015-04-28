@@ -35,6 +35,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/reflection.hpp"
@@ -965,21 +966,41 @@ void MemberNameTable::add_member_name(jweak mem_name_wref) {
 
 #if INCLUDE_JVMTI
 // It is called at safepoint only for RedefineClasses
-void MemberNameTable::adjust_method_entries(Method** old_methods, Method** new_methods,
-                                            int methods_length, bool *trace_name_printed) {
+void MemberNameTable::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   // For each redefined method
-  for (int j = 0; j < methods_length; j++) {
-    Method* old_method = old_methods[j];
-    Method* new_method = new_methods[j];
+  for (int idx = 0; idx < length(); idx++) {
+    oop mem_name = JNIHandles::resolve(this->at(idx));
+    if (mem_name == NULL) {
+      continue;
+    }
+    Method* old_method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name);
 
-    // search the MemberNameTable for uses of either obsolete or EMCP methods
-    for (int idx = 0; idx < length(); idx++) {
-      oop mem_name = JNIHandles::resolve(this->at(idx));
-      if (mem_name != NULL) {
-        java_lang_invoke_MemberName::adjust_vmtarget(mem_name, old_method, new_method,
-                                                     trace_name_printed);
+    if (old_method == NULL || !old_method->is_old()) {
+      continue; // skip uninteresting entries
+    }
+    if (old_method->is_deleted()) {
+      // skip entries with deleted methods
+      continue;
+    }
+    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
+
+    assert(new_method != NULL, "method_with_idnum() should not be NULL");
+    assert(old_method != new_method, "sanity check");
+
+    java_lang_invoke_MemberName::set_vmtarget(mem_name, new_method);
+
+    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (!(*trace_name_printed)) {
+        // RC_TRACE_MESG macro has an embedded ResourceMark
+        RC_TRACE_MESG(("adjust: name=%s",
+                       old_method->method_holder()->external_name()));
+        *trace_name_printed = true;
       }
+      // RC_TRACE macro has an embedded ResourceMark
+      RC_TRACE(0x00400000, ("MemberName method update: %s(%s)",
+                            new_method->name()->as_C_string(),
+                            new_method->signature()->as_C_string()));
     }
   }
 }

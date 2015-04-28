@@ -238,10 +238,8 @@ class MemberNameTable : public GrowableArray<jweak> {
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:
-  // If a MemberName refers to old_method then update it
-  // to refer to new_method.
-  void adjust_method_entries(Method** old_methods, Method** new_methods,
-                             int methods_length, bool *trace_name_printed);
+  // If a MemberName refers to old_method then update it to refer to new_method.
+  void adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed);
 #endif // INCLUDE_JVMTI
 };
 
