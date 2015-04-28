@@ -28,6 +28,7 @@
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 // Trim our work_queue so its length is below max at return
 inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {

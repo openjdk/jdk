@@ -66,6 +66,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
