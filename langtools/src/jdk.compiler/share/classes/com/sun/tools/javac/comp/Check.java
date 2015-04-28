@@ -2268,7 +2268,7 @@ public class Check {
             }
         }
         if (complete)
-            complete = ((c.flags_field & UNATTRIBUTED) == 0) && c.completer == null;
+            complete = ((c.flags_field & UNATTRIBUTED) == 0) && c.isCompleted();
         if (complete) c.flags_field |= ACYCLIC;
         return complete;
     }

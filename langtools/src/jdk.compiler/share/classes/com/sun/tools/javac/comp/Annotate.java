@@ -1241,7 +1241,7 @@ public class Annotate {
 
         private void init() {
             // Make sure metaDataFor is member entered
-            while (metaDataFor.completer != null)
+            while (!metaDataFor.isCompleted())
                 metaDataFor.complete();
 
             if (annotationTypeCompleter != null) {
