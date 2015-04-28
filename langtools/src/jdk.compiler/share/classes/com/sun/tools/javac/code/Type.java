@@ -580,12 +580,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     }
 
     public boolean isCompound() {
-        return tsym.completer == null
-            // Compound types can't have a completer.  Calling
-            // flags() will complete the symbol causing the
-            // compiler to load classes unnecessarily.  This led
-            // to regression 6180021.
-            && (tsym.flags() & COMPOUND) != 0;
+        // Compound types can't have a (non-terminal) completer.  Calling
+        // flags() will complete the symbol causing the compiler to load
+        // classes unnecessarily.  This led to regression 6180021.
+        return tsym.isCompleted() && (tsym.flags() & COMPOUND) != 0;
     }
 
     public boolean isIntersection() {
@@ -1124,7 +1122,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public void complete() {
-            if (tsym.completer != null) tsym.complete();
+            tsym.complete();
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1212,7 +1210,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             Assert.check((csym.flags() & COMPOUND) != 0);
             supertype_field = bounds.head;
             interfaces_field = bounds.tail;
-            Assert.check(supertype_field.tsym.completer != null ||
+            Assert.check(!supertype_field.tsym.isCompleted() ||
                     !supertype_field.isInterface(), supertype_field);
         }
 

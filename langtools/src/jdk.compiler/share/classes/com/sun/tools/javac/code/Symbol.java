@@ -96,6 +96,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     public Symbol owner;
 
     /** The completer of this symbol.
+     * This should never equal null (NULL_COMPLETER should be used instead).
      */
     public Completer completer;
 
@@ -193,6 +194,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         return (metadata != null && !metadata.isTypesEmpty());
     }
 
+    public boolean isCompleted() {
+        return completer.isTerminal();
+    }
+
     public void prependAttributes(List<Attribute.Compound> l) {
         if (l.nonEmpty()) {
             initedMetadata().prepend(l);
@@ -243,7 +248,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         this.flags_field = flags;
         this.type = type;
         this.owner = owner;
-        this.completer = null;
+        this.completer = Completer.NULL_COMPLETER;
         this.erasure_field = null;
         this.name = name;
     }
@@ -568,9 +573,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** Complete the elaboration of this symbol's definition.
      */
     public void complete() throws CompletionFailure {
-        if (completer != null) {
+        if (completer != Completer.NULL_COMPLETER) {
             Completer c = completer;
-            completer = null;
+            completer = Completer.NULL_COMPLETER;
             c.complete(this);
         }
     }
@@ -872,19 +877,19 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         public WriteableScope members() {
-            if (completer != null) complete();
+            complete();
             return members_field;
         }
 
         public long flags() {
-            if (completer != null) complete();
+            complete();
             return flags_field;
         }
 
         @Override
         public List<Attribute.Compound> getRawAttributes() {
-            if (completer != null) complete();
-            if (package_info != null && package_info.completer != null) {
+            complete();
+            if (package_info != null) {
                 package_info.complete();
                 mergeAttributes();
             }
@@ -1000,24 +1005,24 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         public long flags() {
-            if (completer != null) complete();
+            complete();
             return flags_field;
         }
 
         public WriteableScope members() {
-            if (completer != null) complete();
+            complete();
             return members_field;
         }
 
         @Override
         public List<Attribute.Compound> getRawAttributes() {
-            if (completer != null) complete();
+            complete();
             return super.getRawAttributes();
         }
 
         @Override
         public List<Attribute.TypeCompound> getRawTypeAttributes() {
-            if (completer != null) complete();
+            complete();
             return super.getRawTypeAttributes();
         }
 
@@ -1782,7 +1787,29 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** Symbol completer interface.
      */
     public static interface Completer {
+
+        /** Dummy completer to be used when the symbol has been completed or
+         * does not need completion.
+         */
+        public final static Completer NULL_COMPLETER = new Completer() {
+            public void complete(Symbol sym) { }
+            public boolean isTerminal() { return true; }
+        };
+
         void complete(Symbol sym) throws CompletionFailure;
+
+        /** Returns true if this completer is <em>terminal</em>. A terminal
+         * completer is used as a place holder when the symbol is completed.
+         * Calling complete on a terminal completer will not affect the symbol.
+         *
+         * The dummy NULL_COMPLETER and the GraphDependencies completer are
+         * examples of terminal completers.
+         *
+         * @return true iff this completer is terminal
+         */
+        default boolean isTerminal() {
+            return false;
+        }
     }
 
     public static class CompletionFailure extends RuntimeException {
