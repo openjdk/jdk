@@ -28,8 +28,6 @@
 
 ALT_MAKE ?= closed
 
--include $(ALT_MAKE)/Makefile
-
 GETMIXEDPATH=echo
 
 # Utilities used
@@ -303,6 +301,8 @@ else
   JTREG_KEY_OPTION = -k:\!ignore
 endif
 JTREG_BASIC_OPTIONS += $(JTREG_KEY_OPTION)
+
+-include $(ALT_MAKE)/Makefile
 
 # Make sure jtreg exists
 $(JTREG): $(JT_HOME)

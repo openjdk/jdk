@@ -36,7 +36,7 @@
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
 OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
