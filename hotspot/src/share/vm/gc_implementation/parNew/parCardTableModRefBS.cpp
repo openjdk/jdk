@@ -29,11 +29,11 @@
 #include "memory/cardTableRS.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/space.inline.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
-#include "runtime/virtualspace.hpp"
 #include "runtime/vmThread.hpp"
 
 void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
