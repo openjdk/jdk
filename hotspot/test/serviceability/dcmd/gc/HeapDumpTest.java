@@ -24,7 +24,13 @@
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.io.IOException;
+import java.util.List;
+
+import jdk.test.lib.hprof.HprofParser;
+import jdk.test.lib.hprof.model.Snapshot;
 
 import com.oracle.java.testlibrary.JDKToolFinder;
 import com.oracle.java.testlibrary.OutputAnalyzer;
@@ -35,59 +41,56 @@ import com.oracle.java.testlibrary.dcmd.PidJcmdExecutor;
  * @test
  * @summary Test of diagnostic command GC.heap_dump
  * @library /testlibrary
+ * @library /../../test/lib/share/classes
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.module.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.utils.*
  * @run testng HeapDumpTest
  */
 public class HeapDumpTest {
     protected String heapDumpArgs = "";
 
-    public void run(CommandExecutor executor) {
-        String fileName = "jcmd.gc.heap_dump." + System.currentTimeMillis() + ".hprof";
-        String cmd = "GC.heap_dump " + heapDumpArgs + " " + fileName;
-        executor.execute(cmd);
-
-        verifyHeapDump(fileName);
-    }
-
-    private void verifyHeapDump(String fileName) {
-        String jhat = JDKToolFinder.getJDKTool("jhat");
-        String[] cmd = { jhat, "-parseonly", "true", fileName };
-
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.redirectErrorStream(true);
-        Process p = null;
-        OutputAnalyzer output = null;
-
-        try {
-            p = pb.start();
-            output = new OutputAnalyzer(p);
-
-            /*
-             * Some hprof dumps of all objects contain constantPoolOop references that cannot be resolved, so we ignore
-             * failures about resolving constantPoolOop fields using a negative lookahead
-             */
-            output.shouldNotMatch(".*WARNING(?!.*Failed to resolve object.*constantPoolOop.*).*");
-        } catch (IOException e) {
-            Assert.fail("Test error: Caught exception while reading stdout/err of jhat", e);
-        } finally {
-            if (p != null) {
-                p.destroy();
-            }
+    public void run(CommandExecutor executor) throws IOException {
+        File dump = new File("jcmd.gc.heap_dump." + System.currentTimeMillis() + ".hprof");
+        if (dump.exists()) {
+            dump.delete();
         }
 
-        if (output.getExitValue() != 0) {
-            Assert.fail("Test error: jhat exit code was nonzero");
+        String cmd = "GC.heap_dump " + heapDumpArgs + " " + dump.getAbsolutePath();
+        executor.execute(cmd);
+
+        dump.delete();
+    }
+
+    private void verifyHeapDump(File dump) {
+        Assert.assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
+        try {
+            File out = HprofParser.parse(dump);
+
+            Assert.assertTrue(out != null && out.exists() && out.isFile(), "Could not find hprof parser output file");
+            List<String> lines = Files.readAllLines(out.toPath());
+            Assert.assertTrue(lines.size() > 0, "hprof parser output file is empty");
+            for (String line : lines) {
+                Assert.assertFalse(line.matches(".*WARNING(?!.*Failed to resolve object.*constantPoolOop.*).*"));
+            }
+
+            out.delete();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail("Could not parse dump file " + dump.getAbsolutePath());
         }
     }
 
     /* GC.heap_dump is not available over JMX, running jcmd pid executor instead */
     @Test
-    public void pid() {
+    public void pid() throws IOException {
         run(new PidJcmdExecutor());
     }
 }
