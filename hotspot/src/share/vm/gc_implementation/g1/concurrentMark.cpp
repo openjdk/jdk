@@ -54,6 +54,7 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 // Concurrent marking bit map wrapper
 
@@ -3756,6 +3757,10 @@ void CMTask::print_stats() {
   gclog_or_tty->print_cr("    time out: " SIZE_FORMAT ", SATB: " SIZE_FORMAT ", termination: " SIZE_FORMAT,
                          _aborted_timed_out, _aborted_satb, _aborted_termination);
 #endif // _MARKING_STATS_
+}
+
+bool ConcurrentMark::try_stealing(uint worker_id, int* hash_seed, oop& obj) {
+  return _task_queues->steal(worker_id, hash_seed, obj);
 }
 
 /*****************************************************************************
