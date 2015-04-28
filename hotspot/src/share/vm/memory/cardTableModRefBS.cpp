@@ -31,9 +31,9 @@
 #include "memory/space.hpp"
 #include "memory/space.inline.hpp"
 #include "memory/universe.hpp"
+#include "memory/virtualspace.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/virtualspace.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1

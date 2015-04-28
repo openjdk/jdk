@@ -22,10 +22,11 @@
  *
  */
 
-package sun.jvm.hotspot.runtime;
+package sun.jvm.hotspot.memory;
 
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
 public class VirtualSpace extends VMObject {
