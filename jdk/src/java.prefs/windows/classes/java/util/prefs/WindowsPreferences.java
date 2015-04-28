@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package java.util.prefs;
 
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.StringTokenizer;
 import java.io.ByteArrayOutputStream;
 import java.security.AccessController;
@@ -46,7 +44,7 @@ import sun.util.logging.PlatformLogger;
  * @since 1.4
  */
 
-class WindowsPreferences extends AbstractPreferences{
+class WindowsPreferences extends AbstractPreferences {
 
     static {
         PrivilegedAction<Void> load = () -> {
@@ -620,22 +618,22 @@ class WindowsPreferences extends AbstractPreferences{
      * @see #getSpi(String)
      */
     protected void putSpi(String javaName, String value) {
-    int nativeHandle = openKey(KEY_SET_VALUE);
-    if (nativeHandle == NULL_NATIVE_HANDLE) {
-        isBackingStoreAvailable = false;
-        return;
-    }
-    int result =  WindowsRegSetValueEx1(nativeHandle,
-                          toWindowsName(javaName), toWindowsValueString(value));
-    if (result != ERROR_SUCCESS) {
-        logger().warning("Could not assign value to key " +
-        byteArrayToString(toWindowsName(javaName))+ " at Windows registry node "
-       + byteArrayToString(windowsAbsolutePath()) + " at root 0x"
-       + Integer.toHexString(rootNativeHandle()) +
-       ". Windows RegSetValueEx(...) returned error code " + result + ".");
-        isBackingStoreAvailable = false;
+        int nativeHandle = openKey(KEY_SET_VALUE);
+        if (nativeHandle == NULL_NATIVE_HANDLE) {
+            isBackingStoreAvailable = false;
+            return;
         }
-    closeKey(nativeHandle);
+        int result = WindowsRegSetValueEx1(nativeHandle,
+                toWindowsName(javaName), toWindowsValueString(value));
+        if (result != ERROR_SUCCESS) {
+            logger().warning("Could not assign value to key " +
+            byteArrayToString(toWindowsName(javaName))+ " at Windows registry node "
+           + byteArrayToString(windowsAbsolutePath()) + " at root 0x"
+           + Integer.toHexString(rootNativeHandle()) +
+           ". Windows RegSetValueEx(...) returned error code " + result + ".");
+            isBackingStoreAvailable = false;
+        }
+        closeKey(nativeHandle);
     }
 
     /**
@@ -645,18 +643,18 @@ class WindowsPreferences extends AbstractPreferences{
      * @see #putSpi(String, String)
      */
     protected String getSpi(String javaName) {
-    int nativeHandle = openKey(KEY_QUERY_VALUE);
-    if (nativeHandle == NULL_NATIVE_HANDLE) {
-        return null;
-    }
-    Object resultObject =  WindowsRegQueryValueEx(nativeHandle,
-                                                  toWindowsName(javaName));
-    if (resultObject == null) {
+        int nativeHandle = openKey(KEY_QUERY_VALUE);
+        if (nativeHandle == NULL_NATIVE_HANDLE) {
+            return null;
+        }
+        Object resultObject = WindowsRegQueryValueEx(nativeHandle,
+                toWindowsName(javaName));
+        if (resultObject == null) {
+            closeKey(nativeHandle);
+            return null;
+        }
         closeKey(nativeHandle);
-        return null;
-    }
-    closeKey(nativeHandle);
-    return toJavaValueString((byte[]) resultObject);
+        return toJavaValueString((byte[]) resultObject);
     }
 
     /**
