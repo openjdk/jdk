@@ -27,6 +27,7 @@
  * @summary Encode many char sequences in many ways
  * @run main/timeout=1200 FindEncoderBugs
  * @author Martin Buchholz
+ * @key randomness
  */
 
 import java.util.*;

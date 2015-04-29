@@ -43,6 +43,7 @@ import javax.crypto.spec.IvParameterSpec;
  *          doesn't use IV).
  * @author Liwen Wang
  * @author Parag Salvi
+ * @key randomness
  */
 public class TestAESCipher {
 

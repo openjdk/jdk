@@ -24,6 +24,7 @@
 /* @test
  * @bug 6565543
  * @summary Minimal test for unsafe.copyMemory() and unsafe.setMemory()
+ * @key randomness
  */
 
 import java.util.*;

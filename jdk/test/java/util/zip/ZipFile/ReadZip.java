@@ -24,6 +24,7 @@
 /* @test
    @bug 4241361 4842702 4985614 6646605 5032358 6923692
    @summary Make sure we can read a zip file.
+   @key randomness
  */
 
 import java.io.*;

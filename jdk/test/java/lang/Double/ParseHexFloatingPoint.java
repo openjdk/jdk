@@ -26,6 +26,7 @@
  * @bug 4826774
  * @summary Numerical tests for hexadecimal inputs to parseDouble, parseFloat
  * @author Joseph D. Darcy
+ * @key randomness
  */
 
 

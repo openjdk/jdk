@@ -26,6 +26,7 @@
  * @bug 4347132 4939441
  * @summary Tests for {Math, StrictMath}.cbrt
  * @author Joseph D. Darcy
+ * @key randomness
  */
 
 public class CubeRootTests {

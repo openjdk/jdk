@@ -27,6 +27,7 @@
  * @bug 4891312 8074460
  * @summary verify that modPow() not broken by the special case for 65537 (use -Dseed=X to set PRNG seed)
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.math.BigInteger;

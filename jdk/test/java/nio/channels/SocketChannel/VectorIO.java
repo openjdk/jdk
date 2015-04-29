@@ -24,6 +24,7 @@
 /* @test
  * @summary Test socketchannel vector IO
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

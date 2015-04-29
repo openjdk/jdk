@@ -27,6 +27,7 @@
  * @summary Unit test for Collections.checkedSet
  * @author  Josh Bloch
  * @run testng CheckedSetBash
+ * @key randomness
  */
 
 import java.util.*;

@@ -26,6 +26,7 @@
  * @bug     4495754
  * @summary Basic test for int bit twiddling
  * @author  Josh Bloch
+ * @key randomness
  */
 
 import java.util.Random;

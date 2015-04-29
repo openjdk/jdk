@@ -25,6 +25,7 @@
  * @test
  * @bug 4245470 7088913
  * @summary Test the primitive wrappers hashCode()
+ * @key randomness
  */
 
 import java.util.Objects;

@@ -26,6 +26,7 @@
  * @summary Tests WatchService behavior when lots of events are pending
  * @library ..
  * @run main/timeout=180 LotsOfEvents
+ * @key randomness
  */
 
 import java.nio.file.*;

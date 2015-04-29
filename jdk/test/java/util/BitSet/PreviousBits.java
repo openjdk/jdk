@@ -25,6 +25,7 @@
  * @test
  * @bug 6410729 6586631
  * @summary Test previousClearBit, previousSetBit
+ * @key randomness
  */
 
 import java.util.*;

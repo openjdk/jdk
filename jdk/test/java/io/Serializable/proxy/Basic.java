@@ -23,6 +23,7 @@
 
 /* @test
  * @summary Verifies basic correct functioning of proxy serialization.
+ * @key randomness
  */
 
 import java.io.*;
