@@ -70,8 +70,8 @@ import com.sun.security.auth.UserPrincipal;
  * conjunction with a specified search filter.
  * If successful then authentication is attempted using the user's
  * distinguished name and the supplied password.
- * To enable this mode, set the <code>userFilter</code> option and omit the
- * <code>authIdentity</code> option.
+ * To enable this mode, set the {@code userFilter} option and omit the
+ * {@code authIdentity} option.
  * Use search-first mode when the user's distinguished name is not
  * known in advance.
  *
@@ -79,22 +79,22 @@ import com.sun.security.auth.UserPrincipal;
  * supplied username and password and then the LDAP directory is searched.
  * If authentication is successful then a search is performed using the
  * supplied username in conjunction with a specified search filter.
- * To enable this mode, set the <code>authIdentity</code> and the
- * <code>userFilter</code> options.
+ * To enable this mode, set the {@code authIdentity} and the
+ * {@code userFilter} options.
  * Use authentication-first mode when accessing an LDAP directory
  * that has been configured to disallow anonymous searches.
  *
  * <p> In authentication-only mode, authentication is attempted using the
  * supplied username and password. The LDAP directory is not searched because
  * the user's distinguished name is already known.
- * To enable this mode, set the <code>authIdentity</code> option to a valid
- * distinguished name and omit the <code>userFilter</code> option.
+ * To enable this mode, set the {@code authIdentity} option to a valid
+ * distinguished name and omit the {@code userFilter} option.
  * Use authentication-only mode when the user's distinguished name is
  * known in advance.
  *
  * <p> The following option is mandatory and must be specified in this
  * module's login {@link Configuration}:
- * <dl><dt></dt><dd>
+ * <dl><dd>
  * <dl>
  * <dt> <code>userProvider=<b>ldap_urls</b></code>
  * </dt>
@@ -106,7 +106,7 @@ import com.sun.security.auth.UserPrincipal;
  *      When several LDAP URLs are specified then each is attempted,
  *      in turn, until the first successful connection is established.
  *      Spaces in the distinguished name component of the URL must be escaped
- *      using the standard mechanism of percent character ('<code>%</code>')
+ *      using the standard mechanism of percent character ('{@code %}')
  *      followed by two hexadecimal digits (see {@link java.net.URI}).
  *      Query components must also be omitted from the URL.
  *
@@ -120,33 +120,33 @@ import com.sun.security.auth.UserPrincipal;
  *
  * <p> This module also recognizes the following optional {@link Configuration}
  *     options:
- * <dl><dt></dt><dd>
+ * <dl><dd>
  * <dl>
  * <dt> <code>userFilter=<b>ldap_filter</b></code> </dt>
  * <dd> This option specifies the search filter to use to locate a user's
  *      entry in the LDAP directory. It is used to determine a user's
  *      distinguished name.
- *      <code><b>ldap_filter</b></code> is an LDAP filter string
+ *      <b>{@code ldap_filter}</b> is an LDAP filter string
  *      (<a href="http://www.ietf.org/rfc/rfc2254.txt">RFC 2254</a>).
- *      If it contains the special token "<code><b>{USERNAME}</b></code>"
+ *      If it contains the special token "<b>{@code {USERNAME}}</b>"
  *      then that token will be replaced with the supplied username value
  *      before the filter is used to search the directory. </dd>
  *
  * <dt> <code>authIdentity=<b>auth_id</b></code> </dt>
  * <dd> This option specifies the identity to use when authenticating a user
  *      to the LDAP directory.
- *      <code><b>auth_id</b></code> may be an LDAP distinguished name string
+ *      <b>{@code auth_id}</b> may be an LDAP distinguished name string
  *      (<a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>) or some
  *      other string name.
- *      It must contain the special token "<code><b>{USERNAME}</b></code>"
+ *      It must contain the special token "<b>{@code {USERNAME}}</b>"
  *      which will be replaced with the supplied username value before the
  *      name is used for authentication.
  *      Note that if this option does not contain a distinguished name then
- *      the <code>userFilter</code> option must also be specified. </dd>
+ *      the {@code userFilter} option must also be specified. </dd>
  *
  * <dt> <code>authzIdentity=<b>authz_id</b></code> </dt>
  * <dd> This option specifies an authorization identity for the user.
- *      <code><b>authz_id</b></code> is any string name.
+ *      <b>{@code authz_id}</b> is any string name.
  *      If it comprises a single special token with curly braces then
  *      that token is treated as a attribute name and will be replaced with a
  *      single value of that attribute from the user's LDAP entry.
@@ -156,23 +156,23 @@ import com.sun.security.auth.UserPrincipal;
  *      is created using the authorization identity and it is associated with
  *      the current {@link Subject}. </dd>
  *
- * <dt> <code>useSSL</code> </dt>
- * <dd> if <code>false</code>, this module does not establish an SSL connection
+ * <dt> {@code useSSL} </dt>
+ * <dd> if {@code false}, this module does not establish an SSL connection
  *      to the LDAP server before attempting authentication. SSL is used to
  *      protect the privacy of the user's password because it is transmitted
  *      in the clear over LDAP.
  *      By default, this module uses SSL. </dd>
  *
- * <dt> <code>useFirstPass</code> </dt>
- * <dd> if <code>true</code>, this module retrieves the username and password
+ * <dt> {@code useFirstPass} </dt>
+ * <dd> if {@code true}, this module retrieves the username and password
  *      from the module's shared state, using "javax.security.auth.login.name"
  *      and "javax.security.auth.login.password" as the respective keys. The
  *      retrieved values are used for authentication. If authentication fails,
  *      no attempt for a retry is made, and the failure is reported back to
  *      the calling application.</dd>
  *
- * <dt> <code>tryFirstPass</code> </dt>
- * <dd> if <code>true</code>, this module retrieves the username and password
+ * <dt> {@code tryFirstPass} </dt>
+ * <dd> if {@code true}, this module retrieves the username and password
  *      from the module's shared state, using "javax.security.auth.login.name"
  *       and "javax.security.auth.login.password" as the respective keys.  The
  *      retrieved values are used for authentication. If authentication fails,
@@ -181,8 +181,8 @@ import com.sun.security.auth.UserPrincipal;
  *      authentication fails, the failure is reported back to the calling
  *      application.</dd>
  *
- * <dt> <code>storePass</code> </dt>
- * <dd> if <code>true</code>, this module stores the username and password
+ * <dt> {@code storePass} </dt>
+ * <dd> if {@code true}, this module stores the username and password
  *      obtained from the {@link CallbackHandler} in the module's shared state,
  *      using
  *      "javax.security.auth.login.name" and
@@ -190,13 +190,13 @@ import com.sun.security.auth.UserPrincipal;
  *      not performed if existing values already exist for the username and
  *      password in the shared state, or if authentication fails.</dd>
  *
- * <dt> <code>clearPass</code> </dt>
- * <dd> if <code>true</code>, this module clears the username and password
+ * <dt> {@code clearPass} </dt>
+ * <dd> if {@code true}, this module clears the username and password
  *      stored in the module's shared state after both phases of authentication
  *      (login and commit) have completed.</dd>
  *
- * <dt> <code>debug</code> </dt>
- * <dd> if <code>true</code>, debug messages are displayed on the standard
+ * <dt> {@code debug} </dt>
+ * <dd> if {@code true}, debug messages are displayed on the standard
  *      output stream.
  * </dl>
  * </dl>
@@ -209,36 +209,36 @@ import com.sun.security.auth.UserPrincipal;
  * Note that the following four JNDI properties are set by this module directly
  * and are ignored if also present in the configuration:
  * <ul>
- * <li> <code>java.naming.provider.url</code>
- * <li> <code>java.naming.security.principal</code>
- * <li> <code>java.naming.security.credentials</code>
- * <li> <code>java.naming.security.protocol</code>
+ * <li> {@code java.naming.provider.url}
+ * <li> {@code java.naming.security.principal}
+ * <li> {@code java.naming.security.credentials}
+ * <li> {@code java.naming.security.protocol}
  * </ul>
  *
  * <p>
  * Three sample {@link Configuration}s are shown below.
  * The first one activates search-first mode. It identifies the LDAP server
- * and specifies that users' entries be located by their <code>uid</code> and
- * <code>objectClass</code> attributes. It also specifies that an identity
- * based on the user's <code>employeeNumber</code> attribute should be created.
+ * and specifies that users' entries be located by their {@code uid} and
+ * {@code objectClass} attributes. It also specifies that an identity
+ * based on the user's {@code employeeNumber} attribute should be created.
  * The second one activates authentication-first mode. It requests that the
  * LDAP server be located dynamically, that authentication be performed using
  * the supplied username directly but without the protection of SSL and that
  * users' entries be located by one of three naming attributes and their
- * <code>objectClass</code> attribute.
+ * {@code objectClass} attribute.
  * The third one activates authentication-only mode. It identifies alternative
  * LDAP servers, it specifies the distinguished name to use for
  * authentication and a fixed identity to use for authorization. No directory
  * search is performed.
  *
- * <pre>
+ * <pre>{@literal
  *
  *     ExampleApplication {
  *         com.sun.security.auth.module.LdapLoginModule REQUIRED
- *             userProvider="ldap://ldap-svr/ou=people,dc=example,dc=com"
- *             userFilter="(&(uid={USERNAME})(objectClass=inetOrgPerson))"
- *             authzIdentity="{EMPLOYEENUMBER}"
- *             debug=true;
+ *              userProvider="ldap://ldap-svr/ou=people,dc=example,dc=com"
+ *              userFilter="(&(uid={USERNAME})(objectClass=inetOrgPerson))"
+ *              authzIdentity="{EMPLOYEENUMBER}"
+ *              debug=true;
  *     };
  *
  *     ExampleApplication {
@@ -258,7 +258,7 @@ import com.sun.security.auth.UserPrincipal;
  *             debug=true;
  *     };
  *
- * </pre>
+ * }</pre>
  *
  * <dl>
  * <dt><b>Note:</b> </dt>
@@ -282,7 +282,6 @@ import com.sun.security.auth.UserPrincipal;
  *     <em>caller-specified</em> {@link Configuration} then the application
  *     must be granted the permissions required by the {@link LoginModule}.
  *     <em>This</em> module requires the following two permissions:
- *     <p>
  *     <ul>
  *     <li> The {@link SocketPermission} to connect to an LDAP server.
  *     <li> The {@link AuthPermission} to modify the set of {@link Principal}s
@@ -373,15 +372,15 @@ public class LdapLoginModule implements LoginModule {
     private SearchControls constraints = null;
 
     /**
-     * Initialize this <code>LoginModule</code>.
+     * Initialize this {@code LoginModule}.
      *
-     * @param subject the <code>Subject</code> to be authenticated.
-     * @param callbackHandler a <code>CallbackHandler</code> to acquire the
+     * @param subject the {@code Subject} to be authenticated.
+     * @param callbackHandler a {@code CallbackHandler} to acquire the
      *                  username and password.
-     * @param sharedState shared <code>LoginModule</code> state.
+     * @param sharedState shared {@code LoginModule} state.
      * @param options options specified in the login
-     *                  <code>Configuration</code> for this particular
-     *                  <code>LoginModule</code>.
+     *                  {@code Configuration} for this particular
+     *                  {@code LoginModule}.
      */
     // Unchecked warning from (Map<String, Object>)sharedState is safe
     // since javax.security.auth.login.LoginContext passes a raw HashMap.
@@ -492,10 +491,10 @@ public class LdapLoginModule implements LoginModule {
      * <p> Acquire the user's credentials and verify them against the
      * specified LDAP directory.
      *
-     * @return true always, since this <code>LoginModule</code>
+     * @return true always, since this {@code LoginModule}
      *          should not be ignored.
      * @exception FailedLoginException if the authentication fails.
-     * @exception LoginException if this <code>LoginModule</code>
+     * @exception LoginException if this {@code LoginModule}
      *          is unable to perform the authentication.
      */
     public boolean login() throws LoginException {
@@ -593,10 +592,10 @@ public class LdapLoginModule implements LoginModule {
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> method), then this method associates an
-     * <code>LdapPrincipal</code> and one or more <code>UserPrincipal</code>s
-     * with the <code>Subject</code> located in the
-     * <code>LoginModule</code>.  If this LoginModule's own
+     * {@code login} method), then this method associates an
+     * {@code LdapPrincipal} and one or more {@code UserPrincipal}s
+     * with the {@code Subject} located in the
+     * {@code LoginModule}.  If this LoginModule's own
      * authentication attempted failed, then this method removes
      * any state that was originally saved.
      *
@@ -662,7 +661,7 @@ public class LdapLoginModule implements LoginModule {
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> and <code>commit</code> methods),
+     * {@code login} and {@code commit} methods),
      * then this method cleans up any state that was originally saved.
      *
      * @exception LoginException if the abort fails.
@@ -697,10 +696,10 @@ public class LdapLoginModule implements LoginModule {
      * Logout a user.
      *
      * <p> This method removes the Principals
-     * that were added by the <code>commit</code> method.
+     * that were added by the {@code commit} method.
      *
      * @exception LoginException if the logout fails.
-     * @return true in all cases since this <code>LoginModule</code>
+     * @return true in all cases since this {@code LoginModule}
      *          should not be ignored.
      */
     public boolean logout() throws LoginException {
