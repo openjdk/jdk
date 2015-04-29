@@ -1167,6 +1167,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   ResourceMark rm;
 
+  G1Log::update_level();
   print_heap_before_gc();
   trace_heap_before_gc(gc_tracer);
 
@@ -3649,6 +3650,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
 
+  G1Log::update_level();
   print_heap_before_gc();
   trace_heap_before_gc(_gc_tracer_stw);
 
