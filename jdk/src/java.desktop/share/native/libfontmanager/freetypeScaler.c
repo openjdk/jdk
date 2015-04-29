@@ -147,20 +147,6 @@ static void invalidateJavaScaler(JNIEnv *env,
 
 #define FILEDATACACHESIZE 1024
 
-/* NB: is it ever called? */
-static void CloseTTFontFileFunc(FT_Stream stream) {
-    FTScalerInfo *scalerInfo = (FTScalerInfo *) stream->pathname.pointer;
-    JNIEnv* env = scalerInfo->env;
-    jclass tmpClass = (*env)->FindClass(env, "sun/font/TrueTypeFont");
-    jfieldID platNameField =
-         (*env)->GetFieldID(env, tmpClass, "platName", "Ljava/lang/String;");
-    jstring platName = (*env)->GetObjectField(env,
-                                              scalerInfo->font2D,
-                                              platNameField);
-    const char *name = JNU_GetStringPlatformChars(env, platName, NULL);
-    JNU_ReleaseStringPlatformChars(env, platName, name);
-}
-
 static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                         unsigned long offset,
                                         unsigned char* destBuffer,
@@ -305,7 +291,7 @@ Java_sun_font_FreetypeFontScaler_initNativeScaler(
                     ftstream->size = filesize;
                     ftstream->pos = 0;
                     ftstream->read = (FT_Stream_IoFunc) ReadTTFontFileFunc;
-                    ftstream->close = (FT_Stream_CloseFunc) CloseTTFontFileFunc;
+                    ftstream->close = NULL;
                     ftstream->pathname.pointer = (void *) scalerInfo;
 
                     memset(&ft_open_args, 0, sizeof(FT_Open_Args));
