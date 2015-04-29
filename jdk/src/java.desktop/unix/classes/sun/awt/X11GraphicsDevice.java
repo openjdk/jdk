@@ -299,11 +299,7 @@ public class X11GraphicsDevice
 
     @Override
     public boolean isFullScreenSupported() {
-        // REMIND: for now we will only allow fullscreen exclusive mode
-        // on the primary screen; we could change this behavior slightly
-        // in the future by allowing only one screen to be in fullscreen
-        // exclusive mode at any given time...
-        boolean fsAvailable = (screen == 0) && isXrandrExtensionSupported();
+        boolean fsAvailable = isXrandrExtensionSupported();
         if (fsAvailable) {
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
@@ -329,7 +325,7 @@ public class X11GraphicsDevice
     private static void enterFullScreenExclusive(Window w) {
         X11ComponentPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
         if (peer != null) {
-            enterFullScreenExclusive(peer.getContentWindow());
+            enterFullScreenExclusive(peer.getWindow());
             peer.setFullScreenExclusiveModeState(true);
         }
     }
@@ -338,7 +334,7 @@ public class X11GraphicsDevice
         X11ComponentPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
         if (peer != null) {
             peer.setFullScreenExclusiveModeState(false);
-            exitFullScreenExclusive(peer.getContentWindow());
+            exitFullScreenExclusive(peer.getWindow());
         }
     }
 
