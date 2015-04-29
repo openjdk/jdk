@@ -93,7 +93,7 @@ import javax.management.DynamicMBean;
  *      returns the diagnostic command description
  *      (the same as the one return in the 'help' command)</li>
  *  <li>{@link javax.management.MBeanOperationInfo#getImpact() getImpact()}
- *      returns <code>ACTION_INFO</code></li>
+ *      returns {@code ACTION_INFO}</li>
  *  <li>{@link javax.management.MBeanOperationInfo#getReturnType() getReturnType()}
  *      returns {@code java.lang.String}</li>
  *  <li>{@link javax.management.MBeanOperationInfo#getDescriptor() getDescriptor()}
@@ -105,7 +105,6 @@ import javax.management.DynamicMBean;
  * meta-data for a JMX element. A field is a name and an associated value.
  * The additional meta-data provided for an operation associated with a
  * diagnostic command are described in the table below:
- * <p>
  *
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -161,7 +160,6 @@ import javax.management.DynamicMBean;
  *          arguments supported by the diagnostic command (see below)</td>
  *   </tr>
  * </table>
- * <p>
  *
  * <p>The description of parameters (options or arguments) of a diagnostic
  * command is provided within a Descriptor instance. In this Descriptor,
