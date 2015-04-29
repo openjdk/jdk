@@ -250,6 +250,8 @@ class SuperWord : public ResourceObj {
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
+  int            _num_work_vecs;   // Number of non memory vector operations
+  int            _num_reductions;  // Number of reduction expressions applied
 
   // Accessors
   Arena* arena()                   { return _arena; }
