@@ -30,10 +30,10 @@
 #include "memory/memRegion.hpp"
 #include "memory/referenceProcessor.hpp"
 #include "memory/universe.hpp"
+#include "memory/virtualspace.hpp"
 #include "memory/watermark.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/virtualspace.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
