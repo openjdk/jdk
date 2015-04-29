@@ -234,15 +234,23 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // Make a region merging constants and a region merging the rest
   uint req_c = 0;
   Node* predicate_proj = NULL;
+  int nb_predicate_proj = 0;
   for (uint ii = 1; ii < r->req(); ii++) {
     if (phi->in(ii) == con1) {
       req_c++;
     }
     Node* proj = PhaseIdealLoop::find_predicate(r->in(ii));
     if (proj != NULL) {
-      assert(predicate_proj == NULL, "only one predicate entry expected");
+      nb_predicate_proj++;
       predicate_proj = proj;
     }
+  }
+  if (nb_predicate_proj > 1) {
+    // Can happen in case of loop unswitching and when the loop is
+    // optimized out: it's not a loop anymore so we don't care about
+    // predicates.
+    assert(!r->is_Loop(), "this must not be a loop anymore");
+    predicate_proj = NULL;
   }
   Node* predicate_c = NULL;
   Node* predicate_x = NULL;
