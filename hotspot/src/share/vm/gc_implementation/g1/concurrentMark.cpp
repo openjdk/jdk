@@ -2315,13 +2315,13 @@ private:
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
   WorkGang*        _workers;
-  int              _active_workers;
+  uint             _active_workers;
 
 public:
   G1CMRefProcTaskExecutor(G1CollectedHeap* g1h,
-                        ConcurrentMark* cm,
-                        WorkGang* workers,
-                        int n_workers) :
+                          ConcurrentMark* cm,
+                          WorkGang* workers,
+                          uint n_workers) :
     _g1h(g1h), _cm(cm),
     _workers(workers), _active_workers(n_workers) { }
 
@@ -2650,7 +2650,7 @@ public:
     }
   }
 
-  CMRemarkTask(ConcurrentMark* cm, int active_workers) :
+  CMRemarkTask(ConcurrentMark* cm, uint active_workers) :
     AbstractGangTask("Par Remark"), _cm(cm) {
     _cm->terminator()->reset_for_reuse(active_workers);
   }
@@ -3028,7 +3028,7 @@ protected:
   ConcurrentMark* _cm;
   BitMap* _cm_card_bm;
   uint _max_worker_id;
-  int _active_workers;
+  uint _active_workers;
   HeapRegionClaimer _hrclaimer;
 
 public:
@@ -3036,7 +3036,7 @@ public:
                            ConcurrentMark* cm,
                            BitMap* cm_card_bm,
                            uint max_worker_id,
-                           int n_workers) :
+                           uint n_workers) :
       AbstractGangTask("Count Aggregation"),
       _g1h(g1h), _cm(cm), _cm_card_bm(cm_card_bm),
       _max_worker_id(max_worker_id),
@@ -3053,7 +3053,7 @@ public:
 
 
 void ConcurrentMark::aggregate_count_data() {
-  int n_workers = _g1h->workers()->active_workers();
+  uint n_workers = _g1h->workers()->active_workers();
 
   G1AggregateCountDataTask g1_par_agg_task(_g1h, this, &_card_bm,
                                            _max_worker_id, n_workers);

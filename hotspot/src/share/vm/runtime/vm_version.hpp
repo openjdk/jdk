@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_micro_version;
   static int          _vm_build_number;
   static bool         _initialized;
-  static int          _parallel_worker_threads;
+  static unsigned int _parallel_worker_threads;
   static bool         _parallel_worker_threads_initialized;
   static int          _reserve_for_allocation_prefetch;
 

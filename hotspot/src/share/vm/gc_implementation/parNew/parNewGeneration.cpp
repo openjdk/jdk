@@ -301,7 +301,7 @@ public:
   inline ParScanThreadState& thread_state(int i);
 
   void trace_promotion_failed(const YoungGCTracer* gc_tracer);
-  void reset(int active_workers, bool promotion_failed);
+  void reset(uint active_workers, bool promotion_failed);
   void flush();
 
   #if TASKQUEUE_STATS
@@ -358,7 +358,7 @@ void ParScanThreadStateSet::trace_promotion_failed(const YoungGCTracer* gc_trace
   }
 }
 
-void ParScanThreadStateSet::reset(int active_threads, bool promotion_failed)
+void ParScanThreadStateSet::reset(uint active_threads, bool promotion_failed)
 {
   _term.reset_for_reuse(active_threads);
   if (promotion_failed) {
@@ -576,7 +576,7 @@ ParNewGenTask::ParNewGenTask(ParNewGeneration* gen, Generation* old_gen,
 
 // Reset the terminator for the given number of
 // active threads.
-void ParNewGenTask::set_for_termination(int active_workers) {
+void ParNewGenTask::set_for_termination(uint active_workers) {
   _state_set->reset(active_workers, _gen->promotion_failed());
   // Should the heap be passed in?  There's only 1 for now so
   // grab it instead.
@@ -759,7 +759,7 @@ public:
 
 private:
   virtual void work(uint worker_id);
-  virtual void set_for_termination(int active_workers) {
+  virtual void set_for_termination(uint active_workers) {
     _state_set.terminator()->reset_for_reuse(active_workers);
   }
 private:
@@ -905,10 +905,10 @@ void ParNewGeneration::collect(bool   full,
   AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
   FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need workgang for parallel work");
-  int active_workers =
-      AdaptiveSizePolicy::calc_active_workers(workers->total_workers(),
-                                   workers->active_workers(),
-                                   Threads::number_of_non_daemon_threads());
+  uint active_workers =
+       AdaptiveSizePolicy::calc_active_workers(workers->total_workers(),
+                                               workers->active_workers(),
+                                               Threads::number_of_non_daemon_threads());
   workers->set_active_workers(active_workers);
   _old_gen = gch->old_gen();
 
@@ -940,7 +940,7 @@ void ParNewGeneration::collect(bool   full,
 
   gch->save_marks();
   assert(workers != NULL, "Need parallel worker threads.");
-  int n_workers = active_workers;
+  uint n_workers = active_workers;
 
   // Set the correct parallelism (number of queues) in the reference processor
   ref_processor()->set_active_mt_degree(n_workers);

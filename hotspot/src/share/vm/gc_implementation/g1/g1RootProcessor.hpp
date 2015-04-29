@@ -115,7 +115,7 @@ public:
                             uint worker_i);
 
   // Inform the root processor about the number of worker threads
-  void set_num_workers(int active_workers);
+  void set_num_workers(uint active_workers);
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1ROOTPROCESSOR_HPP
