@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/virtualspace.hpp"
 #include "services/memTracker.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
