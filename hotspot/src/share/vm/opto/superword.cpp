@@ -66,7 +66,9 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _lp(NULL),                              // LoopNode
   _bb(NULL),                              // basic block
   _iv(NULL),                              // induction var
-  _race_possible(false)                   // cases where SDMU is true
+  _race_possible(false),                  // cases where SDMU is true
+  _num_work_vecs(0),                      // amount of vector work we have
+  _num_reductions(0)                      // amount of reduction work we have
 {}
 
 //------------------------------transform_loop---------------------------
@@ -1112,7 +1114,6 @@ void SuperWord::construct_my_pack_map() {
 //------------------------------filter_packs---------------------------
 // Remove packs that are not implemented or not profitable.
 void SuperWord::filter_packs() {
-
   // Remove packs that are not implemented
   for (int i = _packset.length() - 1; i >= 0; i--) {
     Node_List* pk = _packset.at(i);
@@ -1125,6 +1126,12 @@ void SuperWord::filter_packs() {
       }
 #endif
       remove_pack_at(i);
+    }
+    Node *n = pk->at(0);
+    if (n->is_reduction()) {
+      _num_reductions++;
+    } else {
+      _num_work_vecs++;
     }
   }
 
@@ -1167,7 +1174,12 @@ bool SuperWord::implemented(Node_List* p) {
     uint size = p->size();
     if (p0->is_reduction()) {
       const Type *arith_type = p0->bottom_type();
-      retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
+      // Length 2 reductions of INT/LONG do not offer performance benefits
+      if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
+        retValue = false;
+      } else {
+        retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
+      }
     } else {
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
     }
@@ -1210,8 +1222,9 @@ bool SuperWord::profitable(Node_List* p) {
   if (p0->is_reduction()) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
-    if (second_pk == NULL) {
-      // Remove reduction flag if no parent pack, it is not profitable
+    if ((second_pk == NULL) || (_num_work_vecs == _num_reductions)) {
+      // Remove reduction flag if no parent pack or if not enough work
+      // to cover reduction expansion overhead
       p0->remove_flag(Node::Flag_is_reduction);
       return false;
     } else if (second_pk->size() != p->size()) {
@@ -2355,6 +2368,9 @@ void SuperWord::init() {
   _lp = NULL;
   _bb = NULL;
   _iv = NULL;
+  _race_possible = 0;
+  _num_work_vecs = 0;
+  _num_reductions = 0;
 }
 
 //------------------------------print_packset---------------------------
