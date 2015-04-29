@@ -1084,11 +1084,9 @@ void G1CollectedHeap::clear_rsets_post_compaction() {
 class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
   G1CollectedHeap*   _g1h;
   UpdateRSOopClosure _cl;
-  int                _worker_i;
 public:
-  RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, int worker_i = 0) :
+  RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, uint worker_i = 0) :
     _cl(g1->g1_rem_set(), worker_i),
-    _worker_i(worker_i),
     _g1h(g1)
   { }
 
@@ -3041,7 +3039,7 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
       assert(UseDynamicNumberOfGCThreads ||
         workers()->active_workers() == workers()->total_workers(),
         "If not dynamic should be using all the workers");
-      int n_workers = workers()->active_workers();
+      uint n_workers = workers()->active_workers();
       set_par_threads(n_workers);
       workers()->run_task(&task);
       set_par_threads(0);
@@ -3579,9 +3577,9 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;
-  const int n = workers()->total_workers();
-  for (int i = 0; i < n; ++i) {
-    st->print("%3d ", i); task_queue(i)->stats.print(st); st->cr();
+  const uint n = workers()->total_workers();
+  for (uint i = 0; i < n; ++i) {
+    st->print("%3u ", i); task_queue(i)->stats.print(st); st->cr();
     totals += task_queue(i)->stats;
   }
   st->print_raw("tot "); totals.print(st); st->cr();
@@ -3590,8 +3588,8 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
 }
 
 void G1CollectedHeap::reset_taskqueue_stats() {
-  const int n = workers()->total_workers();
-  for (int i = 0; i < n; ++i) {
+  const uint n = workers()->total_workers();
+  for (uint i = 0; i < n; ++i) {
     task_queue(i)->stats.reset();
   }
 }
@@ -4321,7 +4319,7 @@ public:
 
   ParallelTaskTerminator* terminator() { return &_terminator; }
 
-  virtual void set_for_termination(int active_workers) {
+  virtual void set_for_termination(uint active_workers) {
     _root_processor->set_num_workers(active_workers);
     terminator()->reset_for_reuse(active_workers);
     _n_workers = active_workers;
@@ -5000,13 +4998,13 @@ private:
   G1CollectedHeap*   _g1h;
   RefToScanQueueSet* _queues;
   FlexibleWorkGang*  _workers;
-  int                _active_workers;
+  uint               _active_workers;
 
 public:
   G1STWRefProcTaskExecutor(G1CollectedHeap* g1h,
-                        FlexibleWorkGang* workers,
-                        RefToScanQueueSet *task_queues,
-                        int n_workers) :
+                           FlexibleWorkGang* workers,
+                           RefToScanQueueSet *task_queues,
+                           uint n_workers) :
     _g1h(g1h),
     _queues(task_queues),
     _workers(workers),
@@ -5139,7 +5137,7 @@ protected:
   uint _n_workers;
 
 public:
-  G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h,int workers, RefToScanQueueSet *task_queues) :
+  G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h, uint workers, RefToScanQueueSet *task_queues) :
     AbstractGangTask("ParPreserveCMReferents"),
     _g1h(g1h),
     _queues(task_queues),

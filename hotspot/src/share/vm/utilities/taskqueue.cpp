@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ int TaskQueueSetSuper::randomParkAndMiller(int *seed0) {
 }
 
 ParallelTaskTerminator::
-ParallelTaskTerminator(int n_threads, TaskQueueSetSuper* queue_set) :
+ParallelTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _n_threads(n_threads),
   _queue_set(queue_set),
   _offered_termination(0) {}
@@ -152,7 +152,7 @@ bool
 ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
-  Atomic::inc(&_offered_termination);
+  Atomic::inc((int *)&_offered_termination);
 
   uint yield_count = 0;
   // Number of hard spin loops done since last yield
@@ -230,7 +230,7 @@ ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
 #endif
       if (peek_in_queue_set() ||
           (terminator != NULL && terminator->should_exit_termination())) {
-        Atomic::dec(&_offered_termination);
+        Atomic::dec((int *)&_offered_termination);
         assert(_offered_termination < _n_threads, "Invariant");
         return false;
       }
@@ -263,7 +263,7 @@ bool ObjArrayTask::is_valid() const {
 }
 #endif // ASSERT
 
-void ParallelTaskTerminator::reset_for_reuse(int n_threads) {
+void ParallelTaskTerminator::reset_for_reuse(uint n_threads) {
   reset_for_reuse();
   _n_threads = n_threads;
 }

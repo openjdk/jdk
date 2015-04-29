@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,9 +418,9 @@ public:
 
 class ParallelTaskTerminator: public StackObj {
 private:
-  int _n_threads;
+  uint _n_threads;
   TaskQueueSetSuper* _queue_set;
-  int _offered_termination;
+  uint _offered_termination;
 
 #ifdef TRACESPINNING
   static uint _total_yields;
@@ -437,7 +437,7 @@ public:
 
   // "n_threads" is the number of threads to be terminated.  "queue_set" is a
   // queue sets of work queues of other threads.
-  ParallelTaskTerminator(int n_threads, TaskQueueSetSuper* queue_set);
+  ParallelTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
 
   // The current thread has no work, and is ready to terminate if everyone
   // else is.  If returns "true", all threads are terminated.  If returns
@@ -459,7 +459,7 @@ public:
   void reset_for_reuse();
   // Same as above but the number of parallel threads is set to the
   // given number.
-  void reset_for_reuse(int n_threads);
+  void reset_for_reuse(uint n_threads);
 
 #ifdef TRACESPINNING
   static uint total_yields() { return _total_yields; }
