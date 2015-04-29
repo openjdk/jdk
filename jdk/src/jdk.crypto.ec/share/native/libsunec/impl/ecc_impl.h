@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,6 +34,7 @@
  *   Dr Vipul Gupta <vipul.gupta@sun.com> and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
+ * Last Modified Date from the Original Code: November 2013
  *********************************************************************** */
 
 #ifndef _ECC_IMPL_H

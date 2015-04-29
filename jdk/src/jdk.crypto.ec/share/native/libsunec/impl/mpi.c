@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,6 +34,7 @@
  *   Netscape Communications Corporation
  *   Douglas Stebila <douglas@stebila.ca> of Sun Laboratories.
  *
+ * Last Modified Date from the Original Code: June 2014
  *********************************************************************** */
 
 /*  Arbitrary precision integer arithmetic library */
