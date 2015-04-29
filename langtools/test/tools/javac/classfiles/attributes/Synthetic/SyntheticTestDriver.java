@@ -21,12 +21,14 @@
  * questions.
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,13 +71,13 @@ public class SyntheticTestDriver extends TestResult {
                 .collect(Collectors.toMap(ExpectedClass::className, Function.identity()));
         this.classes = new HashMap<>();
         Path classDir = getClassDir().toPath();
-        String sourceFileName = testCaseName.replace('.', '/');
+        Pattern filePattern = Pattern.compile(Pattern.quote(testCaseName.replace('.', File.separatorChar)) + ".*\\.class");
         List<Path> paths = Files.walk(classDir)
                 .map(p -> classDir.relativize(p.toAbsolutePath()))
-                .filter(p -> p.toString().matches(sourceFileName + ".*\\.class"))
+                .filter(p -> filePattern.matcher(p.toString()).matches())
                 .collect(Collectors.toList());
         for (Path path : paths) {
-            String className = path.toString().replace(".class", "").replace('/', '.');
+            String className = path.toString().replace(".class", "").replace(File.separatorChar, '.');
             classes.put(className, readClassFile(classDir.resolve(path).toFile()));
         }
         if (classes.isEmpty()) {
