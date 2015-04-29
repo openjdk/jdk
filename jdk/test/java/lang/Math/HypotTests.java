@@ -26,6 +26,7 @@
  * @bug 4851638 4939441
  * @summary Tests for {Math, StrictMath}.hypot
  * @author Joseph D. Darcy
+ * @key randomness
  */
 
 public class HypotTests {

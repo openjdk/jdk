@@ -29,6 +29,7 @@
  * @bug 8026236 8074460
  * @summary test primality verification methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @author bpb
+ * @key randomness
  */
 import java.math.BigInteger;
 import java.util.BitSet;

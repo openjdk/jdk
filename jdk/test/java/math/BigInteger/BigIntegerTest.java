@@ -28,6 +28,7 @@
  * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @run main/timeout=400 BigIntegerTest
  * @author madbot
+ * @key randomness
  */
 
 import java.io.File;

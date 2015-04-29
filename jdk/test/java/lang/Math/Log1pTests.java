@@ -26,6 +26,7 @@
  * @bug 4851638 4939441
  * @summary Tests for {Math, StrictMath}.log1p
  * @author Joseph D. Darcy
+ * @key randomness
  */
 
 public class Log1pTests {

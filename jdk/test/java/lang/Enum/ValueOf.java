@@ -29,6 +29,7 @@
  *
  * @compile ValueOf.java
  * @run main ValueOf
+ * @key randomness
  */
 
 import java.util.*;

@@ -25,6 +25,7 @@
  * @test
  * @bug 6840246 6559590
  * @summary test String.split()
+ * @key randomness
  */
 import java.util.Arrays;
 import java.util.Random;

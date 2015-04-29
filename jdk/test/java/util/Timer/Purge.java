@@ -25,6 +25,7 @@
  * @test
  * @bug 4481072
  * @summary Basic test for purge method
+ * @key randomness
  */
 
 import java.util.*;

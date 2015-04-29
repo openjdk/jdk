@@ -27,6 +27,7 @@
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

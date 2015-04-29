@@ -29,6 +29,7 @@
  * @bug 6910473 8021204 8021203 9005933 8074460
  * @summary Test range of BigInteger values (use -Dseed=X to set PRNG seed)
  * @author Dmitry Nadezhin
+ * @key randomness
  */
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

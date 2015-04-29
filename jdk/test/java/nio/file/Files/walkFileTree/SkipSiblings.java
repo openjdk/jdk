@@ -27,6 +27,7 @@
  * @library ../..
  * @compile SkipSiblings.java CreateFileTree.java
  * @run main SkipSiblings
+ * @key randomness
  */
 
 import java.nio.file.*;
