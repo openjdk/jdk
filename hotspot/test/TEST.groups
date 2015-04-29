@@ -329,11 +329,6 @@ applicable_cmsgc = \
  -:needs_serialgc \
  -:needs_parallelgc
 
-
-# When called from top level the test suites use the hotspot_ prefix
-hotspot_wbapitest = \
-  sanity/
-
 hotspot_native_sanity = \
   native_sanity
 
@@ -418,7 +413,7 @@ hotspot_runtime = \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/7158988/FieldMonitor.java \
-  sanity/ExecuteInternalVMTests.java \
+  sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
 hotspot_serviceability = \
