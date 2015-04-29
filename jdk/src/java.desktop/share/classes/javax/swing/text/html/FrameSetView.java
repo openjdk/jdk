@@ -126,7 +126,7 @@ class FrameSetView extends javax.swing.text.BoxView {
                 if (children[i].length() > 1) {
                     relativeChildren[i] =
                         Integer.parseInt(children[i].substring(
-                            0, children[i].length()-1));
+                            0, children[i].length()-1).trim());
                     relativeTotals += relativeChildren[i];
                 } else {
                     relativeChildren[i] = 1;
@@ -136,7 +136,11 @@ class FrameSetView extends javax.swing.text.BoxView {
                 percentChildren[i] = parseDigits(children[i]);
                 percentTotals += percentChildren[i];
             } else {
-                absoluteChildren[i] = Integer.parseInt(children[i]);
+                String value = children[i].toLowerCase();
+                if (value.endsWith("px")) {
+                    value = value.substring(0, value.length()-2).trim();
+                }
+                absoluteChildren[i] = Integer.parseInt(value);
             }
         }
         if (percentTotals > 100) {
