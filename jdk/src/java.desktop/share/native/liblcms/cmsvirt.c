@@ -671,7 +671,7 @@ cmsToneCurve* Build_sRGBGamma(cmsContext ContextID)
 // Create the ICC virtual profile for sRGB space
 cmsHPROFILE CMSEXPORT cmsCreate_sRGBProfileTHR(cmsContext ContextID)
 {
-       cmsCIExyY       D65;
+       cmsCIExyY       D65 = { 0.3127, 0.3290, 1.0 };
        cmsCIExyYTRIPLE Rec709Primaries = {
                                    {0.6400, 0.3300, 1.0},
                                    {0.3000, 0.6000, 1.0},
@@ -680,7 +680,7 @@ cmsHPROFILE CMSEXPORT cmsCreate_sRGBProfileTHR(cmsContext ContextID)
        cmsToneCurve* Gamma22[3];
        cmsHPROFILE  hsRGB;
 
-       cmsWhitePointFromTemp(&D65, 6504);
+      // cmsWhitePointFromTemp(&D65, 6504);
        Gamma22[0] = Gamma22[1] = Gamma22[2] = Build_sRGBGamma(ContextID);
        if (Gamma22[0] == NULL) return NULL;
 
@@ -708,6 +708,7 @@ typedef struct {
                 cmsFloat64Number Contrast;
                 cmsFloat64Number Hue;
                 cmsFloat64Number Saturation;
+                cmsBool          lAdjustWP;
                 cmsCIEXYZ WPsrc, WPdest;
 
 } BCHSWADJUSTS, *LPBCHSWADJUSTS;
@@ -737,9 +738,10 @@ int bchswSampler(register const cmsUInt16Number In[], register cmsUInt16Number O
     cmsLCh2Lab(&LabOut, &LChOut);
 
     // Move white point in Lab
-
-    cmsLab2XYZ(&bchsw ->WPsrc,  &XYZ, &LabOut);
-    cmsXYZ2Lab(&bchsw ->WPdest, &LabOut, &XYZ);
+    if (bchsw->lAdjustWP) {
+           cmsLab2XYZ(&bchsw->WPsrc, &XYZ, &LabOut);
+           cmsXYZ2Lab(&bchsw->WPdest, &LabOut, &XYZ);
+    }
 
     // Back to encoded
 
@@ -773,17 +775,22 @@ cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
     bchsw.Contrast   = Contrast;
     bchsw.Hue        = Hue;
     bchsw.Saturation = Saturation;
+    if (TempSrc == TempDest) {
 
-    cmsWhitePointFromTemp(&WhitePnt, TempSrc );
-    cmsxyY2XYZ(&bchsw.WPsrc, &WhitePnt);
+           bchsw.lAdjustWP = FALSE;
+    }
+    else {
+           bchsw.lAdjustWP = TRUE;
+           cmsWhitePointFromTemp(&WhitePnt, TempSrc);
+           cmsxyY2XYZ(&bchsw.WPsrc, &WhitePnt);
+           cmsWhitePointFromTemp(&WhitePnt, TempDest);
+           cmsxyY2XYZ(&bchsw.WPdest, &WhitePnt);
 
-    cmsWhitePointFromTemp(&WhitePnt, TempDest);
-    cmsxyY2XYZ(&bchsw.WPdest, &WhitePnt);
+    }
 
     hICC = cmsCreateProfilePlaceholder(ContextID);
     if (!hICC)                          // can't allocate
         return NULL;
-
 
     cmsSetDeviceClass(hICC,      cmsSigAbstractClass);
     cmsSetColorSpace(hICC,       cmsSigLabData);
@@ -1017,12 +1024,14 @@ typedef struct {
 
 } cmsAllowedLUT;
 
+#define cmsSig0 ((cmsTagSignature) 0)
+
 static const cmsAllowedLUT AllowedLUTTypes[] = {
 
-    { FALSE, 0,              cmsSigLut16Type,    4,  { cmsSigMatrixElemType,   cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType}},
-    { FALSE, 0,              cmsSigLut16Type,    3,  { cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType}},
-    { FALSE, 0,              cmsSigLut16Type,    2,  { cmsSigCurveSetElemType, cmsSigCLutElemType}},
-    { TRUE , 0,              cmsSigLutAtoBType,  1,  { cmsSigCurveSetElemType }},
+    { FALSE, cmsSig0,        cmsSigLut16Type, 4, { cmsSigMatrixElemType, cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType } },
+    { FALSE, cmsSig0,        cmsSigLut16Type, 3, { cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType } },
+    { FALSE, cmsSig0,        cmsSigLut16Type, 2, { cmsSigCurveSetElemType, cmsSigCLutElemType } },
+    { TRUE,  cmsSig0,        cmsSigLutAtoBType, 1, { cmsSigCurveSetElemType } },
     { TRUE , cmsSigAToB0Tag, cmsSigLutAtoBType,  3,  { cmsSigCurveSetElemType, cmsSigMatrixElemType, cmsSigCurveSetElemType } },
     { TRUE , cmsSigAToB0Tag, cmsSigLutAtoBType,  3,  { cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType   } },
     { TRUE , cmsSigAToB0Tag, cmsSigLutAtoBType,  5,  { cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType, cmsSigMatrixElemType, cmsSigCurveSetElemType }},
