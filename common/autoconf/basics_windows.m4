@@ -66,7 +66,7 @@ AC_DEFUN([BASIC_MAKE_WINDOWS_SPACE_SAFE_CYGWIN],
       # Going to short mode and back again did indeed matter. Since short mode is
       # case insensitive, let's make it lowercase to improve readability.
       shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
+      # Now convert it back to Unix-style (cygpath)
       input_path=`$CYGPATH -u "$shortmode_path"`
       new_path="$input_path"
     fi
