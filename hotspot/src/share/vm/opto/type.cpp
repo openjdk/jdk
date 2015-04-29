@@ -1158,11 +1158,11 @@ static int normalize_int_widen( jint lo, jint hi, int w ) {
   // Certain normalizations keep us sane when comparing types.
   // The 'SMALLINT' covers constants and also CC and its relatives.
   if (lo <= hi) {
-    if ((juint)(hi - lo) <= SMALLINT)  w = Type::WidenMin;
-    if ((juint)(hi - lo) >= max_juint) w = Type::WidenMax; // TypeInt::INT
+    if (((juint)hi - lo) <= SMALLINT)  w = Type::WidenMin;
+    if (((juint)hi - lo) >= max_juint) w = Type::WidenMax; // TypeInt::INT
   } else {
-    if ((juint)(lo - hi) <= SMALLINT)  w = Type::WidenMin;
-    if ((juint)(lo - hi) >= max_juint) w = Type::WidenMin; // dual TypeInt::INT
+    if (((juint)lo - hi) <= SMALLINT)  w = Type::WidenMin;
+    if (((juint)lo - hi) >= max_juint) w = Type::WidenMin; // dual TypeInt::INT
   }
   return w;
 }
@@ -1416,11 +1416,11 @@ static int normalize_long_widen( jlong lo, jlong hi, int w ) {
   // Certain normalizations keep us sane when comparing types.
   // The 'SMALLINT' covers constants.
   if (lo <= hi) {
-    if ((julong)(hi - lo) <= SMALLINT)   w = Type::WidenMin;
-    if ((julong)(hi - lo) >= max_julong) w = Type::WidenMax; // TypeLong::LONG
+    if (((julong)hi - lo) <= SMALLINT)   w = Type::WidenMin;
+    if (((julong)hi - lo) >= max_julong) w = Type::WidenMax; // TypeLong::LONG
   } else {
-    if ((julong)(lo - hi) <= SMALLINT)   w = Type::WidenMin;
-    if ((julong)(lo - hi) >= max_julong) w = Type::WidenMin; // dual TypeLong::LONG
+    if (((julong)lo - hi) <= SMALLINT)   w = Type::WidenMin;
+    if (((julong)lo - hi) >= max_julong) w = Type::WidenMin; // dual TypeLong::LONG
   }
   return w;
 }
