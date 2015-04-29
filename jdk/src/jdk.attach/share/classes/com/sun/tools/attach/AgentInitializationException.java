@@ -29,15 +29,15 @@ package com.sun.tools.attach;
  * The exception thrown when an agent fails to initialize in the target
  * Java virtual machine.
  *
- * <p> This exception is thrown by {@link
- * com.sun.tools.attach.VirtualMachine#loadAgent VirtualMachine.loadAgent},
+ * <p> This exception is thrown by
+ * {@link com.sun.tools.attach.VirtualMachine#loadAgent VirtualMachine.loadAgent},
  * {@link com.sun.tools.attach.VirtualMachine#loadAgentLibrary
- * VirtualMachine.loadAgentLibrary}, {@link
- * com.sun.tools.attach.VirtualMachine#loadAgentPath VirtualMachine.loadAgentPath}
+ * VirtualMachine.loadAgentLibrary},
+ * {@link com.sun.tools.attach.VirtualMachine#loadAgentPath VirtualMachine.loadAgentPath}
  * methods if an agent, or agent library, cannot be initialized.
- * When thrown by <tt>VirtualMachine.loadAgentLibrary</tt>, or
- * <tt>VirtualMachine.loadAgentPath</tt> then the exception encapsulates
- * the error returned by the agent's <code>Agent_OnAttach</code> function.
+ * When thrown by {@code VirtualMachine.loadAgentLibrary}, or
+ * {@code VirtualMachine.loadAgentPath} then the exception encapsulates
+ * the error returned by the agent's {@code Agent_OnAttach} function.
  * This error code can be obtained by invoking the {@link #returnValue() returnValue} method.
  */
 @jdk.Exported
@@ -49,7 +49,7 @@ public class AgentInitializationException extends Exception {
     private int returnValue;
 
     /**
-     * Constructs an <code>AgentInitializationException</code> with
+     * Constructs an {@code AgentInitializationException} with
      * no detail message.
      */
     public AgentInitializationException() {
@@ -58,7 +58,7 @@ public class AgentInitializationException extends Exception {
     }
 
     /**
-     * Constructs an <code>AgentInitializationException</code> with
+     * Constructs an {@code AgentInitializationException} with
      * the specified detail message.
      *
      * @param   s   the detail message.
@@ -69,9 +69,9 @@ public class AgentInitializationException extends Exception {
     }
 
     /**
-     * Constructs an <code>AgentInitializationException</code> with
+     * Constructs an {@code AgentInitializationException} with
      * the specified detail message and the return value from the
-     * execution of the agent's <code>Agent_OnAttach</code> function.
+     * execution of the agent's {@code Agent_OnAttach} function.
      *
      * @param   s               the detail message.
      * @param   returnValue     the return value
@@ -83,8 +83,8 @@ public class AgentInitializationException extends Exception {
 
     /**
      * If the exception was created with the return value from the agent
-     * <code>Agent_OnAttach</code> function then this returns that value,
-     * otherwise returns <code>0</code>. </p>
+     * {@code Agent_OnAttach} function then this returns that value,
+     * otherwise returns {@code 0}.
      *
      * @return  the return value
      */

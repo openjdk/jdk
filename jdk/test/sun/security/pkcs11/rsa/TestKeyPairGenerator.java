@@ -28,6 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @run main/othervm TestKeyPairGenerator
+ * @key intermittent
  */
 
 import java.io.*;
