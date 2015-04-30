@@ -51,10 +51,8 @@
 #include "gc_implementation/g1/dirtyCardQueue.hpp"
 #include "gc_implementation/g1/satbQueue.hpp"
 #endif // INCLUDE_ALL_GCS
-#ifdef ZERO
 #ifdef TARGET_ARCH_zero
 # include "stack_zero.hpp"
-#endif
 #endif
 
 class ThreadSafepointState;

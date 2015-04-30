@@ -41,6 +41,7 @@
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
