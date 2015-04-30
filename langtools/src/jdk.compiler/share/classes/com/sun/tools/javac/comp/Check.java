@@ -2999,7 +2999,7 @@ public class Check {
 
     /** Is the annotation applicable to types? */
     protected boolean isTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
-        List<Attribute> targets = typeAnnotations.annotationTargets(a.attribute);
+        List<Attribute> targets = typeAnnotations.annotationTargets(a.annotationType.type.tsym);
         return (targets == null) ?
                 false :
                 targets.stream()
