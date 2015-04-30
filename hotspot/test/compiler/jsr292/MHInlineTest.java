@@ -48,15 +48,12 @@ public class MHInlineTest {
         // The test is applicable only to C2 (present in Server VM).
         if (analyzer.getStderr().contains("Server VM")) {
             analyzer.shouldContain("MHInlineTest$B::public_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain(   "MHInlineTest$B::protected_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain(   "MHInlineTest$B::package_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("MHInlineTest$B::protected_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("MHInlineTest$B::package_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("MHInlineTest$A::package_final_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("MHInlineTest$B::private_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("MHInlineTest$B::private_static_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("MHInlineTest$A::package_static_x (3 bytes)   inline (hot)");
-
-            analyzer.shouldNotContain("MHInlineTest$A::protected_x (3 bytes)   virtual call");
-            analyzer.shouldNotContain("MHInlineTest$A::package_x (3 bytes)   virtual call");
         }
     }
 
@@ -179,6 +176,7 @@ public class MHInlineTest {
             throw new Error(throwable);
         }
     }
+
     static class Launcher {
         public static void main(String[] args) throws Exception {
             for (int i = 0; i < 20_000; i++) {

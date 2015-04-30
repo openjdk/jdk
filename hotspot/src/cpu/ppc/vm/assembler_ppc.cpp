@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,7 @@ int Assembler::branch_destination(int inst, int pos) {
 }
 
 // Low-level andi-one-instruction-macro.
-void Assembler::andi(Register a, Register s, const int ui16) {
-  assert(is_uimm(ui16, 16), "must be 16-bit unsigned immediate");
+void Assembler::andi(Register a, Register s, const long ui16) {
   if (is_power_of_2_long(((jlong) ui16)+1)) {
     // pow2minus1
     clrldi(a, s, 64-log2_long((((jlong) ui16)+1)));
@@ -97,6 +96,7 @@ void Assembler::andi(Register a, Register s, const int ui16) {
     // negpow2
     clrrdi(a, s, log2_long((jlong)-ui16));
   } else {
+    assert(is_uimm(ui16, 16), "must be 16-bit unsigned immediate");
     andi_(a, s, ui16);
   }
 }
@@ -356,7 +356,6 @@ void Assembler::load_const(Register d, long x, Register tmp) {
 // 16 bit immediate offset.
 int Assembler::load_const_optimized(Register d, long x, Register tmp, bool return_simm16_rest) {
   // Avoid accidentally trying to use R0 for indexed addressing.
-  assert(d != R0, "R0 not allowed");
   assert_different_registers(d, tmp);
 
   short xa, xb, xc, xd; // Four 16-bit chunks of const.
@@ -370,6 +369,58 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
     return 0;
   }
 
+  int retval = 0;
+  if (return_simm16_rest) {
+    retval = xd;
+    x = rem << 16;
+    xd = 0;
+  }
+
+  if (d == R0) { // Can't use addi.
+    if (is_simm(x, 32)) { // opt 2: simm32
+      lis(d, x >> 16);
+      if (xd) ori(d, d, (unsigned short)xd);
+    } else {
+      // 64-bit value: x = xa xb xc xd
+      xa = (x >> 48) & 0xffff;
+      xb = (x >> 32) & 0xffff;
+      xc = (x >> 16) & 0xffff;
+      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
+      if (tmp == noreg || (xc == 0 && xd == 0)) {
+        if (xa_loaded) {
+          lis(d, xa);
+          if (xb) { ori(d, d, (unsigned short)xb); }
+        } else {
+          li(d, xb);
+        }
+        sldi(d, d, 32);
+        if (xc) { oris(d, d, (unsigned short)xc); }
+        if (xd) { ori( d, d, (unsigned short)xd); }
+      } else {
+        // Exploit instruction level parallelism if we have a tmp register.
+        bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
+        if (xa_loaded) {
+          lis(tmp, xa);
+        }
+        if (xc_loaded) {
+          lis(d, xc);
+        }
+        if (xa_loaded) {
+          if (xb) { ori(tmp, tmp, (unsigned short)xb); }
+        } else {
+          li(tmp, xb);
+        }
+        if (xc_loaded) {
+          if (xd) { ori(d, d, (unsigned short)xd); }
+        } else {
+          li(d, xd);
+        }
+        insrdi(d, tmp, 32, 0);
+      }
+    }
+    return retval;
+  }
+
   xc = rem & 0xFFFF; // Next 16-bit chunk.
   rem = (rem >> 16) + ((unsigned short)xc >> 15); // Compensation for sign extend.
 
@@ -377,28 +428,27 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
     lis(d, xc);
   } else { // High 32 bits needed.
 
-    if (tmp != noreg) { // opt 3: We have a temp reg.
+    if (tmp != noreg  && (int)x != 0) { // opt 3: We have a temp reg.
       // No carry propagation between xc and higher chunks here (use logical instructions).
       xa = (x >> 48) & 0xffff;
       xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
-      bool load_xa = (xa != 0) || (xb < 0);
+      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
       bool return_xd = false;
 
-      if (load_xa) { lis(tmp, xa); }
+      if (xa_loaded) { lis(tmp, xa); }
       if (xc) { lis(d, xc); }
-      if (load_xa) {
+      if (xa_loaded) {
         if (xb) { ori(tmp, tmp, (unsigned short)xb); } // No addi, we support tmp == R0.
       } else {
-        li(tmp, xb); // non-negative
+        li(tmp, xb);
       }
       if (xc) {
-        if (return_simm16_rest && xd >= 0) { return_xd = true; } // >= 0 to avoid carry propagation after insrdi/rldimi.
-        else if (xd) { addi(d, d, xd); }
+        if (xd) { addi(d, d, xd); }
       } else {
         li(d, xd);
       }
       insrdi(d, tmp, 32, 0);
-      return return_xd ? xd : 0; // non-negative
+      return retval;
     }
 
     xb = rem & 0xFFFF; // Next 16-bit chunk.
@@ -417,11 +467,51 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
     if (xc) { addis(d, d, xc); }
   }
 
-  // opt 5: Return offset to be inserted into following instruction.
-  if (return_simm16_rest) return xd;
-
   if (xd) { addi(d, d, xd); }
-  return 0;
+  return retval;
+}
+
+// We emit only one addition to s to optimize latency.
+int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp, bool return_simm16_rest) {
+  assert(s != R0 && s != tmp, "unsupported");
+  long rem = x;
+
+  // Case 1: Can use mr or addi.
+  short xd = rem & 0xFFFF; // Lowest 16-bit chunk.
+  rem = (rem >> 16) + ((unsigned short)xd >> 15);
+  if (rem == 0) {
+    if (xd == 0) {
+      if (d != s) { mr(d, s); }
+      return 0;
+    }
+    if (return_simm16_rest) {
+      return xd;
+    }
+    addi(d, s, xd);
+    return 0;
+  }
+
+  // Case 2: Can use addis.
+  if (xd == 0) {
+    short xc = rem & 0xFFFF; // 2nd 16-bit chunk.
+    rem = (rem >> 16) + ((unsigned short)xd >> 15);
+    if (rem == 0) {
+      addis(d, s, xc);
+      return 0;
+    }
+  }
+
+  // Other cases: load & add.
+  Register tmp1 = tmp,
+           tmp2 = noreg;
+  if ((d != tmp) && (d != s)) {
+    // Can use d.
+    tmp1 = d;
+    tmp2 = tmp;
+  }
+  int simm16_rest = load_const_optimized(tmp1, x, tmp2, return_simm16_rest);
+  add(d, tmp1, s);
+  return simm16_rest;
 }
 
 #ifndef PRODUCT

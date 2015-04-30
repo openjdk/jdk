@@ -906,9 +906,6 @@ protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:
 
-  // Idealize graph, using DU info.  Done after constant propagation
-  virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
-
   // See if there is valid pipeline info
   static  const Pipeline *pipeline_class();
   virtual const Pipeline *pipeline() const;
@@ -941,6 +938,9 @@ public:
 
   // Return the unique control out if only one. Null if none or more than one.
   Node* unique_ctrl_out() const;
+
+  // Set control or add control as precedence edge
+  void ensure_control_or_add_prec(Node* c);
 
 //----------------- Code Generation
 

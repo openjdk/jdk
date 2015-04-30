@@ -1179,7 +1179,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
 #endif
 
   // JSR 292 key invariant:
-  // If the resolved method is a MethodHandle invoke target the call
+  // If the resolved method is a MethodHandle invoke target, the call
   // site must be a MethodHandle call site, because the lambda form might tail-call
   // leaving the stack in a state unknown to either caller or callee
   // TODO detune for now but we might need it again
