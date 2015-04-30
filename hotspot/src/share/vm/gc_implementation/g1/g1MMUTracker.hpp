@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ public:
   G1MMUTracker(double time_slice, double max_gc_time);
 
   virtual void add_pause(double start, double end, bool gc_thread) = 0;
-  virtual double longest_pause(double current_time) = 0;
   virtual double when_sec(double current_time, double pause_time) = 0;
 
   double max_gc_time() {
@@ -122,7 +121,6 @@ private:
   void remove_expired_entries(double current_time);
   double calculate_gc_time(double current_time);
 
-  double longest_pause_internal(double current_time);
   double when_internal(double current_time, double pause_time);
 
 public:
@@ -130,7 +128,6 @@ public:
 
   virtual void add_pause(double start, double end, bool gc_thread);
 
-  virtual double longest_pause(double current_time);
   virtual double when_sec(double current_time, double pause_time);
 };
 
