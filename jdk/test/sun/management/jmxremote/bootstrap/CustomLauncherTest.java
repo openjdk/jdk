@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,8 @@ public class CustomLauncherTest {
 
         try {
             String[] launcher = getLauncher();
+
+            if (launcher == null) return; // launcher not available for the tested platform; skip
 
             System.out.println("Starting custom launcher:");
             System.out.println("=========================");
