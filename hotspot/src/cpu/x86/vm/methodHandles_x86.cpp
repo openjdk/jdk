@@ -374,7 +374,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     //  member_reg - MemberName that was the trailing argument
     //  temp1_recv_klass - klass of stacked receiver, if needed
     //  rsi/r13 - interpreter linkage (if interpreted)
-    //  rcx, rdx, rsi, rdi, r8, r8 - compiler arguments (if compiled)
+    //  rcx, rdx, rsi, rdi, r8 - compiler arguments (if compiled)
 
     Label L_incompatible_class_change_error;
     switch (iid) {

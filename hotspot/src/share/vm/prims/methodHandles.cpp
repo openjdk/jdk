@@ -940,6 +940,24 @@ int MethodHandles::find_MemberNames(KlassHandle k,
   return rfill + overflow;
 }
 
+// Get context class for a CallSite instance: either extract existing context or use default one.
+InstanceKlass* MethodHandles::get_call_site_context(oop call_site) {
+  // In order to extract a context the following traversal is performed:
+  //   CallSite.context => Cleaner.referent => Class._klass => Klass
+  assert(java_lang_invoke_CallSite::is_instance(call_site), "");
+  oop context_oop = java_lang_invoke_CallSite::context_volatile(call_site);
+  if (oopDesc::is_null(context_oop)) {
+    return NULL; // The context hasn't been initialized yet.
+  }
+  oop context_class_oop = java_lang_ref_Reference::referent(context_oop);
+  if (oopDesc::is_null(context_class_oop)) {
+    // The context reference was cleared by GC, so current dependency context
+    // isn't usable anymore. Context should be fetched from CallSite again.
+    return NULL;
+  }
+  return InstanceKlass::cast(java_lang_Class::as_Klass(context_class_oop));
+}
+
 //------------------------------------------------------------------------------
 // MemberNameTable
 //
@@ -1252,7 +1270,7 @@ JVM_END
 
 JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
   Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
-  Handle target   (THREAD, JNIHandles::resolve(target_jh));
+  Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
@@ -1264,12 +1282,39 @@ JVM_END
 
 JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
   Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
-  Handle target   (THREAD, JNIHandles::resolve(target_jh));
+  Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
     CodeCache::flush_dependents_on(call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
+  }
+}
+JVM_END
+
+JVM_ENTRY(void, MHN_invalidateDependentNMethods(JNIEnv* env, jobject igcls, jobject call_site_jh)) {
+  Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
+  {
+    // Walk all nmethods depending on this call site.
+    MutexLocker mu1(Compile_lock, thread);
+
+    CallSiteDepChange changes(call_site(), Handle());
+
+    InstanceKlass* ctxk = MethodHandles::get_call_site_context(call_site());
+    if (ctxk == NULL) {
+      return; // No dependencies to invalidate yet.
+    }
+    int marked = 0;
+    {
+      MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      marked = ctxk->mark_dependent_nmethods(changes);
+    }
+    java_lang_invoke_CallSite::set_context_volatile(call_site(), NULL); // Reset call site to initial state
+    if (marked > 0) {
+      // At least one nmethod has been marked for deoptimization
+      VM_Deoptimize op;
+      VMThread::execute(&op);
+    }
   }
 }
 JVM_END
@@ -1327,6 +1372,7 @@ static JNINativeMethod MHN_methods[] = {
   {CC"objectFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_objectFieldOffset)},
   {CC"setCallSiteTargetNormal",   CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetNormal)},
   {CC"setCallSiteTargetVolatile", CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetVolatile)},
+  {CC"invalidateDependentNMethods", CC"("CS")V",                         FN_PTR(MHN_invalidateDependentNMethods)},
   {CC"staticFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_staticFieldOffset)},
   {CC"staticFieldBase",           CC"("MEM")"OBJ,                        FN_PTR(MHN_staticFieldBase)},
   {CC"getMemberVMInfo",           CC"("MEM")"OBJ,                        FN_PTR(MHN_getMemberVMInfo)}
