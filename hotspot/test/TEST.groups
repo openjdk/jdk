@@ -421,7 +421,6 @@ hotspot_serviceability = \
   serviceability/dcmd/compiler
 
 hotspot_jprt = \
-  :hotspot_wbapitest \
   :hotspot_compiler_1 \
   :hotspot_compiler_2 \
   :hotspot_compiler_3 \
@@ -430,7 +429,6 @@ hotspot_jprt = \
   :hotspot_gc_closed \
   :hotspot_gc_gcold \
   :hotspot_runtime \
-  :hotspot_runtime_closed \
   :hotspot_serviceability
 
 #All tests that depends on nashorn extension.
