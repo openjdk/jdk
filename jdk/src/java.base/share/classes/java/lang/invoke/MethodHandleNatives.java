@@ -61,6 +61,9 @@ class MethodHandleNatives {
     static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);
     static native void setCallSiteTargetVolatile(CallSite site, MethodHandle target);
 
+    /** Invalidate CallSite context: clean up dependent nmethods and reset call site context to initial state (null). */
+    static native void invalidateDependentNMethods(CallSite site);
+
     private static native void registerNatives();
     static {
         registerNatives();
@@ -232,6 +235,7 @@ class MethodHandleNatives {
             return Invokers.linkToTargetMethod(type);
         } else {
             appendixResult[0] = callSite;
+            callSite.initContext(caller);
             return Invokers.linkToCallSiteMethod(type);
         }
     }
