@@ -25,12 +25,17 @@
  * @test
  * @summary Test of diagnostic command GC.heap_dump -all=true
  * @library /testlibrary
+ * @library /../../test/lib/share/classes
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.module.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.utils.*
  * @build HeapDumpTest
  * @run testng HeapDumpAllTest
  */
